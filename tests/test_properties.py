@@ -1,10 +1,7 @@
 import pytest
 from sympy import Poly, symbols, simplify
-from braidpy import Braid
+from braidpy import Braid, garside_normal_form
 from braidpy.properties import alexander_polynomial, conjugacy_class
-
-from src.braidpy import garside_normal_form
-
 t = symbols('t')
 # Run tests with: uv run pytest /tests
 

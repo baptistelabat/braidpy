@@ -5,7 +5,7 @@ import matplotlib
 from matplotlib.axes import Axes
 matplotlib.use('WebAgg')
 
-from src.braidpy import Braid
+from .braid import Braid
 import braidvisualiser as bv
 
 

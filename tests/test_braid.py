@@ -1,8 +1,6 @@
 import pytest
-from braidpy import Braid
+from braidpy import Braid, conjugate, power
 from sympy import symbols, Matrix
-
-from src.braidpy import conjugate, power
 
 
 # Run tests with: uv run pytest /tests
