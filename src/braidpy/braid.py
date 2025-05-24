@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 
 from braidpy.utils import int_to_superscript, int_to_subscript
 
-t = symbols('t')
+t = symbols("t")
+
 
 @dataclass(frozen=True)
 class Braid:
@@ -24,55 +25,79 @@ class Braid:
 
         # Set the inferred value if needed (bypass frozen with object.__setattr__)
         if self.n_strands is None:
-            object.__setattr__(self, 'n_strands', actual_n)
+            object.__setattr__(self, "n_strands", actual_n)
 
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
 
-    def format(self, generator_symbols=None, inverse_generator_symbols=None, zero_symbol="0", separator:str="") ->str:
-        if generator_symbols is None:
-            generator_symbols = ["σ" + int_to_subscript(i+1) for i in range(self.n_strands)]
-        if inverse_generator_symbols is None:
-            inverse_generator_symbols = ["σ" + int_to_subscript(i+1) + int_to_superscript(-1) for i in range(self.n_strands)]
+    def format(
+        self,
+        generator_symbols: list[str] = None,
+        inverse_generator_symbols: list[str] = None,
+        zero_symbol: str = "0",
+        separator: str = "",
+    ) -> str:
+        """
+        Allow to format the braid word following different format.
+        Note that the power are limited to -1/1 (not possible to display σ₁² for example)
 
-        word=""
-        for (i, gen) in enumerate(self.generators):
+        Args:
+            generator_symbols:
+            inverse_generator_symbols:
+            zero_symbol:
+            separator:
+
+        Returns:
+
+        """
+        if generator_symbols is None:
+            generator_symbols = [
+                "σ" + int_to_subscript(i + 1) for i in range(self.n_strands)
+            ]
+        if inverse_generator_symbols is None:
+            inverse_generator_symbols = [
+                "σ" + int_to_subscript(i + 1) + int_to_superscript(-1)
+                for i in range(self.n_strands)
+            ]
+
+        word = ""
+        for i, gen in enumerate(self.generators):
             if gen > 0:
-                word = word + generator_symbols[gen-1]
-            elif gen< 0:
-                word = word + inverse_generator_symbols[-gen-1]
+                word = word + generator_symbols[gen - 1]
+            elif gen < 0:
+                word = word + inverse_generator_symbols[-gen - 1]
             else:
                 word = word + zero_symbol
-            if i<len(self.generators)-1:
-                word+=separator
+            if i < len(self.generators) - 1:
+                word += separator
         return f"{word}"
 
     def __len__(self):
         return len(self.generators)
-    
-    def __mul__(self, other: 'Braid') -> 'Braid':
+
+    def __mul__(self, other: "Braid") -> "Braid":
         """Multiply two braids (concatenate them)"""
         if self.n_strands != other.n_strands:
             raise ValueError("Braids must have the same number of strands")
         return Braid(self.generators + other.generators, self.n_strands)
 
-    def __pow__(self, n) -> 'Braid':
+    def __pow__(self, n) -> "Braid":
         """Raise bread to power two braids (concatenate them)"""
         if n == 0:
             return Braid([], self.n_strands)
         elif n > 0:
             result = self
             for _ in range(n - 1):
-                result = result*self
+                result = result * self
             return result
         else:
             return (self**n).inverse()
+
     def __key(self):
         return tuple(self.generators + [self.n_strands])
 
     def word_eq(self, other):
         return self.__key() == other.__key()
-
 
     def __hash__(self):
         return hash(self.__key())
@@ -88,11 +113,11 @@ class Braid:
 
         """
         return self.word_eq(other)
-    
-    def inverse(self) -> 'Braid':
+
+    def inverse(self) -> "Braid":
         """Return the inverse of the braid"""
         return Braid([-g for g in reversed(self.generators)], self.n_strands)
-    
+
     def writhe(self) -> int:
         """Calculate the writhe of the braid (sum of generator powers)"""
         return sum(np.sign(self.generators))
@@ -114,8 +139,8 @@ class Braid:
                 # σ_i⁻¹
                 B[i, i] = 0
                 B[i, i + 1] = 1
-                B[i + 1, i] = t ** -1
-                B[i + 1, i + 1] = 1 - t ** -1
+                B[i + 1, i] = t**-1
+                B[i + 1, i + 1] = 1 - t**-1
             matrix = matrix * B  # Correct order: left-to-right
         return matrix
 
@@ -125,22 +150,21 @@ class Braid:
     def is_trivial(self) -> bool:
         """Check if the braid is trivial (identity braid)"""
         return not self.generators or all(g == 0 for g in self.generators)
-    
+
     def perm(self) -> List[int]:
         """Return the permutation induced by the braid"""
         strands = list(range(1, self.n_strands + 1))
         for gen in self.generators:
             i = abs(gen) - 1
             if gen > 0:  # Positive crossing (σ_i)
-                strands[i], strands[i+1] = strands[i+1], strands[i]
-            else:        # Negative crossing (σ_i⁻¹)
-                strands[i+1], strands[i] = strands[i], strands[i+1]
+                strands[i], strands[i + 1] = strands[i + 1], strands[i]
+            else:  # Negative crossing (σ_i⁻¹)
+                strands[i + 1], strands[i] = strands[i], strands[i + 1]
         return strands
 
     def is_pure(self) -> bool:
         """Check if a braid is pure (permutation is identity)"""
         return self.perm() == list(range(1, self.n_strands + 1))
-
 
     def is_palindromic(self):
         return self.generators == self.generators[::-1]
@@ -149,7 +173,10 @@ class Braid:
         return self.inverse().generators == self.generators
 
     def cyclic_conjugates(self):
-        return [self.generators[i:] + self.generators[:i] for i in range(len(self.generators))]
+        return [
+            self.generators[i:] + self.generators[:i]
+            for i in range(len(self.generators))
+        ]
 
     def is_equivalent_to(self, other):
         if self.n != other.n:

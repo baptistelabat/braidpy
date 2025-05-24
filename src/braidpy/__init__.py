@@ -10,4 +10,4 @@ from .operations import multiply, conjugate, power
 from .properties import *
 from .visualization import *
 
-__all__ = ['Braid']
+__all__ = ["Braid"]

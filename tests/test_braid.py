@@ -39,8 +39,22 @@ class TestBraid:
         """Test braid format to any word convention"""
         b = Braid([1, 2, -1], n_strands=3)
         assert b.format() == "σ₁σ₂σ₁⁻¹"
-        assert b.format(generator_symbols="abc", inverse_generator_symbols="ABC", separator=".") == "a.b.A"
+        assert (
+            b.format(
+                generator_symbols="abc", inverse_generator_symbols="ABC", separator="."
+            )
+            == "a.b.A"
+        )
 
+        """Test when introducing neutral generator"""
+        b = Braid([1, 2, 0, -1], n_strands=3)
+        assert b.format() == "σ₁σ₂0σ₁⁻¹"
+        assert (
+            b.format(
+                generator_symbols="abc", inverse_generator_symbols="ABC", separator="."
+            )
+            == "a.b.0.A"
+        )
 
     def test_multiplication(self, simple_braid):
         """Test braid multiplication"""
@@ -65,7 +79,6 @@ class TestBraid:
         b1 = Braid([1], 3)
         assert (b1**2).word_eq(Braid([1, 1], 3))
 
-
     def test_writhe(self, simple_braid):
         """Test writhe calculation"""
         b = simple_braid
@@ -73,7 +86,7 @@ class TestBraid:
 
     def test_permutation(self):
         """Test permutation calculation"""
-        assert Braid([1, 2, - 3]).perm() == [2, 3, 4, 1]
+        assert Braid([1, 2, -3]).perm() == [2, 3, 4, 1]
 
     def test_trivial_braid(self, trivial_braid):
         """Test trivial braid properties"""
@@ -82,60 +95,38 @@ class TestBraid:
 
     def test_to_matrix(self, simple_braid):
         """Test unreduced Burau matrix representation"""
-        t = symbols('t')
-        M = Matrix([
-            [1 - t, t],
-            [1, 0]
-        ])
-        assert Braid ([1]).to_matrix() == M
-        M = Matrix([
-            [1 - t, t, 0],
-            [1, 0, 0],
-            [0, 0, 1]
-        ])
+        t = symbols("t")
+        M = Matrix([[1 - t, t], [1, 0]])
+        assert Braid([1]).to_matrix() == M
+        M = Matrix([[1 - t, t, 0], [1, 0, 0], [0, 0, 1]])
         assert Braid([1], 3).to_matrix() == M
 
+        M = Matrix([[0, 1, 0], [1 / t, 1 - 1 / t, 0], [0, 0, 1]])
+        assert Braid([-1], 3).to_matrix() == M
 
-        M = Matrix([
-        [  0,       1, 0],
-        [1/t, 1 - 1/t, 0],
-        [  0,       0, 1]])
-        assert Braid ([-1],3).to_matrix() == M
-
-        M = Matrix([
-        [1,     0, 0],
-        [0, 1 - t, t],
-        [0,     1, 0]])
+        M = Matrix([[1, 0, 0], [0, 1 - t, t], [0, 1, 0]])
         assert Braid([2], 3).to_matrix() == M
 
-        M = Matrix([
-        [1,   0,         0],
-        [0,   0,         1],
-        [0, 1/t, 1 - 1/t]])
+        M = Matrix([[1, 0, 0], [0, 0, 1], [0, 1 / t, 1 - 1 / t]])
         assert Braid([-2], 3).to_matrix() == M
 
         # Unsure about this one
-        M = Matrix([
-        [1 - t,   0,       t],
-        [    1,   0,       0],
-        [    0, 1/t, 1 - 1/t]])
-        assert Braid ([1, -2]).to_matrix() == M
+        M = Matrix([[1 - t, 0, t], [1, 0, 0], [0, 1 / t, 1 - 1 / t]])
+        assert Braid([1, -2]).to_matrix() == M
 
     def test_to_reduced_matrix(self, simple_braid):
         """Test unreduced Burau matrix representation
         According to https://arxiv.org/pdf/1410.0849
         """
-        t = symbols('t')
-        M = Matrix([
-            [-t, t],
-            [-1, 1-1/t]])
+        t = symbols("t")
+        M = Matrix([[-t, t], [-1, 1 - 1 / t]])
         # assert Braid([1, -2]).to_reduced_matrix()==M
 
     def test_conjugate(self):
         """Test conjugacy class generation"""
         b1 = Braid([1], 3)
         b2 = Braid([2], 3)
-        assert conjugate(b1,b2).word_eq(Braid([2, 1, -2], 3))
+        assert conjugate(b1, b2).word_eq(Braid([2, 1, -2], 3))
 
     def test_power(self):
         """Test conjugacy class generation"""
@@ -146,4 +137,3 @@ class TestBraid:
         """Test pure braid detection"""
         assert pure_braid.is_pure()
         assert not non_pure_braid.is_pure()
-

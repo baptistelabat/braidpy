@@ -1,4 +1,3 @@
-
 from braidpy.visualization import plot_braid
 
 
@@ -8,4 +7,3 @@ from braidpy.visualization import plot_braid
 class TestVisualization:
     def test_plot_braid(self, simple_braid):
         plot_braid(simple_braid)
-
