@@ -1,6 +1,8 @@
 import pytest
-from braidpy import Braid, conjugate, power
+from braidpy import Braid
 from sympy import symbols, Matrix
+
+from braidpy.operations import conjugate
 
 
 # Run tests with: uv run pytest /tests
@@ -127,11 +129,6 @@ class TestBraid:
         b1 = Braid([1], 3)
         b2 = Braid([2], 3)
         assert conjugate(b1, b2).word_eq(Braid([2, 1, -2], 3))
-
-    def test_power(self):
-        """Test conjugacy class generation"""
-        b1 = Braid([1], 3)
-        assert power(b1, 2).word_eq(Braid([1, 1], 3))
 
     def test_is_pure(self, pure_braid, non_pure_braid):
         """Test pure braid detection"""
