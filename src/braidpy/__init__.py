@@ -6,8 +6,11 @@ It includes support for braid operations, visualization, and mathematical proper
 """
 
 from .braid import Braid
-from .operations import multiply, conjugate, power
-from .properties import *
-from .visualization import *
+from .properties import (
+    alexander_polynomial as alexander_polynomial,
+    conjugacy_class as conjugacy_class,
+    garside_normal_form as garside_normal_form,
+)
+from .visualization import plot_braid as plot_braid
 
 __all__ = ["Braid"]

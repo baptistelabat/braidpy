@@ -114,13 +114,13 @@ class TestBraid:
         M = Matrix([[1 - t, 0, t], [1, 0, 0], [0, 1 / t, 1 - 1 / t]])
         assert Braid([1, -2]).to_matrix() == M
 
-    def test_to_reduced_matrix(self, simple_braid):
-        """Test unreduced Burau matrix representation
-        According to https://arxiv.org/pdf/1410.0849
-        """
-        t = symbols("t")
-        M = Matrix([[-t, t], [-1, 1 - 1 / t]])
-        # assert Braid([1, -2]).to_reduced_matrix()==M
+    # def test_to_reduced_matrix(self, simple_braid):
+    #     """Test unreduced Burau matrix representation
+    #     According to https://arxiv.org/pdf/1410.0849
+    #     """
+    #     t = symbols("t")
+    #     M = Matrix([[-t, t], [-1, 1 - 1 / t]])
+    #     assert Braid([1, -2]).to_reduced_matrix()==M
 
     def test_conjugate(self):
         """Test conjugacy class generation"""

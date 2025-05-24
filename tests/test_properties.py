@@ -1,5 +1,4 @@
-import pytest
-from sympy import Poly, symbols, simplify
+from sympy import symbols, simplify
 from braidpy import Braid, garside_normal_form
 from braidpy.properties import alexander_polynomial, conjugacy_class
 

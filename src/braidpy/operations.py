@@ -4,7 +4,6 @@ Operations on braids.
 This module provides various operations that can be performed on braids.
 """
 
-from typing import List
 from .braid import Braid
 
 

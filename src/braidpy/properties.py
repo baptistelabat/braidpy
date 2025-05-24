@@ -1,6 +1,5 @@
 from typing import List, Tuple
-import numpy as np
-from sympy import Matrix, Poly, symbols, simplify
+from sympy import Poly, symbols, simplify
 from .braid import Braid
 
 t = symbols("t")
