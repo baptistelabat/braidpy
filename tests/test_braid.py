@@ -35,6 +35,13 @@ class TestBraid:
         b = Braid([1, 2, 0, -1], n_strands=3)
         assert repr(b) == "Braid([1, 2, 0, -1], n_strands=3)"
 
+    def test_format(self):
+        """Test braid format to any word convention"""
+        b = Braid([1, 2, -1], n_strands=3)
+        assert b.format() == "σ₁σ₂σ₁⁻¹"
+        assert b.format(generator_symbols="abc", inverse_generator_symbols="ABC", separator=".") == "a.b.A"
+
+
     def test_multiplication(self, simple_braid):
         """Test braid multiplication"""
         b = simple_braid

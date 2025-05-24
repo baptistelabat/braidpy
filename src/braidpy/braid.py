@@ -4,6 +4,8 @@ import numpy as np
 from sympy import Matrix, eye, symbols
 from dataclasses import dataclass, field
 
+from braidpy.utils import int_to_superscript, int_to_subscript
+
 t = symbols('t')
 
 @dataclass(frozen=True)
@@ -26,6 +28,24 @@ class Braid:
 
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
+
+    def format(self, generator_symbols=None, inverse_generator_symbols=None, zero_symbol="0", separator:str="") ->str:
+        if generator_symbols is None:
+            generator_symbols = ["σ" + int_to_subscript(i+1) for i in range(self.n_strands)]
+        if inverse_generator_symbols is None:
+            inverse_generator_symbols = ["σ" + int_to_subscript(i+1) + int_to_superscript(-1) for i in range(self.n_strands)]
+
+        word=""
+        for (i, gen) in enumerate(self.generators):
+            if gen > 0:
+                word = word + generator_symbols[gen-1]
+            elif gen< 0:
+                word = word + inverse_generator_symbols[-gen-1]
+            else:
+                word = word + zero_symbol
+            if i<len(self.generators)-1:
+                word+=separator
+        return f"{word}"
 
     def __len__(self):
         return len(self.generators)
