@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "braidpy"
+version = "0.1.0"
+description = "Python library for working with braids"
+authors = [
+    { name="Baptiste Labat", email="baptiste.labat@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MPL-2.0"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Mathematics"
+]
+
+dependencies = [
+    "braidvisualiser>=0.2.2",
+    "matplotlib>=3.7.5",
+    "numpy>=1.21.0",
+    "pytest>=8.3.5",
+    "sympy>=1.14.0",
+    "tornado>=6.4.2",
+]
+
