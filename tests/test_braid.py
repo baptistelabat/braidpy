@@ -109,10 +109,16 @@ class TestBraid:
 
     def test_permutations(self):
         """Test permutation calculation"""
-        permutations = [[1, 2, 3, 4], [2, 1, 3, 4], [2, 3, 1, 4], [2, 3, 4, 1]]
-        assert Braid([1, 2, -3]).permutations(plot=True) == permutations
+        permutations = [
+            [1, 2, 3, 4],
+            [2, 1, 3, 4],
+            [2, 3, 1, 4],
+            [2, 3, 4, 1],
+            [2, 3, 4, 1],
+        ]
+        assert Braid([1, 2, -3, 0]).permutations(plot=True) == permutations
 
-        (Braid([1, 0 -2, 0]) ** 3).permutations(plot=True) == [1, 2, 3]
+        (Braid([1, -2]) ** 3).permutations(plot=True) == [1, 2, 3]
 
     def test_permutation(self):
         """Test permutation calculation"""
