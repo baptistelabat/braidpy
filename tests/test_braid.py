@@ -26,10 +26,6 @@ class TestBraid:
         with pytest.raises(ValueError):
             Braid([1, 3], n_strands=2)
 
-        # Test empty generators
-        with pytest.raises(ValueError):
-            Braid([])
-
     def test_repr(self):
         """Test braid representation"""
         b = Braid([1, 2, -1], n_strands=3)

@@ -2,31 +2,33 @@ from typing import List, Tuple, Optional
 import numpy as np
 
 from sympy import Matrix, eye, symbols
+from dataclasses import dataclass, field
 
 t = symbols('t')
 
+@dataclass(frozen=True)
 class Braid:
-    def __init__(self, generators: List[int], n_strands: Optional[int] = None):
-        """
-        Initialize a braid.
-        
-        Args:
-            generators: List of integers representing the braid generators
-            n_strands: Number of strands in the braid. If None, it will be inferred.
-        """
+    generators: Tuple[int, ...]
+    n_strands: Optional[int] = field(default=None)
+
+    def __post_init__(self):
         # Infer number of strands if not provided
-        if n_strands is None:
-            n_strands = abs(max(generators, key=abs)) + 1
-            
-        self.generators = generators
-        self.n_strands = n_strands
-        
+        inferred_n = abs(max(self.generators, key=abs)) + 1 if self.generators else 1
+        actual_n = self.n_strands if self.n_strands is not None else inferred_n
+
         # Validate generators
-        if any(abs(g) >= n_strands for g in generators):
-            raise ValueError(f"Generator index out of bounds for {n_strands} strands")
-            
+        if any(abs(g) >= actual_n for g in self.generators):
+            raise ValueError(f"Generator index out of bounds for {actual_n} strands")
+
+        # Set the inferred value if needed (bypass frozen with object.__setattr__)
+        if self.n_strands is None:
+            object.__setattr__(self, 'n_strands', actual_n)
+
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
+
+    def __len__(self):
+        return len(self.generators)
     
     def __mul__(self, other: 'Braid') -> 'Braid':
         """Multiply two braids (concatenate them)"""
@@ -118,3 +120,18 @@ class Braid:
     def is_pure(self) -> bool:
         """Check if a braid is pure (permutation is identity)"""
         return self.perm() == list(range(1, self.n_strands + 1))
+
+
+    def is_palindromic(self):
+        return self.generators == self.generators[::-1]
+
+    def is_involutive(self):
+        return self.inverse().generators == self.generators
+
+    def cyclic_conjugates(self):
+        return [self.generators[i:] + self.generators[:i] for i in range(len(self.generators))]
+
+    def is_equivalent_to(self, other):
+        if self.n != other.n:
+            return False
+        return any(conj == other.word for conj in self.cyclic_conjugates())
