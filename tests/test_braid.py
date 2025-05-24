@@ -37,6 +37,25 @@ class TestBraid:
         b = Braid([1, 2, 0, -1], n_strands=3)
         assert repr(b) == "Braid([1, 2, 0, -1], n_strands=3)"
 
+    def test_length(self):
+        """Test braid length"""
+        b = Braid([1, 2, -1], n_strands=3)
+        assert len(b) == 3
+
+        # Test braid length with zero generator
+        b = Braid([1, 2, 0, -1], n_strands=3)
+        assert len(b) == 4
+
+    def test_hash(self):
+        """Test braid hash"""
+        b = Braid([1, 2, -1], n_strands=3)
+        b2 = Braid([1, 2, -1], n_strands=3).inverse().inverse()
+        # Test braid length with zero generator
+        bz = Braid([1, 2, 0, -1], n_strands=3)
+        assert hash(b) != hash(bz)
+        assert hash(b) == hash(b2)
+        assert b == b2
+
     def test_format(self):
         """Test braid format to any word convention"""
         b = Braid([1, 2, -1], n_strands=3)
@@ -80,11 +99,20 @@ class TestBraid:
         """Test braid power"""
         b1 = Braid([1], 3)
         assert (b1**2).word_eq(Braid([1, 1], 3))
+        assert (b1**-3).word_eq(Braid([-1, -1, -1], 3))
+        assert (b1**0).word_eq(Braid([], 3))
 
     def test_writhe(self, simple_braid):
         """Test writhe calculation"""
         b = simple_braid
         assert b.writhe() == 1  # 1 + 1 - 1 = 1
+
+    def test_permutations(self):
+        """Test permutation calculation"""
+        permutations = [[1, 2, 3, 4], [2, 1, 3, 4], [2, 3, 1, 4], [2, 3, 4, 1]]
+        assert Braid([1, 2, -3]).permutations(plot=True) == permutations
+
+        (Braid([1, -2]) ** 3).permutations(plot=True) == [1, 2, 3]
 
     def test_permutation(self):
         """Test permutation calculation"""

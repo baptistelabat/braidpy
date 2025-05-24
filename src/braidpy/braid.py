@@ -4,7 +4,7 @@ import numpy as np
 from sympy import Matrix, eye, symbols
 from dataclasses import dataclass, field
 
-from braidpy.utils import int_to_superscript, int_to_subscript
+from braidpy.utils import int_to_superscript, int_to_subscript, colorize
 
 t = symbols("t")
 
@@ -91,7 +91,7 @@ class Braid:
                 result = result * self
             return result
         else:
-            return (self**n).inverse()
+            return (self ** (-n)).inverse()
 
     def __key(self):
         return tuple(self.generators + [self.n_strands])
@@ -151,16 +151,50 @@ class Braid:
         """Check if the braid is trivial (identity braid)"""
         return not self.generators or all(g == 0 for g in self.generators)
 
-    def perm(self) -> List[int]:
-        """Return the permutation induced by the braid"""
+    def permutations(self, plot=False) -> List[int]:
+        """Return the permutations induced by the braid"""
+        perms = []
         strands = list(range(1, self.n_strands + 1))
+        perms.append(strands.copy())
+        if plot:
+            print(" ".join(colorize(item) for item in strands))
         for gen in self.generators:
             i = abs(gen) - 1
             if gen > 0:  # Positive crossing (σ_i)
+                if plot:
+                    print(
+                        " ".join(colorize(item) for item in strands[: i + 1])
+                        + colorize(">", strands[i] - 1)
+                        + " ".join(colorize(item) for item in strands[i + 1 :])
+                    )
                 strands[i], strands[i + 1] = strands[i + 1], strands[i]
-            else:  # Negative crossing (σ_i⁻¹)
+            elif gen < 0:  # Negative crossing (σ_i⁻¹)
+                if plot:
+                    print(
+                        " ".join(colorize(item) for item in strands[: i + 1])
+                        + colorize("<", strands[i + 1] - 1)
+                        + " ".join(colorize(item) for item in strands[i + 1 :])
+                    )
                 strands[i + 1], strands[i] = strands[i], strands[i + 1]
-        return strands
+
+            else:
+                if plot:
+                    print(" ".join(colorize(item) for item in strands))
+                # No crossing
+                strands = strands
+
+            perms.append(strands.copy())
+        if plot:
+            print(" ".join(colorize(item) for item in strands))
+        return perms
+
+    def perm(self):
+        """
+
+        Returns:
+            list: return the final permutation due to braid
+        """
+        return self.permutations()[-1]
 
     def is_pure(self) -> bool:
         """Check if a braid is pure (permutation is identity)"""

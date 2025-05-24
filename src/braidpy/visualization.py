@@ -9,7 +9,7 @@ from .braid import Braid
 import braidvisualiser as bv
 
 
-def plot_braid(braid: Braid, ax: Optional[Axes] = None) -> Axes:
+def plot_braid(braid: Braid, ax: Optional[Axes] = None, save=False) -> Axes:
     """
     Plot a braid diagram.
 
@@ -23,7 +23,7 @@ def plot_braid(braid: Braid, ax: Optional[Axes] = None) -> Axes:
 
     b = bv.Braid(braid.n_strands, *braid.generators)
 
-    b.draw()
+    b.draw(save=save)
 
 
 def save_braid_plot(braid: Braid, filename: str, format: str = "png"):
