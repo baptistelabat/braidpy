@@ -57,6 +57,10 @@ coverage: ## Launch coverage test
 	coverage run -m pytest tests
 	coverage html --omit="*/test*"
 
+docs:
+	cd docs
+	make docs
+
 
 
 
