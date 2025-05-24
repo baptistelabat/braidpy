@@ -216,3 +216,6 @@ class Braid:
         if self.n != other.n:
             return False
         return any(conj == other.word for conj in self.cyclic_conjugates())
+
+    def draw(self):
+        self.permutations(plot=True)
