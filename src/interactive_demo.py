@@ -1,5 +1,3 @@
-
-
 def step(description, code, var_name=None):
     print("\n" + description)
     if var_name:

@@ -1,3 +1,5 @@
+from typing import Any
+
 # ANSI color codes (foreground)
 ANSI_COLORS = [
     "\033[31m",  # Red
@@ -55,3 +57,35 @@ def int_to_subscript(n: int) -> str:
         "9": "\u2089",
     }
     return "".join(subscript_map[ch] for ch in str(n))
+
+
+class PositiveFloat(float):
+    def __new__(cls, value: Any) -> "PositiveFloat":
+        val = float(value)
+        if val < 0:
+            raise ValueError(f"Value must be >= 0, got {val}")
+        return super().__new__(cls, val)
+
+
+class StrictlyPositiveFloat(float):
+    def __new__(cls, value: Any) -> "StrictlyPositiveFloat":
+        val = float(value)
+        if val <= 0:
+            raise ValueError(f"Value must be > 0, got {val}")
+        return super().__new__(cls, val)
+
+
+class PositiveInt(int):
+    def __new__(cls, value: Any) -> "PositiveInt":
+        val = int(value)
+        if val < 0:
+            raise ValueError(f"Value must be >= 0, got {val}")
+        return super().__new__(cls, val)
+
+
+class StrictlyPositiveInt(int):
+    def __new__(cls, value: Any) -> "StrictlyPositiveInt":
+        val = int(value)
+        if val <= 0:
+            raise ValueError(f"Value must be > 0, got {val}")
+        return super().__new__(cls, val)

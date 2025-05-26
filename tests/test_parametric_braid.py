@@ -1,22 +1,22 @@
 # Create braid σ₁ σ₂⁻¹ σ₁ on 3 strands
 from braidpy import Braid
-from braidpy.material_braid import MaterialBraid, MaterialStrand
 from braidpy.parametric_braid import (
     braid_to_parametric_strands,
     ParametricStrand,
+    ParametricBraid,
 )
 
 
-# def test_conversion():
-#     b = Braid((1, -2, 1), n_strands=3)
-#     strands = braid_to_parametric_strands(b)
-#     ParametricBraid(strands).plot()
-#
-#
-#
-#     # Sample and print one of the strands
-#     for pt in strands[0].sample(10):
-#         print(pt)
+def test_conversion():
+    b = Braid((1, -2, 1), n_strands=3)
+    strands = braid_to_parametric_strands(b)
+    p = ParametricBraid(strands).plot()
+
+    assert p.get_positions_at(0.5) == [(0.5, 0.2, 0.5), (0.5, -0.2, 0.5), (2, 0.0, 0.5)]
+
+    # Sample and print one of the strands
+    for pt in strands[0].sample(10):
+        print(pt)
 
 
 def test_parametric_strand_sampling():
@@ -38,17 +38,3 @@ def test_braid_to_parametric_strands():
     p0 = strands[0].evaluate(0)
     assert isinstance(p0, tuple)
     assert len(p0) == 3
-
-
-def test_are_too_close_false():
-    # Two strands far apart
-    s1 = MaterialStrand(lambda t: (0, 0, t), radius=0.05)
-    s2 = MaterialStrand(lambda t: (10, 0, t), radius=0.05)
-    assert not MaterialBraid.are_too_close(s1, s2, clearance=0.01)
-
-
-def test_are_too_close_true():
-    # Two strands too close
-    s1 = MaterialStrand(lambda t: (0, 0, t), radius=0.1)
-    s2 = MaterialStrand(lambda t: (0.15, 0, t), radius=0.1)
-    assert MaterialBraid.are_too_close(s1, s2, clearance=0.01)

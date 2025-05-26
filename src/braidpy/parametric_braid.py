@@ -4,6 +4,7 @@ import math
 import matplotlib.pyplot as plt
 
 from braidpy import Braid
+from braidpy.utils import StrictlyPositiveInt, PositiveFloat
 
 
 class ParametricStrand:
@@ -19,7 +20,7 @@ class ParametricStrand:
             raise ValueError("t must be in [0, 1]")
         return self.func(t)
 
-    def sample(self, n: int = 100) -> List[tuple]:
+    def sample(self, n: StrictlyPositiveInt = 100) -> List[tuple]:
         """Return a list of sampled points for plotting"""
         return [self.evaluate(i / (n - 1)) for i in range(n)]
 
@@ -27,16 +28,16 @@ class ParametricStrand:
 class ParametricBraid:
     def __init__(self, strands: list[ParametricStrand]):
         self.strands = strands
-        self.n = len(strands)
+        self.n_strands = len(strands)
 
-    def get_positions_at(self, t: float):
+    def get_positions_at(self, t: PositiveFloat):
         return [strand.evaluate(t) for strand in self.strands]
 
-    def plot(self):
+    def plot(self, n_sample: StrictlyPositiveInt = 200):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         for strand in self.strands:
-            path = strand.sample(200)
+            path = strand.sample(n_sample)
             x, y, z = zip(*path)
             ax.plot(x, y, z)
         ax.set_xlabel("X")
@@ -45,8 +46,13 @@ class ParametricBraid:
         plt.tight_layout()
         plt.show()
 
+        # Return to avoid plotting and saving
+        return self
 
-def braid_to_parametric_strands(braid: Braid, amplitude=0.2, duration_per_gen=1.0):
+
+def braid_to_parametric_strands(
+    braid: Braid, amplitude: float = 0.2, duration_per_gen=1.0
+):
     n = braid.n_strands or max(abs(g) for g in braid.generators) + 1
     x_positions = [i for i in range(n)]
 
@@ -93,7 +99,13 @@ def braid_to_parametric_strands(braid: Braid, amplitude=0.2, duration_per_gen=1.
         strand_segments[j].append((t0, t_final, lambda t, xj=xj: (xj, 0.0, t)))
 
     # Compose each strand's segments into a single function
-    def combine_segments(segments):
+    def combine_segments(
+        segments: list[
+            tuple[
+                float, float, Callable[tuple[float, float], tuple[float, float, float]]
+            ]
+        ],
+    ):
         def strand_func(t):
             for t_start, t_end, seg_func in segments:
                 if t_start <= t <= t_end:

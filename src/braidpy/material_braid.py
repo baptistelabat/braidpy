@@ -1,36 +1,44 @@
+from typing import Callable
+
 import numpy as np
 from braidpy.parametric_braid import ParametricStrand
+from braidpy.utils import PositiveFloat, StrictlyPositiveFloat, StrictlyPositiveInt
 
 
 class MaterialStrand(ParametricStrand):
-    def __init__(self, path_points, radius=0.05):
+    def __init__(self, func: Callable[[float], tuple], radius: PositiveFloat = 0.05):
         """
         radius: physical thickness of the strand
         """
-        super().__init__(path_points)
+        super().__init__(func)
         self.radius = radius
 
 
 class MaterialBraid:
-    def __init__(self, strands):
+    def __init__(self, strands: tuple[ParametricStrand]):
         """
         strands: list of MaterialStrand objects
         """
         self.strands = strands
-        self.n = len(strands)
+        self.n_strands = len(strands)
         self._check_nonintersecting()
 
-    def _check_nonintersecting(self, min_clearance=1e-3):
+    def _check_nonintersecting(self, min_clearance: StrictlyPositiveFloat = 1e-3):
         """
         Checks that strands do not intersect or overlap.
         """
-        for i in range(self.n):
-            for j in range(i + 1, self.n):
+        for i in range(self.n_strands):
+            for j in range(i + 1, self.n_strands):
                 if self._are_too_close(self.strands[i], self.strands[j], min_clearance):
                     raise ValueError(f"Strands {i} and {j} intersect or are too close.")
 
     @staticmethod
-    def are_too_close(s1, s2, clearance=1e-3, samples=100):
+    def _are_too_close(
+        s1: ParametricStrand,
+        s2: ParametricStrand,
+        clearance: StrictlyPositiveFloat = 1e-3,
+        samples: StrictlyPositiveInt = 100,
+    ):
         """
         Checks if two ParametricStrand objects are too close at any point in time.
 
