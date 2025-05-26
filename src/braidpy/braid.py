@@ -6,6 +6,11 @@ from dataclasses import dataclass, field
 
 from braidpy.utils import int_to_superscript, int_to_subscript, colorize
 
+import braidvisualiser as bv
+import matplotlib
+
+matplotlib.use("qtagg")
+
 t = symbols("t")
 
 
@@ -219,3 +224,40 @@ class Braid:
 
     def draw(self):
         self.permutations(plot=True)
+
+    def plot(self, style="ext", line_width=3, gap_size=3, color="rainbow", save=False):
+        """
+        style : "comp" or "ext"
+            "comp" renders the image of the braid in a compact style with
+            crossings parallel to one another if possible. "ext", for extended,
+            shows the crossings in series.
+        line_width : int (Default = 3)
+            Thickness of the strands in the figure.
+        gap_size : int (Default = 3)
+            Amount of space shown at crossings for undercrossing strands.
+        color : str
+            Multicolor strands defined by "rainbow". Single fixed colour for
+            all strands can be chosen from:
+                {'b': blue,
+                'g': green,
+                'r': red,
+                'c': cyan,
+                'm': magenta,
+                'y': yellow,
+                'k': black,
+                'w': white}
+        Args:
+            save:
+
+        Returns:
+
+        """
+        b = bv.Braid(self.n_strands, *self.generators)
+
+        b.draw(
+            save=save,
+            style=style,
+            line_width=line_width,
+            gap_size=gap_size,
+            color=color,
+        )

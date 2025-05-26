@@ -11,4 +11,3 @@ from .properties import (
     conjugacy_class as conjugacy_class,
     garside_normal_form as garside_normal_form,
 )
-from .visualization import plot_braid as plot_braid
