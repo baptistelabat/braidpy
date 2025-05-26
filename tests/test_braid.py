@@ -168,3 +168,13 @@ class TestBraid:
         """Test pure braid detection"""
         assert pure_braid.is_pure()
         assert not non_pure_braid.is_pure()
+
+    def test_is_palindromic(self):
+        assert Braid([1, 2, 1]).is_palindromic()
+        assert not Braid([1, 2, 2]).is_palindromic()
+
+    def test_is_involutive(self):
+        assert Braid([1, -1]).is_involutive()
+
+    def draw(self):
+        assert Braid([1, 2, 1]).draw() == Braid([1, 2, 1])
