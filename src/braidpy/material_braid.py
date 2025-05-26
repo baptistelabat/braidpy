@@ -25,7 +25,7 @@ class MaterialBraid:
         Checks that strands do not intersect or overlap.
         """
         for i in range(self.n):
-            for j in range(i+1, self.n):
+            for j in range(i + 1, self.n):
                 if self._are_too_close(self.strands[i], self.strands[j], min_clearance):
                     raise ValueError(f"Strands {i} and {j} intersect or are too close.")
 

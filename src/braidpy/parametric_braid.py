@@ -23,6 +23,7 @@ class ParametricStrand:
         """Return a list of sampled points for plotting"""
         return [self.evaluate(i / (n - 1)) for i in range(n)]
 
+
 class ParametricBraid:
     def __init__(self, strands: list[ParametricStrand]):
         self.strands = strands
@@ -32,9 +33,8 @@ class ParametricBraid:
         return [strand.evaluate(t) for strand in self.strands]
 
     def plot(self):
-
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(111, projection="3d")
         for strand in self.strands:
             path = strand.sample(200)
             x, y, z = zip(*path)
@@ -44,6 +44,7 @@ class ParametricBraid:
         ax.set_zlabel("Z (time)")
         plt.tight_layout()
         plt.show()
+
 
 def braid_to_parametric_strands(braid: Braid, amplitude=0.2, duration_per_gen=1.0):
     n = braid.n_strands or max(abs(g) for g in braid.generators) + 1
@@ -63,16 +64,18 @@ def braid_to_parametric_strands(braid: Braid, amplitude=0.2, duration_per_gen=1.
             if j == i:
                 # First strand in crossing
                 return lambda t: (
-                    x0 + (x_positions[i+1] - x0) * ((t - t0) / (t1 - t0)),
-                    (amplitude if over else -amplitude) * math.sin(math.pi * (t - t0) / (t1 - t0)),
-                    t
+                    x0 + (x_positions[i + 1] - x0) * ((t - t0) / (t1 - t0)),
+                    (amplitude if over else -amplitude)
+                    * math.sin(math.pi * (t - t0) / (t1 - t0)),
+                    t,
                 )
             elif j == i + 1:
                 # Second strand in crossing
                 return lambda t: (
                     x0 + (x_positions[i] - x0) * ((t - t0) / (t1 - t0)),
-                    (-amplitude if over else amplitude) * math.sin(math.pi * (t - t0) / (t1 - t0)),
-                    t
+                    (-amplitude if over else amplitude)
+                    * math.sin(math.pi * (t - t0) / (t1 - t0)),
+                    t,
                 )
             else:
                 # Idle strand
@@ -96,6 +99,9 @@ def braid_to_parametric_strands(braid: Braid, amplitude=0.2, duration_per_gen=1.
                 if t_start <= t <= t_end:
                     return seg_func(t)
             raise ValueError("t out of bounds")
+
         return strand_func
 
-    return [ParametricStrand(combine_segments(segments)) for segments in strand_segments]
+    return [
+        ParametricStrand(combine_segments(segments)) for segments in strand_segments
+    ]
