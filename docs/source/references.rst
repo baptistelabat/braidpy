@@ -1,3 +1,5 @@
+https://en.wikipedia.org/wiki/Braid_group
+
 Visualization
 ----------------
 https://github.com/rexgreenway/braid-visualiser

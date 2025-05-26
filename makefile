@@ -1,4 +1,4 @@
-.PHONY: help install-uv
+.PHONY: help install-uv docs
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -58,8 +58,18 @@ coverage: ## Launch coverage test
 	coverage html --omit="*/test*"
 
 docs:
-	cd docs
-	make docs
+	cd docs && make html
+
+doc-deploy: docs ## Deploy docs to gh-pages under versioned path
+	@branch=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$branch" = "main" ]; then \
+		tag=$$(git describe --tags --abbrev=0 2>/dev/null || echo "latest"); \
+	else \
+		tag=$$branch; \
+	fi; \
+	safe_tag=$$(echo "$$tag" | tr '/\\' '-' ); \
+	echo "Deploying to branch gh-pages/$$safe_tag"; \
+	gh-pages-multi deploy -s docs/build/html -t "$$safe_tag"
 
 
 
