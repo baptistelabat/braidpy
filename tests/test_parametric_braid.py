@@ -8,7 +8,7 @@ from braidpy.parametric_braid import (
 
 
 def test_conversion():
-    b = Braid((1, -2, 1), n_strands=3)
+    b = Braid((1, 0, 0, -2), n_strands=3)
     strands = braid_to_parametric_strands(b)
     p = ParametricBraid(strands).plot()
 

@@ -39,10 +39,11 @@ class ParametricBraid:
         for strand in self.strands:
             path = strand.sample(n_sample)
             x, y, z = zip(*path)
-            ax.plot(x, y, z)
+            ax.plot(x, y, z, linewidth=10)
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel("Z (time)")
+        ax.set_aspect("equal", "box")
         plt.tight_layout()
         plt.show()
 
@@ -146,7 +147,8 @@ def braid_to_parametric_strands(
     for gen in braid.generators:
         i = abs(gen) - 1
         positions = positions.copy()
-        positions[i], positions[i + 1] = positions[i + 1], positions[i]
+        if gen != 0:
+            positions[i], positions[i + 1] = positions[i + 1], positions[i]
         position_history.append(positions.copy())
 
     # Transpose history to get each strand's path
@@ -162,17 +164,18 @@ def braid_to_parametric_strands(
         path = strand_paths[strand_id]
 
         for k in range(n_segments - 1):
-            x0 = path[k]
-            x1 = path[k + 1]
+            i0 = path[k]
+            i1 = path[k + 1]
+            x0 = i0 * amplitude
+            x1 = i1 * amplitude
             t_start = k * duration_per_gen
             t_end = (k + 1) * duration_per_gen
-
-            if x0 == x1:
+            gen = braid.generators[k]
+            if i0 == i1 or gen == 0:
                 arc_func = make_idle_arc(x0, t_start, t_end)
             else:
-                gen = braid.generators[k]
                 i = abs(gen) - 1
-                over = (x0 == i and gen > 0) or (x0 == i + 1 and gen < 0)
+                over = (i0 == i and gen > 0) or (i0 == i + 1 and gen < 0)
                 arc_func = make_arc(
                     x0, x1, t_start, t_end, amplitude if over else -amplitude
                 )
@@ -182,7 +185,7 @@ def braid_to_parametric_strands(
         # Final segment (idle)
         t_final_start = (n_segments - 1) * duration_per_gen
         t_final_end = t_final_start + duration_per_gen
-        x_final = path[-1]
+        x_final = path[-1] * amplitude
         arcs.append(
             (
                 t_final_start,
