@@ -209,6 +209,12 @@ class Braid:
         return self.generators == self.generators[::-1]
 
     def is_involutive(self):
+        """
+        This probably works only for the neutral element
+
+        Returns:
+
+        """
         return self.inverse().generators == self.generators
 
     def cyclic_conjugates(self):
@@ -225,7 +231,7 @@ class Braid:
     def draw(self):
         self.permutations(plot=True)
 
-        #Return self to enable to chain the different steps
+        # Return self to enable to chain the different steps
         return self
 
     def plot(self, style="ext", line_width=3, gap_size=3, color="rainbow", save=False):
