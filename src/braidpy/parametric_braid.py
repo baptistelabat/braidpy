@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Tuple
 import math
 
 import matplotlib.pyplot as plt
@@ -50,70 +50,97 @@ class ParametricBraid:
         return self
 
 
+# Type alias for an arc of a strand: a time interval and a 3D path function over that interval
+Arc = Tuple[float, float, Callable[[float], Tuple[float, float, float]]]
+
+
 def braid_to_parametric_strands(
-    braid: Braid, amplitude: float = 0.2, duration_per_gen=1.0
-):
-    n = braid.n_strands or max(abs(g) for g in braid.generators) + 1
-    x_positions = [i for i in range(n)]
+    braid: Braid, amplitude: float = 0.2, duration_per_gen: float = 1.0
+) -> List[ParametricStrand]:
+    """
+    Converts a braid into a list of 3D parametric strand paths.
 
-    # For each strand, build a list of segment functions and their time ranges
-    strand_segments = [[] for _ in range(n)]
-    t0 = 0.0
+    Each strand is returned as a function of time `t`, describing its (x, y, z)
+    position over time as it weaves through crossings defined in the braid.
 
-    for g in braid.generators:
-        i = abs(g) - 1
-        over = g > 0
-        t1 = t0 + duration_per_gen
+    Args:
+        braid: The Braid object containing crossing generators.
+        amplitude: Height of the sine wave used to visualize over/under crossings.
+        duration_per_gen: The duration each generator (crossing) spans in time.
 
-        def make_segment(j, i=i, over=over, t0=t0, t1=t1):
-            x0 = x_positions[j]
-            if j == i:
-                # First strand in crossing
-                return lambda t: (
-                    x0 + (x_positions[i + 1] - x0) * ((t - t0) / (t1 - t0)),
-                    (amplitude if over else -amplitude)
-                    * math.sin(math.pi * (t - t0) / (t1 - t0)),
-                    t,
-                )
-            elif j == i + 1:
-                # Second strand in crossing
-                return lambda t: (
-                    x0 + (x_positions[i] - x0) * ((t - t0) / (t1 - t0)),
-                    (-amplitude if over else amplitude)
-                    * math.sin(math.pi * (t - t0) / (t1 - t0)),
-                    t,
-                )
-            else:
-                # Idle strand
-                return lambda t: (x0, 0.0, t)
+    Returns:
+        A list of ParametricStrand instances, each representing a strand's 3D path.
+    """
+    # Determine number of strands
+    n_strands: int = braid.n_strands or max(abs(g) for g in braid.generators) + 1
+    x_positions: List[float] = list(range(n_strands))
 
-        for j in range(n):
-            strand_segments[j].append((t0, t1, make_segment(j)))
+    # Prepare arcs (segments) for each strand
+    strand_arcs: List[List[Arc]] = [[] for _ in range(n_strands)]
+    current_time: float = 0.0
 
-        t0 = t1
+    def make_crossing_arc(
+        strand_idx: int, crossing_idx: int, over: bool, t_start: float, t_end: float
+    ) -> Callable[[float], Tuple[float, float, float]]:
+        """
+        Generates the arc function for a strand involved in a crossing.
+        """
+        x0 = x_positions[strand_idx]
+        delta_t = t_end - t_start
 
-    # Add final straight segment to z = t1 + 1
-    t_final = t0 + duration_per_gen
-    for j in range(n):
-        xj = x_positions[j]
-        strand_segments[j].append((t0, t_final, lambda t, xj=xj: (xj, 0.0, t)))
+        if strand_idx == crossing_idx:
+            # First strand in the crossing
+            def arc(t: float) -> Tuple[float, float, float]:
+                progress = (t - t_start) / delta_t
+                x = x0 + (x_positions[crossing_idx + 1] - x0) * progress
+                y = (amplitude if over else -amplitude) * math.sin(math.pi * progress)
+                return (x, y, t)
+        elif strand_idx == crossing_idx + 1:
+            # Second strand in the crossing
+            def arc(t: float) -> Tuple[float, float, float]:
+                progress = (t - t_start) / delta_t
+                x = x0 + (x_positions[crossing_idx] - x0) * progress
+                y = (-amplitude if over else amplitude) * math.sin(math.pi * progress)
+                return (x, y, t)
+        else:
+            # Strand not involved in crossing
+            def arc(t: float) -> Tuple[float, float, float]:
+                return (x0, 0.0, t)
 
-    # Compose each strand's segments into a single function
-    def combine_segments(
-        segments: list[
-            tuple[
-                float, float, Callable[tuple[float, float], tuple[float, float, float]]
-            ]
-        ],
-    ):
-        def strand_func(t):
-            for t_start, t_end, seg_func in segments:
+        return arc
+
+    # Generate arcs for each generator (crossing)
+    for generator in braid.generators:
+        crossing_idx = abs(generator) - 1
+        over = generator > 0
+        t_start = current_time
+        t_end = t_start + duration_per_gen
+
+        for strand_idx in range(n_strands):
+            arc_func = make_crossing_arc(strand_idx, crossing_idx, over, t_start, t_end)
+            strand_arcs[strand_idx].append((t_start, t_end, arc_func))
+
+        current_time = t_end
+
+    # Append final vertical arc (no crossing)
+    final_time = current_time + duration_per_gen
+    for strand_idx in range(n_strands):
+        x = x_positions[strand_idx]
+
+        def final_arc(t: float, x=x) -> Tuple[float, float, float]:
+            return (x, 0.0, t)
+
+        strand_arcs[strand_idx].append((current_time, final_time, final_arc))
+
+    # Combine arcs into a complete strand function
+    def combine_arcs(arcs: List[Arc]) -> Callable[[float], Tuple[float, float, float]]:
+        def strand_function(t: float) -> Tuple[float, float, float]:
+            for t_start, t_end, arc_func in arcs:
                 if t_start <= t <= t_end:
-                    return seg_func(t)
-            raise ValueError("t out of bounds")
+                    return arc_func(t)
+            raise ValueError("Time t is out of bounds for this strand.")
 
-        return strand_func
+        return strand_function
 
-    return [
-        ParametricStrand(combine_segments(segments)) for segments in strand_segments
-    ]
+    # Build final parametric strands
+    return [ParametricStrand(combine_arcs(arcs)) for arcs in strand_arcs]
