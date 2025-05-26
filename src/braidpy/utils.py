@@ -55,16 +55,3 @@ def int_to_subscript(n: int) -> str:
         "9": "\u2089",
     }
     return "".join(subscript_map[ch] for ch in str(n))
-
-
-# Examples:
-print("t" + int_to_superscript(-1))  # t⁻¹
-print("t" + int_to_superscript(2))  # t²
-print("t" + int_to_superscript(-12))  # t⁻¹²
-print("t" + int_to_superscript(345))  # t³⁴⁵
-print("t" + int_to_superscript(-1000))
-
-# Examples
-print("x" + int_to_subscript(2))  # x₂
-print("a" + int_to_subscript(-13))  # a₋₁₃
-print("i" + int_to_subscript(456))  # i₄₅₆

@@ -71,6 +71,9 @@ doc-deploy: docs ## Deploy docs to gh-pages under versioned path
 	echo "Deploying to branch gh-pages/$$safe_tag"; \
 	gh-pages-multi deploy -s docs/build/html -t "$$safe_tag"
 
+demo: ## Launch an interactive demo
+	uv run src/interactive_demo.py
+
 
 
 
