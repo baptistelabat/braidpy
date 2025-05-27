@@ -63,7 +63,7 @@ class Braid:
         return single_crossing_braiding_process(self.process)
 
     @property
-    def main_generators(self):
+    def main_generator(self):
         """A main generator of a braid word w is the generator with the lowest index
         https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
 
@@ -194,7 +194,7 @@ class Braid:
         """
         if not self.generators:
             return True
-        mg = self.main_generator()
+        mg = self.main_generator
         signs = [g > 0 for g in self.generators if abs(g) == mg]
         return all(signs) or not any(signs)
 

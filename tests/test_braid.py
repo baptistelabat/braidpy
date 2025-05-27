@@ -170,6 +170,10 @@ class TestBraid:
         b2 = Braid([2], 3)
         assert conjugate(b1, b2).word_eq(Braid([2, 1, -2], 3))
 
+    def test_is_reduced(self):
+        assert not Braid([1, -1], 3).is_reduced()
+        assert (Braid([1, -2], 3)**3).is_reduced()
+
     def test_is_pure(self, pure_braid, non_pure_braid):
         """Test pure braid detection"""
         assert pure_braid.is_pure()
