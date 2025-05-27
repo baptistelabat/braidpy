@@ -24,6 +24,12 @@ class TestBraid:
         assert bz.generators == [1, 2, 0, -1]
         assert bz.n_strands == 3
 
+        # Test braid with empty step
+        bz = Braid([1, 2, (), -1])
+        assert bz.process == [1, 2, (), -1]
+        assert bz.generators == [1, 2, -1]
+        assert bz.n_strands == 3
+
         # Test invalid generator
         with pytest.raises(ValueError):
             Braid([1, 3], n_strands=2)

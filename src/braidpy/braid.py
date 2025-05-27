@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 import numpy as np
 
 from sympy import Matrix, eye, symbols
@@ -13,24 +13,54 @@ matplotlib.use("qtagg")
 
 t = symbols("t")
 
+# Define a type alias for clarity
+SignedCrossingIndex = int
+BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
+BraidingProcess = Tuple[BraidingStep, ...]
+
+
+def single_crossing_braiding_process(
+    process: BraidingProcess,
+) -> List[SignedCrossingIndex]:
+    """
+    Flattens a tuple of braiding steps into a list of signed crossings.
+
+    Each step may be a single crossing or multiple simultaneous crossings.
+    To get Artin generators we need only consecutive single crossing, which is topologically equivalent
+    """
+    sequential_single_crossings_index: List[SignedCrossingIndex] = []
+    for step in process:
+        if isinstance(step, int):
+            sequential_single_crossings_index.append(step)
+        else:
+            sequential_single_crossings_index.extend(step)
+    return sequential_single_crossings_index
+
 
 @dataclass(frozen=True)
 class Braid:
-    generators: Tuple[int, ...]
+    process: Tuple[Tuple[int] | int, ...]
     n_strands: Optional[int] = field(default=None)
 
     def __post_init__(self):
+        sequential_generators = single_crossing_braiding_process(self.process)
         # Infer number of strands if not provided
-        inferred_n = abs(max(self.generators, key=abs)) + 1 if self.generators else 1
+        inferred_n = (
+            abs(max(sequential_generators, key=abs)) + 1 if sequential_generators else 1
+        )
         actual_n = self.n_strands if self.n_strands is not None else inferred_n
 
         # Validate generators
-        if any(abs(g) >= actual_n for g in self.generators):
+        if any(abs(g) >= actual_n for g in sequential_generators):
             raise ValueError(f"Generator index out of bounds for {actual_n} strands")
 
         # Set the inferred value if needed (bypass frozen with object.__setattr__)
         if self.n_strands is None:
             object.__setattr__(self, "n_strands", actual_n)
+
+    @property
+    def generators(self):
+        return single_crossing_braiding_process(self.process)
 
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
