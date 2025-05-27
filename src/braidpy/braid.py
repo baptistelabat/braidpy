@@ -62,6 +62,16 @@ class Braid:
     def generators(self):
         return single_crossing_braiding_process(self.process)
 
+    @property
+    def main_generators(self):
+        """A main generator of a braid word w is the generator with the lowest index
+        https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
+
+        """
+        if not self.generators:
+            return None
+        return min([abs(gen) for gen in self.generators if abs(gen)>0])
+
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
 
@@ -106,6 +116,30 @@ class Braid:
             if i < len(self.generators) - 1:
                 word += separator
         return f"{word}"
+
+    def change_notation(self, target):
+        """
+        Taken from https://github.com/abhikpal/dehornoy/blob/master/braid.py
+        Changes from the internal notation to the target notation.
+        Possible values for target:
+         'alpha', 'artin', 'default'
+        The artin representationn can also be used in a latex file.
+
+        The nullstring is 'e' for the Artin representation and '#' for alpha.
+        """
+        if target == 'artin':
+            if len(self.generators) == 0:
+                return 'e'
+            return ' '.join('s_{' + str(abs(g)) + '}^{' + str(abs(g)/g) + '}'\
+                            if g != 0 else 'e' for g in self.generators)
+        elif target == 'alpha':
+            if len(self.generators) == 0:
+                return '#'
+            m = self.main_generator()
+            alp = lambda g: chr(ord('Q') + (abs(g) / g) * 16 + abs(g) - 1)
+            return ''.join(alp(g) if g != 0 else '#' for g in self.generators)
+        else:
+            return '<' + ' : '.join(str(g) for g in self.generators) + '>'
 
     def __len__(self):
         return len(self.generators)
@@ -152,6 +186,17 @@ class Braid:
     def inverse(self) -> "Braid":
         """Return the inverse of the braid"""
         return Braid([-g for g in reversed(self.generators)], self.n_strands)
+
+    def is_reduced(self) -> bool:
+        """ A braid word w is reduced either if it is the null string, or the empty braid, or if the main
+        generator of w occurs only positively or only negatively.
+        https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
+        """
+        if not self.generators:
+            return True
+        mg = self.main_generator()
+        signs = [g > 0 for g in self.generators if abs(g) == mg]
+        return all(signs) or not any(signs)
 
     def writhe(self) -> int:
         """Calculate the writhe of the braid (sum of generator powers)"""
