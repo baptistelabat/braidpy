@@ -11,7 +11,7 @@ authors = [
     { name="Baptiste Labat", email="baptiste.labat@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4.0"
 license = {text = "MPL-2.0"}
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -38,5 +38,6 @@ dependencies = [
     "sphinx-rtd-theme>=3.0.2",
     "sympy>=1.14.0",
     "tornado>=6.4.2",
+    "math-braid (>=0.8,<0.9)",
 ]
 
