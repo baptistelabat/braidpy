@@ -4,7 +4,6 @@ from sympy import symbols, Matrix
 
 from braidpy.braid import a
 from braidpy.operations import conjugate
-import math_braid
 
 
 # Run tests with: uv run pytest /tests
@@ -14,10 +13,9 @@ class TestBraid:
     def test_init(self):
         """Test braid initialization"""
 
-        b = Braid([],1)
+        b = Braid([], 1)
         assert b.generators == []
         assert b.n_strands == 1
-
 
         b = Braid([1, 2, -1], n_strands=3)
         assert b.generators == [1, 2, -1]
@@ -90,19 +88,51 @@ class TestBraid:
 
         """Test when introducing neutral generator"""
         b = Braid([1, 2, 0, -1], n_strands=3)
-        assert b.format() == "σ₁σ₂0σ₁⁻¹"
+        assert b.format() == "σ₁σ₂eσ₁⁻¹"
         assert (
             b.format(
-                generator_symbols="abc", inverse_generator_symbols="ABC", separator="."
+                generator_symbols="abc",
+                inverse_generator_symbols="ABC",
+                separator=".",
+                zero_symbol="#",
             )
-            == "a.b.0.A"
+            == "a.b.#.A"
         )
+
+    def test_change_notation(self):
+        b = Braid([], n_strands=3)
+        assert b.format_to_notation("artin") == "e"
+        assert b.format_to_notation("alpha") == "#"
+
+        b = Braid([0], n_strands=3)
+        assert b.format_to_notation("artin") == "e"
+        assert b.format_to_notation("alpha") == "#"
+        b = Braid([1, 2, -1, -2], n_strands=3)
+        assert (
+            b.format_to_notation("artin")
+            == "s_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}"
+        )
+        assert b.format_to_notation("alpha") == "abAB"
+        assert b.format_to_notation("default") == "<1 : 2 : -1 : -2>"
+
+        b = Braid([1, 2, -1, 0, -2], n_strands=3)
+        assert (
+            b.format_to_notation("artin")
+            == "s_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} e s_{2}^{-1.0}"
+        )
+        assert b.format_to_notation("alpha") == "abA#B"
+        assert b.format_to_notation("default") == "<1 : 2 : -1 : 0 : -2>"
+        with pytest.raises(NotImplementedError):
+            assert b.format_to_notation("blabla") == "<1 : 2 : -1 : 0 : -2>"
+
+    def test_draw(self):
+        Braid([1, 2, -1, 0, -2], n_strands=3).draw()
 
     def test_no_zero(self):
         b = Braid([1, 2, 0, -1], n_strands=3)
         assert b.no_zero().word_eq(Braid([1, 2, -1], n_strands=3))
 
-        b = Braid([0,0,0], n_strands=3)
+        b = Braid([0, 0, 0], n_strands=3)
         assert b.no_zero().word_eq(Braid([], n_strands=3))
 
     def test_multiplication(self, simple_braid):
@@ -123,11 +153,16 @@ class TestBraid:
         assert b_inv.generators == [1, -2, -1]
         assert b_inv.n_strands == 3
 
+        # using ~ notation
+        b_inv = ~b
+        assert b_inv.generators == [1, -2, -1]
+        assert b_inv.n_strands == 3
+
     def test_flip(self):
         b = Braid([1, -2], 3)
         b.flip()
         Braid([-(3 - 1), +(3 - 2)], 3)
-        assert b.flip().word_eq(Braid([-(3-1), +(3-2)], 3))
+        assert b.flip().word_eq(Braid([-(3 - 1), +(3 - 2)], 3))
 
     def test_pow(self):
         """Test braid power"""
@@ -140,6 +175,22 @@ class TestBraid:
         """Test writhe calculation"""
         b = simple_braid
         assert b.writhe() == 1  # 1 + 1 - 1 = 1
+
+    def test_main_generator(self):
+        b = Braid([])
+        assert b.main_generator is None
+
+        b = Braid([0])
+        assert b.main_generator is None
+
+        b = Braid([1, -2])
+        assert b.main_generator == 1
+
+        b = Braid([2, -2])
+        assert b.main_generator == 2
+
+        b = Braid([2, 0, -2])
+        assert b.main_generator == 2
 
     def test_permutations(self):
         """Test permutation calculation"""
@@ -200,7 +251,8 @@ class TestBraid:
 
     def test_is_reduced(self):
         assert not Braid([1, -1], 3).is_reduced()
-        assert (Braid([1, -2], 3)**3).is_reduced()
+        assert (Braid([1, -2], 3) ** 3).is_reduced()
+        assert (Braid([], 3) ** 3).is_reduced()
 
     def test_is_pure(self, pure_braid, non_pure_braid):
         """Test pure braid detection"""
@@ -218,10 +270,9 @@ class TestBraid:
         assert Braid([1, 2, 1]).draw() == Braid([1, 2, 1])
 
     def test_eq(self):
-
         # assert math_braid.braid.Braid([])==math_braid.braid.Braid([])
         assert Braid([]) == Braid([])
-        assert Braid([0])==Braid([0])
+        assert Braid([0]) == Braid([0])
         assert Braid([1]) == Braid([1])
         assert Braid([10]) == Braid([10])
 
@@ -242,19 +293,21 @@ class TestBraid:
         assert Braid([1, 4, 4, 1], 7) == Braid([4, -5, 1, 1, 5, 4], 7)
         assert Braid([1, 4, 4, 1], 7) != Braid([4, -5, 1, 1, 6, 4], 7)
 
-def test_a():
-    """ Test short notation with artin generator as derived class of Braid"""
-    print(a(1))
-    assert a(1)==Braid([1])
 
-    assert a(1)**(-2)==Braid([-1, -1])
+def test_a():
+    """Test short notation with artin generator as derived class of Braid"""
+    print(a(1))
+    assert a(1) == Braid([1])
+
+    assert a(1) ** (-2) == Braid([-1, -1])
+
 
 def test_n():
     # Check we can change the number of strands in a compact notation
-    assert (a(2)*a(1)**(-2)).n(3)==Braid([2, -1, -1], 3)
+    assert (a(2) * a(1) ** (-2)).n(3) == Braid([2, -1, -1], 3)
+
 
 def test_mixing_operation_with_braid():
     # Check we can change the number of strands in a compact notation
-    assert a(2)*Braid([1, 5]) == Braid([2, 1, 5])
-    assert Braid([1, 5])*a(2) == Braid([1, 5, 2])
-
+    assert a(2) * Braid([1, 5]) == Braid([2, 1, 5])
+    assert Braid([1, 5]) * a(2) == Braid([1, 5, 2])

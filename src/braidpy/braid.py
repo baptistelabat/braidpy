@@ -1,3 +1,4 @@
+import enum
 from typing import List, Tuple, Optional, Union
 import numpy as np
 
@@ -22,6 +23,12 @@ BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
 BraidingProcess = Tuple[BraidingStep, ...]
 
 
+class BraidWordNotation(str, enum.Enum):
+    ARTIN = "ARTIN"
+    ALPHA = "ALPHA"
+    DEFAULT = "DEFAULT"
+
+
 def single_crossing_braiding_process(
     process: BraidingProcess,
 ) -> List[SignedCrossingIndex]:
@@ -39,6 +46,7 @@ def single_crossing_braiding_process(
             sequential_single_crossings_index.append(step)
     return sequential_single_crossings_index
 
+
 @dataclass(frozen=True)
 class Braid:
     process: Tuple[Tuple[int] | int, ...]
@@ -46,11 +54,11 @@ class Braid:
 
     def __post_init__(self):
         # Hack to allow to code single generator without parenthesis
-        if type(self.process)==int:
+        if isinstance(self.process, Iterable):
+            process = self.process
+        else:
             process = (self.process,)
             object.__setattr__(self, "process", (self.process,))
-        else:
-            process = self.process
 
         sequential_generators = single_crossing_braiding_process(process)
         # Infer number of strands if not provided
@@ -77,33 +85,80 @@ class Braid:
         https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
 
         """
-        if not self.generators:
+        if not self.no_zero().generators:
             return None
-        return min([abs(gen) for gen in self.generators if abs(gen)>0])
+        return min([abs(gen) for gen in self.generators if abs(gen) > 0])
 
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
 
+    def format_to_notation(self, target: str = ""):
+        """
+        Inspired from https://github.com/abhikpal/dehornoy/blob/master/braid.py
+
+        Allow for targets:
+
+
+        The Artin representation can also be used in a latex file.
+
+        The neutral element is 'e' for the Artin representation and '#' for alpha.
+
+        Args:
+            target(str): Among
+                'alpha': for example 'aBa'
+                'artin'  for example 's_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}'
+                'default'
+
+        Returns:
+            str: the formated braid word
+        """
+        match target.upper():
+            case BraidWordNotation.ARTIN.value:
+                if len(self.generators) == 0:
+                    return "e"
+                return " ".join(
+                    "s_{" + str(abs(g)) + "}^{" + str(abs(g) / g) + "}"
+                    if g != 0
+                    else "e"
+                    for g in self.generators
+                )
+            case BraidWordNotation.ALPHA.value:
+                if len(self.generators) == 0:
+                    return "#"
+
+                def alp(g):
+                    return chr(ord("Q") + int(abs(g) / g) * 16 + abs(g) - 1)
+
+                return "".join(alp(g) if g != 0 else "#" for g in self.generators)
+            case BraidWordNotation.DEFAULT.value | "":
+                return "<" + " : ".join(str(g) for g in self.generators) + ">"
+            case _:
+                raise NotImplementedError(
+                    f"target notation should be among {[notation.value for notation in BraidWordNotation]}"
+                )
 
     def format(
         self,
         generator_symbols: list[str] = None,
         inverse_generator_symbols: list[str] = None,
-        zero_symbol: str = "0",
+        zero_symbol: str = "e",
         separator: str = "",
     ) -> str:
         """
-        Allow to format the braid word following different format.
-        Note that the power are limited to -1/1 (not possible to display σ₁² for example)
+        Allow to format the braid word following different formats.
+
+        Note that the power are limited to -1/1 due to the actual braid word definition (not possible to display σ₁² for example)
+
+        See also format_to_notation for simpler predefined format
 
         Args:
-            generator_symbols:
-            inverse_generator_symbols:
-            zero_symbol:
-            separator:
+            generator_symbols (Optional(list[str])): Default to ["σ₁", "σ₂", ...]
+            inverse_generator_symbols(Optional(list[str])): Default to ["σ₁⁻¹", ...]
+            zero_symbol (Optional(str)): Default to "e
+            separator(Optional(str)): Default to ""
 
         Returns:
-
+            str: the formated braid word
         """
         if generator_symbols is None:
             generator_symbols = [
@@ -134,31 +189,7 @@ class Braid:
         Returns:
             Braid
         """
-        return Braid([g for g in self.generators if g!=0], self.n_strands)
-
-    def change_notation(self, target):
-        """
-        Taken from https://github.com/abhikpal/dehornoy/blob/master/braid.py
-        Changes from the internal notation to the target notation.
-        Possible values for target:
-         'alpha', 'artin', 'default'
-        The artin representationn can also be used in a latex file.
-
-        The nullstring is 'e' for the Artin representation and '#' for alpha.
-        """
-        if target == 'artin':
-            if len(self.generators) == 0:
-                return 'e'
-            return ' '.join('s_{' + str(abs(g)) + '}^{' + str(abs(g)/g) + '}'\
-                            if g != 0 else 'e' for g in self.generators)
-        elif target == 'alpha':
-            if len(self.generators) == 0:
-                return '#'
-            m = self.main_generator()
-            alp = lambda g: chr(ord('Q') + (abs(g) / g) * 16 + abs(g) - 1)
-            return ''.join(alp(g) if g != 0 else '#' for g in self.generators)
-        else:
-            return '<' + ' : '.join(str(g) for g in self.generators) + '>'
+        return Braid([g for g in self.generators if g != 0], self.n_strands)
 
     def __len__(self):
         return len(self.generators)
@@ -166,7 +197,7 @@ class Braid:
     def __mul__(self, other: "Braid") -> "Braid":
         """Compose two braids (concatenate operation of other after self
 
-        This corresponds to multiplication of two braids in braid theory """
+        This corresponds to multiplication of two braids in braid theory"""
         if self.n_strands != other.n_strands:
             raise ValueError("Braids must have the same number of strands")
         return Braid(self.generators + other.generators, self.n_strands)
@@ -208,11 +239,13 @@ class Braid:
         Returns:
 
         """
-        if self.n_strands!=other.n_strands:
+        if self.n_strands != other.n_strands:
             return False
         if not self.no_zero().generators and not other.no_zero().generators:
             return True
-        return math_braid.Braid(list(self.generators), self.n_strands)==math_braid.Braid(list(other.generators), other.n_strands)
+        return math_braid.Braid(
+            list(self.generators), self.n_strands
+        ) == math_braid.Braid(list(other.generators), other.n_strands)
 
     def inverse(self) -> "Braid":
         """
@@ -266,13 +299,11 @@ class Braid:
         Returns:
             Braid: the reversed braid
         """
-        gen = [-np.sign(g)*(self.n_strands-abs(g)) for g in self.generators]
+        gen = [-np.sign(g) * (self.n_strands - abs(g)) for g in self.generators]
         return Braid(gen, self.n_strands)
 
-
-
     def is_reduced(self) -> bool:
-        """ A braid word w is reduced either if it is the null string, or the empty braid, or if the main
+        """A braid word w is reduced either if it is the null string, or the empty braid, or if the main
         generator of w occurs only positively or only negatively.
         https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
         """
@@ -429,14 +460,17 @@ class Braid:
             gap_size=gap_size,
             color=color,
         )
+
+
 class a(Braid):
     """
     This class is a shortcut to be able to use a compact notation with Artin Generator
     """
+
     def __mul__(self, other: "Braid") -> "Braid":
         """Compose two braids (concatenate operation of other after self
 
-        This corresponds to multiplication of two braids in braid theory """
+        This corresponds to multiplication of two braids in braid theory"""
 
         # Take max number of strands in this case
         n_strands = max(self.n_strands, other.n_strands)
@@ -446,9 +480,12 @@ class a(Braid):
     def __rmul__(self, other: "Braid") -> "Braid":
         """Compose two braids (concatenate operation of other after self
 
-        This corresponds to multiplication of two braids in braid theory """
+        This corresponds to multiplication of two braids in braid theory"""
 
         # Take max number of strands in this case
         n_strands = max(self.n_strands, other.n_strands)
 
-        return Braid(other.generators+self.generators, n_strands)
+        return Braid(other.generators + self.generators, n_strands)
+
+    def __repr__(self) -> str:
+        return f"a({self.generators[0]})"
