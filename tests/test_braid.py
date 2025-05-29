@@ -160,9 +160,12 @@ class TestBraid:
 
     def test_flip(self):
         b = Braid([1, -2], 3)
-        b.flip()
-        Braid([-(3 - 1), +(3 - 2)], 3)
         assert b.flip().word_eq(Braid([-(3 - 1), +(3 - 2)], 3))
+
+    def test_up_side_down(self):
+        b = Braid([1, -2], 3)
+        assert (-b).word_eq(Braid([-1, 2], 3))
+        assert b.up_side_down().word_eq(Braid([-1, 2], 3))
 
     def test_pow(self):
         """Test braid power"""

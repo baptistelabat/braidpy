@@ -2,6 +2,7 @@
 
 ## 📘 General background wikis on braid theory
 
+- [Braid on Wikipedia](https://en.wikipedia.org/wiki/Braid)
 - [Braid group on Wikipedia](https://en.wikipedia.org/wiki/Braid_group)
 - https://ncatlab.org/nlab/show/braid+group
 

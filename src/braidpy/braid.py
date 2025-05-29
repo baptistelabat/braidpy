@@ -131,6 +131,9 @@ class Braid:
 
                 return "".join(alp(g) if g != 0 else "#" for g in self.generators)
             case BraidWordNotation.DEFAULT.value | "":
+                """
+                This is the syntax used by math-braid and braidlab
+                """
                 return "<" + " : ".join(str(g) for g in self.generators) + ">"
             case _:
                 raise NotImplementedError(
@@ -302,6 +305,42 @@ class Braid:
         gen = [-np.sign(g) * (self.n_strands - abs(g)) for g in self.generators]
         return Braid(gen, self.n_strands)
 
+    def half_twist(self, sign):
+        """
+        Twist the braid with half a turn
+
+
+        Args:
+            sign: sign of the twist. IF positive the first strand is going over
+
+        Returns:
+            Braid: the twisted brain
+        """
+        b = self
+        for i in range(abs(self.n_strands)):
+            b = b * (slide_strand(1, self.n_strands - i - 1, sign).n(self.n_strands))
+
+        return b
+
+    def up_side_down(self):
+        """
+        Invert up and down crossing operations
+
+        Returns:
+            Braid: the mirrored braid
+        """
+        gen = [-g for g in self.generators]
+        return Braid(gen, self.n_strands)
+
+    def __neg__(self):
+        """
+        Invert up and down crossing operations
+
+        Returns:
+            Braid: the mirrored braid
+        """
+        return self.up_side_down()
+
     def is_reduced(self) -> bool:
         """A braid word w is reduced either if it is the null string, or the empty braid, or if the main
         generator of w occurs only positively or only negatively.
@@ -418,6 +457,18 @@ class Braid:
             return False
         return any(conj == other.word for conj in self.cyclic_conjugates())
 
+    def is_brunnian(self):
+        """
+        A Brunnian braid is a braid that becomes trivial upon removal of any one of its strings.
+        Brunnian braids form a subgroup of the braid group
+
+        https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids
+
+        Returns:
+            bool
+        """
+        raise NotImplementedError()
+
     def draw(self):
         self.permutations(plot=True)
 
@@ -451,7 +502,9 @@ class Braid:
         Returns:
 
         """
-        b = bv.Braid(self.n_strands, *self.generators)
+        # Neutral elements are not supported by library used
+        compact = self.no_zero()
+        b = bv.Braid(compact.n_strands, *compact.generators)
 
         b.draw(
             save=save,
@@ -489,3 +542,21 @@ class a(Braid):
 
     def __repr__(self) -> str:
         return f"a({self.generators[0]})"
+
+
+def slide_strand(start_index, n_slide, sign):
+    """
+    Combine Artin Generator to move one braid over or under several braid
+    Args:
+        start_index:
+        end_index:
+        sign:
+
+    Returns:
+
+    """
+
+    b = a(0)
+    for i in range(0, n_slide):
+        b = b * a(sign * (start_index + i))
+    return b
