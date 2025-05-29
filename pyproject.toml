@@ -39,5 +39,6 @@ dependencies = [
     "sympy>=1.14.0",
     "tornado>=6.4.2",
     "math-braid (>=0.8,<0.9)",
+    "myst-parser>=4.0.1",
 ]
 

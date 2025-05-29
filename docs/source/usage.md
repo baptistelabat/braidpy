@@ -162,5 +162,3 @@ for n in range(2):
 ```
 
 ---
-
-Let me know if you’d like the `.md` file downloadable or enhanced with live code examples or diagrams!
