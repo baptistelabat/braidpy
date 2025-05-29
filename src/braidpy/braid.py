@@ -9,6 +9,9 @@ from braidpy.utils import int_to_superscript, int_to_subscript, colorize
 import braidvisualiser as bv
 import matplotlib
 
+import math_braid
+from collections.abc import Iterable
+
 matplotlib.use("qtagg")
 
 t = symbols("t")
@@ -30,12 +33,11 @@ def single_crossing_braiding_process(
     """
     sequential_single_crossings_index: List[SignedCrossingIndex] = []
     for step in process:
-        if isinstance(step, int):
-            sequential_single_crossings_index.append(step)
-        else:
+        if isinstance(step, Iterable):
             sequential_single_crossings_index.extend(step)
+        else:
+            sequential_single_crossings_index.append(step)
     return sequential_single_crossings_index
-
 
 @dataclass(frozen=True)
 class Braid:
@@ -43,7 +45,14 @@ class Braid:
     n_strands: Optional[int] = field(default=None)
 
     def __post_init__(self):
-        sequential_generators = single_crossing_braiding_process(self.process)
+        # Hack to allow to code single generator without parenthesis
+        if type(self.process)==int:
+            process = (self.process,)
+            object.__setattr__(self, "process", (self.process,))
+        else:
+            process = self.process
+
+        sequential_generators = single_crossing_braiding_process(process)
         # Infer number of strands if not provided
         inferred_n = (
             abs(max(sequential_generators, key=abs)) + 1 if sequential_generators else 1
@@ -74,6 +83,7 @@ class Braid:
 
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
+
 
     def format(
         self,
@@ -117,6 +127,15 @@ class Braid:
                 word += separator
         return f"{word}"
 
+    def no_zero(self):
+        """
+        Suppress all the zero steps (multiplication by neutral element)
+
+        Returns:
+            Braid
+        """
+        return Braid([g for g in self.generators if g!=0], self.n_strands)
+
     def change_notation(self, target):
         """
         Taken from https://github.com/abhikpal/dehornoy/blob/master/braid.py
@@ -145,7 +164,9 @@ class Braid:
         return len(self.generators)
 
     def __mul__(self, other: "Braid") -> "Braid":
-        """Multiply two braids (concatenate them)"""
+        """Compose two braids (concatenate operation of other after self
+
+        This corresponds to multiplication of two braids in braid theory """
         if self.n_strands != other.n_strands:
             raise ValueError("Braids must have the same number of strands")
         return Braid(self.generators + other.generators, self.n_strands)
@@ -173,19 +194,82 @@ class Braid:
 
     def __eq__(self, other):
         """
-        For now we check equality of words
+        Check if two braids are equivalent
+        We ask to get the same number of strands
+
+        Relies on math_braid implementation from Cha and all paper.
+        https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
+
+        Might not be the best algorithm compare to handle reduction.
 
         Args:
-            other:
+            other(Braid):
 
         Returns:
 
         """
-        return self.word_eq(other)
+        if self.n_strands!=other.n_strands:
+            return False
+        if not self.no_zero().generators and not other.no_zero().generators:
+            return True
+        return math_braid.Braid(list(self.generators), self.n_strands)==math_braid.Braid(list(other.generators), other.n_strands)
 
     def inverse(self) -> "Braid":
-        """Return the inverse of the braid"""
+        """
+        Return the inverse of the braid
+        This corresponds to the image of the braid in a mirror.
+        Both order and signs are reversed
+
+        Returns:
+            Braid: the inverse braid
+        """
         return Braid([-g for g in reversed(self.generators)], self.n_strands)
+
+    def __invert__(self):
+        """
+        Inverse of the braid with symbole ~
+        This corresponds to the image of the braid in a mirror orthogonal to the braid direction
+        The last operation becomes the firt one
+        Both order of operation and signs are reversed, but not order of strands
+
+        >>> x = Braid([1, -2], 3)
+        >>> ~x
+
+        Returns:
+            Braid
+        """
+        return self.inverse()
+
+    def n(self, n_strands):
+        """
+        Compact notation to allow to change the number of strands
+
+        Args:
+            n_strands:
+
+        Returns:
+
+        """
+        return Braid(self.process, n_strands)
+
+    def flip(self):
+        """
+        Flip the braid
+        This corresponds to the image of the braid in a mirror on the side of the braid reordered from left to right
+        The strands are reversed, not the order of operations
+        Sign is also changed.
+        This step is often used when braiding
+
+        >>> b = Braid([1], 3)
+        >>> basic_3_braid = (b*(b.flip()))**3
+
+        Returns:
+            Braid: the reversed braid
+        """
+        gen = [-np.sign(g)*(self.n_strands-abs(g)) for g in self.generators]
+        return Braid(gen, self.n_strands)
+
+
 
     def is_reduced(self) -> bool:
         """ A braid word w is reduced either if it is the null string, or the empty braid, or if the main
@@ -345,3 +429,26 @@ class Braid:
             gap_size=gap_size,
             color=color,
         )
+class a(Braid):
+    """
+    This class is a shortcut to be able to use a compact notation with Artin Generator
+    """
+    def __mul__(self, other: "Braid") -> "Braid":
+        """Compose two braids (concatenate operation of other after self
+
+        This corresponds to multiplication of two braids in braid theory """
+
+        # Take max number of strands in this case
+        n_strands = max(self.n_strands, other.n_strands)
+
+        return Braid(self.generators + other.generators, n_strands)
+
+    def __rmul__(self, other: "Braid") -> "Braid":
+        """Compose two braids (concatenate operation of other after self
+
+        This corresponds to multiplication of two braids in braid theory """
+
+        # Take max number of strands in this case
+        n_strands = max(self.n_strands, other.n_strands)
+
+        return Braid(other.generators+self.generators, n_strands)

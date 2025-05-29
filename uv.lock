@@ -1,5 +1,6 @@
 version = 1
-requires-python = ">=3.10"
+revision = 1
+requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
     "python_full_version < '3.11'",
@@ -30,6 +31,7 @@ source = { editable = "." }
 dependencies = [
     { name = "braidvisualiser" },
     { name = "coverage" },
+    { name = "math-braid" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pyqt6" },
@@ -46,6 +48,7 @@ dependencies = [
 requires-dist = [
     { name = "braidvisualiser", specifier = ">=0.2.2" },
     { name = "coverage", specifier = ">=7.8.2" },
+    { name = "math-braid", specifier = ">=0.8,<0.9" },
     { name = "matplotlib", specifier = ">=3.7.5" },
     { name = "numpy", specifier = ">=1.21.0" },
     { name = "pyqt6", specifier = ">=6.9.0" },
@@ -303,7 +306,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749 }
 wheels = [
@@ -534,6 +537,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/82/78/fedb03c7d5380df2427038ec8d973587e90561b2d90cd472ce9254cf348b/MarkupSafe-3.0.2-cp313-cp313t-win32.whl", hash = "sha256:ba8062ed2cf21c07a9e295d5b8a2a5ce678b913b45fdf68c32d95d6c1291e0b6", size = 15208 },
     { url = "https://files.pythonhosted.org/packages/4f/65/6079a46068dfceaeabb5dcad6d674f5f5c61a6fa5673746f42a9f4c233b3/MarkupSafe-3.0.2-cp313-cp313t-win_amd64.whl", hash = "sha256:e444a31f8db13eb18ada366ab3cf45fd4b31e4db1236a4448f68778c1d1a5a2f", size = 15739 },
 ]
+
+[[package]]
+name = "math-braid"
+version = "0.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sympy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/16/62/fc5b9fe07a4b60ab7060a85033cff618a03c8d54bd57224ee6992f13be68/math_braid-0.8.tar.gz", hash = "sha256:910370eec53f90def097172be6b45fc489c188066dda4e45a1704fad8003a153", size = 16208 }
 
 [[package]]
 name = "matplotlib"
