@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Usage &mdash; braidpy 0.1 documentation</title>
+  <title>🛠️ Usage Guide &mdash; braidpy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -18,8 +18,7 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Welcome to braidpy documentation!" href="index.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -41,14 +40,25 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#launching-demo-in-progress">Launching demo (in progress)</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">🛠️ Usage Guide</a><ul>
+<li><a class="reference internal" href="#installation">📦 Installation</a></li>
+<li><a class="reference internal" href="#launching-the-demo-in-progress">🚀 Launching the demo <em>(In Progress)</em></a></li>
+<li><a class="reference internal" href="#creating-braids-artin-generators">🔁 Creating braids (Artin Generators)</a><ul>
+<li><a class="reference internal" href="#positive-crossing-above">➕ Positive crossing (Above)</a></li>
+<li><a class="reference internal" href="#negative-crossing-below">➖ Negative crossing (Below)</a></li>
+<li><a class="reference internal" href="#visualizing">🖼️ Visualizing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-crossing">🔄 Next crossing</a></li>
+<li><a class="reference internal" href="#combining-braid-operatin">🔗 Combining braid operatin</a></li>
+<li><a class="reference internal" href="#creating-a-pure-braid">🔁 Creating a Pure Braid</a></li>
+<li><a class="reference internal" href="#handle-reduction">✂️ Handle Reduction</a></li>
 </ul>
 </li>
 </ul>
-
+</div>
         </div>
       </div>
     </nav>
@@ -63,9 +73,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Usage</li>
+      <li class="breadcrumb-item active">🛠️ Usage Guide</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/usage.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/usage.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -73,92 +83,148 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="usage">
-<h1>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h1>
+  <section id="usage-guide">
+<h1>🛠️ Usage Guide<a class="headerlink" href="#usage-guide" title="Link to this heading"></a></h1>
 <section id="installation">
-<span id="id1"></span><h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>To use braidpy, first install it using git:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">git clone git@github.com:baptistelabat/braidpy.git</span>
+<h2>📦 Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>To use <strong>braidpy</strong>, first clone the repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:baptistelabat/braidpy.git
 </pre></div>
 </div>
-<p>To install the required dependencies, follow the steps below:</p>
-<ol class="arabic simple">
-<li><p>Install <cite>uv</cite> by following the official [installation guide](<a class="reference external" href="https://docs.astral.sh/uv/getting-started/installation">https://docs.astral.sh/uv/getting-started/installation</a>).</p></li>
-<li><p>Alternatively, run the command from root of repository:
-<a href="#id2"><span class="problematic" id="id3">``</span></a><a href="#id4"><span class="problematic" id="id5">`</span></a>bash
-cd braidpy
-make install-uv</p></li>
+<p>Then install the required dependencies:</p>
+<ol class="arabic">
+<li><p>Install <a class="reference external" href="https://docs.astral.sh/uv/getting-started/installation"><code class="docutils literal notranslate"><span class="pre">uv</span></code></a>.</p></li>
+<li><p>Or simply run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>braidpy
+make<span class="w"> </span>install-uv
+</pre></div>
+</div>
+</li>
 </ol>
 </section>
-<section id="launching-demo-in-progress">
-<h2>Launching demo (in progress)<a class="headerlink" href="#launching-demo-in-progress" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">Alternatively,</span> <span class="pre">if</span> <span class="pre">you</span> <span class="pre">have</span> <span class="pre">make</span> <span class="pre">install,</span> <span class="pre">just</span> <span class="pre">run:</span>
-<span class="pre">```bash</span>
-<span class="pre">make</span> <span class="pre">demo</span>
-<span class="pre">`</span></code></p>
-<p>To create a braid you have to supply the operations which are needed to create the braid.
-In braid theory, these operations are called Artin generators and correspond to the crossings of two strands.
-Let’s start by taking a 3 strands braid and let’s consider we have them attached at the top of the screen and hanging below.
-The first strand (1) is on the left, the second strand on the middle (2) and the third strand (3) on the right.</p>
-<p>We know consider the first operation where we are going to take the first strand (1) and move it above the next neightboor (2) (to the right)
-Programmatically this is coded as follows, where the 1 means we are taking the first strand,
-and the sign + means we are moving it above its neighboor (the next one on the right):
-first_upcrossing = Braid([+1], n_strands=3)</p>
-<p>Alternatively, we could move the first braid below its neighboor. For this we change the sign
-first_downcrossing = Braid([-1], n_strands=3)</p>
-<p>One can notice that if we do the two previous operations one after other, they are cancelling.
-As a result, we can also define one crossing as the inverse of the other one.
-first_downcrossing = first_upcrossing.inverse()</p>
-<p>You can visualize the corresponding braid by doing
-first_crossing.draw()
-You should get the following visual. The arrow indicate that the strand 1 is going over the strand 2
-After this step the strand noted 2 is the first one on the left
-1 2 3
-1&gt;2 3
-2 1 3</p>
-<p>The next step, would be to move the third braid above the (new) middle one.
-We we exchange the position of two braids, the index always correspond to the one the more on the left.
-So here instead of saying that we move the third strand above the second, we say that we move the second below third,
-which is equivalent
-second_crossing = Braid([-2], n_strands=3)</p>
-<p>We have now our two basic operations.
-We can combine them in different ways.</p>
-<p>One is to list the different operations:
-b = Braid([1, -2], n_strands=3)</p>
-<p>The second one is to use the multiplication symbol.</p>
-<p>basic_step= first_upcrossing * second_crossing</p>
-<p>We obtain the following braid:
-1 2 3
-1&gt;2 3
-2 1&lt;3
-2 3 1</p>
-<p>To make a longer braid we how have to reproduce the operations.
-If wa want a braid where the strands are in the initial order we need to repeat this operation 3 times
-This can be done
-with</p>
-<p>pure_braid = basic_step*basic_step*basic_step</p>
-<p>A bure braid is a braid which is changing the order of the strands.</p>
-<p>to write this even faster, we can do
-pure_braid = basic_step**3</p>
-<p>pure_braid.draw()
-1 2 3
-1&gt;2 3
-2 1&lt;3
-2&gt;3 1
-3 2&lt;1
-3&gt;1 2
-1 3&lt;2
-1 2 3</p>
+<hr class="docutils" />
+<section id="launching-the-demo-in-progress">
+<h2>🚀 Launching the demo <em>(In Progress)</em><a class="headerlink" href="#launching-the-demo-in-progress" title="Link to this heading"></a></h2>
+<p>If you have <code class="docutils literal notranslate"><span class="pre">make</span></code> installed, you can launch the demo using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>demo
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="creating-braids-artin-generators">
+<h2>🔁 Creating braids (Artin Generators)<a class="headerlink" href="#creating-braids-artin-generators" title="Link to this heading"></a></h2>
+<p>To create a braid, you need to define operations called <strong>Artin generators</strong>, representing crossings of two strands.</p>
+<p>Imagine a 3-strand braid:</p>
+<ul class="simple">
+<li><p>Strand 1: Left</p></li>
+<li><p>Strand 2: Middle</p></li>
+<li><p>Strand 3: Right</p></li>
+</ul>
+<section id="positive-crossing-above">
+<h3>➕ Positive crossing (Above)<a class="headerlink" href="#positive-crossing-above" title="Link to this heading"></a></h3>
+<p>Move strand 1 <strong>over</strong> strand 2:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">first_upcrossing</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="negative-crossing-below">
+<h3>➖ Negative crossing (Below)<a class="headerlink" href="#negative-crossing-below" title="Link to this heading"></a></h3>
+<p>Move strand 1 <strong>under</strong> strand 2:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">first_downcrossing</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is the inverse of the first:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">first_downcrossing</span> <span class="o">=</span> <span class="n">first_upcrossing</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The inverse can be seen as the image of the braid in a mirror. We will see that this holds for any braid.</p>
+</section>
+<section id="visualizing">
+<h3>🖼️ Visualizing<a class="headerlink" href="#visualizing" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">first_crossing</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This shows strand 1 going over strand 2. Intermediate steps are shown with an arrow from the braid moving abobe the other one:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="o">&gt;</span><span class="mi">2</span> <span class="mi">3</span>
+<span class="mi">2</span> <span class="mi">1</span> <span class="mi">3</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-crossing">
+<h2>🔄 Next crossing<a class="headerlink" href="#next-crossing" title="Link to this heading"></a></h2>
+<p>Move the new middle strand (strand 2) below strand 3:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">second_crossing</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="combining-braid-operatin">
+<h2>🔗 Combining braid operatin<a class="headerlink" href="#combining-braid-operatin" title="Link to this heading"></a></h2>
+<p>Using a list:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or by multiplying:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">basic_step</span> <span class="o">=</span> <span class="n">first_upcrossing</span> <span class="o">*</span> <span class="n">second_crossing</span>
+</pre></div>
+</div>
+<p>The resulting braid is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="o">&gt;</span><span class="mi">2</span> <span class="mi">3</span>
+<span class="mi">2</span> <span class="mi">1</span><span class="o">&lt;</span><span class="mi">3</span>
+<span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="creating-a-pure-braid">
+<h2>🔁 Creating a Pure Braid<a class="headerlink" href="#creating-a-pure-braid" title="Link to this heading"></a></h2>
+<p>As you may, with this typical braid, if we reepeat the <code class="docutils literal notranslate"><span class="pre">basic_step</span></code> three times we return to original order of strands:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">braid</span> <span class="o">=</span> <span class="n">basic_step</span> <span class="o">*</span> <span class="n">basic_step</span> <span class="o">*</span> <span class="n">basic_step</span>
+</pre></div>
+</div>
+<p>Or simply:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">braid</span> <span class="o">=</span> <span class="n">basic_step</span> <span class="o">**</span> <span class="mi">3</span>
+<span class="n">braid</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Visual:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="o">&gt;</span><span class="mi">2</span> <span class="mi">3</span>
+<span class="mi">2</span> <span class="mi">1</span><span class="o">&lt;</span><span class="mi">3</span>
+<span class="mi">2</span><span class="o">&gt;</span><span class="mi">3</span> <span class="mi">1</span>
+<span class="mi">3</span> <span class="mi">2</span><span class="o">&lt;</span><span class="mi">1</span>
+<span class="mi">3</span><span class="o">&gt;</span><span class="mi">1</span> <span class="mi">2</span>
+<span class="mi">1</span> <span class="mi">3</span><span class="o">&lt;</span><span class="mi">2</span>
+<span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>This is called a pure braid. A <strong>pure braid</strong> restores the original strand order.</p>
+<p>You can check this with:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">braid</span><span class="o">.</span><span class="n">is_pure</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="handle-reduction">
+<h2>✂️ Handle Reduction<a class="headerlink" href="#handle-reduction" title="Link to this heading"></a></h2>
+<p>Now consider applying handle reduction on a series of braids:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">b1</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="o">+</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">b2</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="o">-</span><span class="n">n</span><span class="p">],</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
 </section>
 </section>
 
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to braidpy documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-    </div>
+          <footer>
 
   <hr/>
 

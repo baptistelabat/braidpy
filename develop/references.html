@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visualization &mdash; braidpy 0.1 documentation</title>
+  <title>🧶 Braid Group: Code Resources, Visualizations &amp; Research &mdash; braidpy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -40,10 +40,24 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a><ul>
+<li><a class="reference internal" href="#general-background-wikis-on-braid-theory">📘 General background wikis on braid theory</a></li>
+<li><a class="reference internal" href="#sagemath-implementation">🧮 SageMath Implementation</a></li>
+<li><a class="reference internal" href="#visualization-tools">🎨 Visualization Tools</a></li>
+<li><a class="reference internal" href="#dehornoys-work">🧠 Dehornoy’s Work</a></li>
+<li><a class="reference internal" href="#python-libraries-github-pypi">🐍 Python Libraries (GitHub &amp; PyPI)</a></li>
+<li><a class="reference internal" href="#matlab-braidlab">📊 MATLAB / BraidLab</a></li>
+<li><a class="reference internal" href="#knots-related-libraries">🪢 Knots &amp; Related Libraries</a><ul>
+<li><a class="reference internal" href="#knot-libraries">Knot libraries:</a></li>
 </ul>
-
+</li>
+<li><a class="reference internal" href="#video-resource">📺 Video Resource</a></li>
+</ul>
+</li>
+</ul>
+</div>
         </div>
       </div>
     </nav>
@@ -58,9 +72,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Visualization</li>
+      <li class="breadcrumb-item active">🧶 Braid Group: Code Resources, Visualizations &amp; Research</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/references.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/references.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -68,40 +82,138 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <p><a class="reference external" href="https://en.wikipedia.org/wiki/Braid_group">https://en.wikipedia.org/wiki/Braid_group</a></p>
-<section id="visualization">
-<h1>Visualization<a class="headerlink" href="#visualization" title="Link to this heading"></a></h1>
-<p><a class="reference external" href="https://github.com/rexgreenway/braid-visualiser">https://github.com/rexgreenway/braid-visualiser</a>
-<a class="reference external" href="https://github.com/Denbox/Braid-Group-Visualization/blob/master/braid_visualization.py">https://github.com/Denbox/Braid-Group-Visualization/blob/master/braid_visualization.py</a></p>
+  <section id="braid-group-code-resources-visualizations-research">
+<h1>🧶 Braid Group: Code Resources, Visualizations &amp; Research<a class="headerlink" href="#braid-group-code-resources-visualizations-research" title="Link to this heading"></a></h1>
+<section id="general-background-wikis-on-braid-theory">
+<h2>📘 General background wikis on braid theory<a class="headerlink" href="#general-background-wikis-on-braid-theory" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Braid">Braid on Wikipedia</a></p></li>
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Braid_group">Braid group on Wikipedia</a></p></li>
+<li><p>https://ncatlab.org/nlab/show/braid+group</p></li>
+</ul>
 </section>
-<section id="dehornoy">
-<h1>Dehornoy<a class="headerlink" href="#dehornoy" title="Link to this heading"></a></h1>
-<p><a class="reference external" href="https://dehornoy.lmno.cnrs.fr/programs.html">https://dehornoy.lmno.cnrs.fr/programs.html</a>
-<a class="reference external" href="https://github.com/abhikpal/dehornoy">https://github.com/abhikpal/dehornoy</a>
-<a class="reference external" href="https://github.com/chesterelian/dehornoy">https://github.com/chesterelian/dehornoy</a>
-<a class="reference external" href="https://github.com/jfromentin/gbraids">https://github.com/jfromentin/gbraids</a>
-<a class="reference external" href="https://github.com/dehornoy/programs">https://github.com/dehornoy/programs</a></p>
-<p><a class="reference external" href="https://github.com/kuboon/math_braid.py">https://github.com/kuboon/math_braid.py</a>
-<a class="reference external" href="https://github.com/sagemath/sage/blob/develop/src/sage/groups/braid.py">https://github.com/sagemath/sage/blob/develop/src/sage/groups/braid.py</a></p>
+<hr class="docutils" />
+<section id="sagemath-implementation">
+<h2>🧮 SageMath Implementation<a class="headerlink" href="#sagemath-implementation" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>The most comprehensive implementation is in <strong>SageMath</strong>, but due to its <strong>GPL license</strong>, it won’t be integrated here.
+However, having a look to the functions implemented gives a good idea of how wide this domain is.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p><a class="reference external" href="https://doc.sagemath.org/html/en/reference/groups/sage/groups/braid.html">SageMath Braid Group Documentation</a></p></li>
+</ul>
 </section>
-<section id="github">
-<h1>Github<a class="headerlink" href="#github" title="Link to this heading"></a></h1>
-<p><a class="reference external" href="https://github.com/rexgreenway/alexander-data">https://github.com/rexgreenway/alexander-data</a></p>
+<hr class="docutils" />
+<section id="visualization-tools">
+<h2>🎨 Visualization Tools<a class="headerlink" href="#visualization-tools" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/rexgreenway/braid-visualiser">rexgreenway/braid-visualiser</a> – Flat diagram visualization, available on <a class="reference external" href="https://pypi.org/project/braidvisualiser/">PyPI</a>  -&gt; used by braidpy</p></li>
+<li><p>(<a class="reference external" href="https://github.com/Denbox/Braid-Group-Visualization/blob/master/braid_visualization.py">Denbox/Braid-Group-Visualization</a> – Flat diagram but lacks good crossing visuals  )</p></li>
+<li><p><a class="reference external" href="https://github.com/loopspace/braids">loopspace/braids</a> <a class="reference external" href="https://texdoc.org/serve/braids/0">LaTeX braids package</a> – LaTeX-based braid rendering available on github. Impressive customization, good for documentation</p></li>
+</ul>
+<p>Alternative Python library:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pypi.org/project/braidpy/">braidpy (PyPI)</a></p></li>
+</ul>
 </section>
-<section id="matlab">
-<h1>Matlab<a class="headerlink" href="#matlab" title="Link to this heading"></a></h1>
-<p><a class="reference external" href="https://arxiv.org/pdf/1410.0849">https://arxiv.org/pdf/1410.0849</a>
-<a class="reference external" href="https://github.com/jeanluct/braidlab">https://github.com/jeanluct/braidlab</a>
-<a class="reference external" href="https://github.com/jeanluct/braidlab/blob/master/doc/braidlab_guide.pdf">https://github.com/jeanluct/braidlab/blob/master/doc/braidlab_guide.pdf</a></p>
-<p><a class="reference external" href="https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py">https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py</a></p>
+<hr class="docutils" />
+<section id="dehornoys-work">
+<h2>🧠 Dehornoy’s Work<a class="headerlink" href="#dehornoys-work" title="Link to this heading"></a></h2>
+<p>Author of <em>“Le calcul des tresses”</em>, Dehornoy contributed several algorithms like handle reduction.</p>
+<ul class="simple">
+<li><p>📄 “Patrick Dehornoy: A Fast Method for Comparing Braids”</p></li>
+<li><p><a class="reference external" href="https://dehornoy.lmno.cnrs.fr/programs.html">Old Pascal Code</a></p></li>
+<li><p><a class="reference external" href="https://github.com/dehornoy/programs">Dockerized Pascal Source</a></p></li>
+<li><p><a class="reference external" href="https://github.com/abhikpal/dehornoy">Python handle reduction</a></p></li>
+<li><p><a class="reference external" href="https://github.com/chesterelian/dehornoy">C++ handle reduction</a></p></li>
+<li><p><a class="reference external" href="https://github.com/jfromentin/gbraids">gbraids – Research with n=4</a></p>
+<ul>
+<li><p>Handle reduction</p></li>
+<li><p>DynnikovCoordinates</p></li>
+<li><p>Dual generator</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf">TU/e paper on Dehornoy</a></p></li>
+</ul>
 </section>
-<section id="knots">
-<h1>Knots<a class="headerlink" href="#knots" title="Link to this heading"></a></h1>
-<p><a class="reference external" href="https://github.com/Algebra8/Knots">https://github.com/Algebra8/Knots</a>
-<a class="reference external" href="https://github.com/SPOCKnots/pyknotid">https://github.com/SPOCKnots/pyknotid</a>
-<a class="reference external" href="https://github.com/xcapaldi/tbkm">https://github.com/xcapaldi/tbkm</a>
-<a class="reference external" href="https://github.com/RafaelMri/Pyknots">https://github.com/RafaelMri/Pyknots</a>
-<a class="reference external" href="https://www.youtube.com/watch?v=8DBhTXM_Br4">https://www.youtube.com/watch?v=8DBhTXM_Br4</a></p>
+<hr class="docutils" />
+<section id="python-libraries-github-pypi">
+<h2>🐍 Python Libraries (GitHub &amp; PyPI)<a class="headerlink" href="#python-libraries-github-pypi" title="Link to this heading"></a></h2>
+<ul>
+<li><p><a class="reference external" href="https://github.com/kuboon/math_braid.py">kuboon/math_braid.py</a>  is available on <a class="reference external" href="https://pypi.org/project/math-braid">PyPI</a></p>
+<ul>
+<li><p>Last updated 6 years ago</p></li>
+<li><p>Scarce documentation</p></li>
+<li><p>BSD license (usable with wrapper or code import)</p></li>
+<li><p>Examples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Artin generation (num = 1 to 3)</span>
+<span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
+
+<span class="c1"># Band generation (num = 1 to 4)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]],</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/rexgreenway/alexander-data">rexgreenway/alexander-data</a> – Invariant calculation (not on PyPI)</p></li>
+<li><p><a class="reference external" href="https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py">leodana/TIPE</a> – Dense, untested student code<br />
+https://github.com/stla/braids</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="matlab-braidlab">
+<h2>📊 MATLAB / BraidLab<a class="headerlink" href="#matlab-braidlab" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/jeanluct/braidlab/blob/master/doc/braidlab_guide.pdf">Braidlab PDF Guide</a> which was published <a class="reference external" href="https://arxiv.org/pdf/1410.0849">arXiv:1410.0849 – Braidlab paper</a></p>
+<ul>
+<li><p>Matlab code is available <a class="reference external" href="https://github.com/jeanluct/braidlab">jeanluct/braidlab</a></p></li>
+<li><p>Probably the best introduction to computation with braids</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="knots-related-libraries">
+<h2>🪢 Knots &amp; Related Libraries<a class="headerlink" href="#knots-related-libraries" title="Link to this heading"></a></h2>
+<p>Braid functions are often used in knot theory.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/Algebra8/Knots">Algebra8/Knots</a></p>
+<ul>
+<li><p>Project name: <code class="docutils literal notranslate"><span class="pre">braidgenerator</span></code> on PyPI</p></li>
+<li><p>Not very useful</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://algebra8.github.io/braidgenerator_doc.github.io/">Documentation Site</a> – Well made</p></li>
+</ul>
+<section id="knot-libraries">
+<h3>Knot libraries:<a class="headerlink" href="#knot-libraries" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pypi.org/project/pyknotid/">pyknotid (PyPI)</a></p></li>
+<li><p><a class="reference external" href="https://github.com/SPOCKnots/pyknotid">SPOCKnots/pyknotid</a></p>
+<ul>
+<li><p>Convert braid word → knot</p></li>
+<li><p>Advanced visualizations</p></li>
+<li><p><a class="reference external" href="https://github.com/SPOCKnots/pyknotid/blob/4d248ff32712702530e458b9dfa276038a5e61b2/pyknotid/spacecurves/spacecurve.py#L286">Relevant code line</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/xcapaldi/tbkm">xcapaldi/tbkm</a> – Random braid visualization in terminal</p></li>
+<li><p><a class="reference external" href="https://github.com/RafaelMri/Pyknots">RafaelMri/Pyknots</a></p>
+<ul>
+<li><p>Step-by-step handle reduction</p></li>
+<li><p><a class="reference external" href="https://github.com/RafaelMri/Pyknots/blob/10254b7ea36e67544bf6867f88bad85b872ffa75/modules/braids.py#L11">Braid code reference</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="video-resource">
+<h2>📺 Video Resource<a class="headerlink" href="#video-resource" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.youtube.com/watch?v=8DBhTXM_Br4">YouTube: Braids Explained</a></p></li>
+</ul>
+</section>
 </section>
 
 
