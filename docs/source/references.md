@@ -1,8 +1,9 @@
 # 🧶 Braid Group: Code Resources, Visualizations & Research
 
-## 📘 Wikipedia Overview
+## 📘 General background wikis on braid theory
 
 - [Braid group on Wikipedia](https://en.wikipedia.org/wiki/Braid_group)
+- https://ncatlab.org/nlab/show/braid+group
 
 ---
 
@@ -46,8 +47,8 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
 
 ## 🐍 Python Libraries (GitHub & PyPI)
 
-- [math-braid (PyPI)](https://pypi.org/project/math-braid)  
-- [kuboon/math_braid.py](https://github.com/kuboon/math_braid.py)  
+
+- [kuboon/math_braid.py](https://github.com/kuboon/math_braid.py)  is available on [PyPI](https://pypi.org/project/math-braid)  
     - Last updated 6 years ago  
     - Scarce documentation  
     - BSD license (usable with wrapper or code import)  
@@ -62,7 +63,7 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
       ```
 - [rexgreenway/alexander-data](https://github.com/rexgreenway/alexander-data) – Invariant calculation (not on PyPI)  
 - [leodana/TIPE](https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py) – Dense, untested student code  
-
+https://github.com/stla/braids
 ---
 
 ## 📊 MATLAB / BraidLab
