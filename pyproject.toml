@@ -40,5 +40,6 @@ dependencies = [
     "tornado>=6.4.2",
     "math-braid (>=0.8,<0.9)",
     "myst-parser>=4.0.1",
+    "myst>=1.0.4",
 ]
 

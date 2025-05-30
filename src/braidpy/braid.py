@@ -23,6 +23,18 @@ BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
 BraidingProcess = Tuple[BraidingStep, ...]
 
 
+@dataclass(frozen=True)
+class GarsideCanonicalFactors:
+    """
+    Also known as Garside canonical form
+    https://webhomes.maths.ed.ac.uk/~v1ranick/papers/garside.pdf
+    """
+
+    n_half_twist: int
+    n_strands: int
+    ai: Tuple[int]
+
+
 class BraidWordNotation(str, enum.Enum):
     ARTIN = "ARTIN"
     ALPHA = "ALPHA"
@@ -56,6 +68,7 @@ BraidProcess = Union[int, Tuple["BraidProcess", ...]]
 @dataclass(frozen=True)
 class Braid:
     """
+    Sometimes referred as algebraic braids
     Args:
         process (BraidProcess): list of Artin's generator, which may group or not by parenthesis (tuples)
         n_strands (Optional[int]): number of strands. Default to the minimum number needed for process
@@ -206,8 +219,24 @@ class Braid:
         """
         return Braid([g for g in self.generators if g != 0], self.n_strands)
 
-    def __len__(self):
+    def word_length(self):
+        """
+        Length of the word including neutral element
+
+        Returns:
+            int: the length of the braid word
+        """
+
         return len(self.generators)
+
+    def __len__(self):
+        """
+        Define the length of the braid as the length of its word
+
+        Returns:
+            int: the length of the braid word
+        """
+        return self.word_length()
 
     def __mul__(self, other: "Braid") -> "Braid":
         """Compose two braids (concatenate operation of other after self
@@ -230,6 +259,12 @@ class Braid:
             return (self ** (-n)).inverse()
 
     def __key(self):
+        """
+        Enables to get a key on the braid (used by hash function)
+
+        Returns:
+            Tuple: key constructed with the Artin's generators and the number of strands
+        """
         return tuple(self.generators + [self.n_strands])
 
     def word_eq(self, other):
@@ -243,16 +278,23 @@ class Braid:
         Check if two braids are equivalent
         We ask to get the same number of strands
 
-        Relies on math_braid implementation from Cha and all paper.
+        Relies on math_braid implementation from J. Cha et al, "An Efficient Implementation of Braid Groups",
+        Advances in Cryptology: Proceedings of ASIACRYPT 2001,
+        Lecture Notes in Computer Science (2001), 144--156.
         https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
 
-        Might not be the best algorithm compare to handle reduction.
+        Complexity is in O(l²n.log n) where n is the word size and l correspond roughly to the number of strands.
+
+        Might not be the best algorithm compared to handle reduction which is efficient in practice and
+        whose complexity is assumed to be linear in O(n), but without proof and an exponential majorant.
+        ON WORD REVERSING IN BRAID GROUPS PATRICK DEHORNOY AND BERT WIEST
+        https://dehornoy.lmno.cnrs.fr/Papers/Dhg.pdf
 
         Args:
-            other(Braid):
+            other(Braid): the braid to compare with
 
         Returns:
-
+            bool: True if the braid are topologically equivalent
         """
         if self.n_strands != other.n_strands:
             return False
@@ -333,7 +375,9 @@ class Braid:
         b = self
         for i in range(abs(self.n_strands)):
             b = b * (
-                slide_strand(1, self.n_strands - i - 1, np.sign(sign)).n(self.n_strands)
+                slide_strand(
+                    start_index=1, n_slide=self.n_strands - i - 1, sign=np.sign(sign)
+                ).n(self.n_strands)
             )
 
         return b
@@ -388,6 +432,22 @@ class Braid:
     def writhe(self) -> int:
         """Calculate the writhe of the braid (sum of generator powers)"""
         return sum(np.sign(self.generators))
+
+    def get_canonical_factors(self):
+        """
+        Get decomposition in left normal form
+
+        Relies on math_braid implementation from J. Cha et al, "An Efficient Implementation of Braid Groups",
+        Advances in Cryptology: Proceedings of ASIACRYPT 2001,
+        Lecture Notes in Computer Science (2001), 144--156.
+        https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
+
+        Returns:
+            GarsideCanonicalFactors: the unique decomposition of the braid according to left convention
+        """
+        b = math_braid.Braid(list(self.generators), self.n_strands)
+        b.cleanUpFactors()
+        return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, ai=b.a)
 
     def garside_length(self) -> int:
         """
@@ -507,6 +567,22 @@ class Braid:
         """
         return self.inverse().generators == self.generators
 
+    def is_periodic(self):
+        """
+        braid x is periodic if and only if its nth power or its (n − 1)st power is a power of the half-twist ∆
+
+        https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf
+
+        Periodic braid are roots of ∆**m
+        https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf
+        """
+
+        return (self ** (2 * self.n_strands)).perm() == list(
+            range(1, self.n_strands + 1)
+        ) or (self ** (2 * (self.n_strands - 1))).perm() == list(
+            range(1, self.n_strands + 1)
+        )
+
     def cyclic_conjugates(self):
         """
         Under construction
@@ -602,19 +678,46 @@ class Braid:
         return b
 
 
-def slide_strand(start_index, n_slide, sign):
+def slide_strand(n_slide, start_index=1, sign: int = +1):
     """
-    Combine Artin Generator to move one braid over or under several braid
+    Combine Artin Generator to move one braid over or under several braids
+
+    This is noted as (ai...as) by Garside where i=start_index and s= i+n_slide
+
+    Πs corresponds to start_index=1 (default) and n_slide=s-1
+
+
     Args:
-        start_index:
-        end_index:
-        sign:
+        n_slide (int): number of crossings
+        start_index(Optional(int)): index of the strand to move. Default to 1
+        sign(Optional[int]): positive if the start strand is going over. Default to +1
 
     Returns:
-
+        Braid: the corresponding braid
     """
 
     b = Braid(0, n_strands=n_slide + start_index)
     for i in range(0, n_slide):
         b = b * Braid(sign * (start_index + i), n_strands=n_slide + start_index)
+    return b.no_zero()
+
+
+def weave_strand(n_slide, start_index=1, sign: int = +1):
+    """
+    Combine Artin Generator to move one braid over/under/over... or under/over/under... several braids
+
+    Args:
+        n_slide (int): number of crossings
+        start_index(Optional(int)): index of the strand to move. Default to 1
+        sign(Optional[int]): positive if the start strand is first going over. Default to +1
+
+    Returns:
+        Braid: the corresponding braid
+    """
+
+    b = Braid(0, n_strands=n_slide + start_index)
+    for i in range(0, n_slide):
+        b = b * Braid(
+            sign * (start_index + i) * (-1) ** i, n_strands=n_slide + start_index
+        )
     return b.no_zero()
