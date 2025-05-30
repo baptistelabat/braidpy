@@ -5,6 +5,7 @@
 - [Braid on Wikipedia](https://en.wikipedia.org/wiki/Braid)
 - [Braid group on Wikipedia](https://en.wikipedia.org/wiki/Braid_group)
 - https://ncatlab.org/nlab/show/braid+group
+- https://www.labri.fr/perso/marckert/poulalhon.pdf
 
 ---
 
@@ -22,7 +23,8 @@
 - [rexgreenway/braid-visualiser](https://github.com/rexgreenway/braid-visualiser) – Flat diagram visualization, available on [PyPI](https://pypi.org/project/braidvisualiser/)  -> used by braidpy   
 - ([Denbox/Braid-Group-Visualization](https://github.com/Denbox/Braid-Group-Visualization/blob/master/braid_visualization.py) – Flat diagram but lacks good crossing visuals  )
 - [loopspace/braids](https://github.com/loopspace/braids) [LaTeX braids package](https://texdoc.org/serve/braids/0) – LaTeX-based braid rendering available on github. Impressive customization, good for documentation  
-
+  (https://github.com/BnZel/poses_and_braids)
+  (https://github.com/isaac-art/BraidLab) More of an art work
 Alternative Python library:
 
 - [braidpy (PyPI)](https://pypi.org/project/braidpy/)
@@ -73,6 +75,7 @@ https://github.com/stla/braids
   - Probably the best introduction to computation with braids
 ---
 
+https://github.com/jeanluct/cbraid?tab=readme-ov-file
 ## 🪢 Knots & Related Libraries
 
 Braid functions are often used in knot theory.
