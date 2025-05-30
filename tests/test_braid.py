@@ -2,7 +2,7 @@ import pytest
 from braidpy import Braid
 from sympy import symbols, Matrix
 
-from braidpy.braid import a
+from braidpy.artin_generator import a
 from braidpy.operations import conjugate
 
 

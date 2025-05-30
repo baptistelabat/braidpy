@@ -43,13 +43,25 @@ def single_crossing_braiding_process(
         if isinstance(step, Iterable):
             sequential_single_crossings_index.extend(step)
         else:
-            sequential_single_crossings_index.append(step)
+            sequential_single_crossings_index.append(
+                int(step)
+            )  # Force int type to be able to use with math_braid
     return sequential_single_crossings_index
+
+
+# Recursive type for nested tuples of integers
+BraidProcess = Union[int, Tuple["BraidProcess", ...]]
 
 
 @dataclass(frozen=True)
 class Braid:
-    process: Tuple[Tuple[int] | int, ...]
+    """
+    Args:
+        process (BraidProcess): list of Artin's generator, which may group or not by parenthesis (tuples)
+        n_strands (Optional[int]): number of strands. Default to the minimum number needed for process
+    """
+
+    process: BraidProcess
     n_strands: Optional[int] = field(default=None)
 
     def __post_init__(self):
@@ -305,26 +317,46 @@ class Braid:
         gen = [-np.sign(g) * (self.n_strands - abs(g)) for g in self.generators]
         return Braid(gen, self.n_strands)
 
-    def half_twist(self, sign):
+    def half_twist(self, sign: int = +1):
         """
         Twist the braid with half a turn
 
+        https://en.wikipedia.org/wiki/Twist_(differential_geometry)
+
 
         Args:
-            sign: sign of the twist. IF positive the first strand is going over
+            sign(Optional[int]): sign of the twist. IF positive the first strand is going over. Default to +1
 
         Returns:
-            Braid: the twisted brain
+            Braid: the twisted braid
         """
         b = self
         for i in range(abs(self.n_strands)):
-            b = b * (slide_strand(1, self.n_strands - i - 1, sign).n(self.n_strands))
+            b = b * (
+                slide_strand(1, self.n_strands - i - 1, np.sign(sign)).n(self.n_strands)
+            )
 
         return b
+
+    def full_twist(self, sign: int = +1):
+        """
+        Twist the braid with a complete turn
+
+        https://en.wikipedia.org/wiki/Twist_(differential_geometry)
+
+        Args:
+            sign(Optional[int]): sign of the twist. IF positive the first strand is going over. Default to +1
+
+        Returns:
+            Braid: the twisted braid
+        """
+        return self.half_twist(sign=sign).half_twist(sign=sign)
 
     def up_side_down(self):
         """
         Invert up and down crossing operations
+
+        For hair braiding this is called "inversé"
 
         Returns:
             Braid: the mirrored braid
@@ -349,12 +381,28 @@ class Braid:
         if not self.generators:
             return True
         mg = self.main_generator
+
         signs = [g > 0 for g in self.generators if abs(g) == mg]
         return all(signs) or not any(signs)
 
     def writhe(self) -> int:
         """Calculate the writhe of the braid (sum of generator powers)"""
         return sum(np.sign(self.generators))
+
+    def garside_length(self) -> int:
+        """
+        Estimate the Garside length of the braid (sum of absolute value of generator powers)
+
+        \todo braid should be in canonical form
+        """
+        return sum(np.abs(self.generators))
+
+    def floor(self) -> float:
+        """
+        Estimate the Dehornoy floor of the braid (approximately half the Garside length)
+        \todo braid should be in canonical form
+        """
+        return self.garside_length() / 2
 
     def to_matrix(self) -> Matrix:
         """Convert braid to its (unreduced) Burau matrix representation."""
@@ -424,6 +472,9 @@ class Braid:
 
     def perm(self):
         """
+        Compute the permutation corresponding to the braid
+
+        This is a braid invariant.
 
         Returns:
             list: return the final permutation due to braid
@@ -437,22 +488,47 @@ class Braid:
     def is_palindromic(self):
         return self.generators == self.generators[::-1]
 
+    def is_positive(self):
+        """
+        Returns True if the braid word is Dehornoy positive
+
+        Returns:
+            bool: True if braid word is positive
+        """
+        return np.all([g >= 0 for g in self.generators])
+
     def is_involutive(self):
         """
+        Returns true if inverse of braid word ie the same as braid word
         This probably works only for the neutral element
 
         Returns:
-
+            bool: True if braid word is involutive
         """
         return self.inverse().generators == self.generators
 
     def cyclic_conjugates(self):
+        """
+        Under construction
+
+        Returns:
+
+        """
         return [
             self.generators[i:] + self.generators[:i]
             for i in range(len(self.generators))
         ]
 
     def is_equivalent_to(self, other):
+        """
+        Under construction
+
+        Args:
+            other: the braid to compare with
+
+        Returns:
+            bool
+        """
         if self.n != other.n:
             return False
         return any(conj == other.word for conj in self.cyclic_conjugates())
@@ -465,11 +541,18 @@ class Braid:
         https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids
 
         Returns:
-            bool
+            bool: True if Brunnian
         """
         raise NotImplementedError()
 
     def draw(self):
+        """
+        Draw the braid in the terminal with arrows allowing
+        to better check the differnet operations (with colors !)
+
+        Returns:
+            Braid: return the braid itself to allow to debug in a chain
+        """
         self.permutations(plot=True)
 
         # Return self to enable to chain the different steps
@@ -477,30 +560,33 @@ class Braid:
 
     def plot(self, style="ext", line_width=3, gap_size=3, color="rainbow", save=False):
         """
-        style : "comp" or "ext"
-            "comp" renders the image of the braid in a compact style with
-            crossings parallel to one another if possible. "ext", for extended,
-            shows the crossings in series.
-        line_width : int (Default = 3)
-            Thickness of the strands in the figure.
-        gap_size : int (Default = 3)
-            Amount of space shown at crossings for undercrossing strands.
-        color : str
-            Multicolor strands defined by "rainbow". Single fixed colour for
-            all strands can be chosen from:
-                {'b': blue,
-                'g': green,
-                'r': red,
-                'c': cyan,
-                'm': magenta,
-                'y': yellow,
-                'k': black,
-                'w': white}
+        Plot the braid using library braid-visualiser
+        https://github.com/rexgreenway/braid-visualiser
+
         Args:
-            save:
+            style(Optional(str)): "comp" or "ext"(default)
+                "comp" renders the image of the braid in a compact style with
+                crossings parallel to one another if possible. "ext", for extended,
+                shows the crossings in series.
+            line_width(Optional(int)): Default to 3
+                Thickness of the strands in the figure.
+            gap_size(Optional(int)): Default to 3
+                Amount of space shown at crossings for undercrossing strands.
+            color(str):
+                Multicolor strands defined by "rainbow". Single fixed colour for
+                all strands can be chosen from:
+                    {'b': blue,
+                    'g': green,
+                    'r': red,
+                    'c': cyan,
+                    'm': magenta,
+                    'y': yellow,
+                    'k': black,
+                    'w': white}
+            save(bool): if True save to file "test.svg"
 
         Returns:
-
+            Braid: return the slightly modified braid to allow to debug in a chain
         """
         # Neutral elements are not supported by library used
         compact = self.no_zero()
@@ -513,35 +599,7 @@ class Braid:
             gap_size=gap_size,
             color=color,
         )
-
-
-class a(Braid):
-    """
-    This class is a shortcut to be able to use a compact notation with Artin Generator
-    """
-
-    def __mul__(self, other: "Braid") -> "Braid":
-        """Compose two braids (concatenate operation of other after self
-
-        This corresponds to multiplication of two braids in braid theory"""
-
-        # Take max number of strands in this case
-        n_strands = max(self.n_strands, other.n_strands)
-
-        return Braid(self.generators + other.generators, n_strands)
-
-    def __rmul__(self, other: "Braid") -> "Braid":
-        """Compose two braids (concatenate operation of other after self
-
-        This corresponds to multiplication of two braids in braid theory"""
-
-        # Take max number of strands in this case
-        n_strands = max(self.n_strands, other.n_strands)
-
-        return Braid(other.generators + self.generators, n_strands)
-
-    def __repr__(self) -> str:
-        return f"a({self.generators[0]})"
+        return b
 
 
 def slide_strand(start_index, n_slide, sign):
@@ -556,7 +614,7 @@ def slide_strand(start_index, n_slide, sign):
 
     """
 
-    b = a(0)
+    b = Braid(0, n_strands=n_slide + start_index)
     for i in range(0, n_slide):
-        b = b * a(sign * (start_index + i))
-    return b
+        b = b * Braid(sign * (start_index + i), n_strands=n_slide + start_index)
+    return b.no_zero()
