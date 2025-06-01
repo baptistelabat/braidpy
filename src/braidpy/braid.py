@@ -13,8 +13,6 @@ import matplotlib
 import math_braid
 from collections.abc import Iterable
 
-matplotlib.use("qtagg")
-
 t = symbols("t")
 
 # Define a type alias for clarity
