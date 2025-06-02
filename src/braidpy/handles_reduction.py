@@ -1,10 +1,11 @@
-from typing import List, Callable, Literal, Optional
+from typing import List, Literal, Optional
 
 import numpy as np
 
-from src.braidpy import Braid
+from braidpy import Braid
 
 ReductionOutcome = Literal["continue", "less", "greater", "equal", "incomparable"]
+
 
 def dehornoy_handle_indices(gens):
     """
@@ -19,9 +20,10 @@ def dehornoy_handle_indices(gens):
         for i in range(j):
             if gens[i] == g:
                 # Check all between gens[i+1 : j] are strictly larger in absolute value
-                if all(abs(h) > abs(g) for h in gens[i+1:j]):
+                if all(abs(h) > abs(g) for h in gens[i + 1 : j]):
                     return i, j  # first such handle found
     return None
+
 
 def reduce_handle(segment):
     """
@@ -30,7 +32,7 @@ def reduce_handle(segment):
     """
 
     m = abs(segment[0])
-    e= np.sign(segment[0])
+    e = np.sign(segment[0])
     if segment[-1] != -segment[0]:
         return segment  # not a valid Dehornoy handle
 
@@ -39,24 +41,20 @@ def reduce_handle(segment):
 
     for g in u:
         abs_g = abs(g)
-        d= np.sign(g)
+        d = np.sign(g)
 
         if abs_g == m + 1:
             # Replace σ_{m+1} with σ_{m+1}^{-1} * σ_m * σ_{m+1}
-            replacement = [
-                -e * (m + 1),
-                d * m,
-                e * (m + 1)
-            ]
+            replacement = [-e * (m + 1), d * m, e * (m + 1)]
             result.extend(replacement)
         else:
             result.append(g)
 
     return result
 
+
 def dehornoy_reduce_core(
-        gens: List[int],
-        mode: Literal["full", "compare"] = "full"
+    gens: List[int], mode: Literal["full", "compare"] = "full"
 ) -> tuple[List[int], Optional[str]]:
     """
     Unified Dehornoy reduction engine.
@@ -86,8 +84,8 @@ def dehornoy_reduce_core(
         i, j = handle
 
         # Apply Dehornoy handle reduction (this part was wrong before)
-        reduced_segment = reduce_handle(gens[i:j + 1])
-        gens = gens[:i] + reduced_segment + gens[j + 1:]
+        reduced_segment = reduce_handle(gens[i : j + 1])
+        gens = gens[:i] + reduced_segment + gens[j + 1 :]
         print(Braid(gens).format_to_notation(target="alpha"))
 
     if mode == "compare":

@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from braidpy.utils import int_to_superscript, int_to_subscript, colorize
 
 import braidvisualiser as bv
-import matplotlib
 
 import math_braid
 from collections.abc import Iterable
