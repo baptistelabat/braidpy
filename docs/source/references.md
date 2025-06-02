@@ -47,6 +47,7 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
     - DynnikovCoordinates  
     - Dual generator  
 - [TU/e paper on Dehornoy](https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf)
+- https://github.com/jfromentin/handle
 
 ---
 
