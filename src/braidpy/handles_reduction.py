@@ -1,11 +1,19 @@
+from enum import Enum
 from typing import List, Literal, Optional
 
 import numpy as np
 
 from braidpy import Braid
 
-ReductionOutcome = Literal["continue", "less", "greater", "equal", "incomparable"]
+class FunctionalException(Exception):
+    pass
 
+class HandleReducedButUnexpectedResult(FunctionalException):
+    pass
+
+class HandleReductionMode(str, Enum):
+    FULL="FULL"
+    COMPARE="COMPARE"
 
 def dehornoy_handle_indices(gens):
     """
@@ -52,31 +60,52 @@ def reduce_handle(segment):
 
     return result
 
+def dehornoy_sign(gens: List[int]):
+    """
+
+    """
+    if gens:
+        mg = min(abs(g) for g in gens)
+        signs = [np.sign(g) for g in gens if abs(g) == mg]
+        if all([s>=0 for s in signs]):
+            return 1
+        elif all([s<=0 for s in signs]):  # all negative
+            return -1
+        elif all([s==0 for s in signs]):
+            return 0
+        else:
+            return None
+    else:
+        return 0
 
 def dehornoy_reduce_core(
-    gens: List[int], mode: Literal["full", "compare"] = "full"
-) -> tuple[List[int], Optional[str]]:
+    gens: List[int], mode: HandleReductionMode = HandleReductionMode.FULL
+) -> tuple[List[int], Optional[int]]:
     """
     Unified Dehornoy reduction engine.
     - `mode="full"`: returns the fully reduced word.
-    - `mode="compare"`: returns early if positive/negative.
+    - `mode="compare"`: returns early if positive/neutral/negative.
 
-    Returns: (reduced_gens, status) where status is:
-        - 'less' or 'greater' if early comparison detected
-        - 'equal' if reduced to empty word
-        - 'incomparable' if reduction halts with no decision
-        - None if in full reduction mode
+    Returns: (reduced_gens, sign) where sign is:
+        - 1 if Dehornoy positive
+        - -1 if Dehornoy negative
+        - 0 if neutral element
+        - None in case it can not be said without reducing handles further
     """
     gens = list(gens)
 
+    # Suppress potential zero
+    gens = [g for g in gens if g != 0]
+
+    if not isinstance(mode, HandleReductionMode):
+        mode=HandleReductionMode(mode.upper())
+
     while True:
-        if mode == "compare" and gens:
-            mg = min(abs(g) for g in gens)
-            signs = [g > 0 for g in gens if abs(g) == mg]
-            if all(signs):
-                return gens, "less"
-            elif not any(signs):  # all negative
-                return gens, "greater"
+        if mode == HandleReductionMode.COMPARE:
+            sign = dehornoy_sign(gens)
+            if sign in [-1, 0, +1]:
+                return gens, sign
+
 
         handle = dehornoy_handle_indices(gens)
         if not handle:
@@ -88,6 +117,7 @@ def dehornoy_reduce_core(
         gens = gens[:i] + reduced_segment + gens[j + 1 :]
         print(Braid(gens).format_to_notation(target="alpha"))
 
-    if mode == "compare":
-        return gens, "equal" if not gens else "incomparable"
-    return gens, None
+    sign = dehornoy_sign(gens)
+    if sign is None:
+        raise HandleReducedButUnexpectedResult(f"Braid word reduced to {gens}, but sign can not be determined which is unexpected")
+    return gens, sign
