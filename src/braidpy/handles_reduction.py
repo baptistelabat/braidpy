@@ -1,19 +1,25 @@
+import time
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import List, Optional
 
 import numpy as np
 
 from braidpy import Braid
+from braidpy.braid import SignedCrossingIndex
+
 
 class FunctionalException(Exception):
     pass
 
+
 class HandleReducedButUnexpectedResult(FunctionalException):
     pass
 
+
 class HandleReductionMode(str, Enum):
-    FULL="FULL"
-    COMPARE="COMPARE"
+    FULL = "FULL"
+    COMPARE = "COMPARE"
+
 
 def dehornoy_handle_indices(gens):
     """
@@ -42,7 +48,7 @@ def reduce_handle(segment):
     m = abs(segment[0])
     e = np.sign(segment[0])
     if segment[-1] != -segment[0]:
-        return segment  # not a valid Dehornoy handle
+        raise ValueError(f"Segment {segment} is not a valid Dehornoy handle")
 
     u = segment[1:-1]
     result = []
@@ -60,31 +66,40 @@ def reduce_handle(segment):
 
     return result
 
-def dehornoy_sign(gens: List[int]):
-    """
 
-    """
+def dehornoy_sign(gens: List[int]):
+    """ """
     if gens:
         mg = min(abs(g) for g in gens)
         signs = [np.sign(g) for g in gens if abs(g) == mg]
-        if all([s>=0 for s in signs]):
+        if all([s >= 0 for s in signs]):
             return 1
-        elif all([s<=0 for s in signs]):  # all negative
+        elif all([s <= 0 for s in signs]):  # all negative
             return -1
-        elif all([s==0 for s in signs]):
+        elif all([s == 0 for s in signs]):
             return 0
         else:
             return None
     else:
         return 0
 
+
 def dehornoy_reduce_core(
-    gens: List[int], mode: HandleReductionMode = HandleReductionMode.FULL
+    gens: List[SignedCrossingIndex],
+    mode: HandleReductionMode | str = HandleReductionMode.FULL,
+    time_out_s: float = 1,
 ) -> tuple[List[int], Optional[int]]:
     """
     Unified Dehornoy reduction engine.
-    - `mode="full"`: returns the fully reduced word.
-    - `mode="compare"`: returns early if positive/neutral/negative.
+
+
+    Args:
+        -gens(List[int]): list of Artin's generators
+        -mode(HandleReductionMode | str):
+            "FULL": returns the fully reduced word.
+            "COMPARE`: returns early if positive/neutral/negative.
+        -time_out_s(Optional(float)): safety timeout. Default to 1
+
 
     Returns: (reduced_gens, sign) where sign is:
         - 1 if Dehornoy positive
@@ -93,19 +108,21 @@ def dehornoy_reduce_core(
         - None in case it can not be said without reducing handles further
     """
     gens = list(gens)
+    non_integers = [x for x in gens if not isinstance(x, (int, np.integer))]
+    if non_integers:
+        raise ValueError(f"All generators should be integers but got {non_integers}")
 
     # Suppress potential zero
     gens = [g for g in gens if g != 0]
 
     if not isinstance(mode, HandleReductionMode):
-        mode=HandleReductionMode(mode.upper())
-
-    while True:
+        mode = HandleReductionMode(mode.upper())
+    t0 = time.time()
+    while abs(time.time() - t0) < time_out_s:
         if mode == HandleReductionMode.COMPARE:
             sign = dehornoy_sign(gens)
             if sign in [-1, 0, +1]:
                 return gens, sign
-
 
         handle = dehornoy_handle_indices(gens)
         if not handle:
@@ -119,5 +136,7 @@ def dehornoy_reduce_core(
 
     sign = dehornoy_sign(gens)
     if sign is None:
-        raise HandleReducedButUnexpectedResult(f"Braid word reduced to {gens}, but sign can not be determined which is unexpected")
+        raise HandleReducedButUnexpectedResult(
+            f"Braid word reduced to {gens}, but sign can not be determined which is unexpected. Consider increasing timeout if necessary"
+        )
     return gens, sign
