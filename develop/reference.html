@@ -1,0 +1,704 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Title &mdash; braidpy 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="🛠️ Usage Guide" href="usage.html" />
+    <link rel="prev" title="🚧 Documentation in Progress" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Title</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid.GarsideCanonicalFactors"><code class="docutils literal notranslate"><span class="pre">GarsideCanonicalFactors</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.GarsideCanonicalFactors.n_half_twist"><code class="docutils literal notranslate"><span class="pre">GarsideCanonicalFactors.n_half_twist</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.GarsideCanonicalFactors.n_strands"><code class="docutils literal notranslate"><span class="pre">GarsideCanonicalFactors.n_strands</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.GarsideCanonicalFactors.ai"><code class="docutils literal notranslate"><span class="pre">GarsideCanonicalFactors.ai</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid.BraidWordNotation"><code class="docutils literal notranslate"><span class="pre">BraidWordNotation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.BraidWordNotation.ARTIN"><code class="docutils literal notranslate"><span class="pre">BraidWordNotation.ARTIN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.BraidWordNotation.ALPHA"><code class="docutils literal notranslate"><span class="pre">BraidWordNotation.ALPHA</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.BraidWordNotation.DEFAULT"><code class="docutils literal notranslate"><span class="pre">BraidWordNotation.DEFAULT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid.single_crossing_braiding_process"><code class="docutils literal notranslate"><span class="pre">single_crossing_braiding_process()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid.Braid"><code class="docutils literal notranslate"><span class="pre">Braid</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.process"><code class="docutils literal notranslate"><span class="pre">Braid.process</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.n_strands"><code class="docutils literal notranslate"><span class="pre">Braid.n_strands</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.generators"><code class="docutils literal notranslate"><span class="pre">Braid.generators</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.main_generator"><code class="docutils literal notranslate"><span class="pre">Braid.main_generator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.format_to_notation"><code class="docutils literal notranslate"><span class="pre">Braid.format_to_notation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.format"><code class="docutils literal notranslate"><span class="pre">Braid.format()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.no_zero"><code class="docutils literal notranslate"><span class="pre">Braid.no_zero()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.word_length"><code class="docutils literal notranslate"><span class="pre">Braid.word_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.word_eq"><code class="docutils literal notranslate"><span class="pre">Braid.word_eq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.inverse"><code class="docutils literal notranslate"><span class="pre">Braid.inverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.n"><code class="docutils literal notranslate"><span class="pre">Braid.n()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.flip"><code class="docutils literal notranslate"><span class="pre">Braid.flip()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.half_twist"><code class="docutils literal notranslate"><span class="pre">Braid.half_twist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.full_twist"><code class="docutils literal notranslate"><span class="pre">Braid.full_twist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.up_side_down"><code class="docutils literal notranslate"><span class="pre">Braid.up_side_down()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_reduced"><code class="docutils literal notranslate"><span class="pre">Braid.is_reduced()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.writhe"><code class="docutils literal notranslate"><span class="pre">Braid.writhe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.get_canonical_factors"><code class="docutils literal notranslate"><span class="pre">Braid.get_canonical_factors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.garside_length"><code class="docutils literal notranslate"><span class="pre">Braid.garside_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.floor"><code class="docutils literal notranslate"><span class="pre">Braid.floor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.to_matrix"><code class="docutils literal notranslate"><span class="pre">Braid.to_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.to_reduced_matrix"><code class="docutils literal notranslate"><span class="pre">Braid.to_reduced_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_trivial"><code class="docutils literal notranslate"><span class="pre">Braid.is_trivial()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.permutations"><code class="docutils literal notranslate"><span class="pre">Braid.permutations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.perm"><code class="docutils literal notranslate"><span class="pre">Braid.perm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_pure"><code class="docutils literal notranslate"><span class="pre">Braid.is_pure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_palindromic"><code class="docutils literal notranslate"><span class="pre">Braid.is_palindromic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_positive"><code class="docutils literal notranslate"><span class="pre">Braid.is_positive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_involutive"><code class="docutils literal notranslate"><span class="pre">Braid.is_involutive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_periodic"><code class="docutils literal notranslate"><span class="pre">Braid.is_periodic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.cyclic_conjugates"><code class="docutils literal notranslate"><span class="pre">Braid.cyclic_conjugates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_equivalent_to"><code class="docutils literal notranslate"><span class="pre">Braid.is_equivalent_to()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_brunnian"><code class="docutils literal notranslate"><span class="pre">Braid.is_brunnian()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.draw"><code class="docutils literal notranslate"><span class="pre">Braid.draw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.plot"><code class="docutils literal notranslate"><span class="pre">Braid.plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid.slide_strand"><code class="docutils literal notranslate"><span class="pre">slide_strand()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid.weave_strand"><code class="docutils literal notranslate"><span class="pre">weave_strand()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Title</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/reference.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-braidpy.braid">
+<span id="title"></span><h1>Title<a class="headerlink" href="#module-braidpy.braid" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="braidpy.braid.GarsideCanonicalFactors">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.braid.</span></span><span class="sig-name descname"><span class="pre">GarsideCanonicalFactors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_half_twist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_strands</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ai</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.GarsideCanonicalFactors" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Also known as Garside canonical form
+<a class="reference external" href="https://webhomes.maths.ed.ac.uk/~v1ranick/papers/garside.pdf">https://webhomes.maths.ed.ac.uk/~v1ranick/papers/garside.pdf</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.GarsideCanonicalFactors.n_half_twist">
+<span class="sig-name descname"><span class="pre">n_half_twist</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></em><a class="headerlink" href="#braidpy.braid.GarsideCanonicalFactors.n_half_twist" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.GarsideCanonicalFactors.n_strands">
+<span class="sig-name descname"><span class="pre">n_strands</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></em><a class="headerlink" href="#braidpy.braid.GarsideCanonicalFactors.n_strands" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.GarsideCanonicalFactors.ai">
+<span class="sig-name descname"><span class="pre">ai</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#braidpy.braid.GarsideCanonicalFactors.ai" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="braidpy.braid.BraidWordNotation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.braid.</span></span><span class="sig-name descname"><span class="pre">BraidWordNotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.BraidWordNotation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.BraidWordNotation.ARTIN">
+<span class="sig-name descname"><span class="pre">ARTIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ARTIN'</span></em><a class="headerlink" href="#braidpy.braid.BraidWordNotation.ARTIN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.BraidWordNotation.ALPHA">
+<span class="sig-name descname"><span class="pre">ALPHA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ALPHA'</span></em><a class="headerlink" href="#braidpy.braid.BraidWordNotation.ALPHA" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.BraidWordNotation.DEFAULT">
+<span class="sig-name descname"><span class="pre">DEFAULT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DEFAULT'</span></em><a class="headerlink" href="#braidpy.braid.BraidWordNotation.DEFAULT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid.single_crossing_braiding_process">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid.</span></span><span class="sig-name descname"><span class="pre">single_crossing_braiding_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">process</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid.single_crossing_braiding_process" title="Link to this definition"></a></dt>
+<dd><p>Flattens a tuple of braiding steps into a list of signed crossings.</p>
+<p>Each step may be a single crossing or multiple simultaneous crossings.
+To get Artin generators we need only consecutive single crossing, which is topologically equivalent</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="braidpy.braid.Braid">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.braid.</span></span><span class="sig-name descname"><span class="pre">Braid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">process</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">BraidProcess</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_strands</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Sometimes referred as algebraic braids
+:param process: list of Artin’s generator, which may group or not by parenthesis (tuples)
+:type process: BraidProcess
+:param n_strands: number of strands. Default to the minimum number needed for process
+:type n_strands: Optional[int]</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.process">
+<span class="sig-name descname"><span class="pre">process</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">BraidProcess</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#braidpy.braid.Braid.process" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.n_strands">
+<span class="sig-name descname"><span class="pre">n_strands</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#braidpy.braid.Braid.n_strands" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.generators">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">generators</span></span><a class="headerlink" href="#braidpy.braid.Braid.generators" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.main_generator">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">main_generator</span></span><a class="headerlink" href="#braidpy.braid.Braid.main_generator" title="Link to this definition"></a></dt>
+<dd><p>A main generator of a braid word w is the generator with the lowest index
+<a class="reference external" href="https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf">https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf</a> page 33</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.format_to_notation">
+<span class="sig-name descname"><span class="pre">format_to_notation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.format_to_notation" title="Link to this definition"></a></dt>
+<dd><p>Inspired from <a class="reference external" href="https://github.com/abhikpal/dehornoy/blob/master/braid.py">https://github.com/abhikpal/dehornoy/blob/master/braid.py</a></p>
+<p>Allow for targets:</p>
+<p>The Artin representation can also be used in a latex file.</p>
+<p>The neutral element is ‘e’ for the Artin representation and ‘#’ for alpha.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Among
+‘alpha’: for example ‘aBa’
+‘artin’  for example ‘s_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}’
+‘default’</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the formated braid word</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.format">
+<span class="sig-name descname"><span class="pre">format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generator_symbols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse_generator_symbols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_symbol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'e'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.format" title="Link to this definition"></a></dt>
+<dd><p>Allow to format the braid word following different formats.</p>
+<p>Note that the power are limited to -1/1 due to the actual braid word definition (not possible to display σ₁² for example)</p>
+<p>See also format_to_notation for simpler predefined format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generator_symbols</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em><em>)</em>) – Default to [“σ₁”, “σ₂”, …]</p></li>
+<li><p><strong>inverse_generator_symbols</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em><em>)</em>) – Default to [“σ₁⁻¹”, …]</p></li>
+<li><p><strong>zero_symbol</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>)</em>) – Default to “e</p></li>
+<li><p><strong>separator</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>)</em>) – Default to “”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the formated braid word</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.no_zero">
+<span class="sig-name descname"><span class="pre">no_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.no_zero" title="Link to this definition"></a></dt>
+<dd><p>Suppress all the zero steps (multiplication by neutral element)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Braid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.word_length">
+<span class="sig-name descname"><span class="pre">word_length</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.word_length" title="Link to this definition"></a></dt>
+<dd><p>Length of the word including neutral element</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the length of the braid word</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.word_eq">
+<span class="sig-name descname"><span class="pre">word_eq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.word_eq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.inverse">
+<span class="sig-name descname"><span class="pre">inverse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.inverse" title="Link to this definition"></a></dt>
+<dd><p>Return the inverse of the braid
+This corresponds to the image of the braid in a mirror.
+Both order and signs are reversed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the inverse braid</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.n">
+<span class="sig-name descname"><span class="pre">n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.n" title="Link to this definition"></a></dt>
+<dd><p>Compact notation to allow to change the number of strands</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_strands</strong></p>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.flip">
+<span class="sig-name descname"><span class="pre">flip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.flip" title="Link to this definition"></a></dt>
+<dd><p>Flip the braid
+This corresponds to the image of the braid in a mirror on the side of the braid reordered from left to right
+The strands are reversed, not the order of operations
+Sign is also changed.
+This step is often used when braiding</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basic_3_braid</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span><span class="o">*</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">flip</span><span class="p">()))</span><span class="o">**</span><span class="mi">3</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the reversed braid</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.half_twist">
+<span class="sig-name descname"><span class="pre">half_twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.half_twist" title="Link to this definition"></a></dt>
+<dd><p>Twist the braid with half a turn</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Twist_(differential_geometry">https://en.wikipedia.org/wiki/Twist_(differential_geometry</a>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sign</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) – sign of the twist. IF positive the first strand is going over. Default to +1</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the twisted braid</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.full_twist">
+<span class="sig-name descname"><span class="pre">full_twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.full_twist" title="Link to this definition"></a></dt>
+<dd><p>Twist the braid with a complete turn</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Twist_(differential_geometry">https://en.wikipedia.org/wiki/Twist_(differential_geometry</a>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sign</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) – sign of the twist. IF positive the first strand is going over. Default to +1</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the twisted braid</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.up_side_down">
+<span class="sig-name descname"><span class="pre">up_side_down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.up_side_down" title="Link to this definition"></a></dt>
+<dd><p>Invert up and down crossing operations</p>
+<p>For hair braiding this is called “inversé”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the mirrored braid</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_reduced">
+<span class="sig-name descname"><span class="pre">is_reduced</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_reduced" title="Link to this definition"></a></dt>
+<dd><p>A braid word w is reduced either if it is the null string, or the empty braid, or if the main
+generator of w occurs only positively or only negatively.
+<a class="reference external" href="https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf">https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf</a> page 33</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.writhe">
+<span class="sig-name descname"><span class="pre">writhe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.writhe" title="Link to this definition"></a></dt>
+<dd><p>Calculate the writhe of the braid (sum of generator powers)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.get_canonical_factors">
+<span class="sig-name descname"><span class="pre">get_canonical_factors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.get_canonical_factors" title="Link to this definition"></a></dt>
+<dd><p>Get decomposition in left normal form</p>
+<p>Relies on math_braid implementation from J. Cha et al, “An Efficient Implementation of Braid Groups”,
+Advances in Cryptology: Proceedings of ASIACRYPT 2001,
+Lecture Notes in Computer Science (2001), 144–156.
+<a class="reference external" href="https://www.iacr.org/archive/asiacrypt2001/22480144.pdf">https://www.iacr.org/archive/asiacrypt2001/22480144.pdf</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the unique decomposition of the braid according to left convention</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.GarsideCanonicalFactors" title="braidpy.braid.GarsideCanonicalFactors">GarsideCanonicalFactors</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.garside_length">
+<span class="sig-name descname"><span class="pre">garside_length</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.garside_length" title="Link to this definition"></a></dt>
+<dd><p>Estimate the Garside length of the braid (sum of absolute value of generator powers)</p>
+<blockquote>
+<div><p>odo braid should be in canonical form</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.floor">
+<span class="sig-name descname"><span class="pre">floor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.floor" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Estimate the Dehornoy floor of the braid (approximately half the Garside length)</dt><dd><p>odo braid should be in canonical form</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.to_matrix">
+<span class="sig-name descname"><span class="pre">to_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MutableDenseMatrix</span></span></span><a class="headerlink" href="#braidpy.braid.Braid.to_matrix" title="Link to this definition"></a></dt>
+<dd><p>Convert braid to its (unreduced) Burau matrix representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.to_reduced_matrix">
+<span class="sig-name descname"><span class="pre">to_reduced_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.to_reduced_matrix" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_trivial">
+<span class="sig-name descname"><span class="pre">is_trivial</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_trivial" title="Link to this definition"></a></dt>
+<dd><p>Check if the braid is trivial (identity braid)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.permutations">
+<span class="sig-name descname"><span class="pre">permutations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid.Braid.permutations" title="Link to this definition"></a></dt>
+<dd><p>Return the permutations induced by the braid</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.perm">
+<span class="sig-name descname"><span class="pre">perm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.perm" title="Link to this definition"></a></dt>
+<dd><p>Compute the permutation corresponding to the braid</p>
+<p>This is a braid invariant.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>return the final permutation due to braid</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_pure">
+<span class="sig-name descname"><span class="pre">is_pure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_pure" title="Link to this definition"></a></dt>
+<dd><p>Check if a braid is pure (permutation is identity)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_palindromic">
+<span class="sig-name descname"><span class="pre">is_palindromic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_palindromic" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_positive">
+<span class="sig-name descname"><span class="pre">is_positive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_positive" title="Link to this definition"></a></dt>
+<dd><p>Returns True if the braid word is Dehornoy positive</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if braid word is positive</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_involutive">
+<span class="sig-name descname"><span class="pre">is_involutive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_involutive" title="Link to this definition"></a></dt>
+<dd><p>Returns true if inverse of braid word ie the same as braid word
+This probably works only for the neutral element</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if braid word is involutive</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_periodic">
+<span class="sig-name descname"><span class="pre">is_periodic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_periodic" title="Link to this definition"></a></dt>
+<dd><p>braid x is periodic if and only if its nth power or its (n − 1)st power is a power of the half-twist ∆</p>
+<p><a class="reference external" href="https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf">https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf</a></p>
+<p>Periodic braid are roots of ∆**m
+<a class="reference external" href="https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf">https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf</a></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.cyclic_conjugates">
+<span class="sig-name descname"><span class="pre">cyclic_conjugates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.cyclic_conjugates" title="Link to this definition"></a></dt>
+<dd><p>Under construction</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_equivalent_to">
+<span class="sig-name descname"><span class="pre">is_equivalent_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_equivalent_to" title="Link to this definition"></a></dt>
+<dd><p>Under construction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> – the braid to compare with</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_brunnian">
+<span class="sig-name descname"><span class="pre">is_brunnian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_brunnian" title="Link to this definition"></a></dt>
+<dd><p>A Brunnian braid is a braid that becomes trivial upon removal of any one of its strings.
+Brunnian braids form a subgroup of the braid group</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids">https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if Brunnian</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the braid in the terminal with arrows allowing
+to better check the differnet operations (with colors !)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>return the braid itself to allow to debug in a chain</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ext'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rainbow'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.plot" title="Link to this definition"></a></dt>
+<dd><p>Plot the braid using library braid-visualiser
+<a class="reference external" href="https://github.com/rexgreenway/braid-visualiser">https://github.com/rexgreenway/braid-visualiser</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>style</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>)</em>) – “comp” or “ext”(default)
+“comp” renders the image of the braid in a compact style with
+crossings parallel to one another if possible. “ext”, for extended,
+shows the crossings in series.</p></li>
+<li><p><strong>line_width</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>)</em>) – Default to 3
+Thickness of the strands in the figure.</p></li>
+<li><p><strong>gap_size</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>)</em>) – Default to 3
+Amount of space shown at crossings for undercrossing strands.</p></li>
+<li><p><strong>color</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – <p>Multicolor strands defined by “rainbow”. Single fixed colour for
+all strands can be chosen from:</p>
+<blockquote>
+<div><p>{‘b’: blue,
+‘g’: green,
+‘r’: red,
+‘c’: cyan,
+‘m’: magenta,
+‘y’: yellow,
+‘k’: black,
+‘w’: white}</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>save</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – if True save to file “test.svg”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>return the slightly modified braid to allow to debug in a chain</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid.slide_strand">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid.</span></span><span class="sig-name descname"><span class="pre">slide_strand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_slide</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.slide_strand" title="Link to this definition"></a></dt>
+<dd><p>Combine Artin Generator to move one braid over or under several braids</p>
+<p>This is noted as (ai…as) by Garside where i=start_index and s= i+n_slide</p>
+<p>Πs corresponds to start_index=1 (default) and n_slide=s-1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_slide</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – number of crossings</p></li>
+<li><p><strong>start_index</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>)</em>) – index of the strand to move. Default to 1</p></li>
+<li><p><strong>sign</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) – positive if the start strand is going over. Default to +1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the corresponding braid</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid.weave_strand">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid.</span></span><span class="sig-name descname"><span class="pre">weave_strand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_slide</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.weave_strand" title="Link to this definition"></a></dt>
+<dd><p>Combine Artin Generator to move one braid over/under/over… or under/over/under… several braids</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_slide</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – number of crossings</p></li>
+<li><p><strong>start_index</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>)</em>) – index of the strand to move. Default to 1</p></li>
+<li><p><strong>sign</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) – positive if the start strand is first going over. Default to +1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the corresponding braid</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="🚧 Documentation in Progress" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="usage.html" class="btn btn-neutral float-right" title="🛠️ Usage Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

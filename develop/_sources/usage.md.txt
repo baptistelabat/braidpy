@@ -1,6 +1,7 @@
 # 🛠️ Usage Guide
 
-## 📦 Installation
+(Installation)=
+## Installation
 
 To use **braidpy**, first clone the repository:
 
@@ -160,5 +161,3 @@ for n in range(2):
     b1 = Braid([+n+1], n_strands=3)
     b2 = Braid([-n], n_strands=3)
 ```
-
----

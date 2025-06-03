@@ -6,6 +6,8 @@
 - [Braid group on Wikipedia](https://en.wikipedia.org/wiki/Braid_group)
 - https://ncatlab.org/nlab/show/braid+group
 - https://www.labri.fr/perso/marckert/poulalhon.pdf
+- https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf Maybe one of the best paper which is describing some
+relationships between algebraic and geometric braid
 
 ---
 
@@ -45,6 +47,7 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
     - DynnikovCoordinates  
     - Dual generator  
 - [TU/e paper on Dehornoy](https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf)
+- https://github.com/jfromentin/handle
 
 ---
 
@@ -53,7 +56,7 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
 
 - [kuboon/math_braid.py](https://github.com/kuboon/math_braid.py)  is available on [PyPI](https://pypi.org/project/math-braid)  
     - Last updated 6 years ago  
-    - Scarce documentation  
+    - Scarce documentation but test in doctest 
     - BSD license (usable with wrapper or code import)  
     - Examples:
 
@@ -67,6 +70,7 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
 - [rexgreenway/alexander-data](https://github.com/rexgreenway/alexander-data) – Invariant calculation (not on PyPI)  
 - [leodana/TIPE](https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py) – Dense, untested student code  
 https://github.com/stla/braids
+- https://github.com/MarkCBell/flipper?tab=readme-ov-file - probably very powerful, but a bit abstract
 ---
 
 ## 📊 MATLAB / BraidLab
