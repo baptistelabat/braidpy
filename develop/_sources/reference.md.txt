@@ -1,4 +1,4 @@
-# Title
+# API reference
 ```{eval-rst}
 .. automodule:: braidpy.braid
    :members:
