@@ -1,5 +1,5 @@
 from braidpy import Braid
-from braidpy.artin_generator import a
+from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
 
 

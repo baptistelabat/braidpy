@@ -1,6 +1,6 @@
-# 🚧 Documentation in Progress
+# Documentation
 
-This documentation is currently under construction. Please refer to the [README](https://github.com/your-repo-link) on the GitHub page for the most up-to-date information.
+Please refer to the [README](https://github.com/baptistelabat/braidpy) on the GitHub page for the most up-to-date information.
 Development documentation is available at https://baptistelabat.github.io/braidpy
 Documentation of release version can be consulted at https://braidpy.readthedocs.io/en/latest/
 
@@ -11,17 +11,10 @@ Documentation of release version can be consulted at https://braidpy.readthedocs
 
 ## Contents
 
-- [Usage Guide](usage.md)
-- [External references](references.md)
-- [Glossary](glossary.md)
-
-# Project Docs
-
 ```{toctree}
 :maxdepth: 2
-:caption: API Reference
 
-reference.md
 usage.md
-glossary.md
 references.md
+reference.md
+glossary.md

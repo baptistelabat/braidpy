@@ -1,5 +1,5 @@
 from braidpy.braid import Braid, slide_strand
-from braidpy.artin_generator import a
+from braidpy.artin_generators import a
 from braidpy.braid_catalog import (
     full_twist_braid,
     flat3,
@@ -9,6 +9,7 @@ from braidpy.braid_catalog import (
     flat6,
     flat5,
     regular_flat6,
+    garside_half_twist_braid,
 )
 
 
@@ -49,6 +50,9 @@ def test_half_twist_braid():
     b = Braid((), 5)
     b = b.half_twist(sign=1)
     assert b.perm() == [5, 4, 3, 2, 1]
+
+    b_cat = garside_half_twist_braid(5)
+    assert b == b_cat
 
     # Check default
     bd = Braid((), 5)
