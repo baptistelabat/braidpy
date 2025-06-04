@@ -21,9 +21,6 @@ BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
 BraidingProcess = Tuple[BraidingStep, ...]
 
 
-
-
-
 class BraidWordNotation(str, enum.Enum):
     ARTIN = "ARTIN"
     ALPHA = "ALPHA"
@@ -650,7 +647,6 @@ class Braid:
             color=color,
         )
         return b
-
 
 
 def slide_strand(n_slide, start_index=1, sign: int = +1):
