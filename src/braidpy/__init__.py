@@ -9,5 +9,4 @@ from .braid import Braid as Braid
 from .properties import (
     alexander_polynomial as alexander_polynomial,
     conjugacy_class as conjugacy_class,
-    garside_normal_form as garside_normal_form,
 )

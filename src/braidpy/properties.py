@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 from sympy import Poly, symbols, simplify
 from .braid import Braid
 
@@ -43,19 +43,3 @@ def conjugacy_class(braid: Braid, conjugators: List[Braid] = None) -> List[Braid
         conjugates.add(conj)
 
     return list(conjugates)
-
-
-def garside_normal_form(braid: Braid) -> Tuple[List[int], List[int]]:
-    """
-    Compute the Garside normal form of a braid.
-
-    Args:
-        braid: The Braid object
-
-    Returns:
-        Tuple of (positive part, negative part) in the normal form
-    """
-    # This is a simplified version - full implementation would be more complex
-    positive_part = [g for g in braid.generators if g > 0]
-    negative_part = [g for g in braid.generators if g < 0]
-    return (positive_part, negative_part)
