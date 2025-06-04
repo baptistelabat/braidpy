@@ -20,16 +20,7 @@ BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
 BraidingProcess = Tuple[BraidingStep, ...]
 
 
-@dataclass(frozen=True)
-class GarsideCanonicalFactors:
-    """
-    Also known as Garside canonical form
-    https://webhomes.maths.ed.ac.uk/~v1ranick/papers/garside.pdf
-    """
 
-    n_half_twist: int
-    n_strands: int
-    ai: Tuple[int]
 
 
 class BraidWordNotation(str, enum.Enum):
@@ -444,22 +435,7 @@ class Braid:
         """
         b = math_braid.Braid(list(self.generators), self.n_strands)
         b.cleanUpFactors()
-        return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, ai=b.a)
-
-    def garside_length(self) -> int:
-        """
-        Estimate the Garside length of the braid (sum of absolute value of generator powers)
-
-        \todo braid should be in canonical form
-        """
-        return sum(np.abs(self.generators))
-
-    def floor(self) -> float:
-        """
-        Estimate the Dehornoy floor of the braid (approximately half the Garside length)
-        \todo braid should be in canonical form
-        """
-        return self.garside_length() / 2
+        return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, Ai=b.a)
 
     def to_matrix(self) -> Matrix:
         """Convert braid to its (unreduced) Burau matrix representation."""
@@ -673,6 +649,7 @@ class Braid:
             color=color,
         )
         return b
+
 
 
 def slide_strand(n_slide, start_index=1, sign: int = +1):
