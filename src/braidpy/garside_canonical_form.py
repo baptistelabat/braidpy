@@ -41,4 +41,4 @@ class GarsideCanonicalFactors:
         Returns the Garside (canonical) length of the braid,
         defined as the number of simple elements A_i in the positive part.
         """
-        return len(self.ai)
+        return len(self.Ai)

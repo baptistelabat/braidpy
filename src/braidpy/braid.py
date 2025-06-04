@@ -5,6 +5,7 @@ import numpy as np
 from sympy import Matrix, eye, symbols
 from dataclasses import dataclass, field
 
+from braidpy.garside_canonical_form import GarsideCanonicalFactors
 from braidpy.utils import int_to_superscript, int_to_subscript, colorize
 
 import braidvisualiser as bv
