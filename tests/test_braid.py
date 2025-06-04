@@ -1,4 +1,6 @@
 import pytest
+from math_braid.canonical_factor import CanonicalFactor
+
 from braidpy import Braid
 from sympy import symbols, Matrix
 
@@ -179,6 +181,27 @@ class TestBraid:
         b = simple_braid
         assert b.writhe() == 1  # 1 + 1 - 1 = 1
 
+    def test_canonical_form(self):
+        f = Braid([]).get_canonical_factors()
+        assert f.Ai == []
+        assert f.n_half_twist == 0
+        assert f.n_strands == 1
+
+        f = Braid([2, -1]).get_canonical_factors()
+        assert isinstance(f.Ai[0], CanonicalFactor)
+        assert f.Ai[0].array_form == [
+            1,
+            0,
+            2,
+        ]  # This describes the permutation of first and second strands
+        assert f.Ai[1].array_form == [
+            0,
+            2,
+            1,
+        ]  # This describes the permutation of second and third strands
+        assert f.n_half_twist == -1
+        assert f.n_strands == 3
+
     def test_main_generator(self):
         b = Braid([])
         assert b.main_generator is None
@@ -238,13 +261,21 @@ class TestBraid:
         M = Matrix([[1 - t, 0, t], [1, 0, 0], [0, 1 / t, 1 - 1 / t]])
         assert Braid([1, -2]).to_matrix() == M
 
-    # def test_to_reduced_matrix(self, simple_braid):
-    #     """Test unreduced Burau matrix representation
-    #     According to https://arxiv.org/pdf/1410.0849
-    #     """
-    #     t = symbols("t")
-    #     M = Matrix([[-t, t], [-1, 1 - 1 / t]])
-    #     assert Braid([1, -2]).to_reduced_matrix()==M
+    @pytest.mark.skip(
+        "reduced Burau matrix definition is ambiguous, skipping for now https://github.com/sagemath/sagetrac-mirror/commit/cf4f6407517615ad3bb95bf8bf752e01949b783a"
+    )
+    def test_to_reduced_matrix(self, simple_braid):
+        """Test unreduced Burau matrix representation
+        According to https://arxiv.org/pdf/1410.0849
+        """
+        t = symbols("t")
+        M = Matrix([[-t, t], [-1, 1 - 1 / t]])
+        assert Braid([1, -2]).to_reduced_matrix() == M
+
+    def test_to_reduced_matrix_not_implemented(self, simple_braid):
+        """Test unreduced Burau matrix representation not implemented error"""
+        with pytest.raises(NotImplementedError):
+            Braid([1, -2]).to_reduced_matrix()
 
     def test_conjugate(self):
         """Test conjugacy class generation"""
@@ -295,6 +326,10 @@ class TestBraid:
         # More test taken from math-braid
         assert Braid([1, 4, 4, 1], 7) == Braid([4, -5, 1, 1, 5, 4], 7)
         assert Braid([1, 4, 4, 1], 7) != Braid([4, -5, 1, 1, 6, 4], 7)
+
+    def test_brunnian_not_implemented(self):
+        with pytest.raises(NotImplementedError):
+            Braid([]).is_brunnian()
 
 
 def test_a():

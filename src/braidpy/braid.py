@@ -431,9 +431,15 @@ class Braid:
         Returns:
             GarsideCanonicalFactors: the unique decomposition of the braid according to left convention
         """
-        b = math_braid.Braid(list(self.generators), self.n_strands)
-        b.cleanUpFactors()
-        return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, Ai=b.a)
+        br = self.no_zero()
+        if br.generators:
+            b = math_braid.Braid(list(self.generators), self.n_strands)
+            b.cleanUpFactors()
+            return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, Ai=b.a)
+        else:
+            return GarsideCanonicalFactors(
+                n_half_twist=0, n_strands=br.n_strands, Ai=[]
+            )
 
     def to_matrix(self) -> Matrix:
         """Convert braid to its (unreduced) Burau matrix representation."""
@@ -458,6 +464,15 @@ class Braid:
         return matrix
 
     def to_reduced_matrix(self):
+        """
+        Return the reduced Burau representation
+
+        \todo Implementation not finished
+        """
+
+        raise NotImplementedError(
+            "Implementation in progress, several definitions make validation difficult"
+        )
         return self.to_matrix()[:-1, :-1]
 
     def is_trivial(self) -> bool:
@@ -519,15 +534,6 @@ class Braid:
     def is_palindromic(self):
         return self.generators == self.generators[::-1]
 
-    def is_positive(self):
-        """
-        Returns True if the braid word is Dehornoy positive
-
-        Returns:
-            bool: True if braid word is positive
-        """
-        return np.all([g >= 0 for g in self.generators])
-
     def is_involutive(self):
         """
         Returns true if inverse of braid word ie the same as braid word
@@ -553,32 +559,6 @@ class Braid:
         ) or (self ** (2 * (self.n_strands - 1))).perm() == list(
             range(1, self.n_strands + 1)
         )
-
-    def cyclic_conjugates(self):
-        """
-        Under construction
-
-        Returns:
-
-        """
-        return [
-            self.generators[i:] + self.generators[:i]
-            for i in range(len(self.generators))
-        ]
-
-    def is_equivalent_to(self, other):
-        """
-        Under construction
-
-        Args:
-            other: the braid to compare with
-
-        Returns:
-            bool
-        """
-        if self.n != other.n:
-            return False
-        return any(conj == other.word for conj in self.cyclic_conjugates())
 
     def is_brunnian(self):
         """

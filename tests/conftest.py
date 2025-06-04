@@ -24,11 +24,3 @@ def pure_braid():
 def non_pure_braid():
     """A non-pure braid that doesn't return to original position"""
     return Braid([1, 2, 1], n_strands=3)
-
-
-@pytest.fixture
-def conjugate_braids():
-    """A pair of conjugate braids"""
-    b1 = Braid([1], n_strands=3)
-    b2 = Braid([2, 1, -2], n_strands=3)
-    return b1, b2
