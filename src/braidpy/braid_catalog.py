@@ -1,9 +1,10 @@
 from braidpy import Braid
 from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
+from braidpy.utils import StrictlyPositiveInt
 
 
-def garside_half_twist_braid(n_strands):
+def garside_half_twist_braid(n_strands: StrictlyPositiveInt):
     """
     Compute the Garside half twist braid also known as Garside element ∆n or (simply ∆ if n=n_strands-1)
     ∆² is known to generate the "center" of the braid group Bn+1.
@@ -18,17 +19,17 @@ def garside_half_twist_braid(n_strands):
     Composition of half_twist is giving a "torsade"
 
     Args:
-        n_strands:
+        n_strands(StrictlyPositiveInt): number of strands
 
     Returns:
-
+        Braid
     """
 
     b = a(0, n_strands)
     return b.half_twist()
 
 
-def full_twist_braid(n_strands):
+def full_twist_braid(n_strands: StrictlyPositiveInt):
     """
     Compute the full twist braid ∆n² which is the square of Garside half twist braid
     ∆n
@@ -39,10 +40,10 @@ def full_twist_braid(n_strands):
     Composition of twist is giving a "torsade"
 
     Args:
-        n_strands:
+        n_strands(StrictlyPositiveInt): number of strands
 
     Returns:
-
+        Braid
     """
 
     b = a(0, n_strands)
@@ -54,6 +55,8 @@ def flat3():
     Basic braid with 3 strands going above central braid
 
     Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
     """
     n = 3
     step = Braid(1, n)
@@ -95,6 +98,13 @@ def round4():
 
 
 def flat4():
+    """
+    Basic flat braid with 4 strands
+
+    Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
+    """
     # https://www.youtube.com/watch?v=7lTFIzm9BLY
     n = 1
     step = slide_strand(2).n(4) * a(-3)
@@ -111,7 +121,8 @@ def flat6():
     https://www.youtube.com/watch?v=ZHWlYBxL-mA
 
     Returns:
-
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
     """
     n = 6
     # Initialisation in video ?
@@ -137,8 +148,10 @@ def flat6():
 def regular_flat6():
     """
     https://www.youtube.com/watch?v=J65kCzm_BtI
-    Returns:
 
+    Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
     """
     n = 6
     step1 = weave_strand(int(n / 2)).n(n)
@@ -156,7 +169,8 @@ def flat5():
     https://www.youtube.com/watch?v=uRy4wvJwSWA
 
     Returns:
-
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
     """
     n = 5
     step1 = slide_strand(int((n - 1) / 2)).n(n) * a(2)

@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Tuple
 
+from math_braid.canonical_factor import CanonicalFactor
+
+from braidpy.utils import PositiveInt, StrictlyPositiveInt
+
 
 @dataclass(frozen=True)
 class GarsideCanonicalFactors:
@@ -17,8 +21,8 @@ class GarsideCanonicalFactors:
     """
 
     n_half_twist: int
-    n_strands: int
-    Ai: Tuple[int]
+    n_strands: StrictlyPositiveInt
+    Ai: Tuple[CanonicalFactor]
 
     @property
     def dehornoy_floor(self) -> int:
@@ -32,13 +36,19 @@ class GarsideCanonicalFactors:
 
         For now, we return the conservative lower bound:
             floor(n_half_twist / 2)
+
+        Returns:
+            int: the Dehornoy floor
         """
         return self.n_half_twist // 2
 
     @property
-    def garside_length(self) -> int:
+    def garside_length(self) -> PositiveInt:
         """
         Returns the Garside (canonical) length of the braid,
         defined as the number of simple elements A_i in the positive part.
+
+        Returns:
+            int: the Garside length
         """
         return len(self.Ai)

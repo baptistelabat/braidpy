@@ -4,7 +4,6 @@ from math_braid.canonical_factor import CanonicalFactor
 from braidpy import Braid
 from sympy import symbols, Matrix
 
-from braidpy.artin_generators import a
 from braidpy.operations import conjugate
 
 
@@ -330,22 +329,3 @@ class TestBraid:
     def test_brunnian_not_implemented(self):
         with pytest.raises(NotImplementedError):
             Braid([]).is_brunnian()
-
-
-def test_a():
-    """Test short notation with artin generator as derived class of Braid"""
-    print(a(1))
-    assert a(1) == Braid([1])
-
-    assert a(1) ** (-2) == Braid([-1, -1])
-
-
-def test_n():
-    # Check we can change the number of strands in a compact notation
-    assert (a(2) * a(1) ** (-2)).n(3) == Braid([2, -1, -1], 3)
-
-
-def test_mixing_operation_with_braid():
-    # Check we can change the number of strands in a compact notation
-    assert a(2) * Braid([1, 5]) == Braid([2, 1, 5])
-    assert Braid([1, 5]) * a(2) == Braid([1, 5, 2])

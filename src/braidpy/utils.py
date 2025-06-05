@@ -89,3 +89,7 @@ class StrictlyPositiveInt(int):
         if val <= 0:
             raise ValueError(f"Value must be > 0, got {val}")
         return super().__new__(cls, val)
+
+
+class FunctionalException(Exception):
+    pass

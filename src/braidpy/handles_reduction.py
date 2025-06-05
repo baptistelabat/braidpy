@@ -1,31 +1,45 @@
 import time
 from enum import Enum
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 
 from braidpy import Braid
 from braidpy.braid import SignedCrossingIndex
-
-
-class FunctionalException(Exception):
-    pass
+from braidpy.utils import FunctionalException, PositiveInt
 
 
 class HandleReducedButUnexpectedResult(FunctionalException):
+    """
+    Exception to be raised if handle reduction is not finishing as expected
+    """
+
     pass
 
 
 class HandleReductionMode(str, Enum):
+    """
+    Define the possible options for handle reduction
+        -full: reduce all handles
+        -compare: partical short circuit reductio which is exiting as long as we can determine if braid is positive, or negative
+    """
+
     FULL = "FULL"
     COMPARE = "COMPARE"
 
 
-def dehornoy_handle_indices(gens):
+def dehornoy_handle_indices(
+    gens: list[SignedCrossingIndex],
+) -> tuple[PositiveInt, PositiveInt] | None:
     """
     Detect the first Dehornoy handle in gens.
     A handle is of the form g ... g^-1, with all intermediates having strictly larger absolute values.
-    Returns (i, j) — the indices of g and g^-1 — for the first such valid handle.
+
+    Args:
+        gens(list[SignedCrossingIndex]): list of Artin's generator
+
+    Returns:
+        Tuple[int, int] | None : (i, j) — the indices of g and g^-1 — for the first such valid handle or None if no more handles
     """
     n = len(gens)
 
@@ -35,40 +49,61 @@ def dehornoy_handle_indices(gens):
             if gens[i] == g:
                 # Check all between gens[i+1 : j] are strictly larger in absolute value
                 if all(abs(h) > abs(g) for h in gens[i + 1 : j]):
-                    return i, j  # first such handle found
+                    return i, j  # first such closing handle found
     return None
 
 
-def reduce_handle(segment):
+def reduce_handle(segment: list[SignedCrossingIndex]) -> list[SignedCrossingIndex]:
     """
     Reduces a Dehornoy handle of the form [sigma_m, u..., sigma_m^{-1}]
     by keeping u and replacing each sigma_{m+1} with sigma_{m+1}^{-1} * sigma_m * sigma_{m+1}.
+
+    Args:
+        segment(list[SignedCrossingIndex]): segment corresponding to handle
+
+    Returns:
+        list[SignedCrossingIndex]: the segment with handle reduced (and no more complete handle, but it may create the start of new one)
+
+    Raises:
+        ValueError: if segment is not a handle
     """
 
+    # Index of first crossing of handle
     m = abs(segment[0])
+
+    # Sign of crossing
     e = np.sign(segment[0])
+
     if segment[-1] != -segment[0]:
         raise ValueError(f"Segment {segment} is not a valid Dehornoy handle")
+    else:
+        # Suppress the handle
+        u = segment[1:-1]
 
-    u = segment[1:-1]
-    result = []
-
-    for g in u:
-        abs_g = abs(g)
-        d = np.sign(g)
-
-        if abs_g == m + 1:
-            # Replace σ_{m+1} with σ_{m+1}^{-1} * σ_m * σ_{m+1}
-            replacement = [-e * (m + 1), d * m, e * (m + 1)]
-            result.extend(replacement)
-        else:
-            result.append(g)
+        # But take into account the effect it can have on next strand
+        result = []
+        for g in u:
+            d = np.sign(g)
+            if abs(g) == m + 1:
+                # Replace σ_{m+1} with σ_{m+1}^{-1} * σ_m * σ_{m+1}
+                replacement = [-e * (m + 1), d * m, e * (m + 1)]
+                result.extend(replacement)
+            else:
+                result.append(g)
 
     return result
 
 
-def dehornoy_sign(gens: List[int]):
-    """ """
+def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
+    """
+    Check  if braid is Dehornoy positive, negative, neutral or if this can not be directly said from braid word
+
+    Args:
+        gens(SignedCrossingIndex: list of Artin's generator
+
+    Returns:
+        int|None: 1 if Dehornoy positive, -1 if Dehornoy negative, 0 if neutral element and None if it can not be said
+    """
     if gens:
         mg = min(abs(g) for g in gens)
         signs = [np.sign(g) for g in gens if abs(g) == mg]
@@ -88,20 +123,20 @@ def dehornoy_reduce_core(
     gens: List[SignedCrossingIndex],
     mode: HandleReductionMode | str = HandleReductionMode.FULL,
     time_out_s: float = 1,
-) -> tuple[List[int], Optional[int]]:
+) -> tuple[List[SignedCrossingIndex], int | None]:
     """
     Unified Dehornoy reduction engine.
 
-
     Args:
-        -gens(List[int]): list of Artin's generators
+        -gens(List[SignedCrossingIndex]): list of Artin's generators
         -mode(HandleReductionMode | str):
             "FULL": returns the fully reduced word.
             "COMPARE`: returns early if positive/neutral/negative.
         -time_out_s(Optional(float)): safety timeout. Default to 1
 
 
-    Returns: (reduced_gens, sign) where sign is:
+    Returns:
+         tuple[List[SignedCrossingIndex], int|None]: (reduced_gens, sign) where sign is:
         - 1 if Dehornoy positive
         - -1 if Dehornoy negative
         - 0 if neutral element
