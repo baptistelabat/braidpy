@@ -98,7 +98,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat6"><code class="docutils literal notranslate"><span class="pre">flat6()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.regular_flat6"><code class="docutils literal notranslate"><span class="pre">regular_flat6()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat5"><code class="docutils literal notranslate"><span class="pre">flat5()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.FunctionalException"><code class="docutils literal notranslate"><span class="pre">FunctionalException</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.HandleReducedButUnexpectedResult"><code class="docutils literal notranslate"><span class="pre">HandleReducedButUnexpectedResult</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode"><code class="docutils literal notranslate"><span class="pre">HandleReductionMode</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode.FULL"><code class="docutils literal notranslate"><span class="pre">HandleReductionMode.FULL</span></code></a></li>
@@ -133,6 +132,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.utils.StrictlyPositiveFloat"><code class="docutils literal notranslate"><span class="pre">StrictlyPositiveFloat</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.utils.PositiveInt"><code class="docutils literal notranslate"><span class="pre">PositiveInt</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.utils.StrictlyPositiveInt"><code class="docutils literal notranslate"><span class="pre">StrictlyPositiveInt</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.utils.FunctionalException"><code class="docutils literal notranslate"><span class="pre">FunctionalException</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -638,7 +638,7 @@ all strands can be chosen from:</p>
 
 <dl class="py function" id="module-braidpy.braid_catalog">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.garside_half_twist_braid">
-<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">garside_half_twist_braid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.garside_half_twist_braid" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">garside_half_twist_braid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#braidpy.utils.StrictlyPositiveInt" title="braidpy.utils.StrictlyPositiveInt"><span class="pre">StrictlyPositiveInt</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.garside_half_twist_braid" title="Link to this definition"></a></dt>
 <dd><p>Compute the Garside half twist braid also known as Garside element ∆n or (simply ∆ if n=n_strands-1)
 ∆² is known to generate the “center” of the braid group Bn+1.
 This is the biggest simple element.</p>
@@ -648,15 +648,17 @@ It can be obtained by recursion ∆n = σ1σ2…σn−1∆n−1</p>
 <p>Composition of half_twist is giving a “torsade”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_strands</strong></p>
+<dd class="field-odd"><p><strong>n_strands</strong> (<a class="reference internal" href="#braidpy.utils.StrictlyPositiveInt" title="braidpy.utils.StrictlyPositiveInt"><em>StrictlyPositiveInt</em></a>) – number of strands</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Braid</p>
 </dd>
 </dl>
-<p>Returns:</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.full_twist_braid">
-<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">full_twist_braid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.full_twist_braid" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">full_twist_braid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#braidpy.utils.StrictlyPositiveInt" title="braidpy.utils.StrictlyPositiveInt"><span class="pre">StrictlyPositiveInt</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.full_twist_braid" title="Link to this definition"></a></dt>
 <dd><p>Compute the full twist braid ∆n² which is the square of Garside half twist braid
 ∆n
 It is known to generate the “center” of the braid group Bn.</p>
@@ -664,17 +666,27 @@ It is known to generate the “center” of the braid group Bn.</p>
 <p>Composition of twist is giving a “torsade”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_strands</strong></p>
+<dd class="field-odd"><p><strong>n_strands</strong> (<a class="reference internal" href="#braidpy.utils.StrictlyPositiveInt" title="braidpy.utils.StrictlyPositiveInt"><em>StrictlyPositiveInt</em></a>) – number of strands</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Braid</p>
 </dd>
 </dl>
-<p>Returns:</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.flat3">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat3</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.flat3" title="Link to this definition"></a></dt>
 <dd><p>Basic braid with 3 strands going above central braid</p>
-<p>Returns:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -710,46 +722,80 @@ n: the number of iterations to get back to initial order of strands</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.flat4">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.flat4" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Basic flat braid with 4 strands</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.flat6">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat6</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.flat6" title="Link to this definition"></a></dt>
 <dd><p>This one is probably not unique !</p>
 <p><a class="reference external" href="https://www.youtube.com/watch?v=ZHWlYBxL-mA">https://www.youtube.com/watch?v=ZHWlYBxL-mA</a></p>
-<p>Returns:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.regular_flat6">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">regular_flat6</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.regular_flat6" title="Link to this definition"></a></dt>
-<dd><p><a class="reference external" href="https://www.youtube.com/watch?v=J65kCzm_BtI">https://www.youtube.com/watch?v=J65kCzm_BtI</a>
-Returns:</p>
+<dd><p><a class="reference external" href="https://www.youtube.com/watch?v=J65kCzm_BtI">https://www.youtube.com/watch?v=J65kCzm_BtI</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.flat5">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat5</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.flat5" title="Link to this definition"></a></dt>
 <dd><p><a class="reference external" href="https://www.youtube.com/watch?v=uRy4wvJwSWA">https://www.youtube.com/watch?v=uRy4wvJwSWA</a></p>
-<p>Returns:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py exception" id="module-braidpy.handles_reduction">
-<dt class="sig sig-object py" id="braidpy.handles_reduction.FunctionalException">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">FunctionalException</span></span><a class="headerlink" href="#braidpy.handles_reduction.FunctionalException" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
-</dd></dl>
-
-<dl class="py exception">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReducedButUnexpectedResult">
 <em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">HandleReducedButUnexpectedResult</span></span><a class="headerlink" href="#braidpy.handles_reduction.HandleReducedButUnexpectedResult" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#braidpy.handles_reduction.FunctionalException" title="braidpy.handles_reduction.FunctionalException"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionalException</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#braidpy.utils.FunctionalException" title="braidpy.utils.FunctionalException"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionalException</span></code></a></p>
+<p>Exception to be raised if handle reduction is not finishing as expected</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionMode">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">HandleReductionMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionMode" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></a></p>
+<dl class="simple">
+<dt>Define the possible options for handle reduction</dt><dd><p>-full: reduce all handles
+-compare: partical short circuit reductio which is exiting as long as we can determine if braid is positive, or negative</p>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionMode.FULL">
 <span class="sig-name descname"><span class="pre">FULL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FULL'</span></em><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionMode.FULL" title="Link to this definition"></a></dt>
@@ -764,23 +810,59 @@ Returns:</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.dehornoy_handle_indices">
-<span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">dehornoy_handle_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gens</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.handles_reduction.dehornoy_handle_indices" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">dehornoy_handle_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.utils.PositiveInt" title="braidpy.utils.PositiveInt"><span class="pre">PositiveInt</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#braidpy.utils.PositiveInt" title="braidpy.utils.PositiveInt"><span class="pre">PositiveInt</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#braidpy.handles_reduction.dehornoy_handle_indices" title="Link to this definition"></a></dt>
 <dd><p>Detect the first Dehornoy handle in gens.
-A handle is of the form g … g^-1, with all intermediates having strictly larger absolute values.
-Returns (i, j) — the indices of g and g^-1 — for the first such valid handle.</p>
+A handle is of the form g … g^-1, with all intermediates having strictly larger absolute values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>gens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><em>SignedCrossingIndex</em><em>]</em>) – list of Artin’s generator</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(i, j) — the indices of g and g^-1 — for the first such valid handle or None if no more handles</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>] | None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.reduce_handle">
-<span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">reduce_handle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.handles_reduction.reduce_handle" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">reduce_handle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.handles_reduction.reduce_handle" title="Link to this definition"></a></dt>
 <dd><p>Reduces a Dehornoy handle of the form [sigma_m, u…, sigma_m^{-1}]
 by keeping u and replacing each sigma_{m+1} with sigma_{m+1}^{-1} * sigma_m * sigma_{m+1}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>segment</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><em>SignedCrossingIndex</em><em>]</em>) – segment corresponding to handle</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the segment with handle reduced (and no more complete handle, but it may create the start of new one)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[SignedCrossingIndex]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – if segment is not a handle</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.dehornoy_sign">
-<span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">dehornoy_sign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.handles_reduction.dehornoy_sign" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">dehornoy_sign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#braidpy.handles_reduction.dehornoy_sign" title="Link to this definition"></a></dt>
+<dd><p>Check  if braid is Dehornoy positive, negative, neutral or if this can not be directly said from braid word</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>gens</strong><strong>(</strong><strong>SignedCrossingIndex</strong> – list of Artin’s generator</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1 if Dehornoy positive, -1 if Dehornoy negative, 0 if neutral element and None if it can not be said</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>|None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.dehornoy_reduce_core">
@@ -789,20 +871,24 @@ by keeping u and replacing each sigma_{m+1} with sigma_{m+1}^{-1} * sigma_m * si
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>-gens</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) – list of Artin’s generators</p></li>
+<li><p><strong>-gens</strong> (<em>List</em><em>[</em><em>SignedCrossingIndex</em><em>]</em>) – list of Artin’s generators</p></li>
 <li><p><strong>-mode</strong> (<a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode" title="braidpy.handles_reduction.HandleReductionMode"><em>HandleReductionMode</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – “FULL”: returns the fully reduced word.
 “COMPARE`: returns early if positive/neutral/negative.</p></li>
 <li><p><strong>-time_out_s</strong> (<em>Optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>)</em>) – safety timeout. Default to 1</p></li>
 </ul>
 </dd>
-</dl>
-<dl class="simple">
-<dt>Returns: (reduced_gens, sign) where sign is:</dt><dd><ul class="simple">
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(reduced_gens, sign) where sign is:</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>tuple[List[SignedCrossingIndex], int|None]</p>
+<ul class="simple">
 <li><p>1 if Dehornoy positive</p></li>
 <li><p>-1 if Dehornoy negative</p></li>
 <li><p>0 if neutral element</p></li>
 <li><p>None in case it can not be said without reducing handles further</p></li>
 </ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -967,6 +1053,12 @@ by keeping u and replacing each sigma_{m+1} with sigma_{m+1}^{-1} * sigma_m * si
 <dt class="sig sig-object py" id="braidpy.utils.StrictlyPositiveInt">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.utils.</span></span><span class="sig-name descname"><span class="pre">StrictlyPositiveInt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.utils.StrictlyPositiveInt" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="braidpy.utils.FunctionalException">
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.utils.</span></span><span class="sig-name descname"><span class="pre">FunctionalException</span></span><a class="headerlink" href="#braidpy.utils.FunctionalException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
 </dd></dl>
 
 </section>
