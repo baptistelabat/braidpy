@@ -19,6 +19,13 @@ from sympy import Matrix, eye, symbols
 from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
+from braidpy.parametric_strand import (
+    ParametricStrand,
+    make_idle_arc,
+    make_arc,
+    Arc,
+    combine_arcs,
+)
 from braidpy.utils import (
     int_to_superscript,
     int_to_subscript,
@@ -589,6 +596,80 @@ class Braid:
             bool: True if Brunnian
         """
         raise NotImplementedError()
+
+    def to_parametric_strands(self, amplitude: float = 0.2) -> List[ParametricStrand]:
+        """
+        Converts a braid into a list of 3D parametric strand paths.
+
+        Args:
+            braid: The Braid object containing crossing generators.
+            amplitude: Height of the sine wave for over/under crossings.
+
+        Returns:
+            A list of ParametricStrand objects representing the strands.
+        """
+        n_strands = self.n_strands or max(abs(g) for g in self.generators) + 1
+        n_segments = len(self.generators) + 1
+        duration_per_gen = 1 / n_segments
+
+        # Track strand positions across braid steps
+        positions = list(range(n_strands))
+        position_history = [positions.copy()]
+
+        for gen in self.generators:
+            i = abs(gen) - 1
+            positions = positions.copy()
+            if gen != 0:
+                positions[i], positions[i + 1] = positions[i + 1], positions[i]
+            position_history.append(positions.copy())
+
+        # Transpose history to get each strand's path
+        strand_paths = [[] for _ in range(n_strands)]
+        for step in position_history:
+            for x_pos, strand_id in enumerate(step):
+                strand_paths[strand_id].append(x_pos)
+
+        # Generate arc sequences for each strand
+        strand_arc_sequences: List[List[Arc]] = []
+        for strand_id in range(n_strands):
+            arcs: List[Arc] = []
+            path = strand_paths[strand_id]
+
+            for k in range(n_segments - 1):
+                i0 = path[k]
+                i1 = path[k + 1]
+                x0 = i0 * amplitude
+                x1 = i1 * amplitude
+                t_start = k * duration_per_gen
+                t_end = (k + 1) * duration_per_gen
+                gen = self.generators[k]
+                if i0 == i1 or gen == 0:
+                    arc_func = make_idle_arc(x0, t_start, t_end)
+                else:
+                    i = abs(gen) - 1
+                    over = (i0 == i and gen > 0) or (i0 == i + 1 and gen < 0)
+                    arc_func = make_arc(
+                        x0, x1, t_start, t_end, amplitude if over else -amplitude
+                    )
+
+                arcs.append((t_start, t_end, arc_func))
+
+            # Final segment (idle)
+            t_final_start = (n_segments - 1) * duration_per_gen
+            t_final_end = t_final_start + duration_per_gen
+            x_final = path[-1] * amplitude
+            arcs.append(
+                (
+                    t_final_start,
+                    t_final_end,
+                    make_idle_arc(x_final, t_final_start, t_final_end),
+                )
+            )
+            strand_arc_sequences.append(arcs)
+
+        return [
+            ParametricStrand(combine_arcs(strand)) for strand in strand_arc_sequences
+        ]
 
     def draw(self):
         """

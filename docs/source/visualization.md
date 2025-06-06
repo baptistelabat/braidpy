@@ -1,15 +1,18 @@
 # Visualizing braids
 
 The followign code presents the different visualizations integrated in braidpy:
+
 ```python
 from braidpy import Braid
-from braidpy.parametric_braid import braid_to_parametric_strands, ParametricBraid
+from braidpy.parametric_braid import ParametricBraid
+from braidpy.parametric_strand import braid_to_parametric_strands
 import matplotlib
+
 matplotlib.use("QtAgg")
 b = Braid((1, -2), n_strands=3)
 b.draw()
 b.plot()
-strands = braid_to_parametric_strands(b**12)
+strands = braid_to_parametric_strands(b ** 12)
 p = ParametricBraid(strands)  # .plot()
 p.plot()
 ```

@@ -14,7 +14,7 @@ License: Mozilla Public License 2.0
 from typing import Callable
 
 import numpy as np
-from braidpy.parametric_braid import ParametricStrand
+from braidpy.parametric_strand import ParametricStrand
 from braidpy.utils import PositiveFloat, StrictlyPositiveFloat, StrictlyPositiveInt
 
 

@@ -1,15 +1,14 @@
 # Create braid σ₁ σ₂⁻¹ σ₁ on 3 strands
 from braidpy import Braid
 from braidpy.parametric_braid import (
-    braid_to_parametric_strands,
-    ParametricStrand,
     ParametricBraid,
 )
+from braidpy.parametric_strand import ParametricStrand
 
 
 def test_conversion():
     b = Braid((1, 0, 0, -2), n_strands=3)
-    strands = braid_to_parametric_strands(b)
+    strands = b.to_parametric_strands()
     p = ParametricBraid(strands)  # .plot()
     assert p.get_positions_at(0.5) == [
         (0.2, 0.0, 0.5),
@@ -36,7 +35,7 @@ def test_parametric_strand_sampling():
 
 def test_braid_to_parametric_strands():
     b = Braid((1,), n_strands=2)
-    strands = braid_to_parametric_strands(b)
+    strands = b.to_parametric_strands()
     assert len(strands) == 2
     p0 = strands[0].evaluate(0)
     assert isinstance(p0, tuple)
