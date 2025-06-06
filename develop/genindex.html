@@ -40,6 +40,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
@@ -77,7 +78,6 @@
  | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
- | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
@@ -111,8 +111,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid">Braid (class in braidpy.braid)</a>
 </li>
-      <li><a href="reference.html#braidpy.parametric_braid.braid_to_parametric_strands">braid_to_parametric_strands() (in module braidpy.parametric_braid)</a>
-</li>
       <li>
     braidpy.artin_generators
 
@@ -134,8 +132,6 @@
         <li><a href="reference.html#module-braidpy.braid_catalog">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     braidpy.handles_reduction
 
@@ -143,6 +139,8 @@
         <li><a href="reference.html#module-braidpy.handles_reduction">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     braidpy.material_braid
 
@@ -174,11 +172,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.utils.colorize">colorize() (in module braidpy.utils)</a>
 </li>
-      <li><a href="reference.html#braidpy.utils.colorize_by_index">colorize_by_index() (in module braidpy.utils)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#braidpy.parametric_braid.combine_arcs">combine_arcs() (in module braidpy.parametric_braid)</a>
+      <li><a href="reference.html#braidpy.utils.colorize_by_index">colorize_by_index() (in module braidpy.utils)</a>
 </li>
       <li><a href="reference.html#braidpy.handles_reduction.HandleReductionMode.COMPARE">COMPARE (braidpy.handles_reduction.HandleReductionMode attribute)</a>
 </li>
@@ -199,14 +195,6 @@
       <li><a href="reference.html#braidpy.handles_reduction.dehornoy_sign">dehornoy_sign() (in module braidpy.handles_reduction)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.draw">draw() (braidpy.braid.Braid method)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="E">E</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#braidpy.parametric_braid.ParametricStrand.evaluate">evaluate() (braidpy.parametric_braid.ParametricStrand method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -306,13 +294,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid.main_generator">main_generator (braidpy.braid.Braid property)</a>
 </li>
-      <li><a href="reference.html#braidpy.parametric_braid.make_arc">make_arc() (in module braidpy.parametric_braid)</a>
-</li>
-      <li><a href="reference.html#braidpy.parametric_braid.make_idle_arc">make_idle_arc() (in module braidpy.parametric_braid)</a>
-</li>
       <li><a href="reference.html#braidpy.material_braid.MaterialBraid">MaterialBraid (class in braidpy.material_braid)</a>
 </li>
       <li><a href="reference.html#braidpy.material_braid.MaterialStrand">MaterialStrand (class in braidpy.material_braid)</a>
+</li>
+      <li><a href="reference.html#braidpy.parametric_braid.Plotter.MATPLOTLIB">MATPLOTLIB (braidpy.parametric_braid.Plotter attribute)</a>
 </li>
       <li>
     module
@@ -355,20 +341,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.parametric_braid.ParametricBraid">ParametricBraid (class in braidpy.parametric_braid)</a>
 </li>
-      <li><a href="reference.html#braidpy.parametric_braid.ParametricStrand">ParametricStrand (class in braidpy.parametric_braid)</a>
-</li>
       <li><a href="reference.html#braidpy.braid.Braid.perm">perm() (braidpy.braid.Braid method)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.permutations">permutations() (braidpy.braid.Braid method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid.plot">plot() (braidpy.braid.Braid method)</a>
 
       <ul>
         <li><a href="reference.html#braidpy.parametric_braid.ParametricBraid.plot">(braidpy.parametric_braid.ParametricBraid method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#braidpy.parametric_braid.Plotter.PLOTLY">PLOTLY (braidpy.parametric_braid.Plotter attribute)</a>
+</li>
+      <li><a href="reference.html#braidpy.parametric_braid.Plotter">Plotter (class in braidpy.parametric_braid)</a>
+</li>
       <li><a href="reference.html#braidpy.utils.PositiveFloat">PositiveFloat (class in braidpy.utils)</a>
 </li>
       <li><a href="reference.html#braidpy.utils.PositiveInt">PositiveInt (class in braidpy.utils)</a>
@@ -395,14 +383,12 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#braidpy.parametric_braid.ParametricStrand.sample">sample() (braidpy.parametric_braid.ParametricStrand method)</a>
-</li>
       <li><a href="reference.html#braidpy.braid.single_crossing_braiding_process">single_crossing_braiding_process() (in module braidpy.braid)</a>
+</li>
+      <li><a href="reference.html#braidpy.braid.slide_strand">slide_strand() (in module braidpy.braid)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#braidpy.braid.slide_strand">slide_strand() (in module braidpy.braid)</a>
-</li>
       <li><a href="reference.html#braidpy.utils.StrictlyPositiveFloat">StrictlyPositiveFloat (class in braidpy.utils)</a>
 </li>
       <li><a href="reference.html#braidpy.utils.StrictlyPositiveInt">StrictlyPositiveInt (class in braidpy.utils)</a>
@@ -417,6 +403,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#braidpy.braid.Braid.to_parametric_strands">to_parametric_strands() (braidpy.braid.Braid method)</a>
+</li>
       <li><a href="reference.html#braidpy.braid.Braid.to_reduced_matrix">to_reduced_matrix() (braidpy.braid.Braid method)</a>
 </li>
   </ul></td>

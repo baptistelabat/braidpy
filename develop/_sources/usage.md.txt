@@ -90,7 +90,7 @@ second_crossing = Braid([-2], n_strands=3)
 
 ---
 
-## 🔗 Combining braid operatin
+## 🔗 Combining braid operation
 
 Using a list:
 

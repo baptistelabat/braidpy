@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Documentation &mdash; braidpy 0.1 documentation</title>
+  <title>BraidPy &mdash; braidpy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="🛠️ Usage Guide" href="usage.html" /> 
+    <link rel="next" title="Visualizing braids" href="visualization.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,6 +42,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
@@ -62,7 +63,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Documentation</li>
+      <li class="breadcrumb-item active">BraidPy</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -72,26 +73,152 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="documentation">
-<h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h1>
-<p>Please refer to the <a class="reference external" href="https://github.com/baptistelabat/braidpy">README</a> on the GitHub page for the most up-to-date information.
-Development documentation is available at https://baptistelabat.github.io/braidpy
-Documentation of release version can be consulted at https://braidpy.readthedocs.io/en/latest/</p>
+  <section id="braidpy">
+<h1>BraidPy<a class="headerlink" href="#braidpy" title="Link to this heading"></a></h1>
+<p>A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
+advances in braid theory. Source is available at on <a class="reference external" href="https://github.com/baptistelabat/braidpy">github</a></p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Mathematical representation of braids with braid words using Artin’s generators</p></li>
+<li><p>[x] Conversion between different braid word formats</p></li>
+<li><p>[x] Braid operations and manipulations (inversion, handles reduction, …)</p></li>
+<li><p>[x] Generation of parametric braid from braid word</p></li>
+<li><p>[x] Visualization capabilities (ASCI, 2D and 3D)</p></li>
+<li><p>[x] Computations of mathematical properties of braid word or invariants of braid</p></li>
+<li><p>[ ] Annulus braids</p></li>
+<li><p>[ ] Conversion from parametric braid to braid word</p></li>
+<li><p>[ ] Conversion from material braid to parametric braid</p></li>
+<li><p>[ ] Simulation of machine braiding process (hexagonal braiding machine)</p></li>
+</ul>
+</section>
+<section id="basic-example">
+<h2>Basic example<a class="headerlink" href="#basic-example" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+
+<span class="c1"># Create a braid</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Perform operations</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="installation">
+<h2>🛠️ Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Release versions are available on Pypi and it should be very easy to install braidpy in your python environment.</p>
+<p>Using pip</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>braidpy
+</pre></div>
+</div>
+<p>Or using poetry</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>add<span class="w"> </span>braidpy
+</pre></div>
+</div>
+<p>Or using uv (recommended package manager used on the project)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>add<span class="w"> </span>braidpy
+</pre></div>
+</div>
+</section>
+<section id="installation-from-source">
+<h2>🛠️ Installation from source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h2>
+<p>The version in pypi might lack features or bug corrections compared to the development versions.</p>
+<p>You can download the code directly from GitHub or using git:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:baptistelabat/braidpy.git
+</pre></div>
+</div>
+<p>By default, you should be on the ‘develop’ branch.</p>
+<p>To install the required dependencies, follow the steps below:</p>
+<ol class="arabic" start="2">
+<li><p>On linux, run the commands from root of repository to install uv. Use the official <a class="reference external" href="https://docs.astral.sh/uv/getting-started/installation">installation guide</a> otherwise.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>build-essential
+<span class="nb">cd</span><span class="w"> </span>braidpy
+make<span class="w"> </span>install-uv
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="test">
+<h2>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h2>
+<p>To launch the complete suite of tests, launch the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests
+</pre></div>
+</div>
+<p>Alternatively, if you have make install, just run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span><span class="nb">test</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="documentation">
+<h2>📜 Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p>Documentation of released versions is hosted by [readthedocs] (https://braidpy.readthedocs.io/en/latest/)</p>
+<p>Documentation of development version can be found on [github pages] (https://baptistelabat.github.io/braidpy)
+You should be able to select among several versions. Note that this process is manual.
+You can also generate the documentation for your version installed from sources</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs
+</pre></div>
+</div>
+<section id="project-team">
+<h3>Project Team:<a class="headerlink" href="#project-team" title="Link to this heading"></a></h3>
+<p>This is a single person project for now, but I would be happy to make the team grow.
+Human:</p>
+<ul class="simple">
+<li><p><strong>Baptiste Labat</strong>
+<a class="reference external" href="https://www.linkedin.com/in/baptiste-labat-01751138/"><img alt="LinkedIn" src="https://img.shields.io/badge/-LinkedIn-blue?logo=linkedin&amp;logoWidth=20&amp;style=flat-square" /></a>
+<a class="reference external" href="https://github.com/baptistelabat"><img alt="GitHub" src="https://img.shields.io/badge/-GitHub-black?logo=github&amp;logoWidth=20&amp;style=flat-square" /></a></p></li>
+</ul>
+</section>
+</section>
+<section id="bot-chatgpt-windsurf">
+<h2>Bot:
+chatgpt
+windsurf<a class="headerlink" href="#bot-chatgpt-windsurf" title="Link to this heading"></a></h2>
+</section>
+<section id="contributions">
+<h2>🤝 Contributions<a class="headerlink" href="#contributions" title="Link to this heading"></a></h2>
+<p>Contributions are welcome! Please open an issue or submit a pull request from your fork to suggest changes, report bugs, or propose new features.</p>
+<p>Here are a few code guidelines:</p>
+<ul class="simple">
+<li><p>We use english for code and comments.</p></li>
+<li><p>We use Google style docstring.</p></li>
+<li><p>We use type hinting.<br />
+Please be sure to install the pre-commit tool in order to check your code while commiting in order to keep a clean project history.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+<p>Please have a look to makefile to find helpful commands.</p>
+</section>
+<section id="license">
+<h2>📜 License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p><img alt="License" src="https://img.shields.io/badge/license-MPL%202.0-brightgreen" /></p>
+<p>This project is licensed under the Mozilla Public License 2.0 - see the <a class="reference internal" href="#./LICENSE"><span class="xref myst">LICENSE</span></a> file for details.</p>
+</section>
+<hr class="docutils" />
+<section id="references">
+<h2>🖇️ References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<p>https://dehornoy.lmno.cnrs.fr</p>
 <p>👉 Check out the <a class="reference internal" href="usage.html"><span class="std std-doc">Usage Guide</span></a> for detailed instructions, including how to <a class="reference internal" href="usage.html#installation"><span class="std std-ref">install the project</span></a>.</p>
-<blockquote>
-<div><p><strong>Note</strong><br />
-This project is under active development.</p>
-</div></blockquote>
+</section>
 <section id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#draw-colored-braid-diagram-in-terminal">Draw colored braid diagram in terminal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#plot-colored-braid-diagram">Plot colored braid diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#plot-3d-braid">Plot 3D braid</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#launching-the-demo-in-progress">🚀 Launching the demo <em>(In Progress)</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#creating-braids-artin-generators">🔁 Creating braids (Artin Generators)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#next-crossing">🔄 Next crossing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#combining-braid-operatin">🔗 Combining braid operatin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#combining-braid-operation">🔗 Combining braid operation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#creating-a-pure-braid">🔁 Creating a Pure Braid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#handle-reduction">✂️ Handle Reduction</a></li>
 </ul>
@@ -131,12 +258,8 @@ This project is under active development.</p>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.dehornoy_reduce_core"><code class="docutils literal notranslate"><span class="pre">dehornoy_reduce_core()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.material_braid.MaterialStrand"><code class="docutils literal notranslate"><span class="pre">MaterialStrand</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.material_braid.MaterialBraid"><code class="docutils literal notranslate"><span class="pre">MaterialBraid</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.ParametricStrand"><code class="docutils literal notranslate"><span class="pre">ParametricStrand</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.Plotter"><code class="docutils literal notranslate"><span class="pre">Plotter</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.ParametricBraid"><code class="docutils literal notranslate"><span class="pre">ParametricBraid</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.make_arc"><code class="docutils literal notranslate"><span class="pre">make_arc()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.make_idle_arc"><code class="docutils literal notranslate"><span class="pre">make_idle_arc()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.combine_arcs"><code class="docutils literal notranslate"><span class="pre">combine_arcs()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.parametric_braid.braid_to_parametric_strands"><code class="docutils literal notranslate"><span class="pre">braid_to_parametric_strands()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.utils.colorize_by_index"><code class="docutils literal notranslate"><span class="pre">colorize_by_index()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.utils.colorize"><code class="docutils literal notranslate"><span class="pre">colorize()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.utils.int_to_superscript"><code class="docutils literal notranslate"><span class="pre">int_to_superscript()</span></code></a></li>
@@ -158,7 +281,7 @@ This project is under active development.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="usage.html" class="btn btn-neutral float-right" title="🛠️ Usage Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="visualization.html" class="btn btn-neutral float-right" title="Visualizing braids" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

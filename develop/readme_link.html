@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BraidPy &mdash; braidpy 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">BraidPy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/readme_link.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="braidpy">
+<h1>BraidPy<a class="headerlink" href="#braidpy" title="Link to this heading"></a></h1>
+<p>A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
+advances in braid theory.</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>[x] Mathematical representation of braids with braid words using Artin’s generator</p></li>
+<li><p>[x] Conversion between different braidword formats</p></li>
+<li><p>[x] Braid operations and manipulations</p></li>
+<li><p>[x] ASCI, 2D and 3D visualization capabilities</p></li>
+<li><p>[x] Computations of mathematical properties of braidword or invariants of braid</p></li>
+<li><p>[ ] Annulus braids</p></li>
+<li><p>[ ] Simulation of machine braiding process</p></li>
+</ul>
+</section>
+<section id="basic-example">
+<h2>Basic example<a class="headerlink" href="#basic-example" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+
+<span class="c1"># Create a braid</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Perform operations</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="installation">
+<h2>🛠️ Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Release are available on Pypi and it should be very easy to install braidpy in your python environment.</p>
+<p>Using pip</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>braidpy
+</pre></div>
+</div>
+<p>Or using poetry</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>add<span class="w"> </span>braidpy
+</pre></div>
+</div>
+<p>With uv (package manager used on the project)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>add<span class="w"> </span>braidpy
+</pre></div>
+</div>
+</section>
+<section id="installation-from-source">
+<h2>🛠️ Installation from source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h2>
+<p>The version in pypi might lack features or bug corrections compared to the development versions.</p>
+<p>You can download the code directly from GitHub or using git:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:baptistelabat/braidpy.git
+</pre></div>
+</div>
+<p>By default, you should be on the ‘develop’ branch.</p>
+<p>To install the required dependencies, follow the steps below:</p>
+<ol class="arabic" start="2">
+<li><p>On linux, run the commands from root of repository to install uv. Use the official <a class="reference external" href="https://docs.astral.sh/uv/getting-started/installation">installation guide</a> otherwise.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>build-essential
+<span class="nb">cd</span><span class="w"> </span>braidpy
+make<span class="w"> </span>install-uv
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="test">
+<h2>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h2>
+<p>To launch the complete suite of tests, launch the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests
+</pre></div>
+</div>
+<p>Alternatively, if you have make install, just run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span><span class="nb">test</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="documentation">
+<h2>📜 Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p>Documentation of released versions is available at:
+https://braidpy.readthedocs.io/en/latest/</p>
+<p>Documentation of development version can be found at https://baptistelabat.github.io/braidpy
+You should be able to select among several versions. Note that this process is manual.
+You can also generate the documentation for your version installed from sources</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs
+</pre></div>
+</div>
+<section id="project-team">
+<h3>Project Team:<a class="headerlink" href="#project-team" title="Link to this heading"></a></h3>
+<p>Human:</p>
+<ul class="simple">
+<li><p><strong>Baptiste Labat</strong>
+<a class="reference external" href="https://www.linkedin.com/in/baptiste-labat-01751138/"><img alt="LinkedIn" src="https://img.shields.io/badge/-LinkedIn-blue?logo=linkedin&amp;logoWidth=20&amp;style=flat-square" /></a>
+<a class="reference external" href="https://github.com/baptistelabat"><img alt="GitHub" src="https://img.shields.io/badge/-GitHub-black?logo=github&amp;logoWidth=20&amp;style=flat-square" /></a></p></li>
+</ul>
+</section>
+</section>
+<section id="bot-chatgpt-windsurf">
+<h2>Bot:
+chatgpt
+windsurf<a class="headerlink" href="#bot-chatgpt-windsurf" title="Link to this heading"></a></h2>
+</section>
+<section id="contributions">
+<h2>🤝 Contributions<a class="headerlink" href="#contributions" title="Link to this heading"></a></h2>
+<p>Contributions are welcome! Please open an issue or submit a pull request to suggest changes, report bugs, or propose new features.</p>
+<p>Here are a few code guidelines:</p>
+<ul class="simple">
+<li><p>We use english for code and comments.</p></li>
+<li><p>We use google style docstring.</p></li>
+<li><p>We use type hinting.<br />
+Please be sure to install the pre-commit tool in order to check your code while commiting in order to keep a clean project history.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+<p>Please have a look to makefile to find helpful commands.</p>
+</section>
+<section id="license">
+<h2>📜 License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p><img alt="License" src="https://img.shields.io/badge/license-MPL%202.0-brightgreen" /></p>
+<p>This project is licensed under the Mozilla Public License 2.0 - see the <a class="reference internal" href="#./LICENSE"><span class="xref myst">LICENSE</span></a> file for details.</p>
+</section>
+<hr class="docutils" />
+<section id="references">
+<h2>🖇️ References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<p>https://dehornoy.lmno.cnrs.fr</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
