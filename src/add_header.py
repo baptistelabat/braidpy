@@ -24,35 +24,29 @@ DEFAULT_DESCRIPTION = "[TODO: Add description here]"
 
 
 def get_git_authors(filepath):
-    try:
-        raw = (
-            subprocess.check_output(
-                ["git", "log", "--follow", "--format=%aN", filepath],
-                stderr=subprocess.DEVNULL,
-            )
-            .decode()
-            .strip()
-            .split("\n")
+    raw = (
+        subprocess.check_output(
+            ["git", "log", "--follow", "--format=%aN", filepath],
+            stderr=subprocess.DEVNULL,
         )
-        return ", ".join(sorted(set(filter(None, raw))))
-    except Exception:
-        return "Unknown"
+        .decode()
+        .strip()
+        .split("\n")
+    )
+    return ", ".join(sorted(set(filter(None, raw))))
 
 
 def get_git_creation_date(filepath):
-    try:
-        date_str = (
-            subprocess.check_output(
-                ["git", "log", "--diff-filter=A", "--follow", "--format=%aI", filepath],
-                stderr=subprocess.DEVNULL,
-            )
-            .decode()
-            .strip()
-            .split("\n")[0]
+    date_str = (
+        subprocess.check_output(
+            ["git", "log", "--diff-filter=A", "--follow", "--format=%aI", filepath],
+            stderr=subprocess.DEVNULL,
         )
-        return date_str[:10] if date_str else datetime.today().strftime("%Y-%m-%d")
-    except Exception:
-        return datetime.today().strftime("%Y-%m-%d")
+        .decode()
+        .strip()
+        .split("\n")[0]
+    )
+    return date_str[:10] if date_str else datetime.today().strftime("%Y-%m-%d")
 
 
 def extract_description(content):
@@ -69,18 +63,15 @@ def remove_existing_mpl_header(content):
 
 
 def get_repo_url():
-    try:
-        url = (
-            subprocess.check_output(
-                ["git", "config", "--get", "remote.origin.url"],
-                stderr=subprocess.DEVNULL,
-            )
-            .decode()
-            .strip()
+    url = (
+        subprocess.check_output(
+            ["git", "config", "--get", "remote.origin.url"],
+            stderr=subprocess.DEVNULL,
         )
-        return url or "Unknown"
-    except Exception:
-        return "Unknown"
+        .decode()
+        .strip()
+    )
+    return url or "Unknown"
 
 
 def insert_or_replace_header(filepath, repo_url):
