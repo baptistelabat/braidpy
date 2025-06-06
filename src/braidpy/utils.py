@@ -73,7 +73,7 @@ def int_to_subscript(n: int) -> str:
 
 
 class PositiveFloat(float):
-    def __new__(cls, value: Any) -> "PositiveFloat":
+    def __new__(cls: "PositiveFloat", value: Any) -> "PositiveFloat":
         val = float(value)
         if val < 0:
             raise ValueError(f"Value must be >= 0, got {val}")
@@ -81,7 +81,7 @@ class PositiveFloat(float):
 
 
 class StrictlyPositiveFloat(float):
-    def __new__(cls, value: Any) -> "StrictlyPositiveFloat":
+    def __new__(cls: "StrictlyPositiveFloat", value: Any) -> "StrictlyPositiveFloat":
         val = float(value)
         if val <= 0:
             raise ValueError(f"Value must be > 0, got {val}")
@@ -89,7 +89,7 @@ class StrictlyPositiveFloat(float):
 
 
 class PositiveInt(int):
-    def __new__(cls, value: Any) -> "PositiveInt":
+    def __new__(cls: "PositiveInt", value: Any) -> "PositiveInt":
         val = int(value)
         if val < 0:
             raise ValueError(f"Value must be >= 0, got {val}")
@@ -97,7 +97,7 @@ class PositiveInt(int):
 
 
 class StrictlyPositiveInt(int):
-    def __new__(cls, value: Any) -> "StrictlyPositiveInt":
+    def __new__(cls: "StrictlyPositiveInt", value: Any) -> "StrictlyPositiveInt":
         val = int(value)
         if val <= 0:
             raise ValueError(f"Value must be > 0, got {val}")

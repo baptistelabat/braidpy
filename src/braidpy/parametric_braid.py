@@ -21,7 +21,7 @@ from braidpy.utils import StrictlyPositiveInt, PositiveFloat
 
 
 class ParametricStrand:
-    def __init__(self, func: Callable[[float], tuple]):
+    def __init__(self, func: Callable[[float], tuple]) -> None:
         """
 
         Args:
@@ -41,11 +41,11 @@ class ParametricStrand:
 
 
 class ParametricBraid:
-    def __init__(self, strands: list[ParametricStrand]):
+    def __init__(self, strands: list[ParametricStrand]) -> None:
         self.strands = strands
         self.n_strands = len(strands)
 
-    def get_positions_at(self, t: PositiveFloat):
+    def get_positions_at(self, t: PositiveFloat) -> List[Tuple[float, float, float]]:
         return [strand.evaluate(t) for strand in self.strands]
 
     def plot(self, n_sample: StrictlyPositiveInt = 200):

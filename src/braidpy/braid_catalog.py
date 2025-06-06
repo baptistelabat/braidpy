@@ -15,9 +15,11 @@ from braidpy import Braid
 from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
 from braidpy.utils import StrictlyPositiveInt
+import braidpy.braid
+from typing import Tuple
 
 
-def garside_half_twist_braid(n_strands: StrictlyPositiveInt):
+def garside_half_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     """
     Compute the Garside half twist braid also known as Garside element ∆n or (simply ∆ if n=n_strands-1)
     ∆² is known to generate the "center" of the braid group Bn+1.
@@ -42,7 +44,7 @@ def garside_half_twist_braid(n_strands: StrictlyPositiveInt):
     return b.half_twist()
 
 
-def full_twist_braid(n_strands: StrictlyPositiveInt):
+def full_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     """
     Compute the full twist braid ∆n² which is the square of Garside half twist braid
     ∆n
@@ -63,7 +65,7 @@ def full_twist_braid(n_strands: StrictlyPositiveInt):
     return b.full_twist()
 
 
-def flat3():
+def flat3() -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic braid with 3 strands going above central braid
 
@@ -78,7 +80,7 @@ def flat3():
     return b, n
 
 
-def inverted_flat3():
+def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic braid with 3 strands going below central braid
 
@@ -94,7 +96,7 @@ def inverted_flat3():
     return b, n
 
 
-def round4():
+def round4() -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic round braid with 4 strands
 
@@ -110,7 +112,7 @@ def round4():
     return b, n
 
 
-def flat4():
+def flat4() -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic flat braid with 4 strands
 
@@ -127,7 +129,7 @@ def flat4():
     return b, n
 
 
-def flat6():
+def flat6() -> Tuple[braidpy.braid.Braid, int]:
     """
     This one is probably not unique !
 
@@ -158,7 +160,7 @@ def flat6():
     return b, n
 
 
-def regular_flat6():
+def regular_flat6() -> Tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=J65kCzm_BtI
 
@@ -177,7 +179,7 @@ def regular_flat6():
     return b, n
 
 
-def flat5():
+def flat5() -> Tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=uRy4wvJwSWA
 
