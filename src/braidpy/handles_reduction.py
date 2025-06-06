@@ -141,6 +141,9 @@ def dehornoy_reduce_core(
         - -1 if Dehornoy negative
         - 0 if neutral element
         - None in case it can not be said without reducing handles further
+
+    Raises:
+        HandleReducedButUnexpectedResult
     """
     gens = list(gens)
     non_integers = [x for x in gens if not isinstance(x, (int, np.integer))]
