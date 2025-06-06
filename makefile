@@ -53,6 +53,12 @@ lint: ## Clean code or warn user
 test: ## Launch test
 	uv run pytest tests
 
+# Step 1: Run code with tracing
+autotype:
+	uv run monkeytype run -m pytest tests
+	monkeytype list-modules | xargs -n1 monkeytype apply
+
+
 coverage: ## Launch coverage test
 	coverage run -m pytest tests
 	coverage html --omit="*/test*"

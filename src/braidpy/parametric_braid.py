@@ -23,7 +23,9 @@ from braidpy.utils import StrictlyPositiveInt, PositiveFloat
 class ParametricStrand:
     def __init__(self, func: Callable[[float], tuple]):
         """
-        func: a function γ(t) : [0,1] → ℝ³
+
+        Args:
+            func(Callable[[float], tuple]): a function γ(t) : [0,1] → ℝ³
         """
         self.func = func
 

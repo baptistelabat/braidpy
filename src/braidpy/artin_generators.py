@@ -19,7 +19,7 @@ class a(Braid):
     This class is a shortcut to be able to use a compact notation with Artin's generators
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Ensures we have only one crossing
         """

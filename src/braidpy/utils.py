@@ -11,7 +11,7 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import Any
+from typing import Optional, Union, Any
 
 # ANSI color codes (foreground)
 ANSI_COLORS = [
@@ -31,7 +31,7 @@ def colorize_by_index(text: str, index: int) -> str:
     return f"{color}{text}{RESET}"
 
 
-def colorize(item, index=None):
+def colorize(item: Union[str, int], index: Optional[int] = None) -> str:
     """Colorize item based on index (or its value if it's an int)."""
     if index is None:
         index = item - 1 if isinstance(item, int) else 0
