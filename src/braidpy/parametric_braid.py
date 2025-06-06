@@ -11,6 +11,7 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+from enum import Enum
 from typing import Callable, List, Tuple
 import math
 
@@ -18,6 +19,13 @@ import matplotlib.pyplot as plt
 
 from braidpy import Braid
 from braidpy.utils import StrictlyPositiveInt, PositiveFloat, terminal_colors
+
+import plotly.graph_objects as go
+
+
+class Plotter(str, Enum):
+    PLOTLY = "PLOTLY"
+    MATPLOTLIB = "MATPLOTLIB"
 
 
 class ParametricStrand:
@@ -72,7 +80,9 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
-    def plot(self, n_sample: StrictlyPositiveInt = 200) -> "ParametricBraid":
+    def plot(
+        self, n_sample: StrictlyPositiveInt = 200, plotter: Plotter = Plotter.PLOTLY
+    ) -> "ParametricBraid":
         """
         Plot the braid in 3D
 
@@ -82,27 +92,35 @@ class ParametricBraid:
         Returns:
             ParametricBraid: the braid itself
         """
-        plotter = "plotly"
-        if plotter == "matplotlib":
+        if plotter == Plotter.MATPLOTLIB:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
-            for strand in self.strands:
+            for i, strand in enumerate(self.strands):
                 path = strand.sample(n_sample)
                 x, y, z = zip(*path)
-                ax.plot(x, y, z, linewidth=10)
+                color = terminal_colors[i % len(terminal_colors)]
+                ax.plot(x, y, z, linewidth=10, color=color)
             ax.set_xlabel("X")
             ax.set_ylabel("Y")
             ax.set_zlabel("Z (time)")
             ax.set_aspect("equal", "box")
             plt.tight_layout()
             plt.show()
-        else:
-            import plotly.graph_objects as go
-
+        elif plotter == Plotter.PLOTLY:
             fig = go.Figure()
 
-            for i, strand in enumerate(self.strands):
+            # First pass to compute global z-range
+            all_paths = []
+            z_min, z_max = float("inf"), float("-inf")
+
+            for strand in self.strands:
                 path = strand.sample(n_sample)
+                z_vals = [pt[2] for pt in path]
+                z_min = min(z_min, min(z_vals))
+                z_max = max(z_max, max(z_vals))
+                all_paths.append(path)
+
+            for i, path in enumerate(all_paths):
                 x, y, z = zip(*path)
 
                 color = terminal_colors[i % len(terminal_colors)]
@@ -124,6 +142,7 @@ class ParametricBraid:
                     xaxis_title="X",
                     yaxis_title="Y",
                     zaxis_title="Z (time)",
+                    zaxis=dict(range=[z_max, z_min]),  # Flip Z axis
                     aspectmode="data",
                 ),
                 margin=dict(l=0, r=0, b=0, t=0),

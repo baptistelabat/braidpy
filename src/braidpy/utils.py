@@ -25,15 +25,15 @@ ANSI_COLORS = [
 RESET = "\033[0m"
 
 terminal_colors = {
-    0: "rgb(255,0,0)",  # Red
-    1: "rgb(0,255,0)",  # Green
-    2: "rgb(0,0,255)",  # Blue
-    3: "rgb(255,255,0)",  # Yellow
-    4: "rgb(255,0,255)",  # Magenta
-    5: "rgb(0,255,255)",  # Cyan
-    6: "rgb(255,165,0)",  # Orange
-    7: "rgb(128,0,128)",  # Purple
-    8: "rgb(165,42,42)",  # Brown
+    0: "red",  # Red
+    1: "green",  # Green
+    2: "blue",  # Blue
+    3: "yellow",  # Yellow
+    4: "magenta",  # Magenta
+    5: "cyan",  # Cyan
+    6: "orange",  # Orange
+    7: "purple",  # Purple
+    8: "brown",  # Brown
     9: "rgb(0,128,128)",  # Teal
 }
 
