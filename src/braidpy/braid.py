@@ -617,17 +617,16 @@ class Braid:
                 Thickness of the strands in the figure.
             gap_size(Optional(int)): Default to 3
                 Amount of space shown at crossings for undercrossing strands.
-            color(str):
-                Multicolor strands defined by "rainbow". Single fixed colour for
+            color(str): Multicolor strands defined by "rainbow". Single fixed colour for
                 all strands can be chosen from:
-                    {'b': blue,
-                    'g': green,
-                    'r': red,
-                    'c': cyan,
-                    'm': magenta,
-                    'y': yellow,
-                    'k': black,
-                    'w': white}
+                {'b': blue,
+                'g': green,
+                'r': red,
+                'c': cyan,
+                'm': magenta,
+                'y': yellow,
+                'k': black,
+                'w': white}
             save(bool): if True save to file "test.svg"
 
         Returns:
