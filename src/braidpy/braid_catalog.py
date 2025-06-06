@@ -105,7 +105,7 @@ def round4() -> Tuple[braidpy.braid.Braid, int]:
         n: the number of iterations to get back to initial order of strands
     """
     n = 4
-    step = Braid([-1, -2, -2], n)
+    step = Braid((-1, -2, -2), n)
     b = step * step.flip()
     b.draw()
     (b**n).draw()

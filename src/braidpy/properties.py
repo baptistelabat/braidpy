@@ -47,8 +47,8 @@ def conjugacy_class(braid: Braid, conjugators: List[Braid] = None) -> List[Braid
     conjugates = set()
     if conjugators is None:
         conjugators = [
-            Braid([i], braid.n_strands) for i in range(1, (braid.n_strands))
-        ] + [Braid([-i], braid.n_strands) for i in range(1, (braid.n_strands))]
+            Braid([i], braid.n_strands) for i in range(1, braid.n_strands)
+        ] + [Braid([-i], braid.n_strands) for i in range(1, braid.n_strands)]
 
     for a in conjugators:
         inv_a = a.inverse()  # You need to implement or have this method

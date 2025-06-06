@@ -51,7 +51,7 @@ class a(Braid):
 
     def __rmul__(self, other: Braid) -> Braid:
         """
-        Compose two braids (concatenate operation of self after other)
+        Compose two braids (concatenate operation of self after the other)
 
         This corresponds to multiplication of two braids in braid theory
 
@@ -60,7 +60,7 @@ class a(Braid):
         Resulting braid will have the minimum number of strands necessary
 
         Args:
-            other(Braid): the other braid to add beforce
+            other(Braid): the other braid to be concatenated
 
         Returns:
             Braid: the resulting braid

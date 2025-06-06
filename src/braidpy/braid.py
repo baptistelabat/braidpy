@@ -19,7 +19,12 @@ from sympy import Matrix, eye, symbols
 from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
-from braidpy.utils import int_to_superscript, int_to_subscript, colorize
+from braidpy.utils import (
+    int_to_superscript,
+    int_to_subscript,
+    colorize,
+    StrictlyPositiveInt,
+)
 
 import braidvisualiser as bv
 
@@ -451,7 +456,7 @@ class Braid:
             return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, Ai=b.a)
         else:
             return GarsideCanonicalFactors(
-                n_half_twist=0, n_strands=br.n_strands, Ai=[]
+                n_half_twist=0, n_strands=StrictlyPositiveInt(br.n_strands), Ai=()
             )
 
     def to_matrix(self) -> Matrix:

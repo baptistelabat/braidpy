@@ -91,7 +91,7 @@ def make_arc(
         progress = (t - t_start) / (t_end - t_start)
         x = x_start + (x_end - x_start) * progress
         y = amplitude * math.sin(math.pi * progress)
-        return (x, y, t)
+        return x, y, t
 
     return arc
 
@@ -112,7 +112,7 @@ def make_idle_arc(
     """
 
     def arc(t: float) -> Tuple[float, float, float]:
-        return (x, 0.0, t)
+        return x, 0.0, t
 
     return arc
 
@@ -146,7 +146,6 @@ def braid_to_parametric_strands(
     Args:
         braid: The Braid object containing crossing generators.
         amplitude: Height of the sine wave for over/under crossings.
-        duration_per_gen: Time duration for each generator.
 
     Returns:
         A list of ParametricStrand objects representing the strands.

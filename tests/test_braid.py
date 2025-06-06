@@ -182,7 +182,7 @@ class TestBraid:
 
     def test_canonical_form(self):
         f = Braid([]).get_canonical_factors()
-        assert f.Ai == []
+        assert f.Ai == ()
         assert f.n_half_twist == 0
         assert f.n_strands == 1
 
