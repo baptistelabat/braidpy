@@ -1,3 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""
+Filename: handles_reduction.py
+Description: Simplification of braid word to get unique braid representation
+Authors: Baptiste Labat
+Created: 2025-06-03
+Repository: https://github.com/baptistelabat/braidpy
+License: Mozilla Public License 2.0
+"""
+
 import time
 from enum import Enum
 from typing import List
