@@ -29,14 +29,29 @@ class ParametricStrand:
         """
         self.func = func
 
-    def evaluate(self, t: float) -> tuple:
-        """Returns the position γ(t)"""
+    def evaluate(self, t: float) -> tuple[float, float, float]:
+        """
+        Compute the strand position at time t (along z axis)
+        Args:
+            t: time or z coordinates
+
+        Returns:
+            tuple[float, float, float]: position of braid [x(t), y(t), t]
+        """
         if t < 0 or t > 1:
             raise ValueError("t must be in [0, 1]")
         return self.func(t)
 
     def sample(self, n: StrictlyPositiveInt = 100) -> List[tuple]:
-        """Return a list of sampled points for plotting"""
+        """
+        Return a list of sampled points for plotting
+
+        Args:
+            n(StrictlyPositiveInt): number of samples
+
+        Returns:
+            List[tuple]: list of 3D coordinates
+        """
         return [self.evaluate(i / (n - 1)) for i in range(n)]
 
 
@@ -46,9 +61,27 @@ class ParametricBraid:
         self.n_strands = len(strands)
 
     def get_positions_at(self, t: PositiveFloat) -> List[Tuple[float, float, float]]:
+        """
+        Get position of different strands at a given time
+
+        Args:
+            t: time or z coordinates
+
+        Returns:
+            List[Tuple[float, float, float]]: list of 3D coordinates
+        """
         return [strand.evaluate(t) for strand in self.strands]
 
-    def plot(self, n_sample: StrictlyPositiveInt = 200):
+    def plot(self, n_sample: StrictlyPositiveInt = 200) -> "ParametricBraid":
+        """
+        Plot the braid in 3D
+
+        Args:
+            n_sample:
+
+        Returns:
+            ParametricBraid: the braid itself
+        """
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         for strand in self.strands:
@@ -77,11 +110,11 @@ def make_arc(
     Creates a sine-arc parametric function between two x-positions.
 
     Args:
-        x_start: Starting x position.
-        x_end: Ending x position.
-        t_start: Start time.
-        t_end: End time.
-        amplitude: Amplitude of the sine wave in the y-direction.
+        x_start(float): Starting x position.
+        x_end(float): Ending x position.
+        t_start(float): Start time.
+        t_end(float): End time.
+        amplitude(float): Amplitude of the sine wave in the y-direction.
 
     Returns:
         A function that maps time t to a 3D point (x, y, z).
