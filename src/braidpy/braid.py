@@ -460,20 +460,20 @@ class Braid:
 
         for gen in self.generators:
             i = abs(gen) - 1
-            B = eye(self.n_strands)
+            mat = eye(self.n_strands)
             if gen > 0:
                 # σ_i
-                B[i, i] = 1 - t
-                B[i, i + 1] = t
-                B[i + 1, i] = 1
-                B[i + 1, i + 1] = 0
+                mat[i, i] = 1 - t
+                mat[i, i + 1] = t
+                mat[i + 1, i] = 1
+                mat[i + 1, i + 1] = 0
             if gen < 0:
                 # σ_i⁻¹
-                B[i, i] = 0
-                B[i, i + 1] = 1
-                B[i + 1, i] = t**-1
-                B[i + 1, i + 1] = 1 - t**-1
-            matrix = matrix * B  # Correct order: left-to-right
+                mat[i, i] = 0
+                mat[i, i + 1] = 1
+                mat[i + 1, i] = t**-1
+                mat[i + 1, i + 1] = 1 - t**-1
+            matrix = matrix * mat  # Correct order: left-to-right
         return matrix
 
     def to_reduced_matrix(self):
