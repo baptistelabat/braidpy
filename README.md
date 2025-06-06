@@ -8,9 +8,12 @@ advances in braid theory. Source is available at on [github](https://github.com/
 - [x] Mathematical representation of braids with braid words using Artin's generators
 - [x] Conversion between different braid word formats
 - [x] Braid operations and manipulations (inversion, handles reduction, ...)
+- [x] Generation of parametric braid from braid word
 - [x] Visualization capabilities (ASCI, 2D and 3D) 
 - [x] Computations of mathematical properties of braid word or invariants of braid
 - [ ] Annulus braids
+- [ ] Conversion from parametric braid to braid word
+- [ ] Conversion from material braid to parametric braid
 - [ ] Simulation of machine braiding process (hexagonal braiding machine)
 
 ## Basic example

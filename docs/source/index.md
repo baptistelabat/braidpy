@@ -7,6 +7,7 @@
 ```{toctree}
 :maxdepth: 2
 
+visualization.md
 usage.md
 references.md
 reference.md

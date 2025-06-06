@@ -17,7 +17,7 @@ import math
 import matplotlib.pyplot as plt
 
 from braidpy import Braid
-from braidpy.utils import StrictlyPositiveInt, PositiveFloat
+from braidpy.utils import StrictlyPositiveInt, PositiveFloat, terminal_colors
 
 
 class ParametricStrand:
@@ -82,18 +82,55 @@ class ParametricBraid:
         Returns:
             ParametricBraid: the braid itself
         """
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        for strand in self.strands:
-            path = strand.sample(n_sample)
-            x, y, z = zip(*path)
-            ax.plot(x, y, z, linewidth=10)
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z (time)")
-        ax.set_aspect("equal", "box")
-        plt.tight_layout()
-        plt.show()
+        plotter = "plotly"
+        if plotter == "matplotlib":
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+            for strand in self.strands:
+                path = strand.sample(n_sample)
+                x, y, z = zip(*path)
+                ax.plot(x, y, z, linewidth=10)
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z (time)")
+            ax.set_aspect("equal", "box")
+            plt.tight_layout()
+            plt.show()
+        else:
+            import plotly.graph_objects as go
+
+            fig = go.Figure()
+
+            for i, strand in enumerate(self.strands):
+                path = strand.sample(n_sample)
+                x, y, z = zip(*path)
+
+                color = terminal_colors[i % len(terminal_colors)]
+
+                fig.add_trace(
+                    go.Scatter3d(
+                        x=x,
+                        y=y,
+                        z=z,
+                        mode="lines",
+                        line=dict(width=10, color=color),
+                        name=f"Strand {i}",
+                        hoverinfo="name",
+                    )
+                )
+
+            fig.update_layout(
+                scene=dict(
+                    xaxis_title="X",
+                    yaxis_title="Y",
+                    zaxis_title="Z (time)",
+                    aspectmode="data",
+                ),
+                margin=dict(l=0, r=0, b=0, t=0),
+                showlegend=True,
+            )
+
+            fig.show()
 
         # Return to avoid plotting and saving
         return self
