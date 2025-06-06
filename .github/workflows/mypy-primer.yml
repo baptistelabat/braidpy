@@ -1,0 +1,32 @@
+name: mypy-primer-check
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+      - 'pyproject.toml'
+      - 'Makefile'
+      - '.github/workflows/*'
+
+jobs:
+  mypy-primer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Setup virtualenv and install mypy-primer
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install mypy-primer
+
+      - name: Run mypy-primer
+        run: |
+          source .venv/bin/activate
+          mypy-primer --local-path . --diff
