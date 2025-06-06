@@ -24,6 +24,8 @@ The second type of visualization enables to plot a 2D braid diagram using matplo
 b.plot()
 ```
 
+[![2D braid diagram](2D_braid_diagram.png)]
+
 The third level is 3D visualization. You first need to convert your braidword to a parametric braid.
 Then you can plot the parametric braid using either matplotlib or plotly:
 
