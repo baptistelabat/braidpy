@@ -14,6 +14,7 @@ advances in braid theory. Source is available at on [github](https://github.com/
 - [ ] Annulus braids
 - [ ] Conversion from parametric braid to braid word
 - [ ] Conversion from material braid to parametric braid
+- [ ] Kumihimo braid with Mobidai
 - [ ] Simulation of machine braiding process (hexagonal braiding machine)
 
 ## Basic example
