@@ -31,6 +31,7 @@ from braidpy.utils import (
     int_to_subscript,
     colorize,
     StrictlyPositiveInt,
+    PositiveInt,
 )
 
 import braidvisualiser as bv
@@ -284,7 +285,7 @@ class Braid:
     def __hash__(self):
         return hash(self.__key())
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """
         Check if two braids are equivalent
         We ask to get the same number of strands
@@ -326,7 +327,7 @@ class Braid:
         """
         return Braid([-g for g in reversed(self.generators)], self.n_strands)
 
-    def __invert__(self):
+    def __invert__(self) -> "Braid":
         """
         Inverse of the braid with symbole ~
         This corresponds to the image of the braid in a mirror orthogonal to the braid direction
@@ -341,7 +342,7 @@ class Braid:
         """
         return self.inverse()
 
-    def n(self, n_strands):
+    def n(self, n_strands) -> "Braid":
         """
         Compact notation to allow to change the number of strands
 
@@ -353,7 +354,7 @@ class Braid:
         """
         return Braid(self.process, n_strands)
 
-    def flip(self):
+    def flip(self) -> "Braid":
         """
         Flip the braid
         This corresponds to the image of the braid in a mirror on the side of the braid reordered from left to right
@@ -370,7 +371,7 @@ class Braid:
         gen = [-np.sign(g) * (self.n_strands - abs(g)) for g in self.generators]
         return Braid(gen, self.n_strands)
 
-    def half_twist(self, sign: int = +1):
+    def half_twist(self, sign: int = +1) -> "Braid":
         """
         Twist the braid with half a turn
 
@@ -393,7 +394,7 @@ class Braid:
 
         return b
 
-    def full_twist(self, sign: int = +1):
+    def full_twist(self, sign: int = +1) -> "Braid":
         """
         Twist the braid with a complete turn
 
@@ -407,7 +408,7 @@ class Braid:
         """
         return self.half_twist(sign=sign).half_twist(sign=sign)
 
-    def up_side_down(self):
+    def up_side_down(self) -> "Braid":
         """
         Invert up and down crossing operations
 
@@ -419,7 +420,7 @@ class Braid:
         gen = [-g for g in self.generators]
         return Braid(gen, self.n_strands)
 
-    def __neg__(self):
+    def __neg__(self) -> "Braid":
         """
         Invert up and down crossing operations
 
@@ -444,7 +445,7 @@ class Braid:
         """Calculate the writhe of the braid (sum of generator powers)"""
         return sum(np.sign(self.generators))
 
-    def get_canonical_factors(self):
+    def get_canonical_factors(self) -> GarsideCanonicalFactors:
         """
         Get decomposition in left normal form
 
@@ -541,7 +542,7 @@ class Braid:
             print(" ".join(colorize(item) for item in strands))
         return perms
 
-    def perm(self):
+    def perm(self) -> list[PositiveInt]:
         """
         Compute the permutation corresponding to the braid
 
@@ -559,7 +560,7 @@ class Braid:
     def is_palindromic(self):
         return self.generators == self.generators[::-1]
 
-    def is_involutive(self):
+    def is_involutive(self) -> bool:
         """
         Returns true if inverse of braid word ie the same as braid word
         This probably works only for the neutral element
@@ -569,7 +570,7 @@ class Braid:
         """
         return self.inverse().generators == self.generators
 
-    def is_periodic(self):
+    def is_periodic(self) -> bool:
         """
         braid x is periodic if and only if its nth power or its (n − 1)st power is a power of the half-twist ∆
 
@@ -585,7 +586,7 @@ class Braid:
             range(1, self.n_strands + 1)
         )
 
-    def is_brunnian(self):
+    def is_brunnian(self) -> bool:
         """
         A Brunnian braid is a braid that becomes trivial upon removal of any one of its strings.
         Brunnian braids form a subgroup of the braid group
@@ -594,6 +595,16 @@ class Braid:
 
         Returns:
             bool: True if Brunnian
+        """
+        raise NotImplementedError()
+
+    def is_reducible(self) -> bool:
+        """
+        If a braid is reducible, it means that the strands can be separated into groups of strands
+         (less groups than number of strands), such that each group is running inside one tube. The tubes themselves can form a braid
+
+        Returns:
+            bool
         """
         raise NotImplementedError()
 
