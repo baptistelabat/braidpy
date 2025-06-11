@@ -11,6 +11,7 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+import dataclasses
 import time
 from enum import Enum
 from typing import List
@@ -39,6 +40,13 @@ class HandleReductionMode(str, Enum):
 
     FULL = "FULL"
     COMPARE = "COMPARE"
+
+
+@dataclasses.dataclass
+class HandleReductionResults:
+    generators: tuple[SignedCrossingIndex]
+    sign: int
+    handle_reduction_mode: HandleReductionMode
 
 
 def dehornoy_handle_indices(
@@ -173,7 +181,9 @@ def dehornoy_reduce_core(
         if mode == HandleReductionMode.COMPARE:
             sign = dehornoy_sign(gens)
             if sign in [-1, 0, +1]:
-                return gens, sign
+                return HandleReductionResults(
+                    generators=gens, sign=sign, handle_reduction_mode=mode
+                )
 
         handle = dehornoy_handle_indices(gens)
         if not handle:
@@ -183,11 +193,18 @@ def dehornoy_reduce_core(
         # Apply Dehornoy handle reduction (this part was wrong before)
         reduced_segment = reduce_handle(gens[i : j + 1])
         gens = gens[:i] + reduced_segment + gens[j + 1 :]
+        print(gens)
         print(Braid(gens).format_to_notation(target="alpha"))
+        # Braid(gens).draw()
+        print("")
 
     sign = dehornoy_sign(gens)
     if sign is None:
         raise HandleReducedButUnexpectedResult(
             f"Braid word reduced to {gens}, but sign can not be determined which is unexpected. Consider increasing timeout if necessary"
         )
-    return gens, sign
+    # Braid(gens).draw()
+    print("")
+    return HandleReductionResults(
+        generators=gens, sign=sign, handle_reduction_mode=mode
+    )
