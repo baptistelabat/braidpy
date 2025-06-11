@@ -96,7 +96,7 @@ def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def round4() -> Tuple[braidpy.braid.Braid, int]:
+def square4() -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic round braid with 4 strands
 
@@ -108,6 +108,7 @@ def round4() -> Tuple[braidpy.braid.Braid, int]:
     step = Braid((-1, -2, -2), n)
     b = step * step.flip()
     b.draw()
+    print(" ")
     (b**n).draw()
     return b, n
 

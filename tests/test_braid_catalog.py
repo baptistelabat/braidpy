@@ -4,7 +4,7 @@ from braidpy.braid_catalog import (
     full_twist_braid,
     flat3,
     inverted_flat3,
-    round4,
+    square4,
     flat4,
     flat6,
     flat5,
@@ -97,14 +97,14 @@ def test_inverted_flat3():
     b, n = inverted_flat3()
 
 
-def test_round4():
+def test_square4():
     """
 
 
     Returns:
 
     """
-    b, n = round4()
+    b, n = square4()
 
 
 def test_flat4():
