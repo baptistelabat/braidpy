@@ -1,7 +1,7 @@
 # BraidPy
 
 A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
-advances in braid theory. Source is available at on [github](https://github.com/baptistelabat/braidpy)
+advances in braid theory. Sources are shared on [github](https://github.com/baptistelabat/braidpy)
 
 ## Features
 
@@ -15,7 +15,7 @@ advances in braid theory. Source is available at on [github](https://github.com/
 - [ ] Conversion from parametric braid to braid word
 - [ ] Conversion from material braid to parametric braid
 - [ ] Kumihimo braid with Mobidai
-- [ ] Simulation of machine braiding process (hexagonal braiding machine)
+- [ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)
 
 ## Basic example
 
