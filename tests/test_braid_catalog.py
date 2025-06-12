@@ -5,7 +5,7 @@ from braidpy.braid_catalog import (
     flat3,
     inverted_flat3,
     square4,
-    flat4,
+    asymmetric_flat4,
     flat6,
     flat5,
     regular_flat6,
@@ -113,7 +113,7 @@ def test_flat4():
     Returns:
 
     """
-    b, n = flat4()
+    b, n = asymmetric_flat4()
     assert b.is_periodic()
 
 
