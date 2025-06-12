@@ -10,6 +10,7 @@
 relationships between algebraic and geometric braid
 - blob:https://github.com/8f3cf57d-953c-4b95-b920-e561721cbdbd
 - https://github.com/louisepb/TexGen
+- https://mathcenter.oxford.emory.edu/site/math108/braid_arithmetic/
 
 ---
 
