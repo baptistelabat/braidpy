@@ -10,6 +10,7 @@ from braidpy.braid_catalog import (
     flat5,
     regular_flat6,
     garside_half_twist_braid,
+    double_flat3,
 )
 
 
@@ -137,3 +138,7 @@ def test_regular_flat_braid_6():
 
     """
     b, n = regular_flat6()
+
+
+def test_double_flat3():
+    b, n = double_flat3()

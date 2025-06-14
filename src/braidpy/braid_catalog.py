@@ -202,6 +202,33 @@ def regular_flat6() -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
+def double_flat3(parallel: bool = True):
+    """
+    if parallel = False
+    ABOK 2971: "If the same method of turning edges is applied where units
+    of two or three parallel round cords are used, instead of single
+    strands, a distinctive sinnet results"
+
+    if parallel = True
+    ABOK 2972: "In this sinnet the strands are double and parallel. The effect
+    is very different from the last, in which the edges were turned."
+    """
+    parallel = False
+    n = 3
+    n_multiple = 2
+    if parallel:
+        step = a(0)
+    else:
+        step = a(1)
+    for i in range(n_multiple):
+        for j in range(n_multiple):
+            step = step * a(1 + n_multiple - 1 - i + j)
+    step = step.n(n * n_multiple)
+    b = (step * step.flip()) ** n
+    b.draw()
+    return b, n
+
+
 def flat5() -> Tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=uRy4wvJwSWA
