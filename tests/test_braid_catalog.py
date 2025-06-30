@@ -11,6 +11,7 @@ from braidpy.braid_catalog import (
     regular_flat6,
     garside_half_twist_braid,
     double_flat3,
+    abok_2973,
 )
 
 
@@ -96,6 +97,10 @@ def test_flat3():
 
 def test_inverted_flat3():
     b, n = inverted_flat3()
+
+
+def test_abok_2973():
+    b, n = abok_2973()
 
 
 def test_square4():

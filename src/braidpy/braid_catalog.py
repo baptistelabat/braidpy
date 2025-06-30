@@ -212,6 +212,10 @@ def double_flat3(parallel: bool = True):
     if parallel = True
     ABOK 2972: "In this sinnet the strands are double and parallel. The effect
     is very different from the last, in which the edges were turned."
+
+    Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
     """
     parallel = False
     n = 3
@@ -224,6 +228,25 @@ def double_flat3(parallel: bool = True):
         for j in range(n_multiple):
             step = step * a(1 + n_multiple - 1 - i + j)
     step = step.n(n * n_multiple)
+    b = (step * step.flip()) ** n
+    b.draw()
+    return b, n
+
+
+def weave_3():
+    """
+    This a 3 strands braid were 2 braids are running parallel while the third one is weaving them
+
+    ABOK 2973:  "The number of sinnets that are possible with three strands
+    only seem very limited. Three are given on these two facing pages."
+
+    Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
+    """
+
+    n = 3
+    step = a(1) * a(-2).n(n)
     b = (step * step.flip()) ** n
     b.draw()
     return b, n
