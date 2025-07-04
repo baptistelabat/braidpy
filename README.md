@@ -53,7 +53,7 @@ p.plot()
 ```
 
 The plot should give the following:
-[![Plot braid example](braid_plot.png)]
+![Plot braid example](braid_plot.png)
 
 ## 🛠️ Installation
 Release versions are available on Pypi and it should be very easy to install braidpy in your python environment.
