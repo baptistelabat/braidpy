@@ -233,7 +233,7 @@ def double_flat3(parallel: bool = True):
     return b, n
 
 
-def weave_3():
+def weave3():
     """
     This a 3 strands braid were 2 braids are running parallel while the third one is weaving them
 
@@ -250,6 +250,20 @@ def weave_3():
     b = (step * step.flip()) ** n
     b.draw()
     return b, n
+
+
+def abok_2974():
+    """
+    2974. With four strands the horizon is somewhat widened.
+
+    Returns:
+
+    """
+    n = 2
+    step = Braid([-1, -3, 2, 2], 4)
+    step.draw()
+    (step**n).draw()
+    return step, n
 
 
 def flat5() -> Tuple[braidpy.braid.Braid, int]:

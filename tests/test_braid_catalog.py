@@ -11,7 +11,8 @@ from braidpy.braid_catalog import (
     regular_flat6,
     garside_half_twist_braid,
     double_flat3,
-    abok_2973,
+    abok_2974,
+    weave3,
 )
 
 
@@ -99,8 +100,8 @@ def test_inverted_flat3():
     b, n = inverted_flat3()
 
 
-def test_abok_2973():
-    b, n = abok_2973()
+def test_weave3():
+    b, n = weave3()
 
 
 def test_square4():
@@ -121,6 +122,10 @@ def test_flat4():
     """
     b, n = asymmetric_flat4()
     assert b.is_periodic()
+
+
+def test_abok_2934():
+    b, n = abok_2974()
 
 
 def test_flat5():
