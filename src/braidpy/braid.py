@@ -133,8 +133,7 @@ class Braid:
         """
         Inspired from https://github.com/abhikpal/dehornoy/blob/master/braid.py
 
-        Allow for targets:
-
+        Allow to format the braidword using several classical notations.:
 
         The Artin representation can also be used in a latex file.
 
@@ -144,7 +143,7 @@ class Braid:
             target(str): Among
                 'alpha': for example 'aBa'
                 'artin'  for example 's_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}'
-                'default'
+                'default' syntax used by other tools such as math-braid and braidlab
 
         Returns:
             str: the formated braid word
