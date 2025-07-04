@@ -5,15 +5,20 @@ The followign code presents the different visualizations integrated in braidpy:
 ```python
 from braidpy import Braid
 from braidpy.parametric_braid import ParametricBraid
-from braidpy.parametric_strand import braid_to_parametric_strands
 import matplotlib
 
 matplotlib.use("QtAgg")
 b = Braid((1, -2), n_strands=3)
+
+# Draw in console
 b.draw()
+
+# 2D braid diagram
 b.plot()
-strands = braid_to_parametric_strands(b ** 12)
-p = ParametricBraid(strands)  # .plot()
+
+# 3D braid plot
+strands = b.to_parametric_strands(b ** 12)
+p = ParametricBraid(strands)
 p.plot()
 ```
 ## Draw colored braid diagram in terminal
@@ -38,6 +43,7 @@ Warning: for now this plot is using [braidvisualizer](https://github.com/rexgree
 The third level is 3D visualization. You first need to convert your braidword to a parametric braid.
 Then you can plot the parametric braid using either matplotlib or plotly:
 
+Using plotly:
 ![3D braid example plotly](3D_braid_example_plotly.png)
 
 Using matplotlib:

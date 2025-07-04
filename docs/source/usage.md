@@ -103,7 +103,7 @@ The resulting braid is:
 
 ## 🔁 Creating a Pure Braid
 
-As you may, with this typical braid, if we reepeat the `basic_step` three times we return to original order of strands:
+As you may know, with this typical braid, if we repeat the `basic_step` three times we return to original order of strands:
 
 ```python
 braid = basic_step * basic_step * basic_step
