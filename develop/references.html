@@ -44,6 +44,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#general-background-wikis-on-braid-theory">📘 General background wikis on braid theory</a></li>
@@ -52,11 +53,14 @@
 <li class="toctree-l2"><a class="reference internal" href="#dehornoys-work">🧠 Dehornoy’s Work</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#python-libraries-github-pypi">🐍 Python Libraries (GitHub &amp; PyPI)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#matlab-braidlab">📊 MATLAB / BraidLab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#julia">Julia</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#knots-related-libraries">🪢 Knots &amp; Related Libraries</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#knot-libraries">Knot libraries:</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#video-resource">📺 Video Resource</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braiding-machine-control">Braiding machine control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braiding-machine-3d-printing">Braiding machine 3d printing</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
@@ -98,6 +102,9 @@
 <li><p>https://www.labri.fr/perso/marckert/poulalhon.pdf</p></li>
 <li><p>https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf Maybe one of the best paper which is describing some
 relationships between algebraic and geometric braid</p></li>
+<li><p>blob:https://github.com/8f3cf57d-953c-4b95-b920-e561721cbdbd</p></li>
+<li><p>https://github.com/louisepb/TexGen</p></li>
+<li><p>https://mathcenter.oxford.emory.edu/site/math108/braid_arithmetic/</p></li>
 </ul>
 </section>
 <hr class="docutils" />
@@ -119,7 +126,18 @@ However, having a look to the functions implemented gives a good idea of how wid
 <li><p>(<a class="reference external" href="https://github.com/Denbox/Braid-Group-Visualization/blob/master/braid_visualization.py">Denbox/Braid-Group-Visualization</a> – Flat diagram but lacks good crossing visuals  )</p></li>
 <li><p><a class="reference external" href="https://github.com/loopspace/braids">loopspace/braids</a> <a class="reference external" href="https://texdoc.org/serve/braids/0">LaTeX braids package</a> – LaTeX-based braid rendering available on github. Impressive customization, good for documentation<br />
 (https://github.com/BnZel/poses_and_braids)
-(https://github.com/isaac-art/BraidLab) More of an art work
+(https://github.com/isaac-art/BraidLab) More of an art work</p></li>
+<li><p>https://github.com/rpitasky/typst-braid</p></li>
+<li><p>https://github.com/joeLepper/braider?tab=readme-ov-file Node. Demo https://braider.surge.sh/</p></li>
+<li><p>https://github.com/byorgey/braids</p></li>
+<li><p>https://github.com/lightningund/braid</p></li>
+<li><p>https://github.com/christian-oudard/logo -&gt; interesting</p></li>
+<li><p>https://github.com/the-bakery/braided &gt; protoype to edit graphically a braid diagram in web browser</p></li>
+<li><p>https://github.com/WhimsicalDragon/BraidMaker (weird)</p></li>
+<li><p>https://github.com/Sonicpineapple/Braids another online braid editor</p></li>
+<li><p>https://github.com/textiles-lab/show-braid</p></li>
+<li><p>https://github.com/mweitzel/braid html braid generator from word</p></li>
+<li><p>A more general way to store and visualize different textiles https://github.com/virtualtextiles/pytexlib
 Alternative Python library:</p></li>
 <li><p><a class="reference external" href="https://pypi.org/project/braidpy/">braidpy (PyPI)</a></p></li>
 </ul>
@@ -169,6 +187,9 @@ Alternative Python library:</p></li>
 <li><p><a class="reference external" href="https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py">leodana/TIPE</a> – Dense, untested student code<br />
 https://github.com/stla/braids</p></li>
 <li><p>https://github.com/MarkCBell/flipper?tab=readme-ov-file - probably very powerful, but a bit abstract</p></li>
+<li><p>https://github.com/mateosi98/Unknotting-Braids</p></li>
+<li><p>https://github.com/GriffinKowash/Cable-braids/tree/main</p></li>
+<li><p>https://github.com/iowyth/harmonic-braider</p></li>
 </ul>
 </section>
 <hr class="docutils" />
@@ -182,6 +203,11 @@ https://github.com/stla/braids</p></li>
 </ul>
 </li>
 </ul>
+</section>
+<hr class="docutils" />
+<section id="julia">
+<h2>Julia<a class="headerlink" href="#julia" title="Link to this heading"></a></h2>
+<p>https://github.com/jwvictor/Braids.jl</p>
 <hr class="docutils" />
 <p>https://github.com/jeanluct/cbraid?tab=readme-ov-file</p>
 </section>
@@ -224,6 +250,21 @@ https://github.com/stla/braids</p></li>
 <ul class="simple">
 <li><p><a class="reference external" href="https://www.youtube.com/watch?v=8DBhTXM_Br4">YouTube: Braids Explained</a></p></li>
 </ul>
+</section>
+<hr class="docutils" />
+<section id="braiding-machine-control">
+<h2>Braiding machine control<a class="headerlink" href="#braiding-machine-control" title="Link to this heading"></a></h2>
+<p>https://github.com/Brandon-Key5113/BraidyBunch
+https://github.com/LJYJYN/Braiding-APP
+https://pubs.rsc.org/en/content/articlelanding/2024/sm/d3sm01732j</p>
+</section>
+<section id="braiding-machine-3d-printing">
+<h2>Braiding machine 3d printing<a class="headerlink" href="#braiding-machine-3d-printing" title="Link to this heading"></a></h2>
+<p>https://github.com/manoharan-lab/arbitrary-topology-stl
+https://github.com/sapphire-arches/braiding-machine
+https://github.com/EricLarueMartin/FourWireBraidingMachine
+https://github.com/sandy9159/DIY-mini-braiding-machine
+https://github.com/tforgrave/braider_project</p>
 </section>
 </section>
 

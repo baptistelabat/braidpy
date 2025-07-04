@@ -43,6 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
@@ -76,7 +77,7 @@
   <section id="braidpy">
 <h1>BraidPy<a class="headerlink" href="#braidpy" title="Link to this heading"></a></h1>
 <p>A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
-advances in braid theory. Source is available at on <a class="reference external" href="https://github.com/baptistelabat/braidpy">github</a></p>
+advances in braid theory. Sources are shared on <a class="reference external" href="https://github.com/baptistelabat/braidpy">github</a></p>
 <section id="features">
 <h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
 <ul class="simple">
@@ -89,7 +90,8 @@ advances in braid theory. Source is available at on <a class="reference external
 <li><p>[ ] Annulus braids</p></li>
 <li><p>[ ] Conversion from parametric braid to braid word</p></li>
 <li><p>[ ] Conversion from material braid to parametric braid</p></li>
-<li><p>[ ] Simulation of machine braiding process (hexagonal braiding machine)</p></li>
+<li><p>[ ] Kumihimo braid with Mobidai</p></li>
+<li><p>[ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)</p></li>
 </ul>
 </section>
 <section id="basic-example">
@@ -154,8 +156,8 @@ make<span class="w"> </span>install-uv
 <hr class="docutils" />
 <section id="documentation">
 <h2>📜 Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
-<p>Documentation of released versions is hosted by [readthedocs] (https://braidpy.readthedocs.io/en/latest/)</p>
-<p>Documentation of development version can be found on [github pages] (https://baptistelabat.github.io/braidpy)
+<p>Documentation of released versions is hosted by <a class="reference external" href="https://braidpy.readthedocs.io/en/latest/">readthedocs</a></p>
+<p>Documentation of development version can be found on <a class="reference external" href="https://baptistelabat.github.io/braidpy">github pages</a>
 You should be able to select among several versions. Note that this process is manual.
 You can also generate the documentation for your version installed from sources</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs
@@ -213,6 +215,7 @@ Please be sure to install the pre-commit tool in order to check your code while 
 <li class="toctree-l2"><a class="reference internal" href="visualization.html#plot-3d-braid">Plot 3D braid</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#launching-the-demo-in-progress">🚀 Launching the demo <em>(In Progress)</em></a></li>
@@ -230,8 +233,11 @@ Please be sure to install the pre-commit tool in order to check your code while 
 <li class="toctree-l2"><a class="reference internal" href="references.html#dehornoys-work">🧠 Dehornoy’s Work</a></li>
 <li class="toctree-l2"><a class="reference internal" href="references.html#python-libraries-github-pypi">🐍 Python Libraries (GitHub &amp; PyPI)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="references.html#matlab-braidlab">📊 MATLAB / BraidLab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#julia">Julia</a></li>
 <li class="toctree-l2"><a class="reference internal" href="references.html#knots-related-libraries">🪢 Knots &amp; Related Libraries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="references.html#video-resource">📺 Video Resource</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#braiding-machine-control">Braiding machine control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#braiding-machine-3d-printing">Braiding machine 3d printing</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a><ul>
@@ -245,13 +251,19 @@ Please be sure to install the pre-commit tool in order to check your code while 
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.full_twist_braid"><code class="docutils literal notranslate"><span class="pre">full_twist_braid()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.flat3"><code class="docutils literal notranslate"><span class="pre">flat3()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.inverted_flat3"><code class="docutils literal notranslate"><span class="pre">inverted_flat3()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.round4"><code class="docutils literal notranslate"><span class="pre">round4()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.flat4"><code class="docutils literal notranslate"><span class="pre">flat4()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.square4"><code class="docutils literal notranslate"><span class="pre">square4()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.asymmetric_flat4"><code class="docutils literal notranslate"><span class="pre">asymmetric_flat4()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.flat6"><code class="docutils literal notranslate"><span class="pre">flat6()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.regular_flat6"><code class="docutils literal notranslate"><span class="pre">regular_flat6()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.double_flat3"><code class="docutils literal notranslate"><span class="pre">double_flat3()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.weave3"><code class="docutils literal notranslate"><span class="pre">weave3()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.abok_2974"><code class="docutils literal notranslate"><span class="pre">abok_2974()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.flat5"><code class="docutils literal notranslate"><span class="pre">flat5()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.flat_sinnet5"><code class="docutils literal notranslate"><span class="pre">flat_sinnet5()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.braid_catalog.flat_sinnet7"><code class="docutils literal notranslate"><span class="pre">flat_sinnet7()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.HandleReducedButUnexpectedResult"><code class="docutils literal notranslate"><span class="pre">HandleReducedButUnexpectedResult</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.HandleReductionMode"><code class="docutils literal notranslate"><span class="pre">HandleReductionMode</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.HandleReductionResults"><code class="docutils literal notranslate"><span class="pre">HandleReductionResults</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.dehornoy_handle_indices"><code class="docutils literal notranslate"><span class="pre">dehornoy_handle_indices()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.reduce_handle"><code class="docutils literal notranslate"><span class="pre">reduce_handle()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#braidpy.handles_reduction.dehornoy_sign"><code class="docutils literal notranslate"><span class="pre">dehornoy_sign()</span></code></a></li>

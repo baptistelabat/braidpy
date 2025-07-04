@@ -41,6 +41,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">API reference</a></li>
@@ -97,11 +98,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.artin_generators.a">a (class in braidpy.artin_generators)</a>
 </li>
+      <li><a href="reference.html#braidpy.braid_catalog.abok_2974">abok_2974() (in module braidpy.braid_catalog)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.BraidWordNotation.ALPHA">ALPHA (braidpy.braid.BraidWordNotation attribute)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.BraidWordNotation.ARTIN">ARTIN (braidpy.braid.BraidWordNotation attribute)</a>
+</li>
+      <li><a href="reference.html#braidpy.braid_catalog.asymmetric_flat4">asymmetric_flat4() (in module braidpy.braid_catalog)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -188,11 +193,13 @@
 </li>
       <li><a href="reference.html#braidpy.handles_reduction.dehornoy_handle_indices">dehornoy_handle_indices() (in module braidpy.handles_reduction)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.handles_reduction.dehornoy_reduce_core">dehornoy_reduce_core() (in module braidpy.handles_reduction)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.handles_reduction.dehornoy_sign">dehornoy_sign() (in module braidpy.handles_reduction)</a>
+</li>
+      <li><a href="reference.html#braidpy.braid_catalog.double_flat3">double_flat3() (in module braidpy.braid_catalog)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.draw">draw() (braidpy.braid.Braid method)</a>
 </li>
@@ -204,11 +211,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid_catalog.flat3">flat3() (in module braidpy.braid_catalog)</a>
 </li>
-      <li><a href="reference.html#braidpy.braid_catalog.flat4">flat4() (in module braidpy.braid_catalog)</a>
-</li>
       <li><a href="reference.html#braidpy.braid_catalog.flat5">flat5() (in module braidpy.braid_catalog)</a>
 </li>
       <li><a href="reference.html#braidpy.braid_catalog.flat6">flat6() (in module braidpy.braid_catalog)</a>
+</li>
+      <li><a href="reference.html#braidpy.braid_catalog.flat_sinnet5">flat_sinnet5() (in module braidpy.braid_catalog)</a>
+</li>
+      <li><a href="reference.html#braidpy.braid_catalog.flat_sinnet7">flat_sinnet7() (in module braidpy.braid_catalog)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.flip">flip() (braidpy.braid.Braid method)</a>
 </li>
@@ -235,7 +244,11 @@
       <li><a href="reference.html#braidpy.braid_catalog.garside_half_twist_braid">garside_half_twist_braid() (in module braidpy.braid_catalog)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.generators">generators (braidpy.braid.Braid property)</a>
+
+      <ul>
+        <li><a href="reference.html#braidpy.handles_reduction.HandleReductionResults.generators">(braidpy.handles_reduction.HandleReductionResults attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid.get_canonical_factors">get_canonical_factors() (braidpy.braid.Braid method)</a>
@@ -250,11 +263,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid.half_twist">half_twist() (braidpy.braid.Braid method)</a>
 </li>
+      <li><a href="reference.html#braidpy.handles_reduction.HandleReductionResults.handle_reduction_mode">handle_reduction_mode (braidpy.handles_reduction.HandleReductionResults attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.handles_reduction.HandleReducedButUnexpectedResult">HandleReducedButUnexpectedResult</a>
 </li>
       <li><a href="reference.html#braidpy.handles_reduction.HandleReductionMode">HandleReductionMode (class in braidpy.handles_reduction)</a>
+</li>
+      <li><a href="reference.html#braidpy.handles_reduction.HandleReductionResults">HandleReductionResults (class in braidpy.handles_reduction)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -272,10 +289,10 @@
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.is_brunnian">is_brunnian() (braidpy.braid.Braid method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid.is_involutive">is_involutive() (braidpy.braid.Braid method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid.Braid.is_palindromic">is_palindromic() (braidpy.braid.Braid method)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.is_periodic">is_periodic() (braidpy.braid.Braid method)</a>
@@ -283,6 +300,8 @@
       <li><a href="reference.html#braidpy.braid.Braid.is_pure">is_pure() (braidpy.braid.Braid method)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.is_reduced">is_reduced() (braidpy.braid.Braid method)</a>
+</li>
+      <li><a href="reference.html#braidpy.braid.Braid.is_reducible">is_reducible() (braidpy.braid.Braid method)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.is_trivial">is_trivial() (braidpy.braid.Braid method)</a>
 </li>
@@ -375,20 +394,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#braidpy.braid_catalog.regular_flat6">regular_flat6() (in module braidpy.braid_catalog)</a>
 </li>
-      <li><a href="reference.html#braidpy.braid_catalog.round4">round4() (in module braidpy.braid_catalog)</a>
-</li>
   </ul></td>
 </tr></table>
 
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#braidpy.handles_reduction.HandleReductionResults.sign">sign (braidpy.handles_reduction.HandleReductionResults attribute)</a>
+</li>
       <li><a href="reference.html#braidpy.braid.single_crossing_braiding_process">single_crossing_braiding_process() (in module braidpy.braid)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.slide_strand">slide_strand() (in module braidpy.braid)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#braidpy.braid_catalog.square4">square4() (in module braidpy.braid_catalog)</a>
+</li>
       <li><a href="reference.html#braidpy.utils.StrictlyPositiveFloat">StrictlyPositiveFloat (class in braidpy.utils)</a>
 </li>
       <li><a href="reference.html#braidpy.utils.StrictlyPositiveInt">StrictlyPositiveInt (class in braidpy.utils)</a>
@@ -421,12 +442,14 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#braidpy.braid.weave_strand">weave_strand() (in module braidpy.braid)</a>
+      <li><a href="reference.html#braidpy.braid_catalog.weave3">weave3() (in module braidpy.braid_catalog)</a>
 </li>
-      <li><a href="reference.html#braidpy.braid.Braid.word_eq">word_eq() (braidpy.braid.Braid method)</a>
+      <li><a href="reference.html#braidpy.braid.weave_strand">weave_strand() (in module braidpy.braid)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#braidpy.braid.Braid.word_eq">word_eq() (braidpy.braid.Braid method)</a>
+</li>
       <li><a href="reference.html#braidpy.braid.Braid.word_length">word_length() (braidpy.braid.Braid method)</a>
 </li>
       <li><a href="reference.html#braidpy.braid.Braid.writhe">writhe() (braidpy.braid.Braid method)</a>

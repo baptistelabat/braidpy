@@ -44,6 +44,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">🧶 Braid Group: Code Resources, Visualizations &amp; Research</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API reference</a><ul>
@@ -83,6 +84,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_involutive"><code class="docutils literal notranslate"><span class="pre">Braid.is_involutive()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_periodic"><code class="docutils literal notranslate"><span class="pre">Braid.is_periodic()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_brunnian"><code class="docutils literal notranslate"><span class="pre">Braid.is_brunnian()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.is_reducible"><code class="docutils literal notranslate"><span class="pre">Braid.is_reducible()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.to_parametric_strands"><code class="docutils literal notranslate"><span class="pre">Braid.to_parametric_strands()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.draw"><code class="docutils literal notranslate"><span class="pre">Braid.draw()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.braid.Braid.plot"><code class="docutils literal notranslate"><span class="pre">Braid.plot()</span></code></a></li>
@@ -95,15 +97,26 @@
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.full_twist_braid"><code class="docutils literal notranslate"><span class="pre">full_twist_braid()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat3"><code class="docutils literal notranslate"><span class="pre">flat3()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.inverted_flat3"><code class="docutils literal notranslate"><span class="pre">inverted_flat3()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.round4"><code class="docutils literal notranslate"><span class="pre">round4()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat4"><code class="docutils literal notranslate"><span class="pre">flat4()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.square4"><code class="docutils literal notranslate"><span class="pre">square4()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.asymmetric_flat4"><code class="docutils literal notranslate"><span class="pre">asymmetric_flat4()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat6"><code class="docutils literal notranslate"><span class="pre">flat6()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.regular_flat6"><code class="docutils literal notranslate"><span class="pre">regular_flat6()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.double_flat3"><code class="docutils literal notranslate"><span class="pre">double_flat3()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.weave3"><code class="docutils literal notranslate"><span class="pre">weave3()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.abok_2974"><code class="docutils literal notranslate"><span class="pre">abok_2974()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat5"><code class="docutils literal notranslate"><span class="pre">flat5()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat_sinnet5"><code class="docutils literal notranslate"><span class="pre">flat_sinnet5()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.braid_catalog.flat_sinnet7"><code class="docutils literal notranslate"><span class="pre">flat_sinnet7()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.HandleReducedButUnexpectedResult"><code class="docutils literal notranslate"><span class="pre">HandleReducedButUnexpectedResult</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode"><code class="docutils literal notranslate"><span class="pre">HandleReductionMode</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode.FULL"><code class="docutils literal notranslate"><span class="pre">HandleReductionMode.FULL</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode.COMPARE"><code class="docutils literal notranslate"><span class="pre">HandleReductionMode.COMPARE</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionResults"><code class="docutils literal notranslate"><span class="pre">HandleReductionResults</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionResults.generators"><code class="docutils literal notranslate"><span class="pre">HandleReductionResults.generators</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionResults.sign"><code class="docutils literal notranslate"><span class="pre">HandleReductionResults.sign</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionResults.handle_reduction_mode"><code class="docutils literal notranslate"><span class="pre">HandleReductionResults.handle_reduction_mode</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#braidpy.handles_reduction.dehornoy_handle_indices"><code class="docutils literal notranslate"><span class="pre">dehornoy_handle_indices()</span></code></a></li>
@@ -323,7 +336,7 @@ Both order and signs are reversed</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.n">
-<span class="sig-name descname"><span class="pre">n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.n" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_strands</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.n" title="Link to this definition"></a></dt>
 <dd><p>Compact notation to allow to change the number of strands</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -335,7 +348,7 @@ Both order and signs are reversed</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.flip">
-<span class="sig-name descname"><span class="pre">flip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.flip" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">flip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.flip" title="Link to this definition"></a></dt>
 <dd><p>Flip the braid
 This corresponds to the image of the braid in a mirror on the side of the braid reordered from left to right
 The strands are reversed, not the order of operations
@@ -357,7 +370,7 @@ This step is often used when braiding</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.half_twist">
-<span class="sig-name descname"><span class="pre">half_twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.half_twist" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">half_twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.half_twist" title="Link to this definition"></a></dt>
 <dd><p>Twist the braid with half a turn</p>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Twist_(differential_geometry">https://en.wikipedia.org/wiki/Twist_(differential_geometry</a>)</p>
 <dl class="field-list simple">
@@ -375,7 +388,7 @@ This step is often used when braiding</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.full_twist">
-<span class="sig-name descname"><span class="pre">full_twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.full_twist" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">full_twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.full_twist" title="Link to this definition"></a></dt>
 <dd><p>Twist the braid with a complete turn</p>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Twist_(differential_geometry">https://en.wikipedia.org/wiki/Twist_(differential_geometry</a>)</p>
 <dl class="field-list simple">
@@ -393,7 +406,7 @@ This step is often used when braiding</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.up_side_down">
-<span class="sig-name descname"><span class="pre">up_side_down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.up_side_down" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">up_side_down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.up_side_down" title="Link to this definition"></a></dt>
 <dd><p>Invert up and down crossing operations</p>
 <p>For hair braiding this is called “inversé”</p>
 <dl class="field-list simple">
@@ -422,7 +435,7 @@ generator of w occurs only positively or only negatively.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.get_canonical_factors">
-<span class="sig-name descname"><span class="pre">get_canonical_factors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.get_canonical_factors" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_canonical_factors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">GarsideCanonicalFactors</span></span></span><a class="headerlink" href="#braidpy.braid.Braid.get_canonical_factors" title="Link to this definition"></a></dt>
 <dd><p>Get decomposition in left normal form</p>
 <p>Relies on math_braid implementation from J. Cha et al, “An Efficient Implementation of Braid Groups”,
 Advances in Cryptology: Proceedings of ASIACRYPT 2001,
@@ -467,7 +480,7 @@ Lecture Notes in Computer Science (2001), 144–156.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.perm">
-<span class="sig-name descname"><span class="pre">perm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.perm" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">perm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.utils.PositiveInt" title="braidpy.utils.PositiveInt"><span class="pre">PositiveInt</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid.Braid.perm" title="Link to this definition"></a></dt>
 <dd><p>Compute the permutation corresponding to the braid</p>
 <p>This is a braid invariant.</p>
 <dl class="field-list simple">
@@ -493,7 +506,7 @@ Lecture Notes in Computer Science (2001), 144–156.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.is_involutive">
-<span class="sig-name descname"><span class="pre">is_involutive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_involutive" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_involutive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_involutive" title="Link to this definition"></a></dt>
 <dd><p>Returns true if inverse of braid word ie the same as braid word
 This probably works only for the neutral element</p>
 <dl class="field-list simple">
@@ -508,7 +521,7 @@ This probably works only for the neutral element</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.is_periodic">
-<span class="sig-name descname"><span class="pre">is_periodic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_periodic" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_periodic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_periodic" title="Link to this definition"></a></dt>
 <dd><p>braid x is periodic if and only if its nth power or its (n − 1)st power is a power of the half-twist ∆</p>
 <p><a class="reference external" href="https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf">https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf</a></p>
 <p>Periodic braid are roots of ∆**m
@@ -517,7 +530,7 @@ This probably works only for the neutral element</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="braidpy.braid.Braid.is_brunnian">
-<span class="sig-name descname"><span class="pre">is_brunnian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.is_brunnian" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_brunnian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_brunnian" title="Link to this definition"></a></dt>
 <dd><p>A Brunnian braid is a braid that becomes trivial upon removal of any one of its strings.
 Brunnian braids form a subgroup of the braid group</p>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids">https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids</a></p>
@@ -527,6 +540,20 @@ Brunnian braids form a subgroup of the braid group</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="braidpy.braid.Braid.is_reducible">
+<span class="sig-name descname"><span class="pre">is_reducible</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#braidpy.braid.Braid.is_reducible" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>If a braid is reducible, it means that the strands can be separated into groups of strands</dt><dd><p>(less groups than number of strands), such that each group is running inside one tube. The tubes themselves can form a braid</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -708,6 +735,15 @@ It is known to generate the “center” of the braid group Bn.</p>
 <dt class="sig sig-object py" id="braidpy.braid_catalog.flat3">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat3</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.flat3" title="Link to this definition"></a></dt>
 <dd><p>Basic braid with 3 strands going above central braid</p>
+<p>ABOK 2965: “FLAT, ENGLISH, ORDINARY or COMMON SINNET is the plat or
+braid seen in schoolgirl pigtails. It is made of three strands and is the
+simplest possible plat.
+To make: Secure three strands together and make the end fast
+to a hook or nail. Hold two strands in the right hand and one in the
+left. Bring the outer right strand down across its sister strand and lay
+it parallel to and below the single left strand. Now bring the upper
+Ie ft strand down across its sister strand and lay it parallel to and
+below the single right strand. Repeat alternately”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the braid object describing the single step to realize the braid
@@ -723,6 +759,9 @@ n: the number of iterations to get back to initial order of strands</p>
 <dt class="sig sig-object py" id="braidpy.braid_catalog.inverted_flat3">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">inverted_flat3</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.inverted_flat3" title="Link to this definition"></a></dt>
 <dd><p>Basic braid with 3 strands going below central braid</p>
+<p>ABOK 2966: “Possibly a quicker but less usual way to make this plat is -
+to pass the strands at the back, employing only the first and second
+fingers and the thumbs”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the braid object describing the single step to realize the braid
@@ -735,8 +774,8 @@ n: the number of iterations to get back to initial order of strands</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="braidpy.braid_catalog.round4">
-<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">round4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.round4" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="braidpy.braid_catalog.square4">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">square4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.square4" title="Link to this definition"></a></dt>
 <dd><p>Basic round braid with 4 strands</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -750,9 +789,16 @@ n: the number of iterations to get back to initial order of strands</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="braidpy.braid_catalog.flat4">
-<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.flat4" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="braidpy.braid_catalog.asymmetric_flat4">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">asymmetric_flat4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.asymmetric_flat4" title="Link to this definition"></a></dt>
 <dd><p>Basic flat braid with 4 strands</p>
+<p><a class="reference external" href="https://www.youtube.com/watch?v=7lTFIzm9BLY">https://www.youtube.com/watch?v=7lTFIzm9BLY</a></p>
+<p>ABOK 2969: “Unless for some special purpose, this method is usually
+limited to an odd number of strands, as with an even number of
+strands the sinnet is unsymmetrical. But I have seen the braid, made
+as if with three strands in the left hand and one in the right hand,
+as here pictured, used as edging on theater-seat upholstery. Of
+course it was machine-made.”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the braid object describing the single step to realize the braid
@@ -796,9 +842,94 @@ n: the number of iterations to get back to initial order of strands</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid_catalog.double_flat3">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">double_flat3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.double_flat3" title="Link to this definition"></a></dt>
+<dd><p>if parallel = False
+ABOK 2971: “If the same method of turning edges is applied where units
+of two or three parallel round cords are used, instead of single
+strands, a distinctive sinnet results”</p>
+<p>if parallel = True
+ABOK 2972: “In this sinnet the strands are double and parallel. The effect
+is very different from the last, in which the edges were turned.”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid_catalog.weave3">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">weave3</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.weave3" title="Link to this definition"></a></dt>
+<dd><p>This a 3 strands braid were 2 braids are running parallel while the third one is weaving them</p>
+<p>ABOK 2973:  “The number of sinnets that are possible with three strands
+only seem very limited. Three are given on these two facing pages.”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid_catalog.abok_2974">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">abok_2974</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.abok_2974" title="Link to this definition"></a></dt>
+<dd><ol class="arabic simple" start="2974">
+<li><p>With four strands the horizon is somewhat widened.</p></li>
+</ol>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="braidpy.braid_catalog.flat5">
 <span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat5</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid"><span class="pre">Braid</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#braidpy.braid_catalog.flat5" title="Link to this definition"></a></dt>
 <dd><p><a class="reference external" href="https://www.youtube.com/watch?v=uRy4wvJwSWA">https://www.youtube.com/watch?v=uRy4wvJwSWA</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid_catalog.flat_sinnet5">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat_sinnet5</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.flat_sinnet5" title="Link to this definition"></a></dt>
+<dd><p>ABOK 2967: “With more than three strands it is well to secure the strands
+in a straight line. Two pencils and two elastic bands are sufficient
+apparatus. FLAT SI~NET may be made with any odd number of
+strands in the way already described. The outer strands are moved
+alternately, and the tension is correctly and evenly arranged as each
+strand is passed”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the braid object describing the single step to realize the braid
+n: the number of iterations to get back to initial order of strands</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#braidpy.braid.Braid" title="braidpy.braid.Braid">Braid</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="braidpy.braid_catalog.flat_sinnet7">
+<span class="sig-prename descclassname"><span class="pre">braidpy.braid_catalog.</span></span><span class="sig-name descname"><span class="pre">flat_sinnet7</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid_catalog.flat_sinnet7" title="Link to this definition"></a></dt>
+<dd><p>ABOK 2968: “Seven strands is about the practical limit of the method.
+Beyond that there is difficulty in keeping it even. Even if a degree
+of success is achieved, a very little rough treatment will cause it to
+distort.”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the braid object describing the single step to realize the braid
@@ -840,6 +971,27 @@ License: Mozilla Public License 2.0</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionMode.COMPARE">
 <span class="sig-name descname"><span class="pre">COMPARE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'COMPARE'</span></em><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionMode.COMPARE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionResults">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">braidpy.handles_reduction.</span></span><span class="sig-name descname"><span class="pre">HandleReductionResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">handle_reduction_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode" title="braidpy.handles_reduction.HandleReductionMode"><span class="pre">braidpy.handles_reduction.HandleReductionMode</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionResults" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionResults.generators">
+<span class="sig-name descname"><span class="pre">generators</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionResults.generators" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionResults.sign">
+<span class="sig-name descname"><span class="pre">sign</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></em><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionResults.sign" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="braidpy.handles_reduction.HandleReductionResults.handle_reduction_mode">
+<span class="sig-name descname"><span class="pre">handle_reduction_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#braidpy.handles_reduction.HandleReductionMode" title="braidpy.handles_reduction.HandleReductionMode"><span class="pre">HandleReductionMode</span></a></em><a class="headerlink" href="#braidpy.handles_reduction.HandleReductionResults.handle_reduction_mode" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

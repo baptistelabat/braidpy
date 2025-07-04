@@ -7,7 +7,9 @@
 ```{toctree}
 :maxdepth: 2
 
+braid_representation.md
 visualization.md
+braid_algebra.md
 usage.md
 references.md
 reference.md

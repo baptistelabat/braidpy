@@ -8,6 +8,9 @@
 - https://www.labri.fr/perso/marckert/poulalhon.pdf
 - https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf Maybe one of the best paper which is describing some
 relationships between algebraic and geometric braid
+- blob:https://github.com/8f3cf57d-953c-4b95-b920-e561721cbdbd
+- https://github.com/louisepb/TexGen
+- https://mathcenter.oxford.emory.edu/site/math108/braid_arithmetic/
 
 ---
 
@@ -27,6 +30,17 @@ relationships between algebraic and geometric braid
 - [loopspace/braids](https://github.com/loopspace/braids) [LaTeX braids package](https://texdoc.org/serve/braids/0) – LaTeX-based braid rendering available on github. Impressive customization, good for documentation  
   (https://github.com/BnZel/poses_and_braids)
   (https://github.com/isaac-art/BraidLab) More of an art work
+- https://github.com/rpitasky/typst-braid
+- https://github.com/joeLepper/braider?tab=readme-ov-file Node. Demo https://braider.surge.sh/
+- https://github.com/byorgey/braids
+- https://github.com/lightningund/braid
+- https://github.com/christian-oudard/logo -> interesting
+- https://github.com/the-bakery/braided > protoype to edit graphically a braid diagram in web browser
+- https://github.com/WhimsicalDragon/BraidMaker (weird)
+- https://github.com/Sonicpineapple/Braids another online braid editor
+- https://github.com/textiles-lab/show-braid
+- https://github.com/mweitzel/braid html braid generator from word
+- A more general way to store and visualize different textiles https://github.com/virtualtextiles/pytexlib
 Alternative Python library:
 
 - [braidpy (PyPI)](https://pypi.org/project/braidpy/)
@@ -71,12 +85,19 @@ Author of _"Le calcul des tresses"_, Dehornoy contributed several algorithms lik
 - [leodana/TIPE](https://github.com/leodana/TIPE/blob/master/programmes%20tresses.py) – Dense, untested student code  
 https://github.com/stla/braids
 - https://github.com/MarkCBell/flipper?tab=readme-ov-file - probably very powerful, but a bit abstract
+- https://github.com/mateosi98/Unknotting-Braids
+- https://github.com/GriffinKowash/Cable-braids/tree/main
+- https://github.com/iowyth/harmonic-braider
 ---
 
 ## 📊 MATLAB / BraidLab
 - [Braidlab PDF Guide](https://github.com/jeanluct/braidlab/blob/master/doc/braidlab_guide.pdf) which was published [arXiv:1410.0849 – Braidlab paper](https://arxiv.org/pdf/1410.0849)  
   - Matlab code is available [jeanluct/braidlab](https://github.com/jeanluct/braidlab)
   - Probably the best introduction to computation with braids
+---
+## Julia
+https://github.com/jwvictor/Braids.jl
+
 ---
 
 https://github.com/jeanluct/cbraid?tab=readme-ov-file
@@ -107,4 +128,17 @@ Braid functions are often used in knot theory.
 ## 📺 Video Resource
 
 - [YouTube: Braids Explained](https://www.youtube.com/watch?v=8DBhTXM_Br4)
+
+---
+## Braiding machine control
+https://github.com/Brandon-Key5113/BraidyBunch
+https://github.com/LJYJYN/Braiding-APP
+https://pubs.rsc.org/en/content/articlelanding/2024/sm/d3sm01732j
+
+## Braiding machine 3d printing
+https://github.com/manoharan-lab/arbitrary-topology-stl
+https://github.com/sapphire-arches/braiding-machine
+https://github.com/EricLarueMartin/FourWireBraidingMachine
+https://github.com/sandy9159/DIY-mini-braiding-machine
+https://github.com/tforgrave/braider_project
 
