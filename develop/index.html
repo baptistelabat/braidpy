@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Visualizing braids" href="visualization.html" /> 
+    <link rel="next" title="Braid representations" href="braid_representations.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,6 +42,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
+<li class="toctree-l1"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
@@ -98,13 +99,38 @@ advances in braid theory. Sources are shared on <a class="reference external" hr
 <h2>Basic example<a class="headerlink" href="#basic-example" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
 
-<span class="c1"># Create a braid</span>
+<span class="c1"># Create a braid using list of Artin&#39;s generator</span>
 <span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
-<span class="c1"># Perform operations</span>
+<span class="c1"># Display the corresponding braid word. You should get the notation as used by Artin &#39;σ₁σ₂σ₁⁻¹&#39;.</span>
+<span class="n">b</span><span class="o">.</span><span class="n">format</span><span class="p">()</span>
+
+<span class="c1"># Display using other common notation. You should get &#39;abA&#39;.</span>
+<span class="n">b</span><span class="o">.</span><span class="n">format_to_notation</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s1">&#39;alpha&#39;</span><span class="p">)</span>
+
+<span class="c1"># Draw the braid in console. Alternatively use result.plot() for more advanced 2D plot.</span>
+<span class="n">b</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+
+<span class="c1"># Perform operations. See documentation for much more features !</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+
+<span class="c1"># Draw the resulting braid in console.</span>
+<span class="n">result</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+
+<span class="c1"># Plot the resulting braid.</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1"># Convert to parametric braid before ploting in 3D.</span>
+<span class="n">strands</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">to_parametric_strands</span><span class="p">()</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.parametric_braid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParametricBraid</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">ParametricBraid</span><span class="p">(</span><span class="n">strands</span><span class="p">)</span>  <span class="c1"># .plot()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>The plot should give the following:
+<img alt="Plot braid example" src="_images/braid_plot.png" /></p>
 </section>
 <section id="installation">
 <h2>🛠️ Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
@@ -158,30 +184,32 @@ make<span class="w"> </span>install-uv
 <h2>📜 Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
 <p>Documentation of released versions is hosted by <a class="reference external" href="https://braidpy.readthedocs.io/en/latest/">readthedocs</a></p>
 <p>Documentation of development version can be found on <a class="reference external" href="https://baptistelabat.github.io/braidpy">github pages</a>
-You should be able to select among several versions. Note that this process is manual.
+You should be able to select among several versions. Note that the process of generation is manual, so documentation
+might not be up to date
 You can also generate the documentation for your version installed from sources</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs
 </pre></div>
 </div>
 <section id="project-team">
 <h3>Project Team:<a class="headerlink" href="#project-team" title="Link to this heading"></a></h3>
-<p>This is a single person project for now, but I would be happy to make the team grow.
-Human:</p>
+<p>This is a single person project for now, but I would be happy to make the team grow.</p>
+<p>Human:</p>
 <ul class="simple">
 <li><p><strong>Baptiste Labat</strong>
 <a class="reference external" href="https://www.linkedin.com/in/baptiste-labat-01751138/"><img alt="LinkedIn" src="https://img.shields.io/badge/-LinkedIn-blue?logo=linkedin&amp;logoWidth=20&amp;style=flat-square" /></a>
 <a class="reference external" href="https://github.com/baptistelabat"><img alt="GitHub" src="https://img.shields.io/badge/-GitHub-black?logo=github&amp;logoWidth=20&amp;style=flat-square" /></a></p></li>
 </ul>
+<p>Bots:</p>
+<ul class="simple">
+<li><p>chatgpt</p></li>
+<li><p>windsurf</p></li>
+</ul>
 </section>
 </section>
-<section id="bot-chatgpt-windsurf">
-<h2>Bot:
-chatgpt
-windsurf<a class="headerlink" href="#bot-chatgpt-windsurf" title="Link to this heading"></a></h2>
-</section>
+<hr class="docutils" />
 <section id="contributions">
 <h2>🤝 Contributions<a class="headerlink" href="#contributions" title="Link to this heading"></a></h2>
-<p>Contributions are welcome! Please open an issue or submit a pull request from your fork to suggest changes, report bugs, or propose new features.</p>
+<p>Contributions are welcome! Please open an <a class="reference external" href="https://github.com/baptistelabat/braidpy/issues">issue</a> or submit a pull request from your fork to suggest changes, report/correct bugs, or propose new features.</p>
 <p>Here are a few code guidelines:</p>
 <ul class="simple">
 <li><p>We use english for code and comments.</p></li>
@@ -198,17 +226,14 @@ Please be sure to install the pre-commit tool in order to check your code while 
 <h2>📜 License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
 <p><img alt="License" src="https://img.shields.io/badge/license-MPL%202.0-brightgreen" /></p>
 <p>This project is licensed under the Mozilla Public License 2.0 - see the <a class="reference internal" href="#./LICENSE"><span class="xref myst">LICENSE</span></a> file for details.</p>
-</section>
 <hr class="docutils" />
-<section id="references">
-<h2>🖇️ References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
-<p>https://dehornoy.lmno.cnrs.fr</p>
-<p>👉 Check out the <a class="reference internal" href="usage.html"><span class="std std-doc">Usage Guide</span></a> for detailed instructions, including how to <a class="reference internal" href="usage.html#installation"><span class="std std-ref">install the project</span></a>.</p>
+<p>👉 Check out the <a class="reference internal" href="usage.html"><span class="std std-doc">Usage Guide</span></a> for detailed instructions.</p>
 </section>
 <section id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="visualization.html#draw-colored-braid-diagram-in-terminal">Draw colored braid diagram in terminal</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visualization.html#plot-colored-braid-diagram">Plot colored braid diagram</a></li>
@@ -293,7 +318,7 @@ Please be sure to install the pre-commit tool in order to check your code while 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="visualization.html" class="btn btn-neutral float-right" title="Visualizing braids" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="braid_representations.html" class="btn btn-neutral float-right" title="Braid representations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

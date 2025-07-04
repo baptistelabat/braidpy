@@ -19,7 +19,7 @@ p.plot()
 ## Draw colored braid diagram in terminal
 The tirst basic visualization enables to draw a braid diagram directly in the console, with some colors !
 
-[![colored ASCII braid example](draw_colored_ASCII_braid.png)]
+![colored ASCII braid example](draw_colored_ASCII_braid.png)
 
 The direction of the arrow indicates the braid of the corresponding color is moving above its neighboor.
 
@@ -30,7 +30,7 @@ The second type of visualization enables to plot a 2D braid diagram using matplo
 b.plot()
 ```
 
-[![2D braid diagram](2D_braid_diagram.png)]
+![2D braid diagram](2D_braid_diagram.png)
 
 Warning: for now this plot is using [braidvisualizer](https://github.com/rexgreenway/braid-visualiser/tree/main/src/braidvisualiser) and is not following the same color code.
 
@@ -38,7 +38,7 @@ Warning: for now this plot is using [braidvisualizer](https://github.com/rexgree
 The third level is 3D visualization. You first need to convert your braidword to a parametric braid.
 Then you can plot the parametric braid using either matplotlib or plotly:
 
-[![3D braid example plotly](3D_braid_example_plotly.png)]
+![3D braid example plotly](3D_braid_example_plotly.png)
 
 Using matplotlib:
-[![3D braid example](3D_braid_example.png)]
+![3D braid example](3D_braid_example.png)

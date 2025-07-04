@@ -43,6 +43,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid arithmetic and algebra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">🛠️ Usage Guide</a></li>
@@ -245,7 +246,7 @@ To get Artin generators we need only consecutive single crossing, which is topol
 <dt class="sig sig-object py" id="braidpy.braid.Braid.format_to_notation">
 <span class="sig-name descname"><span class="pre">format_to_notation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#braidpy.braid.Braid.format_to_notation" title="Link to this definition"></a></dt>
 <dd><p>Inspired from <a class="reference external" href="https://github.com/abhikpal/dehornoy/blob/master/braid.py">https://github.com/abhikpal/dehornoy/blob/master/braid.py</a></p>
-<p>Allow for targets:</p>
+<p>Allow to format the braidword using several classical notations.:</p>
 <p>The Artin representation can also be used in a latex file.</p>
 <p>The neutral element is ‘e’ for the Artin representation and ‘#’ for alpha.</p>
 <dl class="field-list simple">
@@ -253,7 +254,7 @@ To get Artin generators we need only consecutive single crossing, which is topol
 <dd class="field-odd"><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Among
 ‘alpha’: for example ‘aBa’
 ‘artin’  for example ‘s_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}’
-‘default’</p>
+‘default’ syntax used by other tools such as math-braid and braidlab</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the formated braid word</p>
