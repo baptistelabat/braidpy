@@ -1,3 +1,9 @@
+from braidpy import Braid
+
+# This is just a line to avoid cleaning the import which is used only at runtime
+Braid(1)
+
+
 def step(description, code, var_name=None):
     print("\n" + description)
     if var_name:
