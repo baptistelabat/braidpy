@@ -22,13 +22,38 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 ```python
 from braidpy import Braid
 
-# Create a braid
+# Create a braid using list of Artin's generator
 b = Braid([1, 2, -1])
 
-# Perform operations
+# Display the corresponding braid word. You should get the notation as used by Artin 'σ₁σ₂σ₁⁻¹'.
+b.format()
+
+# Display using other common notation. You should get 'abA'.
+b.format_to_notation(target='alpha')
+
+# Draw the braid in console. Alternatively use result.plot() for more advanced 2D plot.
+b.draw()
+
+# Perform operations. See documentation for much more features !
 result = b * b.inverse()
+
+# Draw the resulting braid in console.
+result.draw()
+
+# Plot the resulting braid.
+result.plot()
+
+# Convert to parametric braid before ploting in 3D.
+strands = result.to_parametric_strands()
+from braidpy.parametric_braid import (
+    ParametricBraid,
+)
+p = ParametricBraid(strands)  # .plot()
+p.plot()
 ```
 
+The plot should give the following:
+[![Plot braid example](braid_plot.png)]
 
 ## 🛠️ Installation
 Release versions are available on Pypi and it should be very easy to install braidpy in your python environment.
@@ -81,10 +106,11 @@ Alternatively, if you have make install, just run:
 ---
 
 ## 📜 Documentation
-Documentation of released versions is hosted by [readthedocs] (https://braidpy.readthedocs.io/en/latest/)
+Documentation of released versions is hosted by [readthedocs](https://braidpy.readthedocs.io/en/latest/)
 
-Documentation of development version can be found on [github pages] (https://baptistelabat.github.io/braidpy)
-You should be able to select among several versions. Note that this process is manual.
+Documentation of development version can be found on [github pages](https://baptistelabat.github.io/braidpy)
+You should be able to select among several versions. Note that the process of generation is manual, so documentation
+might not be up to date
 You can also generate the documentation for your version installed from sources
    ```bash
    make docs
@@ -92,19 +118,20 @@ You can also generate the documentation for your version installed from sources
 
 ### Project Team:
 This is a single person project for now, but I would be happy to make the team grow.
+
 Human: 
 - **Baptiste Labat**
 [![LinkedIn](https://img.shields.io/badge/-LinkedIn-blue?logo=linkedin&logoWidth=20&style=flat-square)](https://www.linkedin.com/in/baptiste-labat-01751138/)
 [![GitHub](https://img.shields.io/badge/-GitHub-black?logo=github&logoWidth=20&style=flat-square)](https://github.com/baptistelabat)
 
-Bot:
-chatgpt
-windsurf
+Bots:
+- chatgpt
+- windsurf
 ---
 
 ## 🤝 Contributions
 
-Contributions are welcome! Please open an issue or submit a pull request from your fork to suggest changes, report bugs, or propose new features.
+Contributions are welcome! Please open an [issue](https://github.com/baptistelabat/braidpy/issues) or submit a pull request from your fork to suggest changes, report/correct bugs, or propose new features.
 
 Here are a few code guidelines:  
 - We use english for code and comments.
@@ -122,6 +149,3 @@ Please have a look to makefile to find helpful commands.
 This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](./LICENSE) file for details.
 
 ---
-
-## 🖇️ References
-https://dehornoy.lmno.cnrs.fr

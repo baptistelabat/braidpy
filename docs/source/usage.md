@@ -2,24 +2,7 @@
 
 (Installation)=
 ## Installation
-
-To use **braidpy**, first clone the repository:
-
-```bash
-git clone git@github.com:baptistelabat/braidpy.git
-```
-
-Then install the required dependencies:
-
-1. Install [`uv`](https://docs.astral.sh/uv/getting-started/installation).
-2. Or simply run:
-
-   ```bash
-   cd braidpy
-   make install-uv
-   ```
-
----
+See [installation paragraph at homepage](index.md) for instruction
 
 ## 🚀 Launching the demo *(In Progress)*
 
@@ -28,6 +11,9 @@ If you have `make` installed, you can launch the demo using:
 ```bash
 make demo
 ```
+
+This should launch an interactive demo in the console.
+It is not fully interactive, please read the instruction at each steps
 
 ---
 
