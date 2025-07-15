@@ -11,12 +11,13 @@ from elastica import (
     CallBacks,
     CosseratRod,
     OneEndFixedBC,
-    FreeJoint,
     AnalyticalLinearDamper,
     PositionVerlet,
     integrate,
     CallBackBaseClass,
     GravityForces,
+    RodRodContact,
+    Contact,
 )
 
 
@@ -48,7 +49,7 @@ class TimedPointPin(CallBackBaseClass):
 
 
 class PolylineRodSimulator(
-    BaseSystemCollection, Constraints, Connections, Forcing, Damping, CallBacks
+    BaseSystemCollection, Constraints, Connections, Forcing, Damping, CallBacks, Contact
 ):
     pass
 
@@ -58,8 +59,13 @@ sim = PolylineRodSimulator()
 # Define polyline points
 points = [
     np.array([0.0, 0.0, 0.0]),
-    np.array([1.0, 0.5, 0.0]),
+    np.array([0.5, 0.5, 2.0]),
     np.array([2.0, 1.0, 0.0]),
+]
+
+end_points = [
+    np.array([1.0, 0.5, 2.0]),
+    np.array([1.0, -0.5, 2.0]),
     np.array([3.0, 1.0, 0.5]),
 ]
 
@@ -73,9 +79,9 @@ shear_modulus = E / (2 * (1 + poisson_ratio))
 rods = []
 
 # Create rods between polyline points
-for i in range(len(points) - 1):
+for i in range(len(points)):
     start = points[i]
-    end = points[i + 1]
+    end = end_points[i]
     direction = end - start
     length = np.linalg.norm(direction)
     direction /= length
@@ -101,14 +107,23 @@ for i in range(len(points) - 1):
     sim.append(rod)
     rods.append(rod)
 
-# Connect rods
-for i in range(len(rods) - 1):
-    sim.connect(rods[i], rods[i + 1], first_connect_idx=-1, second_connect_idx=0).using(
-        FreeJoint, k=1e5, nu=1e2
-    )
+# # Connect rods
+# for i in range(len(rods) - 1):
+#     sim.connect(rods[i], rods[i + 1], first_connect_idx=-1, second_connect_idx=0).using(
+#         FreeJoint, k=1e5, nu=1e2
+#     )
 
 # Fix first end
 sim.constrain(rods[0]).using(
+    OneEndFixedBC, constrained_position_idx=(0,), constrained_director_idx=(0,)
+)
+# Fix first end
+# sim.constrain(rods[1]).using(
+#     OneEndFixedBC, constrained_position_idx=(0,), constrained_director_idx=(0,)
+# )
+
+# Fix first end
+sim.constrain(rods[2]).using(
     OneEndFixedBC, constrained_position_idx=(0,), constrained_director_idx=(0,)
 )
 
@@ -125,6 +140,8 @@ for rod in rods:
         GravityForces, acc_gravity=np.array([0.0, 0.0, -9.81])
     )
     sim.dampen(rod).using(AnalyticalLinearDamper, damping_constant=1, time_step=1e-4)
+
+sim.detect_contact_between(rods[0], rods[1]).using(RodRodContact, k=1e3, nu=10.0)
 
 # ---- Diagnostics ---- #
 
