@@ -20,6 +20,8 @@ from elastica import (
     Contact,
 )
 
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
 
 class TimedPointPin(CallBackBaseClass):
     """
@@ -70,7 +72,7 @@ end_points = [
 ]
 
 n_elements = 20
-radius = 0.2
+radius = 0.1
 density = 1000
 E = 1e6
 poisson_ratio = 0.5
@@ -182,38 +184,85 @@ frames_per_rod = [frames[i::n_rods] for i in range(n_rods)]
 
 fig = plt.figure(figsize=(6, 5))
 ax = fig.add_subplot(111, projection="3d")
-lines = [ax.plot([], [], [], lw=2)[0] for _ in range(n_rods)]
-
-# Set axis limits
 ax.set_xlim(-0.5, 3.5)
 ax.set_ylim(-1.0, 2.0)
 ax.set_zlim(-1.0, 1.5)
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 ax.set_zlabel("Z")
-ax.set_title("Polyline Rod Simulation")
+ax.set_title("Rod Visualization with Tube Geometry")
+
+# Each rod will have a list of Poly3DCollections
+tube_patches = []
+colors = [
+    "red",
+    "green",
+    "blue",
+    "skyblue",
+    "orange",
+    "limegreen",
+    "crimson",
+    "purple",
+    "gold",
+]
+
+for i, _ in enumerate(rods):
+    tube = Poly3DCollection([], alpha=0.7, color=colors[i % len(colors)])
+
+    ax.add_collection3d(tube)
+    tube_patches.append(tube)
 
 
-def init():
-    for line in lines:
-        line.set_data([], [])
-        line.set_3d_properties([])
-    return lines
+# ---- Tube Rendering Animation ---- #
 
 
-def update(frame_idx):
-    for i, line in enumerate(lines):
-        pos = frames_per_rod[i][frame_idx]
-        line.set_data(pos[0], pos[1])
-        line.set_3d_properties(pos[2])
-    return lines
+def create_circle(center, direction, radius, resolution=8):
+    """Create circle points perpendicular to direction."""
+    direction = direction / np.linalg.norm(direction)
+    if np.allclose(direction, [0, 0, 1]):
+        ortho1 = np.array([1, 0, 0])
+    else:
+        ortho1 = np.cross(direction, [0, 0, 1])
+        ortho1 /= np.linalg.norm(ortho1)
+    ortho2 = np.cross(direction, ortho1)
+
+    angles = np.linspace(0, 2 * np.pi, resolution)
+    circle = [
+        center + radius * (np.cos(a) * ortho1 + np.sin(a) * ortho2) for a in angles
+    ]
+    return circle
+
+
+subsample_stride = 2
+
+
+def update_tube(frame_idx):
+    for i, rod in enumerate(rods):
+        pos = frames_per_rod[i][frame_idx]  # [3, n_nodes]
+        segments = pos.shape[1] - 1
+        faces = []
+        for j in range(0, segments, subsample_stride):
+            p0 = pos[:, j]
+            p1 = pos[:, j + 1]
+            direction = p1 - p0
+            # Create circles at p0 and p1
+            circle0 = create_circle(p0, direction, radius)
+            circle1 = create_circle(p1, direction, radius)
+            # Create tube quads between corresponding circle points
+            for k in range(len(circle0) - 1):
+                quad = [circle0[k], circle0[k + 1], circle1[k + 1], circle1[k]]
+                faces.append(quad)
+        # Close the last quad
+        quad = [circle0[-1], circle0[0], circle1[0], circle1[-1]]
+        faces.append(quad)
+
+        tube_patches[i].set_verts(faces)
+    return tube_patches
 
 
 ani = animation.FuncAnimation(
-    fig, update, frames=n_frames, init_func=init, blit=True, interval=40
+    fig, update_tube, frames=n_frames, interval=40, blit=False
 )
 
-# To save animation to file
-ani.save("polyline_rod_animation.mp4", fps=25, bitrate=1800)
-
+ani.save("polyline_rod_tubes.mp4", fps=25, bitrate=1800)
 plt.show()
