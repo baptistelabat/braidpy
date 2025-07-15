@@ -16,7 +16,33 @@ from elastica import (
     PositionVerlet,
     integrate,
     CallBackBaseClass,
+    GravityForces,
 )
+
+
+class TimedPointPin(CallBackBaseClass):
+    """
+    Pins a point at a fixed position until a given release time,
+    after which the point is free to move.
+    """
+
+    def __init__(self, idx, pin_position, release_time: float):
+        super().__init__()
+        self.idx = idx
+        self.pin_position = np.array(pin_position)
+        self.release_time = release_time
+        self.released = False
+
+    def make_callback(self, system, time, current_step: int):
+        if not self.released and time < self.release_time:
+            # Pin the point
+            system.position_collection[..., self.idx] = self.pin_position
+            system.velocity_collection[..., self.idx] = 0.0
+        elif time >= self.release_time and not self.released:
+            # Mark as released
+            print(f"⏱️ Releasing point at time {time:.3f}")
+            self.released = True
+
 
 # ---- Simulation Setup ---- #
 
@@ -38,9 +64,9 @@ points = [
 ]
 
 n_elements = 20
-radius = 0.02
+radius = 0.2
 density = 1000
-E = 1e5
+E = 1e6
 poisson_ratio = 0.5
 shear_modulus = E / (2 * (1 + poisson_ratio))
 
@@ -77,16 +103,27 @@ for i in range(len(points) - 1):
 
 # Connect rods
 for i in range(len(rods) - 1):
-    sim.connect(rods[i], rods[i + 1]).using(FreeJoint, k=1e5, nu=1e2)
+    sim.connect(rods[i], rods[i + 1], first_connect_idx=-1, second_connect_idx=0).using(
+        FreeJoint, k=1e5, nu=1e2
+    )
 
 # Fix first end
 sim.constrain(rods[0]).using(
     OneEndFixedBC, constrained_position_idx=(0,), constrained_director_idx=(0,)
 )
 
+sim.collect_diagnostics(rods[0]).using(
+    TimedPointPin,
+    idx=10,
+    pin_position=[0.5, 0.25, 0.0],
+    release_time=1.5,  # seconds
+)
+
 # Add forces and damping
 for rod in rods:
-    # sim.add_forcing_to(rod).using(GravityForces, acc_gravity=np.array([0.0, 0.0, -9.81]))
+    sim.add_forcing_to(rod).using(
+        GravityForces, acc_gravity=np.array([0.0, 0.0, -9.81])
+    )
     sim.dampen(rod).using(AnalyticalLinearDamper, damping_constant=1, time_step=1e-4)
 
 # ---- Diagnostics ---- #
