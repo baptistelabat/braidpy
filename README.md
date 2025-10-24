@@ -14,7 +14,8 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [ ] Annulus braids
 - [ ] Conversion from parametric braid to braid word
 - [ ] Conversion from material braid to parametric braid
-- [ ] Kumihimo braid with Mobidai
+- [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
+- [ ] Kumihimo braid with Marudai diagram
 - [ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)
 
 ## Basic example

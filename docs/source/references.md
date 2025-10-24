@@ -11,7 +11,8 @@ relationships between algebraic and geometric braid
 - blob:https://github.com/8f3cf57d-953c-4b95-b920-e561721cbdbd
 - https://github.com/louisepb/TexGen
 - https://mathcenter.oxford.emory.edu/site/math108/braid_arithmetic/
-
+- https://eprints.nottingham.ac.uk/76624/1/Thompson%2C%20Matthew%2C%2014343257%2C%20corrections.pdf
+- https://jsphdms.github.io/2023/01/06/knots.html
 ---
 
 ## 🧮 SageMath Implementation
@@ -100,6 +101,11 @@ https://github.com/jwvictor/Braids.jl
 
 ---
 
+## Haskell
+https://hackage.haskell.org/package/combinat-0.2.8.2/docs/Math-Combinat-Groups-Braid.html#v:-61--61-
+
+---
+
 https://github.com/jeanluct/cbraid?tab=readme-ov-file
 ## 🪢 Knots & Related Libraries
 
@@ -131,14 +137,22 @@ Braid functions are often used in knot theory.
 
 ---
 ## Braiding machine control
+https://github.com/stiganielsen/BraidOMatic
 https://github.com/Brandon-Key5113/BraidyBunch
 https://github.com/LJYJYN/Braiding-APP
 https://pubs.rsc.org/en/content/articlelanding/2024/sm/d3sm01732j
 
 ## Braiding machine 3d printing
+https://www.thingiverse.com/thing:2843159
 https://github.com/manoharan-lab/arbitrary-topology-stl
 https://github.com/sapphire-arches/braiding-machine
 https://github.com/EricLarueMartin/FourWireBraidingMachine
 https://github.com/sandy9159/DIY-mini-braiding-machine
 https://github.com/tforgrave/braider_project
 
+## Kumihimo braiding machine
+https://www.youtube.com/watch?v=wdiRZvdyO5A 
+
+## Braiding simulation
+https://github.com/ElsevierSoftwareX/SOFTX-D-17-00056
+https://github.com/louisepb/TexGen

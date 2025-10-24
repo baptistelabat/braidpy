@@ -319,3 +319,48 @@ def flat_sinnet7():
     b = (step * step.flip()) ** n
     b.draw()
     return b, n
+
+
+def triangle_sinnet_9():
+    """
+    ABOK3057
+    https://craftdesignonline.com/design/9-strand-triangle-sinnet-1/
+
+    ABOK3058
+    https://craftdesignonline.com/design/9-strand-triangle-sinnet-2/
+
+    Returns:
+
+    """
+
+
+def triangle_sinnet_10():
+    """
+    ABOK3045
+    https://craftdesignonline.com/design/10-strand-triangle-sinnet/
+
+    Returns:
+
+    """
+
+
+"""
+ABOK2979
+https://www.paracordguild.com/french-sinnet-abok-2979-tutorial/
+
+"""
+"""
+ABOK3044
+https://craftdesignonline.com/design/8-strand-triangle-sinnet/
+"""
+
+"""
+ABOK3073
+https://craftdesignonline.com/design/20-strand-square-sinnet/
+"""
+
+"""
+17-Strand Half Round Sinnet
+ABOK3054
+https://craftdesignonline.com/design/17-strand-half-round-sinnet/
+"""
