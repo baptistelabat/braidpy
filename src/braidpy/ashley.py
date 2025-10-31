@@ -73,7 +73,7 @@ def ashley_single_move_to_artin(counts: list[int], from_space: int, to_space: in
                 is_wrapped = True
                 next_space = 1
                 for s in reversed(range(n_strands - 1)):
-                    braid_word.append(s)
+                    braid_word.append(s + 1)
             if is_wrapped:
                 counts[current_space - 1] -= 1
                 counts[next_space - 1] += 1  # 1 based -> zero based
@@ -93,7 +93,6 @@ def ashley_single_move_to_artin(counts: list[int], from_space: int, to_space: in
                 counts[current_space - 1] -= 1
                 counts[next_space - 1] += 1  # 1 based -> zero based
                 spaces = init_spaces_from_counts(counts)
-            print(spaces)
             current_space = next_space
 
     return (
