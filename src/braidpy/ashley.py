@@ -47,68 +47,55 @@ def ashley_single_move_to_artin(counts: list[int], from_space: int, to_space: in
             - list of counts of number of strand in each zone
             - list of Artin σ generators as signed int.
     """
-    m = len(counts)
+    n_spaces = len(counts)
+    n_strands = sum(counts)
     spaces = init_spaces_from_counts(counts)
     braid_word: list[int] = []
     if spaces[from_space]:
         # Determine moving strand and direction
         from_parity = from_space % 2
-        to_parity = to_space % 2
+
         moving_right = from_parity == 1  # odd → right
-
-        # Pop strand from source space
-        strand = spaces[from_space].pop(-1 if moving_right else 0)
-
-        # Flatten spaces for global indexing
-        flat = flatten_spaces(spaces)
 
         # Normal step-by-step movement through spaces
         current_space = from_space
         while current_space != to_space:
-            counts[current_space - 1] -= 1
             next_space = current_space + (1 if moving_right else -1)
 
-            if next_space < 1:
-                next_space = m
-                for s in range(m - 1):
+            # Deals with wrapping to go from annulus to flat braid numbering
+            is_wrapped = False
+            if next_space == 0:
+                is_wrapped = True
+                next_space = n_spaces
+                for s in range(n_strands - 1):
                     braid_word.append(-(s + 1))
-            elif next_space > m:
+            elif next_space == n_spaces + 1:
+                is_wrapped = True
                 next_space = 1
-                for s in reversed(range(m - 1)):
+                for s in reversed(range(n_strands - 1)):
                     braid_word.append(s)
-
-            counts[next_space - 1] += 1
+            if is_wrapped:
+                counts[current_space - 1] -= 1
+                counts[next_space - 1] += 1  # 1 based -> zero based
+                spaces = init_spaces_from_counts(counts)
 
             next_strands = spaces[next_space]
-            cross_order = next_strands if moving_right else list(reversed(next_strands))
-            for s in cross_order:
-                idx = flat.index(s)
-                braid_word.append(-(idx + 1) if moving_right else (idx + 1))
-                flat[idx], strand = strand, flat[idx]
+            next_parity = next_space % 2
+            insert_shortest = from_parity == next_parity
+            if next_space != to_space or not (insert_shortest):
+                cross_order = (
+                    next_strands if moving_right else list(reversed(next_strands))
+                )
+                for s in cross_order[int(is_wrapped) :]:
+                    braid_word.append(-(s - 1) if moving_right else s)
 
+            if not (is_wrapped):
+                counts[current_space - 1] -= 1
+                counts[next_space - 1] += 1  # 1 based -> zero based
+                spaces = init_spaces_from_counts(counts)
+            print(spaces)
             current_space = next_space
 
-        # --- Cross strands already in destination space ---
-        insert_shortest = from_parity == to_parity
-        dest_strands = spaces[to_space]
-        cross_order = dest_strands if moving_right else list(reversed(dest_strands))
-        if not (insert_shortest):
-            for s in cross_order:
-                idx = flat.index(s)
-                braid_word.append(idx + 1 if moving_right else -(idx + 1))
-                flat[idx], strand = strand, flat[idx]
-
-        # --- Insert strand in destination space ---
-        if insert_shortest:
-            if moving_right:
-                spaces[to_space].insert(0, strand)
-            else:
-                spaces[to_space].append(strand)
-        else:
-            if moving_right:
-                spaces[to_space].append(strand)
-            else:
-                spaces[to_space].insert(0, strand)
     return (
         counts,
         braid_word,
