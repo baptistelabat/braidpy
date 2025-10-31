@@ -1,0 +1,226 @@
+"""
+kumihimo.py
+============
+
+Enhanced Kumihimo simulator and visualizer.
+
+Features:
+- Simulates formal S/R sequences (swap, rotate)
+- Tracks Artin braid word (σ generators)
+- Produces a vertical timeline with labeled steps
+- Adds slight radial offset to avoid overlapping lines
+- Displays step labels, strand IDs, and pattern info
+"""
+
+from typing import List
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+class Kumihimo:
+    """Simulate and visualize Kumihimo braiding sequences with annotations.
+
+    Attributes:
+        n (int): Number of strands (divisible by 4).
+        k (int): Number of positions per quarter turn.
+        state (List[int]): Current strand order around the disk.
+        braid_word (List[str]): Sequence of Artin generators.
+        history (List[str]): Record of performed S/R moves.
+        frames (List[List[int]]): Strand configurations per step.
+        angles (np.ndarray): Angular positions of strand slots.
+        colors (np.ndarray): Color assigned to each strand.
+        pattern (str): Original S/R pattern executed.
+    """
+
+    def __init__(self, n: int = 8) -> None:
+        """Initialize a Kumihimo simulation.
+
+        Args:
+            n (int, optional): Number of strands. Must be divisible by 4.
+                Defaults to 8.
+
+        Raises:
+            ValueError: If n is not divisible by 4.
+        """
+        if n % 4 != 0:
+            raise ValueError("n must be divisible by 4 (e.g. 8, 12, 16).")
+
+        self.n: int = n
+        self.k: int = n // 4
+        self.state: List[int] = list(range(n))
+        self.braid_word: List[str] = []
+        self.history: List[str] = []
+        self.frames: List[List[int]] = [self.state.copy()]
+        self.angles: np.ndarray = np.linspace(0, 2 * np.pi, n, endpoint=False)
+        self.colors: np.ndarray = plt.cm.hsv(np.linspace(0, 1, n))
+        self.pattern: str = ""
+
+    # ----------------------------------------------------------------------
+    # Core Operations
+    # ----------------------------------------------------------------------
+
+    def _swap_path(self, i: int, j: int) -> List[str]:
+        """Compute Artin word for swapping two distant strands.
+
+        Args:
+            i (int): Index of the first strand.
+            j (int): Index of the second strand.
+
+        Returns:
+            List[str]: List of σ generators representing the swap.
+        """
+        if i > j:
+            i, j = j, i
+        path: List[str] = [f"sigma_{k + 1}" for k in range(i, j)]
+        path.extend(f"sigma_{k + 1}" for k in reversed(range(i, j)))
+        return path
+
+    def swap_top_bottom(self) -> None:
+        """Swap top and bottom strands."""
+        top, bottom = 0, self.n // 2
+        self.braid_word.extend(self._swap_path(top, bottom))
+        self.state[top], self.state[bottom] = self.state[bottom], self.state[top]
+        self.history.append("S")
+        self.frames.append(self.state.copy())
+
+    def rotate(self, turns: int = 1) -> None:
+        """Rotate the disk clockwise by quarter turns.
+
+        Args:
+            turns (int, optional): Number of 90° clockwise turns. Defaults to 1.
+        """
+        shift = (self.k * turns) % self.n
+        self.state = [self.state[(i - shift) % self.n] for i in range(self.n)]
+        self.history.append(f"R^{turns}")
+        self.frames.append(self.state.copy())
+
+    # ----------------------------------------------------------------------
+    # Driver
+    # ----------------------------------------------------------------------
+
+    def move(self, pattern: str) -> "Kumihimo":
+        """Execute a sequence of S/R operations.
+
+        Args:
+            pattern (str): String of moves, e.g. "SRSRSR".
+
+        Returns:
+            Kumihimo: Self (for chaining).
+        """
+        self.pattern = pattern
+        for step in pattern:
+            if step == "S":
+                self.swap_top_bottom()
+            elif step == "R":
+                self.rotate()
+            else:
+                raise ValueError(f"Invalid step: {step}")
+        return self
+
+    # ----------------------------------------------------------------------
+    # Visualization
+    # ----------------------------------------------------------------------
+
+    def plot_timeline(
+        self,
+        step_height: float = 1.6,
+        radial_offset: float = 0.05,
+        show_ids: bool = True,
+    ) -> None:
+        """Plot the braid evolution as vertically stacked disks.
+
+        Args:
+            step_height (float, optional): Vertical spacing between steps.
+                Defaults to 1.6.
+            radial_offset (float, optional): Small radial offset per step
+                to reduce overlap. Defaults to 0.05.
+            show_ids (bool, optional): Whether to display strand indices.
+                Defaults to True.
+        """
+        n_steps = len(self.frames)
+        fig, ax = plt.subplots(figsize=(7, n_steps * 0.9))
+        ax.set_aspect("equal")
+        ax.axis("off")
+
+        # draw each step
+        for t, frame in enumerate(self.frames):
+            y_offset: float = -t * step_height
+            radius = 1.0 + (t * radial_offset)
+
+            # draw each strand as a radial line
+            for i, strand in enumerate(frame):
+                angle = self.angles[i]
+                x, y = np.cos(angle), np.sin(angle)
+                color = self.colors[strand]
+                ax.plot(
+                    [0, radius * x],
+                    [y_offset, y_offset + radius * y],
+                    color=color,
+                    lw=2.3,
+                    alpha=0.85,
+                )
+
+                # label strand IDs
+                if show_ids:
+                    ax.text(
+                        1.15 * radius * x,
+                        y_offset + 1.15 * radius * y,
+                        f"{strand}",
+                        color=color,
+                        ha="center",
+                        va="center",
+                        fontsize=8,
+                        alpha=0.9,
+                    )
+
+            # outer ring
+            circle = plt.Circle((0, y_offset), radius, color="gray", fill=False, lw=1)
+            ax.add_artist(circle)
+
+            # annotate the step type
+            if t < len(self.history):
+                op = self.history[t]
+                ax.text(
+                    -1.7, y_offset, f"{op}", fontsize=9, fontweight="bold", va="center"
+                )
+
+            # step index
+            ax.text(
+                1.5, y_offset, f"Step {t}", va="center", fontsize=8, color="dimgray"
+            )
+
+        # title / legend
+        ax.set_title(
+            f"Kumihimo braid evolution\nPattern: {self.pattern}\nArtin word: {self.artin_word()}",
+            fontsize=10,
+            pad=20,
+        )
+        plt.tight_layout()
+        plt.show()
+
+    # ----------------------------------------------------------------------
+    # Utilities
+    # ----------------------------------------------------------------------
+
+    def artin_word(self) -> str:
+        """Return concatenated Artin braid word.
+
+        Returns:
+            str: Sequence of σ generators.
+        """
+        return " ".join(self.braid_word)
+
+    def __repr__(self) -> str:
+        """Return concise summary of current braid state."""
+        return (
+            f"<Kumihimo n={self.n}, steps={len(self.history)}, "
+            f"pattern='{self.pattern}', braid='{self.artin_word()}'>"
+        )
+
+
+if __name__ == "__main__":
+    K = Kumihimo(n=8)
+    K.move("SRSRSRSR")
+    print(K)
+    print("Artin word:", K.artin_word())
+    K.plot_timeline()
