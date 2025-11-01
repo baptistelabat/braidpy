@@ -126,35 +126,38 @@ class Kumihimo:
 
     def plot_timeline(
         self,
-        step_height: float = 1,
+        step_width: float = 2.5,  # Use width instead of height
         show_ids: bool = True,
     ) -> None:
-        """Plot the braid evolution as vertically stacked disks.
+        """Plot the braid evolution as horizontally arranged disks.
 
         Args:
-            step_height (float, optional): Vertical spacing between steps.
-                Defaults to 1
+            step_width (float, optional): Horizontal spacing between steps.
+                Defaults to 2.5
             show_ids (bool, optional): Whether to display strand indices.
                 Defaults to True.
         """
         n_steps = len(self.frames)
-        fig, ax = plt.subplots(figsize=(7, n_steps * step_height))
+        # Swap figsize dimensions for horizontal plot
+        fig, ax = plt.subplots(figsize=(n_steps * step_width, 5))
         ax.set_aspect("equal")
         ax.axis("off")
 
         # draw each step
         for t, frame in enumerate(self.frames):
-            y_offset: float = -t * step_height
-            radius = 0.8 * step_height / 2
+            # Calculate horizontal offset instead of vertical
+            x_offset: float = t * step_width
+            radius = 0.8 * step_width / 2
 
             # draw each strand as a radial line
             for i, strand in enumerate(frame):
                 angle = self.angles[i]
+                # x and y calculations remain relative to the disk center
                 x, y = -np.sin(angle), np.cos(angle)
                 color = self.colors[strand]
                 ax.plot(
-                    [0, radius * x],
-                    [y_offset, y_offset + radius * y],
+                    [x_offset, x_offset + radius * x],  # Add x_offset to x-coordinates
+                    [0, radius * y],
                     color=color,
                     lw=2.3,
                     alpha=0.85,
@@ -163,8 +166,8 @@ class Kumihimo:
                 # label strand IDs
                 if show_ids:
                     ax.text(
-                        1.15 * radius * x,
-                        y_offset + 1.15 * radius * y,
+                        x_offset + 1.15 * radius * x,
+                        1.15 * radius * y,
                         f"{strand}",
                         color=color,
                         ha="center",
@@ -174,27 +177,36 @@ class Kumihimo:
                     )
 
             # outer ring
-            circle = plt.Circle((0, y_offset), radius, color="gray", fill=False, lw=1)
+            circle = plt.Circle((x_offset, 0), radius, color="gray", fill=False, lw=1)
             ax.add_artist(circle)
 
-            # annotate the step type
+            # annotate the step type (Move to bottom for horizontal)
             if t < len(self.history):
                 op = self.history[t]
                 ax.text(
-                    -1.7, y_offset, f"{op}", fontsize=9, fontweight="bold", va="center"
+                    x_offset, -1.7, f"{op}", fontsize=9, fontweight="bold", ha="center"
                 )
 
-            # step index
+            # step index (Move to top for horizontal)
             ax.text(
-                1.5, y_offset, f"Step {t}", va="center", fontsize=8, color="dimgray"
+                x_offset, 1.5, f"Step {t}", ha="center", fontsize=8, color="dimgray"
             )
 
         # title / legend
         ax.set_title(
-            f"Kumihimo braid evolution\nPattern: {self.pattern}\n",
+            f"Kumihimo braid evolution\nPattern: {self.pattern}",
             fontsize=10,
             pad=20,
         )
+
+        # Adjust limits to fit all elements
+        x_min = -1
+        x_max = n_steps * step_width
+        y_min = -3
+        y_max = 3
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+
         plt.tight_layout()
         plt.show()
 
