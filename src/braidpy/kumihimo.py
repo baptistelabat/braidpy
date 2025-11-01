@@ -2,13 +2,12 @@
 kumihimo.py
 ============
 
-Enhanced Kumihimo simulator and visualizer.
+Kumihimo simulator and visualizer.
 
 Features:
 - Simulates formal S/R sequences (swap, rotate)
 - Tracks Artin braid word (σ generators)
 - Produces a vertical timeline with labeled steps
-- Adds slight radial offset to avoid overlapping lines
 - Displays step labels, strand IDs, and pattern info
 """
 
@@ -21,7 +20,7 @@ class Kumihimo:
     """Simulate and visualize Kumihimo braiding sequences with annotations.
 
     Attributes:
-        n (int): Number of strands (divisible by 4).
+        n_strands (int): Number of strands (divisible by 4).
         k (int): Number of positions per quarter turn.
         state (List[int]): Current strand order around the disk.
         braid_word (List[str]): Sequence of Artin generators.
@@ -32,27 +31,27 @@ class Kumihimo:
         pattern (str): Original S/R pattern executed.
     """
 
-    def __init__(self, n: int = 8) -> None:
+    def __init__(self, n_strands: int = 8) -> None:
         """Initialize a Kumihimo simulation.
 
         Args:
-            n (int, optional): Number of strands. Must be divisible by 4.
+            n_strands (int, optional): Number of strands. Must be divisible by 4.
                 Defaults to 8.
 
         Raises:
             ValueError: If n is not divisible by 4.
         """
-        if n % 4 != 0:
+        if n_strands % 4 != 0:
             raise ValueError("n must be divisible by 4 (e.g. 8, 12, 16).")
 
-        self.n: int = n
-        self.k: int = n // 4
-        self.state: List[int] = list(range(n))
+        self.n: int = n_strands
+        self.k: int = n_strands // 4
+        self.state: List[int] = list(range(n_strands))
         self.braid_word: List[str] = []
         self.history: List[str] = []
         self.frames: List[List[int]] = [self.state.copy()]
-        self.angles: np.ndarray = np.linspace(0, 2 * np.pi, n, endpoint=False)
-        self.colors: np.ndarray = plt.cm.hsv(np.linspace(0, 1, n))
+        self.angles: np.ndarray = np.linspace(0, 2 * np.pi, n_strands, endpoint=False)
+        self.colors: np.ndarray = plt.cm.hsv(np.linspace(0, 1, n_strands))
         self.pattern: str = ""
 
     # ----------------------------------------------------------------------
@@ -71,12 +70,16 @@ class Kumihimo:
         """
         if i > j:
             i, j = j, i
-        path: List[str] = [f"sigma_{k + 1}" for k in range(i, j)]
-        path.extend(f"sigma_{k + 1}" for k in reversed(range(i, j)))
+        path: List[str] = [k + 1 for k in range(i, j)]
+        path.extend(k + 1 for k in reversed(range(i, j)))
         return path
 
     def swap_top_bottom(self) -> None:
-        """Swap top and bottom strands."""
+        """Swap top and bottom strands.
+
+        Returns:
+            None
+        """
         top, bottom = 0, self.n // 2
         self.braid_word.extend(self._swap_path(top, bottom))
         self.state[top], self.state[bottom] = self.state[bottom], self.state[top]
@@ -90,8 +93,8 @@ class Kumihimo:
             turns (int, optional): Number of 90° clockwise turns. Defaults to 1.
         """
         shift = (self.k * turns) % self.n
-        self.state = [self.state[(i - shift) % self.n] for i in range(self.n)]
-        self.history.append(f"R^{turns}")
+        self.state = [self.state[(i + shift) % self.n] for i in range(self.n)]
+        self.history.append(f"R**{turns}")
         self.frames.append(self.state.copy())
 
     # ----------------------------------------------------------------------
@@ -123,34 +126,31 @@ class Kumihimo:
 
     def plot_timeline(
         self,
-        step_height: float = 1.6,
-        radial_offset: float = 0.05,
+        step_height: float = 1,
         show_ids: bool = True,
     ) -> None:
         """Plot the braid evolution as vertically stacked disks.
 
         Args:
             step_height (float, optional): Vertical spacing between steps.
-                Defaults to 1.6.
-            radial_offset (float, optional): Small radial offset per step
-                to reduce overlap. Defaults to 0.05.
+                Defaults to 1
             show_ids (bool, optional): Whether to display strand indices.
                 Defaults to True.
         """
         n_steps = len(self.frames)
-        fig, ax = plt.subplots(figsize=(7, n_steps * 0.9))
+        fig, ax = plt.subplots(figsize=(7, n_steps * step_height))
         ax.set_aspect("equal")
         ax.axis("off")
 
         # draw each step
         for t, frame in enumerate(self.frames):
             y_offset: float = -t * step_height
-            radius = 1.0 + (t * radial_offset)
+            radius = 0.8 * step_height / 2
 
             # draw each strand as a radial line
             for i, strand in enumerate(frame):
                 angle = self.angles[i]
-                x, y = np.cos(angle), np.sin(angle)
+                x, y = -np.sin(angle), np.cos(angle)
                 color = self.colors[strand]
                 ax.plot(
                     [0, radius * x],
@@ -191,7 +191,7 @@ class Kumihimo:
 
         # title / legend
         ax.set_title(
-            f"Kumihimo braid evolution\nPattern: {self.pattern}\nArtin word: {self.artin_word()}",
+            f"Kumihimo braid evolution\nPattern: {self.pattern}\n",
             fontsize=10,
             pad=20,
         )
@@ -202,25 +202,17 @@ class Kumihimo:
     # Utilities
     # ----------------------------------------------------------------------
 
-    def artin_word(self) -> str:
-        """Return concatenated Artin braid word.
-
-        Returns:
-            str: Sequence of σ generators.
-        """
-        return " ".join(self.braid_word)
-
     def __repr__(self) -> str:
         """Return concise summary of current braid state."""
         return (
             f"<Kumihimo n={self.n}, steps={len(self.history)}, "
-            f"pattern='{self.pattern}', braid='{self.artin_word()}'>"
+            f"pattern='{self.pattern}', braid='{self.braid_word}'>"
         )
 
 
 if __name__ == "__main__":
-    K = Kumihimo(n=8)
+    K = Kumihimo(n_strands=8)
     K.move("SRSRSRSR")
     print(K)
-    print("Artin word:", K.artin_word())
+    print("Artin word:", K.braid_word)
     K.plot_timeline()
