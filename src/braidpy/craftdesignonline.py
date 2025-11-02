@@ -21,6 +21,21 @@ class Point(DataClassJsonMixin):
 
 
 @dataclass_json
+@dataclass
+class ThreadState(DataClassJsonMixin):
+    """
+    The state of a single thread.
+    Maps Python names (color, dir_val) to JSON names (colour, dir).
+    color: color code. Example 15395822
+    dir_val: initial angle
+    """
+
+    color: int = field(metadata=config(field_name="colour"))
+    dir_val: float = field(metadata=config(field_name="dir"))
+    poss: List[Point] = field(default_factory=list)  # Initial 3D path points
+
+
+@dataclass_json
 @dataclass(frozen=True)
 class Move(DataClassJsonMixin):
     """
@@ -33,16 +48,20 @@ class Move(DataClassJsonMixin):
 
 
 @dataclass_json
-@dataclass
-class ThreadState(DataClassJsonMixin):
+@dataclass(frozen=True)
+class Step(DataClassJsonMixin):
     """
-    The state of a single thread.
-    Maps Python names (color, dir_val) to JSON names (colour, dir).
+    Represents a single crossover step in the braid pattern.
+    Uses 'field' and 'config' to map 'from_val' to 'from' and 'to_val' to 'to'.
     """
 
-    color: int = field(metadata=config(field_name="colour"))
-    dir_val: float = field(metadata=config(field_name="dir"))
-    poss: List[Point] = field(default_factory=list)  # Initial 3D path points
+    type: str
+    num: int
+    moves: List[Move]  # Initial 3D path points
+    tighten: Optional[int]
+    rotate: Optional[float]
+    repeat_from: Optional[int] = field(metadata=config(field_name="repeatFrom"))
+    repeat_times: Optional[int] = field(metadata=config(field_name="repeatTimes"))
 
 
 @dataclass_json
@@ -54,17 +73,13 @@ class BraidModel(DataClassJsonMixin):
     """
 
     n_threads: int = field(metadata=config(field_name="nThreads"))
-    tighten: int
-    rotate: float
-    repeat_from: int = field(metadata=config(field_name="repeatFrom"))
-    repeat_times: int = field(metadata=config(field_name="repeatTimes"))
 
     # Nested lists of dataclasses
     thread_states: List[ThreadState] = field(
         metadata=config(field_name="threadStates"), default_factory=list
     )
     # RENAMED from 'moves' to 'steps' internally, but mapped back to JSON key 'moves'
-    steps: List[Move] = field(metadata=config(field_name="moves"), default_factory=list)
+    steps: List[Step] = field(metadata=config(field_name="steps"), default_factory=list)
 
     def __str__(self) -> str:
         """
@@ -116,6 +131,9 @@ class BraidModel(DataClassJsonMixin):
 
             # 2. URL-decode the content
             decoded_content = urllib.parse.unquote(raw_content)
+
+            # Load the JSON from the decoded string
+            # data = json.loads(decoded_content)
 
             # 3. Load the BraidModel from the decoded JSON string
             model = cls.from_json(decoded_content)
