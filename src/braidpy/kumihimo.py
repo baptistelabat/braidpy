@@ -71,7 +71,7 @@ class Kumihimo:
         if i > j:
             i, j = j, i
         path: List[str] = [k + 1 for k in range(i, j)]
-        path.extend(k + 1 for k in reversed(range(i, j)))
+        path.extend(-(k + 1) for k in reversed(range(i, j - 1)))
         return path
 
     def swap_top_bottom(self) -> None:
@@ -92,8 +92,10 @@ class Kumihimo:
         Args:
             turns (int, optional): Number of 90° clockwise turns. Defaults to 1.
         """
-        shift = (self.k * turns) % self.n
+        shift = self.k * turns
         self.state = [self.state[(i + shift) % self.n] for i in range(self.n)]
+        for _ in range(shift):
+            self.braid_word.extend([k + 1 for k in range(self.n - 1)])
         self.history.append(f"R**{turns}")
         self.frames.append(self.state.copy())
 
