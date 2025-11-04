@@ -131,10 +131,19 @@ Braid functions are often used in knot theory.
 
 ---
 
+## Kumihimo
+https://archive.bridgesmathart.org/2022/bridges2022-327.pdf
+http://www.englisch.kumihimo.de/html/history.html
+Simulation https://www.artisanart.biz/Apps/Kikko_Planner/
+Nimai korai gumi https://www.youtube.com/watch?v=98MB0GH9how&list=PLBXqC8CNQNiqj3xu8glytqYIa6i_pSogC&index=1
+Regular kumihimo corresponds to dihedral group https://en.wikipedia.org/wiki/Dihedral_group
+Instrumented https://dl.acm.org/doi/fullHtml/10.1145/3563657.3596026
 ## 📺 Video Resource
 
 - [YouTube: Braids Explained](https://www.youtube.com/watch?v=8DBhTXM_Br4)
 
+## Braiding stand
+Takadai https://www.youtube.com/watch?v=1K3P7ua1WkY
 ---
 ## Braiding machine control
 https://github.com/stiganielsen/BraidOMatic
