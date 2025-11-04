@@ -1,4 +1,15 @@
 from typing import Dict, List, Tuple
+from dataclasses import dataclass
+
+
+@dataclass
+class AshleySolidSinnet:
+    """
+    Move from a numbered sector to another numbered sector
+    """
+
+    initial_counts_per_space: list[int]  # Initial number of strands by sector
+    moves: list[tuple[int, int]]  # List of steps to be repeated
 
 
 def init_spaces_from_counts(counts: List[int]) -> Dict[int, List[int]]:
