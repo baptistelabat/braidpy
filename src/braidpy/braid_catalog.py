@@ -79,6 +79,8 @@ def flat3() -> Tuple[braidpy.braid.Braid, int]:
     Ie ft strand down across its sister strand and lay it parallel to and
     below the single right strand. Repeat alternately"
 
+    https://www.animatedknots.com/three-strand-braid-knot
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -98,6 +100,8 @@ def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
     to pass the strands at the back, employing only the first and second
     fingers and the thumbs"
 
+    https://www.animatedknots.com/three-strand-braid-knot-alt
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -113,6 +117,19 @@ def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
 def square4() -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic round braid with 4 strands
+
+    https://www.animatedknots.com/four-strand-square-sinnet-knot
+
+    ABOK 2999. "SQUARE SINNET of four strands. Used for lanyards, whips, whiplashes, quirts and leashes.
+    With strands of two colors, arranged as pictured, the two colors helix around the sinnet,
+    giving a barber-pole or candy-twist effect.
+    The sinnet is made in two movements.
+    First, take the top left strand, bring it around to the back of the other strands and then from back to front
+    between the opposing strands. Finally lay it beside its sister strand into the lower position at the left.
+    Second, take the right upper strand, bring it around to the back of the other strands and
+    then from back to front between the opposing strands. Finally lay it beside its sister strand into the lower
+    position at the right. In this size, this sinnet, although made by the SQUARE SINNET method,
+    is identical with ROUND SINNET of four strands."
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -256,6 +273,8 @@ def abok_2974():
     """
     2974. With four strands the horizon is somewhat widened.
 
+    https://www.animatedknots.com/four-strand-sinnet-knot-2974
+
     Returns:
 
     """
@@ -363,4 +382,14 @@ https://craftdesignonline.com/design/20-strand-square-sinnet/
 17-Strand Half Round Sinnet
 ABOK3054
 https://craftdesignonline.com/design/17-strand-half-round-sinnet/
+"""
+
+"""
+7 strands braid (not exactly a kumihimo)
+https://raft.net/wp-content/uploads/2020/08/PGS-Kumihimo.pdf
+"""
+
+"""
+16 strands kumihimo
+https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 """
