@@ -1,4 +1,4 @@
-from braidpy.ashley import (
+from braidpy.ashley_solid_sinnet import (
     init_spaces_from_counts,
     flatten_spaces,
     ashley_single_move_to_artin,
