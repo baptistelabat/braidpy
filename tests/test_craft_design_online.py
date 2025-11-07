@@ -38,6 +38,13 @@ def test_braid_model():
     # Generate mock states first to determine thread count
     initial_states = create_initial_braid_data(n_strands=5)
 
+    new_braid = BraidModel(
+        n_strands=len(initial_states),  # MUST provide n_threads during initialization
+        thread_states=initial_states,
+        steps=[],
+    )
+    new_braid.save_to_file(filepath="tests/5strands.b3d", encode=True)
+
     # Create the single Step object containing configuration and moves
     main_step = Step(
         type="None",  # Example usage of the new Literal type

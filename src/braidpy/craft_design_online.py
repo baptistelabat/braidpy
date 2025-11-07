@@ -13,7 +13,12 @@ from dataclasses_json import dataclass_json, DataClassJsonMixin, config
 @dataclass_json
 @dataclass(frozen=True)
 class Point(DataClassJsonMixin):
-    """Represents a single 3D point (x, y, z) in a thread's path."""
+    """Represents a single 3D point (x, y, z) in a thread's path.
+    The following conventions are used
+    x and z are in the plane of the mobidai
+    y is up for the mobidai
+    z = 0 for the reference thread with is toward the right when marudai is seen from top
+    """
 
     x: float
     y: float
@@ -133,40 +138,37 @@ class BraidModel(DataClassJsonMixin):
         """
         Saves the BraidModel configuration to a URL-encoded JSON file using dataclasses-json.
         """
-        try:
-            # Use dataclasses_json to get the JSON string, ensuring field names are correct
-            json_data = self.to_json(indent=4, exclude_none=True)
+        # Use dataclasses_json to get the JSON string, ensuring field names are correct
+        json_data = self.to_json(indent=4)
 
-            # Recursive function to convert 0.0 → 0
-            def convert_floats(obj):
-                if isinstance(obj, float) and obj == 0.0:
-                    return 0
-                elif isinstance(obj, list):
-                    return [convert_floats(i) for i in obj]
-                elif isinstance(obj, dict):
-                    return {k: convert_floats(v) for k, v in obj.items()}
-                else:
-                    return obj
-
-            # Apply the conversion
-            json_data = convert_floats(json_data)
-
-            # Write it back
-            with open("output.json", "w", encoding="utf-8") as f:
-                json.dump(json_data, f, ensure_ascii=False, indent=4)
-            compact_json = json.dumps(json.loads(json_data), separators=(",", ":"))
-
-            # URL-encode the JSON string before writing
-            if encode:
-                data = urllib.parse.quote(compact_json)
+        # Recursive function to convert 0.0 → 0
+        def convert_floats(obj):
+            if isinstance(obj, float) and obj == 0.0:
+                return 0
+            elif isinstance(obj, list):
+                return [convert_floats(i) for i in obj]
+            elif isinstance(obj, dict):
+                return {k: convert_floats(v) for k, v in obj.items()}
             else:
-                data = json_data
+                return obj
 
-            with open(filepath, "w") as f:
-                f.write(data)
-            print(f"Braid model successfully saved to file: {filepath}")
-        except Exception as e:
-            print(f"Error saving file: {e}")
+        # Apply the conversion
+        json_data = convert_floats(json_data)
+
+        # Write it back
+        with open("output.json", "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=4)
+        compact_json = json.dumps(json.loads(json_data), separators=(",", ":"))
+
+        # URL-encode the JSON string before writing
+        if encode:
+            data = urllib.parse.quote(compact_json)
+        else:
+            data = json_data
+
+        with open(filepath, "w") as f:
+            f.write(data)
+        print(f"Braid model successfully saved to file: {filepath}")
 
     @classmethod
     def load_from_file(cls, filepath: str) -> Optional["BraidModel"]:
@@ -255,21 +257,25 @@ def create_initial_braid_data(n_strands: int = 5) -> List[ThreadState]:
 
     for i in range(n_strands):
         angle = (2 * math.pi / n_strands) * i
-        radius = 5.0
+        radius = 20.0
         initial_points = [
-            Point(x=radius * math.cos(angle), y=radius * math.sin(angle), z=0.0),
-            Point(x=radius * math.cos(angle), y=radius * math.sin(angle), z=1.0),
             Point(
-                x=radius * math.cos(angle) * 0.9,
-                y=radius * math.sin(angle) * 0.9,
-                z=2.0,
+                x=0.1 * radius * math.cos(angle), y=0, z=0.1 * radius * math.sin(angle)
+            ),
+            Point(
+                x=0.7 * radius * math.cos(angle), y=0, z=0.7 * radius * math.sin(angle)
+            ),
+            Point(
+                x=0.9 * radius * math.cos(angle),
+                y=0,
+                z=0.9 * radius * math.sin(angle),
             ),
         ]
 
         states.append(
             ThreadState(
                 color=base_color + (i * 100000),
-                dir_val=0.1 + (i * 0.05),
+                dir_val=angle,
                 poss=initial_points,
             )
         )
