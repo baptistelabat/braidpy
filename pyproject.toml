@@ -35,6 +35,7 @@ dependencies = [
     "tornado>=6.4.2",
     "math-braid (>=0.8,<0.9)",
     "plotly>=6.1.2",
+    "imageio>=2.37.2",
 ]
 
 [dependency-groups]
