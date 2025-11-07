@@ -51,57 +51,38 @@ def test_braid_model():
     new_braid.save_to_file(filepath="tests/5strands_no_step.b3d", encode=True)
 
     # Create the single Step object containing configuration and moves
-    main_step = Step(
-        type="None",  # Example usage of the new Literal type
-        tighten=0,
-        rotate=math.pi / 36,  # Example rotation of 5 degrees
-        repeat_from=1,
-        repeat_times=5,  # Repeat the pattern 5 times
-        moves=[],
-    )
+
     new_braid = BraidModel(
         n_strands=len(initial_states),  # MUST provide n_threads during initialization
         thread_states=initial_states,
-        steps=[main_step],
     )
     new_braid.save_to_file(filepath="tests/5strands_main_step.b3d", encode=True)
 
     # Create the single Step object containing configuration and moves
     move_step = Step(
         type="threadMove",  # Example usage of the new Literal type
-        tighten=0,
-        rotate=math.pi / 36,  # Example rotation of 5 degrees
-        repeat_from=1,
-        repeat_times=5,  # Repeat the pattern 5 times
-        poss=[],
+        num=1,
         moves=[
-            Move(from_val=0.5, to_val=0.6),
-            Move(from_val=1.2, to_val=1.0),
-            Move(from_val=0.785, to_val=0.785),
-            Move(from_val=2.356, to_val=2.4),
+            Move(from_val=0.0, to_val=2 * math.pi / 5 + 0.3),
         ],
     )
+    new_braid.add_step(move_step)
+    new_braid.save_to_file(filepath="tests/5strands_move_step.b3d", encode=True)
     repeat_step = Step(
         type="repeat",  # Example usage of the new Literal type
-        tighten=0,
-        rotate=math.pi / 36,  # Example rotation of 5 degrees
         repeat_from=1,
         repeat_times=5,  # Repeat the pattern 5 times
         poss=[],
         moves=[],
     )
 
-    new_braid = BraidModel(
-        n_strands=len(initial_states),  # MUST provide n_threads during initialization
-        thread_states=initial_states,
-        steps=[main_step, move_step, repeat_step],
-    )
+    new_braid.add_step(repeat_step)
 
     assert len(new_braid.steps) == 3
 
 
 def test_save_to_file():
-    loaded_braid = BraidModel.load_from_file("tests/abok3054.b3d")
+    loaded_braid = BraidModel.load_from_file("tests/5strands_move_step.b3d")
 
     # Test saving to json
     loaded_braid.save_to_file(filepath="tests/abok3054_out.json", encode=False)

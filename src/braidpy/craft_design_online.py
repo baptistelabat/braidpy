@@ -26,7 +26,7 @@ class Point(DataClassJsonMixin):
 
 
 @dataclass_json
-@dataclass(frozen=True)
+@dataclass
 class Move(DataClassJsonMixin):
     """
     Represents a single crossover step in the braid pattern.
@@ -61,7 +61,7 @@ class ThreadState(DataClassJsonMixin):
 
 
 @dataclass_json
-@dataclass(frozen=True)
+@dataclass
 class Step(DataClassJsonMixin):
     """
     Represents a block of moves and the configuration parameters associated with that block.
@@ -77,13 +77,24 @@ class Step(DataClassJsonMixin):
     tighten: Optional[int] = 0
 
     repeat_from: Optional[int] = field(
-        default=1, metadata=config(field_name="repeatFrom")
+        default=0, metadata=config(field_name="repeatFrom")
     )
     repeat_times: Optional[int] = field(
-        default=1, metadata=config(field_name="repeatTimes")
+        default=0, metadata=config(field_name="repeatTimes")
     )
     rotate: Optional[float] = 0.0
     poss: Optional[list[AnglePosition]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """
+        Complete id
+
+        Returns:
+            None
+        """
+        for i, move in enumerate(self.moves):
+            if move.id is None:
+                self.moves[i].id = i
 
 
 @dataclass_json
@@ -104,12 +115,57 @@ class BraidModel(DataClassJsonMixin):
     # The 'steps' list, which contains all move blocks and config info
     steps: List[Step] = field(metadata=config(field_name="steps"), default_factory=list)
 
+    def __post_init__(self) -> None:
+        """
+        Complete the positions from initial state
+
+        Returns:
+            None
+        """
+        if not self.steps:
+            self.steps = [
+                Step(
+                    type=None,
+                    poss=[
+                        AnglePosition(angle=thread_state.dir_val, id=i)
+                        for (i, thread_state) in enumerate(self.thread_states)
+                    ],
+                )
+            ]
+
+        for i, step in enumerate(self.steps):
+            if step.num is None:
+                self.steps[i].num = i
+            if step.poss is None:
+                self.steps[i].poss = [
+                    AnglePosition(angle=thread_state.dir_val, id=i)
+                    for (i, thread_state) in enumerate(self.thread_states)
+                ]
+
     def get_main_config(self) -> Step:
         """Returns the configuration from the first (and assumed only) Step element."""
         if not self.steps:
             # Return a default step if the list is empty to prevent errors
             return Step()
         return self.steps[0]
+
+    def add_step(self, step: Step) -> None:
+        """
+        Add step to list of steps
+
+        Args:
+            step(Step): step to be added
+
+        Returns:
+            None
+        """
+        if not step.poss:
+            step.poss = [
+                AnglePosition(angle=thread_state.dir_val, id=i)
+                for (i, thread_state) in enumerate(self.thread_states)
+            ]
+
+        self.steps.append(step)
 
     def __str__(self) -> str:
         """
@@ -175,33 +231,23 @@ class BraidModel(DataClassJsonMixin):
         """
         Loads a BraidModel configuration from a URL-encoded JSON file using dataclasses-json.
         """
-        try:
-            # 1. Read the raw, potentially URL-encoded content
-            with open(filepath, "r") as f:
-                raw_content = f.read()
+        # 1. Read the raw, potentially URL-encoded content
+        with open(filepath, "r") as f:
+            raw_content = f.read()
 
-            # 2. URL-decode the content
-            decoded_content = urllib.parse.unquote(raw_content)
+        # 2. URL-decode the content
+        decoded_content = urllib.parse.unquote(raw_content)
 
-            # --- CRITICAL: Manually parse and restructure the flat JSON to fit the Step class ---
-            data = json.loads(decoded_content)
-            with open(Path(filepath).with_suffix(".json"), "w") as f:
-                json.dump(data, f, indent=4)
+        # --- CRITICAL: Manually parse and restructure the flat JSON to fit the Step class ---
+        data = json.loads(decoded_content)
+        with open(Path(filepath).with_suffix(".json"), "w") as f:
+            json.dump(data, f, indent=4)
 
-            # 3. Load the BraidModel from the restructured dict
-            model = cls.from_dict(data)
+        # 3. Load the BraidModel from the restructured dict
+        model = cls.from_dict(data)
 
-            print(f"Braid model successfully loaded and decoded from: {filepath}")
-            return model
-        except FileNotFoundError:
-            print(f"Error: File not found at {filepath}")
-            return None
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON from file after URL-decoding: {e}")
-            return None
-        except Exception as e:
-            print(f"An unexpected error occurred during loading: {e}")
-            return None
+        print(f"Braid model successfully loaded and decoded from: {filepath}")
+        return model
 
     def get_programmatic_code(self) -> str:
         """
@@ -263,11 +309,13 @@ def create_initial_braid_data(n_strands: int = 5) -> List[ThreadState]:
                 x=0.1 * radius * math.cos(angle), y=0, z=0.1 * radius * math.sin(angle)
             ),
             Point(
-                x=0.7 * radius * math.cos(angle), y=0, z=0.7 * radius * math.sin(angle)
+                x=0.7 * radius * math.cos(angle),
+                y=0.7 * radius * 0.4,
+                z=0.7 * radius * math.sin(angle),
             ),
             Point(
                 x=0.9 * radius * math.cos(angle),
-                y=0,
+                y=0.9 * radius * 0.4,
                 z=0.9 * radius * math.sin(angle),
             ),
         ]
