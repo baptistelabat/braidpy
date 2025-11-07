@@ -385,7 +385,7 @@ https://craftdesignonline.com/design/17-strand-half-round-sinnet/
 """
 
 """
-7 strands braid (not exactly a kumihimo)
+7 strands braid (not exactly a kumihimo) with 8 slots mobidai
 https://raft.net/wp-content/uploads/2020/08/PGS-Kumihimo.pdf
 """
 

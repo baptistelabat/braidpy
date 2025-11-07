@@ -1,10 +1,15 @@
 import math
 
-from braidpy.craftdesignonline import BraidModel, create_initial_braid_data, Step, Move
+from braidpy.craft_design_online import (
+    BraidModel,
+    create_initial_braid_data,
+    Step,
+    Move,
+)
 
 
 def test_load_from_file():
-    loaded_braid = BraidModel.load_from_file("tests/abok3054.b3d")
+    loaded_braid = BraidModel.load_from_file("tests/7strands.b3d")
 
     assert loaded_braid.n_strands == 17
     assert type(loaded_braid.thread_states) is list
@@ -43,7 +48,7 @@ def test_braid_model():
         thread_states=initial_states,
         steps=[],
     )
-    new_braid.save_to_file(filepath="tests/5strands.b3d", encode=True)
+    new_braid.save_to_file(filepath="tests/5strands_no_step.b3d", encode=True)
 
     # Create the single Step object containing configuration and moves
     main_step = Step(
@@ -54,6 +59,12 @@ def test_braid_model():
         repeat_times=5,  # Repeat the pattern 5 times
         moves=[],
     )
+    new_braid = BraidModel(
+        n_strands=len(initial_states),  # MUST provide n_threads during initialization
+        thread_states=initial_states,
+        steps=[main_step],
+    )
+    new_braid.save_to_file(filepath="tests/5strands_main_step.b3d", encode=True)
 
     # Create the single Step object containing configuration and moves
     move_step = Step(
