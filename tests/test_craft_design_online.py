@@ -101,7 +101,7 @@ def test_braid_model():
 
 
 def test_save_to_file():
-    loaded_braid = BraidModel.load_from_file("tests/5strands.b3d")
+    loaded_braid = BraidModel.load_from_file("tests/abok3054.b3d")
 
     # Test saving to json
     loaded_braid.save_to_file(filepath="tests/abok3054_out.json", encode=False)
