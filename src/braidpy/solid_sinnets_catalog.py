@@ -66,3 +66,25 @@ abok_3047 = AshleySolidSinnet(
         (2, 12),
     ],
 )
+
+"""
+ABOK #3048
+17-strand triangle
+"""
+abok_3048 = AshleySolidSinnet(
+    initial_counts_per_space=[2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1],
+    moves=[
+        (1, 9),
+        (8, 2),
+        (3, 7),
+        (6, 4),
+        (9, 1),
+        (4, 10),
+        (11, 3),
+        (2, 12),
+        (5, 1),
+        (12, 6),
+        (7, 11),
+        (10, 8),
+    ],
+)
