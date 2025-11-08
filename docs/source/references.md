@@ -13,6 +13,7 @@ relationships between algebraic and geometric braid
 - https://mathcenter.oxford.emory.edu/site/math108/braid_arithmetic/
 - https://eprints.nottingham.ac.uk/76624/1/Thompson%2C%20Matthew%2C%2014343257%2C%20corrections.pdf
 - https://jsphdms.github.io/2023/01/06/knots.html
+- https://www.youtube.com/watch?v=3vZ8TT5Ln7o
 ---
 
 ## 🧮 SageMath Implementation
