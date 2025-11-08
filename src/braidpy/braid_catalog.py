@@ -364,6 +364,24 @@ def triangle_sinnet_10():
 
 
 """
+16-strands interlaced french sinnet
+https://www.youtube.com/watch?v=we4seysYqrk
+"""
+"""
+23-strand interlaced french sinnet
+https://www.youtube.com/watch?v=HY7mis6Ss60
+"""
+
+"""
+ABOK #2996
+https://www.youtube.com/watch?v=gXl5dX844sg
+"""
+"""
+ABOK #3021
+https://www.youtube.com/watch?v=G0BFWYYVj7M
+"""
+
+"""
 ABOK2979
 https://www.paracordguild.com/french-sinnet-abok-2979-tutorial/
 
