@@ -127,7 +127,7 @@ class BraidModel(DataClassJsonMixin):
                 Step(
                     type=None,
                     poss=[
-                        AnglePosition(angle=thread_state.dir_val, id=i)
+                        AnglePosition(angle=thread_state.dir_val, id=str(i))
                         for (i, thread_state) in enumerate(self.thread_states)
                     ],
                 )
@@ -138,7 +138,7 @@ class BraidModel(DataClassJsonMixin):
                 self.steps[i].num = i
             if step.poss is None:
                 self.steps[i].poss = [
-                    AnglePosition(angle=thread_state.dir_val, id=i)
+                    AnglePosition(angle=thread_state.dir_val, id=str(i))
                     for (i, thread_state) in enumerate(self.thread_states)
                 ]
 

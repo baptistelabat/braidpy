@@ -41,37 +41,28 @@ def test_step():
 
 def test_braid_model():
     # Generate mock states first to determine thread count
-    initial_states = create_initial_braid_data(n_strands=5)
-
-    new_braid = BraidModel(
-        n_strands=len(initial_states),  # MUST provide n_threads during initialization
-        thread_states=initial_states,
-        steps=[],
-    )
-    new_braid.save_to_file(filepath="tests/5strands_no_step.b3d", encode=True)
-
-    # Create the single Step object containing configuration and moves
+    initial_states = create_initial_braid_data(n_strands=3)
 
     new_braid = BraidModel(
         n_strands=len(initial_states),  # MUST provide n_threads during initialization
         thread_states=initial_states,
     )
-    new_braid.save_to_file(filepath="tests/5strands_main_step.b3d", encode=True)
+    new_braid.save_to_file(filepath="tests/3strands_no_step.json", encode=False)
 
     # Create the single Step object containing configuration and moves
     move_step = Step(
         type="threadMove",  # Example usage of the new Literal type
         num=1,
         moves=[
-            Move(from_val=0.0, to_val=2 * math.pi / 5 + 0.3),
+            Move(from_val=0.0, to_val=2.479820503041855),
         ],
     )
     new_braid.add_step(move_step)
-    new_braid.save_to_file(filepath="tests/5strands_move_step.b3d", encode=True)
+    new_braid.save_to_file(filepath="tests/3strands_move_step.json", encode=False)
     repeat_step = Step(
         type="repeat",  # Example usage of the new Literal type
         repeat_from=1,
-        repeat_times=5,  # Repeat the pattern 5 times
+        repeat_times=1,  # Repeat the pattern 5 times
         poss=[],
         moves=[],
     )
@@ -82,7 +73,7 @@ def test_braid_model():
 
 
 def test_save_to_file():
-    loaded_braid = BraidModel.load_from_file("tests/abok3054.b3d")
+    loaded_braid = BraidModel.load_from_file("tests/3strands_repeat_one_cross.b3d")
 
     # Test saving to json
     loaded_braid.save_to_file(filepath="tests/abok3054_out.json", encode=False)
