@@ -8,6 +8,8 @@ from dataclasses_json import dataclass_json, DataClassJsonMixin, config
 
 
 # --- Dataclass Definitions for the Braid Structure ---
+def modulo_minus_pi_pi(angle: float):
+    return (angle + math.pi) % (2 * math.pi) - math.pi
 
 
 @dataclass_json
@@ -31,6 +33,7 @@ class Move(DataClassJsonMixin):
     """
     Represents a single crossover step in the braid pattern.
     Maps 'from_val' to 'from' and 'to_val' to 'to'.
+    angle in radians
     """
 
     from_val: float = field(metadata=config(field_name="from"))
@@ -41,7 +44,10 @@ class Move(DataClassJsonMixin):
 @dataclass_json
 @dataclass(frozen=True)
 class AnglePosition(DataClassJsonMixin):
-    """ """
+    """
+    angle in radians
+    id typically index starting from 0. Example "0"
+    """
 
     angle: float
     id: str
@@ -127,7 +133,9 @@ class BraidModel(DataClassJsonMixin):
                 Step(
                     type=None,
                     poss=[
-                        AnglePosition(angle=thread_state.dir_val, id=str(i))
+                        AnglePosition(
+                            angle=modulo_minus_pi_pi(thread_state.dir_val), id=str(i)
+                        )
                         for (i, thread_state) in enumerate(self.thread_states)
                     ],
                 )
@@ -138,7 +146,9 @@ class BraidModel(DataClassJsonMixin):
                 self.steps[i].num = i
             if step.poss is None:
                 self.steps[i].poss = [
-                    AnglePosition(angle=thread_state.dir_val, id=str(i))
+                    AnglePosition(
+                        angle=modulo_minus_pi_pi(thread_state.dir_val), id=str(i)
+                    )
                     for (i, thread_state) in enumerate(self.thread_states)
                 ]
 
@@ -161,9 +171,21 @@ class BraidModel(DataClassJsonMixin):
         """
         if not step.poss:
             step.poss = [
-                AnglePosition(angle=thread_state.dir_val, id=i)
+                AnglePosition(angle=thread_state.dir_val, id=str(i))
                 for (i, thread_state) in enumerate(self.thread_states)
             ]
+            if step.type == "threadMove":
+                for move in step.moves:
+                    for i, thread_state in enumerate(self.thread_states):
+                        if i == move.id:
+                            self.thread_states[i].dir_val = modulo_minus_pi_pi(
+                                move.to_val
+                            )
+            #         step.poss = [
+            #             AnglePosition(angle=modulo_minus_pi_pi(move.to_val), id=str(i))
+            #             if i==move.id else AnglePosition(angle=modulo_minus_pi_pi(thread_state.dir_val), id=str(i))
+            #             for (i, thread_state) in enumerate(self.thread_states)
+            #         ]
 
         self.steps.append(step)
 
