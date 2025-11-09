@@ -139,6 +139,14 @@ Simulation https://www.artisanart.biz/Apps/Kikko_Planner/
 Nimai korai gumi https://www.youtube.com/watch?v=98MB0GH9how&list=PLBXqC8CNQNiqj3xu8glytqYIa6i_pSogC&index=1
 Regular kumihimo corresponds to dihedral group https://en.wikipedia.org/wiki/Dihedral_group
 Instrumented https://dl.acm.org/doi/fullHtml/10.1145/3563657.3596026
+Track plan https://loopbraider.com/track-plans/
+https://www.artisanart.biz/Apps/Kikko_Planner/
+
+## Loop Manipulation braiding (Kute-uchi)
+
+Historical braids by Masako Kinoshita https://loopbraiding.com/ https://www.ee0r.com/lmbric.net/
+Ingrid Crickmore blog https://loopbraider.com/
+Braid planner by Gary Mitchell https://www.islandbraider.com/
 ## 📺 Video Resource
 
 - [YouTube: Braids Explained](https://www.youtube.com/watch?v=8DBhTXM_Br4)
@@ -162,6 +170,7 @@ https://github.com/tforgrave/braider_project
 
 ## Kumihimo braiding machine
 https://www.youtube.com/watch?v=wdiRZvdyO5A 
+https://www.youtube.com/watch?v=qSPfs9S0Pag
 
 ## Braiding simulation
 https://github.com/ElsevierSoftwareX/SOFTX-D-17-00056

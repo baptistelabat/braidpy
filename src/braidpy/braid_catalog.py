@@ -18,6 +18,12 @@ from braidpy.utils import StrictlyPositiveInt
 import braidpy.braid
 from typing import Tuple
 
+"""
+In flat braid all the strands follow the same track
+In tubular braid, the strands follow two separate, though interwoven tracks
+https://loopbraider.com/track-plans/
+"""
+
 
 def garside_half_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     """
@@ -94,7 +100,7 @@ def flat3() -> Tuple[braidpy.braid.Braid, int]:
 
 def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
     """
-    Basic braid with 3 strands going below central braid
+    Basic braid with 3 strands going below central braid. Also known as dutch braid
 
     ABOK 2966: "Possibly a quicker but less usual way to make this plat is -
     to pass the strands at the back, employing only the first and second
@@ -362,6 +368,11 @@ def triangle_sinnet_10():
 
     """
 
+
+"""
+14-strands 7-loop D-shaped (unorthodox)
+https://loopbraider.com/2015/04/21/uo-dshaped-7tut/
+"""
 
 """
 16-strands interlaced french sinnet
