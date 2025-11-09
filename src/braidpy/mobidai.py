@@ -1,84 +1,217 @@
 """
-The following braid were taken from "Bracelets Kumihimo, technique des bracelets japonais" by Agnès Delage-Calvet
-"""
+mobidai.py
+
+A simulator for the traditional Japanese braiding stand (Marudai / Mobidai).
+
+This module provides classes to model, simulate, and visualize the braiding
+process, based on configurations of slots, strands, and moves.
 
 """
-8 strands on a 32 slots clockwise mobidai
 
-"""
-
-initial_slots = [(32, "red"), (1, "red"), (17, "red")(16, "red")]
-((25, "green"),)
-((24, "green"),)
-((8, "green"),)
-(9, "green")
-
-move = [(1, 15), (17, 31), (25, 7), (9, 23), (16, 30), (32, 14)]
-
-"""
-7 strands on a 8 slots clockwise mobidai (0 to 7)
-"""
-(1, "red")
-((2, "yellow"),)
-((3, "purple"),)
-((4, "red"),)
-(5, "green")
-(6, "orange")
-(7, "blue")
-
-(3, 0)
-"""
-then rotate(-3) and repeat
-"""
-
-"""
-12 strands on a 32 slots clockwise mobidai
-"""
-initial_slots = [
-    (1, "yellow"),
-    (5, "pink"),
-    (6, "pink"),
-    (17, "pink"),
-    (21, "pink"),
-    (22, "pink"),
-    (27, "pink"),
-    (11, "blue"),
-    (12, "red"),
-    (16, "purple"),
-    (28, "green"),
-    (32, "cyan"),
-]
-
-move = [(1, 15), (17, 31), (28, 10), (12, 26), (22, 4), (6, 20)]
-
-"""
-16 strands on a 32 slots clockwise mobidai
-"""
-initial_slots = [
-    (32, "green"),
-    (1, "red"),
-    (17, "green"),
-    (16, "green"),
-    (25, "red"),
-    (24, "green"),
-    (8, "red"),
-    (9, "red"),
-    (4, "red"),
-    (5, "red"),
-    (12, "red"),
-    (13, "red"),
-    (20, "green"),
-    (21, "green"),
-    (28, "red"),
-    (29, "red"),
-]
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-(1, 15)
-(17, 31)
-(29, 11)
-(13, 27)
-(25, 7)
-(9, 23)
-(21, 3)
-(5, 19)
+# ---------------------------------------------------------------------------
+# Data Classes
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Strand:
+    """Represents a strand placed on a mobidai slot.
+
+    Attributes:
+        color (str): The color of the strand.
+        position (int): The slot number (1-indexed) where the strand currently sits.
+    """
+
+    color: str
+    position: int
+
+
+@dataclass
+class Move:
+    """Represents one strand move from one slot to another.
+
+    Attributes:
+        from_slot (int): The slot number where the strand starts.
+        to_slot (int): The slot number where the strand will be placed.
+    """
+
+    from_slot: int
+    to_slot: int
+
+
+@dataclass
+class MobidaiConfig:
+    """Configuration of a mobidai setup.
+
+    Attributes:
+        n_slots (int): Total number of slots on the mobidai disk.
+        clockwise (bool): Direction of rotation (True = clockwise).
+        strands (List[Strand]): Initial list of strands on slots.
+        moves (List[Move]): Sequence of moves performed in one braiding cycle.
+        rotation (int): Number of slots to rotate between cycles (optional).
+    """
+
+    n_slots: int
+    clockwise: bool
+    strands: List[Strand]
+    moves: List[Move]
+    rotation: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Mobidai Simulation
+# ---------------------------------------------------------------------------
+
+
+class Mobidai:
+    """Simulates a mobidai braiding process.
+
+    Attributes:
+        config (MobidaiConfig): Configuration object for this mobidai.
+        slots (Dict[int, Optional[Strand]]): Dictionary mapping slot number to strand.
+    """
+
+    def __init__(self, config: MobidaiConfig):
+        """Initializes the mobidai simulation.
+
+        Args:
+            config (MobidaiConfig): The mobidai configuration.
+        """
+        self.config = config
+        self.slots: Dict[int, Optional[Strand]] = {
+            i: None for i in range(1, config.n_slots + 1)
+        }
+        for strand in config.strands:
+            if strand.position in self.slots:
+                self.slots[strand.position] = strand
+            else:
+                raise ValueError(
+                    f"Invalid slot {strand.position} for strand {strand.color}"
+                )
+
+    # ---------------------------------------------------------------------
+
+    def rotate(self, steps: int):
+        """Rotates all strands by a given number of slots.
+
+        Args:
+            steps (int): Number of slots to rotate. Positive for clockwise.
+        """
+        n = self.config.n_slots
+        new_slots: Dict[int, Optional[Strand]] = {i: None for i in range(1, n + 1)}
+
+        for slot, strand in self.slots.items():
+            if strand:
+                new_pos = ((slot - 1 + steps) % n) + 1
+                strand.position = new_pos
+                new_slots[new_pos] = strand
+
+        self.slots = new_slots
+
+    # ---------------------------------------------------------------------
+
+    def step(self):
+        """Performs one round of the braiding moves."""
+        new_slots: Dict[int, Optional[Strand]] = self.slots.copy()
+
+        for move in self.config.moves:
+            strand = self.slots.get(move.from_slot)
+            if strand is None:
+                continue
+            if new_slots.get(move.to_slot) is not None:
+                raise ValueError(f"Slot {move.to_slot} already occupied during move.")
+            # Move the strand
+            new_slots[move.from_slot] = None
+            strand.position = move.to_slot
+            new_slots[move.to_slot] = strand
+
+        self.slots = new_slots
+
+        if self.config.rotation:
+            self.rotate(self.config.rotation)
+
+    # ---------------------------------------------------------------------
+
+    def visualize(self, ax=None):
+        """Visualizes the current state of the mobidai.
+
+        Args:
+            ax (matplotlib.axes.Axes, optional): Axis to draw on. Creates one if None.
+        """
+        n = self.config.n_slots
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(6, 6))
+        ax.set_aspect("equal")
+        ax.axis("off")
+
+        r_outer = 1.0
+        theta = np.linspace(0, 2 * np.pi, n + 1)
+        ax.plot(r_outer * np.cos(theta), r_outer * np.sin(theta), "k-", lw=1)
+
+        for slot in range(1, n + 1):
+            angle = 2 * np.pi * (slot - 1) / n
+            x = r_outer * np.sin(angle)
+            y = r_outer * np.cos(angle)
+            strand = self.slots.get(slot)
+            color = strand.color if strand else "white"
+            ax.plot(x, y, "o", color=color, markersize=12, markeredgecolor="black")
+            ax.text(x * 1.15, y * 1.15, str(slot), ha="center", va="center", fontsize=8)
+
+        plt.show()
+
+    # ---------------------------------------------------------------------
+
+    def simulate(self, steps: int, visualize_each: bool = False):
+        """Runs multiple braiding steps.
+
+        Args:
+            steps (int): Number of steps to simulate.
+            visualize_each (bool, optional): Whether to show each step. Defaults to False.
+        """
+        for _ in range(steps):
+            self.step()
+            if visualize_each:
+                self.visualize()
+                plt.show()
+
+
+# ---------------------------------------------------------------------------
+# Example usage
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    config = MobidaiConfig(
+        n_slots=32,
+        clockwise=True,
+        strands=[
+            Strand("red", 32),
+            Strand("red", 1),
+            Strand("red", 17),
+            Strand("red", 16),
+            Strand("green", 25),
+            Strand("green", 24),
+            Strand("green", 8),
+            Strand("green", 9),
+        ],
+        moves=[
+            Move(a, b)
+            for a, b in [(1, 15), (17, 31), (25, 7), (9, 23), (16, 30), (32, 14)]
+        ],
+        rotation=0,
+    )
+
+    mobidai = Mobidai(config)
+    mobidai.visualize()
+    mobidai.step()
+    mobidai.visualize()
+    mobidai.step()
+    mobidai.visualize()
+    mobidai.step()
+    mobidai.visualize()
