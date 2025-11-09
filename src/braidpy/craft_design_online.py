@@ -186,7 +186,7 @@ class BraidModel(DataClassJsonMixin):
             #             if i==move.id else AnglePosition(angle=modulo_minus_pi_pi(thread_state.dir_val), id=str(i))
             #             for (i, thread_state) in enumerate(self.thread_states)
             #         ]
-
+        step.num = len(self.steps)
         self.steps.append(step)
 
     def __str__(self) -> str:

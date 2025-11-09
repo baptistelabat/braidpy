@@ -56,16 +56,16 @@ def test_braid_model():
         num=1,
         moves=[
             Move(from_val=0.0, to_val=3.14, id=0),
-            Move(from_val=-2.0943951023931957, to_val=3, id=2),
+            Move(from_val=-2.0943951023931957 % (2 * math.pi), to_val=2.7, id=2),
         ],
     )
     new_braid.add_step(move_step)
-    new_braid.save_to_file(filepath="tests/3strands_move_step.json", encode=False)
-    new_braid.save_to_file(filepath="tests/3strands_move_step.b3d", encode=True)
+    new_braid.save_to_file(filepath="tests/3strands_moves_step.json", encode=False)
+    new_braid.save_to_file(filepath="tests/3strands_moves_step.b3d", encode=True)
     repeat_step = Step(
         type="repeat",  # Example usage of the new Literal type
         repeat_from=1,
-        repeat_times=3,  # Repeat the pattern 5 times
+        repeat_times=2,  # Repeat the pattern 5 times
         poss=[],
         moves=[],
     )
@@ -78,7 +78,7 @@ def test_braid_model():
 
 
 def test_save_to_file():
-    loaded_braid = BraidModel.load_from_file("tests/abok3054_out.b3d")
+    loaded_braid = BraidModel.load_from_file("tests/abok3054.b3d")
 
     # Test saving to json
     loaded_braid.save_to_file(filepath="tests/abok3054_out.json", encode=False)
