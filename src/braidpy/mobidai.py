@@ -2,6 +2,7 @@
 mobidai.py
 
 A simulator for the traditional Japanese braiding stand (Marudai / Mobidai).
+Sometimes known as friendship disk and used for kumihimo braiding.
 
 This module provides classes to model, simulate, and visualize the braiding
 process, based on configurations of slots, strands, and moves.
@@ -20,12 +21,15 @@ import numpy as np
 # ---------------------------------------------------------------------------
 
 
+class SlotAlreadyInUseError(Exception): ...
+
+
 @dataclass
 class Strand:
     """Represents a strand placed on a mobidai slot.
 
     Attributes:
-        color (str): The color of the strand.
+        color (str): The color of the strand (format as supported by matplotlib)
         position (int): The slot number (1-indexed) where the strand currently sits.
     """
 
@@ -51,18 +55,19 @@ class MobidaiConfig:
     """Configuration of a mobidai setup.
 
     Attributes:
-        n_slots (int): Total number of slots on the mobidai disk.
-        clockwise (bool): Direction of rotation (True = clockwise).
         strands (List[Strand]): Initial list of strands on slots.
         moves (List[Move]): Sequence of moves performed in one braiding cycle.
-        rotation (int): Number of slots to rotate between cycles (optional).
+        n_shift_after_cycle (int): Number of slots to rotate between cycles to come back to strands positions similar to initial positions (permutation only)
+        n_slots (int): Total number of slots on the mobidai disk. Default to 32
+        is_clockwise (bool): Direction of rotation for numbering (True = clockwise).
+
     """
 
-    n_slots: int
-    clockwise: bool
     strands: List[Strand]
     moves: List[Move]
-    rotation: int = 0
+    n_shift_after_cycle: int
+    n_slots: int = 32
+    is_clockwise: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -85,9 +90,10 @@ class Mobidai:
             config (MobidaiConfig): The mobidai configuration.
         """
         self.config = config
-        self.slots: Dict[int, Optional[Strand]] = {
+        self.slots: Dict[int, Strand | None] = {
             i: None for i in range(1, config.n_slots + 1)
         }
+        self.n_shift_after_cycle = 0
         for strand in config.strands:
             if strand.position in self.slots:
                 self.slots[strand.position] = strand
@@ -109,11 +115,12 @@ class Mobidai:
 
         for slot, strand in self.slots.items():
             if strand:
-                new_pos = ((slot - 1 + steps) % n) + 1
-                strand.position = new_pos
-                new_slots[new_pos] = strand
+                new_absolute_position = ((slot - 1 + steps) % n) + 1
+                strand.position = new_absolute_position
+                new_slots[new_absolute_position] = strand
 
         self.slots = new_slots
+        self.n_shift_after_cycle += steps
 
     # ---------------------------------------------------------------------
 
@@ -126,7 +133,9 @@ class Mobidai:
             if strand is None:
                 continue
             if new_slots.get(move.to_slot) is not None:
-                raise ValueError(f"Slot {move.to_slot} already occupied during move.")
+                raise SlotAlreadyInUseError(
+                    f"Slot {move.to_slot} already occupied during move."
+                )
             # Move the strand
             new_slots[move.from_slot] = None
             strand.position = move.to_slot
@@ -134,8 +143,8 @@ class Mobidai:
 
         self.slots = new_slots
 
-        if self.config.rotation:
-            self.rotate(self.config.rotation)
+        if self.config.n_shift_after_cycle:
+            self.rotate(self.config.n_shift_after_cycle)
 
     # ---------------------------------------------------------------------
 
@@ -156,7 +165,13 @@ class Mobidai:
         ax.plot(r_outer * np.cos(theta), r_outer * np.sin(theta), "k-", lw=1)
 
         for slot in range(1, n + 1):
-            angle = 2 * np.pi * (slot - 1) / n
+            angle = (
+                2
+                * np.pi
+                * (slot - 1 + self.n_shift_after_cycle)
+                / n
+                * (int(self.config.is_clockwise) * 2 - 1)
+            )
             x = r_outer * np.sin(angle)
             y = r_outer * np.cos(angle)
             strand = self.slots.get(slot)
@@ -189,7 +204,7 @@ class Mobidai:
 if __name__ == "__main__":
     config = MobidaiConfig(
         n_slots=32,
-        clockwise=True,
+        is_clockwise=True,
         strands=[
             Strand("red", 32),
             Strand("red", 1),
@@ -204,7 +219,7 @@ if __name__ == "__main__":
             Move(a, b)
             for a, b in [(1, 15), (17, 31), (25, 7), (9, 23), (16, 30), (32, 14)]
         ],
-        rotation=0,
+        n_shift_after_cycle=0,
     )
 
     mobidai = Mobidai(config)
