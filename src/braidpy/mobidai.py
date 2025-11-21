@@ -89,11 +89,11 @@ class Mobidai:
         Args:
             config (MobidaiConfig): The mobidai configuration.
         """
+        self.n_total_shift = 0
         self.config = config
         self.slots: Dict[int, Strand | None] = {
             i: None for i in range(1, config.n_slots + 1)
         }
-        self.n_shift_after_cycle = 0
         for strand in config.strands:
             if strand.position in self.slots:
                 self.slots[strand.position] = strand
@@ -120,35 +120,39 @@ class Mobidai:
                 new_slots[new_absolute_position] = strand
 
         self.slots = new_slots
-        self.n_shift_after_cycle += steps
+        self.n_total_shift += steps
 
     # ---------------------------------------------------------------------
 
-    def step(self):
-        """Performs one round of the braiding moves."""
-        new_slots: Dict[int, Optional[Strand]] = self.slots.copy()
-
-        for move in self.config.moves:
-            strand = self.slots.get(move.from_slot)
-            if strand is None:
-                continue
-            if new_slots.get(move.to_slot) is not None:
+    @staticmethod
+    def single_step(move: Move, slots):
+        """Performs one step of the braiding moves."""
+        strand = slots.get(move.from_slot)
+        if strand:
+            if slots.get(move.to_slot) is not None:
                 raise SlotAlreadyInUseError(
                     f"Slot {move.to_slot} already occupied during move."
                 )
             # Move the strand
-            new_slots[move.from_slot] = None
+            slots[move.from_slot] = None
             strand.position = move.to_slot
-            new_slots[move.to_slot] = strand
+            slots[move.to_slot] = strand
+        return slots
+
+    def all_steps(self):
+        """Performs one round of the braiding moves."""
+        new_slots: Dict[int, Optional[Strand]] = self.slots.copy()
+
+        for move in self.config.moves:
+            new_slots = self.single_step(move, new_slots)
 
         self.slots = new_slots
 
-        if self.config.n_shift_after_cycle:
-            self.rotate(self.config.n_shift_after_cycle)
+        self.rotate(self.config.n_shift_after_cycle)
 
     # ---------------------------------------------------------------------
 
-    def visualize(self, ax=None):
+    def visualize(self, ax=None, shift_back_to_initial_position: bool = False):
         """Visualizes the current state of the mobidai.
 
         Args:
@@ -168,7 +172,11 @@ class Mobidai:
             angle = (
                 2
                 * np.pi
-                * (slot - 1 + self.n_shift_after_cycle)
+                * (
+                    slot
+                    - 1
+                    - self.n_total_shift * int(not (shift_back_to_initial_position))
+                )
                 / n
                 * (int(self.config.is_clockwise) * 2 - 1)
             )
@@ -191,7 +199,7 @@ class Mobidai:
             visualize_each (bool, optional): Whether to show each step. Defaults to False.
         """
         for _ in range(steps):
-            self.step()
+            self.all_steps()
             if visualize_each:
                 self.visualize()
                 plt.show()
@@ -202,6 +210,7 @@ class Mobidai:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    # Typical moves described in books
     config = MobidaiConfig(
         n_slots=32,
         is_clockwise=True,
@@ -217,16 +226,52 @@ if __name__ == "__main__":
         ],
         moves=[
             Move(a, b)
-            for a, b in [(1, 15), (17, 31), (25, 7), (9, 23), (16, 30), (32, 14)]
+            for a, b in [
+                (1, 15),
+                (17, 31),
+                (25, 7),
+                (9, 23),
+                (16, 30),
+                (32, 14),
+                (8, 22),
+                (24, 6),
+            ]
         ],
-        n_shift_after_cycle=0,
+        n_shift_after_cycle=2,
     )
 
     mobidai = Mobidai(config)
-    mobidai.visualize()
-    mobidai.step()
-    mobidai.visualize()
-    mobidai.step()
-    mobidai.visualize()
-    mobidai.step()
-    mobidai.visualize()
+    mobidai.visualize(shift_back_to_initial_position=False)
+    mobidai.all_steps()
+    mobidai.visualize(shift_back_to_initial_position=False)
+    mobidai.all_steps()
+    mobidai.visualize(shift_back_to_initial_position=False)
+    mobidai.all_steps()
+    mobidai.visualize(shift_back_to_initial_position=False)
+
+    # We can get the same braid using only half of the moves, then repeating them !
+    config = MobidaiConfig(
+        n_slots=32,
+        is_clockwise=True,
+        strands=[
+            Strand("red", 32),
+            Strand("red", 1),
+            Strand("red", 17),
+            Strand("red", 16),
+            Strand("green", 25),
+            Strand("green", 24),
+            Strand("green", 8),
+            Strand("green", 9),
+        ],
+        moves=[Move(a, b) for a, b in [(1, 15), (17, 31), (25, 7), (9, 23)]],
+        n_shift_after_cycle=1,
+    )
+
+    mobidai = Mobidai(config)
+    mobidai.visualize(shift_back_to_initial_position=False)
+    mobidai.all_steps()
+    mobidai.visualize(shift_back_to_initial_position=False)
+    mobidai.all_steps()
+    mobidai.visualize(shift_back_to_initial_position=False)
+    mobidai.all_steps()
+    mobidai.visualize(shift_back_to_initial_position=False)

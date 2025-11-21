@@ -24,7 +24,7 @@ def test_step_simple_move():
         n_slots=8, strands=[Strand("red", 1)], moves=[Move(1, 5)], n_shift_after_cycle=0
     )
     m = Mobidai(config)
-    m.step()
+    m.all_steps()
 
     assert m.slots[1] is None
     assert m.slots[5].color == "red"
@@ -41,7 +41,7 @@ def test_step_conflict_raises():
     m = Mobidai(config)
 
     with pytest.raises(SlotAlreadyInUseError):
-        m.step()
+        m.all_steps()
 
 
 def test_rotation():
@@ -53,7 +53,7 @@ def test_rotation():
         n_shift_after_cycle=2,
     )
     m = Mobidai(config)
-    m.step()  # no moves, only rotation
+    m.all_steps()  # no moves, only rotation
 
     assert m.slots[3].color == "red"
     assert m.slots[6].color == "blue"
@@ -69,11 +69,22 @@ def test_multiple_steps():
     )
     m = Mobidai(config)
 
-    m.step()
-    assert m.slots[3].color == "red"
-
-    m.step()
+    m.all_steps()
     assert m.slots[5].color == "red"
+
+
+def test_multiple_steps_and_shift():
+    """Simulating multiple steps should apply moves repeatedly."""
+    config = MobidaiConfig(
+        n_slots=8,
+        strands=[Strand("red", 1)],
+        moves=[Move(1, 3), Move(3, 5)],
+        n_shift_after_cycle=2,
+    )
+    m = Mobidai(config)
+
+    m.all_steps()
+    assert m.slots[7].color == "red"
 
 
 def test_visualization_runs():
