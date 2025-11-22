@@ -55,6 +55,9 @@ class Move:
 
     from_slot: int
     to_slot: int
+    # Optional: Force a direction if you want a "long way round" move
+    # 1 = CW, -1 = CCW, 0 = Auto (Shortest Path)
+    force_direction: int = 0
 
 
 @dataclass
@@ -96,7 +99,7 @@ class BraidTracker:
         strand_map (Dict[int, Strand]): Reference to the actual strand objects.
     """
 
-    def __init__(self, strands: List[Strand], n_slots: int):
+    def __init__(self, strands: List[Strand], n_slots: int, is_disk_clockwise: bool):
         """Initializes the BraidTracker.
 
         Args:
@@ -104,26 +107,16 @@ class BraidTracker:
             n_slots (int): Total slots on the disk (used for sorting).
         """
         self.strand_map = {s.id: s for s in strands}
-        # Sort strands by their initial position to establish the baseline linear order (1..N)
+        self.n_slots = n_slots
+        self.is_disk_clockwise = is_disk_clockwise
+
+        # Initialize linear order based on current positions
+        # We sort by position to get the 1..N topological order
         self.linear_order = sorted(
             [s.id for s in strands], key=lambda sid: self.strand_map[sid].position
         )
 
-    def get_generators_for_move(self, move: Move, n_slots: int) -> str:
-        """Calculates the Artin generators for a specific move.
-
-        Assumes the standard Marudai physics where the moving strand is lifted
-        UP and passes OVER any intervening strands.
-
-        Args:
-            move (Move): The move being performed.
-            n_slots (int): Total number of slots (to calculate direction).
-
-        Returns:
-            str: A space-separated string of generators (e.g., "s1 s2" or "s3^-1").
-                 Returns an empty string if no crossings occur.
-        """
-        # 1. Identify the moving strand
+    def get_generators_for_move(self, move: Move) -> str:
         moving_strand = None
         for s in self.strand_map.values():
             if s.position == move.from_slot:
@@ -133,31 +126,46 @@ class BraidTracker:
         if not moving_strand:
             return ""
 
-        # 2. Determine Direction and Path
-        # Calculate distance Clockwise
-        diff = (move.to_slot - move.from_slot) % n_slots
-        is_clockwise = diff <= (n_slots // 2)
+        # 1. Determine Direction (CW or CCW)
+        diff = (move.to_slot - move.from_slot) % self.n_slots
 
-        steps = diff if is_clockwise else (n_slots - diff)
-        direction = 1 if is_clockwise else -1
+        # Determine if path is Clockwise (CW)
+        if move.force_direction == 1:
+            is_move_cw = True
+        elif move.force_direction == -1:
+            is_move_cw = False
+        else:
+            # Default: Shortest path
+            is_move_cw = diff <= (self.n_slots // 2)
 
-        # 3. Find all strands physically located in the path
+        # 2. Identify Strands in the Path
+        # We iterate slot-by-slot from 'from' to 'to'
+        steps = diff if is_move_cw else (self.n_slots - diff)
+        direction_step = 1 if is_move_cw else -1
+
         crossed_strand_ids = []
-        current_check = move.from_slot
+        current_slot = move.from_slot
 
         for _ in range(steps):
-            # Move one slot in the direction
-            current_check = ((current_check + direction - 1) % n_slots) + 1
+            # Update slot check (Simulate walking along the rim)
+            # Math: (current - 1 + direction) % n + 1 gives 1-based index wrap
+            current_slot = ((current_slot + direction_step - 1) % self.n_slots) + 1
 
-            # Check if a strand exists at this slot
+            # Ignore the target slot (it's where we place the strand, not cross it)
+            # But strict checking: if strands are packed, we might cross a strand
+            # just before placing it? Usually target is empty.
+            if current_slot == move.to_slot:
+                continue
+
+            # Check for strands at this position
             for s in self.strand_map.values():
-                if s.position == current_check and s.id != moving_strand.id:
+                if s.position == current_slot and s.id != moving_strand.id:
                     crossed_strand_ids.append(s.id)
 
         if not crossed_strand_ids:
             return ""
 
-        # 4. Generate Words and Update Linear Order
+        # 3. Generate Artin Words
         generators = []
 
         for crossed_id in crossed_strand_ids:
@@ -165,22 +173,25 @@ class BraidTracker:
             idx_moving = self.linear_order.index(moving_strand.id)
             idx_stationary = self.linear_order.index(crossed_id)
 
-            # The Artin generator index 'k' is 1-indexed, based on the leftmost strand involved
+            # Artin Index k is the minimum rank (Leftmost strand in the pair)
             k = min(idx_moving, idx_stationary) + 1
 
-            if is_clockwise:
-                # Moving Left -> Right (Rank i -> i+1). Crossing OVER.
-                # This is the positive generator σ_k
-                gen = f"s{k}"
+            # SIGN LOGIC:
+            # If Disk is CW (1..N go Right):
+            #    CW Move (Right) = Positive (s)
+            #    CCW Move (Left) = Negative (s^-1)
+            # If Disk is CCW (1..N go Left):
+            #    CW Move (Right) = Moves AGAINST index = Negative (s^-1)
+            #    CCW Move (Left) = Moves WITH index = Positive (s)
+
+            if self.is_disk_clockwise:
+                sign = "" if is_move_cw else "^-1"
             else:
-                # Moving Right -> Left (Rank i+1 -> i). Crossing OVER.
-                # A right-strand crossing over a left-strand is the inverse σ_k^-1
-                gen = f"s{k}^-1"
+                sign = "^-1" if is_move_cw else ""
 
-            generators.append(gen)
+            generators.append(f"s{k}{sign}")
 
-            # CRITICAL: Update the linear order to reflect the swap
-            # The strands have topologically exchanged places.
+            # Update Topology (Swap ranks)
             self.linear_order[idx_moving], self.linear_order[idx_stationary] = (
                 self.linear_order[idx_stationary],
                 self.linear_order[idx_moving],
@@ -190,132 +201,70 @@ class BraidTracker:
 
 
 # ---------------------------------------------------------------------------
-# Mobidai Simulation
+# Mobidai Class Updates
 # ---------------------------------------------------------------------------
 
 
 class Mobidai:
-    """Simulates a mobidai braiding process and tracks braid words.
-
-    Attributes:
-        config (MobidaiConfig): Configuration object for this mobidai.
-        slots (Dict[int, Optional[Strand]]): Dictionary mapping slot number to strand.
-        braid_word (List[str]): The accumulated sequence of Artin generators.
-    """
-
     def __init__(self, config: MobidaiConfig):
-        """Initializes the mobidai simulation.
-
-        Assigns unique IDs to strands if they don't have them, sets up slots,
-        and initializes the topological BraidTracker.
-
-        Args:
-            config (MobidaiConfig): The mobidai configuration.
-
-        Raises:
-            ValueError: If a slot is double-booked in the initial config.
-        """
         self.n_total_shift = 0
         self.config = config
         self.slots: Dict[int, Strand | None] = {
             i: None for i in range(1, config.n_slots + 1)
         }
 
-        # Re-initialize strands with unique IDs for tracking
         new_strands = []
         for i, s in enumerate(config.strands):
-            # Create new instance to avoid mutating the passed config directly
-            # Assign ID 'i'
             new_s = Strand(s.color, s.position, id=i)
             new_strands.append(new_s)
-
             if new_s.position in self.slots:
                 self.slots[new_s.position] = new_s
             else:
-                raise ValueError(
-                    f"Invalid slot {new_s.position} for strand {new_s.color}"
-                )
+                raise ValueError(f"Invalid slot {new_s.position}")
 
-        # Update config to use the ID-aware strands
         self.config.strands = new_strands
 
-        # Initialize Braid Word logic
-        self.braid_tracker = BraidTracker(self.config.strands, self.config.n_slots)
+        # Pass 'is_clockwise' from config to Tracker to fix sign logic
+        self.braid_tracker = BraidTracker(
+            self.config.strands, self.config.n_slots, self.config.is_clockwise
+        )
         self.braid_word: List[str] = []
-
-    # ---------------------------------------------------------------------
-
-    def rotate(self, steps: int):
-        """Rotates all strands by a given number of slots.
-
-        Does not generate braid words as rotation is a change of reference frame,
-        not a crossing of strands.
-
-        Args:
-            steps (int): Number of slots to rotate. Positive for clockwise.
-        """
-        n = self.config.n_slots
-        new_slots: Dict[int, Optional[Strand]] = {i: None for i in range(1, n + 1)}
-
-        for slot, strand in self.slots.items():
-            if strand:
-                new_absolute_position = ((slot - 1 + steps) % n) + 1
-                strand.position = new_absolute_position
-                new_slots[new_absolute_position] = strand
-
-        self.slots = new_slots
-        self.n_total_shift += steps
-
-    # ---------------------------------------------------------------------
 
     def single_step(
         self, move: Move, slots: Dict[int, Optional[Strand]]
     ) -> Dict[int, Optional[Strand]]:
-        """Performs one step of the braiding moves and extracts generators.
-
-        Args:
-            move (Move): The move to perform.
-            slots (Dict): Current snapshot of the slots.
-
-        Returns:
-            Dict: Updated snapshot of the slots.
-
-        Raises:
-            SlotAlreadyInUseError: If the target slot is occupied.
-        """
         strand = slots.get(move.from_slot)
         if strand:
             if slots.get(move.to_slot) is not None:
-                raise SlotAlreadyInUseError(
-                    f"Slot {move.to_slot} already occupied during move."
-                )
+                raise SlotAlreadyInUseError(f"Slot {move.to_slot} occupied.")
 
-            # --- Braid Extraction Start ---
-            # Calculate generators before physical update, but knowing the path
-            generators = self.braid_tracker.get_generators_for_move(
-                move, self.config.n_slots
-            )
-            if generators:
-                self.braid_word.append(generators)
-            # --- Braid Extraction End ---
+            # Extract Generators
+            gens = self.braid_tracker.get_generators_for_move(move)
+            if gens:
+                self.braid_word.append(gens)
 
-            # Move the strand physically
+            # Physical Move
             slots[move.from_slot] = None
             strand.position = move.to_slot
             slots[move.to_slot] = strand
 
         return slots
 
-    def all_steps(self):
-        """Performs one round of the braiding moves.
+    # ... rotate, all_steps, visualize, simulate remain the same ...
+    def rotate(self, steps: int):
+        n = self.config.n_slots
+        new_slots = {i: None for i in range(1, n + 1)}
+        for slot, strand in self.slots.items():
+            if strand:
+                new_pos = ((slot - 1 + steps) % n) + 1
+                strand.position = new_pos
+                new_slots[new_pos] = strand
+        self.slots = new_slots
+        self.n_total_shift += steps
 
-        Iterates through all configured moves, updates the braid word,
-        and finally performs the rotation step.
-        """
-        # Use self.slots directly to maintain state
+    def all_steps(self):
         for move in self.config.moves:
             self.slots = self.single_step(move, self.slots)
-
         self.rotate(self.config.n_shift_after_cycle)
 
     # ---------------------------------------------------------------------
@@ -334,53 +283,29 @@ class Mobidai:
             fig, ax = plt.subplots(figsize=(6, 6))
         ax.set_aspect("equal")
         ax.axis("off")
-
         r_outer = 1.0
         theta = np.linspace(0, 2 * np.pi, n + 1)
         ax.plot(r_outer * np.cos(theta), r_outer * np.sin(theta), "k-", lw=1)
 
         for slot in range(1, n + 1):
-            angle = (
-                2
-                * np.pi
-                * (
-                    slot
-                    - 1
-                    - self.n_total_shift * int(not (shift_back_to_initial_position))
-                )
-                / n
-                * (int(self.config.is_clockwise) * 2 - 1)
-            )
+            # Calculate angle
+            shift = self.n_total_shift * int(not (shift_back_to_initial_position))
+            direction = 1 if self.config.is_clockwise else -1
+            # Angle starts at 0 (top usually) and rotates based on slot index
+            angle = (2 * np.pi * (slot - 1 - shift) / n) * direction
+
             x = r_outer * np.sin(angle)
             y = r_outer * np.cos(angle)
             strand = self.slots.get(slot)
             color = strand.color if strand else "white"
-
             ax.plot(x, y, "o", color=color, markersize=12, markeredgecolor="black")
             ax.text(x * 1.15, y * 1.15, str(slot), ha="center", va="center", fontsize=8)
-
         plt.show()
 
-    # ---------------------------------------------------------------------
-
-    def simulate(self, steps: int, visualize_each: bool = False):
-        """Runs multiple braiding steps.
-
-        Args:
-            steps (int): Number of steps to simulate.
-            visualize_each (bool, optional): Whether to show each step. Defaults to False.
-        """
-        for _ in range(steps):
-            self.all_steps()
-            if visualize_each:
-                self.visualize()
-                plt.show()
-
 
 # ---------------------------------------------------------------------------
-# Example usage
+# Example to Verify CCW/Backward Crossing
 # ---------------------------------------------------------------------------
-
 if __name__ == "__main__":
     # Using the simpler example to easily verify braid words
     print("--- Simulating Braiding and Extracting Artin Words ---")
