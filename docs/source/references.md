@@ -40,7 +40,7 @@ relationships between algebraic and geometric braid
 - https://github.com/the-bakery/braided > protoype to edit graphically a braid diagram in web browser
 - https://github.com/WhimsicalDragon/BraidMaker (weird)
 - https://github.com/Sonicpineapple/Braids another online braid editor
-- https://github.com/textiles-lab/show-braid
+- https://github.com/textiles-lab/show-braid javascript/html 2D braid diagram visualization
 - https://github.com/mweitzel/braid html braid generator from word
 - A more general way to store and visualize different textiles https://github.com/virtualtextiles/pytexlib
 Alternative Python library:
@@ -89,7 +89,7 @@ https://github.com/stla/braids
 - https://github.com/MarkCBell/flipper?tab=readme-ov-file - probably very powerful, but a bit abstract
 - https://github.com/mateosi98/Unknotting-Braids
 - https://github.com/GriffinKowash/Cable-braids/tree/main
-- https://github.com/iowyth/harmonic-braider
+- https://github.com/iowyth/harmonic-braider -> seems not related
 ---
 
 ## 📊 MATLAB / BraidLab
@@ -175,3 +175,4 @@ https://www.youtube.com/watch?v=qSPfs9S0Pag
 ## Braiding simulation
 https://github.com/ElsevierSoftwareX/SOFTX-D-17-00056
 https://github.com/louisepb/TexGen
+https://craftdesignonline.com/braid-3d/
