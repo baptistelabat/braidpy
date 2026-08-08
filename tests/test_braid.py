@@ -273,6 +273,13 @@ class TestBraid:
         M = Matrix([[1, 0], [1, -1 / t]])
         assert Braid([-2], n_strands=3).to_reduced_matrix() == M
 
+        M = Matrix([[-t, 1, 0], [0, 1, 0], [0, 0, 1]])
+        assert Braid([1], n_strands=4).to_reduced_matrix() == M
+        M = Matrix([[1, 0, 0], [t, -t, 1], [0, 0, 1]])
+        assert Braid([2], n_strands=4).to_reduced_matrix() == M
+        M = Matrix([[1, 0, 0], [0, 1, 0], [0, t, -t]])
+        assert Braid([3], n_strands=4).to_reduced_matrix() == M
+
     @pytest.mark.skip(
         "reduced Burau matrix definition is ambiguous, skipping for now https://github.com/sagemath/sagetrac-mirror/commit/cf4f6407517615ad3bb95bf8bf752e01949b783a"
     )
