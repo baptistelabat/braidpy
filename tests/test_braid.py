@@ -260,21 +260,29 @@ class TestBraid:
         M = Matrix([[1 - t, 0, t], [1, 0, 0], [0, 1 / t, 1 - 1 / t]])
         assert Braid([1, -2]).to_matrix() == M
 
+    def test_basic_to_reduced_matrix(self, simple_braid):
+        """Test reduced Burau matrix representation"""
+        t = symbols("t")
+        assert Braid([1], n_strands=2).to_reduced_matrix() == Matrix([-t])
+        M = Matrix([[-t, 1], [0, 1]])
+        assert Braid([1], n_strands=3).to_reduced_matrix() == M
+        M = Matrix([[-1 / t, 1 / t], [0, 1]])
+        assert Braid([-1], n_strands=3).to_reduced_matrix() == M
+        M = Matrix([[1, 0], [t, -t]])
+        assert Braid([2], n_strands=3).to_reduced_matrix() == M
+        M = Matrix([[1, 0], [1, -1 / t]])
+        assert Braid([-2], n_strands=3).to_reduced_matrix() == M
+
     @pytest.mark.skip(
         "reduced Burau matrix definition is ambiguous, skipping for now https://github.com/sagemath/sagetrac-mirror/commit/cf4f6407517615ad3bb95bf8bf752e01949b783a"
     )
     def test_to_reduced_matrix(self, simple_braid):
-        """Test unreduced Burau matrix representation
+        """Test reduced Burau matrix representation
         According to https://arxiv.org/pdf/1410.0849
         """
         t = symbols("t")
         M = Matrix([[-t, t], [-1, 1 - 1 / t]])
-        assert Braid([1, -2]).to_reduced_matrix() == M
-
-    def test_to_reduced_matrix_not_implemented(self, simple_braid):
-        """Test unreduced Burau matrix representation not implemented error"""
-        with pytest.raises(NotImplementedError):
-            Braid([1, -2]).to_reduced_matrix()
+        assert Braid([1, -2], n_strands=3).to_reduced_matrix() == M
 
     def test_conjugate(self):
         """Test conjugacy class generation"""
