@@ -13,6 +13,7 @@ relationships between algebraic and geometric braid
 - https://mathcenter.oxford.emory.edu/site/math108/braid_arithmetic/
 - https://eprints.nottingham.ac.uk/76624/1/Thompson%2C%20Matthew%2C%2014343257%2C%20corrections.pdf
 - https://jsphdms.github.io/2023/01/06/knots.html
+- https://www.youtube.com/watch?v=3vZ8TT5Ln7o
 ---
 
 ## 🧮 SageMath Implementation
@@ -39,7 +40,7 @@ relationships between algebraic and geometric braid
 - https://github.com/the-bakery/braided > protoype to edit graphically a braid diagram in web browser
 - https://github.com/WhimsicalDragon/BraidMaker (weird)
 - https://github.com/Sonicpineapple/Braids another online braid editor
-- https://github.com/textiles-lab/show-braid
+- https://github.com/textiles-lab/show-braid javascript/html 2D braid diagram visualization
 - https://github.com/mweitzel/braid html braid generator from word
 - A more general way to store and visualize different textiles https://github.com/virtualtextiles/pytexlib
 Alternative Python library:
@@ -88,7 +89,7 @@ https://github.com/stla/braids
 - https://github.com/MarkCBell/flipper?tab=readme-ov-file - probably very powerful, but a bit abstract
 - https://github.com/mateosi98/Unknotting-Braids
 - https://github.com/GriffinKowash/Cable-braids/tree/main
-- https://github.com/iowyth/harmonic-braider
+- https://github.com/iowyth/harmonic-braider -> seems not related
 ---
 
 ## 📊 MATLAB / BraidLab
@@ -131,10 +132,27 @@ Braid functions are often used in knot theory.
 
 ---
 
+## Kumihimo
+https://archive.bridgesmathart.org/2022/bridges2022-327.pdf
+http://www.englisch.kumihimo.de/html/history.html
+Simulation https://www.artisanart.biz/Apps/Kikko_Planner/
+Nimai korai gumi https://www.youtube.com/watch?v=98MB0GH9how&list=PLBXqC8CNQNiqj3xu8glytqYIa6i_pSogC&index=1
+Regular kumihimo corresponds to dihedral group https://en.wikipedia.org/wiki/Dihedral_group
+Instrumented https://dl.acm.org/doi/fullHtml/10.1145/3563657.3596026
+Track plan https://loopbraider.com/track-plans/
+https://www.artisanart.biz/Apps/Kikko_Planner/
+
+## Loop Manipulation braiding (Kute-uchi)
+
+Historical braids by Masako Kinoshita https://loopbraiding.com/ https://www.ee0r.com/lmbric.net/
+Ingrid Crickmore blog https://loopbraider.com/
+Braid planner by Gary Mitchell https://www.islandbraider.com/
 ## 📺 Video Resource
 
 - [YouTube: Braids Explained](https://www.youtube.com/watch?v=8DBhTXM_Br4)
 
+## Braiding stand
+Takadai https://www.youtube.com/watch?v=1K3P7ua1WkY
 ---
 ## Braiding machine control
 https://github.com/stiganielsen/BraidOMatic
@@ -152,7 +170,9 @@ https://github.com/tforgrave/braider_project
 
 ## Kumihimo braiding machine
 https://www.youtube.com/watch?v=wdiRZvdyO5A 
+https://www.youtube.com/watch?v=qSPfs9S0Pag
 
 ## Braiding simulation
 https://github.com/ElsevierSoftwareX/SOFTX-D-17-00056
 https://github.com/louisepb/TexGen
+https://craftdesignonline.com/braid-3d/
