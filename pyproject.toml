@@ -36,6 +36,7 @@ dependencies = [
     "math-braid (>=0.8,<0.9)",
     "plotly>=6.1.2",
     "imageio>=2.37.2",
+    "networkx>=3.4.2",
 ]
 
 [dependency-groups]
