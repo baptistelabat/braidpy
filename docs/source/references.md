@@ -136,6 +136,67 @@ Braid functions are often used in knot theory.
 - [YouTube: Braids Explained](https://www.youtube.com/watch?v=8DBhTXM_Br4)
 
 ---
+## Braid patterns (1/1, 2/2, 3/3, milanaise)
+
+A braid *pattern* names how many opposing yarns each yarn passes over and
+under. It describes the **interlacing**, not the machine: the same machine can
+produce several patterns.
+
+| Pattern | Notation | Each yarn crosses | Note |
+|---|---|---|---|
+| Diamond | 1/1 | over 1, under 1 | plain-weave equivalent; most dimensionally stable |
+| Regular (plain) | 2/2 | over 2, under 2 | 2/2 twill repeat |
+| Hercules | 3/3 | over 3, under 3 | least stable of the three |
+| Milanaise | 3/1 | 3 threads over 1 | thick, asymmetric; 1920s neckties, tricolour slider on French mayors' sashes |
+
+- [ScienceDirect — Triaxial braid overview](https://www.sciencedirect.com/topics/engineering/triaxial-braid)
+  — diamond/regular/Hercules definitions and relative stability.
+- [L'Atelier de Tressage — la tresse plate](https://www.atelierdetressage.paris/tresse-plate/)
+  — French flat-braid designs (uni, chiné, grappé, damier, pied-de-poule,
+  diagonal, milanaise). Flat looms run 7–121 fuseaux, single circuit.
+- [Meubliz — définition d'une milanaise](https://www.meubliz.com/definition/milanaise/)
+
+> ⚠️ **The names collide between industries.** In composites, *diamond* = 1/1
+> and *regular* = 2/2. In medical wire braiding, *regular* = 1-under-2-over-2
+> and *diamond* = 2-under-2-over-2. Always state which convention is meant.
+>
+> - [Teleflex Medical OEM — braid patterns](https://www.teleflexmedicaloem.com/get-to-know-us/medtec-resources/braid-patterns/)
+> - [MMBT — herringbone, diamond and half-load explained](https://mmbt.us/blogs/news/braid-patterns-in-mmbt-fine-wire-medical-braiders-herringbone-diamond-and-half-load-explained)
+
+### What actually sets the pattern
+
+At least three independent levers, only the first of which is carrier placement:
+
+1. **How many carriers are mounted.** *Half load* is a standard named setup:
+   half the carriers, alternating gaps, giving a one-over-one/one-under-one
+   structure with better flexibility and torque (Teleflex, MMBT). The French
+   *diagonal* design is the same idea — "one spindle out of 2 is mounted".
+2. **Gearing ratio.** MMBT: for diamond and half-load the machine "runs at half
+   speed. Horn gears turn twice per pick" — the ratio of gear rotation to
+   take-up changes the interlacing, not just the braid angle.
+3. **Yarns per carrier.** Two yarns in one carrier read as a 2/2 crossing.
+
+Note a vocabulary trap for `horn_gear`: a maypole machine with N carriers has
+**2N slots**, because only one of the two slots meeting at a contact may be
+occupied. So the industry's *full load* is this package's 50% ceiling, and the
+empty slots at full load are mechanism, not choice. *Half load* is 25% of slots.
+
+### Maypole machine simulation (closest prior art to `horn_gear`)
+
+- [Discrete simulation of maypole braiding machines to create collision-free
+  braiding programmes](https://www.sciencedirect.com/science/article/pii/S2405844025012988)
+  (2025) — enumerating collision-free carrier arrangements. Paywalled.
+- [Kyosev & Gleßner, *Extended horn gears in 3D maypole braiding*](https://journals.sagepub.com/doi/full/10.1177/2515221118786741)
+  (2018, open access) — horn gear arrangement, transfer places, floating length.
+
+### Soutache
+
+- [Soutache (Wikipedia)](https://en.wikipedia.org/wiki/Soutache) — a narrow flat
+  herringbone braid "created by weaving a decorative thread around and between
+  **two parallel cords**, completely covering the cores". Two cores, which is
+  what `soutache_braid()` models as two `Axial` columns.
+
+---
 ## Braiding machine control
 https://github.com/stiganielsen/BraidOMatic
 https://github.com/Brandon-Key5113/BraidyBunch
