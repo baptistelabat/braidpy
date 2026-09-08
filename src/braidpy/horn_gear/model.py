@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import networkx as nx
 
@@ -126,16 +126,46 @@ class Connection:
         return sa, sb
 
 
+@dataclass(frozen=True)
+class Axial:
+    """A yarn fed straight down a fixed column, never carried by a gear.
+
+    Braiding carriers travel around an axial; the axial itself does not move,
+    holds no slot, and has no track.  It is therefore *not* a carrier and takes
+    no part in stepping, tracks or collision detection — it is a fixed point
+    that the braid forms around.
+
+    The column stands at the centroid of the gears it is anchored to, which
+    covers both ways a machine carries one:
+
+    - ``anchor=("B",)`` — one gear, so the column is that gear's own centre,
+      as an axial yarn fed up through a hollow horn gear spindle.  This is the
+      0° reinforcement of a triaxial braid, and the cord of a soutache.
+    - ``anchor=("A", "B", "C", "D")`` — the ring of gears around a hole, so the
+      column is the centre of the tube they braid, as a rope core or a mandrel.
+      :func:`~braidpy.horn_gear.layout.tube_rings` finds these rings for you.
+
+    Args:
+        name: Unique identifier for this axial.
+        anchor: Names of the gears whose centroid the column stands at.
+    """
+
+    name: str
+    anchor: Tuple[str, ...]
+
+
 class BraidingMachine:
     """A complete horn-gear braiding machine described as a connection graph.
 
     Args:
         gears: List of HornGear instances.
         connections: List of Connection edges between gears.
+        axials: Optional Axial columns the braid forms around.
 
     Attributes:
         gears: Dict mapping gear name → HornGear.
         connections: List of Connection instances.
+        axials: List of Axial instances (empty for a machine without cores).
         graph: NetworkX graph of gear connections (for layout / analysis).
     """
 
@@ -143,9 +173,11 @@ class BraidingMachine:
         self,
         gears: List[HornGear],
         connections: List[Connection],
+        axials: Iterable[Axial] = (),
     ) -> None:
         self.gears: Dict[str, HornGear] = {g.name: g for g in gears}
         self.connections: List[Connection] = connections
+        self.axials: List[Axial] = list(axials)
         self.graph: nx.Graph = self._build_graph()
         self._validate()
 
@@ -181,6 +213,19 @@ class BraidingMachine:
                     f"slot_b0={conn.slot_b0} out of range for gear '{conn.gear_b}' "
                     f"(n_slots={gb.n_slots})."
                 )
+
+        seen_axials: set = set()
+        for axial in self.axials:
+            if not axial.anchor:
+                raise ValueError(f"Axial '{axial.name}' has an empty anchor.")
+            for name in axial.anchor:
+                if name not in self.gears:
+                    raise ValueError(
+                        f"Axial '{axial.name}' anchors to unknown gear '{name}'."
+                    )
+            if axial.name in seen_axials:
+                raise ValueError(f"Duplicate axial name '{axial.name}'.")
+            seen_axials.add(axial.name)
 
     def total_slots(self) -> int:
         """Total number of carrier slots across all gears."""

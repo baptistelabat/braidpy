@@ -23,8 +23,18 @@ from dataclasses import dataclass
 from itertools import product
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Tuple
 
+import networkx as nx
+
 from .model import BraidingMachine
 from .tracks import Position, _next_position
+
+# Above this slot count, maximum-clique enumeration is no longer safe to run
+# unbounded and loading falls back to a greedy search.
+_EXACT_LOADING_LIMIT = 48
+
+# Beyond this many tracks, enumerating every per-track offset is not worth
+# it and the first candidate is used as-is.
+_MAX_TRACK_OFFSETS = 16
 
 if TYPE_CHECKING:
     from .tracks import Track
@@ -200,20 +210,54 @@ def _is_collision_free(
     return True
 
 
+def _gear_balance(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+) -> float:
+    """How evenly a loading spreads over the gears; lower is more even.
+
+    A machine is threaded with its carriers alternating around it, never
+    clumped onto one gear.  Both are collision-free — an empty gear cannot
+    collide with anything — so the simulation alone will not choose between
+    them and this does, by comparing how full each gear is.
+    """
+    counts: Dict[str, int] = {name: 0 for name in machine.gears}
+    for gear, _ in positions.values():
+        counts[gear] += 1
+    filled = [counts[name] / machine.gears[name].n_slots for name in machine.gears]
+    mean = sum(filled) / len(filled)
+    return sum((f - mean) ** 2 for f in filled)
+
+
 def _alternating_loadings(
+    machine: BraidingMachine,
     tracks: List["Track"],
 ) -> Iterator[Dict[CarrierId, Position]]:
     """Every other slot along each track, for each choice of starting offset.
 
     Tracks may share a slot — carriers can cross it at different times without
     ever meeting — so repeats are dropped rather than doubly occupied.
+
+    Candidates come out fullest first and, among equally full ones, most evenly
+    spread first.  Choosing an offset per track decides which *gear* each
+    carrier starts on, so without that ordering a two-gear machine happily
+    loads every carrier onto one gear and leaves the other bare.
     """
-    for offsets in product((0, 1), repeat=len(tracks)):
-        yield _number(
+    if len(tracks) > _MAX_TRACK_OFFSETS:
+        offsets_to_try: Iterable[Tuple[int, ...]] = [(0,) * len(tracks)]
+    else:
+        offsets_to_try = product((0, 1), repeat=len(tracks))
+
+    candidates = [
+        _number(
             track[i]
             for track, off in zip(tracks, offsets)
             for i in range(off, len(track), 2)
         )
+        for offsets in offsets_to_try
+    ]
+    candidates.sort(key=lambda p: (-len(p), _gear_balance(machine, p)))
+    yield from candidates
 
 
 def _greedy_loadings(
@@ -233,21 +277,61 @@ def _greedy_loadings(
         yield slots[seed:] + slots[:seed]
 
 
+def _fullest_loading(
+    machine: BraidingMachine,
+    period: int,
+) -> Dict[CarrierId, Position]:
+    """The largest collision-free set of slots, computed exactly.
+
+    Every collision this model detects involves exactly two carriers — two in
+    one slot, two on the two sides of one contact, or two swapping through one
+    contact — so a set of carriers is collision-free precisely when every
+    *pair* in it is.  That makes the fullest loading a maximum clique of the
+    "these two can coexist" graph, which is worth solving exactly: greedy
+    loading leaves real machines short of what they can hold.
+    """
+    slots = [
+        (name, slot)
+        for name, gear in machine.gears.items()
+        for slot in range(gear.n_slots)
+    ]
+
+    graph = nx.Graph()
+    graph.add_nodes_from(
+        i
+        for i, pos in enumerate(slots)
+        if _is_collision_free(machine, {0: pos}, period)
+    )
+    viable = list(graph.nodes)
+    for a in range(len(viable)):
+        for b in range(a + 1, len(viable)):
+            i, j = viable[a], viable[b]
+            if _is_collision_free(machine, {0: slots[i], 1: slots[j]}, period):
+                graph.add_edge(i, j)
+
+    if graph.number_of_nodes() == 0:
+        return {}
+
+    cliques = list(nx.find_cliques(graph))
+    fullest = max(len(c) for c in cliques)
+    return min(
+        (_number(slots[i] for i in sorted(c)) for c in cliques if len(c) == fullest),
+        key=lambda positions: _gear_balance(machine, positions),
+    )
+
+
 def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
     """Fill the machine with as many carriers as it can hold without collisions.
 
     A real machine is loaded with a spool in every other slot along each track,
-    which is what this tries first.  That has no meaning for a track whose path
-    revisits slots — the interior gears of a flat braid are crossed once per
-    traversal — so the fallback simply adds carriers one at a time, keeping
-    each one that leaves the machine collision-free.
+    which is what this tries first, since it reproduces how a machine is
+    threaded in practice.  That has no meaning for a track whose path revisits
+    slots — the interior gears of a flat braid are crossed once per traversal —
+    so the machine is then filled as far as it will go instead.
 
     Either way the candidate is validated by simulating a full period: checking
     occupancy at t=0 is not enough, because contact points move to a different
     slot every step and conflicts can surface later in the cycle.
-
-    Half the slots is the most any machine can hold, since only one of the two
-    slots meeting at a contact may be occupied, so the search stops there.
 
     Args:
         machine: The machine definition.
@@ -261,23 +345,33 @@ def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
     from .tracks import compute_tracks, simulation_period
 
     period = simulation_period(machine)
-    target = machine.total_slots() // 2
 
-    for positions in _alternating_loadings(compute_tracks(machine)):
-        if _is_collision_free(machine, positions, period):
+    # A gear with no carrier does no braiding, so a loading that leaves one
+    # bare is rejected here even though it collides with nothing — the exact
+    # search below spreads the same number of carriers over every gear.
+    for positions in _alternating_loadings(machine, compute_tracks(machine)):
+        occupied = {gear for gear, _ in positions.values()}
+        if len(occupied) == len(machine.gears) and _is_collision_free(
+            machine, positions, period
+        ):
             return positions
 
-    best: Dict[CarrierId, Position] = {}
-    for order in _greedy_loadings(machine):
-        chosen: Dict[CarrierId, Position] = {}
-        for pos in order:
-            trial = {**chosen, len(chosen): pos}
-            if _is_collision_free(machine, trial, period):
-                chosen = trial
-        if len(chosen) > len(best):
-            best = chosen
-        if len(best) >= target:
-            break
+    # Exact for any machine of a sane size; clique enumeration is exponential
+    # in the worst case, so very large machines fall back to greedy.
+    if machine.total_slots() <= _EXACT_LOADING_LIMIT:
+        best = _fullest_loading(machine, period)
+    else:
+        best = {}
+        for order in _greedy_loadings(machine):
+            chosen: Dict[CarrierId, Position] = {}
+            for pos in order:
+                trial = {**chosen, len(chosen): pos}
+                if _is_collision_free(machine, trial, period):
+                    chosen = trial
+            if len(chosen) > len(best):
+                best = chosen
+            if len(best) >= machine.total_slots() // 2:
+                break
 
     if not best:
         raise RuntimeError(

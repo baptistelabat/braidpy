@@ -38,7 +38,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import plotly.graph_objects as go
 
-from .layout import compute_layout, gear_radii
+from .layout import axial_clearance, axial_position, compute_layout, gear_radii
 from .model import BraidingMachine
 from .simulation import CollisionError, MachineState, load_carriers, simulate
 from .tracks import Track, compute_tracks
@@ -328,6 +328,45 @@ def _connection_traces(
     return traces
 
 
+def _axial_traces(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+) -> List[go.BaseTraceType]:
+    """Column marker for each axial — a ring with a dot, the column end-on.
+
+    Axials never move, so the same marker is drawn in every animation frame.
+    """
+    if not machine.axials:
+        return []
+    xs, ys, labels = [], [], []
+    for axial in machine.axials:
+        x, y = axial_position(machine, layout, axial)
+        xs.append(x)
+        ys.append(y)
+        clear = axial_clearance(machine, layout, (x, y))
+        labels.append(
+            f"{axial.name}<br>anchor: {'-'.join(axial.anchor)}"
+            f"<br>clearance: {clear:.2f}"
+        )
+    return [
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers",
+            marker=dict(
+                size=17,
+                symbol="circle-open-dot",
+                color="rgba(150,105,30,0.95)",
+                line=dict(width=2.5, color="rgba(150,105,30,0.95)"),
+            ),
+            text=labels,
+            hoverinfo="text",
+            name="Axials",
+            showlegend=False,
+        )
+    ]
+
+
 def _contact_point_traces(
     machine: BraidingMachine,
     layout: Dict[str, Tuple[float, float]],
@@ -410,6 +449,8 @@ def visualize_machine(
                 showlegend=False,
             )
         )
+
+    traces.extend(_axial_traces(machine, layout))
 
     fig = go.Figure(data=traces)
     fig.update_layout(
@@ -597,6 +638,7 @@ def animate(
                     frac,
                 )
             )
+        out.extend(_axial_traces(machine, layout_pos))
 
         xs, ys, htexts, colors_list, texts = [], [], [], [], []
         for c in state.carriers:

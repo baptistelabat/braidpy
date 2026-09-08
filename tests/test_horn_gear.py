@@ -14,12 +14,21 @@ from braidpy.horn_gear.examples import (
     flat_braid_4,
     flat_braid_9,
     mixed_gear_machine,
+    princess_braid,
+    soutache_braid,
     tubular_braid_8,
     tubular_braid_12,
     tubular_braid_16,
 )
-from braidpy.horn_gear.layout import compute_layout, gear_radii
-from braidpy.horn_gear.model import BraidingMachine, Connection, HornGear
+from braidpy.horn_gear.layout import (
+    axial_clearance,
+    axial_position,
+    compute_layout,
+    gear_radii,
+    tube_axials,
+    tube_rings,
+)
+from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
 from braidpy.horn_gear.simulation import (
     initial_state,
     load_carriers,
@@ -31,7 +40,11 @@ from braidpy.horn_gear.tracks import (
     simulation_period,
     tracks_summary,
 )
-from braidpy.horn_gear.visualization import _offset_residuals
+from braidpy.horn_gear.visualization import (
+    _offset_residuals,
+    animate,
+    visualize_machine,
+)
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -446,6 +459,228 @@ def test_duplicate_carrier_position_rejected():
         initial_state(m, carrier_positions={0: ("A", 0), 1: ("A", 0)})
 
 
+# ── Axial columns and tube cores ──────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "factory", [princess_braid, tubular_braid_8, diamond_braid, flat_braid_3]
+)
+def test_axials_do_not_disturb_the_simulation(factory):
+    """An axial is geometry, not a carrier — it must change nothing dynamic.
+
+    This is the invariant the whole design rests on: an axial holds no slot,
+    never moves and cannot collide, so loading, tracks and the period must come
+    out identical whether or not the machine carries one.
+    """
+    m = factory()
+    cored = BraidingMachine(
+        list(m.gears.values()),
+        m.connections,
+        axials=[Axial("probe", ("A",))],
+    )
+    assert load_carriers(cored) == load_carriers(m)
+    assert compute_tracks(cored) == compute_tracks(m)
+    assert simulation_period(cored) == simulation_period(m)
+
+
+@pytest.mark.parametrize("n_slots", [3, 5, 7, 9])
+def test_soutache_is_two_odd_gears_loaded_every_other_slot(n_slots):
+    """Soutache: two gears of the same odd slot count, half of them loaded.
+
+    Every slot sits on its own two-position track, so the machine repeats in
+    2 x n_slots steps, and both gears have a single connection so the layout is
+    exact whatever the slot count.
+    """
+    m = soutache_braid(n_slots=n_slots)
+    assert len(m.gears) == 2
+    assert {g.n_slots for g in m.gears.values()} == {n_slots}
+    assert m.total_slots() == 2 * n_slots
+
+    cp = load_carriers(m)
+    assert len(cp) == n_slots, "every other slot carries a spool"
+    assert simulation_period(m) == 2 * n_slots
+    simulate(m, simulation_period(m), cp)  # raises on any collision
+
+    worst = max(_offset_residuals(m, compute_layout(m)).values())
+    assert math.degrees(worst) < 1.0
+
+
+def test_princess_carries_eight_carriers_around_a_cord():
+    """Princess: 5/6/5 gears, 8 carriers, cord up the centre gear's spindle.
+
+    The carrier count is the regression guard that matters here — a greedy
+    loader finds only 7, and the machine genuinely holds 8.
+    """
+    m = princess_braid()
+    assert [g.n_slots for g in m.gears.values()] == [5, 6, 5]
+    assert m.total_slots() == 16
+
+    cp = load_carriers(m)
+    assert len(cp) == 8, "princess 5/6/5 carries eight"
+    assert len(compute_tracks(m)) == 1, "princess should be one interlinked track"
+    simulate(m, simulation_period(m), cp)  # raises on any collision
+
+    cord = m.axials[0]
+    assert cord.name == "cord"
+    assert cord.anchor == ("B",)
+
+    # The cord stands at the centre gear, so it clears that gear's radius.
+    layout = compute_layout(m)
+    position = axial_position(m, layout, cord)
+    assert position == pytest.approx(layout["B"])
+    assert axial_clearance(m, layout, position) == pytest.approx(
+        gear_radii(m)["B"], abs=1e-9
+    )
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [princess_braid, flat_braid_9, tubular_braid_8, diamond_braid, mixed_gear_machine],
+)
+def test_loading_reaches_half_the_slots(factory):
+    """Half the slots is the ceiling, and these machines all reach it.
+
+    Only one of the two slots meeting at a contact may be occupied, so half is
+    the most any machine can hold.  Loading is solved exactly rather than
+    greedily, so falling short here means a real regression.
+    """
+    m = factory()
+    assert len(load_carriers(m)) == m.total_slots() // 2
+
+
+@pytest.mark.parametrize(
+    "factory,expected",
+    [
+        (flat_braid_3, 0),
+        (flat_braid_9, 0),
+        (soutache_braid, 0),
+        (princess_braid, 0),
+        (mixed_gear_machine, 0),
+        (tubular_braid_8, 1),
+        (tubular_braid_12, 1),
+        (tubular_braid_16, 1),
+        (diamond_braid, 1),
+    ],
+)
+def test_tube_rings_finds_one_ring_per_hole(factory, expected):
+    """Holes are the bounded faces of the planar machine graph.
+
+    A flat braid has no cycle and so no tube; every ring braid encloses
+    exactly one.  Each ring must be a real cycle of the graph.
+    """
+    m = factory()
+    rings = tube_rings(m)
+    assert len(rings) == expected
+
+    for ring in rings:
+        assert len(ring) >= 3
+        for i, gear in enumerate(ring):
+            neighbour = ring[(i + 1) % len(ring)]
+            assert m.graph.has_edge(gear, neighbour), (
+                f"{gear}-{neighbour} is not a connection, so this is no ring"
+            )
+
+
+def test_tube_ring_follows_the_hole_not_the_alphabet():
+    """A ring is reported in the order it encloses the hole, not by gear name.
+
+    W-Y-X-Z is the cycle here, so a routine that merely sorted the gears would
+    report W-X-Y-Z and place the core using the wrong ring.
+    """
+    gears = [
+        HornGear("W", 4, direction=+1),
+        HornGear("Y", 4, direction=-1),
+        HornGear("X", 4, direction=+1),
+        HornGear("Z", 4, direction=-1),
+    ]
+    connections = [
+        Connection("W", "Y", 0, 2),
+        Connection("Y", "X", 0, 2),
+        Connection("X", "Z", 0, 2),
+        Connection("Z", "W", 0, 2),
+    ]
+    ring = tube_rings(BraidingMachine(gears, connections))[0]
+
+    assert sorted(ring) == ["W", "X", "Y", "Z"]
+    # Same cycle up to rotation and direction.
+    doubled = ring + ring
+    assert any(
+        doubled[i : i + 4] in (["W", "Y", "X", "Z"], ["Z", "X", "Y", "W"])
+        for i in range(4)
+    )
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, tubular_braid_12, tubular_braid_16, diamond_braid]
+)
+def test_tube_axials_place_a_core_with_room_for_it(factory):
+    """Each tube gets one core, centred, with positive clearance."""
+    m = factory()
+    cores = tube_axials(m)
+    assert len(cores) == 1
+
+    cored = BraidingMachine(list(m.gears.values()), m.connections, cores)
+    layout = compute_layout(cored)
+    position = axial_position(cored, layout, cores[0])
+    assert position == pytest.approx((0.0, 0.0), abs=0.05), "ring braids centre on 0,0"
+    assert axial_clearance(cored, layout, position) > 0
+
+
+@pytest.mark.parametrize(
+    "factory", [flat_braid_3, flat_braid_9, soutache_braid, princess_braid]
+)
+def test_flat_braids_get_no_tube_core(factory):
+    """A flat braid has no hole, so nothing to feed a core through."""
+    assert tube_axials(factory()) == []
+
+
+def test_tube_axials_handles_several_tubes():
+    """A grid of gears has (rows-1)x(cols-1) holes, each getting its own core."""
+    gears, connections = [], []
+    for row in range(2):
+        for col in range(3):
+            gears.append(
+                HornGear(f"{row}{col}", 4, direction=+1 if (row + col) % 2 == 0 else -1)
+            )
+    for row in range(2):
+        for col in range(3):
+            if col + 1 < 3:
+                connections.append(Connection(f"{row}{col}", f"{row}{col + 1}", 0, 2))
+            if row + 1 < 2:
+                connections.append(Connection(f"{row}{col}", f"{row + 1}{col}", 1, 3))
+    m = BraidingMachine(gears, connections)
+
+    cores = tube_axials(m)
+    assert len(cores) == 2, "a 2x3 grid encloses two holes"
+    assert len({c.name for c in cores}) == 2, "cores must be uniquely named"
+
+
+@pytest.mark.parametrize(
+    "axials,message",
+    [
+        ([Axial("x", ("NOPE",))], "unknown gear"),
+        ([Axial("x", ())], "empty anchor"),
+        ([Axial("x", ("A",)), Axial("x", ("B",))], "Duplicate axial"),
+    ],
+)
+def test_invalid_axials_are_rejected(axials, message):
+    m = tubular_braid_8()
+    with pytest.raises(ValueError, match=message):
+        BraidingMachine(list(m.gears.values()), m.connections, axials)
+
+
+def test_axials_are_drawn_in_every_animation_frame():
+    """The column is static, so it must appear in the static view and each frame."""
+    m = princess_braid()
+
+    static_names = [t.name for t in visualize_machine(m).data if t.name]
+    assert "Axials" in static_names
+
+    fig = animate(m, n_steps=6)
+    for frame in fig.frames:
+        assert "Axials" in [t.name for t in frame.data if t.name]
+
+
 # ── Examples sanity ───────────────────────────────────────────────────────────
 
 
@@ -521,4 +756,36 @@ def test_animation_continuity(factory, n_steps):
             f"  frame {i}→{i + 1}, carrier {j}: jump={d:.4f}"
             for i, j, d in violations[:20]
         )
+    )
+
+
+def test_diamond_braid_is_tubular_braid_8_relabelled():
+    """The 2x2 grid and the 4-gear ring are one machine, so one must delegate.
+
+    Both are a 4-cycle of 4-slot gears with alternating rotations.  If they
+    ever diverge, one of them has been edited without the other.
+    """
+    from networkx.algorithms.isomorphism import (
+        GraphMatcher,
+        categorical_node_match,
+    )
+
+    d, t = diamond_braid(), tubular_braid_8()
+
+    def annotated(m):
+        g = m.graph.copy()
+        for name, gear in m.gears.items():
+            g.nodes[name]["spec"] = (gear.n_slots, gear.direction)
+        return g
+
+    matcher = GraphMatcher(
+        annotated(d), annotated(t), node_match=categorical_node_match("spec", None)
+    )
+    assert matcher.is_isomorphic(), "diamond and tubular_8 have diverged"
+
+    assert d.total_slots() == t.total_slots()
+    assert len(load_carriers(d)) == len(load_carriers(t))
+    assert simulation_period(d) == simulation_period(t)
+    assert sorted(len(x) for x in compute_tracks(d)) == sorted(
+        len(x) for x in compute_tracks(t)
     )

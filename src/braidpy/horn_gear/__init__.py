@@ -13,8 +13,16 @@ Each gear has N slots; bobbins (carriers) travel between gears along
 closed tracks determined by the connection topology and gear rotations.
 """
 
-from .layout import compute_layout, gear_radii
-from .model import BraidingMachine, Connection, HornGear
+from .layout import (
+    axial_clearance,
+    axial_position,
+    axial_positions,
+    compute_layout,
+    gear_radii,
+    tube_axials,
+    tube_rings,
+)
+from .model import Axial, BraidingMachine, Connection, HornGear
 from .simulation import (
     CarrierState,
     CollisionError,
@@ -31,10 +39,17 @@ __all__ = [
     # model
     "HornGear",
     "Connection",
+    "Axial",
     "BraidingMachine",
     # layout
     "compute_layout",
     "gear_radii",
+    # axial columns and tube cores
+    "axial_position",
+    "axial_positions",
+    "axial_clearance",
+    "tube_rings",
+    "tube_axials",
     # tracks
     "compute_track",
     "compute_tracks",

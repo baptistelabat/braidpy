@@ -18,7 +18,7 @@ References
 
 from __future__ import annotations
 
-from .model import BraidingMachine, Connection, HornGear
+from .model import Axial, BraidingMachine, Connection, HornGear
 
 
 def flat_braid_3() -> BraidingMachine:
@@ -71,6 +71,85 @@ def flat_braid_4(n_slots: int = 4) -> BraidingMachine:
     return BraidingMachine(gears, connections)
 
 
+def soutache_braid(n_slots: int = 5) -> BraidingMachine:
+    """Soutache: the narrow flat braid used for trimming and in jewellery.
+
+    Layout::
+
+        [A(5)] -- [B(5)]
+
+    Two gears carrying the same **odd** number of slots, loaded every other
+    slot, which gives ``n_slots`` carriers.  The odd count is what makes the
+    braid narrow and even: a carrier returning from one gear comes back on the
+    opposite strand, so every slot lies on its own two-position track and the
+    whole machine repeats in ``2 x n_slots`` steps.
+
+    Both gears have a single connection, so their slots sit exactly on their
+    one contact whatever the count — the layout is always exact.
+
+    Soutache carries **two cords**, one fed up the spindle of each gear, and
+    the carriers braid around both as they pass between them.  They are
+    :class:`~braidpy.horn_gear.model.Axial` columns: they never ride a horn,
+    and each stands clear of the carriers by its gear's radius.  The two cords
+    are what make soutache soutache — the braid closes over them and is held
+    flat, rather than rounding up as an uncored braid would.
+
+    Args:
+        n_slots: Slots per gear.  Odd values give the classic soutache.
+
+    Returns:
+        BraidingMachine for a 2-gear soutache braid with two cords.
+    """
+    gears = [
+        HornGear("A", n_slots, direction=+1),
+        HornGear("B", n_slots, direction=-1),
+    ]
+    connections = [
+        Connection("A", "B", slot_a0=0, slot_b0=0, name="A-B"),
+    ]
+    axials = [Axial("cord_A", ("A",)), Axial("cord_B", ("B",))]
+    return BraidingMachine(gears, connections, axials=axials)
+
+
+def princess_braid() -> BraidingMachine:
+    """Princess braid: 3 gears, 5/6/5 slots, 8 carriers over a cord.
+
+    Layout::
+
+                   cord
+                    ↓
+        [A(5)] -- [B(6)] -- [C(5)]
+
+    The classic princess arrangement: two 5-slot end gears either side of a
+    6-slot centre gear, sixteen slots carrying eight carriers on a single
+    track, so every carrier eventually occupies every slot and the braid is
+    fully interlinked.
+
+    Unlike :func:`soutache_braid`, this machine has a gear in the middle, so
+    its cord can be fed up that gear's spindle and stands clear of the
+    carriers by a full gear radius.  The cord is an
+    :class:`~braidpy.horn_gear.model.Axial`: it never rides a horn, and the
+    carriers braid around it as they pass between the end gears.
+
+    The end gears have one connection each, so their 5 slots sit exactly on
+    their contacts; the centre gear's two contacts are 180° apart, which is
+    three of its six slots.  The layout is exact.
+
+    Returns:
+        BraidingMachine for a 3-gear princess braid with a cord core.
+    """
+    gears = [
+        HornGear("A", 5, direction=+1),
+        HornGear("B", 6, direction=-1),
+        HornGear("C", 5, direction=+1),
+    ]
+    connections = [
+        Connection("A", "B", slot_a0=0, slot_b0=0, name="A-B"),
+        Connection("B", "C", slot_a0=3, slot_b0=0, name="B-C"),
+    ]
+    return BraidingMachine(gears, connections, axials=[Axial("cord", ("B",))])
+
+
 def flat_braid_9(n_end: int = 5) -> BraidingMachine:
     """9-carrier flat braid: 4 gears in a row, turnaround gears at each end.
 
@@ -107,7 +186,8 @@ def flat_braid_9(n_end: int = 5) -> BraidingMachine:
     two slots meeting at a contact may be occupied — at the cost of a much
     longer period.  Even values can fall short: 4 and 8 share a factor with the
     4-slot interior gears, which fragments the machine into many short tracks
-    and strands slots that cannot be filled.
+    and strands slots that cannot be filled.  These are true maxima, not the
+    best a search happened to find: ``load_carriers`` solves loading exactly.
 
     Args:
         n_end: Slot count of the two end gears.  Odd gives one combined track,
@@ -223,36 +303,25 @@ def tubular_braid_16() -> BraidingMachine:
 
 
 def diamond_braid() -> BraidingMachine:
-    """Diamond / square braid: 2×2 grid of gears.
+    """Diamond / square braid — the same machine as :func:`tubular_braid_8`.
 
-    Layout::
+    Drawing the four gears as a 2×2 grid rather than a ring suggests a
+    different machine, but it is not one.  Both are a 4-cycle of 4-slot gears
+    with alternating rotations, and they are isomorphic with slot counts and
+    directions respected (A→A, C→B, D→C, B→D): 16 slots, 8 carriers, four
+    4-position tracks, period 8.  So this delegates rather than restating the
+    same gears and connections in a different order.
 
-        [A] -- [B]
-         |      |
-        [C] -- [D]
-
-    Each gear has 4 slots.  Produces 2 interlocked braid tracks.
-
-    The four gears form a 4-cycle (A-B-D-C-A), so as in :func:`tubular_braid_8`
-    each gear's two contacts are 90° apart — one slot pitch.  The connection
-    slots below keep those two slots adjacent, matching the layout.
+    The braiding terms *diamond* (1/1 intersection) and *square* or *regular*
+    (2/2) name different **interlacings** of this one machine, not different
+    machines.  Telling them apart needs which yarn crosses over which, which
+    the simulator does not compute yet — see the axial/interlacing note in
+    :class:`~braidpy.horn_gear.model.Axial`.
 
     Returns:
-        BraidingMachine for a 2×2 grid.
+        BraidingMachine for a 4-gear ring braid.
     """
-    gears = [
-        HornGear("A", 4, direction=+1),
-        HornGear("B", 4, direction=-1),
-        HornGear("C", 4, direction=-1),
-        HornGear("D", 4, direction=+1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=0, slot_b0=0, name="A-B"),
-        Connection("C", "D", slot_a0=1, slot_b0=0, name="C-D"),
-        Connection("A", "C", slot_a0=1, slot_b0=0, name="A-C"),
-        Connection("B", "D", slot_a0=3, slot_b0=1, name="B-D"),
-    ]
-    return BraidingMachine(gears, connections)
+    return tubular_braid_8()
 
 
 def mixed_gear_machine() -> BraidingMachine:
