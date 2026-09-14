@@ -35,6 +35,23 @@ from typing import Dict, List, Tuple
 
 from .model import BraidingMachine
 
+
+class NoFixedTracks(RuntimeError):
+    """Raised when a fixed-track calculation is asked of a programmed machine."""
+
+
+def _require_fixed_tracks(machine: BraidingMachine, what: str) -> None:
+    """Guard the calculations that only mean something for a wired machine."""
+    if not machine.has_fixed_tracks:
+        raise NoFixedTracks(
+            f"{what} is a property of a machine whose gears are geared "
+            f"together, and {type(machine).__name__} is driven by a "
+            f"programme: a carrier goes where the programme sends it, so its "
+            f"path need not close and there is no period to find.  Simulate "
+            f"the programme instead, with carriers you place yourself."
+        )
+
+
 # A position is (gear_name, slot_index)
 Position = Tuple[str, int]
 
@@ -46,14 +63,10 @@ Track = List[Position]
 def _next_position(machine: BraidingMachine, pos: Position, time: int) -> Position:
     """Compute the position of a carrier after one step.
 
-    A carrier sits in a physical slot (a horn of the gear) and turns with it,
-    so **its slot index never changes while it stays on a gear** — only the
-    slot's angular position changes, via ``HornGear.slot_angle``.
-
-    Contact points, by contrast, are fixed in space: as the gear turns, a
-    different slot index arrives at each contact every step
-    (``HornGear.slot_at_connection``).  A transfer happens exactly when the
-    carrier's slot is the one sitting at a contact.
+    How a carrier moves depends on how the machine is built — tangent gears
+    with their own slots, or interpenetrating gears sharing them — so the rule
+    lives on the machine, in
+    :meth:`~braidpy.horn_gear.model.BraidingMachine.next_position`.
 
     Args:
         machine: The machine definition.
@@ -63,25 +76,16 @@ def _next_position(machine: BraidingMachine, pos: Position, time: int) -> Positi
     Returns:
         Next (gear_name, slot_index) after one step.
     """
-    gear_name, slot = pos
-
-    # Has this slot arrived at a contact point at time+1?  The check uses
-    # time+1 because the gear turns first, then the transfer happens.
-    neighbor = machine.neighbor_at_slot(gear_name, slot, time + 1)
-    if neighbor is not None:
-        return neighbor  # transfer to neighbouring gear
-
-    return gear_name, slot
+    return machine.next_position(pos, time)
 
 
 def contact_period(machine: BraidingMachine) -> int:
     """Number of steps after which every contact point shows the same slots again.
 
-    Each gear returns its slot indices to the contact points every
-    ``n_slots`` steps, so the whole machine's contact pattern repeats with
-    period ``lcm(n_slots)``.
+    Delegates to the machine, because how fast the contacts cycle depends on
+    how the gears are driven — see :meth:`BraidingMachine.contact_period`.
     """
-    return reduce(lcm, (g.n_slots for g in machine.gears.values()), 1)
+    return machine.contact_period()
 
 
 def _follow(
@@ -96,6 +100,7 @@ def _follow(
         number of steps after which the carrier is back at ``start`` with the
         contact pattern in its t=0 phase.
     """
+    _require_fixed_tracks(machine, "Following a track")
     period = contact_period(machine)
     track: Track = [start]
     seen = {start}
@@ -157,6 +162,7 @@ def simulation_period(machine: BraidingMachine, max_steps: int = 100_000) -> int
     Returns:
         The machine's full simulation period in steps.
     """
+    _require_fixed_tracks(machine, "A simulation period")
     positions = [
         (name, slot)
         for name, gear in machine.gears.items()
@@ -182,6 +188,7 @@ def compute_tracks(machine: BraidingMachine) -> List[Track]:
         List of tracks.  Each track is a list of (gear_name, slot_index)
         visited in order.
     """
+    _require_fixed_tracks(machine, "Computing tracks")
     all_positions: List[Position] = [
         (name, slot)
         for name, gear in machine.gears.items()

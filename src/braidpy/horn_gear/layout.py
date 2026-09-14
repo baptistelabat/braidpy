@@ -6,12 +6,21 @@
 horn_gear/layout.py
 ===================
 
-Automatic 2-D layout of horn gears from the connection graph.
+Where everything sits: gear centres, the notches between them, the circles a
+carrier rides on, and the columns a braid forms around.
 
-Strategy: spring / Kamada-Kawai layout where the rest length of each
-edge is proportional to (r_A + r_B), the sum of the two gear radii.
-Gear radius is proportional to sqrt(n_slots) so that the disk area
-scales linearly with slot count.
+Gears are placed from the connection graph — BFS along the x-axis for a chain,
+Kamada-Kawai for anything with a cycle — unless the machine pins its own
+geometry, in which case :meth:`~braidpy.horn_gear.model.BraidingMachine
+.preferred_layout` wins.  Gear radius goes as sqrt(n_slots), so disc area
+scales with slot count and slot arcs stay about the same width.
+
+Everything else here is derived from those centres: where two gears meet
+(:func:`contact_point`), how far out a carrier rides (:func:`carrier_radius`),
+how each gear must be turned for its slots to face its notches
+(:func:`slot_offsets`) and by how much that fails when a machine's slots cannot
+be reconciled with its layout (:func:`offset_residuals`).  It is all plain
+geometry with no drawing in it, so it can be measured and tested directly.
 """
 
 from __future__ import annotations
@@ -66,6 +75,10 @@ def compute_layout(
     Returns:
         Dict mapping gear name → (x, y) in layout coordinates.
     """
+    preferred = machine.preferred_layout(scale)
+    if preferred is not None:
+        return preferred
+
     if len(machine.gears) == 0:
         return {}
     if len(machine.gears) == 1:
@@ -201,6 +214,152 @@ def axial_clearance(
         abs(math.hypot(layout[name][0] - px, layout[name][1] - py) - radii[name])
         for name in machine.gears
     )
+
+
+def contact_point(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    gear: str,
+    neighbor: str,
+    scale: float = 1.0,
+) -> Tuple[float, float]:
+    """The middle of the notch two gears share.
+
+    Where the circles cross, the notch is the chord between the two crossings
+    and the bobbin sits at its middle — which lies on the line between the two
+    centres.  Where the circles merely touch, the two crossings coincide and
+    that middle is the tangent point, so one construction serves both.
+    """
+    cx, cy = layout[gear]
+    nx_, ny_ = layout[neighbor]
+    dx, dy = nx_ - cx, ny_ - cy
+    dist = math.hypot(dx, dy) or 1.0
+
+    radii = gear_radii(machine, scale)
+    along = (dist**2 + radii[gear] ** 2 - radii[neighbor] ** 2) / (2 * dist)
+    return cx + along * dx / dist, cy + along * dy / dist
+
+
+def contact_angle(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    gear: str,
+    neighbor: str,
+    scale: float = 1.0,
+) -> float:
+    """Angle (rad) from a gear's centre toward the notch it shares with a neighbour."""
+    cx, cy = layout[gear]
+    px, py = contact_point(machine, layout, gear, neighbor, scale)
+    return math.atan2(py - cy, px - cx)
+
+
+def carrier_radius(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    gear: str,
+    scale: float = 1.0,
+) -> float:
+    """How far from a gear's centre its bobbins ride.
+
+    A bobbin sits *in* a notch, so it turns about the gear at the distance of
+    that notch — the gear's own radius when the gears merely touch, and less
+    than that when they overlap and the notch is cut back inside the rim.
+    """
+    radius = gear_radii(machine, scale)[gear]
+    contacts = machine.connections_of(gear)
+    if not contacts or not machine.gears_interpenetrate:
+        # Gears that only touch carry their bobbins on the rim.  Saying so
+        # outright keeps them exactly there, rather than a fraction off it
+        # because a numerically solved layout left the circles a hair apart.
+        return radius
+
+    cx, cy = layout[gear]
+    distances = [
+        math.dist(
+            (cx, cy),
+            contact_point(
+                machine,
+                layout,
+                gear,
+                conn.gear_b if conn.gear_a == gear else conn.gear_a,
+                scale,
+            ),
+        )
+        for conn in contacts
+    ]
+    return sum(distances) / len(distances)
+
+
+def _gear_constraints(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+) -> Dict[str, List[float]]:
+    """Per gear, the rotation offset each of its connections asks for.
+
+    A connection ``gear_a[slot_a0] ↔ gear_b[slot_b0]`` wants slot ``slot_a0`` of
+    gear_a to point at gear_b, i.e. ``phi_a = theta_ab - 2π*slot_a0/N_a``.  A
+    gear with several connections gets one such value per connection; they all
+    agree only when the connection slots match the physical layout.
+    """
+    wanted: Dict[str, List[float]] = {name: [] for name in machine.gears}
+    for conn in machine.connections:
+        for gname, other, slot0 in [
+            (conn.gear_a, conn.gear_b, conn.slot_a0),
+            (conn.gear_b, conn.gear_a, conn.slot_b0),
+        ]:
+            gear = machine.gears[gname]
+            theta = contact_angle(machine, layout, gname, other)
+            wanted[gname].append(theta - 2 * math.pi * slot0 / gear.n_slots)
+    return wanted
+
+
+def slot_offsets(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+) -> Dict[str, float]:
+    """Per-gear rotation offset phi so connection slots point toward their neighbors.
+
+    Every connection of a gear is taken into account, via the circular mean of
+    the offsets they each ask for.  When the machine's connection slots match
+    its layout the requests coincide and the mean reproduces them exactly; when
+    they do not, the residual error is shared between the contacts instead of
+    being dumped entirely onto whichever connection happened to come second.
+    """
+    offsets: Dict[str, float] = {}
+    for name, wanted in _gear_constraints(machine, layout).items():
+        if not wanted:
+            offsets[name] = 0.0
+            continue
+        sin_sum = sum(math.sin(a) for a in wanted)
+        cos_sum = sum(math.cos(a) for a in wanted)
+        # Degenerate: requests cancel out (e.g. exactly opposed).  The mean is
+        # meaningless there, so honour the first connection rather than spin.
+        if math.hypot(sin_sum, cos_sum) < 1e-9:
+            offsets[name] = wanted[0]
+        else:
+            offsets[name] = math.atan2(sin_sum, cos_sum)
+    return offsets
+
+
+def offset_residuals(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+) -> Dict[str, float]:
+    """Worst angular error (radians) between each gear's slots and its contacts.
+
+    Zero means every contact of that gear falls exactly on a slot.  A non-zero
+    value means the machine's connection slots cannot be reconciled with its
+    layout, and carriers will appear to jump when they transfer there.
+    """
+    offsets = slot_offsets(machine, layout)
+    residuals: Dict[str, float] = {}
+    for name, wanted in _gear_constraints(machine, layout).items():
+        phi = offsets[name]
+        residuals[name] = max(
+            (abs((a - phi + math.pi) % (2 * math.pi) - math.pi) for a in wanted),
+            default=0.0,
+        )
+    return residuals
 
 
 def _signed_area(

@@ -464,8 +464,8 @@ def _check_connection_point_collision(
     """
     pos_map = {c.position: c.carrier_id for c in state.carriers}
     for conn in machine.connections:
-        sa = machine.gears[conn.gear_a].slot_at_connection(conn.slot_a0, state.time)
-        sb = machine.gears[conn.gear_b].slot_at_connection(conn.slot_b0, state.time)
+        sa = machine.slot_at_connection(conn.gear_a, conn.slot_a0, state.time)
+        sb = machine.slot_at_connection(conn.gear_b, conn.slot_b0, state.time)
         if (conn.gear_a, sa) in pos_map and (conn.gear_b, sb) in pos_map:
             cid_a = pos_map[(conn.gear_a, sa)]
             cid_b = pos_map[(conn.gear_b, sb)]

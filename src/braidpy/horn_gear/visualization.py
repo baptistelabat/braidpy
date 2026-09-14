@@ -18,16 +18,22 @@ Three entry points:
 
 Key geometric conventions
 --------------------------
-Each gear G has a layout position (cx, cy) and radius r.
-When two gears G and H are connected, their physical contact point lies on
-the line segment between their centres, at distance r_G from G and r_H from H.
-From G's centre the contact is at angle  ``theta_GH = atan2(y_H-y_G, x_H-x_G)``.
+Each gear G has a layout position (cx, cy) and radius r.  Two connected gears
+meet at a *notch*: for tangent gears that is the single point where they touch,
+and for gears that interpenetrate it is the middle of the chord between the two
+places their circles cross.  Either way it lies on the line between the two
+centres, and a carrier rides at that distance from its gear's centre — on the
+rim when the gears merely touch, inside it when they overlap.
 
-The gear rotation offset ``phi_G`` orients the gear so that its connection
-slot(s) align with those angles.  All slot angles in the visualisation are
-computed as::
+The rotation offset ``phi_G`` turns each gear so its connection slots point at
+its notches, fitted across all of them (:func:`slot_offsets`); where a
+machine's slots cannot be reconciled with its layout, :func:`offset_residuals`
+says by how much and the figure is labelled with it.
 
-    angle(slot, t, frac) = phi_G + 2π*(slot + dir_G*(t+frac)) / N_G
+Nothing here decides how far a gear has turned, where a carrier goes next, or
+which gear is carrying it — those belong to the machine, so that an ordinary
+braider and a programme-driven lace machine can both be drawn by this code
+without it knowing the difference.
 """
 
 from __future__ import annotations
@@ -38,9 +44,19 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import plotly.graph_objects as go
 
-from .layout import axial_clearance, axial_position, compute_layout, gear_radii
+from .layout import (
+    axial_clearance,
+    axial_position,
+    carrier_radius,
+    compute_layout,
+    contact_angle,
+    contact_point,
+    gear_radii,
+    offset_residuals,
+    slot_offsets,
+)
 from .model import BraidingMachine
-from .simulation import CollisionError, MachineState, load_carriers, simulate
+from .simulation import CollisionError, MachineState, simulate
 from .tracks import Track, compute_tracks
 
 _PALETTE = [
@@ -62,97 +78,21 @@ _PALETTE = [
 # ── Geometry helpers ───────────────────────────────────────────────────────────
 
 
-def _contact_angle(
-    layout: Dict[str, Tuple[float, float]], gear: str, neighbor: str
-) -> float:
-    """Angle (rad) from gear's centre toward neighbor's centre – the contact direction."""
-    cx, cy = layout[gear]
-    nx, ny = layout[neighbor]
-    return math.atan2(ny - cy, nx - cx)
-
-
-def _gear_constraints(
-    machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, List[float]]:
-    """Per gear, the rotation offset each of its connections asks for.
-
-    A connection ``gear_a[slot_a0] ↔ gear_b[slot_b0]`` wants slot ``slot_a0`` of
-    gear_a to point at gear_b, i.e. ``phi_a = theta_ab - 2π*slot_a0/N_a``.  A
-    gear with several connections gets one such value per connection; they all
-    agree only when the connection slots match the physical layout.
-    """
-    wanted: Dict[str, List[float]] = {name: [] for name in machine.gears}
-    for conn in machine.connections:
-        for gname, other, slot0 in [
-            (conn.gear_a, conn.gear_b, conn.slot_a0),
-            (conn.gear_b, conn.gear_a, conn.slot_b0),
-        ]:
-            gear = machine.gears[gname]
-            theta = _contact_angle(layout, gname, other)
-            wanted[gname].append(theta - 2 * math.pi * slot0 / gear.n_slots)
-    return wanted
-
-
-def _compute_offsets(
-    machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, float]:
-    """Per-gear rotation offset phi so connection slots point toward their neighbors.
-
-    Every connection of a gear is taken into account, via the circular mean of
-    the offsets they each ask for.  When the machine's connection slots match
-    its layout the requests coincide and the mean reproduces them exactly; when
-    they do not, the residual error is shared between the contacts instead of
-    being dumped entirely onto whichever connection happened to come second.
-    """
-    offsets: Dict[str, float] = {}
-    for name, wanted in _gear_constraints(machine, layout).items():
-        if not wanted:
-            offsets[name] = 0.0
-            continue
-        sin_sum = sum(math.sin(a) for a in wanted)
-        cos_sum = sum(math.cos(a) for a in wanted)
-        # Degenerate: requests cancel out (e.g. exactly opposed).  The mean is
-        # meaningless there, so honour the first connection rather than spin.
-        if math.hypot(sin_sum, cos_sum) < 1e-9:
-            offsets[name] = wanted[0]
-        else:
-            offsets[name] = math.atan2(sin_sum, cos_sum)
-    return offsets
-
-
-def _offset_residuals(
-    machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, float]:
-    """Worst angular error (radians) between each gear's slots and its contacts.
-
-    Zero means every contact of that gear falls exactly on a slot.  A non-zero
-    value means the machine's connection slots cannot be reconciled with its
-    layout, and carriers will appear to jump when they transfer there.
-    """
-    offsets = _compute_offsets(machine, layout)
-    residuals: Dict[str, float] = {}
-    for name, wanted in _gear_constraints(machine, layout).items():
-        phi = offsets[name]
-        residuals[name] = max(
-            (abs((a - phi + math.pi) % (2 * math.pi) - math.pi) for a in wanted),
-            default=0.0,
-        )
-    return residuals
-
-
 def _slot_angle(
+    machine: BraidingMachine,
+    gear_name: str,
     slot: int,
-    n_slots: int,
-    direction: int,
     offset: float,
     t: int = 0,
     frac: float = 0.0,
 ) -> float:
-    """Physical angle (rad) of a slot at continuous time t+frac."""
-    return offset + 2 * math.pi * (slot + direction * (t + frac)) / n_slots
+    """Physical angle (rad) of a slot at continuous time t+frac.
+
+    How far the gear has turned by then is the machine's business — it is
+    ``direction * t`` on an ordinary machine and whatever the programme says
+    on a Jacquard one — so this only adds the layout offset on top.
+    """
+    return offset + machine.slot_angle(gear_name, slot, t, frac)
 
 
 def _arc_xy(
@@ -228,46 +168,70 @@ def _track_runs(
 
 
 def _gear_traces(
-    cx: float,
-    cy: float,
-    r: float,
-    name: str,
-    n_slots: int,
-    direction: int,
-    offset: float,
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    radii: Dict[str, float],
+    offsets: Dict[str, float],
     t: int = 0,
     frac: float = 0.0,
+    scale: float = 1.0,
 ) -> List[go.BaseTraceType]:
-    """Disk, rotating tick marks and centre label for one gear."""
+    """Discs, tick marks and labels for *all* the gears, in a handful of traces.
+
+    Every gear could have its own traces, but a real lace machine has dozens of
+    them and a trace per gear per frame makes an animation crawl.  Plotly draws
+    a separate polygon for each ``None``-separated run, so all the discs that
+    share a colour go in one trace, all the ticks in another, all the labels in
+    a third — a fixed handful however many gears there are.
+
+    Discs are coloured green while a gear turns and red while it is held, but
+    only for a machine driven gear by gear: one whose gears are geared together
+    is always turning, so saying so would say nothing.
+    """
+    programmed = machine.program_rows() is not None
+    turning = machine.turning_gears(t) if programmed else frozenset(machine.gears)
+    theta = np.linspace(0, 2 * math.pi, 90)
+
     traces: List[go.BaseTraceType] = []
-    theta = np.linspace(0, 2 * math.pi, 120)
 
-    # Disk circle
-    traces.append(
-        go.Scatter(
-            x=cx + r * np.cos(theta),
-            y=cy + r * np.sin(theta),
-            fill="toself",
-            fillcolor="rgba(100,100,200,0.10)",
-            line=dict(color="rgba(80,80,180,0.50)", width=1.5),
-            mode="lines",
-            showlegend=False,
-            hoverinfo="skip",
+    # One trace per gear, always in the same order.  Plotly matches traces
+    # between frames by position, so a gear must keep its own trace: batching
+    # the discs by colour would put different gears in the same slot from one
+    # frame to the next and the circles would appear to fly about.  Only the
+    # fill changes; the geometry is identical every frame.
+    for name in machine.gears:
+        cx, cy = layout[name]
+        r = radii[name]
+        if not programmed:
+            fill, edge = "rgba(100,100,200,0.10)", "rgba(80,80,180,0.50)"
+        elif name in turning:
+            fill, edge = "rgba(60,170,90,0.20)", "rgba(35,135,65,0.85)"
+        else:
+            fill, edge = "rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"
+        traces.append(
+            go.Scatter(
+                x=cx + r * np.cos(theta),
+                y=cy + r * np.sin(theta),
+                fill="toself",
+                fillcolor=fill,
+                line=dict(color=edge, width=1.8),
+                mode="lines",
+                showlegend=False,
+                hoverinfo="skip",
+            )
         )
-    )
 
-    # Tick marks – rotate with the gear
-    tick_len = r * 0.15
+    # Tick marks, from the notch radius out to the rim, rotating with the gear.
     tick_xs: List = []
     tick_ys: List = []
-    for slot in range(n_slots):
-        ang = _slot_angle(slot, n_slots, direction, offset, t, frac)
-        x0 = cx + (r - tick_len) * math.cos(ang)
-        y0 = cy + (r - tick_len) * math.sin(ang)
-        x1 = cx + r * math.cos(ang)
-        y1 = cy + r * math.sin(ang)
-        tick_xs += [x0, x1, None]
-        tick_ys += [y0, y1, None]
+    for name, gear in machine.gears.items():
+        cx, cy = layout[name]
+        r = radii[name]
+        inner = carrier_radius(machine, layout, name, scale)
+        for slot in range(gear.n_slots):
+            ang = _slot_angle(machine, name, slot, offsets[name], t, frac)
+            tick_xs += [cx + inner * math.cos(ang), cx + r * math.cos(ang), None]
+            tick_ys += [cy + inner * math.sin(ang), cy + r * math.sin(ang), None]
     traces.append(
         go.Scatter(
             x=tick_xs,
@@ -279,14 +243,15 @@ def _gear_traces(
         )
     )
 
-    # Centre label
-    arrow = "↺" if direction == 1 else "↻"
     traces.append(
         go.Scatter(
-            x=[cx],
-            y=[cy],
+            x=[layout[n][0] for n in machine.gears],
+            y=[layout[n][1] for n in machine.gears],
             mode="text",
-            text=[f"<b>{name}</b><br>{n_slots}s {arrow}"],
+            text=[
+                f"<b>{n}</b><br>{g.n_slots}s {'↺' if g.direction == 1 else '↻'}"
+                for n, g in machine.gears.items()
+            ],
             textposition="middle center",
             showlegend=False,
             hoverinfo="skip",
@@ -301,7 +266,15 @@ def _connection_traces(
     layout: Dict[str, Tuple[float, float]],
     radii: Dict[str, float],
 ) -> List[go.BaseTraceType]:
-    traces = []
+    """Dashed link and label for every connection, batched into two traces.
+
+    A lace machine has dozens of connections and this is redrawn every frame,
+    so all the links go in one ``None``-separated trace and all the labels in
+    another, rather than a pair of traces per connection.
+    """
+    xs: List = []
+    ys: List = []
+    label_x, label_y, labels = [], [], []
     for conn in machine.connections:
         cx_a, cy_a = layout[conn.gear_a]
         cx_b, cy_b = layout[conn.gear_b]
@@ -312,20 +285,31 @@ def _connection_traces(
         ey_a = cy_a + radii[conn.gear_a] * dy / dist
         ex_b = cx_b - radii[conn.gear_b] * dx / dist
         ey_b = cy_b - radii[conn.gear_b] * dy / dist
-        label = conn.name or f"{conn.gear_a}↔{conn.gear_b}"
-        traces.append(
-            go.Scatter(
-                x=[ex_a, ex_b],
-                y=[ey_a, ey_b],
-                mode="lines+text",
-                line=dict(color="rgba(80,80,80,0.35)", width=2, dash="dash"),
-                text=["", label],
-                textposition="top center",
-                showlegend=False,
-                hoverinfo="skip",
-            )
-        )
-    return traces
+        xs += [ex_a, ex_b, None]
+        ys += [ey_a, ey_b, None]
+        label_x.append(ex_b)
+        label_y.append(ey_b)
+        labels.append(conn.name or f"{conn.gear_a}↔{conn.gear_b}")
+
+    return [
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="lines",
+            line=dict(color="rgba(80,80,80,0.35)", width=2, dash="dash"),
+            showlegend=False,
+            hoverinfo="skip",
+        ),
+        go.Scatter(
+            x=label_x,
+            y=label_y,
+            mode="text",
+            text=labels,
+            textposition="top center",
+            showlegend=False,
+            hoverinfo="skip",
+        ),
+    ]
 
 
 def _axial_traces(
@@ -367,22 +351,131 @@ def _axial_traces(
     ]
 
 
+def _punchcard_traces(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    radii: Dict[str, float],
+    current_phase: Optional[int] = None,
+) -> List[go.BaseTraceType]:
+    """Draw the machine's programme below it, as the punchcard it is.
+
+    One column per gear and one row per phase, read downwards.  A punched hole
+    means that gear is let turn; an unpunched position means it is held.  The
+    clockwise row of each step is shifted half a punch to the right of its
+    trigonometric partner, because the two are driven one after the other
+    rather than together.
+
+    Returns an empty list for a machine that has no programme.
+    """
+    rows = machine.program_rows()
+    if not rows:
+        return []
+
+    names = list(machine.gears)
+    xs_gear = [layout[n][0] for n in names]
+    ys_gear = [layout[n][1] for n in names]
+    span = max(max(xs_gear) - min(xs_gear), 1.0) + 2 * max(radii.values())
+    dx = span / max(len(names), 1)
+    dy = dx * 0.62
+    x0 = (min(xs_gear) + max(xs_gear)) / 2 - (len(names) - 1) * dx / 2 - dx / 4
+    y0 = min(ys_gear) - max(radii.values()) - dy * 2.0
+
+    # Every punch keeps its own place in one trace, with colour, symbol and
+    # size carried per point.  Splitting them into "lit" and "unlit" traces
+    # would shuffle which punch sits at which index from frame to frame, and
+    # Plotly — which pairs traces up by index — would slide them about.
+    xs: List[float] = []
+    ys: List[float] = []
+    colors: List[str] = []
+    symbols: List[str] = []
+    sizes: List[int] = []
+    hovers: List[str] = []
+
+    for row_index, (label, flags) in enumerate(rows):
+        shift = dx / 2 if label == "clockwise" else 0.0
+        y = y0 - row_index * dy
+        live = row_index == current_phase
+        for column, (name, on) in enumerate(zip(names, flags)):
+            xs.append(x0 + column * dx + shift)
+            ys.append(y)
+            if not on:
+                colors.append("rgba(150,150,150,0.45)")
+                symbols.append("circle-open")
+                sizes.append(7)
+            elif live:
+                colors.append("rgba(35,135,65,0.95)")
+                symbols.append("circle")
+                sizes.append(12)
+            else:
+                colors.append("rgba(45,45,45,0.85)")
+                symbols.append("circle")
+                sizes.append(9)
+            hovers.append(
+                f"step {row_index // 2} · {label}<br>{name} {'turns' if on else 'held'}"
+            )
+
+    traces: List[go.BaseTraceType] = [
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers",
+            marker=dict(
+                size=sizes,
+                color=colors,
+                symbol=symbols,
+                line=dict(width=1, color="rgba(255,255,255,0.8)"),
+            ),
+            text=hovers,
+            hoverinfo="text",
+            name="Programme",
+            showlegend=False,
+        )
+    ]
+
+    # Row labels, with an arrow on the row being driven.
+    traces.append(
+        go.Scatter(
+            x=[x0 - dx * 0.85] * len(rows),
+            y=[y0 - i * dy for i in range(len(rows))],
+            mode="text",
+            text=[
+                f"{'▶ ' if i == current_phase else ''}{i // 2}"
+                f"{'↺' if label == 'trigonometric' else '↻'}"
+                for i, (label, _) in enumerate(rows)
+            ],
+            textposition="middle left",
+            textfont=dict(size=9, color="rgba(90,90,90,0.9)"),
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
+
+    # Gear names across the top of the card.
+    traces.append(
+        go.Scatter(
+            x=[x0 + i * dx for i in range(len(names))],
+            y=[y0 + dy * 0.8] * len(names),
+            mode="text",
+            text=names,
+            textfont=dict(size=9, color="rgba(90,90,90,0.9)"),
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
+    return traces
+
+
 def _contact_point_traces(
     machine: BraidingMachine,
     layout: Dict[str, Tuple[float, float]],
     radii: Dict[str, float],
 ) -> List[go.BaseTraceType]:
-    """X marker at each physical contact point (tangent between gear circles)."""
+    """X marker at each notch where two gear circles meet."""
     xs, ys, labels = [], [], []
     for conn in machine.connections:
-        cx_a, cy_a = layout[conn.gear_a]
-        cx_b, cy_b = layout[conn.gear_b]
-        dx = cx_b - cx_a
-        dy = cy_b - cy_a
-        dist = math.hypot(dx, dy) or 1.0
-        r_a = radii[conn.gear_a]
-        xs.append(cx_a + r_a * dx / dist)
-        ys.append(cy_a + r_a * dy / dist)
+        x, y = contact_point(machine, layout, conn.gear_a, conn.gear_b)
+        xs.append(x)
+        ys.append(y)
         labels.append(conn.name or f"{conn.gear_a}↔{conn.gear_b}")
     return [
         go.Scatter(
@@ -403,9 +496,6 @@ def _contact_point_traces(
     ]
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
-
-
 def visualize_machine(
     machine: BraidingMachine,
     scale: float = 1.0,
@@ -415,42 +505,41 @@ def visualize_machine(
     """Static diagram of the machine layout with oriented slot tick marks."""
     layout = compute_layout(machine, scale=scale)
     radii = gear_radii(machine, scale=scale)
-    offsets = _compute_offsets(machine, layout)
+    offsets = slot_offsets(machine, layout)
 
     traces: List[go.BaseTraceType] = []
     traces.extend(_connection_traces(machine, layout, radii))
     traces.extend(_contact_point_traces(machine, layout, radii))
+    traces.extend(_gear_traces(machine, layout, radii, offsets, scale=scale))
 
+    # Slot dots, in the notches the bobbins ride in.
+    xs, ys, labels = [], [], []
     for name, gear in machine.gears.items():
         cx, cy = layout[name]
-        r = radii[name]
-        phi = offsets[name]
-        traces.extend(_gear_traces(cx, cy, r, name, gear.n_slots, gear.direction, phi))
-
-        # Slot dots at their oriented positions
-        xs, ys, labels = [], [], []
+        r_carrier = carrier_radius(machine, layout, name, scale)
         for s in range(gear.n_slots):
-            ang = _slot_angle(s, gear.n_slots, gear.direction, phi)
-            xs.append(cx + r * math.cos(ang))
-            ys.append(cy + r * math.sin(ang))
+            ang = _slot_angle(machine, name, s, offsets[name])
+            xs.append(cx + r_carrier * math.cos(ang))
+            ys.append(cy + r_carrier * math.sin(ang))
             labels.append(f"{name}[{s}]")
-        traces.append(
-            go.Scatter(
-                x=xs,
-                y=ys,
-                mode="markers",
-                marker=dict(
-                    size=7,
-                    color="rgba(60,60,60,0.55)",
-                    line=dict(width=1, color="white"),
-                ),
-                text=labels,
-                hoverinfo="text",
-                showlegend=False,
-            )
+    traces.append(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers",
+            marker=dict(
+                size=7,
+                color="rgba(60,60,60,0.55)",
+                line=dict(width=1, color="white"),
+            ),
+            text=labels,
+            hoverinfo="text",
+            showlegend=False,
         )
+    )
 
     traces.extend(_axial_traces(machine, layout))
+    traces.extend(_punchcard_traces(machine, layout, radii))
 
     fig = go.Figure(data=traces)
     fig.update_layout(
@@ -514,9 +603,9 @@ def visualize_tracks(
 
             # Arc goes FROM incoming contact TO outgoing contact.
             # Contact with prev_gear: angle from gear_name toward prev_gear.
-            theta_in = _contact_angle(layout, gear_name, prev_gear)
+            theta_in = contact_angle(machine, layout, gear_name, prev_gear)
             # Contact with next_gear: angle from gear_name toward next_gear.
-            theta_out = _contact_angle(layout, gear_name, next_gear)
+            theta_out = contact_angle(machine, layout, gear_name, next_gear)
 
             xs, ys = _arc_xy(cx, cy, r, theta_in, theta_out, direction)
             xs_all.extend(xs.tolist())
@@ -574,9 +663,14 @@ def animate(
     """
     layout_pos = compute_layout(machine, scale=scale)
     radii_dict = gear_radii(machine, scale=scale)
-    offsets = _compute_offsets(machine, layout_pos)
+    offsets = slot_offsets(machine, layout_pos)
+    _rows = machine.program_rows()
+    _phases = len(_rows) if _rows else 1
+    carrier_radii = {
+        name: carrier_radius(machine, layout_pos, name, scale) for name in machine.gears
+    }
     if carrier_positions is None:
-        carrier_positions = load_carriers(machine)
+        carrier_positions = machine.default_carriers()
 
     collision_info: Optional[CollisionError] = None
     try:
@@ -595,7 +689,7 @@ def animate(
     # Warn when the machine's connection slots cannot be reconciled with its
     # layout: carriers then visibly jump as they transfer.  That is a property
     # of the machine definition, not of the animation.
-    worst = max(_offset_residuals(machine, layout_pos).values(), default=0.0)
+    worst = max(offset_residuals(machine, layout_pos).values(), default=0.0)
     if math.degrees(worst) > 1.0:
         title = (
             f"{title}<br><sub>slots miss their contacts by up to "
@@ -615,40 +709,32 @@ def animate(
     # the neighbour only at the step where its slot is at the contact point, and
     # it lands on the neighbour's slot that is at that same contact point at that
     # same instant, so the two coincide (provided the machine's connection slots
-    # match its layout — see ``_offset_residuals``).
+    # match its layout — see ``offset_residuals``).
 
     def _build(state: MachineState, frac: float) -> List[go.BaseTraceType]:
         t = state.time
         out: List[go.BaseTraceType] = []
         out.extend(_connection_traces(machine, layout_pos, radii_dict))
         out.extend(_contact_point_traces(machine, layout_pos, radii_dict))
-        for name, gear in machine.gears.items():
-            cx, cy = layout_pos[name]
-            r = radii_dict[name]
-            out.extend(
-                _gear_traces(
-                    cx,
-                    cy,
-                    r,
-                    name,
-                    gear.n_slots,
-                    gear.direction,
-                    offsets[name],
-                    t,
-                    frac,
-                )
-            )
+        out.extend(
+            _gear_traces(machine, layout_pos, radii_dict, offsets, t, frac, scale)
+        )
         out.extend(_axial_traces(machine, layout_pos))
+        out.extend(
+            _punchcard_traces(
+                machine, layout_pos, radii_dict, current_phase=t % _phases
+            )
+        )
 
         xs, ys, htexts, colors_list, texts = [], [], [], [], []
         for c in state.carriers:
-            gear = machine.gears[c.gear]
-            cx, cy = layout_pos[c.gear]
-            r = radii_dict[c.gear]
+            # Draw the carrier on whatever is actually moving it this step,
+            # which on a machine with shared slots is the receiving gear.
+            gear_name, slot = machine.riding_position(c.position, t)
+            cx, cy = layout_pos[gear_name]
+            r = carrier_radii[gear_name]
 
-            ang = _slot_angle(
-                c.slot, gear.n_slots, gear.direction, offsets[c.gear], t, frac
-            )
+            ang = _slot_angle(machine, gear_name, slot, offsets[gear_name], t, frac)
 
             xs.append(cx + r * math.cos(ang))
             ys.append(cy + r * math.sin(ang))

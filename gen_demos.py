@@ -12,6 +12,7 @@ from braidpy.horn_gear import (  # noqa: E402
     BraidingMachine,
     animate,
     compute_tracks,
+    jacquard_lace_ring,  # noqa: E402
     tube_axials,
     visualize_machine,
     visualize_tracks,
@@ -26,6 +27,27 @@ from braidpy.horn_gear.examples import (  # noqa: E402
     tubular_braid_12,
     tubular_braid_16,
 )
+
+
+def lace_program(n_gears, steps=8, hold=6):
+    """A programme that walks a held block of gears round the ring.
+
+    Everything is enabled except a run of `hold` gears, and that run moves on
+    one place each step — so the held patch travels round the machine and
+    leaves a diagonal in the lace.
+    """
+    program = []
+    for step in range(steps):
+        rows = []
+        for parity in (0, 1):
+            rows.append(
+                "".join(
+                    "1" if i % 2 == parity and not (step <= i < step + hold) else "0"
+                    for i in range(n_gears)
+                )
+            )
+        program.append((rows[0], rows[1]))
+    return program
 
 
 def cored(factory):
@@ -53,6 +75,18 @@ MACHINES = [
     ),
     ("tubular_12", tubular_braid_12, 16, "Tubular braid – 12 carriers"),
     ("tubular_16", tubular_braid_16, 16, "Tubular braid – 16 carriers"),
+    (
+        "jacquard_lace",
+        lambda: jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")]),
+        16,
+        "Jacquard lace – 6 two-slot gears, C and D held every other step",
+    ),
+    (
+        "jacquard_lace_48",
+        lambda: jacquard_lace_ring(48, lace_program(48)),
+        6,
+        "Jacquard lace – 48 gears, a held block walking round the ring",
+    ),
 ]
 
 

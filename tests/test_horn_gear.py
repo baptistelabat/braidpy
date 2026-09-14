@@ -20,11 +20,20 @@ from braidpy.horn_gear.examples import (
     tubular_braid_12,
     tubular_braid_16,
 )
+from braidpy.horn_gear.jacquard import (
+    JacquardLaceMachine,
+    JacquardProgramError,
+    jacquard_lace_ring,
+    notch_positions,
+)
 from braidpy.horn_gear.layout import (
     axial_clearance,
     axial_position,
+    carrier_radius,
     compute_layout,
+    contact_point,
     gear_radii,
+    offset_residuals,
     tube_axials,
     tube_rings,
 )
@@ -36,15 +45,12 @@ from braidpy.horn_gear.simulation import (
     step,
 )
 from braidpy.horn_gear.tracks import (
+    NoFixedTracks,
     compute_tracks,
     simulation_period,
     tracks_summary,
 )
-from braidpy.horn_gear.visualization import (
-    _offset_residuals,
-    animate,
-    visualize_machine,
-)
+from braidpy.horn_gear.visualization import animate, visualize_machine
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -329,7 +335,7 @@ def test_slots_land_exactly_on_contacts(factory):
     for 4-slot gears (90° per slot) is only a whole number of slots at N=4.
     """
     m = factory()
-    residuals = _offset_residuals(m, compute_layout(m))
+    residuals = offset_residuals(m, compute_layout(m))
     worst_gear = max(residuals, key=residuals.get)
     assert math.degrees(residuals[worst_gear]) < 1.0, (
         f"{factory.__name__}: gear {worst_gear}'s contacts miss its slots by "
@@ -353,7 +359,7 @@ def test_rings_that_cannot_align_are_flagged(factory, n_gears):
     separation = 180 - 360 / n_gears
     assert separation % 90 != 0, "this ring would in fact align; update the test"
 
-    worst = max(_offset_residuals(m, compute_layout(m)).values())
+    worst = max(offset_residuals(m, compute_layout(m)).values())
     assert math.degrees(worst) > 1.0
 
 
@@ -406,7 +412,7 @@ def test_flat_braid_end_gear_slot_count_is_unconstrained(n_end):
     gears' two contacts are 180° apart — two slots of a 4-slot gear.
     """
     m = flat_braid_9(n_end=n_end)
-    worst = max(_offset_residuals(m, compute_layout(m)).values())
+    worst = max(offset_residuals(m, compute_layout(m)).values())
     assert math.degrees(worst) < 1.0
 
 
@@ -501,7 +507,7 @@ def test_soutache_is_two_odd_gears_loaded_every_other_slot(n_slots):
     assert simulation_period(m) == 2 * n_slots
     simulate(m, simulation_period(m), cp)  # raises on any collision
 
-    worst = max(_offset_residuals(m, compute_layout(m)).values())
+    worst = max(offset_residuals(m, compute_layout(m)).values())
     assert math.degrees(worst) < 1.0
 
 
@@ -789,3 +795,376 @@ def test_diamond_braid_is_tubular_braid_8_relabelled():
     assert sorted(len(x) for x in compute_tracks(d)) == sorted(
         len(x) for x in compute_tracks(t)
     )
+
+
+# ── Jacquard lace machine ─────────────────────────────────────────────────────
+
+
+def test_jacquard_has_no_tracks_to_compute():
+    """A programmed machine has no closed tracks, and must say so.
+
+    Where a bobbin goes is decided by the programme, not by the wiring, so its
+    path need never come back on itself.  Inventing a track or a period here
+    would be inventing a fact about the machine.
+    """
+    m = jacquard_lace_ring(6)
+    assert m.has_fixed_tracks is False
+
+    for call in (compute_tracks, simulation_period):
+        with pytest.raises(NoFixedTracks, match="driven by a"):
+            call(m)
+
+    # An ordinary machine is unaffected.
+    assert tubular_braid_8().has_fixed_tracks is True
+    assert compute_tracks(tubular_braid_8())
+
+
+def test_jacquard_is_threaded_one_bobbin_per_notch():
+    """A notch is shared by two gears, so there is one bobbin position per contact."""
+    m = jacquard_lace_ring(6)
+    cp = notch_positions(m)
+
+    assert len(cp) == len(m.connections) == 6
+    assert cp == m.default_carriers()
+    assert len(set(cp.values())) == len(cp), "two bobbins in one notch"
+
+    simulate(m, 12, cp)  # raises on any collision
+
+
+def test_jacquard_bobbins_travel_round_the_ring():
+    """Fully enabled, every bobbin should work its way round every gear."""
+    m = jacquard_lace_ring(6)
+    cp = notch_positions(m)
+    history = simulate(m, 12, cp)
+
+    for cid in cp:
+        visited = {history[t].carrier_positions()[cid][0] for t in range(13)}
+        assert visited == set(m.gears), f"bobbin {cid} only reached {sorted(visited)}"
+
+
+def test_mask_gates_which_gears_turn():
+    """A gear left out of the mask must not turn, and one in it must."""
+    # Punched step 0 turns everything; step 1 holds C and D.
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+
+    assert m.steps_per_pass == 4, "two mask lines make two simulation steps"
+    assert m.turning_gears(0) == frozenset({"A", "C", "E"})
+    assert m.turning_gears(1) == frozenset({"B", "D", "F"})
+    assert m.turning_gears(2) == frozenset({"A", "E"})
+    assert m.turning_gears(3) == frozenset({"B", "F"})
+
+    per_pass = {n: m.rotation(n, m.steps_per_pass) for n in m.gears}
+    assert per_pass == {"A": 2, "B": -2, "C": 1, "D": -1, "E": 2, "F": -2}
+    assert m.rotation("A", 2 * m.steps_per_pass) == 4
+    assert m.rotation("C", 2 * m.steps_per_pass) == 2
+
+
+def test_a_bobbin_stays_put_while_both_its_gears_are_idle():
+    """Nothing moves a bobbin whose own gear and notch-neighbour are both held."""
+    # Only A and B ever turn; C..F never do.
+    m = jacquard_lace_ring(6, [("100000", "010000")])
+    idle = {0: ("C", 0), 1: ("D", 0), 2: ("E", 0)}
+    history = simulate(m, 8, idle)
+    for state in history:
+        assert state.carrier_positions() == idle, "an idle bobbin moved"
+
+
+def test_a_turning_gear_takes_the_bobbin_from_its_idle_neighbour():
+    """The point of interpenetrating gears: one turns while the other stands still.
+
+    A bobbin in the notch shared by A and B is swept out by whichever of the
+    two turns — so with A idle and B turning, it ends up on B.
+    """
+    m = jacquard_lace_ring(6, [("000000", "010000")])
+    assert m.turning_gears(0) == frozenset()
+    assert m.turning_gears(1) == frozenset({"B"})
+
+    # Find the slot of A that faces B, and put a bobbin in that notch.
+    conn = next(c for c in m.connections if {c.gear_a, c.gear_b} == {"A", "B"})
+    notch = (conn.gear_a, conn.slot_a0)
+
+    history = simulate(m, 2, {0: notch})
+    assert history[1].carrier_positions()[0] == notch, "nothing turned yet"
+    assert history[2].carrier_positions()[0][0] == "B", "B should have taken it"
+
+
+@pytest.mark.parametrize(
+    "program,message",
+    [
+        ([("111111", "000000")], "turns the other way"),
+        ([("1010", "0101")], "has 4 bits"),
+        ([], "needs a programme"),
+        ([("10101x", "010101")], "may only contain 0 and 1"),
+        ([("101010",)], "expected a"),
+    ],
+)
+def test_invalid_programmes_are_rejected(program, message):
+    with pytest.raises(JacquardProgramError, match=message):
+        jacquard_lace_ring(6, program)
+
+
+def test_touching_gears_may_not_turn_together():
+    """Two neighbours turning at once would fight over the notch they share.
+
+    A ring whose gears alternate direction can never express this, because the
+    two mask lines already separate the neighbours — so this needs a machine
+    built by hand with two touching gears turning the same way.
+    """
+    gears = [
+        HornGear("A", 2, direction=+1),
+        HornGear("B", 2, direction=+1),
+        HornGear("C", 2, direction=-1),
+        HornGear("D", 2, direction=-1),
+    ]
+    conns = [
+        Connection("A", "B", 0, 1),
+        Connection("B", "C", 0, 1),
+        Connection("C", "D", 0, 1),
+        Connection("D", "A", 0, 1),
+    ]
+    with pytest.raises(JacquardProgramError, match="share a notch"):
+        JacquardLaceMachine(gears, conns, [("1100", "0000")])
+
+
+@pytest.mark.parametrize("n_gears", [3, 5, 2, 0])
+def test_jacquard_ring_needs_an_even_number_of_gears(n_gears):
+    """Meshing gears turn opposite ways, so a ring cannot have an odd count."""
+    with pytest.raises(ValueError, match="even number"):
+        jacquard_lace_ring(n_gears)
+
+
+def test_jacquard_machine_draws():
+    """The drawing code is machine-driven, so it must handle a programme."""
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    assert len(visualize_machine(m).data) > 0
+
+    fig = animate(m, n_steps=6)
+    assert fig.frames
+    for frame in fig.frames:
+        assert "Carriers" in [t.name for t in frame.data if t.name]
+
+
+@pytest.mark.parametrize("n_gears", [4, 6, 8, 12])
+def test_lace_bobbin_sits_in_the_notch(n_gears):
+    """A bobbin rides inside the notch, not out on the rim.
+
+    Overlapping circles cut a chord between their two crossings; the bobbin
+    sits at the middle of it, which lies on the line between the two centres
+    and is closer in than either rim.
+    """
+    m = jacquard_lace_ring(n_gears)
+    layout, radii = compute_layout(m), gear_radii(m)
+    assert m.gears_interpenetrate is True
+
+    for conn in m.connections:
+        a, b = conn.gear_a, conn.gear_b
+        centres = math.dist(layout[a], layout[b])
+        assert centres < radii[a] + radii[b], "the circles only touch"
+
+        notch = contact_point(m, layout, a, b)
+        # On the line of centres, and the same point seen from either gear.
+        assert contact_point(m, layout, b, a) == pytest.approx(notch)
+        assert math.dist(layout[a], notch) + math.dist(notch, layout[b]) == (
+            pytest.approx(centres)
+        )
+        # Cut back inside both rims.
+        assert math.dist(layout[a], notch) < radii[a]
+
+    for gear in m.gears:
+        assert carrier_radius(m, layout, gear) < radii[gear]
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, flat_braid_9, princess_braid, diamond_braid]
+)
+def test_tangent_machines_carry_bobbins_on_the_rim(factory):
+    """Gears that merely touch hold their bobbins out on the rim, as before."""
+    m = factory()
+    assert m.gears_interpenetrate is False
+
+    layout, radii = compute_layout(m), gear_radii(m)
+    for gear in m.gears:
+        assert carrier_radius(m, layout, gear) == pytest.approx(radii[gear])
+
+
+def test_tangent_machines_keep_contacts_on_the_line_of_centres():
+    """Ordinary gears touch, so their contact must stay where it always was."""
+    m = tubular_braid_8()
+    layout, radii = compute_layout(m), gear_radii(m)
+    for conn in m.connections:
+        ax, ay = layout[conn.gear_a]
+        bx, by = layout[conn.gear_b]
+        dist = math.hypot(bx - ax, by - ay)
+        expected = (
+            ax + radii[conn.gear_a] * (bx - ax) / dist,
+            ay + radii[conn.gear_a] * (by - ay) / dist,
+        )
+        assert contact_point(m, layout, conn.gear_a, conn.gear_b) == pytest.approx(
+            expected, abs=0.01
+        )
+
+
+def test_programme_is_drawn_as_a_punchcard():
+    """The mask is shown as the punchcard it is, one row per phase.
+
+    The clockwise row of each step is offset half a punch from its
+    trigonometric partner, because the two are driven one after the other.
+    """
+    from braidpy.horn_gear.visualization import _punchcard_traces
+
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    rows = m.program_rows()
+    assert [label for label, _ in rows] == [
+        "trigonometric",
+        "clockwise",
+        "trigonometric",
+        "clockwise",
+    ]
+    assert rows[0][1] == (True, False, True, False, True, False)
+
+    traces = _punchcard_traces(m, compute_layout(m), gear_radii(m), current_phase=0)
+    card = next(t for t in traces if t.name == "Programme")
+
+    # Every punch has a place on the card, whether or not it is punched.
+    n = len(m.gears)
+    assert len(card.x) == len(rows) * n
+
+    # The row being driven is lit, and only the gears turning in it.
+    lit = [x for x, size in zip(card.x, card.marker.size) if size == 12]
+    assert len(lit) == len(m.turning_gears(0)) == 3
+
+    # A clockwise row sits half a punch right of its trigonometric partner.
+    trig_xs = sorted(card.x[:n])
+    cw_xs = sorted(card.x[n : 2 * n])
+    pitch = trig_xs[1] - trig_xs[0]
+    assert cw_xs[0] - trig_xs[0] == pytest.approx(pitch / 2)
+
+
+def test_gears_are_coloured_by_whether_they_turn():
+    """Green while a gear turns, red while it is held."""
+    m = jacquard_lace_ring(6, [("101010", "010101")])
+    fig = animate(m, n_steps=4)
+
+    for frame in fig.frames:
+        discs = [t for t in frame.data if t.fill == "toself"]
+        assert len(discs) == len(m.gears), "each gear needs its own steady trace"
+
+        greens = sum(1 for d in discs if "60,170,90" in (d.fillcolor or ""))
+        reds = sum(1 for d in discs if "205,60,55" in (d.fillcolor or ""))
+        assert greens + reds == len(m.gears)
+        assert greens == 3, "three gears turn in each phase of this programme"
+
+
+@pytest.mark.parametrize("factory", [tubular_braid_8, flat_braid_9, princess_braid])
+def test_wired_machines_get_no_punchcard_and_no_colouring(factory):
+    """A machine whose gears are geared together is always turning.
+
+    Colouring it green would say nothing, and it has no programme to show, so
+    it must look exactly as it always did.
+    """
+    from braidpy.horn_gear.visualization import _punchcard_traces
+
+    m = factory()
+    assert m.program_rows() is None
+    assert _punchcard_traces(m, compute_layout(m), gear_radii(m)) == []
+
+    discs = [t for t in visualize_machine(m).data if t.fill == "toself"]
+    assert discs
+    assert all("100,100,200" in (d.fillcolor or "") for d in discs)
+
+
+def test_animation_traces_keep_their_identity_between_frames():
+    """Only what actually moves may move.
+
+    Plotly pairs traces between frames by position, so a trace has to mean the
+    same thing in every frame.  Batching the gear discs by colour broke this:
+    one slot held the turning gears in one frame and the held ones in the next,
+    and the circles appeared to fly around the machine instead of just
+    changing colour.  The same trap catches the punchcard if its lit and unlit
+    punches are split into separate traces.
+    """
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    frames = list(animate(m, n_steps=6).frames)
+    assert len({len(f.data) for f in frames}) == 1, "trace count changes"
+
+    base = frames[0].data
+    for index, trace in enumerate(base):
+        moved = any(list(f.data[index].x) != list(trace.x) for f in frames[1:])
+
+        if trace.fill == "toself":  # a gear disc
+            assert not moved, f"gear disc {index} moved between frames"
+            assert any(
+                f.data[index].fillcolor != trace.fillcolor for f in frames[1:]
+            ), "a gear disc never changes colour, so nothing shows it turning"
+
+        if trace.name == "Programme":  # the punchcard
+            assert not moved, "a punch moved between frames"
+            assert any(
+                str(f.data[index].marker.color) != str(trace.marker.color)
+                for f in frames[1:]
+            ), "the punchcard never lights the row being driven"
+
+    # Exactly two things are entitled to move: the tick marks turning with
+    # their gears, and the carriers.
+    movers = sum(
+        any(list(f.data[i].x) != list(tr.x) for f in frames[1:])
+        for i, tr in enumerate(base)
+    )
+    assert movers == 2, f"{movers} traces move, expected the ticks and the carriers"
+
+
+@pytest.mark.parametrize("n_gears", [6, 12, 24])
+def test_lace_carriers_never_jump_across_a_gear(n_gears):
+    """A bobbin must be drawn on whatever is actually sweeping it.
+
+    On this machine the gear that moves a bobbin is often *not* the one it is
+    recorded on: an idle gear's neighbour reaches into the shared notch and
+    takes it.  Drawing it on its own gear leaves it still for the whole step
+    and then flings it across to the neighbour — which measured 6.4x a normal
+    sub-frame step before this was fixed.
+    """
+    n_substeps = 9
+    m = jacquard_lace_ring(n_gears)
+    fig = animate(m, n_steps=4, n_substeps=n_substeps)
+
+    layout = compute_layout(m)
+    radius = max(carrier_radius(m, layout, g) for g in m.gears)
+    pitch = min(2 * math.pi / g.n_slots for g in m.gears.values())
+    smooth = radius * pitch / n_substeps
+
+    carriers = [f.data[-1] for f in fig.frames]
+    worst = max(
+        math.hypot(xb - xa, yb - ya)
+        for a, b in zip(carriers, carriers[1:])
+        for xa, ya, xb, yb in zip(a.x, a.y, b.x, b.y)
+    )
+    assert worst < 3 * smooth, (
+        f"a bobbin moved {worst / smooth:.1f}x a normal sub-frame step, so it is "
+        f"being drawn on a gear that is not carrying it"
+    )
+
+
+def test_a_bobbin_is_drawn_on_the_gear_that_sweeps_it():
+    """The receiving gear carries the bobbin through the step, not the idle one."""
+    m = jacquard_lace_ring(6)
+
+    # Find a bobbin whose own gear is idle while a neighbour takes it.
+    cp = notch_positions(m)
+    history = simulate(m, 2, cp)
+    moved = [
+        c
+        for c in history[0].carriers
+        if history[1].carrier_positions()[c.carrier_id][0] != c.gear
+    ]
+    assert moved, "this programme should hand bobbins over on its first step"
+
+    for c in moved:
+        assert c.gear not in m.turning_gears(0), "its own gear should be idle"
+        riding = m.riding_position(c.position, 0)
+        assert riding == history[1].carrier_positions()[c.carrier_id]
+        assert riding[0] in m.turning_gears(0), "drawn on the gear that turns"
+
+    # A wired machine keeps its carriers on their own gear all step.
+    wired = tubular_braid_8()
+    for gear, slot in load_carriers(wired).values():
+        assert wired.riding_position((gear, slot), 0) == (gear, slot)

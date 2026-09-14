@@ -10,19 +10,27 @@ Data model for a horn gear braiding machine.
 
 A machine is a graph of HornGear nodes connected by Connection edges.
 
-A connection is a fixed point in space where two gears touch.  Every step
-each gear turns by one slot, so a different slot index arrives at that point
-each time; a carrier transfers when its slot is the one that has arrived.
-``Connection.slot_a0``/``slot_b0`` record which slot of each gear sits there
-at t=0, and for the animation to be seamless those slots must also point at
-the neighbour in the computed layout.
+A connection is a fixed point in space where two gears meet.  As a gear turns,
+a different slot arrives there; ``Connection.slot_a0``/``slot_b0`` record which
+slot of each gear sits there at t=0.
+
+:class:`BraidingMachine` describes a machine whose gears are geared together:
+every gear turns one slot every step, each slot belongs to one gear, and a
+carrier crosses to its neighbour when its slot reaches a contact.  A machine
+built differently says so by overriding a handful of methods —
+:meth:`~BraidingMachine.turning_gears`, :meth:`~BraidingMachine.rotation`,
+:meth:`~BraidingMachine.next_position` and their neighbours — and the rest of
+the package needs no special case.  See
+:class:`~braidpy.horn_gear.jacquard.JacquardLaceMachine`.
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Tuple
+from functools import reduce
+from math import lcm
+from typing import Dict, FrozenSet, Iterable, List, Optional, Tuple
 
 import networkx as nx
 
@@ -47,43 +55,22 @@ class HornGear:
         if self.direction not in (1, -1):
             raise ValueError(f"direction must be +1 or -1, got {self.direction}.")
 
-    def slot_angle(self, slot: int, time: int = 0) -> float:
-        """Absolute angle (radians) of a slot at a given simulation step.
+    def angle_at_rotation(self, slot: int, rotation: float) -> float:
+        """Angle (radians) of a slot after the gear has turned ``rotation`` slots.
+
+        The gear knows only how far it has turned, never how that relates to
+        simulation time — a gear that is driven individually turns at its own
+        pace.  Ask the machine for the rotation; see
+        :meth:`BraidingMachine.rotation`.
 
         Args:
             slot: Slot index (0-based).
-            time: Current step count.
+            rotation: Signed slots turned through, fractional allowed.
 
         Returns:
             Angle in radians, measured CCW from the positive x-axis.
         """
-        base_angle = 2 * math.pi * slot / self.n_slots
-        rotation = 2 * math.pi * self.direction * time / self.n_slots
-        return base_angle + rotation
-
-    def slot_at_connection(self, slot0_at_t0: int, time: int) -> int:
-        """Which slot of this gear is currently at the connection point
-        whose slot index at t=0 was slot0_at_t0?
-
-        Equivalently: at time t, the gear has rotated so that the slot
-        originally at slot0_at_t0 is now at a new angular position.
-        We want to know *which slot index is currently at the original
-        angular position* (i.e. the fixed connection point in space).
-
-        Connection points are fixed in space.  At t=0 slot ``slot0_at_t0``
-        is at the connection angle.  After t steps the gear has rotated by
-        ``direction * t`` slots, so the slot currently at that angle is:
-
-            (slot0_at_t0 - direction * time) mod n_slots
-
-        Args:
-            slot0_at_t0: Slot index that was at the connection at t=0.
-            time: Current step.
-
-        Returns:
-            Slot index currently at the connection point.
-        """
-        return (slot0_at_t0 - self.direction * time) % self.n_slots
+        return 2 * math.pi * (slot + rotation) / self.n_slots
 
 
 @dataclass(frozen=True)
@@ -119,10 +106,8 @@ class Connection:
         Returns:
             Tuple (slot_in_a, slot_in_b) currently at the connection point.
         """
-        gear_a = machine.gears[self.gear_a]
-        gear_b = machine.gears[self.gear_b]
-        sa = gear_a.slot_at_connection(self.slot_a0, time)
-        sb = gear_b.slot_at_connection(self.slot_b0, time)
+        sa = machine.slot_at_connection(self.gear_a, self.slot_a0, time)
+        sb = machine.slot_at_connection(self.gear_b, self.slot_b0, time)
         return sa, sb
 
 
@@ -168,6 +153,15 @@ class BraidingMachine:
         axials: List of Axial instances (empty for a machine without cores).
         graph: NetworkX graph of gear connections (for layout / analysis).
     """
+
+    #: Whether neighbouring gear circles overlap, cutting a notch that both
+    #: gears share, rather than merely touching at a point.
+    gears_interpenetrate: bool = False
+
+    #: Whether carriers follow closed tracks fixed by the machine's wiring.
+    #: False on a machine driven by a programme, where the path a carrier
+    #: takes is whatever the programme dictates and need never come back.
+    has_fixed_tracks: bool = True
 
     def __init__(
         self,
@@ -226,6 +220,176 @@ class BraidingMachine:
             if axial.name in seen_axials:
                 raise ValueError(f"Duplicate axial name '{axial.name}'.")
             seen_axials.add(axial.name)
+
+    # ── How the gears are driven ──────────────────────────────────────────
+    #
+    # An ordinary braiding machine has its gears geared together: they all
+    # turn, one slot at a time, for ever.  A machine that drives each gear
+    # separately — a Jacquard lace machine reading a mask — overrides these
+    # three methods, and nothing else in the package needs to know.
+
+    def turning_gears(self, step: int) -> FrozenSet[str]:
+        """Gears that turn during the transition from ``step`` to ``step + 1``.
+
+        Args:
+            step: The step being taken.
+
+        Returns:
+            Names of the gears that move.  Every gear, on an ordinary machine.
+        """
+        return frozenset(self.gears)
+
+    def rotation(self, gear_name: str, time: int) -> int:
+        """Signed number of slots a gear has turned through after ``time`` steps.
+
+        Args:
+            gear_name: Name of the gear.
+            time: Current step.
+
+        Returns:
+            Slots turned; negative for a clockwise gear.
+        """
+        return self.gears[gear_name].direction * time
+
+    def contact_period(self) -> int:
+        """Steps after which every contact shows the same slots again.
+
+        Each gear returns its slots to the contacts every ``n_slots`` steps,
+        so the machine's contact pattern repeats with period ``lcm(n_slots)``.
+        """
+        return reduce(lcm, (g.n_slots for g in self.gears.values()), 1)
+
+    # ── Derived from the above ────────────────────────────────────────────
+
+    def program_rows(self) -> Optional[List[Tuple[str, Tuple[bool, ...]]]]:
+        """The machine's programme as punchcard rows, or None if it has none.
+
+        One row per phase, in the order they are driven, each a label and a
+        flag per gear.  A machine whose gears are geared together has no
+        programme to show.
+
+        Returns:
+            List of (label, flags) or None.
+        """
+        return None
+
+    def preferred_layout(
+        self, scale: float = 1.0
+    ) -> Optional[Dict[str, Tuple[float, float]]]:
+        """A layout the machine knows to be right for itself, or None.
+
+        Returning None lets :func:`~braidpy.horn_gear.layout.compute_layout`
+        work the positions out from the connection graph, which is what an
+        ordinary machine of tangent gears wants.  A machine whose geometry is
+        pinned by its own construction overrides this.
+
+        Args:
+            scale: Overall scale factor for gear radii.
+
+        Returns:
+            Gear name → (x, y), or None to let the layout be computed.
+        """
+        return None
+
+    def riding_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+        """Which (gear, slot) sweeps a carrier through the step at ``time``.
+
+        This is what an animation must draw it on, and it is not always where
+        the carrier is recorded.  On an ordinary machine the carrier's own gear
+        carries it round to the contact and hands over only at the very end of
+        the step, so it rides its own gear throughout — which is what this
+        returns.
+
+        A machine whose gears share their slots overrides this, because there
+        the *receiving* gear does the sweeping: see
+        :meth:`~braidpy.horn_gear.jacquard.JacquardLaceMachine.riding_position`.
+
+        Args:
+            pos: The carrier's (gear_name, slot_index) at ``time``.
+            time: Step being taken.
+
+        Returns:
+            The (gear_name, slot_index) to draw the carrier on for this step.
+        """
+        return pos
+
+    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+        """How to thread this machine when the caller does not say.
+
+        A wired machine is loaded along its tracks, as far as it will go.  A
+        machine without tracks overrides this — see
+        :func:`~braidpy.horn_gear.jacquard.notch_positions`.
+
+        Returns:
+            Dict mapping carrier_id → (gear_name, slot).
+        """
+        from .simulation import load_carriers
+
+        return load_carriers(self)
+
+    def next_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+        """Where a carrier goes during the step from ``time`` to ``time + 1``.
+
+        On an ordinary machine the gears are **tangent** and every slot belongs
+        to one gear alone, so a carrier rides its own slot round until that
+        slot arrives at a contact, and then crosses into the neighbour's slot
+        waiting there.
+
+        A machine built differently overrides this — see
+        :meth:`~braidpy.horn_gear.jacquard.JacquardLaceMachine.next_position`,
+        whose gears interpenetrate and share their slots.
+
+        Args:
+            pos: Current (gear_name, slot_index).
+            time: Step being taken.
+
+        Returns:
+            The (gear_name, slot_index) the carrier occupies afterwards.
+        """
+        gear_name, slot = pos
+        if gear_name not in self.turning_gears(time):
+            return pos
+
+        # time + 1 because the gear turns first, then the transfer happens.
+        neighbor = self.neighbor_at_slot(gear_name, slot, time + 1)
+        return neighbor if neighbor is not None else pos
+
+    def slot_at_connection(self, gear_name: str, slot0_at_t0: int, time: int) -> int:
+        """Which slot sits at the contact whose slot at t=0 was ``slot0_at_t0``.
+
+        Contacts are fixed in space, so as the gear turns a different slot
+        arrives at each one.
+
+        Args:
+            gear_name: Name of the gear.
+            slot0_at_t0: Slot that was at the contact at t=0.
+            time: Current step.
+
+        Returns:
+            Slot index currently at that contact.
+        """
+        gear = self.gears[gear_name]
+        return (slot0_at_t0 - self.rotation(gear_name, time)) % gear.n_slots
+
+    def slot_angle(
+        self, gear_name: str, slot: int, time: int = 0, frac: float = 0.0
+    ) -> float:
+        """Angle (radians) of a slot at continuous time ``time + frac``.
+
+        Args:
+            gear_name: Name of the gear.
+            slot: Slot index.
+            time: Current step.
+            frac: Fraction of the way into the step, for smooth animation.
+
+        Returns:
+            Angle in radians, measured CCW from the positive x-axis.
+        """
+        rotation = float(self.rotation(gear_name, time))
+        if frac:
+            step_arc = self.rotation(gear_name, time + 1) - rotation
+            rotation += step_arc * frac
+        return self.gears[gear_name].angle_at_rotation(slot, rotation)
 
     def total_slots(self) -> int:
         """Total number of carrier slots across all gears."""
