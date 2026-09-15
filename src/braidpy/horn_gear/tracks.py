@@ -138,6 +138,39 @@ def circulation(
     return net
 
 
+def walk(
+    machine: BraidingMachine,
+    start: Position,
+    period: Optional[int] = None,
+) -> List[Position]:
+    """Every position a carrier passes through, in order, repeats included.
+
+    A :data:`Track` lists the *distinct* positions on a loop, which is what you
+    want for counting slots but not for following one: a carrier that comes
+    back to a slot it has already used is not recorded again, so two entries
+    that sit side by side in a track need not be a step apart in time.  On a
+    flat braid that leaves the track reading as though a carrier hopped
+    straight from one end gear to the other, which are not even connected.
+
+    Args:
+        machine: The machine definition.
+        start: Where the carrier begins.
+        period: Steps to follow it for; the simulation period if None.
+
+    Returns:
+        The positions visited, one per step, starting at ``start``.
+    """
+    if period is None:
+        period = simulation_period(machine)
+
+    path = [start]
+    pos = start
+    for t in range(period):
+        pos = _next_position(machine, pos, t)
+        path.append(pos)
+    return path
+
+
 def contact_period(machine: BraidingMachine) -> int:
     """Number of steps after which every contact point shows the same slots again.
 

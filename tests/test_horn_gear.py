@@ -39,9 +39,11 @@ from braidpy.horn_gear.layout import (
 )
 from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
 from braidpy.horn_gear.simulation import (
+    carrier_places,
     initial_state,
     load_carriers,
     simulate,
+    state_period,
     step,
 )
 from braidpy.horn_gear.tracks import (
@@ -51,6 +53,7 @@ from braidpy.horn_gear.tracks import (
     ring_order,
     simulation_period,
     tracks_summary,
+    walk,
 )
 from braidpy.horn_gear.visualization import animate, visualize_machine
 
@@ -642,8 +645,15 @@ def test_flat_braids_get_no_tube_core(factory):
     assert tube_axials(factory()) == []
 
 
-def test_tube_axials_handles_several_tubes():
-    """A grid of gears has (rows-1)x(cols-1) holes, each getting its own core."""
+def test_tube_rings_handles_several_tubes():
+    """A grid of gears encloses one hole per opening, and all are found.
+
+    Only the *detection* is asserted here.  Whether a core will fit is a
+    separate question, and depends on the drawing: the layout solver is free to
+    draw this ladder as a hexagon, which squashes both openings onto the same
+    point and leaves no room for anything — in which case tube_axials rightly
+    offers no cores at all.
+    """
     gears, connections = [], []
     for row in range(2):
         for col in range(3):
@@ -658,9 +668,17 @@ def test_tube_axials_handles_several_tubes():
                 connections.append(Connection(f"{row}{col}", f"{row + 1}{col}", 1, 3))
     m = BraidingMachine(gears, connections)
 
-    cores = tube_axials(m)
-    assert len(cores) == 2, "a 2x3 grid encloses two holes"
-    assert len({c.name for c in cores}) == 2, "cores must be uniquely named"
+    rings = tube_rings(m)
+    assert len(rings) == 2, "a 2x3 grid encloses two holes"
+    for ring in rings:
+        assert len(ring) == 4
+        for i, gear in enumerate(ring):
+            assert m.graph.has_edge(gear, ring[(i + 1) % len(ring)])
+
+    # Any cores offered must have somewhere to go.
+    layout = compute_layout(m)
+    for core in tube_axials(m, layout):
+        assert axial_clearance(m, layout, axial_position(m, layout, core)) > 0
 
 
 @pytest.mark.parametrize(
@@ -677,16 +695,21 @@ def test_invalid_axials_are_rejected(axials, message):
         BraidingMachine(list(m.gears.values()), m.connections, axials)
 
 
-def test_axials_are_drawn_in_every_animation_frame():
-    """The column is static, so it must appear in the static view and each frame."""
+def test_axials_are_drawn_once_and_stay_put():
+    """The column never moves, so it is drawn into the figure, not into frames.
+
+    It has to be on screen throughout all the same: an animation that left it
+    out of the figure would only ever show it if a frame carried it.
+    """
     m = princess_braid()
 
     static_names = [t.name for t in visualize_machine(m).data if t.name]
     assert "Axials" in static_names
 
     fig = animate(m, n_steps=6)
+    assert "Axials" in [t.name for t in fig.data if t.name]
     for frame in fig.frames:
-        assert "Axials" in [t.name for t in frame.data if t.name]
+        assert "Axials" not in [t.name for t in frame.data if t.name]
 
 
 # ── Examples sanity ───────────────────────────────────────────────────────────
@@ -764,6 +787,173 @@ def test_animation_continuity(factory, n_steps):
             f"  frame {i}→{i + 1}, carrier {j}: jump={d:.4f}"
             for i, j, d in violations[:20]
         )
+    )
+
+
+# ── One cycle, and round again ────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        flat_braid_3,
+        flat_braid_4,
+        flat_braid_9,
+        soutache_braid,
+        princess_braid,
+        tubular_braid_8,
+        tubular_braid_12,
+    ],
+)
+def test_a_cycle_puts_every_carrier_back_where_it_started(factory):
+    """Each bobbin at its own place again — and nothing shorter does it."""
+    m = factory()
+    period = state_period(m)
+    assert period is not None
+
+    history = simulate(m, period, m.default_carriers())
+    start = carrier_places(m, history[0])
+    assert carrier_places(m, history[period]) == start
+    assert all(carrier_places(m, history[t]) != start for t in range(1, period))
+
+
+def test_a_carrier_comes_home_to_a_place_not_to_a_slot():
+    """A slot index is a label on a turning gear, and the gear takes it away.
+
+    Every step turns each gear by one slot, so its notches land back on notch
+    angles: the gear is indistinguishable from the gear a step earlier.  On the
+    flat braid of nine, eighteen steps bring every bobbin back to the point it
+    set off from, drawn to the last decimal — in a *different* notch.  Waiting
+    for the notches to match as well takes 180 steps and shows the same picture
+    ten times over.
+    """
+    from braidpy.horn_gear.visualization import animate
+
+    m = flat_braid_9()
+    assert state_period(m) == 18
+
+    history = simulate(m, 180, m.default_carriers())
+    assert carrier_places(m, history[18]) == carrier_places(m, history[0])
+    assert history[18].carrier_positions() != history[0].carrier_positions()
+    assert history[180].carrier_positions() == history[0].carrier_positions()
+
+    # What is drawn is the place, so the picture really does repeat.
+    frames = {f.name: f for f in animate(m, n_steps=20, n_substeps=1).frames}
+    first, again = frames["0_0"].data[-1], frames["18_0"].data[-1]
+    assert list(first.text) == list(again.text), "the bobbins have been shuffled"
+    assert max(
+        math.hypot(xb - xa, yb - ya)
+        for xa, ya, xb, yb in zip(first.x, first.y, again.x, again.y)
+    ) == pytest.approx(0, abs=1e-9)
+
+
+@pytest.mark.parametrize(
+    "factory", [flat_braid_4, soutache_braid, tubular_braid_8, flat_braid_9]
+)
+def test_an_animation_runs_exactly_one_cycle_by_default(factory):
+    """Asked for no particular length, an animation covers the cycle once.
+
+    It stops one step short of starting over, because that step *is* the first
+    one: drawing it would show the opening frame twice at the join.
+    """
+    m = factory()
+    fig = animate(m)
+    steps = sorted({int(f.name.split("_")[0]) for f in fig.frames})
+    assert steps == list(range(state_period(m)))
+
+
+def test_the_loop_joins_up_as_smoothly_as_any_other_frame():
+    """The step from the last frame back to the first is an ordinary step.
+
+    This is what makes a looping page read as a machine running rather than as
+    a clip restarting.
+    """
+    from braidpy.horn_gear.layout import gear_radii
+
+    m = tubular_braid_8()
+    fig = animate(m)
+
+    carriers = [f.data[-1] for f in fig.frames]
+    jumps = [
+        max(math.hypot(xb - xa, yb - ya) for xa, ya, xb, yb in zip(a.x, a.y, b.x, b.y))
+        for a, b in zip(carriers, carriers[1:] + carriers[:1])
+    ]
+    wrap = jumps[-1]
+    assert wrap <= max(jumps[:-1]) * 1.05, (
+        f"the join jumps {wrap:.4f} against {max(jumps[:-1]):.4f} elsewhere"
+    )
+    assert wrap < max(gear_radii(m).values())  # a real step, not a teleport
+
+
+def test_a_programmed_machine_has_no_cycle_to_run():
+    """A carrier goes where the programme sends it and need never come back."""
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    assert state_period(m, max_steps=200) is None
+
+    # It is still animatable: the drive's own period stands in, so the
+    # punchcard at least ends where it started.
+    fig = animate(m)
+    steps = sorted({int(f.name.split("_")[0]) for f in fig.frames})
+    assert steps == list(range(m.contact_period() + 1)), "the last step is shown"
+
+
+def test_a_written_animation_starts_itself_and_plays_round_again(tmp_path):
+    """The page loops: Plotly stops at the last frame, so the page restarts it."""
+    path = tmp_path / "loop.html"
+    animate(tubular_braid_8(), output_html=str(path))
+    page = path.read_text()
+
+    assert "plotly_animated" in page, "nothing notices the sequence running out"
+    assert "Plotly.animate(gd, null, opts);" in page, "nothing starts it again"
+    assert "plotly_buttonclicked" in page, "Pause would never take"
+
+
+def test_only_whole_steps_are_numbered_on_the_slider():
+    """Every frame keeps a notch to scrub to; only whole steps carry a number.
+
+    Reading "31" tells you nothing about a machine whose period is 8, and a
+    number part-way through a step would be worse.  Plotly writes the numbers
+    by striding over the notches at an interval it works out for itself, so the
+    sub-frames are given nothing to say: wherever the stride lands on one, it
+    prints nothing, and a number can only ever appear at a whole step.
+    """
+    n_substeps = 4
+    m = tubular_braid_8()
+    fig = animate(m, n_substeps=n_substeps)
+    slider = fig.layout.sliders[0]
+
+    assert len(slider.steps) == len(fig.frames), "a frame with no notch"
+    for index, (entry, frame) in enumerate(zip(slider.steps, fig.frames)):
+        assert list(entry.args[0]) == [frame.name], "a notch plays the wrong frame"
+        step, substep = (int(part) for part in frame.name.split("_"))
+        assert entry.label == (str(step) if substep == 0 else "")
+        assert index == step * n_substeps + substep
+
+    numbered = [s.label for s in slider.steps if s.label]
+    assert numbered == [str(t) for t in range(state_period(m))]
+
+
+def test_a_frame_carries_only_what_changes():
+    """On a geared machine only the slots turn and the bobbins ride.
+
+    Everything else — links, contact crosses, discs, labels, columns — is drawn
+    into the figure once.  Repeating it in every frame of a long cycle is most
+    of what such a page would weigh.
+    """
+    fig = animate(tubular_braid_8())
+    assert all(len(f.data) == 2 for f in fig.frames)
+    assert all(len(f.traces) == 2 for f in fig.frames)
+
+
+def test_a_long_cycle_trades_smoothing_rather_than_its_length():
+    """The cycle is the thing to keep; the sub-frames are what give way."""
+    m = flat_braid_9()
+    period = state_period(m)
+
+    fig = animate(m, max_frames=period * 2)
+    assert len(fig.frames) <= period * 2
+    assert sorted({int(f.name.split("_")[0]) for f in fig.frames}) == list(
+        range(period)
     )
 
 
@@ -1455,3 +1645,55 @@ def test_tracks_are_drawn_as_wide_as_a_bobbin_and_stay_behind(factory):
         assert not [t for t in frame.data if t.name and t.name.startswith("Track")], (
             "a track is being redrawn every frame"
         )
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [tubular_braid_8, tubular_braid_12, flat_braid_3, flat_braid_9, princess_braid],
+)
+def test_a_drawn_track_only_steps_between_connected_gears(factory):
+    """A track must be drawn along the path a carrier really takes.
+
+    A track lists the *distinct* slots on a loop, so a slot the carrier returns
+    to is not recorded twice and two entries side by side in the list need not
+    be a step apart in time.  Drawing straight from that list made a flat
+    braid's track jump between its two end gears, which are not connected at
+    all — the carrier walks all the way back down the chain in between.
+    """
+    from braidpy.horn_gear.visualization import _track_runs
+
+    m = factory()
+    period = simulation_period(m)
+
+    for track in compute_tracks(m):
+        runs = _track_runs(walk(m, track[0], period))
+        gears = [gear for gear, _, _ in runs]
+        for here, nxt in zip(gears, gears[1:] + gears[:1]):
+            assert here == nxt or m.graph.has_edge(here, nxt), (
+                f"{factory.__name__}: drawn track steps {here} -> {nxt}, "
+                f"but they share no contact"
+            )
+
+
+def test_the_stored_track_is_not_a_path():
+    """Guard the distinction the drawing bug turned on.
+
+    flat_braid_9's track genuinely contains slots that sit next to each other
+    in the list while being far apart in time, so anything that needs the real
+    path must walk it rather than read the track.
+    """
+    m = flat_braid_9()
+    track = compute_tracks(m)[0]
+
+    jumps = [
+        (track[i], track[(i + 1) % len(track)])
+        for i in range(len(track))
+        if track[i][0] != track[(i + 1) % len(track)][0]
+        and not m.graph.has_edge(track[i][0], track[(i + 1) % len(track)][0])
+    ]
+    assert jumps, "if this track became a path, the walk above can be simplified"
+
+    # Walking it never does that.
+    path = walk(m, track[0], simulation_period(m))
+    for here, nxt in zip(path, path[1:]):
+        assert here[0] == nxt[0] or m.graph.has_edge(here[0], nxt[0])

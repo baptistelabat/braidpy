@@ -60,33 +60,42 @@ def cored(factory):
     return build
 
 
+# (name, factory, n_steps, title).  ``None`` steps means one full cycle of the
+# machine, which is what most of these want: the animation then ends where it
+# began and the page loops without a jump.  A lace machine is given a length,
+# because a programme need not bring its carriers back at all.
 MACHINES = [
-    ("flat_3", flat_braid_3, 12, "Flat braid – 3 carriers (simplest machine)"),
-    ("flat_4", flat_braid_4, 8, "Flat braid – 4 carriers"),
-    ("flat_9", flat_braid_9, 24, "Flat braid – 9 carriers, single track"),
-    ("soutache_5", soutache_braid, 20, "Soutache – 2 gears of 5, 5 carriers"),
+    ("flat_3", flat_braid_3, None, "Flat braid – 3 carriers (simplest machine)"),
+    ("flat_4", flat_braid_4, None, "Flat braid – 4 carriers"),
+    ("flat_9", flat_braid_9, None, "Flat braid – 9 carriers, single track"),
+    ("soutache_5", soutache_braid, None, "Soutache – 2 gears of 5, 5 carriers"),
     (
         "soutache_7",
         lambda: soutache_braid(n_slots=7),
-        28,
+        None,
         "Soutache – 2 gears of 7, 7 carriers",
     ),
     (
         "soutache_9",
         lambda: soutache_braid(n_slots=9),
-        36,
+        None,
         "Soutache – 2 gears of 9, 9 carriers",
     ),
-    ("princess", princess_braid, 24, "Princess – 5/6/5 gears, 8 carriers over a cord"),
-    ("tubular_8", tubular_braid_8, 16, "Tubular braid – 8 carriers"),
+    (
+        "princess",
+        princess_braid,
+        None,
+        "Princess – 5/6/5 gears, 8 carriers over a cord",
+    ),
+    ("tubular_8", tubular_braid_8, None, "Tubular braid – 8 carriers"),
     (
         "tubular_8_cored",
         cored(tubular_braid_8),
-        16,
+        None,
         "Tubular braid – 8 carriers over a central core",
     ),
-    ("tubular_12", tubular_braid_12, 16, "Tubular braid – 12 carriers"),
-    ("tubular_16", tubular_braid_16, 16, "Tubular braid – 16 carriers"),
+    ("tubular_12", tubular_braid_12, None, "Tubular braid – 12 carriers"),
+    ("tubular_16", tubular_braid_16, None, "Tubular braid – 16 carriers"),
     (
         "jacquard_lace",
         lambda: jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")]),
@@ -112,8 +121,8 @@ def main() -> None:
 
     for name, factory, n_steps, title in MACHINES:
         path = f"demo_{name}.html"
-        animate(factory(), n_steps=n_steps, title=title, output_html=path)
-        print(path)
+        fig = animate(factory(), n_steps=n_steps, title=title, output_html=path)
+        print(f"{path} ({len(fig.frames)} frames)")
 
     print(f"\n{len(MACHINES) + 2} pages written.")
 

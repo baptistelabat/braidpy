@@ -44,9 +44,11 @@ from .simulation import (
     CarrierState,
     CollisionError,
     MachineState,
+    carrier_places,
     initial_state,
     load_carriers,
     simulate,
+    state_period,
     step,
 )
 from .tracks import (
@@ -56,6 +58,7 @@ from .tracks import (
     compute_tracks,
     ring_order,
     simulation_period,
+    walk,
 )
 from .visualization import animate, visualize_machine, visualize_tracks
 
@@ -92,14 +95,17 @@ __all__ = [
     "NoFixedTracks",
     "ring_order",
     "circulation",
+    "walk",
     # simulation
     "CarrierState",
     "MachineState",
     "CollisionError",
+    "carrier_places",
     "initial_state",
     "load_carriers",
     "step",
     "simulate",
+    "state_period",
     # visualization
     "visualize_machine",
     "visualize_tracks",

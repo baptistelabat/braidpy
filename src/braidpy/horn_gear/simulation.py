@@ -19,6 +19,7 @@ making it easy to replay or branch the simulation.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from itertools import product
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Tuple
@@ -452,6 +453,86 @@ def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
             f"(period {period})."
         )
     return best
+
+
+def carrier_places(
+    machine: BraidingMachine, state: MachineState
+) -> Dict[CarrierId, Tuple[str, int]]:
+    """Where each carrier actually *is*: its gear, and the angle it has reached.
+
+    A slot index is a label painted on a turning gear, not a place.  Every step
+    turns a gear by one slot, so its notches land back on notch angles and the
+    gear is indistinguishable from the gear a step earlier — which means a
+    carrier sitting in a different notch may be at exactly the point in space
+    it started from, and one back in "its own" notch may be on the far side of
+    the gear.  What the eye sees, and what the machine does next, follow from
+    the angle.
+
+    Angles are returned as whole millionths of a turn, so they compare exactly
+    and 0 and a full turn are the same place.
+
+    Args:
+        machine: The machine definition.
+        state: The snapshot to read.
+
+    Returns:
+        {carrier_id: (gear, angle in millionths of a turn)}.
+    """
+    turn = 2 * math.pi
+    return {
+        c.carrier_id: (
+            c.gear,
+            round(machine.slot_angle(c.gear, c.slot, state.time) % turn / turn * 1e6)
+            % 1_000_000,
+        )
+        for c in state.carriers
+    }
+
+
+def state_period(
+    machine: BraidingMachine,
+    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+    max_steps: int = 10_000,
+) -> Optional[int]:
+    """Steps after which the machine is exactly as it started, or None.
+
+    "Exactly" means every carrier back at the point it set off from — see
+    :func:`carrier_places` for why that is not the same as back in its own
+    slot — and the drive back to its starting phase, so the step that follows
+    is the step that followed then.  Run the machine for this many steps and
+    the last frame hands straight back to the first.
+
+    This is a property of the machine and of how it is loaded, and it varies a
+    lot: eight steps for a square braid, eighteen for a flat braid on nine
+    carriers.  It is *not* how long a carrier takes to walk its whole track —
+    that flat braid's track is ninety steps round — because the machine is back
+    where it started long before any one carrier has been everywhere.
+
+    A machine driven by a programme need not ever come back — a carrier goes
+    where the programme sends it — so this returns None rather than pretend.
+
+    Args:
+        machine: The machine definition.
+        carrier_positions: The carriers to follow; the machine's own if None.
+        max_steps: How far to look before giving up.
+
+    Returns:
+        The cycle length in steps, or None if there is none within reach.
+    """
+    state = initial_state(machine, carrier_positions)
+    start = carrier_places(machine, state)
+    # Whatever drives the machine has to come round too, or the next step would
+    # not be the step that followed last time.  Geared together, nothing
+    # depends on the clock once the angles match; driven by a programme, the
+    # programme has to be back at its first row.
+    rows = machine.program_rows()
+    phase = len(rows) if rows else 1
+
+    for t in range(1, max_steps + 1):
+        state = step(machine, state)
+        if t % phase == 0 and carrier_places(machine, state) == start:
+            return t
+    return None
 
 
 def simulate(

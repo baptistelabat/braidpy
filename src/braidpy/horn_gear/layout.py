@@ -113,7 +113,60 @@ def compute_layout(
     if math.isfinite(min_ratio) and min_ratio > 0:
         pos = {n: xy * min_ratio for n, xy in pos.items()}
 
-    return {n: (float(xy[0]), float(xy[1])) for n, xy in pos.items()}
+    placed = {n: (float(xy[0]), float(xy[1])) for n, xy in pos.items()}
+    return _orient(machine, placed)
+
+
+def _orient(
+    machine: BraidingMachine,
+    placed: Dict[str, Tuple[float, float]],
+) -> Dict[str, Tuple[float, float]]:
+    """Settle a ring layout's handedness so it comes out the same every time.
+
+    A graph layout solver is free to hand back a machine or its mirror image,
+    and which one it chooses can change with the solver's version.  That is not
+    a cosmetic difference here: a machine's connection slots are chosen to face
+    its neighbours in a particular layout, so a mirrored one leaves every slot
+    pointing at the wrong side and reverses which way its carriers circulate.
+
+    Rings are therefore always laid out running clockwise in screen
+    coordinates, by flipping the result when it comes back the other way.  The
+    choice is arbitrary, but it has to be made somewhere and the machines'
+    connection slots are written against it.
+    """
+    cycles = nx.cycle_basis(machine.graph)
+    if not cycles:
+        return placed
+
+    # Walk the ring in a settled order — from its first gear by name, towards
+    # whichever of its two neighbours sorts first — so the sign below means the
+    # same thing whatever order the cycle was handed back in.
+    ring = max(cycles, key=len)
+    members = set(ring)
+    start = min(ring)
+    walk = [start]
+    previous = None
+    current = start
+    while len(walk) < len(ring):
+        neighbours = sorted(
+            n
+            for n in machine.graph.neighbors(current)
+            if n in members and n != previous
+        )
+        if not neighbours:
+            return placed
+        previous, current = current, neighbours[0]
+        walk.append(current)
+
+    area = 0.0
+    for i, name in enumerate(walk):
+        x1, y1 = placed[name]
+        x2, y2 = placed[walk[(i + 1) % len(walk)]]
+        area += x1 * y2 - x2 * y1
+
+    if area <= 0:
+        return placed
+    return {name: (x, -y) for name, (x, y) in placed.items()}
 
 
 def _layout_bfs(
