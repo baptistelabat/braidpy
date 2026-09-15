@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from functools import reduce
 from math import lcm
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .model import BraidingMachine
 
@@ -77,6 +77,65 @@ def _next_position(machine: BraidingMachine, pos: Position, time: int) -> Positi
         Next (gear_name, slot_index) after one step.
     """
     return machine.next_position(pos, time)
+
+
+def ring_order(machine: BraidingMachine) -> Optional[List[str]]:
+    """The gears in the order they circle the machine, or None if it has no ring.
+
+    A flat braid is a chain with no way round, so there is no circulation to
+    speak of and this returns None.
+    """
+    import networkx as nx
+
+    if any(degree != 2 for _, degree in machine.graph.degree()):
+        return None
+    cycles = nx.cycle_basis(machine.graph)
+    if len(cycles) != 1 or len(cycles[0]) != len(machine.gears):
+        return None
+    return list(cycles[0])
+
+
+def circulation(
+    machine: BraidingMachine,
+    start: Position,
+    period: Optional[int] = None,
+) -> int:
+    """Which way round the machine a carrier started at ``start`` travels.
+
+    Returns the net number of gear-to-gear steps it makes around the ring over
+    one period: positive one way, negative the other, zero for a machine with
+    no ring or a carrier that ends up where it began.
+
+    This counts steps around the connection graph, so it needs no layout — and
+    it is a property of the *starting position*, not of the track.  Two
+    carriers on the same track can circulate opposite ways, because one placed
+    in a slot at t=0 sits at a different phase from one that arrived there.
+
+    Args:
+        machine: The machine definition.
+        start: The (gear_name, slot_index) a carrier is placed in.
+        period: Steps to follow it for; the simulation period if None.
+
+    Returns:
+        Signed number of places moved around the ring.
+    """
+    order = ring_order(machine)
+    if order is None:
+        return 0
+    index = {name: i for i, name in enumerate(order)}
+    size = len(order)
+    if period is None:
+        period = simulation_period(machine)
+
+    net = 0
+    pos = start
+    for t in range(period):
+        nxt = _next_position(machine, pos, t)
+        if nxt[0] != pos[0]:
+            step = (index[nxt[0]] - index[pos[0]]) % size
+            net += step if step * 2 <= size else step - size
+        pos = nxt
+    return net
 
 
 def contact_period(machine: BraidingMachine) -> int:
@@ -173,6 +232,14 @@ def simulation_period(machine: BraidingMachine, max_steps: int = 100_000) -> int
 
 def compute_tracks(machine: BraidingMachine) -> List[Track]:
     """Compute all distinct closed tracks for the machine.
+
+    A slot belongs to one gear and one track, so the tracks partition the
+    slots.  Following a track out of *every* slot instead would not improve on
+    this: at a contact the carrier is in two slots at once, so entering the
+    loop by the other one hands back the same track reversed, and on a flat
+    braid entering at a different phase hands back an ordering that is neither
+    a rotation nor a reversal of the first.  Starting from the slots not yet
+    accounted for is what keeps the result a partition.
 
     Every (gear, slot) appears on at least one track.  For most machines the
     tracks also partition the slots, but that is not guaranteed: two carriers

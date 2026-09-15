@@ -49,7 +49,14 @@ from .simulation import (
     simulate,
     step,
 )
-from .tracks import NoFixedTracks, compute_track, compute_tracks, simulation_period
+from .tracks import (
+    NoFixedTracks,
+    circulation,
+    compute_track,
+    compute_tracks,
+    ring_order,
+    simulation_period,
+)
 from .visualization import animate, visualize_machine, visualize_tracks
 
 __all__ = [
@@ -83,6 +90,8 @@ __all__ = [
     "compute_tracks",
     "simulation_period",
     "NoFixedTracks",
+    "ring_order",
+    "circulation",
     # simulation
     "CarrierState",
     "MachineState",

@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Tupl
 import networkx as nx
 
 from .model import BraidingMachine
-from .tracks import Position, _next_position
+from .tracks import Position, _next_position, circulation
 
 # Above this slot count, maximum-clique enumeration is no longer safe to run
 # unbounded and loading falls back to a greedy search.
@@ -210,28 +210,90 @@ def _is_collision_free(
     return True
 
 
+def _circulation_imbalance(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+    period: int,
+) -> int:
+    """How lopsided a loading is between the two ways round; lower is better.
+
+    A tubular braid is made of two counter-rotating sets of carriers, and it
+    wants as many going one way as the other.  Which way a carrier travels
+    depends on the slot it starts in — two carriers on the same track can
+    circulate opposite ways, since one placed there at t=0 sits at a different
+    phase from one that arrived — so the loading decides the balance, and
+    several equally full loadings can differ in it.
+
+    Zero for a machine with no ring, which has no circulation to balance.
+    """
+    senses = [
+        (1 if circulation(machine, pos, period) > 0 else -1)
+        for pos in positions.values()
+        if circulation(machine, pos, period) != 0
+    ]
+    return abs(sum(senses))
+
+
+def _crowding(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+) -> int:
+    """How many carriers sit in neighbouring slots; lower is better.
+
+    A machine is threaded with its spools spread out, not bunched together —
+    every other horn where the count allows it.  Nothing about a bunched
+    loading collides, so the simulation will not rule it out, and two loadings
+    can hold the same number of carriers and spread them quite differently:
+    soutache came out with three consecutive slots filled on one gear when a
+    placement with only one such pair was available.
+    """
+    chosen = set(positions.values())
+    return sum(
+        1
+        for name, gear in machine.gears.items()
+        for slot in range(gear.n_slots)
+        if (name, slot) in chosen and (name, (slot + 1) % gear.n_slots) in chosen
+    )
+
+
 def _gear_balance(
     machine: BraidingMachine,
     positions: Dict[CarrierId, Position],
+    period: int,
 ) -> float:
-    """How evenly a loading spreads over the gears; lower is more even.
+    """How evenly a loading spreads over the gears, over the whole run.
 
-    A machine is threaded with its carriers alternating around it, never
-    clumped onto one gear.  Both are collision-free — an empty gear cannot
-    collide with anything — so the simulation alone will not choose between
-    them and this does, by comparing how full each gear is.
+    Scoring the starting arrangement alone is not enough: carriers drift from
+    gear to gear as the machine turns, so a loading that looks well spread at
+    the outset can pile every carrier onto one gear a step later — which is
+    what a three-carrier flat braid did, leaving one gear bare and the braid
+    momentarily undone.  This walks a full period and charges for the spread at
+    every step.
+
+    Nothing about a bunched loading collides, so the simulation will not rule
+    it out; this is what chooses between placements it accepts.  Candidates are
+    ranked before being checked, so one that does collide is simply sorted
+    last rather than raising here.
     """
-    counts: Dict[str, int] = {name: 0 for name in machine.gears}
-    for gear, _ in positions.values():
-        counts[gear] += 1
-    filled = [counts[name] / machine.gears[name].n_slots for name in machine.gears]
-    mean = sum(filled) / len(filled)
-    return sum((f - mean) ** 2 for f in filled)
+    try:
+        history = simulate(machine, period, positions)
+    except (CollisionError, ValueError):
+        return float("inf")
+    total = 0.0
+    for state in history[:-1]:
+        counts: Dict[str, int] = {name: 0 for name in machine.gears}
+        for carrier in state.carriers:
+            counts[carrier.gear] += 1
+        filled = [counts[name] / machine.gears[name].n_slots for name in machine.gears]
+        mean = sum(filled) / len(filled)
+        total += sum((f - mean) ** 2 for f in filled)
+    return total / max(len(history) - 1, 1)
 
 
 def _alternating_loadings(
     machine: BraidingMachine,
     tracks: List["Track"],
+    period: int,
 ) -> Iterator[Dict[CarrierId, Position]]:
     """Every other slot along each track, for each choice of starting offset.
 
@@ -256,7 +318,14 @@ def _alternating_loadings(
         )
         for offsets in offsets_to_try
     ]
-    candidates.sort(key=lambda p: (-len(p), _gear_balance(machine, p)))
+    candidates.sort(
+        key=lambda p: (
+            -len(p),
+            _circulation_imbalance(machine, p, period),
+            _crowding(machine, p),
+            _gear_balance(machine, p, period),
+        )
+    )
     yield from candidates
 
 
@@ -316,7 +385,11 @@ def _fullest_loading(
     fullest = max(len(c) for c in cliques)
     return min(
         (_number(slots[i] for i in sorted(c)) for c in cliques if len(c) == fullest),
-        key=lambda positions: _gear_balance(machine, positions),
+        key=lambda positions: (
+            _circulation_imbalance(machine, positions, period),
+            _crowding(machine, positions),
+            _gear_balance(machine, positions, period),
+        ),
     )
 
 
@@ -349,7 +422,7 @@ def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
     # A gear with no carrier does no braiding, so a loading that leaves one
     # bare is rejected here even though it collides with nothing — the exact
     # search below spreads the same number of carriers over every gear.
-    for positions in _alternating_loadings(machine, compute_tracks(machine)):
+    for positions in _alternating_loadings(machine, compute_tracks(machine), period):
         occupied = {gear for gear, _ in positions.values()}
         if len(occupied) == len(machine.gears) and _is_collision_free(
             machine, positions, period

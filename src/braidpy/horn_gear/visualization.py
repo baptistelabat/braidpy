@@ -59,6 +59,26 @@ from .model import BraidingMachine
 from .simulation import CollisionError, MachineState, simulate
 from .tracks import Track, compute_tracks
 
+# Which way a gear is turning, at a glance: green clockwise, red the other
+# way, grey standing still.  An ordinary machine turns every gear every step,
+# so its colours show the alternation its braid depends on; a machine driven
+# gear by gear greys out whatever its programme is holding.
+# How far in a slot's radial mark reaches, as a fraction of the gear radius.
+# It stops here rather than at the centre so the gear's label stays clear.
+_SLOT_MARK_INNER = 0.38
+
+# A bobbin sits in its notch, a little smaller than the notch itself.
+_BOBBIN_FILL = 0.82
+
+# Plot width the bobbin sizing is worked out against, in pixels.
+_NOMINAL_PLOT_PX = 700
+
+_GEAR_COLOURS = {
+    "clockwise": ("rgba(60,170,90,0.20)", "rgba(35,135,65,0.85)"),
+    "trigonometric": ("rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"),
+    "held": ("rgba(140,140,140,0.14)", "rgba(110,110,110,0.65)"),
+}
+
 _PALETTE = [
     "#e41a1c",
     "#377eb8",
@@ -73,6 +93,13 @@ _PALETTE = [
     "#8da0cb",
     "#e78ac3",
 ]
+
+
+def _gear_state(direction: int, turning: bool) -> str:
+    """Which of the three gear colours applies: the way it turns, or held."""
+    if not turning:
+        return "held"
+    return "clockwise" if direction == -1 else "trigonometric"
 
 
 # ── Geometry helpers ───────────────────────────────────────────────────────────
@@ -167,6 +194,131 @@ def _track_runs(
 # ── Static machine traces ──────────────────────────────────────────────────────
 
 
+def _notch_radius(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    radii: Dict[str, float],
+    gear: str,
+    scale: float = 1.0,
+) -> float:
+    """Radius of the notch cut for one slot, in layout units.
+
+    Big enough to read, but never more than a third of the gap between
+    neighbouring slots, so the notches of a many-slotted gear stay apart.
+    """
+    seat = carrier_radius(machine, layout, gear, scale)
+    n_slots = machine.gears[gear].n_slots
+    return min(radii[gear] * 0.16, 2 * math.pi * seat / n_slots * 0.34)
+
+
+def _carrier_marker_sizes(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    radii: Dict[str, float],
+    scale: float = 1.0,
+) -> Dict[str, float]:
+    """Marker size per gear, in points, so a bobbin sits snugly in its notch.
+
+    Plotly sizes markers in pixels while the notches are in layout units, so
+    the ratio is worked out against the machine's own extent and scaled by a
+    nominal plot width.  It is approximate — a reader who zooms will see the
+    bobbin and its notch drift apart — but it keeps a bobbin looking like a
+    bobbin in its seat across machines of very different sizes, which a fixed
+    pixel size cannot.
+    """
+    xs = [layout[n][0] for n in machine.gears]
+    ys = [layout[n][1] for n in machine.gears]
+    margin = max(radii.values())
+    span = max(max(xs) - min(xs), max(ys) - min(ys)) + 2 * margin
+
+    return {
+        name: _NOMINAL_PLOT_PX
+        * (2 * _notch_radius(machine, layout, radii, name, scale) * _BOBBIN_FILL)
+        / span
+        for name in machine.gears
+    }
+
+
+def _track_traces(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    tracks: Optional[List[Track]] = None,
+    scale: float = 1.0,
+    width: float = 2.5,
+    opacity: float = 1.0,
+) -> List[go.BaseTraceType]:
+    """Each carrier track as a closed run of arcs, one trace per track.
+
+    A run of positions on the same gear is drawn as a single arc from the notch
+    the carrier came in by to the one it leaves by, following the gear's
+    rotation, at the radius the carriers actually ride at — so the tracks lie
+    under the carriers rather than beside them.
+
+    Tracks belong to the wiring, so they are the same at every step and can be
+    drawn once and left alone.  A machine driven by a programme has none, and
+    gets an empty list.
+    """
+    if not machine.has_fixed_tracks:
+        return []
+    if tracks is None:
+        tracks = compute_tracks(machine)
+
+    radii = {
+        name: carrier_radius(machine, layout, name, scale) for name in machine.gears
+    }
+
+    # Several carrier cycles can run round the same loop of gears, offset from
+    # one another by a slot.  The drawn arc depends only on which gears the
+    # carrier crosses, so those cycles come out as the same closed curve: draw
+    # it once.  A square braid has four cycles but only the two paths — one
+    # each way round the ring — that its counter-rotating braid is made of.
+    paths: Dict[Tuple[Tuple[str, str, str], ...], None] = {}
+    for track in tracks:
+        runs = tuple(_track_runs(track))
+        if not runs:
+            continue
+        # Same loop entered at a different gear is still the same loop.
+        paths.setdefault(min(runs[i:] + runs[:i] for i in range(len(runs))), None)
+
+    traces: List[go.BaseTraceType] = []
+    for index, runs in enumerate(paths):
+        xs_all: List = []
+        ys_all: List = []
+        for gear_name, prev_gear, next_gear in runs:
+            cx, cy = layout[gear_name]
+            xs, ys = _arc_xy(
+                cx,
+                cy,
+                radii[gear_name],
+                contact_angle(machine, layout, gear_name, prev_gear, scale),
+                contact_angle(machine, layout, gear_name, next_gear, scale),
+                machine.gears[gear_name].direction,
+            )
+            xs_all.extend(xs.tolist())
+            ys_all.extend(ys.tolist())
+
+        xs_all.append(xs_all[0])  # close the loop
+        ys_all.append(ys_all[0])
+
+        # Name the curve by the loop of gears it runs round.  Counting the
+        # tracks that fall on it would be misleading: a track can be walked
+        # either way, so which of the two curves it lands on depends only on
+        # the slot its computation happened to start from.
+        label = "Track " + "-".join(gear for gear, _, _ in runs)
+        traces.append(
+            go.Scatter(
+                x=xs_all,
+                y=ys_all,
+                mode="lines",
+                line=dict(color=_PALETTE[index % len(_PALETTE)], width=width),
+                opacity=opacity,
+                name=label,
+                hoverinfo="skip",
+            )
+        )
+    return traces
+
+
 def _gear_traces(
     machine: BraidingMachine,
     layout: Dict[str, Tuple[float, float]],
@@ -188,8 +340,7 @@ def _gear_traces(
     only for a machine driven gear by gear: one whose gears are geared together
     is always turning, so saying so would say nothing.
     """
-    programmed = machine.program_rows() is not None
-    turning = machine.turning_gears(t) if programmed else frozenset(machine.gears)
+    turning = machine.turning_gears(t)
     theta = np.linspace(0, 2 * math.pi, 90)
 
     traces: List[go.BaseTraceType] = []
@@ -202,12 +353,9 @@ def _gear_traces(
     for name in machine.gears:
         cx, cy = layout[name]
         r = radii[name]
-        if not programmed:
-            fill, edge = "rgba(100,100,200,0.10)", "rgba(80,80,180,0.50)"
-        elif name in turning:
-            fill, edge = "rgba(60,170,90,0.20)", "rgba(35,135,65,0.85)"
-        else:
-            fill, edge = "rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"
+        fill, edge = _GEAR_COLOURS[
+            _gear_state(machine.gears[name].direction, name in turning)
+        ]
         traces.append(
             go.Scatter(
                 x=cx + r * np.cos(theta),
@@ -221,23 +369,39 @@ def _gear_traces(
             )
         )
 
-    # Tick marks, from the notch radius out to the rim, rotating with the gear.
-    tick_xs: List = []
-    tick_ys: List = []
+    # Slots, drawn as what they are: a rounded notch cut into the rim with a
+    # radial mark through it, so they stay legible as the gear turns.  Notch
+    # and mark share one trace, separated by None, which keeps the number of
+    # traces fixed however many slots a machine has.
+    slot_xs: List = []
+    slot_ys: List = []
     for name, gear in machine.gears.items():
         cx, cy = layout[name]
-        r = radii[name]
-        inner = carrier_radius(machine, layout, name, scale)
+        rim = radii[name]
+        seat = carrier_radius(machine, layout, name, scale)
+        notch = _notch_radius(machine, layout, radii, name, scale)
+
         for slot in range(gear.n_slots):
-            ang = _slot_angle(machine, name, slot, offsets[name], t, frac)
-            tick_xs += [cx + inner * math.cos(ang), cx + r * math.cos(ang), None]
-            tick_ys += [cy + inner * math.sin(ang), cy + r * math.sin(ang), None]
+            angle = _slot_angle(machine, name, slot, offsets[name], t, frac)
+            px = cx + seat * math.cos(angle)
+            py = cy + seat * math.sin(angle)
+
+            # The half facing into the gear: the cut itself.
+            arc = np.linspace(angle + math.pi / 2, angle + 3 * math.pi / 2, 24)
+            slot_xs.extend((px + notch * np.cos(arc)).tolist() + [None])
+            slot_ys.extend((py + notch * np.sin(arc)).tolist() + [None])
+
+            # A radial mark running inward from the notch, stopping short of
+            # the middle so it does not cross the gear's label.
+            slot_xs += [px, cx + rim * _SLOT_MARK_INNER * math.cos(angle), None]
+            slot_ys += [py, cy + rim * _SLOT_MARK_INNER * math.sin(angle), None]
+
     traces.append(
         go.Scatter(
-            x=tick_xs,
-            y=tick_ys,
+            x=slot_xs,
+            y=slot_ys,
             mode="lines",
-            line=dict(color="rgba(80,80,180,0.60)", width=1.2),
+            line=dict(color="rgba(70,70,160,0.75)", width=1.4),
             showlegend=False,
             hoverinfo="skip",
         )
@@ -513,7 +677,8 @@ def visualize_machine(
     traces.extend(_gear_traces(machine, layout, radii, offsets, scale=scale))
 
     # Slot dots, in the notches the bobbins ride in.
-    xs, ys, labels = [], [], []
+    seat_sizes = _carrier_marker_sizes(machine, layout, radii, scale)
+    xs, ys, labels, dot_sizes = [], [], [], []
     for name, gear in machine.gears.items():
         cx, cy = layout[name]
         r_carrier = carrier_radius(machine, layout, name, scale)
@@ -522,13 +687,14 @@ def visualize_machine(
             xs.append(cx + r_carrier * math.cos(ang))
             ys.append(cy + r_carrier * math.sin(ang))
             labels.append(f"{name}[{s}]")
+            dot_sizes.append(seat_sizes[name] * 0.55)
     traces.append(
         go.Scatter(
             x=xs,
             y=ys,
             mode="markers",
             marker=dict(
-                size=7,
+                size=dot_sizes,
                 color="rgba(60,60,60,0.55)",
                 line=dict(width=1, color="white"),
             ),
@@ -587,45 +753,9 @@ def visualize_tracks(
 
     fig = visualize_machine(machine, scale=scale, title=title)
     layout = compute_layout(machine, scale=scale)
-    radii = gear_radii(machine, scale=scale)
 
-    for ti, track in enumerate(tracks):
-        color = _PALETTE[ti % len(_PALETTE)]
-        runs = _track_runs(track)
-
-        xs_all: List = []
-        ys_all: List = []
-
-        for gear_name, prev_gear, next_gear in runs:
-            cx, cy = layout[gear_name]
-            r = radii[gear_name]
-            direction = machine.gears[gear_name].direction
-
-            # Arc goes FROM incoming contact TO outgoing contact.
-            # Contact with prev_gear: angle from gear_name toward prev_gear.
-            theta_in = contact_angle(machine, layout, gear_name, prev_gear)
-            # Contact with next_gear: angle from gear_name toward next_gear.
-            theta_out = contact_angle(machine, layout, gear_name, next_gear)
-
-            xs, ys = _arc_xy(cx, cy, r, theta_in, theta_out, direction)
-            xs_all.extend(xs.tolist())
-            ys_all.extend(ys.tolist())
-
-        # Close the curve
-        if xs_all:
-            xs_all.append(xs_all[0])
-            ys_all.append(ys_all[0])
-
-        fig.add_trace(
-            go.Scatter(
-                x=xs_all,
-                y=ys_all,
-                mode="lines",
-                line=dict(color=color, width=2.5),
-                name=f"Track {ti}  (len={len(track)})",
-                hoverinfo="skip",
-            )
-        )
+    for trace in _track_traces(machine, layout, tracks, scale):
+        fig.add_trace(trace)
 
     if output_html:
         fig.write_html(output_html)
@@ -664,8 +794,14 @@ def animate(
     layout_pos = compute_layout(machine, scale=scale)
     radii_dict = gear_radii(machine, scale=scale)
     offsets = slot_offsets(machine, layout_pos)
+    # The tracks are a property of the wiring, so they are identical in
+    # every frame: build them once and hand the same traces to each.
+    track_traces = _track_traces(
+        machine, layout_pos, scale=scale, width=1.6, opacity=0.45
+    )
     _rows = machine.program_rows()
     _phases = len(_rows) if _rows else 1
+    bobbin_sizes = _carrier_marker_sizes(machine, layout_pos, radii_dict, scale)
     carrier_radii = {
         name: carrier_radius(machine, layout_pos, name, scale) for name in machine.gears
     }
@@ -726,7 +862,7 @@ def animate(
             )
         )
 
-        xs, ys, htexts, colors_list, texts = [], [], [], [], []
+        xs, ys, htexts, colors_list, texts, sizes = [], [], [], [], [], []
         for c in state.carriers:
             # Draw the carrier on whatever is actually moving it this step,
             # which on a machine with shared slots is the receiving gear.
@@ -741,6 +877,7 @@ def animate(
             htexts.append(f"C{c.carrier_id} @ {c.gear}[{c.slot}]")
             colors_list.append(carrier_colors[c.carrier_id])
             texts.append(str(c.carrier_id))
+            sizes.append(bobbin_sizes[gear_name])
 
         out.append(
             go.Scatter(
@@ -748,7 +885,9 @@ def animate(
                 y=ys,
                 mode="markers+text",
                 marker=dict(
-                    size=14, color=colors_list, line=dict(width=1.5, color="white")
+                    size=sizes,
+                    color=colors_list,
+                    line=dict(width=1.5, color="white"),
                 ),
                 text=texts,
                 textposition="middle center",
@@ -764,18 +903,30 @@ def animate(
     frames: List[go.Frame] = []
     frame_names: List[str] = []
 
+    # The tracks go in first so they sit underneath, and every frame is told to
+    # update only the traces after them.  They never change, so repeating them
+    # in each frame would copy the same arcs a hundred times over — on an
+    # eight-gear braid that alone was two thirds of the finished page.
+    first = len(track_traces)
+    moving = _build(history[0], 0.0)
+    updates = list(range(first, first + len(moving)))
+
     for t_idx in range(n_steps):
         state = history[t_idx]
         for k in range(n_substeps):
             fname = f"{t_idx}_{k}"
-            frames.append(go.Frame(data=_build(state, k / n_substeps), name=fname))
+            frames.append(
+                go.Frame(data=_build(state, k / n_substeps), traces=updates, name=fname)
+            )
             frame_names.append(fname)
 
     final_name = f"{n_steps}_0"
-    frames.append(go.Frame(data=_build(history[n_steps], 0.0), name=final_name))
+    frames.append(
+        go.Frame(data=_build(history[n_steps], 0.0), traces=updates, name=final_name)
+    )
     frame_names.append(final_name)
 
-    fig = go.Figure(data=_build(history[0], 0.0), frames=frames)
+    fig = go.Figure(data=track_traces + moving, frames=frames)
     fig.update_layout(
         title=title,
         xaxis=dict(
