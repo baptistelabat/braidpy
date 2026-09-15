@@ -1419,3 +1419,39 @@ def test_bobbins_and_notches_scale_together():
     )
     # More slots on the same gear means a tighter seat for each.
     assert crowded["A"] <= roomy["A"]
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, tubular_braid_12, soutache_braid, flat_braid_9]
+)
+def test_tracks_are_drawn_as_wide_as_a_bobbin_and_stay_behind(factory):
+    """A track should read as the channel its carriers run along.
+
+    Drawn as a hairline it disappeared under the machine entirely, so it is
+    now as wide as the narrowest bobbin that threads it — wide enough to see,
+    never wider than the notches it passes through — and faint, and drawn
+    before everything else so it stays in the background.
+    """
+    from braidpy.horn_gear.visualization import (
+        _TRACK_OPACITY,
+        _carrier_marker_sizes,
+    )
+
+    m = factory()
+    fig = animate(m, n_steps=4)
+    drawn = [
+        (i, t) for i, t in enumerate(fig.data) if t.name and t.name.startswith("Track")
+    ]
+    assert drawn, f"{factory.__name__} should draw its tracks"
+
+    bobbin = min(_carrier_marker_sizes(m, compute_layout(m), gear_radii(m)).values())
+    for index, trace in drawn:
+        assert trace.line.width == pytest.approx(bobbin)
+        assert trace.opacity == _TRACK_OPACITY
+        assert index < len(fig.data) - 1, "a track is drawn over the machine"
+
+    # And they stay put: the tracks never change, so no frame redraws them.
+    for frame in fig.frames:
+        assert not [t for t in frame.data if t.name and t.name.startswith("Track")], (
+            "a track is being redrawn every frame"
+        )

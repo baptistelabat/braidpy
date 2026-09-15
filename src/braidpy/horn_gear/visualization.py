@@ -73,6 +73,9 @@ _BOBBIN_FILL = 0.82
 # Plot width the bobbin sizing is worked out against, in pixels.
 _NOMINAL_PLOT_PX = 700
 
+# How strongly the track channels show through behind the machine.
+_TRACK_OPACITY = 0.28
+
 _GEAR_COLOURS = {
     "clockwise": ("rgba(60,170,90,0.20)", "rgba(35,135,65,0.85)"),
     "trigonometric": ("rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"),
@@ -794,14 +797,24 @@ def animate(
     layout_pos = compute_layout(machine, scale=scale)
     radii_dict = gear_radii(machine, scale=scale)
     offsets = slot_offsets(machine, layout_pos)
+    bobbin_sizes = _carrier_marker_sizes(machine, layout_pos, radii_dict, scale)
+
     # The tracks are a property of the wiring, so they are identical in
     # every frame: build them once and hand the same traces to each.
+    #
+    # Drawn as wide as a bobbin, so a track reads as the channel its carriers
+    # run along rather than a hairline beside them, and faint enough to stay
+    # behind everything else.  The narrowest bobbin sets the width, so the
+    # band never grows wider than the notches it threads.
     track_traces = _track_traces(
-        machine, layout_pos, scale=scale, width=1.6, opacity=0.45
+        machine,
+        layout_pos,
+        scale=scale,
+        width=min(bobbin_sizes.values()),
+        opacity=_TRACK_OPACITY,
     )
     _rows = machine.program_rows()
     _phases = len(_rows) if _rows else 1
-    bobbin_sizes = _carrier_marker_sizes(machine, layout_pos, radii_dict, scale)
     carrier_radii = {
         name: carrier_radius(machine, layout_pos, name, scale) for name in machine.gears
     }
