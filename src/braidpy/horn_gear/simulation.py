@@ -1,0 +1,630 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""
+horn_gear/simulation.py
+========================
+
+Simulation state and stepping for a horn gear braiding machine.
+
+Each carrier occupies exactly one (gear, slot) position.  At each step
+the machine advances by one slot, transfers happen at connection points,
+and the new state is returned.
+
+This module is intentionally pure / functional: MachineState is a frozen
+dataclass and ``step()`` returns a new state rather than mutating in place,
+making it easy to replay or branch the simulation.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from itertools import product
+from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Tuple
+
+import networkx as nx
+
+from .model import BraidingMachine
+from .tracks import Position, _next_position, circulation
+
+# Above this slot count, maximum-clique enumeration is no longer safe to run
+# unbounded and loading falls back to a greedy search.
+_EXACT_LOADING_LIMIT = 48
+
+# Beyond this many tracks, enumerating every per-track offset is not worth
+# it and the first candidate is used as-is.
+_MAX_TRACK_OFFSETS = 16
+
+if TYPE_CHECKING:
+    from .tracks import Track
+
+# Carrier identifier — any hashable type, typically int or str.
+CarrierId = int
+
+
+class CollisionError(RuntimeError):
+    """Raised when two or more carriers occupy the same (gear, slot) after a step.
+
+    Attributes:
+        step: The step at which the collision was detected.
+        collisions: Mapping of {(gear, slot): [carrier_id, ...]} for every
+            position with more than one carrier.
+        history: Valid MachineState list up to (but not including) the
+            colliding step — i.e. the last entry is the last safe state.
+    """
+
+    def __init__(
+        self,
+        step: int,
+        collisions: Dict[Position, List[CarrierId]],
+        history: "List[MachineState]",
+    ) -> None:
+        parts = [
+            f"gear={g} slot={s} → carriers {ids}" for (g, s), ids in collisions.items()
+        ]
+        super().__init__(f"Collision at step {step}: {'; '.join(parts)}")
+        self.step = step
+        self.collisions = collisions
+        self.history = history
+
+
+@dataclass(frozen=True)
+class CarrierState:
+    """Position and identity of a single carrier.
+
+    Args:
+        carrier_id: Unique identifier for this carrier.
+        gear: Gear the carrier is currently on.
+        slot: Slot index within that gear.
+    """
+
+    carrier_id: CarrierId
+    gear: str
+    slot: int
+
+    @property
+    def position(self) -> Position:
+        return self.gear, self.slot
+
+
+@dataclass(frozen=True)
+class MachineState:
+    """Snapshot of the machine at a particular simulation step.
+
+    Args:
+        time: Current step index (0 = initial state).
+        carriers: Tuple of CarrierState, one per carrier.
+    """
+
+    time: int
+    carriers: Tuple[CarrierState, ...]
+
+    def carrier_positions(self) -> Dict[CarrierId, Position]:
+        """Return {carrier_id: (gear, slot)} for all carriers."""
+        return {c.carrier_id: c.position for c in self.carriers}
+
+
+def initial_state(
+    machine: BraidingMachine,
+    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+) -> MachineState:
+    """Create an initial MachineState.
+
+    If ``carrier_positions`` is None, one carrier is placed in each slot
+    across all gears in the order they were defined.
+
+    Args:
+        machine: The machine definition.
+        carrier_positions: Optional mapping {carrier_id: (gear, slot)}.
+
+    Returns:
+        MachineState at time=0.
+
+    Raises:
+        ValueError: If two carriers share a position, or a position is invalid.
+    """
+    if carrier_positions is None:
+        # Fill every slot with one carrier, numbered sequentially.
+        positions: Dict[CarrierId, Position] = {}
+        cid = 0
+        for gear_name, gear in machine.gears.items():
+            for slot in range(gear.n_slots):
+                positions[cid] = (gear_name, slot)
+                cid += 1
+    else:
+        positions = carrier_positions
+
+    # Validate.
+    seen: Dict[Position, CarrierId] = {}
+    for cid, pos in positions.items():
+        gear_name, slot = pos
+        if gear_name not in machine.gears:
+            raise ValueError(f"Carrier {cid}: unknown gear '{gear_name}'.")
+        gear = machine.gears[gear_name]
+        if not (0 <= slot < gear.n_slots):
+            raise ValueError(
+                f"Carrier {cid}: slot {slot} out of range for gear '{gear_name}'."
+            )
+        if pos in seen:
+            raise ValueError(f"Carriers {seen[pos]} and {cid} share position {pos}.")
+        seen[pos] = cid
+
+    carriers = tuple(
+        CarrierState(carrier_id=cid, gear=g, slot=s)
+        for cid, (g, s) in positions.items()
+    )
+    return MachineState(time=0, carriers=carriers)
+
+
+def step(machine: BraidingMachine, state: MachineState) -> MachineState:
+    """Advance the machine by one step.
+
+    Each carrier moves to its next position as determined by
+    ``_next_position`` (gear rotation + optional transfer).
+
+    Args:
+        machine: The machine definition.
+        state: Current machine state.
+
+    Returns:
+        New MachineState at state.time + 1.
+    """
+    new_carriers = tuple(
+        CarrierState(
+            carrier_id=c.carrier_id,
+            gear=next_pos[0],
+            slot=next_pos[1],
+        )
+        for c in state.carriers
+        for next_pos in (_next_position(machine, c.position, state.time),)
+    )
+    return MachineState(time=state.time + 1, carriers=new_carriers)
+
+
+def _number(positions: Iterable[Position]) -> Dict[CarrierId, Position]:
+    """Assign sequential carrier ids to positions, skipping repeats."""
+    numbered: Dict[CarrierId, Position] = {}
+    seen: set = set()
+    for pos in positions:
+        if pos not in seen:
+            seen.add(pos)
+            numbered[len(numbered)] = pos
+    return numbered
+
+
+def _is_collision_free(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+    period: int,
+) -> bool:
+    """True if this placement runs a full period without any collision.
+
+    A placement that puts two carriers in one slot is rejected as well, so
+    callers may propose one without pre-checking.
+    """
+    try:
+        simulate(machine, period, positions)
+    except (CollisionError, ValueError):
+        return False
+    return True
+
+
+def _circulation_imbalance(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+    period: int,
+) -> int:
+    """How lopsided a loading is between the two ways round; lower is better.
+
+    A tubular braid is made of two counter-rotating sets of carriers, and it
+    wants as many going one way as the other.  Which way a carrier travels
+    depends on the slot it starts in — two carriers on the same track can
+    circulate opposite ways, since one placed there at t=0 sits at a different
+    phase from one that arrived — so the loading decides the balance, and
+    several equally full loadings can differ in it.
+
+    Zero for a machine with no ring, which has no circulation to balance.
+    """
+    senses = [
+        (1 if circulation(machine, pos, period) > 0 else -1)
+        for pos in positions.values()
+        if circulation(machine, pos, period) != 0
+    ]
+    return abs(sum(senses))
+
+
+def _crowding(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+) -> int:
+    """How many carriers sit in neighbouring slots; lower is better.
+
+    A machine is threaded with its spools spread out, not bunched together —
+    every other horn where the count allows it.  Nothing about a bunched
+    loading collides, so the simulation will not rule it out, and two loadings
+    can hold the same number of carriers and spread them quite differently:
+    soutache came out with three consecutive slots filled on one gear when a
+    placement with only one such pair was available.
+    """
+    chosen = set(positions.values())
+    return sum(
+        1
+        for name, gear in machine.gears.items()
+        for slot in range(gear.n_slots)
+        if (name, slot) in chosen and (name, (slot + 1) % gear.n_slots) in chosen
+    )
+
+
+def _gear_balance(
+    machine: BraidingMachine,
+    positions: Dict[CarrierId, Position],
+    period: int,
+) -> float:
+    """How evenly a loading spreads over the gears, over the whole run.
+
+    Scoring the starting arrangement alone is not enough: carriers drift from
+    gear to gear as the machine turns, so a loading that looks well spread at
+    the outset can pile every carrier onto one gear a step later — which is
+    what a three-carrier flat braid did, leaving one gear bare and the braid
+    momentarily undone.  This walks a full period and charges for the spread at
+    every step.
+
+    Nothing about a bunched loading collides, so the simulation will not rule
+    it out; this is what chooses between placements it accepts.  Candidates are
+    ranked before being checked, so one that does collide is simply sorted
+    last rather than raising here.
+    """
+    try:
+        history = simulate(machine, period, positions)
+    except (CollisionError, ValueError):
+        return float("inf")
+    total = 0.0
+    for state in history[:-1]:
+        counts: Dict[str, int] = {name: 0 for name in machine.gears}
+        for carrier in state.carriers:
+            counts[carrier.gear] += 1
+        filled = [counts[name] / machine.gears[name].n_slots for name in machine.gears]
+        mean = sum(filled) / len(filled)
+        total += sum((f - mean) ** 2 for f in filled)
+    return total / max(len(history) - 1, 1)
+
+
+def _alternating_loadings(
+    machine: BraidingMachine,
+    tracks: List["Track"],
+    period: int,
+) -> Iterator[Dict[CarrierId, Position]]:
+    """Every other slot along each track, for each choice of starting offset.
+
+    Tracks may share a slot — carriers can cross it at different times without
+    ever meeting — so repeats are dropped rather than doubly occupied.
+
+    Candidates come out fullest first and, among equally full ones, most evenly
+    spread first.  Choosing an offset per track decides which *gear* each
+    carrier starts on, so without that ordering a two-gear machine happily
+    loads every carrier onto one gear and leaves the other bare.
+    """
+    if len(tracks) > _MAX_TRACK_OFFSETS:
+        offsets_to_try: Iterable[Tuple[int, ...]] = [(0,) * len(tracks)]
+    else:
+        offsets_to_try = product((0, 1), repeat=len(tracks))
+
+    candidates = [
+        _number(
+            track[i]
+            for track, off in zip(tracks, offsets)
+            for i in range(off, len(track), 2)
+        )
+        for offsets in offsets_to_try
+    ]
+    candidates.sort(
+        key=lambda p: (
+            -len(p),
+            _circulation_imbalance(machine, p, period),
+            _crowding(machine, p),
+            _gear_balance(machine, p, period),
+        )
+    )
+    yield from candidates
+
+
+def _greedy_loadings(
+    machine: BraidingMachine,
+) -> Iterator[List[Position]]:
+    """Candidate slot orderings for greedy loading, one per starting slot.
+
+    Greedy loading is very sensitive to where it starts, so every slot gets a
+    turn at being first.
+    """
+    slots = [
+        (name, slot)
+        for name, gear in machine.gears.items()
+        for slot in range(gear.n_slots)
+    ]
+    for seed in range(len(slots)):
+        yield slots[seed:] + slots[:seed]
+
+
+def _fullest_loading(
+    machine: BraidingMachine,
+    period: int,
+) -> Dict[CarrierId, Position]:
+    """The largest collision-free set of slots, computed exactly.
+
+    Every collision this model detects involves exactly two carriers — two in
+    one slot, two on the two sides of one contact, or two swapping through one
+    contact — so a set of carriers is collision-free precisely when every
+    *pair* in it is.  That makes the fullest loading a maximum clique of the
+    "these two can coexist" graph, which is worth solving exactly: greedy
+    loading leaves real machines short of what they can hold.
+    """
+    slots = [
+        (name, slot)
+        for name, gear in machine.gears.items()
+        for slot in range(gear.n_slots)
+    ]
+
+    graph = nx.Graph()
+    graph.add_nodes_from(
+        i
+        for i, pos in enumerate(slots)
+        if _is_collision_free(machine, {0: pos}, period)
+    )
+    viable = list(graph.nodes)
+    for a in range(len(viable)):
+        for b in range(a + 1, len(viable)):
+            i, j = viable[a], viable[b]
+            if _is_collision_free(machine, {0: slots[i], 1: slots[j]}, period):
+                graph.add_edge(i, j)
+
+    if graph.number_of_nodes() == 0:
+        return {}
+
+    cliques = list(nx.find_cliques(graph))
+    fullest = max(len(c) for c in cliques)
+    return min(
+        (_number(slots[i] for i in sorted(c)) for c in cliques if len(c) == fullest),
+        key=lambda positions: (
+            _circulation_imbalance(machine, positions, period),
+            _crowding(machine, positions),
+            _gear_balance(machine, positions, period),
+        ),
+    )
+
+
+def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
+    """Fill the machine with as many carriers as it can hold without collisions.
+
+    A real machine is loaded with a spool in every other slot along each track,
+    which is what this tries first, since it reproduces how a machine is
+    threaded in practice.  That has no meaning for a track whose path revisits
+    slots — the interior gears of a flat braid are crossed once per traversal —
+    so the machine is then filled as far as it will go instead.
+
+    Either way the candidate is validated by simulating a full period: checking
+    occupancy at t=0 is not enough, because contact points move to a different
+    slot every step and conflicts can surface later in the cycle.
+
+    Args:
+        machine: The machine definition.
+
+    Returns:
+        Dict mapping carrier_id → (gear_name, slot).
+
+    Raises:
+        RuntimeError: If not even one carrier can be placed.
+    """
+    from .tracks import compute_tracks, simulation_period
+
+    period = simulation_period(machine)
+
+    # A gear with no carrier does no braiding, so a loading that leaves one
+    # bare is rejected here even though it collides with nothing — the exact
+    # search below spreads the same number of carriers over every gear.
+    for positions in _alternating_loadings(machine, compute_tracks(machine), period):
+        occupied = {gear for gear, _ in positions.values()}
+        if len(occupied) == len(machine.gears) and _is_collision_free(
+            machine, positions, period
+        ):
+            return positions
+
+    # Exact for any machine of a sane size; clique enumeration is exponential
+    # in the worst case, so very large machines fall back to greedy.
+    if machine.total_slots() <= _EXACT_LOADING_LIMIT:
+        best = _fullest_loading(machine, period)
+    else:
+        best = {}
+        for order in _greedy_loadings(machine):
+            chosen: Dict[CarrierId, Position] = {}
+            for pos in order:
+                trial = {**chosen, len(chosen): pos}
+                if _is_collision_free(machine, trial, period):
+                    chosen = trial
+            if len(chosen) > len(best):
+                best = chosen
+            if len(best) >= machine.total_slots() // 2:
+                break
+
+    if not best:
+        raise RuntimeError(
+            f"No collision-free carrier placement found for this machine "
+            f"(period {period})."
+        )
+    return best
+
+
+def carrier_places(
+    machine: BraidingMachine, state: MachineState
+) -> Dict[CarrierId, Tuple[str, int]]:
+    """Where each carrier actually *is*: its gear, and the angle it has reached.
+
+    A slot index is a label painted on a turning gear, not a place.  Every step
+    turns a gear by one slot, so its notches land back on notch angles and the
+    gear is indistinguishable from the gear a step earlier — which means a
+    carrier sitting in a different notch may be at exactly the point in space
+    it started from, and one back in "its own" notch may be on the far side of
+    the gear.  What the eye sees, and what the machine does next, follow from
+    the angle.
+
+    Angles are returned as whole millionths of a turn, so they compare exactly
+    and 0 and a full turn are the same place.
+
+    Args:
+        machine: The machine definition.
+        state: The snapshot to read.
+
+    Returns:
+        {carrier_id: (gear, angle in millionths of a turn)}.
+    """
+    turn = 2 * math.pi
+    return {
+        c.carrier_id: (
+            c.gear,
+            round(machine.slot_angle(c.gear, c.slot, state.time) % turn / turn * 1e6)
+            % 1_000_000,
+        )
+        for c in state.carriers
+    }
+
+
+def state_period(
+    machine: BraidingMachine,
+    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+    max_steps: int = 10_000,
+) -> Optional[int]:
+    """Steps after which the machine is exactly as it started, or None.
+
+    "Exactly" means every carrier back at the point it set off from — see
+    :func:`carrier_places` for why that is not the same as back in its own
+    slot — and the drive back to its starting phase, so the step that follows
+    is the step that followed then.  Run the machine for this many steps and
+    the last frame hands straight back to the first.
+
+    This is a property of the machine and of how it is loaded, and it varies a
+    lot: eight steps for a square braid, eighteen for a flat braid on nine
+    carriers.  It is *not* how long a carrier takes to walk its whole track —
+    that flat braid's track is ninety steps round — because the machine is back
+    where it started long before any one carrier has been everywhere.
+
+    A machine driven by a programme need not ever come back — a carrier goes
+    where the programme sends it — so this returns None rather than pretend.
+
+    Args:
+        machine: The machine definition.
+        carrier_positions: The carriers to follow; the machine's own if None.
+        max_steps: How far to look before giving up.
+
+    Returns:
+        The cycle length in steps, or None if there is none within reach.
+    """
+    state = initial_state(machine, carrier_positions)
+    start = carrier_places(machine, state)
+    # Whatever drives the machine has to come round too, or the next step would
+    # not be the step that followed last time.  Geared together, nothing
+    # depends on the clock once the angles match; driven by a programme, the
+    # programme has to be back at its first row.
+    rows = machine.program_rows()
+    phase = len(rows) if rows else 1
+
+    for t in range(1, max_steps + 1):
+        state = step(machine, state)
+        if t % phase == 0 and carrier_places(machine, state) == start:
+            return t
+    return None
+
+
+def simulate(
+    machine: BraidingMachine,
+    n_steps: int,
+    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+) -> List[MachineState]:
+    """Run the simulation for ``n_steps`` steps.
+
+    Args:
+        machine: The machine definition.
+        n_steps: Number of steps to simulate.
+        carrier_positions: Optional initial placement of carriers.
+
+    Returns:
+        List of MachineState objects, length n_steps + 1 (includes t=0).
+    """
+    state = initial_state(machine, carrier_positions)
+    history: List[MachineState] = [state]
+
+    # Check the initial state: if both sides of a connection are already occupied,
+    # carriers are at the same physical point at frac=0 of step 0.
+    _check_connection_point_collision(machine, state, history)
+
+    for _ in range(n_steps):
+        prev_state = state
+        state = step(machine, state)
+
+        # 1. Same-gear same-slot collision.
+        occupied: Dict[Position, List[CarrierId]] = {}
+        for c in state.carriers:
+            occupied.setdefault(c.position, []).append(c.carrier_id)
+        same_slot = {pos: ids for pos, ids in occupied.items() if len(ids) > 1}
+        if same_slot:
+            history.append(state)
+            raise CollisionError(state.time, same_slot, history)
+
+        # 2. Crossing-transfer collision: two carriers swapping through the same
+        #    connection in opposite directions.  Both end up at the contact point
+        #    at frac=0 of the next step, which is the same physical (x, y).
+        prev_gear = {c.carrier_id: c.gear for c in prev_state.carriers}
+        curr_gear = {c.carrier_id: c.gear for c in state.carriers}
+        for conn in machine.connections:
+            a_to_b = [
+                cid
+                for cid in prev_gear
+                if prev_gear[cid] == conn.gear_a and curr_gear[cid] == conn.gear_b
+            ]
+            b_to_a = [
+                cid
+                for cid in prev_gear
+                if prev_gear[cid] == conn.gear_b and curr_gear[cid] == conn.gear_a
+            ]
+            if a_to_b and b_to_a:
+                new_map = {c.carrier_id: c for c in state.carriers}
+                col: Dict[Position, List[CarrierId]] = {}
+                for cid in a_to_b:
+                    col.setdefault(new_map[cid].position, []).append(cid)
+                for cid in b_to_a:
+                    col.setdefault(new_map[cid].position, []).append(cid)
+                history.append(state)
+                raise CollisionError(state.time, col, history)
+
+        history.append(state)
+
+        # Check whether the new state already has both sides of a connection
+        # occupied (would cause a visual collision at frac=0 of the next step).
+        _check_connection_point_collision(machine, state, history)
+
+    return history
+
+
+def _check_connection_point_collision(
+    machine: BraidingMachine,
+    state: MachineState,
+    history: "List[MachineState]",
+) -> None:
+    """Raise CollisionError if both sides of any connection are occupied.
+
+    When both gear_a[sa(t)] and gear_b[sb(t)] hold carriers they are at the
+    same physical tangent point, causing a visual collision at frac=0 of the
+    next animation step.
+    """
+    pos_map = {c.position: c.carrier_id for c in state.carriers}
+    for conn in machine.connections:
+        sa = machine.slot_at_connection(conn.gear_a, conn.slot_a0, state.time)
+        sb = machine.slot_at_connection(conn.gear_b, conn.slot_b0, state.time)
+        if (conn.gear_a, sa) in pos_map and (conn.gear_b, sb) in pos_map:
+            cid_a = pos_map[(conn.gear_a, sa)]
+            cid_b = pos_map[(conn.gear_b, sb)]
+            col = {
+                (conn.gear_a, sa): [cid_a],
+                (conn.gear_b, sb): [cid_b],
+            }
+            raise CollisionError(state.time, col, history)
