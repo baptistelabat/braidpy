@@ -624,6 +624,37 @@ class Braid:
         """
         raise NotImplementedError()
 
+    def slot_history(self) -> List[List[int]]:
+        """Which slot every strand occupies, before and after each generator.
+
+        Slots are the positions across the braid, numbered from zero.  A
+        generator names two neighbouring slots and exchanges whoever is
+        standing in them, whichever strands those happen to be, so this is
+        the braid word's permutation unrolled step by step.
+
+        It says nothing about which strand passed over which: that is the
+        sign of the generator, and it is read separately — see
+        :func:`~braidpy.parametric_strand.strand_paths`.
+
+        Returns:
+            A list of ``len(generators) + 1`` rows; row ``m`` holds the slot
+            of each strand after ``m`` generators, indexed by strand.
+        """
+        n_strands = self.n_strands or max(abs(g) for g in self.generators) + 1
+        slots = list(range(n_strands))
+        history = [slots.copy()]
+
+        for generator in self.generators:
+            slots = slots.copy()
+            if generator != 0:
+                lower = abs(generator) - 1
+                at_lower = slots.index(lower)
+                at_upper = slots.index(lower + 1)
+                slots[at_lower], slots[at_upper] = lower + 1, lower
+            history.append(slots)
+
+        return history
+
     def to_parametric_strands(self, amplitude: float = 0.2) -> List[ParametricStrand]:
         """
         Converts a braid into a list of 3D parametric strand paths.
@@ -639,22 +670,9 @@ class Braid:
         n_segments = len(self.generators) + 1
         duration_per_gen = 1 / n_segments
 
-        # Track strand positions across braid steps
-        positions = list(range(n_strands))
-        position_history = [positions.copy()]
-
-        for gen in self.generators:
-            i = abs(gen) - 1
-            positions = positions.copy()
-            if gen != 0:
-                positions[i], positions[i + 1] = positions[i + 1], positions[i]
-            position_history.append(positions.copy())
-
-        # Transpose history to get each strand's path
-        strand_paths = [[] for _ in range(n_strands)]
-        for step in position_history:
-            for x_pos, strand_id in enumerate(step):
-                strand_paths[strand_id].append(x_pos)
+        strand_paths = [
+            [row[strand] for row in self.slot_history()] for strand in range(n_strands)
+        ]
 
         # Generate arc sequences for each strand
         strand_arc_sequences: List[List[Arc]] = []
