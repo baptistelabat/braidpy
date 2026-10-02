@@ -11,10 +11,12 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+import math
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from braidpy.parametric_strand import ParametricStrand
 from braidpy.utils import StrictlyPositiveInt, PositiveFloat, terminal_colors
@@ -44,14 +46,131 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
+    def _tube_traces(
+        self, diameter: float, n_sample: int, n_around: int, opacity: float
+    ) -> List[go.Surface]:
+        """One tube per strand, swept at the strands' real thickness.
+
+        See :func:`~braidpy.parametric_strand.tube_mesh` for the sweep.
+        """
+        from braidpy.parametric_strand import tube_mesh
+
+        traces = []
+        for index, strand in enumerate(self.strands):
+            colour = terminal_colors[index % len(terminal_colors)]
+            x, y, z = tube_mesh(
+                strand.sample(n_sample), diameter / 2.0, n_around=n_around
+            )
+            traces.append(
+                go.Surface(
+                    x=x,
+                    y=y,
+                    z=z,
+                    surfacecolor=np.zeros_like(x),
+                    colorscale=[[0.0, colour], [1.0, colour]],
+                    showscale=False,
+                    opacity=opacity,
+                    name=f"Strand {index}",
+                    showlegend=True,
+                    hoverinfo="name",
+                )
+            )
+        return traces
+
+    def _line_traces(self, n_sample: int) -> List[go.Scatter3d]:
+        """One line per strand, along the centrelines."""
+        traces = []
+        for index, strand in enumerate(self.strands):
+            x, y, z = zip(*strand.sample(n_sample))
+            traces.append(
+                go.Scatter3d(
+                    x=x,
+                    y=y,
+                    z=z,
+                    mode="lines",
+                    line=dict(
+                        width=10, color=terminal_colors[index % len(terminal_colors)]
+                    ),
+                    name=f"Strand {index}",
+                    hoverinfo="name",
+                )
+            )
+        return traces
+
+    def figure(
+        self,
+        n_sample: StrictlyPositiveInt = 200,
+        title: str = "",
+        tube_diameter: Optional[float] = None,
+        n_around: int = 16,
+        opacity: float = 0.55,
+    ) -> go.Figure:
+        """The braid as a Plotly figure, drawn but neither shown nor written.
+
+        Given ``tube_diameter``, the strands are drawn at their real
+        thickness instead of as lines.  That is worth the extra cost when the
+        point is how the strands *fit*: a line drawing shows where the centres
+        go and leaves whether the yarn touches or overlaps to be taken on
+        trust.  The tubes are semi-transparent so the far side of a rope is
+        not simply hidden behind the near one.
+
+        Args:
+            n_sample: Points sampled along each strand.
+            title: Figure title.
+            tube_diameter: Draw the strands this thick, rather than as lines.
+            n_around: Points round each tube, when drawing them.
+            opacity: How far through a tube the one behind shows.
+
+        Returns:
+            The figure.
+        """
+        traces = (
+            self._line_traces(n_sample)
+            if tube_diameter is None
+            else self._tube_traces(tube_diameter, n_sample, n_around, opacity)
+        )
+        heights = [
+            point[2] for strand in self.strands for point in strand.sample(n_sample)
+        ]
+
+        figure = go.Figure(data=traces)
+        figure.update_layout(
+            scene=dict(
+                xaxis_title="X",
+                yaxis_title="Y",
+                zaxis_title="Z (time)",
+                zaxis=dict(range=[max(heights), min(heights)]),  # Flip Z axis
+                aspectmode="data",
+            ),
+            margin=dict(l=0, r=0, b=0, t=30 if title else 0),
+            showlegend=True,
+            title=title,
+        )
+        return figure
+
     def plot(
-        self, n_sample: StrictlyPositiveInt = 200, plotter: Plotter = Plotter.PLOTLY
+        self,
+        n_sample: StrictlyPositiveInt = 200,
+        plotter: Plotter = Plotter.PLOTLY,
+        output_html: Optional[str] = None,
+        title: str = "",
+        tube_diameter: Optional[float] = None,
+        n_around: int = 16,
+        opacity: float = 0.55,
     ) -> "ParametricBraid":
         """
         Plot the braid in 3D
 
         Args:
-            n_sample:
+            n_sample: Points sampled along each strand.
+            plotter: Which backend to draw with.
+            output_html: If given, write the figure to this path instead of
+                showing it.  Plotly only.
+            title: Figure title, for a written page that has to say what it is.
+            tube_diameter: Draw the strands at this thickness rather than as
+                lines — see :meth:`figure`.  Plotly only.
+            n_around: Points round each tube, when drawing them.
+            opacity: How far through a tube the one behind shows.
 
         Returns:
             ParametricBraid: the braid itself
@@ -71,49 +190,84 @@ class ParametricBraid:
             plt.tight_layout()
             plt.show()
         elif plotter == Plotter.PLOTLY:
-            fig = go.Figure()
-
-            # First pass to compute global z-range
-            all_paths = []
-            z_min, z_max = float("inf"), float("-inf")
-
-            for strand in self.strands:
-                path = strand.sample(n_sample)
-                z_vals = [pt[2] for pt in path]
-                z_min = min(z_min, min(z_vals))
-                z_max = max(z_max, max(z_vals))
-                all_paths.append(path)
-
-            for i, path in enumerate(all_paths):
-                x, y, z = zip(*path)
-
-                color = terminal_colors[i % len(terminal_colors)]
-
-                fig.add_trace(
-                    go.Scatter3d(
-                        x=x,
-                        y=y,
-                        z=z,
-                        mode="lines",
-                        line=dict(width=10, color=color),
-                        name=f"Strand {i}",
-                        hoverinfo="name",
-                    )
-                )
-
-            fig.update_layout(
-                scene=dict(
-                    xaxis_title="X",
-                    yaxis_title="Y",
-                    zaxis_title="Z (time)",
-                    zaxis=dict(range=[z_max, z_min]),  # Flip Z axis
-                    aspectmode="data",
-                ),
-                margin=dict(l=0, r=0, b=0, t=0),
-                showlegend=True,
+            fig = self.figure(
+                n_sample=n_sample,
+                title=title,
+                tube_diameter=tube_diameter,
+                n_around=n_around,
+                opacity=opacity,
             )
-
-            fig.show()
+            if output_html:
+                fig.write_html(output_html)
+            else:
+                fig.show()
 
         # Return to avoid plotting and saving
         return self
+
+
+def closest_approach(
+    strands: Sequence,
+    n_samples: int = 600,
+    span: float = 1.0,
+    against: Optional[Sequence[int]] = None,
+) -> float:
+    """The nearest the centres of two different strands come to each other.
+
+    Strands of diameter ``d`` may not come closer than ``d``.  Nothing in a
+    drawing enforces that, so it has to be measured — and a shape that fails
+    here is not a braid however pretty.  Works on anything that answers
+    ``position(z)`` over a known ``length``, whoever produced it.
+
+    Every pair of *heights* is compared, not only equal ones.  Comparing
+    strands at the same height is much cheaper and is wrong: two strands that
+    wind round each other pass closest at *different* heights, and on a
+    three-strand rope laid one turn per period the equal-height figure
+    overstates the clearance by a third.  A strand is followed over
+    ``span`` periods either side of the other's, which is ample — the
+    distance between two points is at least their difference in height, so a
+    neighbour further away than that in ``z`` cannot be the nearest.
+
+    Args:
+        strands: The strands to compare.
+        n_samples: Points sampled along a period.  The measurement is a
+            minimum over samples, so it converges from above.
+        span: Periods to follow one strand either side of the other's.  The
+            distance between two points is at least their difference in
+            height, so a fraction of a period is enough whenever the strands
+            are thin against the period — and much cheaper.
+        against: Compare only these strands against all the others, rather
+            than every pair.  For a braid with a symmetry that carries one
+            strand onto another, most pairs are repeats of a few, and naming
+            the few is the difference between a search that finishes and one
+            that does not.  Comparing everything if left out.
+
+    Returns:
+        The smallest distance found; infinity if there are fewer than two
+        strands.
+    """
+    if len(strands) < 2:
+        return math.inf
+
+    nearest = math.inf
+    for first in range(len(strands)) if against is None else against:
+        one = strands[first]
+        here = np.array(
+            [one.position(one.length * step / n_samples) for step in range(n_samples)]
+        )
+        for second in range(len(strands)):
+            if second == first or (against is None and second < first):
+                continue
+            other = strands[second]
+            reach = int(round((1 + 2 * span) * n_samples))
+            there = np.array(
+                [
+                    other.position(
+                        other.length * ((1 + 2 * span) * step / reach - span)
+                    )
+                    for step in range(reach)
+                ]
+            )
+            gaps = np.linalg.norm(here[:, None, :] - there[None, :, :], axis=2)
+            nearest = min(nearest, float(gaps.min()))
+    return nearest
