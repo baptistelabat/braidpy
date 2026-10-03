@@ -44,7 +44,7 @@ class HandleReductionMode(str, Enum):
 
 @dataclasses.dataclass
 class HandleReductionResults:
-    generators: tuple[SignedCrossingIndex]
+    generators: List[SignedCrossingIndex]
     sign: int
     handle_reduction_mode: HandleReductionMode
 
@@ -144,7 +144,7 @@ def dehornoy_reduce_core(
     gens: List[SignedCrossingIndex],
     mode: HandleReductionMode | str = HandleReductionMode.FULL,
     time_out_s: float = 1,
-) -> tuple[List[SignedCrossingIndex], int | None]:
+) -> HandleReductionResults:
     """
     Unified Dehornoy reduction engine.
 
@@ -157,7 +157,8 @@ def dehornoy_reduce_core(
 
 
     Returns:
-         tuple[List[SignedCrossingIndex], int|None]: (reduced_gens, sign) where sign is:
+         HandleReductionResults: ``generators``, the reduced word, ``sign`` and the
+         ``handle_reduction_mode`` used, where sign is:
         - 1 if Dehornoy positive
         - -1 if Dehornoy negative
         - 0 if neutral element
