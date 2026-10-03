@@ -46,8 +46,21 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
+    def _colour(self, index: int, colors: Optional[Sequence[str]]) -> str:
+        palette = colors if colors else terminal_colors
+        return palette[index % len(palette)]
+
+    def _name(self, index: int, names: Optional[Sequence[str]]) -> str:
+        return names[index] if names is not None else f"Strand {index}"
+
     def _tube_traces(
-        self, diameter: float, n_sample: int, n_around: int, opacity: float
+        self,
+        diameter: float,
+        n_sample: int,
+        n_around: int,
+        opacity: float,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
     ) -> List[go.Surface]:
         """One tube per strand, swept at the strands' real thickness.
 
@@ -57,7 +70,7 @@ class ParametricBraid:
 
         traces = []
         for index, strand in enumerate(self.strands):
-            colour = terminal_colors[index % len(terminal_colors)]
+            colour = self._colour(index, colors)
             x, y, z = tube_mesh(
                 strand.sample(n_sample), diameter / 2.0, n_around=n_around
             )
@@ -70,14 +83,21 @@ class ParametricBraid:
                     colorscale=[[0.0, colour], [1.0, colour]],
                     showscale=False,
                     opacity=opacity,
-                    name=f"Strand {index}",
+                    name=self._name(index, names),
+                    legendgroup=self._name(index, names),
                     showlegend=True,
                     hoverinfo="name",
                 )
             )
         return traces
 
-    def _line_traces(self, n_sample: int) -> List[go.Scatter3d]:
+    def _line_traces(
+        self,
+        n_sample: int,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
+        line_width: float = 10,
+    ) -> List[go.Scatter3d]:
         """One line per strand, along the centrelines."""
         traces = []
         for index, strand in enumerate(self.strands):
@@ -88,10 +108,9 @@ class ParametricBraid:
                     y=y,
                     z=z,
                     mode="lines",
-                    line=dict(
-                        width=10, color=terminal_colors[index % len(terminal_colors)]
-                    ),
-                    name=f"Strand {index}",
+                    line=dict(width=line_width, color=self._colour(index, colors)),
+                    name=self._name(index, names),
+                    legendgroup=self._name(index, names),
                     hoverinfo="name",
                 )
             )
@@ -104,6 +123,11 @@ class ParametricBraid:
         tube_diameter: Optional[float] = None,
         n_around: int = 16,
         opacity: float = 0.55,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
+        line_width: float = 10,
+        z_title: str = "Z (time)",
+        flip_z: bool = True,
     ) -> go.Figure:
         """The braid as a Plotly figure, drawn but neither shown nor written.
 
@@ -120,14 +144,23 @@ class ParametricBraid:
             tube_diameter: Draw the strands this thick, rather than as lines.
             n_around: Points round each tube, when drawing them.
             opacity: How far through a tube the one behind shows.
+            colors: One colour per strand, cycled; the terminal colours if None.
+            names: One legend name per strand; "Strand i" if None.
+            line_width: Width of the lines, when not drawing tubes.
+            z_title: Title of the z axis.
+            flip_z: Run z downward, as time does in a braid diagram.  A braid
+                whose z is a height, such as one coming off a machine, wants
+                it upright instead.
 
         Returns:
             The figure.
         """
         traces = (
-            self._line_traces(n_sample)
+            self._line_traces(n_sample, colors, names, line_width)
             if tube_diameter is None
-            else self._tube_traces(tube_diameter, n_sample, n_around, opacity)
+            else self._tube_traces(
+                tube_diameter, n_sample, n_around, opacity, colors, names
+            )
         )
         heights = [
             point[2] for strand in self.strands for point in strand.sample(n_sample)
@@ -138,8 +171,10 @@ class ParametricBraid:
             scene=dict(
                 xaxis_title="X",
                 yaxis_title="Y",
-                zaxis_title="Z (time)",
-                zaxis=dict(range=[max(heights), min(heights)]),  # Flip Z axis
+                zaxis_title=z_title,
+                zaxis=dict(range=[max(heights), min(heights)])  # Flip Z axis
+                if flip_z
+                else dict(),
                 aspectmode="data",
             ),
             margin=dict(l=0, r=0, b=0, t=30 if title else 0),

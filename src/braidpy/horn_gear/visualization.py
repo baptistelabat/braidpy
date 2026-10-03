@@ -50,6 +50,7 @@ from .layout import (
     axial_clearance,
     axial_position,
     carrier_radius,
+    carrier_xy,
     compute_layout,
     contact_angle,
     contact_point,
@@ -990,15 +991,7 @@ def animate(
         for i, c in enumerate(history[0].carriers)
     }
 
-    # A carrier rides in a horn of its gear, so its angle is simply that slot's
-    # angle — the very same ``_slot_angle`` used to draw the tick marks.  It
-    # therefore turns at exactly the gear's rate and always sits on its slot.
-    #
-    # Transfers stay continuous without any special casing: a carrier moves to
-    # the neighbour only at the step where its slot is at the contact point, and
-    # it lands on the neighbour's slot that is at that same contact point at that
-    # same instant, so the two coincide (provided the machine's connection slots
-    # match its layout — see ``offset_residuals``).
+    # Where a carrier is, and why transfers stay continuous: see ``carrier_xy``.
 
     # Most of a frame is the same picture as the frame before it.  The links,
     # the contact crosses, the gear labels and the axial columns never move at
@@ -1027,16 +1020,12 @@ def animate(
         t = state.time
         xs, ys, htexts, colors_list, texts, sizes = [], [], [], [], [], []
         for c in state.carriers:
-            # Draw the carrier on whatever is actually moving it this step,
-            # which on a machine with shared slots is the receiving gear.
-            gear_name, slot = machine.riding_position(c.position, t)
-            cx, cy = layout_pos[gear_name]
-            r = carrier_radii[gear_name]
-
-            ang = _slot_angle(machine, gear_name, slot, offsets[gear_name], t, frac)
-
-            xs.append(cx + r * math.cos(ang))
-            ys.append(cy + r * math.sin(ang))
+            x, y = carrier_xy(
+                machine, layout_pos, offsets, carrier_radii, c.position, t, frac
+            )
+            gear_name, _ = machine.riding_position(c.position, t)
+            xs.append(x)
+            ys.append(y)
             htexts.append(f"C{c.carrier_id} @ {c.gear}[{c.slot}]")
             colors_list.append(carrier_colors[c.carrier_id])
             texts.append(str(c.carrier_id))

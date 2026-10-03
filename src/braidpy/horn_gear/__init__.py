@@ -17,6 +17,10 @@ the carriers follow closed tracks fixed by the wiring.
 :class:`JacquardLaceMachine` covers machines whose gears are driven one by one
 from a punched programme, where they do not.  Both are laid out, simulated and
 drawn by the same code.
+
+:func:`yarn_paths` follows the carriers through a run and lays their yarns
+off along the machine's axis, with no tension yet, and :func:`visualize_yarns`
+draws the result in 3D standing on the machine.
 """
 
 from .jacquard import (
@@ -30,6 +34,7 @@ from .layout import (
     axial_position,
     axial_positions,
     carrier_radius,
+    carrier_xy,
     compute_layout,
     contact_angle,
     contact_point,
@@ -50,6 +55,14 @@ from .simulation import (
     simulate,
     state_period,
     step,
+)
+from .take_off import (
+    CarrierTrajectories,
+    YarnPaths,
+    carrier_trajectories,
+    default_take_off,
+    visualize_yarns,
+    yarn_paths,
 )
 from .tracks import (
     NoFixedTracks,
@@ -80,6 +93,7 @@ __all__ = [
     "contact_point",
     "contact_angle",
     "carrier_radius",
+    "carrier_xy",
     "slot_offsets",
     "offset_residuals",
     # axial columns and tube cores
@@ -106,6 +120,13 @@ __all__ = [
     "step",
     "simulate",
     "state_period",
+    # the braid coming off the machine
+    "CarrierTrajectories",
+    "YarnPaths",
+    "carrier_trajectories",
+    "default_take_off",
+    "yarn_paths",
+    "visualize_yarns",
     # visualization
     "visualize_machine",
     "visualize_tracks",

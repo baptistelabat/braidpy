@@ -6,6 +6,7 @@
 
 import math
 
+import numpy as np
 import pytest
 
 from braidpy.horn_gear.examples import (
@@ -1697,3 +1698,112 @@ def test_the_stored_track_is_not_a_path():
     path = walk(m, track[0], simulation_period(m))
     for here, nxt in zip(path, path[1:]):
         assert here[0] == nxt[0] or m.graph.has_edge(here[0], nxt[0])
+
+
+# ── The braid coming off the machine ──────────────────────────────────────────
+
+
+def test_trajectories_follow_the_animation_and_stay_continuous():
+    from braidpy.horn_gear.layout import carrier_xy
+    from braidpy.horn_gear.take_off import carrier_trajectories
+
+    m = tubular_braid_8()
+    traj = carrier_trajectories(m, 8, n_substeps=6)
+    assert len(traj.times) == 8 * 6 + 1
+    assert traj.times[0] == 0 and traj.times[-1] == 8
+
+    # The last sample is where the simulation leaves the carrier.
+    layout = compute_layout(m)
+    from braidpy.horn_gear.layout import slot_offsets
+
+    offsets = slot_offsets(m, layout)
+    riding = {g: carrier_radius(m, layout, g) for g in m.gears}
+    last = simulate(m, 8, m.default_carriers())[-1]
+    for c in last.carriers:
+        expected = carrier_xy(m, layout, offsets, riding, c.position, 8)
+        assert traj.xy[c.carrier_id][-1] == pytest.approx(expected)
+
+    # No jumps, transfers included: a sample never moves further than the arc
+    # its gear turns in one substep.
+    radii = gear_radii(m)
+    bound = max(2 * math.pi * r / m.gears[g].n_slots for g, r in radii.items()) / 6
+    for xy in traj.xy.values():
+        steps = [math.dist(a, b) for a, b in zip(xy[:-1], xy[1:])]
+        assert max(steps) <= bound * 1.01
+
+
+def test_yarns_are_laid_off_along_the_axis():
+    from braidpy.horn_gear.take_off import yarn_paths
+
+    m = tubular_braid_8()
+    paths = yarn_paths(m, n_steps=16, take_off=0.5, n_substeps=4)
+    assert len(paths.points) == len(m.default_carriers())
+    assert paths.length == pytest.approx(8.0)
+    for cid, pts in paths.points.items():
+        # Oldest yarn highest, the newest at the deck under its carrier.
+        assert pts[0, 2] == pytest.approx(8.0)
+        assert pts[-1, 2] == pytest.approx(0.0)
+        assert all(a > b for a, b in zip(pts[:-1, 2], pts[1:, 2]))
+        assert pts[:, :2] == pytest.approx(paths.trajectories.xy[cid])
+
+
+def test_tubular_yarns_wind_both_ways_round_the_axis():
+    from braidpy.horn_gear.take_off import yarn_paths
+
+    m = tubular_braid_8()
+    paths = yarn_paths(m)  # three full cycles
+    centre = np.mean(list(paths.trajectories.layout.values()), axis=0)
+    windings = []
+    for pts in paths.points.values():
+        angle = np.unwrap(np.arctan2(pts[:, 1] - centre[1], pts[:, 0] - centre[0]))
+        windings.append((angle[-1] - angle[0]) / (2 * math.pi))
+    # A tubular braid: half the yarns go round one way and half the other,
+    # each by the same whole number of turns.
+    assert sum(w > 0.5 for w in windings) == sum(w < -0.5 for w in windings) == 4
+    assert all(abs(abs(w) - round(abs(w))) < 1e-6 for w in windings)
+
+
+def test_yarn_paths_default_length_and_validation():
+    from braidpy.horn_gear.take_off import default_take_off, yarn_paths
+
+    m = flat_braid_3()
+    cycle = state_period(m)
+    paths = yarn_paths(m, n_cycles=2, n_substeps=2)
+    assert paths.times[-1] == 2 * cycle
+    assert paths.take_off == pytest.approx(default_take_off(m))
+    with pytest.raises(ValueError):
+        yarn_paths(m, n_steps=3, take_off=0.0)
+
+
+def test_yarn_paths_as_parametric_braid():
+    from braidpy.horn_gear.take_off import yarn_paths
+
+    paths = yarn_paths(flat_braid_3(), n_steps=6, take_off=1.0, n_substeps=3)
+    braid = paths.to_parametric_braid()
+    assert braid.n_strands == 3
+    for strand, pts in zip(braid.strands, paths.points.values()):
+        assert strand.evaluate(0.0) == pytest.approx(tuple(pts[-1]))
+        assert strand.evaluate(1.0) == pytest.approx(tuple(pts[0]))
+
+
+def test_visualize_yarns(tmp_path):
+    from braidpy.horn_gear.take_off import visualize_yarns, yarn_paths
+
+    m = tubular_braid_8()
+    out = tmp_path / "yarns.html"
+    fig = visualize_yarns(m, n_steps=8, n_substeps=3, output_html=str(out))
+    assert out.exists()
+    names = [t.name for t in fig.data]
+    assert "Gears" in names
+    assert sum(1 for n in names if n.startswith("Yarn")) == 8
+
+    tubes = visualize_yarns(
+        m, yarn_paths(m, n_steps=4, n_substeps=2), tube_diameter=0.1
+    )
+    assert any(t.type == "surface" for t in tubes.data)
+    with pytest.raises(TypeError):
+        visualize_yarns(m, yarn_paths(m, n_steps=2), n_steps=3)
+
+    cored = BraidingMachine(list(m.gears.values()), m.connections, tube_axials(m))
+    fig = visualize_yarns(cored, n_steps=4, n_substeps=2)
+    assert any(t.name.startswith("Core") for t in fig.data)

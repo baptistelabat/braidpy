@@ -17,6 +17,9 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
 - [ ] Kumihimo braid with Marudai diagram
 - [ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)
+- [x] Simulation of horn gear braiding machines (flat, tubular, Jacquard lace), animated in 2D
+- [x] Braid coming off a horn gear machine, without tension, in 3D
+- [ ] Braid coming off a horn gear machine, under tension
 
 ## Basic example
 
