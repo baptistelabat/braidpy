@@ -45,6 +45,71 @@ def test_braid_to_parametric_strands():
     assert len(p0) == 3
 
 
+def test_closest_approach_finds_the_tightest_spot():
+    """A measurement on any strands at all, whoever made them.
+
+    Strands of diameter d may not come closer than d, and nothing in a
+    drawing enforces that — so it is measured rather than assumed.
+    """
+    import math
+
+    from braidpy.annulus_braid import lay_radius, rope_helices
+    from braidpy.parametric_braid import closest_approach
+
+    diameter, lay = 0.4, 2.4
+    touching = rope_helices(3, diameter=diameter, length=lay, turns=1.0)
+    assert closest_approach(touching, 500) == pytest.approx(diameter, abs=2e-3)
+
+    squeezed = rope_helices(
+        3,
+        diameter=diameter,
+        length=lay,
+        turns=1.0,
+        radius=lay_radius(3, diameter, lay) * 0.8,
+    )
+    assert closest_approach(squeezed, 500) < diameter
+
+    assert closest_approach(touching[:1]) == math.inf
+
+
+def test_a_braid_can_be_drawn_as_yarn_rather_than_as_lines():
+    """Tubes at the strands' real thickness, so the fit can be seen.
+
+    A line drawing shows where the centres go and leaves whether the yarn
+    touches or overlaps to be believed; this shows it.
+    """
+    from braidpy.annulus_braid import lay_radius, minimum_lay, rope_helices
+    from braidpy.parametric_braid import ParametricBraid
+    from braidpy.parametric_strand import ParametricStrand
+
+    diameter = 0.4
+    lay = minimum_lay(3, diameter) * 2
+    helices = rope_helices(
+        3,
+        diameter=diameter,
+        length=lay,
+        turns=1.0,
+        radius=lay_radius(3, diameter, lay),
+    )
+    braid = ParametricBraid(
+        [
+            ParametricStrand(lambda t, helix=helix: helix.position(t * helix.length))
+            for helix in helices
+        ]
+    )
+
+    lines = braid.figure(n_sample=60)
+    assert [trace.type for trace in lines.data] == ["scatter3d"] * 3
+
+    tubes = braid.figure(n_sample=60, tube_diameter=diameter)
+    assert [trace.type for trace in tubes.data] == ["surface"] * 3
+    assert all(trace.opacity < 1.0 for trace in tubes.data), "the far side shows"
+
+    assert isinstance(
+        braid.plot(n_sample=20, output_html=None, plotter="nothing"), ParametricBraid
+    ), "plot still returns the braid"
+
+
 def test_a_tube_is_everywhere_its_own_radius_from_the_centreline():
     """Which is what makes the picture a measurement rather than a suggestion."""
     import numpy as np
