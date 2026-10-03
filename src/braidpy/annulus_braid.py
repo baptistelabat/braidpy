@@ -255,9 +255,10 @@ def packing_radius(n_strands: int, diameter: float) -> float:
     This is the cross-section packing answer, and it is exact only for
     strands that run straight — a rope with no lay at all.  Twist them and
     they come closer than this says, because a strand's neighbour is nearer
-    at a different height than alongside it: laid one turn per period, three
-    strands at this radius clear only 0.68 of a diameter.  For a rope with
-    an actual lay use :func:`lay_radius`, which solves for it.
+    at a different height than alongside it: at the tightest lay they can be
+    made at, three strands at this radius clear 0.76 of a diameter, and the
+    shortfall barely eases with more strands — 0.71 at twelve.  For a rope
+    with an actual lay use :func:`lay_radius`, which solves for it.
 
     Args:
         n_strands: How many strands are laid up.
@@ -488,3 +489,307 @@ def rope_helices(
         )
         for strand in range(n_strands)
     ]
+
+
+@dataclass(frozen=True)
+class TubularBraidStrand:
+    """A strand of a braided tube, after Brunnschweiler's geometric model.
+
+    The strand winds round the tube at a constant angle to the axis while its
+    distance from the axis swings in and out — out where it passes over a
+    strand coming the other way, in where it passes under.  That swing is the
+    whole of the braid: take it away and the strands are helices that would
+    have to pass through one another.
+
+    From "The geometry of tubular braided structures", page 19:
+    https://scispace.com/pdf/the-geometry-of-tubular-braided-structures-32b4yiwio2.pdf
+
+    Args:
+        n_strands: How many strands the tube has, half going each way.
+        radius: The mean distance from the axis.
+        braid_angle: The angle the *mean* helix makes with the axis, in
+            radians — zero is straight up the tube, a right angle is round
+            it.  The swing makes the local angle wander either side of it,
+            and biases it upward, since swinging out and in adds path across
+            the tube but none along it.
+        bulge: How far the strand swings out and in.  Two strands crossing
+            are ``2 * bulge`` apart radially, so half a diameter makes them
+            touch there.
+        direction: +1 or -1, which way round the tube it goes.
+        phase: Where on the circle it starts, in radians.
+    """
+
+    n_strands: int
+    radius: float
+    braid_angle: float
+    bulge: float
+    direction: int
+    phase: float
+
+    @property
+    def length(self) -> float:
+        """The axial distance in which the strand goes once round the tube."""
+        return 2.0 * math.pi * self.radius / math.tan(self.braid_angle)
+
+    def position(self, z: float) -> Tuple[float, float, float]:
+        """Where the strand is at ``z`` along the axis."""
+        # z = R * u * cot(q), so the angle travelled follows from the height.
+        travelled = z * math.tan(self.braid_angle) / self.radius
+        angle = self.direction * travelled + self.phase
+        swing = self.radius + self.direction * self.bulge * math.sin(
+            self.n_strands * angle / 2.0
+        )
+        return swing * math.cos(angle), swing * math.sin(angle), z
+
+
+def tubular_braid(
+    n_strands: int,
+    radius: float = 1.0,
+    braid_angle: float = math.pi / 4.0,
+    diameter: float = 0.4,
+    bulge: Optional[float] = None,
+) -> List[TubularBraidStrand]:
+    """A braided tube: half the strands each way, interlacing.
+
+    Two things the bare formula does not say, and without which it does not
+    braid:
+
+    **The strands alternate direction round the tube.**  Spaced evenly and
+    alternating, two that cross meet where the radial swing is at its
+    extreme, so one is fully out and the other fully in.  Space them any
+    other way and they meet mid-swing, or — in the worst case — where the
+    swing is zero and they are in the same place.
+
+    **The swing follows the direction.**  A strand going one way bulges out
+    where one going the other way tucks in; give them a common sign and both
+    strands of a crossing take the same radius, which is a collision rather
+    than a braid.
+
+    Args:
+        n_strands: How many strands, which must be even — half go each way.
+        radius: The mean distance from the axis.
+        braid_angle: The angle the strands make with the axis, in radians.
+        diameter: How thick the strands are.  Only used to pick a default
+            bulge; the geometry itself does not depend on it.
+        bulge: How far the strands swing.  Half a diameter if left out, which
+            sets two crossing strands exactly a diameter apart *at the
+            crossing* — the clearance everywhere only while the crossings are
+            the tightest spot, which
+            :func:`~braidpy.parametric_braid.closest_approach` will tell you.
+
+    Returns:
+        One strand per place round the tube, alternating direction.
+
+    Raises:
+        ValueError: If the strand count is odd, or the braid angle leaves the
+            strands running straight up the tube without braiding.
+    """
+    if n_strands < 2 or n_strands % 2:
+        raise ValueError(
+            f"A braided tube needs an even number of strands, half going each "
+            f"way, not {n_strands}."
+        )
+    if not 0.0 < braid_angle < math.pi / 2.0:
+        raise ValueError(
+            f"A braid angle of {braid_angle:g} radians does not wind round the "
+            f"tube: it must lie strictly between 0 and pi/2."
+        )
+    if bulge is None:
+        bulge = diameter / 2.0
+
+    return [
+        TubularBraidStrand(
+            n_strands=n_strands,
+            radius=radius,
+            braid_angle=braid_angle,
+            bulge=bulge,
+            direction=1 if place % 2 == 0 else -1,
+            phase=2.0 * math.pi * place / n_strands,
+        )
+        for place in range(n_strands)
+    ]
+
+
+def tubular_braid_clearance(strands: Sequence, n_samples: int = 500) -> float:
+    """How close two strands of a braided tube come, using its symmetry.
+
+    Turning the tube by two places and relabelling the strands to match
+    carries the braid onto itself, so the pair (0, j) is the same distance
+    apart as the pair (2, j + 2).  Every pair is therefore a repeat of one
+    involving strand 0 or strand 1, and comparing those two against the rest
+    answers the question at a fraction of the cost — which matters, because
+    finding a tube's radius asks it a few dozen times.
+
+    The strands are also thin against the length in which they go once round,
+    so only a fraction of a period either side need be searched.
+
+    Args:
+        strands: The strands of one braided tube, as :func:`tubular_braid`
+            returns them.
+        n_samples: Points per period.
+
+    Returns:
+        The smallest distance between the centres of two strands.
+    """
+    from braidpy.parametric_braid import closest_approach
+
+    return closest_approach(strands, n_samples=n_samples, span=0.15, against=(0, 1))
+
+
+def crossing_binds_above(n_strands: int, braid_angle: float) -> bool:
+    """Which of the two conditions on the radius is the binding one.
+
+    See :func:`tubular_braid_radius`.  Below the crossover angle the tube's
+    width is set by the strands' own swing; above it, by how fast they climb.
+    The crossover is at
+
+    .. math:: \\tan q^{*} = \\sqrt{1 + 4/n^{2}}
+
+    which tends to 45 degrees as the strands are added, so any braid of more
+    than a few strands changes character near 45.
+
+    Args:
+        n_strands: How many strands, half each way.
+        braid_angle: The angle they make with the axis, in radians.
+
+    Returns:
+        True if the climbing condition binds, False if the swing does.
+    """
+    return math.tan(braid_angle) > math.sqrt(1.0 + 4.0 / (n_strands**2))
+
+
+def tubular_braid_radius(
+    n_strands: int,
+    diameter: float = 0.4,
+    braid_angle: float = math.pi / 4.0,
+    bulge: Optional[float] = None,
+) -> float:
+    """The narrowest tube on which these strands braid without crowding.
+
+    In closed form, from the geometry, rather than by squeezing and
+    measuring.
+
+    Take the two strands of a crossing and let ``s`` and ``t`` measure how
+    far each has gone past it.  At the crossing itself the swing holds them
+    ``2b`` apart.  Just beside it the swing has decayed — as
+    :math:`\\cos(ns/2)`, so by :math:`b n^{2} s^{2}/8` to second order — while
+    the angle between them has opened by ``s + t`` and their heights have
+    parted by :math:`R\\cot q\\,(s - t)`.  Writing ``p = s + t`` and
+    ``m = s - t``, the squared distance comes out as
+
+    .. math::
+
+        D^{2} \\simeq 4b^{2}
+            + p^{2}\\left[(R^{2} - b^{2}) - \\tfrac{1}{4}b^{2}n^{2}\\right]
+            + m^{2}\\left[R^{2}\\cot^{2}q - \\tfrac{1}{4}b^{2}n^{2}\\right]
+
+    — no cross term, the two motions being independent.  So the crossing is
+    the tightest spot exactly when both brackets are non-negative, and the
+    narrowest tube is where the first of them reaches zero:
+
+    .. math::
+
+        R = b \\max\\!\\left(\\sqrt{1 + \\tfrac{n^{2}}{4}},\\;
+            \\tfrac{n}{2}\\tan q\\right)
+
+    Two conditions, and which one binds says what is holding the tube open:
+    the strands' own swing, or the rate at which they climb past one
+    another.  :func:`crossing_binds_above` says which.
+
+    The rope has no such formula (:func:`lay_radius` searches), and the
+    reason is visible here: this works because a crossing is a point of
+    symmetry for *both* strands, so it is automatically a critical point of
+    the distance and only the second-order terms matter.  Two helices of a
+    rope have no such point — their nearest approach is not where the chord
+    between them is.
+
+    Args:
+        n_strands: How many strands, half each way.
+        diameter: How thick they are.
+        braid_angle: The angle they make with the axis, in radians.
+        bulge: The radial swing; half a diameter if left out.
+
+    Returns:
+        The smallest mean radius at which the strands are no closer together
+        than they are at their crossings.
+    """
+    if bulge is None:
+        bulge = diameter / 2.0
+    swing = math.sqrt(1.0 + n_strands**2 / 4.0)
+    climb = (n_strands / 2.0) * math.tan(braid_angle)
+    return bulge * max(swing, climb)
+
+
+def cover_factor(
+    n_strands: int, radius: float, braid_angle: float, diameter: float
+) -> float:
+    """How much of the tube's surface the strands hide, as a fraction.
+
+    The measure of a braid's tightness, and the one a braider cares about:
+    a sleeve at 0.4 is visibly open, one at 1 is closed.  Half the strands
+    run each way, so one direction covers the surface when its ``n/2``
+    strands, each crossing a circumferential cut in a segment of
+    ``d / cos(q)``, together span the circumference:
+
+    .. math:: \\text{cover} = \\frac{n}{2}\\,
+              \\frac{d / \\cos q}{2 \\pi R}
+
+    Above 1 the strands of one direction would have to overlap each other,
+    which round ones cannot.
+
+    Args:
+        n_strands: How many strands, half each way.
+        radius: The mean distance from the axis.
+        braid_angle: The angle the strands make with the axis, in radians.
+        diameter: How thick they are.
+
+    Returns:
+        The covered fraction, counting one direction.
+    """
+    circumferential = diameter / math.cos(braid_angle)
+    return (n_strands / 2.0) * circumferential / (2.0 * math.pi * radius)
+
+
+def radius_for_cover(
+    n_strands: int, diameter: float, braid_angle: float, cover: float = 1.0
+) -> float:
+    """The radius at which the strands cover that fraction of the tube.
+
+    :func:`cover_factor` rearranged, which is worth having because the
+    radius that avoids crowding and the radius that looks like a braid are
+    not the same number, and the gap between them is the model's main
+    limitation — see below.
+
+    .. math:: R = \\frac{n \\, d}{4 \\pi \\, \\text{cover} \\, \\cos q}
+
+    **This will not clear.**  At its own non-crowding radius
+    (:func:`tubular_braid_radius`) the model covers about 0.4 whatever the
+    strand count, the braid angle or the swing depth — measured across 4 to
+    16 strands and 45 to 80 degrees.  Tightening past that makes the strands
+    overlap: at a cover of 0.9 they are a third of a diameter into one
+    another.
+
+    The reason is the sinusoidal swing.  Two strands are nearest not at
+    their crossing, where the swing holds them a full ``2b`` apart, but just
+    beside it, where the swing has decayed while the angle between them is
+    still small — and at a smaller radius a given angle buys less arc to
+    separate them with.  A real braid escapes this because its strands are
+    not round: yarn flattens where it crosses and stays proud for longer,
+    which is a squarer swing than a sine.
+
+    So use this to draw a braid that looks like one, and
+    :func:`tubular_braid_radius` for the tightest the round-strand model
+    honestly allows.
+
+    Args:
+        n_strands: How many strands, half each way.
+        diameter: How thick they are.
+        braid_angle: The angle they make with the axis, in radians.
+        cover: The fraction of the surface to hide.
+
+    Returns:
+        The mean radius giving that cover.
+    """
+    if cover <= 0.0:
+        raise ValueError(f"A cover of {cover:g} is not a fraction of anything.")
+    return (n_strands * diameter) / (4.0 * math.pi * cover * math.cos(braid_angle))
