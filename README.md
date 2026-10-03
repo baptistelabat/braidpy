@@ -22,6 +22,9 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [ ] Conversion from material braid to parametric braid
 - [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
 - [ ] Kumihimo braid with Marudai diagram
+- [x] A braid as it comes off whatever made it, in 3D — a horn gear machine,
+      a braid word, a mobidai or a kumihimo disk: laid with no tension,
+      converging on a braiding point or fell circle, and tightened
 - [ ] Finger loop braids (Kute-Uchi), a technic used and improved by nuns for centuries
 - [ ] Track plan
 - [ ] Simulation of 3D rotary (hexagonal) braiding machines
