@@ -11,7 +11,7 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 
 No formula takes a braid word to the shape its strands settle into — see
-``src/braidpy/analytic/WHY_NOT_ANALYTIC.md``.  But some braids are regular
+``docs/source/why_no_closed_form.md``.  But some braids are regular
 enough that a *family* of shapes can be written down and the choosing left to
 a handful of numbers, and then the question becomes a small search instead of
 an open problem.

@@ -9,6 +9,10 @@
 
 braid_representations.md
 visualization.md
+laid_rope.md
+braided_tube.md
+why_no_closed_form.md
+solving_numerically.md
 braid_algebra.md
 usage.md
 references.md

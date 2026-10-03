@@ -53,7 +53,7 @@ their shape is a one-parameter family — helices of radius R — and symmetry
 says where they touch without anyone having to search for it.  Minimising
 length then drives R down until they do, at :func:`lay_radius`.  Take
 away either the symmetry or the absence of crossings and neither step
-survives; see ``src/braidpy/analytic/WHY_NOT_ANALYTIC.md``.
+survives; see ``docs/source/why_no_closed_form.md``.
 """
 
 from __future__ import annotations
@@ -382,7 +382,7 @@ def lay_radius(
     There is no closed form, only a well-posed search: :func:`helix_clearance`
     rises with the radius, so bisection finds where it equals a diameter.
     That it is a search rather than a formula is the point — see
-    ``src/braidpy/analytic/WHY_NOT_ANALYTIC.md``.
+    ``docs/source/why_no_closed_form.md``.
 
     Args:
         n_strands: How many strands are laid up.
