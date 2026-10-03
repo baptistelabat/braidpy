@@ -1883,14 +1883,68 @@ def test_tightening_shortens_without_overlap_or_change_of_braid():
     assert min(history["closest"]) >= d * (1 - 2e-3)
     assert tight.closest_approach() >= d * (1 - 2e-3)
     assert _windings(tight) == pytest.approx(_windings(paths), abs=0.05)
+    assert tight.yarn_diameter == d
 
     n = paths.formed_count
     for cid in paths.points:
         before, after = paths.points[cid], tight.points[cid]
-        # Heights untouched, ends held, the run down to the carrier unchanged.
+        # Heights untouched; both ends held, and the run down to the carrier
+        # unchanged.
         assert after[:, 2] == pytest.approx(before[:, 2])
-        assert after[0] == pytest.approx(before[0])
         assert after[n - 1 :] == pytest.approx(before[n - 1 :])
+
+    for cid in paths.points:
+        assert tight.points[cid][0] == pytest.approx(paths.points[cid][0])
+    # Left free, the oldest end moves.
+    loose, _ = tighten_yarns(paths, d, iterations=5, hold_top=False)
+    assert any(
+        loose.points[cid][0] != pytest.approx(paths.points[cid][0])
+        for cid in paths.points
+    )
+
+
+def _cross_section(paths, fraction):
+    """Width and thickness of the braid, at a fraction of the way down it."""
+    level = paths.formed()[:, int(fraction * (paths.formed_count - 1)), :2]
+    level = level - level.mean(axis=0)
+    axes = np.linalg.svd(level)[2]
+    return np.ptp(level @ axes.T, axis=0)
+
+
+def test_braid_settles_to_its_own_shape_whatever_the_fell():
+    """Far from the fell, a braid's shape is set by its yarns, not the fell."""
+    from braidpy.horn_gear.take_off import tighten_yarns, yarn_paths
+
+    m = flat_braid_4()
+    d = 0.2 * gear_radii(m)["A"]
+    jam = yarn_paths(m, yarn_diameter=d).fell_radius
+    sections = []
+    for fell in (0.0, jam, 2 * jam):
+        paths = yarn_paths(m, yarn_diameter=d, fell_radius=fell)
+        tight, _ = tighten_yarns(paths, d, iterations=80)
+        assert tight.closest_approach(include_fell=False) >= d * (1 - 2e-3)
+        sections.append(_cross_section(tight, 0.5))
+    for section in sections[1:]:
+        assert section == pytest.approx(sections[0], rel=0.05)
+    # And a flat braid comes out flat.
+    width, thickness = sections[0]
+    assert width > 1.5 * thickness
+
+
+def test_fell_and_braid_sizes_are_separate():
+    from braidpy.horn_gear.take_off import yarn_paths
+
+    m = tubular_braid_8()
+    paths = yarn_paths(m, n_steps=16, yarn_diameter=0.4, fell_radius=0.0)
+    assert paths.fell_radius == 0.0
+    assert 0 < paths.contraction < 1
+    formed = paths.formed()
+    radius = np.linalg.norm(formed[:, :, :2] - paths.axis, axis=-1)
+    # On the axis at the fell, and the jammed size far above it.
+    assert np.max(radius[:, -1]) == pytest.approx(0.0, abs=1e-12)
+    jammed = yarn_paths(m, n_steps=16, yarn_diameter=0.4)
+    top = np.linalg.norm(jammed.formed()[:, 0, :2] - paths.axis, axis=-1)
+    assert radius[:, 0] == pytest.approx(top)
 
 
 def test_tightening_respects_a_core():
@@ -1904,7 +1958,7 @@ def test_tightening_respects_a_core():
     with pytest.raises(ValueError):
         tighten_yarns(paths, 0.0)
     with pytest.raises(ValueError):
-        tighten_yarns(paths, 0.4, stiffness=0.0)
+        tighten_yarns(paths, 0.4, step=0.0)
 
 
 def test_visualize_converging_yarns():
@@ -1916,3 +1970,8 @@ def test_visualize_converging_yarns():
     assert any(t.name == "Braiding point" for t in fig.data)
     fig = visualize_yarns(m, yarn_paths(m, n_steps=6, fell_radius=0.5))
     assert any(t.name == "Fell" for t in fig.data)
+    # Made for a yarn, drawn as one; 0 asks for lines instead.
+    made = yarn_paths(m, n_steps=6, yarn_diameter=0.4)
+    assert any(t.type == "surface" for t in visualize_yarns(m, made).data)
+    lines = visualize_yarns(m, made, tube_diameter=0)
+    assert not any(t.type == "surface" for t in lines.data)

@@ -107,6 +107,15 @@ class YarnPaths:
             same order as ``times``, so the last point is the one at the deck.
         take_off: Length of braid drawn off per step.
         trajectories: The carrier motion the yarns were laid from.
+        fell_height: Height of the fell over the deck; 0 if the yarns do not
+            converge on one.
+        fell_radius: Radius of the fell, 0 for a braiding point; None if the
+            yarns do not converge.
+        axis: The braid's axis, in the deck plane.
+        contraction: How far the braid itself is drawn in, away from the fell.
+        n_formed: Points per yarn above the fell; all of them if None.
+        yarn_diameter: The yarn's thickness, if the braid was made for one;
+            it is then drawn that thick.
     """
 
     times: np.ndarray
@@ -118,6 +127,7 @@ class YarnPaths:
     axis: Tuple[float, float] = (0.0, 0.0)
     contraction: float = 1.0
     n_formed: Optional[int] = None
+    yarn_diameter: Optional[float] = None
 
     @property
     def length(self) -> float:
@@ -146,9 +156,17 @@ class YarnPaths:
         n = self.formed_count
         return np.stack([pts[:n] for pts in self.points.values()])
 
-    def closest_approach(self) -> float:
-        """The nearest two different yarns come in the braid, over its samples."""
-        return _closest_approach(self.formed(), self._level_spacing())
+    def closest_approach(self, include_fell: bool = True) -> float:
+        """The nearest two different yarns come in the braid, over its samples.
+
+        Args:
+            include_fell: Count the fell itself.  At a braiding point every
+                yarn meets there, so the answer is 0 unless it is left out.
+        """
+        formed = self.formed()
+        if not include_fell:
+            formed = formed[:, :-1]
+        return _closest_approach(formed, self._level_spacing())
 
     def _level_spacing(self) -> float:
         n = self.formed_count
@@ -267,6 +285,7 @@ def yarn_paths(
     fell_height: Optional[float] = None,
     axis: Optional[Tuple[float, float]] = None,
     n_converge: int = 16,
+    settle_length: Optional[float] = None,
 ) -> YarnPaths:
     """The braid as it stands after ``n_steps`` steps.
 
@@ -275,6 +294,12 @@ def yarn_paths(
     along the machine's axis by the braid taken off since.  With either, the
     yarns converge on a fell and the braid above it is drawn in toward the
     axis.
+
+    With both, the fell and the braid are no longer the same size: the yarns
+    converge on the fell, and the braid then opens out — or closes in — to as
+    tight as the yarn allows over ``settle_length`` of take-off.  The fell is
+    then only where the braid starts; what it settles to is the yarn's
+    business, and :func:`tighten_yarns` takes it from there.
 
     Args:
         machine: The machine definition.
@@ -290,8 +315,9 @@ def yarn_paths(
         n_cycles: Cycles to braid for when ``n_steps`` is None.
         fell_radius: Radius of the fell circle the braid is formed on; 0 for
             a braiding point.
-        yarn_diameter: If ``fell_radius`` is not given, draw the braid in as
-            far as yarns this thick allow — see :func:`jammed_contraction`.
+        yarn_diameter: Draw the braid in as far as yarns this thick allow —
+            see :func:`jammed_contraction` — away from the fell, and at the
+            fell too if ``fell_radius`` is not given.
             The samples should then be closer than a diameter apart along
             the axis (``take_off / n_substeps < yarn_diameter``), or contacts
             between them go unseen.
@@ -301,6 +327,9 @@ def yarn_paths(
         axis: The braid's axis, in the deck plane.  Defaults to the middle of
             the gears.
         n_converge: Points along each yarn from the fell down to its carrier.
+        settle_length: Take-off over which the braid goes from the fell's size
+            to its own, when both ``fell_radius`` and ``yarn_diameter`` are
+            given.  Defaults to twice the difference in radius.
 
     Returns:
         The yarns, one per carrier.
@@ -327,23 +356,40 @@ def yarn_paths(
     rel = np.stack([xy - centre for xy in traj.xy.values()])
     deck_radius = float(np.max(np.linalg.norm(rel, axis=2)))
 
-    if fell_radius is not None:
-        if fell_radius < 0:
-            raise ValueError("fell_radius must not be negative.")
-        k = fell_radius / deck_radius if deck_radius > 0 else 0.0
-    elif yarn_diameter is not None:
+    if yarn_diameter is not None:
         spacing = take_off * float(traj.times[1] - traj.times[0])
         k = jammed_contraction(rel, spacing, yarn_diameter)
     else:
         k = 1.0
+    if fell_radius is not None:
+        if fell_radius < 0:
+            raise ValueError("fell_radius must not be negative.")
+        k_fell = fell_radius / deck_radius if deck_radius > 0 else 0.0
+        if yarn_diameter is None:
+            k = k_fell
+    else:
+        k_fell = k
     converging = fell_radius is not None or yarn_diameter is not None
     if fell_height is None:
-        fell_height = abs(1.0 - k) * deck_radius if converging else 0.0
+        fell_height = abs(1.0 - k_fell) * deck_radius if converging else 0.0
 
-    heights = fell_height + take_off * (traj.times[-1] - traj.times)
+    above = take_off * (traj.times[-1] - traj.times)
+    heights = fell_height + above
+    # How far each level is drawn in: the fell's own size at the fell, the
+    # braid's beyond ``settle_length``, and a smooth step between.  Any
+    # positive scale at each level leaves the braid the machine made, so the
+    # step can be any shape at all.
+    if settle_length is None:
+        settle_length = 2 * abs(k - k_fell) * deck_radius
+    u = (
+        np.clip(above / settle_length, 0.0, 1.0)
+        if settle_length > 0
+        else np.ones_like(above)
+    )
+    level_k = k_fell + (k - k_fell) * (3 * u**2 - 2 * u**3)
     points: Dict[CarrierId, np.ndarray] = {}
     for cid, r in zip(traj.xy, rel):
-        formed = np.column_stack([centre + k * r, heights])
+        formed = np.column_stack([centre + level_k[:, None] * r, heights])
         if fell_height > 0:
             # Straight from the fell down to the carrier, which sits on the
             # deck where the yarn's last sample was taken.
@@ -365,10 +411,11 @@ def yarn_paths(
         take_off=take_off,
         trajectories=traj,
         fell_height=fell_height,
-        fell_radius=k * deck_radius if converging else None,
+        fell_radius=k_fell * deck_radius if converging else None,
         axis=(float(centre[0]), float(centre[1])),
         contraction=k,
         n_formed=n_formed,
+        yarn_diameter=yarn_diameter,
     )
 
 
@@ -455,37 +502,42 @@ def tighten_yarns(
     paths: YarnPaths,
     yarn_diameter: float,
     iterations: int = 400,
-    stiffness: float = 0.5,
+    step: float = 20.0,
     core_radius: Optional[float] = None,
     tolerance: float = 1e-3,
+    hold_top: bool = True,
 ) -> Tuple[YarnPaths, Dict[str, List[float]]]:
     """Pull the yarns taut above the fell, without letting them overlap.
 
-    Each iteration shortens every yarn — each sample moves toward the middle of
-    its two neighbours, sideways only, so it keeps its height — then pushes
-    apart any two samples of different yarns closer than a diameter, until
-    none are.  The ends stay where they are: the oldest yarn, and the fell
-    where the yarn arrives from its carrier.
+    Each iteration shortens every yarn, sideways only, so every sample keeps
+    its height; then it pushes apart any two samples of different yarns closer
+    than a diameter, until none are.  The yarn is held where it arrives at the
+    fell from its carrier, and at its oldest end, where the take-off holds it.
+    Between the two, far enough from the fell, the braid takes the shape its
+    yarns pull it into, whatever shape the fell started it in.
 
     Shortening at fixed height is the length objective of *Solving a braid's
-    shape numerically* in its small-slope form, and the push is its
-    non-interpenetration constraint.  No sample moves more than a fifth of a
-    diameter in one go, so a yarn cannot jump through another and the braid
-    the machine made is the braid that comes out.
-
-    Start it from a braid already drawn in (``yarn_diameter`` given to
-    :func:`yarn_paths`): tension alone draws a braid in only very slowly.
+    shape numerically* in its small-slope form — tension pulls a yarn toward
+    the middle of its neighbours — and the push is its non-interpenetration
+    constraint.  The tension is taken implicitly, as a backward-Euler step of
+    ``step`` along that flow, which settles a whole yarn in a few dozen
+    iterations where moving each sample toward its neighbours would take
+    thousands.  No sample moves more than a fifth of a diameter in one go,
+    though, so a yarn cannot jump through another and the braid the machine
+    made is the braid that comes out.
 
     Args:
         paths: The braid to tighten.
         yarn_diameter: Yarn diameter.
         iterations: Shortening steps.
-        stiffness: Fraction of the way to its neighbours' middle a sample moves
-            per step, 0 to 1.
+        step: How far along the tension flow each step goes, in units where
+            1 moves a sample half way to its neighbours' middle.
         core_radius: Keep the yarns outside a core of this radius round the
             axis, for a braid laid over one.
         tolerance: Overlap, as a fraction of the diameter, that the contact
             push accepts.
+        hold_top: Hold the oldest end where it is, as the take-off does.  Left
+            free, the end can turn about the axis and untwist the braid.
 
     Returns:
         The tightened braid, and its history: ``"length"``, the total yarn
@@ -494,8 +546,8 @@ def tighten_yarns(
     """
     if yarn_diameter <= 0:
         raise ValueError("yarn_diameter must be positive.")
-    if not 0 < stiffness <= 1:
-        raise ValueError("stiffness must be in (0, 1].")
+    if step <= 0:
+        raise ValueError("step must be positive.")
 
     formed = paths.formed().copy()
     n_yarns, n, _ = formed.shape
@@ -507,7 +559,17 @@ def tighten_yarns(
     # One row per sample, yarn after yarn: sample i of yarn a is row a * n + i.
     xy = formed[:, :, :2].reshape(-1, 2)
     level = np.tile(np.arange(n), n_yarns)
-    held = (level == 0) | (level == n - 1)
+    held = (level == n - 1) | ((level == 0) & hold_top)
+
+    # Backward Euler on the tension: (I + step * L) x_new = x, with L the
+    # second difference along a yarn — the fell end fixed, the top end fixed
+    # or free.  Every yarn shares the matrix, so it is inverted once.
+    lap = np.zeros((n, n))
+    for i in range(1, n - 1):
+        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
+    if not hold_top and n > 1:
+        lap[0, :2] = (1.0, -1.0)
+    settle = np.linalg.inv(np.eye(n) + 0.5 * step * lap)
 
     def clamp(move: np.ndarray) -> np.ndarray:
         size = np.linalg.norm(move, axis=-1, keepdims=True)
@@ -555,9 +617,12 @@ def tighten_yarns(
                 if np.any(hit):
                     worst = float(np.max(short[hit]))
                     unit = diff[hit] / np.maximum(dist[hit], 1e-300)[:, None]
-                    half = 0.5 * short[hit, None] * unit
-                    np.add.at(push, p[hit], half)
-                    np.add.at(push, q[hit], -half)
+                    gap = short[hit, None] * unit
+                    # Shared between the two, or all to the one that is free
+                    # to move when the other is held at the fell.
+                    share = (free[p[hit]] / (free[p[hit]] + free[q[hit]]))[:, None]
+                    np.add.at(push, p[hit], share * gap)
+                    np.add.at(push, q[hit], -(1 - share) * gap)
             if core_radius is not None:
                 rel = xy - centre
                 r = np.linalg.norm(rel, axis=-1)
@@ -578,22 +643,34 @@ def tighten_yarns(
         sideways = np.sum((xy[p] - xy[q]) ** 2, axis=-1)
         return float(np.sqrt(np.min(sideways + rise**2)))
 
+    # A pair of held samples cannot be pushed apart — at a braiding point the
+    # yarns all meet there — so contact is only looked for where one of the
+    # two is free to move.
+    free = (~held).astype(float)
+
+    def movable(pairs):
+        p, q, need, rise = pairs
+        keep = (free[p] + free[q]) > 0
+        return p[keep], q[keep], need[keep], rise[keep]
+
     def total_length() -> float:
         return float(np.sum(np.linalg.norm(np.diff(formed, axis=1), axis=-1)))
 
     history: Dict[str, List[float]] = {"length": [], "closest": []}
-    p, q, need, rise = neighbours()
+    p, q, need, rise = movable(neighbours())
     built = xy.copy()
     separate(p, q, need)
     inner = ~held
     for _ in range(iterations):
-        middle = 0.5 * (np.roll(xy, 1, axis=0) + np.roll(xy, -1, axis=0))
-        xy[inner] += clamp(stiffness * (middle[inner] - xy[inner]))
+        lines = xy.reshape(n_yarns, n, 2).transpose(1, 0, 2).reshape(n, -1)
+        target = (settle @ lines).reshape(n, n_yarns, 2).transpose(1, 0, 2)
+        move = target.reshape(-1, 2) - xy
+        xy[inner] += clamp(move[inner])
         separate(p, q, need)
         # The push itself can carry a sample out of the list's reach, so the
         # check comes after it, and a rebuilt list is pushed against again.
         while np.max(np.linalg.norm(xy - built, axis=-1)) > yarn_diameter / 4:
-            p, q, need, rise = neighbours()
+            p, q, need, rise = movable(neighbours())
             built = xy.copy()
             separate(p, q, need)
         history["length"].append(total_length())
@@ -602,7 +679,7 @@ def tighten_yarns(
     points = {}
     for row, (cid, pts) in zip(formed, paths.points.items()):
         points[cid] = np.vstack([row, pts[n:]])
-    return replace(paths, points=points), history
+    return replace(paths, points=points, yarn_diameter=yarn_diameter), history
 
 
 # ── Drawing ───────────────────────────────────────────────────────────────────
@@ -656,7 +733,8 @@ def visualize_yarns(
             ``kwargs`` are then passed to.
         output_html: If given, write the figure to this HTML file.
         title: Figure title; says which model the yarns follow if None.
-        tube_diameter: Draw the yarns this thick, rather than as lines.
+        tube_diameter: Draw the yarns as tubes this thick.  Defaults to the
+            yarn diameter the braid was made for, if any; 0 draws lines.
         n_around: Points round each tube, when drawing them.
         show_deck: Outline the gears at z = 0.
 
@@ -680,6 +758,11 @@ def visualize_yarns(
                 "Braid coming off the machine, formed on a fell of radius "
                 f"{paths.fell_radius:.3g}"
             )
+
+    if tube_diameter is None:
+        tube_diameter = paths.yarn_diameter
+    if not tube_diameter:
+        tube_diameter = None
 
     # The yarns themselves are drawn as any parametric braid is, upright,
     # sampled as finely as they were laid, in their carriers' colours.

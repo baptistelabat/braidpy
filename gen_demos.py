@@ -2,7 +2,7 @@
 
 Writes one static diagram, one track diagram, and an animation per machine,
 then the braid each wired machine lays, in 3D: with no tension, and drawn in
-to a fell and tightened.
+to a braiding point and tightened.
 Run from the repository root: ``python gen_demos.py``
 """
 
@@ -137,23 +137,30 @@ def main() -> None:
         if name.startswith("jacquard"):
             continue
         machine = factory()
-        path = f"demo_{name}_yarns.html"
-        visualize_yarns(machine, title=f"{title} — yarns", output_html=path)
-        print(path)
-
-        # The same braid drawn in to a fell as tight as its yarn allows, then
-        # pulled taut.  A fifth of a gear radius is a plausible yarn.
+        # A fifth of a gear radius is a plausible yarn.
         radii = gear_radii(machine)
         diameter = 0.2 * sum(radii.values()) / len(radii)
+        path = f"demo_{name}_yarns.html"
+        visualize_yarns(
+            machine,
+            title=f"{title} — yarns",
+            tube_diameter=diameter,
+            output_html=path,
+        )
+        print(path)
+
+        # The same braid made at a braiding point, then pulled taut: it opens
+        # out above the point into the shape its yarns settle to.
         braid, _ = tighten_yarns(
-            yarn_paths(machine, yarn_diameter=diameter), diameter, iterations=150
+            yarn_paths(machine, yarn_diameter=diameter, fell_radius=0.0),
+            diameter,
+            iterations=150,
         )
         path = f"demo_{name}_braid.html"
         visualize_yarns(
             machine,
             braid,
-            title=f"{title} — tightened braid",
-            tube_diameter=diameter,
+            title=f"{title} — tightened braid, from a braiding point",
             output_html=path,
         )
         print(path)
