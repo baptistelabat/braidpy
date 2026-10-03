@@ -29,6 +29,11 @@ def _spokes(frame, n):
     return frame.data[:n], frame.data[2 * n : 3 * n], frame.data[3 * n]
 
 
+def _shrunk(trace):
+    """A copy or edging with nothing to show: a point at the braiding point."""
+    return list(trace.x) == [0.0, 0.0] and list(trace.y) == [0.0, 0.0]
+
+
 def _edgings(frame, n):
     return frame.data[n : 2 * n]
 
@@ -57,9 +62,9 @@ def test_a_strand_lifted_over_is_drawn_on_top():
     fig = animate_disk(traj)
     # At rest nobody is lifted; half way through the move strand 0 is.
     _, over, _ = _spokes(fig.frames[0], 2)
-    assert all(list(s.x) == [None, None] for s in over)
+    assert all(_shrunk(s) for s in over)
     _, over, _ = _spokes(fig.frames[2], 2)
-    assert None not in over[0].x and list(over[1].x) == [None, None]
+    assert not _shrunk(over[0]) and _shrunk(over[1])
     assert np.hypot(over[0].x[1], over[0].y[1]) < 1.0  # inside the rim
 
 
@@ -75,7 +80,7 @@ def test_a_moving_strand_keeps_its_look_and_its_edging_swells_smoothly():
         assert under[0].line.color == over[0].line.color
         assert under[0].opacity is None
         edging = _edgings(frame, 2)[0]
-        widths.append(edging.line.width if edging.x[0] is not None else 3)
+        widths.append(3 if _shrunk(edging) else edging.line.width)
     # The edging grows to the middle of the move and shrinks back, by steps
     # no bigger than the move's own.
     middle = widths.index(max(widths))
@@ -100,9 +105,10 @@ def test_a_strand_set_down_leaves_no_copy_behind():
         _, over, _ = _spokes(frame, 2)
         assert all(len(s.x) == 2 and len(s.y) == 2 for s in over)
         assert all(len(s.x) == 2 for s in _edgings(frame, 2))
-    # Once strand 0 is set down its overlay is a gap, not its last position.
+    # Once strand 0 is set down its overlay is shrunk away, not left where it
+    # last was.
     _, over, _ = _spokes(fig.frames[4], 2)
-    assert list(over[0].x) == [None, None]
+    assert _shrunk(over[0])
 
 
 def test_long_sequences_are_sampled_within_the_budget():
@@ -154,13 +160,12 @@ def test_mobidai_animation():
     assert list(carriers.marker.color) == ["red", "green", "blue"]
 
 
-def test_what_moves_is_drawn_with_webgl_and_names_are_not():
+def test_strands_are_plain_svg_and_named_above_them():
+    """Plotly.js 3.0.1 cannot animate WebGL traces: every strand vanishes."""
     traj = disk_trajectories({0: 1, 1: 3}, [{0: 4}], n_slots=8, samples_per_step=2)
-    frame = animate_disk(traj).frames[0]
-    # Spokes, edgings, copies on top and carriers in one WebGL pass; the
-    # names as annotations, since text on a WebGL trace can stop it drawing
-    # and a plain trace would sit under the WebGL layer.
-    assert {t.type for t in frame.data} == {"scattergl"}
-    assert _names(frame) == ["0", "1"]
-    svg = animate_disk(traj, webgl=False).frames[0]
-    assert {t.type for t in svg.data} == {"scatter"}
+    fig = animate_disk(traj)
+    assert {t.type for t in fig.data} | {
+        t.type for f in fig.frames for t in f.data
+    } == {"scatter"}
+    # The names are annotations, drawn above every trace.
+    assert _names(fig.frames[0]) == ["0", "1"]

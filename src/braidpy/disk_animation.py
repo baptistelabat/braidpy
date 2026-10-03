@@ -74,7 +74,6 @@ def animate_disk(
     show_ids: bool = True,
     frame_duration_ms: int = 50,
     max_frames: int = 900,
-    webgl: bool = True,
 ) -> go.Figure:
     """Animate strands moving round a disk, seen from above.
 
@@ -88,9 +87,6 @@ def animate_disk(
         colors: One colour per strand; the horn gear animation's if None.
         show_ids: Name each strand at its carrier.
         frame_duration_ms: How long each frame is shown.
-        webgl: Draw what moves with WebGL, which redraws every strand of a
-            frame in one pass; with SVG each is redrawn in turn, and a strand
-            and its copy on top can be seen out of step for an instant.
         max_frames: Frame budget: a long sequence is sampled more coarsely
             rather than written to a page too big to open.
 
@@ -123,7 +119,10 @@ def animate_disk(
     }
     deepest = max(float(np.max(d)) for d in depth.values())
 
-    Moving = go.Scattergl if webgl else go.Scatter
+    # Plain SVG traces.  WebGL would redraw a frame in one pass, but the
+    # Plotly.js bundled here (3.0.1) cannot animate WebGL traces: the first
+    # frame fails and every strand vanishes.
+    Moving = go.Scatter
 
     def strand_traces(i: int) -> List[go.Scatter]:
         """Every strand as a spoke, then again on top for those lifted over.
@@ -151,9 +150,16 @@ def animate_disk(
             )
             under.append(Moving(**spoke))
             # A strand that is not lifted still sends its edging and its copy,
-            # as gaps: Plotly leaves a trace alone when a frame gives it no
-            # points, so an empty one would keep showing the last lift.
-            gap = {} if lifted else {"x": [None, None], "y": [None, None]}
+            # shrunk to nothing at the braiding point, where every spoke meets
+            # anyway.  Not as no points: Plotly leaves a trace alone when a
+            # frame gives it none, so the last lift would stay on screen.  Not
+            # as gaps either: a WebGL trace of nothing but gaps stops the
+            # whole WebGL layer drawing, every strand with it.
+            gap = (
+                {}
+                if lifted
+                else {"x": [centre[0], centre[0]], "y": [centre[1], centre[1]]}
+            )
             edging.append(
                 Moving(
                     **{
