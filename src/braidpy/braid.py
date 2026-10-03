@@ -34,7 +34,6 @@ from braidpy.utils import (
     PositiveInt,
 )
 
-import braidvisualiser as bv
 
 import math_braid
 from collections.abc import Iterable
@@ -795,47 +794,65 @@ class Braid:
         # Return self to enable to chain the different steps
         return self
 
-    def plot(self, style="ext", line_width=3, gap_size=3, color="rainbow", save=False):
-        """
-        Plot the braid using library braid-visualiser
-        https://github.com/rexgreenway/braid-visualiser
+    def plot(
+        self,
+        n_samples: int = 400,
+        line_width: float = 3.0,
+        gap: float = 0.45,
+        amplitude: float = 0.28,
+        profile=None,
+        color: Optional[str] = None,
+        title: Optional[str] = None,
+        save: Optional[str] = None,
+        ax=None,
+    ) -> "Braid":
+        """Draw the braid as a 2D diagram, running down the page.
+
+        The braid hangs downward, the way it is worked, with its word written
+        above it.  Each strand is drawn in the colour :meth:`draw` gives it,
+        and the one passing behind is interrupted where they meet.  The
+        over-and-under is not re-derived: it is read from the curve
+        :func:`~braidpy.parametric_strand.strand_paths` computes.
+
+        This used to be drawn by braid-visualiser, which used its own
+        colours, so a strand was one colour in the console and another in the
+        plot.  The arguments changed with it: "style" is gone, "gap_size"
+        became "gap" as a fraction of the strand spacing, and "save" takes a
+        path rather than a flag.
 
         Args:
-            style(Optional(str)): "comp" or "ext"(default)
-                "comp" renders the image of the braid in a compact style with
-                crossings parallel to one another if possible. "ext", for extended,
-                shows the crossings in series.
-            line_width(Optional(int)): Default to 3
-                Thickness of the strands in the figure.
-            gap_size(Optional(int)): Default to 3
-                Amount of space shown at crossings for undercrossing strands.
-            color(str): Multicolor strands defined by "rainbow". Single fixed colour for
-                all strands can be chosen from:
-                {'b': blue,
-                'g': green,
-                'r': red,
-                'c': cyan,
-                'm': magenta,
-                'y': yellow,
-                'k': black,
-                'w': white}
-            save(bool): if True save to file "test.svg"
+            n_samples: Points along each strand.
+            line_width: Thickness of a strand.
+            gap: Width of the break where a strand passes behind, as a
+                fraction of the distance between neighbouring strands.
+            amplitude: How far a strand swings out of line as it crosses.
+            profile: How a strand travels sideways; smoothstep by default,
+                :data:`~braidpy.parametric_strand.LINEAR` for straight
+                segments.
+            color: One colour for every strand; each takes its own by default.
+            title: Heading; the braid's word by default, and "" for none.
+            save: Path to write the figure to, if wanted.
+            ax: Axes to draw on; a new figure otherwise.
 
         Returns:
-            Braid: return the slightly modified braid to allow to debug in a chain
+            Braid: self, so the call can be chained.
         """
-        # Neutral elements are not supported by library used
-        compact = self.no_zero()
-        b = bv.Braid(compact.n_strands, *compact.generators)
+        from braidpy.braid_diagram import draw_diagram
+        from braidpy.parametric_strand import SMOOTHSTEP
 
-        b.draw(
-            save=save,
-            style=style,
+        draw_diagram(
+            self,
+            n_samples=n_samples,
             line_width=line_width,
-            gap_size=gap_size,
+            gap=gap,
+            amplitude=amplitude,
+            profile=SMOOTHSTEP if profile is None else profile,
             color=color,
+            title=title,
+            save=save,
+            ax=ax,
         )
-        return b
+        return self
 
 
 def slide_strand(n_slide, start_index=1, sign: int = +1):
