@@ -55,6 +55,7 @@ from braidpy.horn_gear.tracks import (
     tracks_summary,
     walk,
 )
+from braidpy.horn_gear.visualization import visualize_machine
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -975,12 +976,77 @@ def test_tangent_machines_keep_contacts_on_the_line_of_centres():
         )
 
 
+def test_programme_is_drawn_as_a_punchcard():
+    """The mask is shown as the punchcard it is, one row per phase.
+
+    The clockwise row of each step is offset half a punch from its
+    trigonometric partner, because the two are driven one after the other.
+    """
+    from braidpy.horn_gear.visualization import _punchcard_traces
+
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    rows = m.program_rows()
+    assert [label for label, _ in rows] == [
+        "trigonometric",
+        "clockwise",
+        "trigonometric",
+        "clockwise",
+    ]
+    assert rows[0][1] == (True, False, True, False, True, False)
+
+    traces = _punchcard_traces(m, compute_layout(m), gear_radii(m), current_phase=0)
+    card = next(t for t in traces if t.name == "Programme")
+
+    # Every punch has a place on the card, whether or not it is punched.
+    n = len(m.gears)
+    assert len(card.x) == len(rows) * n
+
+    # The row being driven is lit, and only the gears turning in it.
+    lit = [x for x, size in zip(card.x, card.marker.size) if size == 12]
+    assert len(lit) == len(m.turning_gears(0)) == 3
+
+    # A clockwise row sits half a punch right of its trigonometric partner.
+    trig_xs = sorted(card.x[:n])
+    cw_xs = sorted(card.x[n : 2 * n])
+    pitch = trig_xs[1] - trig_xs[0]
+    assert cw_xs[0] - trig_xs[0] == pytest.approx(pitch / 2)
+
+
 GREEN, RED, GREY = "60,170,90", "205,60,55", "140,140,140"
 
 
 def _disc_colours(figure_or_frame):
     """The fill of every gear disc, in gear order."""
     return [t.fillcolor for t in figure_or_frame.data if t.fill == "toself"]
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, flat_braid_9, princess_braid, diamond_braid]
+)
+def test_wired_machine_gears_are_coloured_by_direction(factory):
+    """Green turns clockwise, red the other way — and a wired machine never stops.
+
+    Every gear of a geared-together machine turns on every step, so none of
+    them may be grey, and the colours show the alternation the braid needs.
+    """
+    m = factory()
+    colours = _disc_colours(visualize_machine(m))
+    assert len(colours) == len(m.gears)
+
+    for colour, gear in zip(colours, m.gears.values()):
+        wanted = GREEN if gear.direction == -1 else RED
+        assert wanted in colour, f"gear {gear.name} turns {gear.direction:+d}"
+        assert GREY not in colour, "a geared-together machine never holds a gear"
+
+
+@pytest.mark.parametrize("factory", [tubular_braid_8, flat_braid_9, princess_braid])
+def test_wired_machines_get_no_punchcard(factory):
+    """A machine with no programme has no punchcard to show."""
+    from braidpy.horn_gear.visualization import _punchcard_traces
+
+    m = factory()
+    assert m.program_rows() is None
+    assert _punchcard_traces(m, compute_layout(m), gear_radii(m)) == []
 
 
 def test_a_bobbin_is_drawn_on_the_gear_that_sweeps_it():
@@ -1007,6 +1073,147 @@ def test_a_bobbin_is_drawn_on_the_gear_that_sweeps_it():
     wired = tubular_braid_8()
     for gear, slot in load_carriers(wired).values():
         assert wired.riding_position((gear, slot), 0) == (gear, slot)
+
+
+@pytest.mark.parametrize(
+    "factory,expected_paths",
+    [
+        (tubular_braid_8, 2),
+        (tubular_braid_12, 2),
+        (tubular_braid_16, 2),
+        (diamond_braid, 2),
+        (flat_braid_3, 1),
+        (flat_braid_9, 1),
+        (soutache_braid, 1),
+        (princess_braid, 1),
+    ],
+)
+def test_a_track_is_drawn_once_however_many_cycles_share_it(factory, expected_paths):
+    """Several carrier cycles can run round the same loop of gears.
+
+    The drawn arc depends only on which gears a carrier crosses, never on the
+    slot, so cycles offset from one another by a slot come out as the very same
+    closed curve.  Drawing one trace per cycle stacked them invisibly and
+    claimed more paths than the machine has: a square braid drew four for the
+    two — one each way round the ring — that its braid is actually made of.
+    """
+    from braidpy.horn_gear.visualization import _track_traces
+
+    m = factory()
+    traces = _track_traces(m, compute_layout(m))
+    assert len(traces) == expected_paths
+
+    # What is drawn must really be that many distinct curves.
+    shapes = {
+        (tuple(round(x, 6) for x in t.x), tuple(round(y, 6) for y in t.y))
+        for t in traces
+    }
+    assert len(shapes) == expected_paths, "two traces drew the same curve"
+
+    # Every slot of the machine is accounted for by some drawn path.
+    assert sum(len(t) for t in compute_tracks(m)) >= m.total_slots()
+
+
+def test_ring_braids_run_two_ways_round():
+    """A tubular braid is two paths, one clockwise and one anticlockwise."""
+    from braidpy.horn_gear.visualization import _track_runs
+
+    for factory in (tubular_braid_8, tubular_braid_12, tubular_braid_16):
+        m = factory()
+        paths = set()
+        for track in compute_tracks(m):
+            runs = tuple(g for g, _, _ in _track_runs(track))
+            paths.add(min(runs[i:] + runs[:i] for i in range(len(runs))))
+        assert len(paths) == 2, f"{factory.__name__} should run two ways round"
+
+        # The two are the same loop of gears walked in opposite directions.
+        one, other = (list(p) for p in paths)
+        assert sorted(one) == sorted(other)
+        assert one != other
+
+
+def _laps_per_carrier(m):
+    """Signed laps each carrier makes round the machine over one period.
+
+    Measured from where the carriers actually are, rather than inferred from
+    the tracks, so it is independent of how tracks are computed or drawn.
+    """
+    from braidpy.horn_gear.layout import carrier_radius
+    from braidpy.horn_gear.visualization import slot_offsets
+
+    layout = compute_layout(m)
+    offsets = slot_offsets(m, layout)
+    radii = {n: carrier_radius(m, layout, n) for n in m.gears}
+    hub_x = sum(p[0] for p in layout.values()) / len(layout)
+    hub_y = sum(p[1] for p in layout.values()) / len(layout)
+
+    def angle(carrier, time):
+        a = offsets[carrier.gear] + m.slot_angle(carrier.gear, carrier.slot, time)
+        x = layout[carrier.gear][0] + radii[carrier.gear] * math.cos(a)
+        y = layout[carrier.gear][1] + radii[carrier.gear] * math.sin(a)
+        return math.atan2(y - hub_y, x - hub_x)
+
+    period = simulation_period(m)
+    history = simulate(m, period, load_carriers(m))
+    swept = {}
+    for t in range(period):
+        now = {c.carrier_id: c for c in history[t].carriers}
+        nxt = {c.carrier_id: c for c in history[t + 1].carriers}
+        for cid, carrier in now.items():
+            step_angle = angle(nxt[cid], t + 1) - angle(carrier, t)
+            step_angle = (step_angle + math.pi) % (2 * math.pi) - math.pi
+            swept[cid] = swept.get(cid, 0.0) + step_angle
+    return {cid: total / (2 * math.pi) for cid, total in swept.items()}
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, tubular_braid_12, tubular_braid_16, diamond_braid]
+)
+def test_ring_braids_are_loaded_with_equal_carriers_each_way(factory):
+    """A tubular braid needs as many carriers going one way as the other.
+
+    Which way a carrier travels is decided by the slot it is put in, not by the
+    track it lands on: two carriers on the same track circulate opposite ways,
+    because one placed there at t=0 sits at a different phase from one that
+    arrived.  So a machine can be threaded balanced or lopsided, and the
+    loading has to choose — tubular_braid_8 ran six one way against two before
+    the loader weighed this, while still being a perfectly good machine.
+    """
+    m = factory()
+    laps = _laps_per_carrier(m)
+
+    assert all(abs(abs(v) - 1.0) < 0.01 for v in laps.values()), (
+        "every carrier should make exactly one lap per period"
+    )
+
+    clockwise = sum(1 for v in laps.values() if v < 0)
+    anticlockwise = sum(1 for v in laps.values() if v > 0)
+    assert clockwise == anticlockwise, (
+        f"{factory.__name__} is threaded {clockwise} one way against "
+        f"{anticlockwise} the other"
+    )
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, tubular_braid_12, tubular_braid_16]
+)
+def test_circulation_agrees_with_the_angle_actually_swept(factory):
+    """The combinatorial sense must match the geometric one.
+
+    ``circulation`` counts steps around the connection graph and never looks at
+    a layout, so it is worth checking against the angle a carrier really sweeps
+    about the machine's centre.
+    """
+    m = factory()
+    period = simulation_period(m)
+    laps = _laps_per_carrier(m)
+
+    for cid, pos in load_carriers(m).items():
+        steps = circulation(m, pos, period)
+        assert steps != 0, "a ring braid's carriers must go somewhere"
+        assert (steps > 0) == (laps[cid] > 0), (
+            f"carrier {cid} counts {steps} steps round but sweeps {laps[cid]:+.2f} laps"
+        )
 
 
 def test_flat_braids_have_no_circulation():
@@ -1054,6 +1261,76 @@ def test_soutache_is_threaded_every_other_slot():
     )
     # Three carriers on a five-slot gear must crowd once; more means bunching.
     assert crowded <= 1, f"{sorted(placed)} bunches carriers together"
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, soutache_braid, princess_braid, flat_braid_3]
+)
+def test_a_bobbin_fits_inside_its_notch(factory):
+    """A bobbin is drawn to sit in its seat, a little smaller than the notch.
+
+    Plotly sizes markers in pixels while the notches are in layout units, so a
+    fixed marker size looks right on one machine and wrong on the next.  The
+    size is worked out from the machine's own extent instead, and must come
+    out under the notch it sits in but not vanishingly small.
+    """
+    from braidpy.horn_gear.visualization import (
+        _BOBBIN_FILL,
+        _carrier_marker_sizes,
+    )
+
+    m = factory()
+    sizes = _carrier_marker_sizes(m, compute_layout(m), gear_radii(m))
+    assert set(sizes) == set(m.gears)
+
+    for gear, size in sizes.items():
+        notch = size / _BOBBIN_FILL
+        assert size < notch, f"bobbin on {gear} is not smaller than its notch"
+        assert size > 8, f"bobbin on {gear} would be too small to see"
+
+
+def test_bobbins_and_notches_scale_together():
+    """Halving the slot spacing must shrink bobbin and notch alike."""
+    from braidpy.horn_gear.visualization import _carrier_marker_sizes
+
+    roomy = _carrier_marker_sizes(
+        soutache_braid(n_slots=5),
+        *(lambda m: (compute_layout(m), gear_radii(m)))(soutache_braid(n_slots=5)),
+    )
+    crowded = _carrier_marker_sizes(
+        soutache_braid(n_slots=9),
+        *(lambda m: (compute_layout(m), gear_radii(m)))(soutache_braid(n_slots=9)),
+    )
+    # More slots on the same gear means a tighter seat for each.
+    assert crowded["A"] <= roomy["A"]
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [tubular_braid_8, tubular_braid_12, flat_braid_3, flat_braid_9, princess_braid],
+)
+def test_a_drawn_track_only_steps_between_connected_gears(factory):
+    """A track must be drawn along the path a carrier really takes.
+
+    A track lists the *distinct* slots on a loop, so a slot the carrier returns
+    to is not recorded twice and two entries side by side in the list need not
+    be a step apart in time.  Drawing straight from that list made a flat
+    braid's track jump between its two end gears, which are not connected at
+    all — the carrier walks all the way back down the chain in between.
+    """
+    from braidpy.horn_gear.visualization import _track_runs
+
+    m = factory()
+    period = simulation_period(m)
+
+    for track in compute_tracks(m):
+        runs = _track_runs(walk(m, track[0], period))
+        gears = [gear for gear, _, _ in runs]
+        for here, nxt in zip(gears, gears[1:] + gears[:1]):
+            assert here == nxt or m.graph.has_edge(here, nxt), (
+                f"{factory.__name__}: drawn track steps {here} -> {nxt}, "
+                f"but they share no contact"
+            )
 
 
 def test_the_stored_track_is_not_a_path():
