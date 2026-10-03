@@ -6,7 +6,10 @@
 
 import pytest
 
-from braidpy.horn_gear.model import BraidingMachine, Connection, HornGear
+from braidpy.horn_gear.examples import (
+    tubular_braid_8,
+)
+from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -45,6 +48,20 @@ def test_machine_invalid_slot_ref():
 
 
 # ── Axial columns and tube cores ──────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "axials,message",
+    [
+        ([Axial("x", ("NOPE",))], "unknown gear"),
+        ([Axial("x", ())], "empty anchor"),
+        ([Axial("x", ("A",)), Axial("x", ("B",))], "Duplicate axial"),
+    ],
+)
+def test_invalid_axials_are_rejected(axials, message):
+    m = tubular_braid_8()
+    with pytest.raises(ValueError, match=message):
+        BraidingMachine(list(m.gears.values()), m.connections, axials)
 
 
 # ── Examples sanity ───────────────────────────────────────────────────────────
