@@ -1,4 +1,4 @@
-from ashley_solid_sinnet import AshleySolidSinnet
+from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 
 """
 ABOK #3042
@@ -154,7 +154,8 @@ abok_3051 = AshleySolidSinnet(
         (6, 14),
         (15, 5),
         (4, 16),
-        (17, 3)(2, 18),
+        (17, 3),
+        (2, 18),
     ],
 )
 """
