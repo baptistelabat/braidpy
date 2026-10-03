@@ -25,6 +25,7 @@ from .jacquard import (
     jacquard_lace_ring,
     notch_positions,
 )
+from .loading import load_carriers
 from .layout import (
     axial_clearance,
     axial_position,
@@ -46,7 +47,6 @@ from .simulation import (
     MachineState,
     carrier_places,
     initial_state,
-    load_carriers,
     simulate,
     state_period,
     step,
