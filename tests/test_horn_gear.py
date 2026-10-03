@@ -55,7 +55,7 @@ from braidpy.horn_gear.tracks import (
     tracks_summary,
     walk,
 )
-from braidpy.horn_gear.visualization import visualize_machine
+from braidpy.horn_gear.visualization import animate, visualize_machine
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -695,6 +695,23 @@ def test_invalid_axials_are_rejected(axials, message):
         BraidingMachine(list(m.gears.values()), m.connections, axials)
 
 
+def test_axials_are_drawn_once_and_stay_put():
+    """The column never moves, so it is drawn into the figure, not into frames.
+
+    It has to be on screen throughout all the same: an animation that left it
+    out of the figure would only ever show it if a frame carried it.
+    """
+    m = princess_braid()
+
+    static_names = [t.name for t in visualize_machine(m).data if t.name]
+    assert "Axials" in static_names
+
+    fig = animate(m, n_steps=6)
+    assert "Axials" in [t.name for t in fig.data if t.name]
+    for frame in fig.frames:
+        assert "Axials" not in [t.name for t in frame.data if t.name]
+
+
 # ── Examples sanity ───────────────────────────────────────────────────────────
 
 
@@ -719,6 +736,58 @@ def test_example_machines_valid(factory):
 
 
 # ── Animation continuity ───────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "factory,n_steps",
+    [
+        (flat_braid_4, 8),
+        (tubular_braid_8, 8),
+        (tubular_braid_12, 8),
+    ],
+)
+def test_animation_continuity(factory, n_steps):
+    """Carrier (x,y) positions must not jump between consecutive animation frames.
+
+    The maximum acceptable displacement per frame is 2×(arc of one full slot per
+    sub-frame).  This is already generous; the original bug produced jumps of a
+    full slot (9× larger than a sub-frame arc), which triggers this test easily.
+    """
+    from braidpy.horn_gear.layout import gear_radii
+    from braidpy.horn_gear.visualization import animate
+
+    n_substeps = 9
+    machine = factory()
+    fig = animate(machine, n_steps=n_steps, n_substeps=n_substeps)
+
+    radii = gear_radii(machine)
+    max_r = max(radii.values())
+    n_slots_min = min(g.n_slots for g in machine.gears.values())
+
+    # Per-sub-frame arc for one slot on the largest gear.
+    # Allow 3× that to accommodate the transfer arc (carrier sweeping to contact).
+    arc_per_substep = max_r * 2 * math.pi / n_slots_min / n_substeps
+    threshold = arc_per_substep * 3
+
+    frames = list(fig.frames)
+    violations = []
+    for i in range(len(frames) - 1):
+        xs_a = frames[i].data[-1].x
+        ys_a = frames[i].data[-1].y
+        xs_b = frames[i + 1].data[-1].x
+        ys_b = frames[i + 1].data[-1].y
+        for j, (xa, ya, xb, yb) in enumerate(zip(xs_a, ys_a, xs_b, ys_b)):
+            dist = math.hypot(xb - xa, yb - ya)
+            if dist > threshold:
+                violations.append((i, j, dist))
+
+    assert not violations, (
+        f"Continuity violations (threshold={threshold:.4f}):\n"
+        + "\n".join(
+            f"  frame {i}→{i + 1}, carrier {j}: jump={d:.4f}"
+            for i, j, d in violations[:20]
+        )
+    )
 
 
 # ── One cycle, and round again ────────────────────────────────────────────────
@@ -746,6 +815,146 @@ def test_a_cycle_puts_every_carrier_back_where_it_started(factory):
     start = carrier_places(m, history[0])
     assert carrier_places(m, history[period]) == start
     assert all(carrier_places(m, history[t]) != start for t in range(1, period))
+
+
+def test_a_carrier_comes_home_to_a_place_not_to_a_slot():
+    """A slot index is a label on a turning gear, and the gear takes it away.
+
+    Every step turns each gear by one slot, so its notches land back on notch
+    angles: the gear is indistinguishable from the gear a step earlier.  On the
+    flat braid of nine, eighteen steps bring every bobbin back to the point it
+    set off from, drawn to the last decimal — in a *different* notch.  Waiting
+    for the notches to match as well takes 180 steps and shows the same picture
+    ten times over.
+    """
+    from braidpy.horn_gear.visualization import animate
+
+    m = flat_braid_9()
+    assert state_period(m) == 18
+
+    history = simulate(m, 180, m.default_carriers())
+    assert carrier_places(m, history[18]) == carrier_places(m, history[0])
+    assert history[18].carrier_positions() != history[0].carrier_positions()
+    assert history[180].carrier_positions() == history[0].carrier_positions()
+
+    # What is drawn is the place, so the picture really does repeat.
+    frames = {f.name: f for f in animate(m, n_steps=20, n_substeps=1).frames}
+    first, again = frames["0_0"].data[-1], frames["18_0"].data[-1]
+    assert list(first.text) == list(again.text), "the bobbins have been shuffled"
+    assert max(
+        math.hypot(xb - xa, yb - ya)
+        for xa, ya, xb, yb in zip(first.x, first.y, again.x, again.y)
+    ) == pytest.approx(0, abs=1e-9)
+
+
+@pytest.mark.parametrize(
+    "factory", [flat_braid_4, soutache_braid, tubular_braid_8, flat_braid_9]
+)
+def test_an_animation_runs_exactly_one_cycle_by_default(factory):
+    """Asked for no particular length, an animation covers the cycle once.
+
+    It stops one step short of starting over, because that step *is* the first
+    one: drawing it would show the opening frame twice at the join.
+    """
+    m = factory()
+    fig = animate(m)
+    steps = sorted({int(f.name.split("_")[0]) for f in fig.frames})
+    assert steps == list(range(state_period(m)))
+
+
+def test_the_loop_joins_up_as_smoothly_as_any_other_frame():
+    """The step from the last frame back to the first is an ordinary step.
+
+    This is what makes a looping page read as a machine running rather than as
+    a clip restarting.
+    """
+    from braidpy.horn_gear.layout import gear_radii
+
+    m = tubular_braid_8()
+    fig = animate(m)
+
+    carriers = [f.data[-1] for f in fig.frames]
+    jumps = [
+        max(math.hypot(xb - xa, yb - ya) for xa, ya, xb, yb in zip(a.x, a.y, b.x, b.y))
+        for a, b in zip(carriers, carriers[1:] + carriers[:1])
+    ]
+    wrap = jumps[-1]
+    assert wrap <= max(jumps[:-1]) * 1.05, (
+        f"the join jumps {wrap:.4f} against {max(jumps[:-1]):.4f} elsewhere"
+    )
+    assert wrap < max(gear_radii(m).values())  # a real step, not a teleport
+
+
+def test_a_programmed_machine_has_no_cycle_to_run():
+    """A carrier goes where the programme sends it and need never come back."""
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    assert state_period(m, max_steps=200) is None
+
+    # It is still animatable: the drive's own period stands in, so the
+    # punchcard at least ends where it started.
+    fig = animate(m)
+    steps = sorted({int(f.name.split("_")[0]) for f in fig.frames})
+    assert steps == list(range(m.contact_period() + 1)), "the last step is shown"
+
+
+def test_a_written_animation_starts_itself_and_plays_round_again(tmp_path):
+    """The page loops: Plotly stops at the last frame, so the page restarts it."""
+    path = tmp_path / "loop.html"
+    animate(tubular_braid_8(), output_html=str(path))
+    page = path.read_text()
+
+    assert "plotly_animated" in page, "nothing notices the sequence running out"
+    assert "Plotly.animate(gd, null, opts);" in page, "nothing starts it again"
+    assert "plotly_buttonclicked" in page, "Pause would never take"
+
+
+def test_only_whole_steps_are_numbered_on_the_slider():
+    """Every frame keeps a notch to scrub to; only whole steps carry a number.
+
+    Reading "31" tells you nothing about a machine whose period is 8, and a
+    number part-way through a step would be worse.  Plotly writes the numbers
+    by striding over the notches at an interval it works out for itself, so the
+    sub-frames are given nothing to say: wherever the stride lands on one, it
+    prints nothing, and a number can only ever appear at a whole step.
+    """
+    n_substeps = 4
+    m = tubular_braid_8()
+    fig = animate(m, n_substeps=n_substeps)
+    slider = fig.layout.sliders[0]
+
+    assert len(slider.steps) == len(fig.frames), "a frame with no notch"
+    for index, (entry, frame) in enumerate(zip(slider.steps, fig.frames)):
+        assert list(entry.args[0]) == [frame.name], "a notch plays the wrong frame"
+        step, substep = (int(part) for part in frame.name.split("_"))
+        assert entry.label == (str(step) if substep == 0 else "")
+        assert index == step * n_substeps + substep
+
+    numbered = [s.label for s in slider.steps if s.label]
+    assert numbered == [str(t) for t in range(state_period(m))]
+
+
+def test_a_frame_carries_only_what_changes():
+    """On a geared machine only the slots turn and the bobbins ride.
+
+    Everything else — links, contact crosses, discs, labels, columns — is drawn
+    into the figure once.  Repeating it in every frame of a long cycle is most
+    of what such a page would weigh.
+    """
+    fig = animate(tubular_braid_8())
+    assert all(len(f.data) == 2 for f in fig.frames)
+    assert all(len(f.traces) == 2 for f in fig.frames)
+
+
+def test_a_long_cycle_trades_smoothing_rather_than_its_length():
+    """The cycle is the thing to keep; the sub-frames are what give way."""
+    m = flat_braid_9()
+    period = state_period(m)
+
+    fig = animate(m, max_frames=period * 2)
+    assert len(fig.frames) <= period * 2
+    assert sorted({int(f.name.split("_")[0]) for f in fig.frames}) == list(
+        range(period)
+    )
 
 
 def test_diamond_braid_is_tubular_braid_8_relabelled():
@@ -916,6 +1125,17 @@ def test_jacquard_ring_needs_an_even_number_of_gears(n_gears):
         jacquard_lace_ring(n_gears)
 
 
+def test_jacquard_machine_draws():
+    """The drawing code is machine-driven, so it must handle a programme."""
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    assert len(visualize_machine(m).data) > 0
+
+    fig = animate(m, n_steps=6)
+    assert fig.frames
+    for frame in fig.frames:
+        assert "Carriers" in [t.name for t in frame.data if t.name]
+
+
 @pytest.mark.parametrize("n_gears", [4, 6, 8, 12])
 def test_lace_bobbin_sits_in_the_notch(n_gears):
     """A bobbin rides inside the notch, not out on the rim.
@@ -1039,6 +1259,21 @@ def test_wired_machine_gears_are_coloured_by_direction(factory):
         assert GREY not in colour, "a geared-together machine never holds a gear"
 
 
+def test_held_gears_are_grey():
+    """A gear its programme is not turning goes grey, whichever way it turns."""
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    fig = animate(m, n_steps=4)
+
+    for frame in fig.frames:
+        turning = m.turning_gears(frame.name and int(frame.name.split("_")[0]) or 0)
+        for colour, (name, gear) in zip(_disc_colours(frame), m.gears.items()):
+            if name not in turning:
+                assert GREY in colour, f"{name} is held but not grey"
+            else:
+                wanted = GREEN if gear.direction == -1 else RED
+                assert wanted in colour, f"{name} turns {gear.direction:+d}"
+
+
 @pytest.mark.parametrize("factory", [tubular_braid_8, flat_braid_9, princess_braid])
 def test_wired_machines_get_no_punchcard(factory):
     """A machine with no programme has no punchcard to show."""
@@ -1047,6 +1282,77 @@ def test_wired_machines_get_no_punchcard(factory):
     m = factory()
     assert m.program_rows() is None
     assert _punchcard_traces(m, compute_layout(m), gear_radii(m)) == []
+
+
+def test_animation_traces_keep_their_identity_between_frames():
+    """Only what actually moves may move.
+
+    Plotly pairs traces between frames by position, so a trace has to mean the
+    same thing in every frame.  Batching the gear discs by colour broke this:
+    one slot held the turning gears in one frame and the held ones in the next,
+    and the circles appeared to fly around the machine instead of just
+    changing colour.  The same trap catches the punchcard if its lit and unlit
+    punches are split into separate traces.
+    """
+    m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
+    frames = list(animate(m, n_steps=6).frames)
+    assert len({len(f.data) for f in frames}) == 1, "trace count changes"
+
+    base = frames[0].data
+    for index, trace in enumerate(base):
+        moved = any(list(f.data[index].x) != list(trace.x) for f in frames[1:])
+
+        if trace.fill == "toself":  # a gear disc
+            assert not moved, f"gear disc {index} moved between frames"
+            assert any(
+                f.data[index].fillcolor != trace.fillcolor for f in frames[1:]
+            ), "a gear disc never changes colour, so nothing shows it turning"
+
+        if trace.name == "Programme":  # the punchcard
+            assert not moved, "a punch moved between frames"
+            assert any(
+                str(f.data[index].marker.color) != str(trace.marker.color)
+                for f in frames[1:]
+            ), "the punchcard never lights the row being driven"
+
+    # Exactly two things are entitled to move: the tick marks turning with
+    # their gears, and the carriers.
+    movers = sum(
+        any(list(f.data[i].x) != list(tr.x) for f in frames[1:])
+        for i, tr in enumerate(base)
+    )
+    assert movers == 2, f"{movers} traces move, expected the ticks and the carriers"
+
+
+@pytest.mark.parametrize("n_gears", [6, 12, 24])
+def test_lace_carriers_never_jump_across_a_gear(n_gears):
+    """A bobbin must be drawn on whatever is actually sweeping it.
+
+    On this machine the gear that moves a bobbin is often *not* the one it is
+    recorded on: an idle gear's neighbour reaches into the shared notch and
+    takes it.  Drawing it on its own gear leaves it still for the whole step
+    and then flings it across to the neighbour — which measured 6.4x a normal
+    sub-frame step before this was fixed.
+    """
+    n_substeps = 9
+    m = jacquard_lace_ring(n_gears)
+    fig = animate(m, n_steps=4, n_substeps=n_substeps)
+
+    layout = compute_layout(m)
+    radius = max(carrier_radius(m, layout, g) for g in m.gears)
+    pitch = min(2 * math.pi / g.n_slots for g in m.gears.values())
+    smooth = radius * pitch / n_substeps
+
+    carriers = [f.data[-1] for f in fig.frames]
+    worst = max(
+        math.hypot(xb - xa, yb - ya)
+        for a, b in zip(carriers, carriers[1:])
+        for xa, ya, xb, yb in zip(a.x, a.y, b.x, b.y)
+    )
+    assert worst < 3 * smooth, (
+        f"a bobbin moved {worst / smooth:.1f}x a normal sub-frame step, so it is "
+        f"being drawn on a gear that is not carrying it"
+    )
 
 
 def test_a_bobbin_is_drawn_on_the_gear_that_sweeps_it():
@@ -1303,6 +1609,42 @@ def test_bobbins_and_notches_scale_together():
     )
     # More slots on the same gear means a tighter seat for each.
     assert crowded["A"] <= roomy["A"]
+
+
+@pytest.mark.parametrize(
+    "factory", [tubular_braid_8, tubular_braid_12, soutache_braid, flat_braid_9]
+)
+def test_tracks_are_drawn_as_wide_as_a_bobbin_and_stay_behind(factory):
+    """A track should read as the channel its carriers run along.
+
+    Drawn as a hairline it disappeared under the machine entirely, so it is
+    now as wide as the narrowest bobbin that threads it — wide enough to see,
+    never wider than the notches it passes through — and faint, and drawn
+    before everything else so it stays in the background.
+    """
+    from braidpy.horn_gear.visualization import (
+        _TRACK_OPACITY,
+        _carrier_marker_sizes,
+    )
+
+    m = factory()
+    fig = animate(m, n_steps=4)
+    drawn = [
+        (i, t) for i, t in enumerate(fig.data) if t.name and t.name.startswith("Track")
+    ]
+    assert drawn, f"{factory.__name__} should draw its tracks"
+
+    bobbin = min(_carrier_marker_sizes(m, compute_layout(m), gear_radii(m)).values())
+    for index, trace in drawn:
+        assert trace.line.width == pytest.approx(bobbin)
+        assert trace.opacity == _TRACK_OPACITY
+        assert index < len(fig.data) - 1, "a track is drawn over the machine"
+
+    # And they stay put: the tracks never change, so no frame redraws them.
+    for frame in fig.frames:
+        assert not [t for t in frame.data if t.name and t.name.startswith("Track")], (
+            "a track is being redrawn every frame"
+        )
 
 
 @pytest.mark.parametrize(
