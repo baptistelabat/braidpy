@@ -79,3 +79,55 @@ Three checks, all already in the package or its tests:
    test that can catch a solver that is confidently wrong. Get it to agree
    with `packing_radius` as the lay is stretched out, too: that is a second
    known point, and a free one.
+
+---
+## A first, restricted version: braids off a horn gear machine
+
+`braidpy.horn_gear.take_off` poses a restricted form of this problem for the
+braid a simulated machine lays, and solves it.
+
+- **The initial guess** is the machine itself: each yarn lies over the path its
+  carrier traced, lifted along the machine's axis by the braid taken off since
+  (`horn_gear.take_off.yarn_paths`). It is in the right braid class by construction, which is
+  what this page asks of a start.
+- **Drawing in.** The braid is formed on a fell — a circle, or a braiding
+  point — and is the carrier footprint scaled toward the axis by a factor *k*.
+  Scaling the plane at fixed height cannot pass one yarn through another, so
+  every *k* > 0 keeps the topology. Given a yarn diameter, the smallest *k*
+  with no two yarns closer than *d* has a closed form over the samples
+  (`horn_gear.take_off.jammed_contraction`): for two samples a height *dz* apart and *s* apart
+  sideways, *k* = √(*d*² − *dz*²) / *s*, and the braid jams at the largest.
+- **The fell is only a boundary.** A fell circle, or a braiding point, sets
+  the size where the braid starts; a short distance above it the braid is
+  drawn to its jammed size instead, by a scale that varies with height. Any
+  positive scale at each level keeps the topology, so how it varies does not
+  matter.
+- **Tightening** (`horn_gear.take_off.tighten_yarns`) minimises length with
+  each sample held at its height — the small-slope form of the length
+  objective — and enforces non-interpenetration by pushing apart any two
+  samples of different yarns closer than *d*. The tension is integrated
+  implicitly (one backward-Euler step along the curve-shortening flow per
+  iteration, the matrix inverted once), which settles a yarn in tens of
+  iterations rather than thousands, but no sample moves more than *d*/5 per
+  iteration, so a feasible path from the start stays in the same braid
+  class, as argued above. The yarn is held at the fell and at its oldest end.
+
+The check that matters is that the result does not depend on the start. Far
+enough from the fell, a braid made at a braiding point, at the jammed fell,
+or at a fell twice that size tightens to the same cross-section — and a flat
+braid comes out as a ribbon (nine carriers: about 4.6 *d* wide by 1.8 *d*
+thick) while a tubular one stays round. That is in the tests.
+
+What it does not yet do: let samples move along the axis, which a full length
+minimisation would; bending stiffness; periodicity, rather than holding both
+ends; and the check against the rope limit.
+
+### Another approach: beads on springs
+
+The braid simulator at craftdesignonline.com (braid3d) models each thread
+as a chain of beads one unit apart, joined by springs, with beads of
+different threads repelling inside a contact distance and a weight pulling
+each thread toward its bobbin. The beads move freely in three dimensions and
+are relaxed from a queue, so it gets axial sliding for free — the first
+thing missing above. Its price is a step size that has to be kept small for
+stability, where the implicit step here does not.

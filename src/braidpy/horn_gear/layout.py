@@ -540,3 +540,45 @@ def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> Dict[str, float]
     return {
         name: _gear_radius(gear.n_slots, scale) for name, gear in machine.gears.items()
     }
+
+
+def carrier_xy(
+    machine: BraidingMachine,
+    layout: Dict[str, Tuple[float, float]],
+    offsets: Dict[str, float],
+    carrier_radii: Dict[str, float],
+    position: Tuple[str, int],
+    time: int,
+    frac: float = 0.0,
+) -> Tuple[float, float]:
+    """Where in the plane a carrier is, at continuous time ``time + frac``.
+
+    A carrier rides in a horn of its gear, so its angle is simply that slot's
+    angle: it turns at exactly the gear's rate and always sits on its slot.
+    It is drawn on whatever is actually moving it this step — on a machine
+    with shared slots that is the receiving gear, see
+    :meth:`~braidpy.horn_gear.model.BraidingMachine.riding_position`.
+
+    Transfers stay continuous without any special casing: a carrier moves to
+    the neighbour only at the step where its slot is at the contact point, and
+    it lands on the neighbour's slot that is at that same contact point at that
+    same instant, so the two coincide (provided the machine's connection slots
+    match its layout — see :func:`offset_residuals`).
+
+    Args:
+        machine: The machine definition.
+        layout: Gear centres, from :func:`compute_layout`.
+        offsets: Per-gear rotation offsets, from :func:`slot_offsets`.
+        carrier_radii: Per-gear riding radius, from :func:`carrier_radius`.
+        position: The carrier's recorded (gear, slot) at ``time``.
+        time: The step being taken.
+        frac: How far into that step, from 0 to 1.
+
+    Returns:
+        The carrier's (x, y).
+    """
+    gear_name, slot = machine.riding_position(position, time)
+    cx, cy = layout[gear_name]
+    r = carrier_radii[gear_name]
+    ang = offsets[gear_name] + machine.slot_angle(gear_name, slot, time, frac)
+    return cx + r * math.cos(ang), cy + r * math.sin(ang)
