@@ -32,6 +32,12 @@ from braidpy.horn_gear.layout import (
     tube_rings,
 )
 from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
+from braidpy.horn_gear.tracks import (
+    compute_tracks,
+    simulation_period,
+    tracks_summary,
+    walk,
+)
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -86,6 +92,41 @@ def test_layout_two_gears():
 # ── Tracks ────────────────────────────────────────────────────────────────────
 
 
+def test_tracks_cover_all_slots():
+    m = tubular_braid_8()
+    tracks = compute_tracks(m)
+    summary = tracks_summary(tracks)
+    assert summary["total_positions"] == m.total_slots()
+
+
+def test_tracks_flat_braid_4():
+    m = flat_braid_4(n_slots=4)
+    tracks = compute_tracks(m)
+    # Each track must be non-empty and closed (we check closure via compute_track)
+    for t in tracks:
+        assert len(t) > 0
+    assert sum(len(t) for t in tracks) == m.total_slots()
+
+
+def test_tracks_tubular_16():
+    m = tubular_braid_16()
+    tracks = compute_tracks(m)
+    summary = tracks_summary(tracks)
+    assert summary["total_positions"] == m.total_slots()
+
+
+def test_tracks_diamond():
+    m = diamond_braid()
+    tracks = compute_tracks(m)
+    assert sum(len(t) for t in tracks) == m.total_slots()
+
+
+def test_tracks_mixed_gear():
+    m = mixed_gear_machine()
+    tracks = compute_tracks(m)
+    assert sum(len(t) for t in tracks) == m.total_slots()
+
+
 # ── Simulation ────────────────────────────────────────────────────────────────
 
 
@@ -138,6 +179,30 @@ def test_rings_that_cannot_align_are_flagged(factory, n_gears):
 
     worst = max(offset_residuals(m, compute_layout(m)).values())
     assert math.degrees(worst) > 1.0
+
+
+@pytest.mark.parametrize("n_end,expected_slots", [(3, 14), (5, 18), (7, 22)])
+def test_odd_end_gears_fuse_the_flat_braid_into_one_track(n_end, expected_slots):
+    """An odd end gear returns the carrier on the opposite strand.
+
+    A carrier entering an end gear leaves by the same contact it came in by.
+    With an odd slot count it comes back onto the other strand, joining both
+    halves into a single closed track that covers every slot.  Even counts
+    leave the machine split (see the companion test).
+    """
+    m = flat_braid_9(n_end=n_end)
+    assert m.total_slots() == expected_slots
+
+    tracks = compute_tracks(m)
+    assert len(tracks) == 1
+    assert len(tracks[0]) == expected_slots
+
+
+@pytest.mark.parametrize("n_end,expected_tracks", [(4, 4), (6, 2), (8, 8)])
+def test_even_end_gears_leave_the_flat_braid_split(n_end, expected_tracks):
+    """Even end gears return the carrier to its own strand, so tracks stay separate."""
+    m = flat_braid_9(n_end=n_end)
+    assert len(compute_tracks(m)) == expected_tracks
 
 
 @pytest.mark.parametrize("n_end", [4, 5, 6, 7])
@@ -324,6 +389,26 @@ def test_invalid_axials_are_rejected(axials, message):
 # ── Examples sanity ───────────────────────────────────────────────────────────
 
 
+@pytest.mark.parametrize(
+    "factory",
+    [
+        flat_braid_3,
+        flat_braid_4,
+        flat_braid_9,
+        tubular_braid_8,
+        tubular_braid_12,
+        tubular_braid_16,
+        diamond_braid,
+        mixed_gear_machine,
+    ],
+)
+def test_example_machines_valid(factory):
+    m = factory()
+    assert m.total_slots() > 0
+    tracks = compute_tracks(m)
+    assert sum(len(t) for t in tracks) == m.total_slots()
+
+
 # ── Animation continuity ───────────────────────────────────────────────────────
 
 
@@ -369,3 +454,27 @@ GREEN, RED, GREY = "60,170,90", "205,60,55", "140,140,140"
 def _disc_colours(figure_or_frame):
     """The fill of every gear disc, in gear order."""
     return [t.fillcolor for t in figure_or_frame.data if t.fill == "toself"]
+
+
+def test_the_stored_track_is_not_a_path():
+    """Guard the distinction the drawing bug turned on.
+
+    flat_braid_9's track genuinely contains slots that sit next to each other
+    in the list while being far apart in time, so anything that needs the real
+    path must walk it rather than read the track.
+    """
+    m = flat_braid_9()
+    track = compute_tracks(m)[0]
+
+    jumps = [
+        (track[i], track[(i + 1) % len(track)])
+        for i in range(len(track))
+        if track[i][0] != track[(i + 1) % len(track)][0]
+        and not m.graph.has_edge(track[i][0], track[(i + 1) % len(track)][0])
+    ]
+    assert jumps, "if this track became a path, the walk above can be simplified"
+
+    # Walking it never does that.
+    path = walk(m, track[0], simulation_period(m))
+    for here, nxt in zip(path, path[1:]):
+        assert here[0] == nxt[0] or m.graph.has_edge(here[0], nxt[0])
