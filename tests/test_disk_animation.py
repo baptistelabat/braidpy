@@ -22,8 +22,15 @@ matplotlib.use("Agg")
 
 
 def _spokes(frame, n):
-    """The frame's spokes drawn under, then over, then the carriers."""
-    return frame.data[:n], frame.data[n : 2 * n], frame.data[2 * n]
+    """The frame's spokes drawn under, then over, then the carriers.
+
+    Between the two sit the white edgings of the copies drawn over.
+    """
+    return frame.data[:n], frame.data[2 * n : 3 * n], frame.data[3 * n]
+
+
+def _edgings(frame, n):
+    return frame.data[n : 2 * n]
 
 
 def test_strands_are_spokes_to_their_carriers():
@@ -51,6 +58,28 @@ def test_a_strand_lifted_over_is_drawn_on_top():
     assert np.hypot(over[0].x[1], over[0].y[1]) < 1.0  # inside the rim
 
 
+def test_a_moving_strand_keeps_its_look_and_its_edging_swells_smoothly():
+    """Nothing about a strand jumps as it is lifted or set down."""
+    traj = disk_trajectories({0: 1, 1: 3}, [{0: 4}], n_slots=8, samples_per_step=8)
+    fig = animate_disk(traj)
+    widths = []
+    for frame in fig.frames:
+        under, over, _ = _spokes(frame, 2)
+        # Under and over drawn alike: switching between them changes nothing.
+        assert under[0].line.width == over[0].line.width == 3
+        assert under[0].line.color == over[0].line.color
+        assert under[0].opacity is None
+        edging = _edgings(frame, 2)[0]
+        widths.append(edging.line.width if edging.x[0] is not None else 3)
+    # The edging grows to the middle of the move and shrinks back, by steps
+    # no bigger than the move's own.
+    middle = widths.index(max(widths))
+    assert widths[: middle + 1] == sorted(widths[: middle + 1])
+    assert widths[middle:] == sorted(widths[middle:], reverse=True)
+    assert max(abs(a - b) for a, b in zip(widths, widths[1:])) < 3
+    assert widths[0] == widths[-1] == 3
+
+
 def test_a_strand_set_down_leaves_no_copy_behind():
     """Every frame says where each overlay is, so none outlives its lift.
 
@@ -65,6 +94,7 @@ def test_a_strand_set_down_leaves_no_copy_behind():
     for frame in fig.frames:
         _, over, _ = _spokes(frame, 2)
         assert all(len(s.x) == 2 and len(s.y) == 2 for s in over)
+        assert all(len(s.x) == 2 for s in _edgings(frame, 2))
     # Once strand 0 is set down its overlay is a gap, not its last position.
     _, over, _ = _spokes(fig.frames[4], 2)
     assert list(over[0].x) == [None, None]

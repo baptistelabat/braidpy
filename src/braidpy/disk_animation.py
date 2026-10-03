@@ -38,9 +38,14 @@ from braidpy.take_off import (
     mobidai_trajectories,
 )
 
-# How much further in than the rim a carrier must be before it is drawn as
-# lifted, as a fraction of the rim's radius.
+# How far into its lift a strand must be before it is drawn over the others,
+# as a fraction of the deepest lift.
 _LIFTED = 0.01
+
+# Width of every strand's spoke, and how much white edging a strand lifted
+# all the way in has either side of it.
+_SPOKE_WIDTH = 3
+_EDGING = 6
 
 
 def _rim_radius(trajectories: StrandTrajectories) -> float:
@@ -106,34 +111,55 @@ def animate_disk(
     if samples[-1] != len(times) - 1:
         samples.append(len(times) - 1)
 
+    # How far in a strand is, as a fraction of the deepest any strand goes:
+    # 0 on the rim, 1 at the middle of the deepest lift.
+    depth = {
+        k: (rim - np.hypot(xy[:, 0] - centre[0], xy[:, 1] - centre[1])) / rim
+        for k, xy in trajectories.xy.items()
+    }
+    deepest = max(float(np.max(d)) for d in depth.values())
+
     def strand_traces(i: int) -> List[go.Scatter]:
-        """Every strand as a spoke, then again on top for those lifted over."""
+        """Every strand as a spoke, then again on top for those lifted over.
+
+        A strand looks the same throughout a move — same width, same colour —
+        so nothing about it jumps when it is lifted or set down.  What says it
+        is over is a white edging drawn under the copy on top, which widens
+        as the strand goes in and narrows as it comes back out: nothing at
+        the start of the move, nothing at the end, and widest half way.
+        """
         under: List[go.Scatter] = []
+        edging: List[go.Scatter] = []
         over: List[go.Scatter] = []
         for k in keys:
             x, y = trajectories.xy[k][i]
-            lifted = np.hypot(x - centre[0], y - centre[1]) < rim * (1 - _LIFTED)
+            lift = float(depth[k][i]) / deepest if deepest > 0 else 0.0
+            lifted = lift > _LIFTED
             spoke = dict(
                 x=[centre[0], x],
                 y=[centre[1], y],
                 mode="lines",
-                line=dict(color=colour[k], width=3),
+                line=dict(color=colour[k], width=_SPOKE_WIDTH),
                 hoverinfo="skip",
                 showlegend=False,
             )
-            under.append(go.Scatter(**spoke, opacity=0.35 if lifted else 0.9))
-            # A strand that is not lifted still sends its overlay, as a gap:
-            # Plotly leaves a trace alone when a frame gives it no points, so
-            # an empty one would keep showing the spoke from the last lift.
-            over.append(
+            under.append(go.Scatter(**spoke))
+            # A strand that is not lifted still sends its edging and its copy,
+            # as gaps: Plotly leaves a trace alone when a frame gives it no
+            # points, so an empty one would keep showing the last lift.
+            gap = {} if lifted else {"x": [None, None], "y": [None, None]}
+            edging.append(
                 go.Scatter(
                     **{
                         **spoke,
-                        "line": dict(color=colour[k], width=5),
-                        **({} if lifted else {"x": [None, None], "y": [None, None]}),
+                        "line": dict(
+                            color="white", width=_SPOKE_WIDTH + _EDGING * lift
+                        ),
+                        **gap,
                     }
                 )
             )
+            over.append(go.Scatter(**{**spoke, **gap}))
         carriers = go.Scatter(
             x=[trajectories.xy[k][i][0] for k in keys],
             y=[trajectories.xy[k][i][1] for k in keys],
@@ -150,7 +176,7 @@ def animate_disk(
             hoverinfo="text",
             showlegend=False,
         )
-        return under + over + [carriers]
+        return under + edging + over + [carriers]
 
     def rounded(trace: go.Scatter) -> go.Scatter:
         if trace.x is not None:
@@ -210,7 +236,7 @@ def animate_disk(
             showlegend=False,
         )
     )
-    moving = list(range(len(still), len(still) + 2 * len(keys) + 1))
+    moving = list(range(len(still), len(still) + 3 * len(keys) + 1))
 
     def label(i: int) -> str:
         step = min(i // per_step, max(len(times) - 2, 0) // per_step)
