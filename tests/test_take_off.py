@@ -307,3 +307,119 @@ def test_mobidai_is_laid_and_tightened():
     assert "Disk" in names and "Braiding point" in names
     assert sum(1 for n in names if n.startswith("Strand ")) == 6
     assert any(t.type == "surface" for t in fig.data)
+
+
+def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
+    from braidpy.mobidai_catalog import KONGO_8
+
+    # The drift is read off the cycle: no one has to say it.
+    start, steps = mobidai_steps(KONGO_8.to_config(), n_cycles=32)
+    assert len(steps) == 4 * 32  # no move ever finds its slot empty
+    where = dict(start)
+    for step in steps:
+        for strand, delta in step.items():
+            where[strand] = (where[strand] - 1 + delta) % 32 + 1
+    assert where == start  # round the whole disk, back where it began
+    # The second cycle opens with the book's next two moves, (32, 14) and
+    # (16, 30): the strands that started there, sent fourteen slots round.
+    second = [list(step.items())[0] for step in steps[4:6]]
+    made = [(start[k], (start[k] - 1 + d) % 32 + 1) for k, d in second]
+    assert made == [(32, 14), (16, 30)]
+    # Said outright, no drift sends the second cycle's moves to empty slots.
+    assert len(mobidai_steps(KONGO_8.to_config(), n_cycles=2, drift=0)[1]) == 4
+
+
+def test_every_slot_is_named_where_it_is():
+    traj = disk_trajectories({0: 1}, [{}], n_slots=8)
+    assert [name for _, _, name in traj.slots] == [str(s) for s in range(1, 9)]
+    assert traj.slots[0][:2] == pytest.approx((0.0, 1.0))  # slot 1 at the top
+    assert traj.slots[2][:2] == pytest.approx((1.0, 0.0))  # clockwise
+    # Kumihimo names its own positions, not the slots a swap passes through.
+    kumi = kumihimo_trajectories("R", n_strands=8)
+    assert [name for _, _, name in kumi.slots] == [str(p) for p in range(8)]
+
+
+def test_slot_offset_turns_the_numbering():
+    traj = disk_trajectories({0: 32, 1: 1}, [{}], n_slots=32, slot_offset=0.5)
+    left, right = traj.xy[0][0], traj.xy[1][0]
+    # The top mark between slot 32 and slot 1: the pair straddles it.
+    assert left[0] == pytest.approx(-right[0])
+    assert left[1] == pytest.approx(right[1])
+    assert right[0] > 0
+
+
+# ── A disk's braid, laid on a ring ────────────────────────────────────────────
+
+
+def test_crossings_are_read_off_the_moves():
+    from braidpy.take_off import disk_crossings
+
+    # a moves from 1 to 5 over b and c; the disk turns, leaving a at 6, b at
+    # 3 and c at 5; then c moves on to 7, over a.
+    order, crossings = disk_crossings(
+        {"a": 1, "b": 2, "c": 4}, [{"a": 4}, {"a": 1, "b": 1, "c": 1}, {"c": 2}], 8
+    )
+    assert order == ["a", "b", "c"]
+    assert crossings == [("a", "b"), ("a", "c"), ("c", "a")]
+    with pytest.raises(ValueError, match="several strands"):
+        disk_crossings({"a": 1, "b": 3}, [{"a": 1, "b": -1}], 8)
+
+
+@pytest.mark.parametrize(
+    "positions, moves",
+    [
+        ([1, 2, 5, 6], [(1, 3), (6, 4)]),
+        ([3, 4, 5, 9, 10], [(3, 7), (10, 8), (4, 2), (9, 11), (7, 6)]),
+    ],
+)
+def test_the_ring_keeps_the_mobidai_word(positions, moves):
+    """Read round the ring, inside as over, the strands make the mobidai's braid.
+
+    The same braid, not necessarily the same spelling: crossings of
+    different strands are made side by side on the ring, and two of them in
+    one row may be read in either order.
+    """
+    from braidpy.take_off import disk_crossings, ring_trajectories
+
+    moves = [(a, b, 0) for a, b in moves]
+    mobidai = Mobidai(_mobidai_config(moves, positions, n_slots=24))
+    mobidai.all_steps()
+    start, steps = mobidai_steps(_mobidai_config(moves, positions, 24))
+    order, crossings = disk_crossings(start, steps, 24)
+    ring = ring_trajectories(order, crossings, diameter=0.2)
+    n = len(order)
+    assert Braid(tuple(_word_of_disk(ring, n)), n_strands=n) == Braid(
+        tuple(_signed(mobidai.braid_word)), n_strands=n
+    )
+
+
+def test_ring_refuses_crossings_of_strangers():
+    from braidpy.take_off import ring_trajectories
+
+    with pytest.raises(ValueError, match="not neighbours"):
+        ring_trajectories(["a", "b", "c", "d"], [("a", "c")])
+
+
+def test_kongo_comes_out_round():
+    from braidpy.mobidai_catalog import KONGO_8
+    from braidpy.take_off import mobidai_braid
+
+    d = 0.12
+    braid = mobidai_braid(KONGO_8.to_config(), d, n_cycles=4, iterations=150)
+    assert braid.closest_approach() >= d * (1 - 2e-3)
+    formed = braid.formed()
+    middle = formed[:, formed.shape[1] // 2, :2]
+    middle = middle - middle.mean(axis=0)
+    width, thickness = np.ptp(middle @ np.linalg.svd(middle)[2].T, axis=0)
+    # Eight strands round a small core: a round cord about three yarns across,
+    # not the flat two rows the disk's waiting places lay.
+    assert width < 1.6 * thickness
+    assert 2 * d < width < 5 * d
+
+
+def test_kumihimo_braid():
+    from braidpy.take_off import kumihimo_braid
+
+    braid = kumihimo_braid("SR" * 4, 0.12, n_strands=8, iterations=60)
+    assert len(braid.points) == 8
+    assert braid.closest_approach() >= 0.12 * (1 - 2e-3)

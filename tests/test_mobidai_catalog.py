@@ -64,3 +64,21 @@ def test_a_catalogued_braid_gives_a_word_braidpy_understands(name):
     word = disk.generators
     assert all(1 <= abs(generator) <= braid.n_strands - 1 for generator in word)
     assert Braid(tuple(word), n_strands=braid.n_strands).format()
+
+
+@pytest.mark.parametrize("name", sorted(CATALOGUE))
+def test_every_cycle_is_made_from_where_the_last_left_off(name):
+    """Cycle after cycle, every move finds a strand to move.
+
+    Most of these braids leave the strands a slot round from where they
+    began, and the braider makes the next cycle from there.  Repeating the
+    moves from the same slots instead finds them empty by the second cycle,
+    and the braid stops being made.
+    """
+    braid = CATALOGUE[name]
+    disk = Mobidai(braid.to_config())
+    disk.all_steps()
+    per_cycle = len(disk.braid_word)
+    for _ in range(5):
+        disk.all_steps()
+    assert len(disk.braid_word) == 6 * per_cycle

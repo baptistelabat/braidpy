@@ -11,7 +11,7 @@ Features:
 - Displays step labels, strand IDs, and pattern info
 """
 
-from typing import List
+from typing import List, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -211,6 +211,24 @@ class Kumihimo:
 
         plt.tight_layout()
         plt.show()
+
+    def animate(self, output_html: Optional[str] = None, **kwargs):
+        """Animate the moves made so far on the disk, seen from above.
+
+        A Plotly animation in which each strand runs from its slot to the
+        middle and moves continuously from step to step — see
+        :func:`~braidpy.disk_animation.animate_kumihimo`, which ``kwargs``
+        are passed to.
+
+        Args:
+            output_html: If given, write the animation to this HTML file.
+
+        Returns:
+            plotly.graph_objects.Figure: The animation.
+        """
+        from braidpy.disk_animation import animate_kumihimo
+
+        return animate_kumihimo(self, output_html=output_html, **kwargs)
 
     # ----------------------------------------------------------------------
     # Utilities
