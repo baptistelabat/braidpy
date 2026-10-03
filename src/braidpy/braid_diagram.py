@@ -99,7 +99,7 @@ def sample_period(path, n_samples: int) -> np.ndarray:
 def diagram_segments(
     paths: Sequence,
     n_samples: int = 400,
-    gap: float = 0.11,
+    gap: float = 0.45,
 ) -> List[List[np.ndarray]]:
     """Each strand as the pieces of it that are visible from the front.
 
@@ -155,7 +155,7 @@ def draw_diagram(
     braid,
     n_samples: int = 400,
     line_width: float = 3.0,
-    gap: float = 0.11,
+    gap: float = 0.45,
     amplitude: float = 0.28,
     profile: Profile = SMOOTHSTEP,
     color: Optional[str] = None,
@@ -170,7 +170,9 @@ def draw_diagram(
         n_samples: Points along each strand.
         line_width: Thickness of a strand.
         gap: Width of the break where a strand passes behind, as a fraction
-            of the distance between neighbouring strands.
+            of the distance between neighbouring strands.  Generous on
+            purpose: this is a diagram, not a picture of a real braid, and
+            the break is what says which strand went behind.
         amplitude: How far a strand swings out of line as it crosses.  Larger
             is rounder; the crossing is drawn, not just implied.
         profile: How a strand travels sideways — :data:`SMOOTHSTEP` for

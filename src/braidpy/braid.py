@@ -732,7 +732,7 @@ class Braid:
         self,
         n_samples: int = 400,
         line_width: float = 3.0,
-        gap: float = 0.11,
+        gap: float = 0.45,
         amplitude: float = 0.28,
         profile=None,
         color: Optional[str] = None,
