@@ -148,7 +148,8 @@ def other_sources() -> int:
         kongo,
         n_cycles=8,
         slot_offset=0.5,
-        title="Kumihimo, kongo gumi on 8 strands — seen from above",
+        side_view=True,
+        title="Kumihimo, kongo gumi on 8 strands — the disk, and the braid below",
         output_html="demo_kumihimo_8.html",
     )
     print("demo_kumihimo_8.html")
@@ -163,7 +164,9 @@ def other_sources() -> int:
     print("demo_kumihimo_8_braid.html")
 
     # Kumihimo's own model: swap top and bottom, turn a quarter.
-    animate_kumihimo("SR" * 4, n_strands=8, output_html="demo_kumihimo_sr_8.html")
+    animate_kumihimo(
+        "SR" * 8, n_strands=8, side_view=True, output_html="demo_kumihimo_sr_8.html"
+    )
     print("demo_kumihimo_sr_8.html")
     return 4
 

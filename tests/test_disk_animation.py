@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from braidpy.disk_animation import (
+    BraidGrowth,
     animate_disk,
     animate_kumihimo,
     animate_mobidai,
@@ -169,3 +170,47 @@ def test_strands_are_plain_svg_and_named_above_them():
     } == {"scatter"}
     # The names are annotations, drawn above every trace.
     assert _names(fig.frames[0]) == ["0", "1"]
+
+
+def test_the_braid_grows_below_the_disk_as_it_is_worked():
+    from braidpy.mobidai_catalog import KONGO_8
+    from braidpy.take_off import mobidai_steps
+
+    config = KONGO_8.to_config()
+    start, steps = mobidai_steps(config, 2)
+    growth = BraidGrowth(start, steps, config.n_slots, 0.12, iterations=50)
+    # Rows only ever come, one step after another.
+    assert growth.rows_done == sorted(growth.rows_done)
+    assert growth.rows_at(0.0) == 0.0
+    assert growth.rows_at(len(steps)) == growth.rows_done[-1] > 0
+    colour = {k: "red" for k in growth.keys}
+    # Nothing yet is still something to draw: Plotly leaves a trace alone
+    # when a frame gives it no points.
+    for time in (0.0, len(steps) / 2, len(steps)):
+        traces = growth.traces(time, colour)
+        assert len(traces) == len(start)
+        assert all(len(t.z) >= 1 for t in traces)
+        # The newest row at the fell, the older ones below it.
+        assert max(max(t.z) for t in traces) == pytest.approx(0.0, abs=1e-3)
+        assert min(min(t.z) for t in traces) >= -growth.window * growth.per_row
+    assert min(min(t.z) for t in growth.traces(len(steps), colour)) < 0
+
+
+def test_side_view_beside_the_disk():
+    config = MobidaiConfig(
+        strands=[Strand(c, p) for c, p in [("red", 1), ("green", 2), ("blue", 6)]],
+        moves=[Move(1, 4)],
+        n_shift_after_cycle=1,
+        n_slots=8,
+    )
+    fig = animate_mobidai(config, n_cycles=2, samples_per_step=3, side_view=True)
+    braid = [i for i, t in enumerate(fig.data) if t.type == "scatter3d"]
+    assert len(braid) == 1 + 3  # the fell, then a yarn per strand
+    for frame in fig.frames:
+        assert len(frame.data) == len(frame.traces)
+        assert [t.type for t in frame.data][-3:] == ["scatter3d"] * 3
+        # The yarns are moved, the fell is not.
+        assert braid[1:] == list(frame.traces)[-3:]
+    assert fig.layout.scene.zaxis.range[0] < 0
+    # Without it, the disk alone.
+    assert "scatter3d" not in {t.type for t in animate_mobidai(config).data}

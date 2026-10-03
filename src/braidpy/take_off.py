@@ -1195,6 +1195,23 @@ def disk_crossings(
 ) -> Tuple[List[Hashable], List[Tuple[Hashable, Hashable]]]:
     """The crossings a disk's moves make, in the order they are made.
 
+    See :func:`disk_crossing_steps`, which also says which step made each.
+
+    Returns:
+        The strands in slot order from slot 1 at the start, and each crossing
+        as ``(over, under)``.
+    """
+    order, crossings, _ = disk_crossing_steps(start, steps, n_slots)
+    return order, crossings
+
+
+def disk_crossing_steps(
+    start: Mapping[Hashable, int],
+    steps: Sequence[Mapping[Hashable, int]],
+    n_slots: int,
+) -> Tuple[List[Hashable], List[Tuple[Hashable, Hashable]], List[int]]:
+    """The crossings a disk's moves make, and the step that makes each.
+
     A strand that moves while the others stay passes over each strand
     between its slot and its new one, one after another, nearest first —
     the rule :func:`disk_trajectories` draws and the mobidai's own word
@@ -1208,8 +1225,8 @@ def disk_crossings(
         n_slots: Slots round the disk.
 
     Returns:
-        The strands in slot order from slot 1 at the start, and each crossing
-        as ``(over, under)``.
+        The strands in slot order from slot 1 at the start, each crossing as
+        ``(over, under)``, and for each crossing the index of its step.
 
     Raises:
         ValueError: If two strands move at once other than by turning the
@@ -1218,6 +1235,7 @@ def disk_crossings(
     where = dict(start)
     order = sorted(where, key=lambda k: where[k])
     crossings: List[Tuple[Hashable, Hashable]] = []
+    made_by: List[int] = []
     for number, step in enumerate(steps):
         moving = {k: d for k, d in step.items() if d}
         if not moving:
@@ -1236,8 +1254,34 @@ def disk_crossings(
             slot = (slot - 1 + sense) % n_slots + 1
             if slot in by_slot:
                 crossings.append((mover, by_slot[slot]))
+                made_by.append(number)
         where[mover] = (where[mover] - 1 + delta) % n_slots + 1
-    return order, crossings
+    return order, crossings, made_by
+
+
+def crossing_rows(
+    order: Sequence[Hashable], crossings: Sequence[Tuple[Hashable, Hashable]]
+) -> List[int]:
+    """The row of the ring each crossing is made in — see :func:`ring_trajectories`.
+
+    Each crossing goes in the first row after both its strands' last ones,
+    so crossings of different strands are made side by side and each
+    strand's crossings stay in order.
+
+    Args:
+        order: The strands round the ring.
+        crossings: ``(over, under)`` in the order they are made.
+
+    Returns:
+        One row index per crossing.
+    """
+    free_from = {k: 0 for k in order}
+    rows: List[int] = []
+    for over, under in crossings:
+        row = max(free_from[over], free_from[under])
+        rows.append(row)
+        free_from[over] = free_from[under] = row + 1
+    return rows
 
 
 def ring_trajectories(
@@ -1281,15 +1325,11 @@ def ring_trajectories(
         raise ValueError("samples_per_row must be at least 1.")
     n = len(order)
     rank = {k: i for i, k in enumerate(order)}
-    # Rows: each crossing goes in the first row after its strands' last ones.
-    free_from = {k: 0 for k in order}
     rows: List[List[Tuple[Hashable, Hashable]]] = []
-    for over, under in crossings:
-        first = max(free_from[over], free_from[under])
-        while len(rows) <= first:
+    for crossing, index in zip(crossings, crossing_rows(order, crossings)):
+        while len(rows) <= index:
             rows.append([])
-        rows[first].append((over, under))
-        free_from[over] = free_from[under] = first + 1
+        rows[index].append(crossing)
 
     # Even round a ring a little looser than the strands' own width.
     radius = n * diameter / (2 * np.pi) / 0.8

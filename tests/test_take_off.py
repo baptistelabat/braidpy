@@ -393,6 +393,25 @@ def test_the_ring_keeps_the_mobidai_word(positions, moves):
     )
 
 
+def test_crossings_are_made_in_rows_by_their_steps():
+    from braidpy.take_off import crossing_rows, disk_crossing_steps, disk_crossings
+
+    start = {"a": 1, "b": 2, "c": 4}
+    steps = [{"a": 4}, {"a": 1, "b": 1, "c": 1}, {"c": 2}]
+    order, crossings, made_by = disk_crossing_steps(start, steps, 8)
+    assert (order, crossings) == disk_crossings(start, steps, 8)
+    # The turn crosses nothing.
+    assert made_by == [0, 0, 2]
+    # Each crossing waits for its strands' previous one.
+    assert crossing_rows(order, crossings) == [0, 1, 2]
+    # Crossings of different strands share a row.
+    assert crossing_rows(list("abcd"), [("a", "b"), ("c", "d"), ("b", "c")]) == [
+        0,
+        0,
+        1,
+    ]
+
+
 def test_ring_refuses_crossings_of_strangers():
     from braidpy.take_off import ring_trajectories
 
