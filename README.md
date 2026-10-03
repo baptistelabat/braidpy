@@ -19,7 +19,7 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)
 - [x] Simulation of horn gear braiding machines (flat, tubular, Jacquard lace), animated in 2D
 - [x] Braid coming off a horn gear machine, without tension, in 3D
-- [ ] Braid coming off a horn gear machine, under tension
+- [x] Braid coming off a horn gear machine, converging on a braiding point or fell circle, and tightened
 
 ## Basic example
 

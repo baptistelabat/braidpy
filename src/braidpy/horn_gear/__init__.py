@@ -61,6 +61,8 @@ from .take_off import (
     YarnPaths,
     carrier_trajectories,
     default_take_off,
+    jammed_contraction,
+    tighten_yarns,
     visualize_yarns,
     yarn_paths,
 )
@@ -126,6 +128,8 @@ __all__ = [
     "carrier_trajectories",
     "default_take_off",
     "yarn_paths",
+    "jammed_contraction",
+    "tighten_yarns",
     "visualize_yarns",
     # visualization
     "visualize_machine",

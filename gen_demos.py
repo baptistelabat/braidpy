@@ -1,7 +1,8 @@
 """Generate the horn gear braiding machine demo pages.
 
 Writes one static diagram, one track diagram, and an animation per machine,
-then the braid each wired machine lays, in 3D, with no tension yet.
+then the braid each wired machine lays, in 3D: with no tension, and drawn in
+to a fell and tightened.
 Run from the repository root: ``python gen_demos.py``
 """
 
@@ -13,11 +14,14 @@ from braidpy.horn_gear import (  # noqa: E402
     BraidingMachine,
     animate,
     compute_tracks,
+    gear_radii,
     jacquard_lace_ring,  # noqa: E402
     tube_axials,
     visualize_machine,
     visualize_tracks,
+    tighten_yarns,
     visualize_yarns,
+    yarn_paths,
 )
 from braidpy.horn_gear.examples import (  # noqa: E402
     flat_braid_3,
@@ -132,10 +136,28 @@ def main() -> None:
     for name, factory, n_steps, title in MACHINES:
         if name.startswith("jacquard"):
             continue
+        machine = factory()
         path = f"demo_{name}_yarns.html"
-        visualize_yarns(factory(), title=f"{title} — yarns", output_html=path)
+        visualize_yarns(machine, title=f"{title} — yarns", output_html=path)
         print(path)
-        yarn_pages += 1
+
+        # The same braid drawn in to a fell as tight as its yarn allows, then
+        # pulled taut.  A fifth of a gear radius is a plausible yarn.
+        radii = gear_radii(machine)
+        diameter = 0.2 * sum(radii.values()) / len(radii)
+        braid, _ = tighten_yarns(
+            yarn_paths(machine, yarn_diameter=diameter), diameter, iterations=150
+        )
+        path = f"demo_{name}_braid.html"
+        visualize_yarns(
+            machine,
+            braid,
+            title=f"{title} — tightened braid",
+            tube_diameter=diameter,
+            output_html=path,
+        )
+        print(path)
+        yarn_pages += 2
 
     print(f"\n{len(MACHINES) + 2 + yarn_pages} pages written.")
 

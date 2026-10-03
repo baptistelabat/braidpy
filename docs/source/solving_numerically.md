@@ -79,3 +79,33 @@ Three checks, all already in the package or its tests:
    test that can catch a solver that is confidently wrong. Get it to agree
    with `packing_radius` as the lay is stretched out, too: that is a second
    known point, and a free one.
+
+---
+## A first, restricted version: braids off a horn gear machine
+
+`braidpy.horn_gear.take_off` poses a restricted form of this problem for the
+braid a simulated machine lays, and solves it.
+
+- **The initial guess** is the machine itself: each yarn lies over the path its
+  carrier traced, lifted along the machine's axis by the braid taken off since
+  (`yarn_paths`). It is in the right braid class by construction, which is
+  what this page asks of a start.
+- **Drawing in.** The braid is formed on a fell — a circle, or a braiding
+  point — and is the carrier footprint scaled toward the axis by a factor *k*.
+  Scaling the plane at fixed height cannot pass one yarn through another, so
+  every *k* > 0 keeps the topology. Given a yarn diameter, the smallest *k*
+  with no two yarns closer than *d* has a closed form over the samples
+  (`jammed_contraction`): for two samples a height *dz* apart and *s* apart
+  sideways, *k* = √(*d*² − *dz*²) / *s*, and the braid jams at the largest.
+- **Tightening** (`tighten_yarns`) minimises length with each sample held at
+  its height — the small-slope form of the length objective — by moving each
+  sample toward its neighbours' midpoint, and enforces non-interpenetration by
+  pushing apart any two samples of different yarns closer than *d*. Steps are
+  capped at *d*/5, so a feasible path from the start stays in the same braid
+  class, as argued above.
+
+What it does not yet do: let samples move along the axis, which a full length
+minimisation would; bending stiffness; periodicity, rather than holding both
+ends; and the check against the rope limit. Its own checks are the first two
+above — the closest approach ends at *d* and total length decreases — and
+both are in the tests.
