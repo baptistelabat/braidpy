@@ -88,16 +88,16 @@ braid a simulated machine lays, and solves it.
 
 - **The initial guess** is the machine itself: each yarn lies over the path its
   carrier traced, lifted along the machine's axis by the braid taken off since
-  (`yarn_paths`). It is in the right braid class by construction, which is
+  (`horn_gear.take_off.yarn_paths`). It is in the right braid class by construction, which is
   what this page asks of a start.
 - **Drawing in.** The braid is formed on a fell — a circle, or a braiding
   point — and is the carrier footprint scaled toward the axis by a factor *k*.
   Scaling the plane at fixed height cannot pass one yarn through another, so
   every *k* > 0 keeps the topology. Given a yarn diameter, the smallest *k*
   with no two yarns closer than *d* has a closed form over the samples
-  (`jammed_contraction`): for two samples a height *dz* apart and *s* apart
+  (`horn_gear.take_off.jammed_contraction`): for two samples a height *dz* apart and *s* apart
   sideways, *k* = √(*d*² − *dz*²) / *s*, and the braid jams at the largest.
-- **Tightening** (`tighten_yarns`) minimises length with each sample held at
+- **Tightening** (`horn_gear.take_off.tighten_yarns`) minimises length with each sample held at
   its height — the small-slope form of the length objective — by moving each
   sample toward its neighbours' midpoint, and enforces non-interpenetration by
   pushing apart any two samples of different yarns closer than *d*. Steps are
