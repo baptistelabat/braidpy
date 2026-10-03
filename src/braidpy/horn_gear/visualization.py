@@ -54,9 +54,17 @@ from .layout import (
     contact_angle,
     contact_point,
     gear_radii,
+    offset_residuals,
     slot_offsets,
 )
 from .model import BraidingMachine
+from .simulation import (
+    CollisionError,
+    MachineState,
+    carrier_places,
+    simulate,
+    state_period,
+)
 from .tracks import Track, compute_tracks, simulation_period, walk
 
 # Which way a gear is turning, at a glance: green clockwise, red the other
@@ -868,4 +876,354 @@ def visualize_tracks(
 
     if output_html:
         fig.write_html(output_html)
+    return fig
+
+
+def animate(
+    machine: BraidingMachine,
+    n_steps: Optional[int] = None,
+    carrier_positions: Optional[Dict] = None,
+    scale: float = 1.0,
+    output_html: Optional[str] = None,
+    title: str = "Carrier Animation",
+    frame_duration_ms: int = 40,
+    n_substeps: int = 9,
+    max_frames: int = 900,
+) -> go.Figure:
+    """Animate carriers with smooth gear rotation between simulation steps.
+
+    By default the animation runs for exactly one cycle of the machine — the
+    point at which every carrier is back at the place it set off from, with the
+    drive in its starting phase
+    (:func:`~braidpy.horn_gear.simulation.state_period`) — so the last frame
+    hands straight back to the first and the page written by ``output_html``
+    plays it round and round.  That is a good deal shorter than a carrier's
+    whole journey: the machine comes back long before any one carrier has been
+    everywhere its track goes.
+
+    Each simulation step is split into ``n_substeps`` intermediate frames.
+    Carrier and tick-mark positions are interpolated so a 4-slot gear shows
+    a smooth 90° (quarter-turn) rotation per step.
+
+    Args:
+        machine: The machine definition.
+        n_steps: Number of simulation steps to animate.  One full cycle if
+            None, falling back to the drive's own period for a programmed
+            machine, whose carriers need never come back at all.
+        carrier_positions: Optional initial carrier placement.
+        scale: Layout scale.
+        output_html: If given, write figure to this HTML file path.
+        title: Figure title.
+        frame_duration_ms: Duration of each sub-frame in ms.
+        n_substeps: Intermediate frames per simulation step.
+        max_frames: Frame budget.  A long cycle gets fewer sub-frames per step
+            rather than a page too big to open.
+
+    Returns:
+        Plotly Figure with animation frames.
+    """
+    layout_pos = compute_layout(machine, scale=scale)
+    radii_dict = gear_radii(machine, scale=scale)
+    offsets = slot_offsets(machine, layout_pos)
+    bobbin_sizes = _carrier_marker_sizes(machine, layout_pos, radii_dict, scale)
+
+    # The tracks are a property of the wiring, so they are identical in
+    # every frame: build them once and hand the same traces to each.
+    #
+    # Drawn as wide as a bobbin, so a track reads as the channel its carriers
+    # run along rather than a hairline beside them, and faint enough to stay
+    # behind everything else.  The narrowest bobbin sets the width, so the
+    # band never grows wider than the notches it threads.
+    track_traces = _track_traces(
+        machine,
+        layout_pos,
+        scale=scale,
+        width=min(bobbin_sizes.values()),
+        opacity=_TRACK_OPACITY,
+    )
+    _rows = machine.program_rows()
+    _phases = len(_rows) if _rows else 1
+    carrier_radii = {
+        name: carrier_radius(machine, layout_pos, name, scale) for name in machine.gears
+    }
+    if carrier_positions is None:
+        carrier_positions = machine.default_carriers()
+
+    if n_steps is None:
+        cycle = state_period(machine, carrier_positions)
+        # A machine driven by a programme need not ever come back, so there is
+        # no cycle to show; run its drive round once instead, which at least
+        # leaves the punchcard where it started.
+        n_steps = cycle if cycle is not None else machine.contact_period()
+
+    # A cycle a hundred steps long does not need a ninth of a slot per frame,
+    # and asking for it writes a page too big to open.  Trade the smoothing
+    # down rather than the cycle short.
+    n_substeps = max(1, min(n_substeps, max_frames // max(n_steps, 1)))
+
+    collision_info: Optional[CollisionError] = None
+    try:
+        history = simulate(machine, n_steps, carrier_positions)
+    except CollisionError as e:
+        collision_info = e
+        history = e.history
+        n_steps = len(history) - 1  # animate only the valid steps
+
+    if collision_info is not None:
+        coll_detail = "; ".join(
+            f"{g}[{s}]: C{ids}" for (g, s), ids in collision_info.collisions.items()
+        )
+        title = f"{title} — COLLISION at step {collision_info.step} ({coll_detail})"
+
+    # Warn when the machine's connection slots cannot be reconciled with its
+    # layout: carriers then visibly jump as they transfer.  That is a property
+    # of the machine definition, not of the animation.
+    worst = max(offset_residuals(machine, layout_pos).values(), default=0.0)
+    if math.degrees(worst) > 1.0:
+        title = (
+            f"{title}<br><sub>slots miss their contacts by up to "
+            f"{math.degrees(worst):.0f}° — carriers jump when transferring</sub>"
+        )
+
+    carrier_colors = {
+        c.carrier_id: _PALETTE[i % len(_PALETTE)]
+        for i, c in enumerate(history[0].carriers)
+    }
+
+    # A carrier rides in a horn of its gear, so its angle is simply that slot's
+    # angle — the very same ``_slot_angle`` used to draw the tick marks.  It
+    # therefore turns at exactly the gear's rate and always sits on its slot.
+    #
+    # Transfers stay continuous without any special casing: a carrier moves to
+    # the neighbour only at the step where its slot is at the contact point, and
+    # it lands on the neighbour's slot that is at that same contact point at that
+    # same instant, so the two coincide (provided the machine's connection slots
+    # match its layout — see ``offset_residuals``).
+
+    # Most of a frame is the same picture as the frame before it.  The links,
+    # the contact crosses, the gear labels and the axial columns never move at
+    # all; the discs only change colour, and only on a machine that holds a
+    # gear; the punchcard only lights a different row, and only if there is a
+    # programme.  Those are built once here and drawn once into the figure —
+    # copying them into every frame of a long cycle is most of what such a page
+    # would weigh, and most of the time it takes to write.
+    still_links = _connection_traces(machine, layout_pos, radii_dict)
+    still_contacts = _contact_point_traces(machine, layout_pos, radii_dict)
+    still_labels = _gear_label_traces(machine, layout_pos)
+    still_axials = _axial_traces(machine, layout_pos)
+
+    discs_change = len({machine.turning_gears(t) for t in range(n_steps + 1)}) > 1
+    still_discs = (
+        None if discs_change else _disc_traces(machine, layout_pos, radii_dict, 0)
+    )
+    card_changes = _phases > 1
+    still_card = (
+        None
+        if card_changes
+        else _punchcard_traces(machine, layout_pos, radii_dict, current_phase=0)
+    )
+
+    def _carrier_trace(state: MachineState, frac: float) -> go.BaseTraceType:
+        t = state.time
+        xs, ys, htexts, colors_list, texts, sizes = [], [], [], [], [], []
+        for c in state.carriers:
+            # Draw the carrier on whatever is actually moving it this step,
+            # which on a machine with shared slots is the receiving gear.
+            gear_name, slot = machine.riding_position(c.position, t)
+            cx, cy = layout_pos[gear_name]
+            r = carrier_radii[gear_name]
+
+            ang = _slot_angle(machine, gear_name, slot, offsets[gear_name], t, frac)
+
+            xs.append(cx + r * math.cos(ang))
+            ys.append(cy + r * math.sin(ang))
+            htexts.append(f"C{c.carrier_id} @ {c.gear}[{c.slot}]")
+            colors_list.append(carrier_colors[c.carrier_id])
+            texts.append(str(c.carrier_id))
+            sizes.append(bobbin_sizes[gear_name])
+
+        return go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers+text",
+            marker=dict(
+                size=sizes,
+                color=colors_list,
+                line=dict(width=1.5, color="white"),
+            ),
+            text=texts,
+            textposition="middle center",
+            textfont=dict(size=9, color="white"),
+            hovertext=htexts,
+            hoverinfo="text",
+            name="Carriers",
+            showlegend=False,
+        )
+
+    def _build(
+        state: MachineState, frac: float
+    ) -> Tuple[List[go.BaseTraceType], List[bool]]:
+        """One frame's traces in drawing order, each flagged if it can change."""
+        t = state.time
+        parts: List[Tuple[List[go.BaseTraceType], bool]] = [
+            (still_links, False),
+            (still_contacts, False),
+            (
+                still_discs
+                if still_discs is not None
+                else _disc_traces(machine, layout_pos, radii_dict, t),
+                discs_change,
+            ),
+            (
+                _slot_traces(machine, layout_pos, radii_dict, offsets, t, frac, scale),
+                True,
+            ),
+            (still_labels, False),
+            (still_axials, False),
+            (
+                still_card
+                if still_card is not None
+                else _punchcard_traces(
+                    machine, layout_pos, radii_dict, current_phase=t % _phases
+                ),
+                card_changes,
+            ),
+            ([_carrier_trace(state, frac)], True),
+        ]
+        traces: List[go.BaseTraceType] = []
+        moves: List[bool] = []
+        for group, changes in parts:
+            traces.extend(group)
+            moves.extend([changes] * len(group))
+        return traces, moves
+
+    frames: List[go.Frame] = []
+    # Every frame gets its own notch on the slider, so it can be scrubbed to
+    # and the handle travels smoothly, but only the frames that open a step are
+    # *numbered*: the rest carry an empty label.  Plotly writes the numbers by
+    # striding over the notches at whatever interval they happen to fit, and it
+    # will not be told what that interval is — but a notch with nothing to say
+    # prints nothing wherever the stride lands on it, so a number can only ever
+    # appear at a whole step.
+    slider_marks: List[Tuple[str, str]] = []
+
+    # The tracks go in first so they sit underneath, and every frame is told
+    # which traces it carries — only the ones that can change.  Plotly pairs
+    # traces between frames by index, so the indices are taken from the one
+    # full build and stay the same all the way through.
+    base_traces, moves = _build(history[0], 0.0)
+    n_below = len(track_traces)
+    updates = [n_below + i for i, changes in enumerate(moves) if changes]
+
+    # One cycle ends where it began, so its closing frame is the opening one
+    # over again and is left out: the animation loops without a hiccup.  A run
+    # that stops mid-cycle keeps it, so the last step is actually shown.
+    closes = (
+        carrier_places(machine, history[n_steps]) == carrier_places(machine, history[0])
+        and n_steps % _phases == 0
+    )
+
+    for t_idx in range(n_steps if closes else n_steps + 1):
+        state = history[t_idx]
+        last = not closes and t_idx == n_steps
+        for k in range(1 if last else n_substeps):
+            fname = f"{t_idx}_{k}"
+            slider_marks.append((fname, str(t_idx) if k == 0 else ""))
+            traces, _ = _build(state, k / n_substeps)
+            frames.append(
+                go.Frame(
+                    data=[
+                        _rounded(tr) for tr, changes in zip(traces, moves) if changes
+                    ],
+                    traces=updates,
+                    name=fname,
+                )
+            )
+
+    fig = go.Figure(data=track_traces + base_traces, frames=frames)
+    fig.update_layout(
+        title=title,
+        xaxis=dict(
+            scaleanchor="y", scaleratio=1, showgrid=False, zeroline=False, visible=False
+        ),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        plot_bgcolor="white",
+        margin=dict(l=20, r=20, t=80, b=20),
+        updatemenus=[
+            dict(
+                type="buttons",
+                showactive=False,
+                y=1.08,
+                x=0.5,
+                xanchor="center",
+                buttons=[
+                    dict(
+                        label="▶ Play",
+                        method="animate",
+                        args=[
+                            None,
+                            {
+                                "frame": {
+                                    "duration": frame_duration_ms,
+                                    "redraw": True,
+                                },
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                            },
+                        ],
+                    ),
+                    dict(
+                        label="⏸ Pause",
+                        method="animate",
+                        args=[
+                            [None],
+                            {
+                                "frame": {"duration": 0, "redraw": False},
+                                "mode": "immediate",
+                            },
+                        ],
+                    ),
+                ],
+            )
+        ],
+        sliders=[
+            dict(
+                steps=[
+                    dict(
+                        args=[
+                            [fn],
+                            {
+                                "frame": {"duration": 0, "redraw": True},
+                                "mode": "immediate",
+                            },
+                        ],
+                        label=label,
+                        method="animate",
+                    )
+                    for fn, label in slider_marks
+                ],
+                active=0,
+                y=0,
+                x=0,
+                xanchor="left",
+                len=1.0,
+                # Plotly's read-out repeats the active notch's label, and the
+                # notches between two steps have none to repeat: it would blank
+                # out eight frames in nine while the animation ran.  The
+                # numbered ticks say where the machine is instead.
+                currentvalue=dict(prefix="Step: ", visible=False),
+                transition=dict(duration=0),
+            )
+        ],
+    )
+
+    if output_html:
+        # ``auto_play`` is left off because Plotly's own kick-off only settles
+        # once the whole sequence has run, and the looping below has to be
+        # listening before that: it starts the first round itself instead.
+        fig.write_html(
+            output_html,
+            auto_play=False,
+            post_script=_LOOP_SCRIPT.replace("__DURATION__", str(frame_duration_ms)),
+        )
     return fig
