@@ -25,7 +25,7 @@ disk and animate it; :func:`animate_disk` does the drawing for any disk.
 
 from __future__ import annotations
 
-from typing import Dict, Hashable, List, Optional, Sequence
+from typing import Dict, Hashable, List, Mapping, Optional, Sequence
 
 import numpy as np
 import plotly.graph_objects as go
@@ -75,11 +75,14 @@ class BraidGrowth:
     """The braid a disk is making, as it grows below it — for a side view.
 
     The braid is laid once, from its crossings round a ring and tightened
-    (see :func:`~braidpy.take_off.disk_braid`), and revealed as the disk is
-    worked: at any moment, the rows of crossings the moves so far have made,
-    the newest at the fell just under the disk and the older carried down by
-    the take-off.  Only the last ``window_rows`` rows are shown, as a braider
-    sees the length of braid nearest the disk.
+    (see :func:`~braidpy.take_off.disk_braid`), and shown as the disk is
+    worked: each crossing reaches the fell, just under the disk, as the
+    strand making it passes the one it crosses on the disk, the older rows
+    carried down by the take-off.  Rows are made in the order their
+    crossings are, so nothing shows below the disk before it is made on it.
+    The braid hangs from the disk and turns with it.  Only the last
+    ``window_rows`` rows are shown, as a braider sees the length of braid
+    nearest the disk.
 
     Args:
         start: Each strand's slot, 1-based.
@@ -93,6 +96,9 @@ class BraidGrowth:
         samples_per_row: Points along each yarn per row, as tightened: fewer
             and the tightening can snap a yarn across its neighbour.
         shown_per_row: Points along each yarn per row, as drawn.
+
+    Raises:
+        ValueError: If the moves cross no strands: there is no braid.
     """
 
     def __init__(
@@ -108,16 +114,14 @@ class BraidGrowth:
         samples_per_row: int = 12,
         shown_per_row: int = 4,
     ) -> None:
-        order, crossings, made_by = disk_crossing_steps(start, steps, n_slots)
-        rows = crossing_rows(order, crossings)
-        # Rows finished once each step is done: never fewer than before.
-        self.rows_done: List[int] = []
-        done = 0
-        for number in range(len(steps)):
-            for row, step in zip(rows, made_by):
-                if step == number:
-                    done = max(done, row + 1)
-            self.rows_done.append(done)
+        order, crossings, made_at = disk_crossing_steps(start, steps, n_slots)
+        if not crossings:
+            raise ValueError("The moves cross no strands: there is no braid.")
+        rows = crossing_rows(order, crossings, in_turn=True)
+        # Each crossing is half way through its row on the ring: that is
+        # when it is at the fell.
+        self.knot_times = np.array([0.0, *made_at, float(len(steps))])
+        self.knot_rows = np.array([0.0, *(r + 0.5 for r in rows), rows[-1] + 1.0])
 
         ring = ring_trajectories(
             order,
@@ -125,7 +129,10 @@ class BraidGrowth:
             yarn_diameter,
             samples_per_row=samples_per_row,
             clockwise=clockwise,
+            rows=rows,
         )
+        self.ring_times = np.asarray(ring.times)
+        self.ring_xy = ring.xy
         self.per_row = take_off_per_row * yarn_diameter
         laid = lay_yarns(ring, take_off=self.per_row, yarn_diameter=yarn_diameter)
         braid, _ = tighten_yarns(laid, yarn_diameter, iterations=iterations)
@@ -136,30 +143,67 @@ class BraidGrowth:
         self.times = np.asarray(braid.times[: braid.formed_count])[::stride]
         self.window = float(window_rows)
         self.diameter = yarn_diameter
-        self.reach = float(np.max(np.abs(formed[:, :, :2]))) + yarn_diameter
+        self.reach = float(np.max(np.hypot(formed[:, :, 0], formed[:, :, 1])))
+        self.reach += yarn_diameter
 
     def rows_at(self, time: float) -> float:
         """How many rows the braid has, ``time`` disk steps in."""
-        step = int(np.floor(time))
-        if step >= len(self.rows_done):
-            return float(self.rows_done[-1]) if self.rows_done else 0.0
-        before = self.rows_done[step - 1] if step > 0 else 0
-        return before + (time - step) * (self.rows_done[step] - before)
+        return float(np.interp(time, self.knot_times, self.knot_rows))
 
-    def traces(self, time: float, colour: Dict[Hashable, str]) -> List[go.Scatter3d]:
-        """Each yarn's visible length, ``time`` disk steps in."""
+    def turn_at(self, rows: float, carriers: Mapping[Hashable, Sequence[float]]):
+        """How far round the braid hangs, its strands nearest their carriers.
+
+        Args:
+            rows: Rows made.
+            carriers: Each strand's carrier on the disk, from its centre.
+
+        Returns:
+            The angle, anticlockwise seen from above, to turn the braid by.
+        """
+        pull = 0j
+        for k in self.keys:
+            if k not in carriers:
+                continue
+            xy = self.ring_xy[k]
+            x = np.interp(rows, self.ring_times, xy[:, 0])
+            y = np.interp(rows, self.ring_times, xy[:, 1])
+            cx, cy = carriers[k]
+            pull += (
+                complex(cx, cy)
+                / max(abs(complex(cx, cy)), 1e-12)
+                * complex(x, -y)
+                / max(abs(complex(x, y)), 1e-12)
+            )
+        return float(np.angle(pull)) if abs(pull) > 1e-12 else 0.0
+
+    def traces(
+        self,
+        time: float,
+        colour: Mapping[Hashable, str],
+        carriers: Optional[Mapping[Hashable, Sequence[float]]] = None,
+    ) -> List[go.Scatter3d]:
+        """Each yarn's visible length, ``time`` disk steps in.
+
+        Args:
+            time: Disk steps made.
+            colour: Each strand's colour.
+            carriers: Each strand's carrier on the disk, from its centre, to
+                turn the braid as the disk is; not turned if None.
+        """
         rows = self.rows_at(time)
         shown = (self.times <= rows + 1e-9) & (self.times >= rows - self.window)
         if not np.any(shown):
             shown = self.times == self.times[0]
         z = -self.per_row * (rows - self.times[shown])
+        turn = self.turn_at(rows, carriers) if carriers is not None else 0.0
+        c, s = np.cos(turn), np.sin(turn)
         out = []
         for k in self.keys:
-            xy = self.xy[k][shown]
+            x, y = self.xy[k][shown].T
             out.append(
                 go.Scatter3d(
-                    x=np.round(xy[:, 0], 4),
-                    y=np.round(xy[:, 1], 4),
+                    x=np.round(c * x - s * y, 4),
+                    y=np.round(s * x + c * y, 4),
                     z=np.round(z, 4),
                     mode="lines",
                     line=dict(color=colour[k], width=9),
@@ -186,22 +230,24 @@ class BraidGrowth:
         )
 
     def scene(self) -> dict:
-        """The side view's scene: seen from the side, braid hanging down."""
+        """The side view's scene: seen from the front of the disk as drawn
+        from above — its bottom edge — the braid hanging down."""
         depth = self.window * self.per_row
         r = self.reach
         hidden = dict(visible=False, showgrid=False, zeroline=False)
+        tall = depth + 2 * self.diameter
         return dict(
             domain=dict(x=[0.52, 1.0], y=[0.08, 1.0]),
             xaxis=dict(range=[-r, r], **hidden),
             yaxis=dict(range=[-r, r], **hidden),
             zaxis=dict(range=[-depth - self.diameter, self.diameter], **hidden),
             aspectmode="manual",
-            aspectratio=dict(
-                x=2 * r / (depth + 2 * self.diameter),
-                y=2 * r / (depth + 2 * self.diameter),
-                z=1,
+            aspectratio=dict(x=2 * r / tall, y=2 * r / tall, z=1),
+            camera=dict(
+                eye=dict(x=0.0, y=-1.3, z=0.15),
+                center=dict(x=0, y=0, z=0),
+                up=dict(x=0, y=0, z=1),
             ),
-            camera=dict(eye=dict(x=1.3, y=0.3, z=0.15), center=dict(x=0, y=0, z=0)),
         )
 
 
@@ -411,18 +457,22 @@ def animate_disk(
             showlegend=False,
         )
     )
-    if braid is not None:
-        still.append(braid.fell())
     moving = list(range(len(still), len(still) + 3 * len(keys) + 1))
+    # The side view's traces come after the disk's: the fell, which stays,
+    # then the yarns.
+    side: list = []
     if braid is not None:
         grey = "#888888"
         braid_colour = {k: colour.get(k, grey) for k in braid.keys}
-        moving += list(range(moving[-1] + 1, moving[-1] + 1 + len(braid.keys)))
+        side = [braid.fell()]
+        after = moving[-1] + 1 + len(side)
+        moving += list(range(after, after + len(braid.keys)))
 
     def frame_traces(i: int) -> list:
         traces: list = [rounded(t) for t in strand_traces(i)]
         if braid is not None:
-            traces += braid.traces(float(times[i]), braid_colour)
+            carriers = {k: trajectories.xy[k][i] - np.asarray(centre) for k in keys}
+            traces += braid.traces(float(times[i]), braid_colour, carriers)
         return traces
 
     def label(i: int) -> str:
@@ -445,7 +495,9 @@ def animate_disk(
         )
         for i in samples
     ]
-    fig = go.Figure(data=still + frame_traces(0), frames=frames)
+    first = frame_traces(0)
+    drawn = 3 * len(keys) + 1
+    fig = go.Figure(data=still + first[:drawn] + side + first[drawn:], frames=frames)
     fig.update_layout(annotations=strand_names(0))
     reach = rim * 1.2
     fig.update_layout(

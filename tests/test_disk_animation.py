@@ -174,15 +174,18 @@ def test_strands_are_plain_svg_and_named_above_them():
 
 def test_the_braid_grows_below_the_disk_as_it_is_worked():
     from braidpy.mobidai_catalog import KONGO_8
-    from braidpy.take_off import mobidai_steps
+    from braidpy.take_off import disk_crossing_steps, mobidai_steps
 
     config = KONGO_8.to_config()
     start, steps = mobidai_steps(config, 2)
     growth = BraidGrowth(start, steps, config.n_slots, 0.12, iterations=50)
-    # Rows only ever come, one step after another.
-    assert growth.rows_done == sorted(growth.rows_done)
+    # Rows only ever come, and each crossing is half way through its row,
+    # at the fell, just as the disk makes it.
+    times = np.linspace(0, len(steps), 200)
+    assert np.all(np.diff([growth.rows_at(t) for t in times]) >= 0)
+    _, _, made_at = disk_crossing_steps(start, steps, config.n_slots)
+    assert [growth.rows_at(t) % 1 for t in made_at] == [0.5] * len(made_at)
     assert growth.rows_at(0.0) == 0.0
-    assert growth.rows_at(len(steps)) == growth.rows_done[-1] > 0
     colour = {k: "red" for k in growth.keys}
     # Nothing yet is still something to draw: Plotly leaves a trace alone
     # when a frame gives it no points.
@@ -194,6 +197,21 @@ def test_the_braid_grows_below_the_disk_as_it_is_worked():
         assert max(max(t.z) for t in traces) == pytest.approx(0.0, abs=1e-3)
         assert min(min(t.z) for t in traces) >= -growth.window * growth.per_row
     assert min(min(t.z) for t in growth.traces(len(steps), colour)) < 0
+
+
+def test_the_braid_turns_to_hang_under_its_carriers():
+    start = {k: 1 + 2 * k for k in range(4)}
+    steps = [{0: 3}, {3: -3}]
+    growth = BraidGrowth(start, steps, 8, 0.12, iterations=10)
+    rows = growth.rows_at(0.0)
+    here = {
+        k: np.array([np.interp(rows, growth.ring_times, xy[:, i]) for i in (0, 1)])
+        for k, xy in growth.ring_xy.items()
+    }
+    assert growth.turn_at(rows, here) == pytest.approx(0.0, abs=1e-9)
+    c, s = np.cos(0.3), np.sin(0.3)
+    turned = {k: np.array([c * x - s * y, s * x + c * y]) for k, (x, y) in here.items()}
+    assert growth.turn_at(rows, turned) == pytest.approx(0.3)
 
 
 def test_side_view_beside_the_disk():

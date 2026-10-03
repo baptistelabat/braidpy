@@ -393,23 +393,23 @@ def test_the_ring_keeps_the_mobidai_word(positions, moves):
     )
 
 
-def test_crossings_are_made_in_rows_by_their_steps():
+def test_crossings_are_timed_and_made_in_rows():
     from braidpy.take_off import crossing_rows, disk_crossing_steps, disk_crossings
 
     start = {"a": 1, "b": 2, "c": 4}
     steps = [{"a": 4}, {"a": 1, "b": 1, "c": 1}, {"c": 2}]
-    order, crossings, made_by = disk_crossing_steps(start, steps, 8)
+    order, crossings, made_at = disk_crossing_steps(start, steps, 8)
     assert (order, crossings) == disk_crossings(start, steps, 8)
-    # The turn crosses nothing.
-    assert made_by == [0, 0, 2]
+    # a passes b a quarter of the way to slot 5, c three quarters; the turn
+    # crosses nothing; c passes a half way to slot 7.
+    assert made_at == [0.25, 0.75, 2.5]
     # Each crossing waits for its strands' previous one.
     assert crossing_rows(order, crossings) == [0, 1, 2]
-    # Crossings of different strands share a row.
-    assert crossing_rows(list("abcd"), [("a", "b"), ("c", "d"), ("b", "c")]) == [
-        0,
-        0,
-        1,
-    ]
+    # Crossings of different strands share a row, even an earlier one...
+    later = [("a", "b"), ("b", "a"), ("c", "d")]
+    assert crossing_rows(list("abcd"), later) == [0, 1, 0]
+    # ...unless the rows must come in the order the crossings are made.
+    assert crossing_rows(list("abcd"), later, in_turn=True) == [0, 1, 1]
 
 
 def test_ring_refuses_crossings_of_strangers():
