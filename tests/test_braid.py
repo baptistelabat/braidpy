@@ -344,3 +344,32 @@ class TestBraid:
     def test_brunnian_not_implemented(self):
         with pytest.raises(NotImplementedError):
             Braid([]).is_brunnian()
+
+
+def test_full_twists_are_counted_and_taken_out():
+    """Whole turns of every strand together, as a hanging braid sheds them."""
+    b = Braid((1, -2, 3), n_strands=4)
+    assert b.full_twists() == 0
+    for turns in (1, 2):
+        twisted = b
+        for _ in range(turns):
+            twisted = twisted.full_twist()
+        assert twisted.full_twists() == turns
+        assert twisted.without_full_twists() == b
+    untwisted = b.full_twist(sign=-1)
+    assert untwisted.full_twists() == -1
+    assert untwisted.without_full_twists() == b
+    assert Braid((), n_strands=3).full_twists() == 0
+    assert Braid((1,), n_strands=3).without_full_twists() == Braid((1,), n_strands=3)
+
+
+def test_turning_a_kumihimo_disk_round_is_a_full_twist():
+    """Four quarter turns of the disk: the cord turns once, nothing crosses."""
+    import matplotlib
+
+    from braidpy.kumihimo import Kumihimo
+
+    matplotlib.use("Agg")
+    turned = Braid(tuple(Kumihimo(8).move("RRRR").braid_word), n_strands=8)
+    assert turned.full_twists() == 1
+    assert turned.without_full_twists() == Braid((1, -1), n_strands=8)

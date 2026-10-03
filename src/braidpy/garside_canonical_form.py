@@ -28,7 +28,11 @@ class GarsideCanonicalFactors:
     https://webhomes.maths.ed.ac.uk/~v1ranick/papers/garside.pdf
 
     Attributes:
-        n_half_twist (int): The exponent of the Garside element Δ (number of half-twists).
+        n_half_twist (int): The exponent of the twist in front of the factors.
+            Despite the name, it counts the Birman–Ko–Lee element δ — a
+            ``1/n_strands`` turn of every strand together — not Artin's half
+            twist Δ: math_braid works in band generators.  A full twist Δ² is
+            ``n_strands`` of them, and Δ alone is 1 with factors after it.
         n_strands (int): The number of strands in the braid.
         Ai (Tuple[int]): The sequence of simple elements (as indices or identifiers). Also known as Garside generators
     """

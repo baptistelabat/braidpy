@@ -407,6 +407,50 @@ class Braid:
         """
         return self.half_twist(sign=sign).half_twist(sign=sign)
 
+    def full_twists(self) -> int:
+        """How many whole turns of every strand together the braid contains.
+
+        The full twist Δ² commutes with every braid, so it can always be
+        moved to the front: β = Δ^{2m} · β′.  Which ``m`` is a choice, made
+        here so that what is left sits evenly about no twist at all: the
+        canonical factors give the least and the most twist the braid lies
+        between (its infimum and supremum, counted in the Birman–Ko–Lee
+        element δ, a ``1/n_strands`` turn), and ``m`` is their middle in
+        whole turns, rounded to the nearest.  Adding ``k`` full twists to any
+        braid adds exactly ``k`` to it.
+
+        A real braid hanging free, as from a kumihimo disk, does not keep
+        these: turning every strand together only turns the cord, which
+        turns back.  See :meth:`without_full_twists`.
+
+        Returns:
+            int: ``m``, negative for turns the other way.
+        """
+        n = self.n_strands
+        if not n or not self.no_zero().generators:
+            return 0
+        factors = self.get_canonical_factors()
+        least = factors.n_half_twist
+        most = least + len(factors.Ai)
+        return int(np.floor((least + most) / (2 * n) + 0.5))
+
+    def without_full_twists(self) -> "Braid":
+        """The braid with its whole turns taken out: β · Δ^{-2m}.
+
+        What is left is the braid's real crossings, and at most a fraction of
+        a turn.  Two braids that differ only by full twists — a word read
+        off a kumihimo disk that was turned round, and the cord it makes —
+        are then equal.
+
+        Returns:
+            Braid: the same crossings, without the full twists.
+        """
+        m = self.full_twists()
+        b = self
+        for _ in range(abs(m)):
+            b = b.full_twist(sign=-1 if m > 0 else 1)
+        return b
+
     def up_side_down(self) -> "Braid":
         """
         Invert up and down crossing operations
