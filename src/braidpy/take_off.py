@@ -216,7 +216,8 @@ class YarnPaths:
             s = np.linspace(0.0, 1.0, len(path))
 
             def func(u: float) -> Tuple[float, float, float]:
-                return tuple(float(np.interp(u, s, path[:, i])) for i in range(3))
+                x, y, z = (float(np.interp(u, s, path[:, i])) for i in range(3))
+                return x, y, z
 
             return ParametricStrand(func)
 
@@ -798,7 +799,7 @@ def parametric_trajectories(
     if n_samples < 2:
         raise ValueError("n_samples must be at least 2.")
     times = np.linspace(0.0, 1.0, n_samples)
-    xy = {
+    xy: Dict[Hashable, np.ndarray] = {
         index: np.array([strand.evaluate(float(t))[:2] for t in times])
         for index, strand in enumerate(strands)
     }
@@ -1120,8 +1121,8 @@ def kumihimo_steps(
     if n % 4:
         raise ValueError("A kumihimo disk takes a multiple of four strands.")
 
-    position = {strand: p for p, strand in enumerate(start_order)}
-    start = {strand: 2 * p + 1 for strand, p in position.items()}
+    position: Dict[Hashable, int] = {s: p for p, s in enumerate(start_order)}
+    start: Dict[Hashable, int] = {s: 2 * p + 1 for s, p in position.items()}
     steps: List[Dict[Hashable, int]] = []
     for move in moves:
         if move == "S":
@@ -1284,11 +1285,11 @@ def ring_trajectories(
     free_from = {k: 0 for k in order}
     rows: List[List[Tuple[Hashable, Hashable]]] = []
     for over, under in crossings:
-        row = max(free_from[over], free_from[under])
-        while len(rows) <= row:
+        first = max(free_from[over], free_from[under])
+        while len(rows) <= first:
             rows.append([])
-        rows[row].append((over, under))
-        free_from[over] = free_from[under] = row + 1
+        rows[first].append((over, under))
+        free_from[over] = free_from[under] = first + 1
 
     # Even round a ring a little looser than the strands' own width.
     radius = n * diameter / (2 * np.pi) / 0.8
@@ -1308,7 +1309,7 @@ def ring_trajectories(
         ys[k].extend(r * np.cos(theta))
 
     for number, row in enumerate(rows):
-        moving: Dict[Hashable, Tuple[float, float]] = {}
+        moving: Dict[Hashable, Tuple[int, float]] = {}
         for over, under in row:
             gap = (slot[under] - slot[over]) % n
             if gap not in (1, n - 1):
@@ -1323,15 +1324,15 @@ def ring_trajectories(
         for k in order:
             here = angle[k]
             if k in moving:
-                step, side = moving[k]
-                a = here + step * ease
+                sense, side = moving[k]
+                a = here + sense * ease
                 r = radius + side * diameter / 2 * np.sin(np.pi * fractions)
             else:
                 a = np.full(samples_per_row, here)
                 r = np.full(samples_per_row, radius)
             place(k, a, r)
-        for k, (step, _) in moving.items():
-            angle[k] += step
+        for k, (sense, _) in moving.items():
+            angle[k] += sense
     for k in order:
         place(k, np.array([angle[k]]), np.array([radius]))
 

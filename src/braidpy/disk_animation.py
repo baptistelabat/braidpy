@@ -59,10 +59,11 @@ def _hsv_colours(n: int) -> List[str]:
     Spaced so the wheel does not wrap: Kumihimo's own palette runs from 0 to
     1 inclusive, which makes the first and last strands the same red.
     """
+    import matplotlib
     import matplotlib.colors as mcolors
-    import matplotlib.pyplot as plt
 
-    return [mcolors.to_hex(c) for c in plt.cm.hsv(np.linspace(0, 1, n, endpoint=False))]
+    wheel = matplotlib.colormaps["hsv"]
+    return [mcolors.to_hex(c) for c in wheel(np.linspace(0, 1, n, endpoint=False))]
 
 
 def animate_disk(
@@ -415,6 +416,8 @@ def animate_kumihimo(
     """
     pattern = kumihimo if isinstance(kumihimo, str) else kumihimo.pattern
     n = n_strands if isinstance(kumihimo, str) else kumihimo.n
+    if n is None:
+        raise ValueError("A pattern needs n_strands.")
     trajectories = kumihimo_trajectories(
         kumihimo, n_strands, samples_per_step=samples_per_step
     )
