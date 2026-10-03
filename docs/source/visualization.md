@@ -37,10 +37,14 @@ b.plot()
 
 ![2D braid diagram](2D_braid_diagram.png)
 
-Strands are coloured the way `b.draw()` colours them in the console, so a strand is
-the same colour wherever you look at it. The strand passing behind is interrupted
-at each crossing; `gap` sets how wide that break is, as a fraction of the distance
-between neighbouring strands.
+The braid runs down the page, the way it hangs and the way a braider works it, with
+its word written above. Strands are coloured the way `b.draw()` colours them in the
+console, so a strand is the same colour wherever you look at it, and the strand
+passing behind is interrupted where the two meet.
+
+`gap` sets how wide that break is as a fraction of the strand spacing, `amplitude`
+how far a strand swings out as it crosses, and `profile=LINEAR` draws straight
+segments instead of curves.
 
 ## Plot 3D braid
 The third level is 3D visualization. You first need to convert your braidword to a parametric braid.

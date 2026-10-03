@@ -732,30 +732,39 @@ class Braid:
         self,
         n_samples: int = 400,
         line_width: float = 3.0,
-        gap: float = 0.3,
+        gap: float = 0.11,
+        amplitude: float = 0.28,
+        profile=None,
         color: Optional[str] = None,
+        title: Optional[str] = None,
         save: Optional[str] = None,
         ax=None,
     ) -> "Braid":
-        """Draw the braid as a 2D diagram, read from left to right.
+        """Draw the braid as a 2D diagram, running down the page.
 
-        Each strand is drawn in the colour :meth:`draw` gives it, and the one
-        that passes behind is interrupted where they meet.  The over-and-under
-        is not re-derived: it is read from the curve
-        :meth:`to_parametric_strands` already computes.
+        The braid hangs downward, the way it is worked, with its word written
+        above it.  Each strand is drawn in the colour :meth:`draw` gives it,
+        and the one passing behind is interrupted where they meet.  The
+        over-and-under is not re-derived: it is read from the curve
+        :func:`~braidpy.parametric_strand.strand_paths` computes.
 
-        This used to be drawn by `braid-visualiser`, which used its own
+        This used to be drawn by braid-visualiser, which used its own
         colours, so a strand was one colour in the console and another in the
-        plot.  The arguments changed with it: `style` is gone, `gap_size`
-        became ``gap`` as a fraction of the strand spacing, and ``save`` takes
-        a path rather than a flag.
+        plot.  The arguments changed with it: "style" is gone, "gap_size"
+        became "gap" as a fraction of the strand spacing, and "save" takes a
+        path rather than a flag.
 
         Args:
             n_samples: Points along each strand.
             line_width: Thickness of a strand.
             gap: Width of the break where a strand passes behind, as a
                 fraction of the distance between neighbouring strands.
+            amplitude: How far a strand swings out of line as it crosses.
+            profile: How a strand travels sideways; smoothstep by default,
+                :data:`~braidpy.parametric_strand.LINEAR` for straight
+                segments.
             color: One colour for every strand; each takes its own by default.
+            title: Heading; the braid's word by default, and "" for none.
             save: Path to write the figure to, if wanted.
             ax: Axes to draw on; a new figure otherwise.
 
@@ -763,13 +772,17 @@ class Braid:
             Braid: self, so the call can be chained.
         """
         from braidpy.braid_diagram import draw_diagram
+        from braidpy.parametric_strand import SMOOTHSTEP
 
         draw_diagram(
             self,
             n_samples=n_samples,
             line_width=line_width,
             gap=gap,
+            amplitude=amplitude,
+            profile=SMOOTHSTEP if profile is None else profile,
             color=color,
+            title=title,
             save=save,
             ax=ax,
         )

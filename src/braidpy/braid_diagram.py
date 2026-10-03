@@ -18,12 +18,16 @@ Drawing it here fixes that: the diagram uses
 :meth:`~braidpy.braid.Braid.draw` uses, so strand 3 is the same colour
 wherever you look at it.
 
-The picture is the one braidpy already computes.
-:meth:`~braidpy.braid.Braid.to_parametric_strands` gives each strand as a
-curve in three coordinates — *across* the braid, *depth* (positive where a
-strand passes in front), and *time* — so the diagram is that curve seen from
-the front, with the strand that passes behind interrupted where the two meet.
-Nothing is re-derived here; the over-and-under already lives in the curve.
+The braid runs **down** the page, the way a braid hangs and the way a braider
+works, with the word written above it.  Strands swing across on the
+smoothstep profile of :mod:`~braidpy.parametric_strand`, so a crossing is a
+curve rather than a corner; pass ``profile=LINEAR`` for straight segments.
+
+Nothing about the braid is re-derived here.
+:func:`~braidpy.parametric_strand.strand_paths` gives each strand as a curve
+in three coordinates — *across* the braid, *depth* (positive where a strand
+passes in front), and *along* — so the diagram is that curve seen from the
+front, with the strand passing behind interrupted where the two meet.
 """
 
 from __future__ import annotations
@@ -33,9 +37,18 @@ from typing import Dict, List, Optional, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .parametric_strand import LINEAR, SMOOTHSTEP, Profile, strand_paths
 from .utils import terminal_colors
 
-__all__ = ["DIAGRAM_COLORS", "diagram_segments", "draw_diagram", "strand_color"]
+__all__ = [
+    "DIAGRAM_COLORS",
+    "LINEAR",
+    "SMOOTHSTEP",
+    "diagram_segments",
+    "draw_diagram",
+    "sample_period",
+    "strand_color",
+]
 
 # terminal_colors is written for the console and for plotly, and its last
 # entry is a plotly colour string that matplotlib cannot read.  Translate the
@@ -60,21 +73,33 @@ def strand_color(index: int) -> str:
     return DIAGRAM_COLORS[index % len(DIAGRAM_COLORS)]
 
 
-def _spacing(paths: Sequence[np.ndarray]) -> float:
-    """How far apart the strands sit across the braid.
+def sample_period(path, n_samples: int) -> np.ndarray:
+    """One period of a strand, without the wrap at the end.
 
-    Used to size the break at a crossing relative to the drawing, so the gap
-    looks the same whatever the braid's width.
+    :meth:`~braidpy.parametric_strand.StrandPath.position` takes ``z`` modulo
+    the period, so that a closed braid can be followed round and round.  Asked
+    for the very last point of one period it therefore answers with the
+    *first*, and a diagram drawn from that has every strand jumping back to
+    where it started.  Sample up to the period and finish with the slot the
+    strand genuinely ends in.
+
+    Args:
+        path: A :class:`~braidpy.parametric_strand.StrandPath`.
+        n_samples: Points to take.
+
+    Returns:
+        An ``(n_samples, 3)`` array of ``(across, depth, along)``.
     """
-    starts = sorted(path[0, 0] for path in paths)
-    gaps = [b - a for a, b in zip(starts, starts[1:]) if b - a > 1e-9]
-    return min(gaps) if gaps else 1.0
+    heights = np.linspace(0.0, path.length, n_samples, endpoint=False)
+    points = [path.position(float(z)) for z in heights]
+    points.append((path.slots[-1] * path.spacing, 0.0, float(path.length)))
+    return np.asarray(points)
 
 
 def diagram_segments(
-    strands: Sequence,
+    paths: Sequence,
     n_samples: int = 400,
-    gap: float = 0.3,
+    gap: float = 0.11,
 ) -> List[List[np.ndarray]]:
     """Each strand as the pieces of it that are visible from the front.
 
@@ -84,33 +109,33 @@ def diagram_segments(
     rather than as a tangle.
 
     Args:
-        strands: Objects answering ``sample(n)``, as
-            :meth:`~braidpy.braid.Braid.to_parametric_strands` returns.
+        paths: :class:`~braidpy.parametric_strand.StrandPath` objects, as
+            :func:`~braidpy.parametric_strand.strand_paths` returns.
         n_samples: Points along each strand.  A crossing narrower than the
             spacing between samples would be drawn unbroken.
         gap: How wide the break is, as a fraction of the distance between
             neighbouring strands.
 
     Returns:
-        Per strand, a list of ``(n, 2)`` arrays of ``(time, across)`` to draw
-        as separate lines.
+        Per strand, a list of ``(n, 2)`` arrays of ``(across, along)`` to
+        draw as separate lines.
     """
-    paths = [np.asarray(strand.sample(n_samples)) for strand in strands]
     if not paths:
         return []
-    width = gap * _spacing(paths)
+    sampled = [sample_period(path, n_samples) for path in paths]
+    width = gap * paths[0].spacing
 
-    visible = [np.ones(len(path), dtype=bool) for path in paths]
-    for first in range(len(paths)):
-        for second in range(first + 1, len(paths)):
-            here, there = paths[first], paths[second]
+    visible = [np.ones(len(points), dtype=bool) for points in sampled]
+    for first in range(len(sampled)):
+        for second in range(first + 1, len(sampled)):
+            here, there = sampled[first], sampled[second]
             meeting = np.abs(here[:, 0] - there[:, 0]) < width
             behind = here[:, 1] < there[:, 1]
             visible[first][meeting & behind] = False
             visible[second][meeting & ~behind] = False
 
     pieces: List[List[np.ndarray]] = []
-    for path, mask in zip(paths, visible):
+    for points, mask in zip(sampled, visible):
         runs: List[np.ndarray] = []
         start = 0
         while start < len(mask):
@@ -120,7 +145,7 @@ def diagram_segments(
             while end < len(mask) and mask[end]:
                 end += 1
             if end - start > 1:
-                runs.append(np.column_stack((path[start:end, 2], path[start:end, 0])))
+                runs.append(points[start:end, [0, 2]])
             start = end
         pieces.append(runs)
     return pieces
@@ -130,12 +155,15 @@ def draw_diagram(
     braid,
     n_samples: int = 400,
     line_width: float = 3.0,
-    gap: float = 0.3,
+    gap: float = 0.11,
+    amplitude: float = 0.28,
+    profile: Profile = SMOOTHSTEP,
     color: Optional[str] = None,
+    title: Optional[str] = None,
     save: Optional[str] = None,
     ax: Optional["plt.Axes"] = None,
 ) -> "plt.Axes":
-    """Draw a braid as a diagram, read from left to right.
+    """Draw a braid as a diagram, running down the page.
 
     Args:
         braid: The braid to draw.
@@ -143,42 +171,49 @@ def draw_diagram(
         line_width: Thickness of a strand.
         gap: Width of the break where a strand passes behind, as a fraction
             of the distance between neighbouring strands.
-        color: One colour for every strand.  By default each strand takes its
-            own, the same colour :meth:`~braidpy.braid.Braid.draw` gives it.
+        amplitude: How far a strand swings out of line as it crosses.  Larger
+            is rounder; the crossing is drawn, not just implied.
+        profile: How a strand travels sideways — :data:`SMOOTHSTEP` for
+            curves, :data:`LINEAR` for straight segments.
+        color: One colour for every strand.  By default each takes its own,
+            the same colour :meth:`~braidpy.braid.Braid.draw` gives it.
+        title: Heading; the braid's word by default, and "" for none.
         save: Path to write the figure to, if wanted.
         ax: Axes to draw on; a new figure otherwise.
 
     Returns:
         The axes drawn on.
     """
-    strands = braid.to_parametric_strands()
-    pieces = diagram_segments(strands, n_samples=n_samples, gap=gap)
+    paths = strand_paths(braid, amplitude=amplitude, profile=profile)
+    pieces = diagram_segments(paths, n_samples=n_samples, gap=gap)
+    n_strands = len(paths)
+    length = paths[0].length if paths else 1
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(1.6 * max(len(braid.generators), 1), 2.4))
+        _, ax = plt.subplots(figsize=(1.1 + 0.7 * n_strands, 1.4 + 0.75 * length))
 
     for index, runs in enumerate(pieces):
         shade = color or strand_color(index)
-        for number, run in enumerate(runs):
+        for run in runs:
             ax.plot(
                 run[:, 0],
                 run[:, 1],
                 color=shade,
                 linewidth=line_width,
                 solid_capstyle="round",
-                label=f"strand {index}" if number == 0 else None,
             )
 
-    ax.set_xlabel("time")
-    ax.set_ylabel("position across the braid")
-    ax.set_yticks(
-        sorted(
-            {float(path[0, 0]) for path in (np.asarray(s.sample(2)) for s in strands)}
-        )
-    )
-    ax.set_yticklabels(range(1, len(strands) + 1))
-    ax.invert_yaxis()
-    ax.spines[["top", "right"]].set_visible(False)
+    if title is None:
+        title = f"Braid: {braid.format()}"
+    if title:
+        ax.set_title(title, fontsize=11, pad=12)
+
+    spacing = paths[0].spacing if paths else 1.0
+    ax.set_xlim(-0.8 * spacing, (n_strands - 1 + 0.8) * spacing)
+    ax.set_ylim(-0.1 * length, length * 1.05)
+    ax.invert_yaxis()  # the braid hangs downward, as it is worked
+    ax.set_aspect("equal")
+    ax.axis("off")
     if save:
-        ax.figure.savefig(save, bbox_inches="tight")
+        ax.figure.savefig(save, bbox_inches="tight", dpi=150)
     return ax

@@ -64,7 +64,10 @@ p = ParametricBraid(strands)  # .plot()
 p.plot()
 ```
 
-The plot should give the following:
+`result.plot()` gives the 2D diagram below — the braid runs down the page with its
+word above it, each strand in the same colour the console draws it in, and the strand
+passing behind interrupted where the two meet. `p.plot()` opens the 3D view.
+
 ![Plot braid example](braid_plot.png)
 
 ## Braiding machines
