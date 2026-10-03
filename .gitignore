@@ -163,3 +163,10 @@ cython_debug/
 
 # Generated horn gear demo pages (see gen_demos.py)
 demo_*.html
+
+# Written by the test suite
+test.svg
+output.json
+tests/3strands_*.b3d
+tests/3strands_*.json
+tests/abok3054*.json
