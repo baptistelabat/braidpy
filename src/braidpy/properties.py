@@ -11,7 +11,7 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import List
+from typing import List, Optional
 from sympy import Poly, symbols, simplify
 from .braid import Braid
 
@@ -33,7 +33,9 @@ def alexander_polynomial(braid: Braid) -> Poly:
     return poly
 
 
-def conjugacy_class(braid: Braid, conjugators: List[Braid] = None) -> List[Braid]:
+def conjugacy_class(
+    braid: Braid, conjugators: Optional[List[Braid]] = None
+) -> List[Braid]:
     """
     Generate conjugates of a braid by a list of other braids.
 

@@ -173,7 +173,7 @@ def ashley_single_move_to_artin(
 
 def ashley_to_artin_exact(
     counts: List[int], moves: Dict[int, int]
-) -> Tuple[List[str], Dict[int, List[int]]]:
+) -> Tuple[List[int], List[int]]:
     """Convert an Ashley-style braid (sinnet) into an exact Artin braid word.
 
     Ashley braids are described in the Ashley book of knots
@@ -488,7 +488,7 @@ def visualize_sinnet(
 
     if make_gif:
         gif_path = os.path.join(out_dir, gif_name)
-        imgs = [imageio.imread(f) for f in frames]
+        imgs: list = [imageio.imread(f) for f in frames]
         imageio.mimsave(gif_path, imgs, loop=0, fps=1)
         result["gif"] = gif_path
 

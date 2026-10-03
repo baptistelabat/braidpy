@@ -336,7 +336,7 @@ class Mobidai:
     # ... rotate, all_steps, visualize, simulate remain the same ...
     def rotate(self, steps: int):
         n = self.config.n_slots
-        new_slots = {i: None for i in range(1, n + 1)}
+        new_slots: Dict[int, Optional[Strand]] = {i: None for i in range(1, n + 1)}
         for slot, strand in self.slots.items():
             if strand:
                 new_pos = ((slot - 1 + steps) % n) + 1

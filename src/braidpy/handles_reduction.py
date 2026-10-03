@@ -18,7 +18,6 @@ from typing import List
 
 import numpy as np
 
-from braidpy import Braid
 from braidpy.braid import SignedCrossingIndex
 from braidpy.utils import FunctionalException, PositiveInt
 
@@ -194,18 +193,12 @@ def dehornoy_reduce_core(
         # Apply Dehornoy handle reduction (this part was wrong before)
         reduced_segment = reduce_handle(gens[i : j + 1])
         gens = gens[:i] + reduced_segment + gens[j + 1 :]
-        print(gens)
-        print(Braid(gens).format_to_notation(target="alpha"))
-        # Braid(gens).draw()
-        print("")
 
     sign = dehornoy_sign(gens)
     if sign is None:
         raise HandleReducedButUnexpectedResult(
             f"Braid word reduced to {gens}, but sign can not be determined which is unexpected. Consider increasing timeout if necessary"
         )
-    # Braid(gens).draw()
-    print("")
     return HandleReductionResults(
         generators=gens, sign=sign, handle_reduction_mode=mode
     )

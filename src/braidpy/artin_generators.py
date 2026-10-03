@@ -24,7 +24,7 @@ class a(Braid):
         Ensures we have only one crossing
         """
         super().__post_init__()
-        if len(self.process) > 1:  # Process is a Tuple
+        if len(self.generators) > 1:
             raise ValueError(
                 f"Artin generator is only a single crossing, but process is {self.process}"
             )

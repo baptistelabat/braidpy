@@ -275,7 +275,10 @@ def annular_word(
         cid: float((angle[-1, k] - angle[0, k]) / turns) for k, cid in enumerate(ids)
     }
     return AnnularWord(
-        generators=word, winding=winding, centre=tuple(around), n_strands=count
+        generators=word,
+        winding=winding,
+        centre=(float(around[0]), float(around[1])),
+        n_strands=count,
     )
 
 
@@ -317,4 +320,5 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
             point = here + (nxt - here) * step
             return float(point[0]), float(point[1]), float(point[2])
 
-    return [_Yarn(paths.points[cid]) for cid in sorted(paths.points)]
+    ids: List = list(paths.points)
+    return [_Yarn(paths.points[cid]) for cid in sorted(ids)]
