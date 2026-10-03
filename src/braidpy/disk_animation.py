@@ -74,6 +74,7 @@ def animate_disk(
     show_ids: bool = True,
     frame_duration_ms: int = 50,
     max_frames: int = 900,
+    webgl: bool = True,
 ) -> go.Figure:
     """Animate strands moving round a disk, seen from above.
 
@@ -87,6 +88,9 @@ def animate_disk(
         colors: One colour per strand; the horn gear animation's if None.
         show_ids: Name each strand at its carrier.
         frame_duration_ms: How long each frame is shown.
+        webgl: Draw what moves with WebGL, which redraws every strand of a
+            frame in one pass; with SVG each is redrawn in turn, and a strand
+            and its copy on top can be seen out of step for an instant.
         max_frames: Frame budget: a long sequence is sampled more coarsely
             rather than written to a page too big to open.
 
@@ -119,6 +123,8 @@ def animate_disk(
     }
     deepest = max(float(np.max(d)) for d in depth.values())
 
+    Moving = go.Scattergl if webgl else go.Scatter
+
     def strand_traces(i: int) -> List[go.Scatter]:
         """Every strand as a spoke, then again on top for those lifted over.
 
@@ -143,13 +149,13 @@ def animate_disk(
                 hoverinfo="skip",
                 showlegend=False,
             )
-            under.append(go.Scatter(**spoke))
+            under.append(Moving(**spoke))
             # A strand that is not lifted still sends its edging and its copy,
             # as gaps: Plotly leaves a trace alone when a frame gives it no
             # points, so an empty one would keep showing the last lift.
             gap = {} if lifted else {"x": [None, None], "y": [None, None]}
             edging.append(
-                go.Scatter(
+                Moving(
                     **{
                         **spoke,
                         "line": dict(
@@ -159,24 +165,44 @@ def animate_disk(
                     }
                 )
             )
-            over.append(go.Scatter(**{**spoke, **gap}))
-        carriers = go.Scatter(
-            x=[trajectories.xy[k][i][0] for k in keys],
-            y=[trajectories.xy[k][i][1] for k in keys],
-            mode="markers+text" if show_ids else "markers",
+            over.append(Moving(**{**spoke, **gap}))
+        xs = [trajectories.xy[k][i][0] for k in keys]
+        ys = [trajectories.xy[k][i][1] for k in keys]
+        carriers = Moving(
+            x=xs,
+            y=ys,
+            mode="markers",
             marker=dict(
                 size=14,
                 color=[colour[k] for k in keys],
                 line=dict(color="white", width=1.5),
             ),
-            text=[str(k) for k in keys],
-            textposition="middle center",
-            textfont=dict(size=8, color="white"),
             hovertext=[f"{trajectories.label}{k}" for k in keys],
             hoverinfo="text",
             showlegend=False,
         )
         return under + edging + over + [carriers]
+
+    def strand_names(i: int) -> List[dict]:
+        """Each strand's name on its carrier, as annotations.
+
+        Not as text on the carriers' trace: text on a WebGL trace can stop
+        the whole WebGL layer drawing, strands and all.  Not as a trace of its
+        own either: a WebGL layer is painted over every plain trace, so the
+        names would sit under the carriers.  Annotations are drawn above both.
+        """
+        if not show_ids:
+            return []
+        return [
+            dict(
+                x=round(float(trajectories.xy[k][i][0]), 4),
+                y=round(float(trajectories.xy[k][i][1]), 4),
+                text=str(k),
+                showarrow=False,
+                font=dict(size=8, color="white"),
+            )
+            for k in keys
+        ]
 
     def rounded(trace: go.Scatter) -> go.Scatter:
         if trace.x is not None:
@@ -253,11 +279,13 @@ def animate_disk(
         go.Frame(
             data=[rounded(t) for t in strand_traces(i)],
             traces=moving,
+            layout=dict(annotations=strand_names(i)),
             name=str(i),
         )
         for i in samples
     ]
     fig = go.Figure(data=still + strand_traces(0), frames=frames)
+    fig.update_layout(annotations=strand_names(0))
     reach = rim * 1.2
     fig.update_layout(
         title=title,

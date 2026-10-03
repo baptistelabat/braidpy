@@ -33,6 +33,10 @@ def _edgings(frame, n):
     return frame.data[n : 2 * n]
 
 
+def _names(frame):
+    return [a.text for a in frame.layout.annotations]
+
+
 def test_strands_are_spokes_to_their_carriers():
     traj = disk_trajectories({0: 1, 1: 3}, [{0: 4}], n_slots=8, samples_per_step=4)
     fig = animate_disk(traj)
@@ -44,7 +48,8 @@ def test_strands_are_spokes_to_their_carriers():
             assert [spoke.x[1], spoke.y[1]] == pytest.approx(
                 traj.xy[k][index], abs=1e-4
             )
-        assert list(carriers.text) == ["0", "1"]
+        assert _names(frame) == ["0", "1"]
+        assert [a.x for a in frame.layout.annotations] == list(carriers.x)
 
 
 def test_a_strand_lifted_over_is_drawn_on_top():
@@ -147,3 +152,15 @@ def test_mobidai_animation():
     assert labels == ["move", "turn", "turn"]  # slot 1 is empty the second time
     _, _, carriers = _spokes(fig.frames[0], 3)
     assert list(carriers.marker.color) == ["red", "green", "blue"]
+
+
+def test_what_moves_is_drawn_with_webgl_and_names_are_not():
+    traj = disk_trajectories({0: 1, 1: 3}, [{0: 4}], n_slots=8, samples_per_step=2)
+    frame = animate_disk(traj).frames[0]
+    # Spokes, edgings, copies on top and carriers in one WebGL pass; the
+    # names as annotations, since text on a WebGL trace can stop it drawing
+    # and a plain trace would sit under the WebGL layer.
+    assert {t.type for t in frame.data} == {"scattergl"}
+    assert _names(frame) == ["0", "1"]
+    svg = animate_disk(traj, webgl=False).frames[0]
+    assert {t.type for t in svg.data} == {"scatter"}
