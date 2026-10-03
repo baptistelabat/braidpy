@@ -2,6 +2,7 @@ import pytest
 from math_braid.canonical_factor import CanonicalFactor
 
 from braidpy import Braid
+from braidpy.garside_canonical_form import permutation_word
 from sympy import symbols, Matrix
 
 from braidpy.operations import conjugate
@@ -186,7 +187,24 @@ class TestBraid:
         assert f.n_half_twist == 0
         assert f.n_strands == 1
 
+        # σ2 σ1⁻¹ = Δ⁻¹ · σ1 · σ1σ2 in Artin's left normal form.
         f = Braid([2, -1]).get_canonical_factors()
+        assert f.n_half_twist == -1
+        assert f.n_strands == 3
+        assert [permutation_word(a) for a in f.Ai] == [[1], [1, 2]]
+
+    def test_canonical_form_counts_half_twists(self):
+        """Δ is one half twist and Δ² two, on any number of strands."""
+        for n in (2, 3, 4, 5):
+            half = Braid([1, -1], n_strands=n).half_twist()
+            f = half.get_canonical_factors()
+            assert (f.n_half_twist, f.Ai) == (1, ())
+            f = half.half_twist().get_canonical_factors()
+            assert (f.n_half_twist, f.Ai) == (2, ())
+
+    def test_band_canonical_form(self):
+        """math_braid's own form: band generators, whose twist is δ."""
+        f = Braid([2, -1]).get_band_canonical_factors()
         assert isinstance(f.Ai[0], CanonicalFactor)
         assert f.Ai[0].array_form == [
             1,
@@ -199,7 +217,37 @@ class TestBraid:
             1,
         ]  # This describes the permutation of second and third strands
         assert f.n_half_twist == -1
-        assert f.n_strands == 3
+        # A full twist on three strands is three of its δ.
+        full = Braid([1, -1], n_strands=3).full_twist()
+        assert full.get_band_canonical_factors().n_half_twist == 3
+
+    def test_canonical_form_is_the_braid_and_only_it(self):
+        """Δ^k · A_1 ⋯ A_r spells the braid, and equal braids spell it alike."""
+        import random
+
+        random.seed(1)
+        for _ in range(100):
+            n = random.choice([3, 4, 5])
+            word = [
+                random.choice([1, -1]) * random.randint(1, n - 1)
+                for _ in range(random.randint(1, 12))
+            ]
+            f = Braid(word, n_strands=n).get_canonical_factors()
+            delta = permutation_word(tuple(range(n - 1, -1, -1)))
+            k = f.n_half_twist
+            rebuilt = delta * k if k >= 0 else [-g for g in reversed(delta)] * -k
+            for a in f.Ai:
+                rebuilt += permutation_word(a)
+            assert Braid(rebuilt or [1, -1], n_strands=n) == Braid(word, n_strands=n)
+            # The same braid spelt otherwise: σ_i σ_i⁻¹ put in, and a braid
+            # relation used.
+            i = random.randint(1, n - 1)
+            padded = Braid(word[:1] + [i, -i] + word[1:], n_strands=n)
+            assert padded.get_canonical_factors() == f
+            assert (
+                Braid(word + [1, 2, 1], n_strands=n).get_canonical_factors()
+                == Braid(word + [2, 1, 2], n_strands=n).get_canonical_factors()
+            )
 
     def test_main_generator(self):
         b = Braid([])
