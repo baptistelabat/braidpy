@@ -11,15 +11,20 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [x] Generation of parametric braid from braid word
 - [x] Visualization capabilities (ASCI, 2D and 3D) 
 - [x] Computations of mathematical properties of braid word or invariants of braid
-- [ ] Annulus braids
-- [ ] Conversion from parametric braid to braid word
+- [x] Annulus braids: crossings, the wrapping crossing and turns on a ring of slots
+- [x] Closed-form geometry for the shapes that admit one — a laid rope, a
+      braided tube, the figure-eight flat braid — with their clearances measured
+      rather than assumed
+- [x] Simulation of horn gear (maypole) braiding machines: flat, tubular,
+      soutache and Jacquard lace, with tracks, collisions and animation
+- [x] Conversion from parametric braid to braid word, for flat braids — so a
+      computed shape can be checked against the braid it claims to be
 - [ ] Conversion from material braid to parametric braid
 - [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
 - [ ] Kumihimo braid with Marudai diagram
-- [ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)
-- [x] Simulation of horn gear braiding machines (flat, tubular, Jacquard lace), animated in 2D
-- [x] Braid coming off a horn gear machine, without tension, in 3D
-- [x] Braid coming off a horn gear machine, converging on a braiding point or fell circle, and tightened
+- [x] The braid coming off a horn gear machine, in 3D: extruded with no
+      tension, converging on a braiding point or fell circle, and tightened
+- [ ] Simulation of 3D rotary (hexagonal) braiding machines
 
 ## Basic example
 
@@ -58,6 +63,55 @@ p.plot()
 
 The plot should give the following:
 ![Plot braid example](braid_plot.png)
+
+## Braiding machines
+
+A horn gear (maypole) braiding machine can be described, run and drawn. Half
+its carriers travel one way round the ring of gears and half the other, and the
+closed paths they run on decide which carriers can ever meet — which is what
+decides the braid.
+
+```python
+from braidpy.horn_gear.examples import tubular_braid_8
+from braidpy.horn_gear.tracks import compute_tracks, simulation_period
+from braidpy.horn_gear.loading import load_carriers
+from braidpy.horn_gear.simulation import simulate
+
+machine = tubular_braid_8()
+len(compute_tracks(machine))      # 4 closed tracks
+simulation_period(machine)        # 8 steps to come home
+
+history = simulate(machine, simulation_period(machine), load_carriers(machine))
+```
+
+Threading is a search, not a convention: `load_carriers` tries placements,
+runs each one, and keeps the fullest that never collides. `visualize_machine`
+and `animate` draw the result, and `gen_demos.py` writes a page per machine —
+flat, tubular, soutache, diamond, and a Jacquard lace machine whose gears
+interpenetrate and whose switches are driven by a punched programme.
+
+## The shape a braid takes
+
+Pulled tight, some braids have a shape you can write down. A laid rope does; so
+does a braided tube; so does the classic flat braid. Most do not, and the
+reason is not want of effort.
+
+```python
+import math
+from braidpy.annulus_braid import lay_radius, packing_radius, tubular_braid_radius
+
+packing_radius(3, 0.4)                          # 0.231 — the zero-lay limit
+lay_radius(3, 0.4, lay=2.0)                     # 0.259 — where it really settles
+tubular_braid_radius(8, 0.4, math.radians(45))  # 0.825 — in closed form
+```
+
+The documentation works each of these through, with figures generated from the
+same functions:
+
+- [The shape of a laid rope](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/laid_rope.md)
+- [The shape of a braided tube](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braided_tube.md)
+- [Why a braid's shape has no closed form](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/why_no_closed_form.md)
+- [Solving a braid's shape numerically](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/solving_numerically.md)
 
 ## 🛠️ Installation
 Release versions are available on Pypi and it should be very easy to install braidpy in your python environment.
