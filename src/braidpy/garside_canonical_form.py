@@ -38,7 +38,7 @@ class GarsideCanonicalFactors:
 
     n_half_twist: int
     n_strands: StrictlyPositiveInt
-    Ai: Tuple[CanonicalFactor | None]
+    Ai: Tuple[CanonicalFactor | Tuple[int, ...], ...]
 
     @property
     def dehornoy_floor(self) -> int:

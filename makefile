@@ -53,6 +53,9 @@ lint: ## Clean code or warn user
 test: ## Launch test
 	uv run pytest tests
 
+typecheck: ## Check type annotations
+	uv run mypy src tests
+
 # Step 1: Run code with tracing
 autotype:
 	uv run monkeytype run -m pytest tests

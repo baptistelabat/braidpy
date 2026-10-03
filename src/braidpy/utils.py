@@ -11,7 +11,7 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import Optional, Union, Any
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 # ANSI color codes (foreground)
 ANSI_COLORS = [
@@ -85,36 +85,42 @@ def int_to_subscript(n: int) -> str:
     return "".join(subscript_map[ch] for ch in str(n))
 
 
-class PositiveFloat(float):
-    def __new__(cls: "PositiveFloat", value: Any) -> "PositiveFloat":
-        val = float(value)
-        if val < 0:
-            raise ValueError(f"Value must be >= 0, got {val}")
-        return super().__new__(cls, val)
+if TYPE_CHECKING:
+    # To a type checker these are the numbers they check: a literal default
+    # such as ``n: StrictlyPositiveInt = 100`` is then fine.
+    PositiveFloat = float
+    StrictlyPositiveFloat = float
+    PositiveInt = int
+    StrictlyPositiveInt = int
+else:
 
+    class PositiveFloat(float):
+        def __new__(cls, value: Any) -> "PositiveFloat":
+            val = float(value)
+            if val < 0:
+                raise ValueError(f"Value must be >= 0, got {val}")
+            return super().__new__(cls, val)
 
-class StrictlyPositiveFloat(float):
-    def __new__(cls: "StrictlyPositiveFloat", value: Any) -> "StrictlyPositiveFloat":
-        val = float(value)
-        if val <= 0:
-            raise ValueError(f"Value must be > 0, got {val}")
-        return super().__new__(cls, val)
+    class StrictlyPositiveFloat(float):
+        def __new__(cls, value: Any) -> "StrictlyPositiveFloat":
+            val = float(value)
+            if val <= 0:
+                raise ValueError(f"Value must be > 0, got {val}")
+            return super().__new__(cls, val)
 
+    class PositiveInt(int):
+        def __new__(cls, value: Any) -> "PositiveInt":
+            val = int(value)
+            if val < 0:
+                raise ValueError(f"Value must be >= 0, got {val}")
+            return super().__new__(cls, val)
 
-class PositiveInt(int):
-    def __new__(cls: "PositiveInt", value: Any) -> "PositiveInt":
-        val = int(value)
-        if val < 0:
-            raise ValueError(f"Value must be >= 0, got {val}")
-        return super().__new__(cls, val)
-
-
-class StrictlyPositiveInt(int):
-    def __new__(cls: "StrictlyPositiveInt", value: Any) -> "StrictlyPositiveInt":
-        val = int(value)
-        if val <= 0:
-            raise ValueError(f"Value must be > 0, got {val}")
-        return super().__new__(cls, val)
+    class StrictlyPositiveInt(int):
+        def __new__(cls, value: Any) -> "StrictlyPositiveInt":
+            val = int(value)
+            if val <= 0:
+                raise ValueError(f"Value must be > 0, got {val}")
+            return super().__new__(cls, val)
 
 
 class FunctionalException(Exception):

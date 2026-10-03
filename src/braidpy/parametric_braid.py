@@ -13,9 +13,10 @@ License: Mozilla Public License 2.0
 
 import math
 from enum import Enum
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, cast
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 from braidpy.parametric_strand import ParametricStrand
@@ -212,7 +213,7 @@ class ParametricBraid:
         """
         if plotter == Plotter.MATPLOTLIB:
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax = cast(Axes3D, fig.add_subplot(111, projection="3d"))
             for i, strand in enumerate(self.strands):
                 path = strand.sample(n_sample)
                 x, y, z = zip(*path)

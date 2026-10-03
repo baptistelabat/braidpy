@@ -212,6 +212,6 @@ Please have a look to makefile to find helpful commands.
 ## 📜 License
 ![License](https://img.shields.io/badge/license-MPL%202.0-brightgreen)
 
-This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](https://github.com/baptistelabat/braidpy/blob/HEAD/LICENSE) file for details.
 
 ---

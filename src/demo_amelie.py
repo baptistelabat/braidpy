@@ -6,9 +6,9 @@ from braidpy.parametric_braid import (
 
 b = Braid((1, 2, 3, 1, 2, 4, -4, -2, -1, -3, -2, -1), n_strands=5)
 b.draw()
-gen, sign = dehornoy_reduce_core(b.generators)
+reduced = dehornoy_reduce_core(b.generators)
 print()
-Braid(gen).draw()
+Braid(reduced.generators).draw()
 (b**10).draw()
 b.plot()
 strands = (b**12).to_parametric_strands()

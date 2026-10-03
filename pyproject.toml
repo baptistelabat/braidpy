@@ -52,3 +52,11 @@ dev = [
     "mypy>=1.16.0",
 ]
 
+[tool.setuptools.package-data]
+braidpy = ["py.typed"]
+
+[tool.mypy]
+# Libraries without type information.
+[[tool.mypy.overrides]]
+module = ["math_braid.*", "mpl_toolkits.*", "networkx.*", "plotly.*", "sympy.*"]
+ignore_missing_imports = true

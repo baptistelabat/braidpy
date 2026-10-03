@@ -12,7 +12,7 @@ License: Mozilla Public License 2.0
 """
 
 import enum
-from typing import List, Tuple, Optional, Union
+from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from sympy import Matrix, eye, symbols
@@ -72,8 +72,8 @@ def single_crossing_braiding_process(
     return sequential_single_crossings_index
 
 
-# Recursive type for nested tuples of integers
-BraidProcess = Union[int, Tuple["BraidProcess", ...]]
+# Recursive type for nested sequences of integers
+BraidProcess = Union[int, Sequence["BraidProcess"]]
 
 
 @dataclass(frozen=True)
@@ -86,7 +86,8 @@ class Braid:
     """
 
     process: BraidProcess
-    n_strands: Optional[int] = field(default=None)
+    # None until __post_init__ infers it; an int on every braid made.
+    n_strands: int = field(default=None)  # type: ignore[assignment]
 
     def __post_init__(self):
         # Hack to allow to code single generator without parenthesis
@@ -177,8 +178,8 @@ class Braid:
 
     def format(
         self,
-        generator_symbols: list[str] = None,
-        inverse_generator_symbols: list[str] = None,
+        generator_symbols: Optional[list[str]] = None,
+        inverse_generator_symbols: Optional[list[str]] = None,
         zero_symbol: str = "e",
         separator: str = "",
     ) -> str:
@@ -586,7 +587,7 @@ class Braid:
         """Check if the braid is trivial (identity braid)"""
         return not self.generators or all(g == 0 for g in self.generators)
 
-    def permutations(self, plot=False) -> List[int]:
+    def permutations(self, plot=False) -> List[List[int]]:
         """Return the permutations induced by the braid"""
         perms = []
         strands = list(range(1, self.n_strands + 1))

@@ -243,10 +243,7 @@ def double_flat3(parallel: bool = True):
     parallel = False
     n = 3
     n_multiple = 2
-    if parallel:
-        step = a(0)
-    else:
-        step = a(1)
+    step: Braid = a(0) if parallel else a(1)
     for i in range(n_multiple):
         for j in range(n_multiple):
             step = step * a(1 + n_multiple - 1 - i + j)
