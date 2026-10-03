@@ -4,6 +4,8 @@
 
 """The curve braidpy draws through a braid word, written down rather than sampled."""
 
+import math
+
 import pytest
 
 from braidpy.braid import Braid
@@ -97,3 +99,13 @@ def test_a_path_can_be_handed_on_as_a_parametric_strand():
 def test_a_braided_strand_is_longer_than_the_axis_it_covers():
     path = strand_paths(FLAT_BRAID)[0]
     assert arc_length(path) > path.length
+
+
+def test_arc_length_is_right_where_it_can_be_checked():
+    """A helix of radius R and one turn per unit is sqrt(1 + (2 pi R)^2) long."""
+    from braidpy.annulus_braid import Helix
+
+    helix = Helix(radius=0.3, turns=1.0, length=1)
+    assert arc_length(helix, 20_000) == pytest.approx(
+        math.hypot(1.0, 2 * math.pi * 0.3), rel=1e-6
+    )
