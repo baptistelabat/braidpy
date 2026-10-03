@@ -38,10 +38,10 @@ from braidpy.horn_gear.layout import (
     tube_rings,
 )
 from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
+from braidpy.horn_gear.loading import load_carriers
 from braidpy.horn_gear.simulation import (
     carrier_places,
     initial_state,
-    load_carriers,
     simulate,
     state_period,
     step,

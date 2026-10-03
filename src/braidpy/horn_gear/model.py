@@ -323,7 +323,7 @@ class BraidingMachine:
         Returns:
             Dict mapping carrier_id → (gear_name, slot).
         """
-        from .simulation import load_carriers
+        from .loading import load_carriers
 
         return load_carriers(self)
 
