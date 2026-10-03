@@ -11,6 +11,7 @@ associated with the braiding moves.
 """
 
 from __future__ import annotations
+import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 import matplotlib.pyplot as plt
@@ -229,6 +230,34 @@ class Mobidai:
             self.config.strands, self.config.n_slots, self.config.is_clockwise
         )
         self.braid_word: List[str] = []
+
+    @property
+    def generators(self) -> List[int]:
+        """The braid word as signed generator indices.
+
+        :attr:`braid_word` keeps one readable string per move, such as
+        ``"s2^-1 s1^-1"``.  The rest of braidpy speaks signed integers — that
+        is what :class:`~braidpy.braid.Braid` takes, and what
+        :func:`~braidpy.symmetric_braid.braid_word` returns — so this gives
+        the same word in that form, flattened across moves.
+
+        Returns:
+            One signed index per crossing: ``+i`` for ``si``, ``-i`` for
+            ``si^-1``.
+
+        Raises:
+            ValueError: If a generator cannot be read, which would mean the
+                tracker had written something this cannot parse.
+        """
+        out: List[int] = []
+        for move_word in self.braid_word:
+            for token in move_word.split():
+                match = re.fullmatch(r"s(\d+)(\^-1)?", token)
+                if match is None:
+                    raise ValueError(f"Cannot read generator {token!r}.")
+                index = int(match.group(1))
+                out.append(-index if match.group(2) else index)
+        return out
 
     def single_step(
         self, move: Move, slots: Dict[int, Optional[Strand]]
