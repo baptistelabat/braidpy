@@ -93,10 +93,14 @@ several things can say that:
   braid word, through `take_off.braid_word_trajectories` — anything that
   makes a word can be laid, kumihimo sequences included;
 - strands moved between the slots of a disk, through
-  `take_off.disk_trajectories`, and a mobidai's configuration through
-  `take_off.mobidai_trajectories`. A strand that moves while the others stay
-  passes over them on the outside of the rim; read in slot order, that gives
-  the crossings the mobidai's own word records on a clockwise disk.
+  `take_off.disk_trajectories`; a mobidai's configuration through
+  `take_off.mobidai_trajectories`, and a kumihimo sequence through
+  `take_off.kumihimo_trajectories`. A strand that moves while the others stay
+  passes over them — over as seen from above the disk, where the braider
+  works, with the braid going down through the middle — which is *inside*
+  the rim. Read in slot order, inside as over, that gives the crossings the
+  mobidai and the kumihimo write down for themselves. It is the opposite way
+  round from `annulus_braid`, which looks at a tube from outside.
 
 From there it is the same for all of them:
 

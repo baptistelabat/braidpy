@@ -8,7 +8,6 @@ Run from the repository root: ``python gen_demos.py``
 """
 
 import sys
-from types import SimpleNamespace
 
 sys.path.insert(0, "src")
 
@@ -27,9 +26,11 @@ from braidpy.horn_gear import (  # noqa: E402
 )
 from braidpy.take_off import (  # noqa: E402
     braid_word_trajectories,
+    kumihimo_trajectories,
     lay_yarns,
     mobidai_trajectories,
 )
+from braidpy.mobidai import MobidaiConfig, Move, Strand  # noqa: E402
 from braidpy.take_off import visualize_yarns as visualize_yarns_from  # noqa: E402
 from braidpy.horn_gear.examples import (  # noqa: E402
     flat_braid_3,
@@ -126,7 +127,7 @@ MACHINES = [
 
 
 def other_sources() -> int:
-    """Braids laid from something other than a machine: a word and a disk."""
+    """Braids laid from something other than a machine: a word and two disks."""
     # A three-strand plait, from nothing but its braid word.
     word = braid_word_trajectories([1, -2] * 6)
     plait, _ = tighten_yarns(
@@ -139,19 +140,12 @@ def other_sources() -> int:
     )
     print("demo_word_plait_braid.html")
 
-    # Eight strands worked on a 32-slot mobidai, in the shape of
-    # braidpy.mobidai's MobidaiConfig (which the reader takes as it is).
-    config = SimpleNamespace(
-        n_slots=32,
-        is_clockwise=True,
+    # Eight strands worked on a 32-slot mobidai.
+    config = MobidaiConfig(
+        strands=[Strand("red", p) for p in (32, 1, 17, 16, 25, 24, 8, 9)],
+        moves=[Move(a, b) for a, b in [(1, 15), (17, 31), (25, 7), (9, 23)]],
         n_shift_after_cycle=1,
-        strands=[
-            SimpleNamespace(position=p, id=-1) for p in (32, 1, 17, 16, 25, 24, 8, 9)
-        ],
-        moves=[
-            SimpleNamespace(from_slot=a, to_slot=b, force_direction=0)
-            for a, b in [(1, 15), (17, 31), (25, 7), (9, 23)]
-        ],
+        n_slots=32,
     )
     disk = mobidai_trajectories(config, n_cycles=8)
     round_braid, _ = tighten_yarns(
@@ -163,7 +157,19 @@ def other_sources() -> int:
         output_html="demo_mobidai_8_braid.html",
     )
     print("demo_mobidai_8_braid.html")
-    return 2
+
+    # Eight strands on a kumihimo disk: swap top and bottom, turn a quarter.
+    disk = kumihimo_trajectories("SR" * 12, n_strands=8)
+    kumihimo, _ = tighten_yarns(
+        lay_yarns(disk, yarn_diameter=0.12, fell_radius=0.0), 0.12, iterations=150
+    )
+    visualize_yarns_from(
+        kumihimo,
+        title="Kumihimo, 8 strands, SR repeated — tightened from a braiding point",
+        output_html="demo_kumihimo_8_braid.html",
+    )
+    print("demo_kumihimo_8_braid.html")
+    return 3
 
 
 def main() -> None:

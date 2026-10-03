@@ -4,12 +4,16 @@
 
 """Laying, drawing in and tightening a braid from any source of strands."""
 
+import re
 from types import SimpleNamespace
 
+import matplotlib
 import numpy as np
 import pytest
 
 from braidpy import Braid
+from braidpy.kumihimo import Kumihimo
+from braidpy.mobidai import Mobidai, MobidaiConfig, Move, Strand
 from braidpy.parametric_braid import ParametricBraid
 from braidpy.symmetric_braid import braid_word
 from braidpy.take_off import (
@@ -17,6 +21,8 @@ from braidpy.take_off import (
     braid_word_trajectories,
     default_take_off,
     disk_trajectories,
+    kumihimo_steps,
+    kumihimo_trajectories,
     lay_yarns,
     mobidai_steps,
     mobidai_trajectories,
@@ -45,14 +51,26 @@ def _word_of_yarns(paths):
     return braid_word(curves, n_samples=4000)
 
 
-def _word_of_disk(trajectories, n_slots):
-    """The word strands on a disk make, read in slot order, outward as over."""
+def _word_of_disk(trajectories, n_slots, clockwise=True):
+    """The word strands on a disk make, read in slot order, inside as over."""
+    turn = 1 if clockwise else -1
     curves = []
     for xy in trajectories.xy.values():
-        angle = np.unwrap(np.arctan2(xy[:, 0], xy[:, 1]))
+        angle = np.unwrap(np.arctan2(turn * xy[:, 0], xy[:, 1]))
+        # Measured from slot 1, so the seam the reading starts at is there.
+        angle += 2 * np.pi * (angle[0] < -1e-9)
         slot = angle * n_slots / (2 * np.pi) + 1
-        curves.append(_Curve(trajectories.times, slot, np.hypot(xy[:, 0], xy[:, 1])))
+        inward = -np.hypot(xy[:, 0], xy[:, 1])
+        curves.append(_Curve(trajectories.times, slot, inward))
     return braid_word(curves, n_samples=20000)
+
+
+def _signed(words):
+    """``"s1 s2^-1"`` and the like as signed generator indices."""
+    return [
+        -int(m[1]) if m[2] else int(m[1])
+        for m in re.finditer(r"s(\d+)(\^-1)?", " ".join(words))
+    ]
 
 
 def _free_reduce(word):
@@ -131,13 +149,13 @@ def test_braid_word_layout():
 # ── A disk ────────────────────────────────────────────────────────────────────
 
 
-def test_a_moving_strand_passes_over_on_the_outside():
-    # Toward higher slots, over the strand in between: a positive crossing on
-    # a clockwise disk, as the mobidai's word has it.
+def test_a_moving_strand_passes_over_on_the_inside():
+    # Over, seen from above the disk, is inside.  Toward higher slots, over
+    # the strand in between: a positive crossing, as the mobidai has it.
     traj = disk_trajectories({"a": 1, "b": 2}, [{"a": 2}], n_slots=8)
     assert _word_of_disk(traj, 8) == [1]
     radius = np.hypot(*traj.xy["a"].T)
-    assert radius.max() == pytest.approx(1.15)
+    assert radius.min() == pytest.approx(0.85)
     assert radius[0] == radius[-1] == pytest.approx(1.0)
     # The other way, under it.
     back = disk_trajectories({"a": 3, "b": 2}, [{"a": -2}], n_slots=8)
@@ -167,17 +185,13 @@ def test_disk_refuses_impossible_moves():
         disk_trajectories({0: 1, 1: 1}, [], n_slots=8)
 
 
-def _mobidai_config(moves, positions, n_slots=16, shift=0):
-    """Shaped like braidpy.mobidai's MobidaiConfig, which this reads."""
-    return SimpleNamespace(
-        n_slots=n_slots,
-        is_clockwise=True,
+def _mobidai_config(moves, positions, n_slots=16, shift=0, clockwise=True):
+    return MobidaiConfig(
+        strands=[Strand("red", p) for p in positions],
+        moves=[Move(a, b, f) for a, b, f in moves],
         n_shift_after_cycle=shift,
-        strands=[SimpleNamespace(position=p, id=-1) for p in positions],
-        moves=[
-            SimpleNamespace(from_slot=a, to_slot=b, force_direction=f)
-            for a, b, f in moves
-        ],
+        n_slots=n_slots,
+        is_clockwise=clockwise,
     )
 
 
@@ -187,6 +201,7 @@ def test_mobidai_steps_follow_its_rules():
         positions=[1, 2, 3, 12],
         shift=1,
     )
+    # Ids are only assigned by Mobidai itself; the config's are -1.
     start, steps = mobidai_steps(config, n_cycles=1)
     assert start == {0: 1, 1: 2, 2: 3, 3: 12}
     assert steps == [
@@ -197,8 +212,81 @@ def test_mobidai_steps_follow_its_rules():
         {2: -13},  # forced the long way round
         {0: 1, 1: 1, 2: 1, 3: 1},  # the disk turns
     ]
-    # A Mobidai object is read through its config.
+    # A Mobidai is read through its config, without being run.
     assert mobidai_steps(SimpleNamespace(config=config))[0] == start
+
+
+@pytest.mark.parametrize(
+    "positions, moves",
+    [
+        ([1, 2, 5, 6], [(1, 3), (6, 4)]),
+        ([3, 4, 5, 9, 10], [(3, 7), (10, 8), (4, 2), (9, 11), (7, 6)]),
+        ([5, 6, 7, 8], [(5, 10), (8, 3), (6, 9), (7, 11)]),
+    ],
+)
+def test_mobidai_word_matches_the_laid_strands(positions, moves):
+    """The crossings the strands make are the ones the mobidai writes down."""
+    moves = [(a, b, 0) for a, b in moves]
+    mobidai = Mobidai(_mobidai_config(moves, positions, n_slots=24))
+    mobidai.all_steps()
+    traj = mobidai_trajectories(_mobidai_config(moves, positions, 24), n_cycles=1)
+    assert _word_of_disk(traj, 24) == _signed(mobidai.braid_word)
+
+
+def test_numbering_the_disk_the_other_way_is_its_mirror_image():
+    moves = [(1, 3, 0), (6, 4, 0)]
+    forward = mobidai_trajectories(_mobidai_config(moves, [1, 2, 5, 6]), n_cycles=1)
+    mirror = mobidai_trajectories(
+        _mobidai_config(moves, [1, 2, 5, 6], clockwise=False), n_cycles=1
+    )
+    for key in forward.xy:
+        assert mirror.xy[key][:, 0] == pytest.approx(-forward.xy[key][:, 0])
+        assert mirror.xy[key][:, 1] == pytest.approx(forward.xy[key][:, 1])
+    # Read in slot order, a mirror image read the mirrored way is unchanged.
+    assert _word_of_disk(mirror, 16, clockwise=False) == _word_of_disk(forward, 16)
+
+
+# ── Kumihimo ──────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("n_strands", [8, 12])
+def test_kumihimo_swap_crosses_as_its_word_says(n_strands):
+    matplotlib.use("Agg")
+    kumihimo = Kumihimo(n_strands).move("S")
+    traj = kumihimo_trajectories(kumihimo)
+    assert _word_of_disk(traj, 2 * n_strands, clockwise=False) == list(
+        kumihimo.braid_word
+    )
+
+
+def test_kumihimo_steps():
+    n_slots, start, steps = kumihimo_steps("SR", n_strands=8)
+    assert n_slots == 16
+    assert start == {s: 2 * s + 1 for s in range(8)}
+    assert steps[:3] == [{0: 9}, {4: -8}, {0: -1}]
+    assert steps[3] == {s: -4 for s in range(8)}  # a quarter turn clockwise
+    # Kumihimo's own record reads the same.
+    assert kumihimo_steps(Kumihimo(8).move("SR"))[2] == steps
+    with pytest.raises(ValueError, match="multiple of four"):
+        kumihimo_steps("S", n_strands=6)
+    with pytest.raises(ValueError, match="n_strands"):
+        kumihimo_steps("S")
+
+
+def test_kumihimo_is_drawn_where_kumihimo_draws_it():
+    kumihimo = Kumihimo(8)
+    traj = kumihimo_trajectories("R", n_strands=8)
+    for strand in range(8):
+        angle = kumihimo.angles[strand]
+        assert traj.xy[strand][0] == pytest.approx([-np.sin(angle), np.cos(angle)])
+
+
+def test_kumihimo_is_laid_and_tightened():
+    traj = kumihimo_trajectories("SR" * 6, n_strands=8)
+    paths = lay_yarns(traj, yarn_diameter=0.15, fell_radius=0.0)
+    tight, history = tighten_yarns(paths, 0.15, iterations=40)
+    assert history["length"][-1] < history["length"][0]
+    assert tight.closest_approach(include_fell=False) >= 0.15 * (1 - 2e-3)
 
 
 def test_mobidai_is_laid_and_tightened():

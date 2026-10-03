@@ -20,7 +20,8 @@ on the braid is made the same way.
   :func:`braid_word_trajectories` a braid word through it — so anything that
   produces a word, kumihimo included, can be laid.
 - :func:`disk_trajectories` moves strands between the slots of a disk, and
-  :func:`mobidai_trajectories` reads a mobidai's configuration into it.
+  :func:`mobidai_trajectories` and :func:`kumihimo_trajectories` read a
+  mobidai or a kumihimo sequence into it.
 
 Laying
 ------
@@ -860,21 +861,26 @@ def disk_trajectories(
     numbers — and a step that moves every strand alike is the disk itself
     turning.
 
-    A strand that moves while others stay is lifted over the ones it passes,
-    and it is laid that way: it travels round the outside of the rim, a
-    ``lift`` fraction of the radius out, and comes back in to its new slot.
-    Read in slot order, that gives the crossings the mobidai's own braid word
-    records — a move toward higher slots on a clockwise disk crosses over,
+    A strand that moves while others stay is lifted over the ones it passes —
+    over as seen from above the disk, the side the braider works from, with
+    the braid going down through the middle.  Over is therefore *inside*: the
+    moving strand travels round inside the rim, a ``lift`` fraction of the
+    radius in, and comes back out to its new slot.  Read in slot order with
+    inside as over, that gives the crossings the mobidai's own braid word
+    records on a clockwise disk — a move toward higher slots crosses over,
     positively.
+
+    That is the opposite way round from :mod:`braidpy.annulus_braid`, which
+    looks at a tube from outside, where over is outside.
 
     Args:
         start: Each strand's slot, 1-based.
         steps: Per step, the strands that move and by how many slots.
         n_slots: Slots round the disk.
         radius: The disk's radius.
-        lift: How far out a moving strand travels, as a fraction of the radius.
+        lift: How far in a moving strand travels, as a fraction of the radius.
         samples_per_step: Samples per step.
-        clockwise: Whether slot numbers go round clockwise.
+        clockwise: Whether slot numbers go round clockwise, seen from above.
         label: Prefix naming a strand in a drawing.
 
     Returns:
@@ -905,8 +911,8 @@ def disk_trajectories(
         for key in keys:
             delta = float(step.get(key, 0))
             slots[key].extend(where[key] + delta * fractions)
-            out = 0.0 if turning or delta == 0 else lift
-            rims[key].extend(radius * (1 + out * np.sin(np.pi * fractions)))
+            inward = 0.0 if turning or delta == 0 else lift
+            rims[key].extend(radius * (1 - inward * np.sin(np.pi * fractions)))
             where[key] = (where[key] + delta - 1) % n_slots + 1
         if len({round(s) for s in where.values()}) < len(where):
             raise ValueError(f"Step {number} leaves two strands in one slot.")
@@ -991,7 +997,7 @@ def mobidai_trajectories(
         mobidai: A ``Mobidai`` or ``MobidaiConfig`` (see :mod:`braidpy.mobidai`).
         n_cycles: Cycles to work.
         radius: The disk's radius.
-        lift: How far out a moving strand travels, as a fraction of the radius.
+        lift: How far in a moving strand travels, as a fraction of the radius.
         samples_per_step: Samples per move.
 
     Returns:
@@ -1007,4 +1013,95 @@ def mobidai_trajectories(
         lift=lift,
         samples_per_step=samples_per_step,
         clockwise=getattr(config, "is_clockwise", True),
+    )
+
+
+def kumihimo_steps(
+    kumihimo, n_strands: Optional[int] = None
+) -> Tuple[int, Dict[Hashable, int], List[Dict[Hashable, int]]]:
+    """A kumihimo sequence, as the disk and steps :func:`disk_trajectories` takes.
+
+    Reads a :class:`~braidpy.kumihimo.Kumihimo` — its strand count and the
+    ``S`` and ``R`` moves it has recorded — or a pattern string such as
+    ``"SRSR"`` for ``n_strands`` strands, without running anything.
+
+    The disk is given twice as many slots as there are strands, so that a
+    swap has somewhere to pass: position ``p`` is slot ``2p + 1``.  A swap of
+    the top and bottom strands is then the move
+    :meth:`~braidpy.kumihimo.Kumihimo.swap_top_bottom` writes down — the top
+    strand goes over every strand on its way to just past the bottom one, the
+    bottom one comes back over the others to the top, and the first settles
+    into its place.  A rotation turns the whole disk, a quarter turn
+    clockwise per ``R``.
+
+    Args:
+        kumihimo: A ``Kumihimo``, or a pattern of ``S`` and ``R``.
+        n_strands: Strands, when given a pattern.
+
+    Returns:
+        The number of slots, each strand's starting slot, and the steps.
+    """
+    if isinstance(kumihimo, str):
+        if n_strands is None:
+            raise ValueError("A pattern needs n_strands.")
+        n = n_strands
+        moves = [m if m == "S" else "R**1" for m in kumihimo]
+        start_order = list(range(n))
+    else:
+        n = kumihimo.n
+        moves = list(kumihimo.history)
+        start_order = list(kumihimo.frames[0])
+    if n % 4:
+        raise ValueError("A kumihimo disk takes a multiple of four strands.")
+
+    position = {strand: p for p, strand in enumerate(start_order)}
+    start = {strand: 2 * p + 1 for strand, p in position.items()}
+    steps: List[Dict[Hashable, int]] = []
+    for move in moves:
+        if move == "S":
+            at = {p: strand for strand, p in position.items()}
+            top, bottom = at[0], at[n // 2]
+            steps += [{top: n + 1}, {bottom: -n}, {top: -1}]
+            position[top], position[bottom] = n // 2, 0
+        elif move.startswith("R"):
+            turns = int(move.split("**")[1]) if "**" in move else 1
+            shift = (n // 4) * turns
+            steps.append({strand: -2 * shift for strand in position})
+            position = {s: (p - shift) % n for s, p in position.items()}
+        else:
+            raise ValueError(f"Unknown kumihimo move {move!r}.")
+    return 2 * n, start, steps
+
+
+def kumihimo_trajectories(
+    kumihimo,
+    n_strands: Optional[int] = None,
+    radius: float = 1.0,
+    lift: float = 0.15,
+    samples_per_step: int = 12,
+) -> StrandTrajectories:
+    """A kumihimo sequence worked on its disk, as trajectories to lay.
+
+    Positions are numbered anticlockwise from the top, as
+    :meth:`~braidpy.kumihimo.Kumihimo.plot_timeline` draws them.
+
+    Args:
+        kumihimo: A ``Kumihimo``, or a pattern of ``S`` and ``R``.
+        n_strands: Strands, when given a pattern.
+        radius: The disk's radius.
+        lift: How far in a moving strand travels, as a fraction of the radius.
+        samples_per_step: Samples per step.
+
+    Returns:
+        The trajectories, one unit of time per step.
+    """
+    n_slots, start, steps = kumihimo_steps(kumihimo, n_strands)
+    return disk_trajectories(
+        start,
+        steps,
+        n_slots,
+        radius=radius,
+        lift=lift,
+        samples_per_step=samples_per_step,
+        clockwise=False,
     )
