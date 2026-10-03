@@ -137,3 +137,41 @@ def test_every_name_the_pages_name_exists():
 def test_the_pages_still_name_the_results_they_rest_on(claim):
     """If one of these is renamed away, the argument loses its anchor."""
     assert f"`{claim}`" in note_text()
+
+
+def test_the_worked_values_on_the_tube_page_are_still_the_ones_the_code_gives():
+    """The table in braided_tube.md, checked row by row.
+
+    Numbers transcribed into prose go stale silently: this table's ancestor
+    kept the radii a search returned before a closed form replaced it, and was
+    3 to 4.5% low for a year.  Nothing noticed, because nothing was looking.
+    """
+    import math
+
+    from braidpy.annulus_braid import (
+        packing_radius,
+        tubular_braid,
+        tubular_braid_radius,
+    )
+
+    page = (DOCS / "braided_tube.md").read_text()
+    diameter = 0.4
+    assert f"for strands {diameter:g} thick" in page, "the table's diameter moved"
+
+    rows = re.findall(
+        r"^\| (\d+) \| (\d+)° \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \|$",
+        page,
+        re.MULTILINE,
+    )
+    assert len(rows) >= 4, f"the table has {len(rows)} rows, expected at least 4"
+
+    for strands, degrees, seated, narrowest, period in rows:
+        count, angle = int(strands), math.radians(int(degrees))
+        radius = tubular_braid_radius(count, diameter, angle)
+        turn = tubular_braid(
+            count, radius=radius, braid_angle=angle, diameter=diameter
+        )[0].length
+        where = f"{strands} strands at {degrees}°"
+        assert abs(packing_radius(count, diameter) - float(seated)) < 5e-4, where
+        assert abs(radius - float(narrowest)) < 5e-4, where
+        assert abs(turn - float(period)) < 5e-3, where
