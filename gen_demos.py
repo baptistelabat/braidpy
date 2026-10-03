@@ -2,11 +2,13 @@
 
 Writes one static diagram, one track diagram, and an animation per machine,
 then the braid each wired machine lays, in 3D: with no tension, and drawn in
-to a braiding point and tightened.
+to a braiding point and tightened — and the same for a braid word and a
+mobidai, which are laid the same way.
 Run from the repository root: ``python gen_demos.py``
 """
 
 import sys
+from types import SimpleNamespace
 
 sys.path.insert(0, "src")
 
@@ -23,6 +25,12 @@ from braidpy.horn_gear import (  # noqa: E402
     visualize_yarns,
     yarn_paths,
 )
+from braidpy.take_off import (  # noqa: E402
+    braid_word_trajectories,
+    lay_yarns,
+    mobidai_trajectories,
+)
+from braidpy.take_off import visualize_yarns as visualize_yarns_from  # noqa: E402
 from braidpy.horn_gear.examples import (  # noqa: E402
     flat_braid_3,
     flat_braid_4,
@@ -117,6 +125,47 @@ MACHINES = [
 ]
 
 
+def other_sources() -> int:
+    """Braids laid from something other than a machine: a word and a disk."""
+    # A three-strand plait, from nothing but its braid word.
+    word = braid_word_trajectories([1, -2] * 6)
+    plait, _ = tighten_yarns(
+        lay_yarns(word, yarn_diameter=0.45, fell_radius=0.0), 0.45, iterations=150
+    )
+    visualize_yarns_from(
+        plait,
+        title="Three-strand plait, from its braid word — tightened",
+        output_html="demo_word_plait_braid.html",
+    )
+    print("demo_word_plait_braid.html")
+
+    # Eight strands worked on a 32-slot mobidai, in the shape of
+    # braidpy.mobidai's MobidaiConfig (which the reader takes as it is).
+    config = SimpleNamespace(
+        n_slots=32,
+        is_clockwise=True,
+        n_shift_after_cycle=1,
+        strands=[
+            SimpleNamespace(position=p, id=-1) for p in (32, 1, 17, 16, 25, 24, 8, 9)
+        ],
+        moves=[
+            SimpleNamespace(from_slot=a, to_slot=b, force_direction=0)
+            for a, b in [(1, 15), (17, 31), (25, 7), (9, 23)]
+        ],
+    )
+    disk = mobidai_trajectories(config, n_cycles=8)
+    round_braid, _ = tighten_yarns(
+        lay_yarns(disk, yarn_diameter=0.12, fell_radius=0.0), 0.12, iterations=150
+    )
+    visualize_yarns_from(
+        round_braid,
+        title="Mobidai, 8 strands on 32 slots — tightened from a braiding point",
+        output_html="demo_mobidai_8_braid.html",
+    )
+    print("demo_mobidai_8_braid.html")
+    return 2
+
+
 def main() -> None:
     reference = tubular_braid_8()
     visualize_machine(reference, output_html="demo_machine.html")
@@ -165,6 +214,8 @@ def main() -> None:
         )
         print(path)
         yarn_pages += 2
+
+    yarn_pages += other_sources()
 
     print(f"\n{len(MACHINES) + 2 + yarn_pages} pages written.")
 

@@ -81,28 +81,42 @@ Three checks, all already in the package or its tests:
    known point, and a free one.
 
 ---
-## A first, restricted version: braids off a horn gear machine
+## A first, restricted version: a braid as it is made
 
-`braidpy.horn_gear.take_off` poses a restricted form of this problem for the
-braid a simulated machine lays, and solves it.
+`braidpy.take_off` poses a restricted form of this problem for a braid as it
+comes off whatever made it, and solves it. All it needs is where each strand's
+carrier was, in a plane, over time (`take_off.StrandTrajectories`), and
+several things can say that:
 
-- **The initial guess** is the machine itself: each yarn lies over the path its
-  carrier traced, lifted along the machine's axis by the braid taken off since
-  (`horn_gear.take_off.yarn_paths`). It is in the right braid class by construction, which is
+- a horn gear machine, through `horn_gear.take_off.carrier_trajectories`;
+- a parametric braid, through `take_off.parametric_trajectories`, and so a
+  braid word, through `take_off.braid_word_trajectories` — anything that
+  makes a word can be laid, kumihimo sequences included;
+- strands moved between the slots of a disk, through
+  `take_off.disk_trajectories`, and a mobidai's configuration through
+  `take_off.mobidai_trajectories`. A strand that moves while the others stay
+  passes over them on the outside of the rim; read in slot order, that gives
+  the crossings the mobidai's own word records on a clockwise disk.
+
+From there it is the same for all of them:
+
+- **The initial guess** is the source itself: each yarn lies over the path its
+  carrier traced, lifted along the axis by the braid taken off since
+  (`take_off.lay_yarns`). It is in the right braid class by construction, which is
   what this page asks of a start.
 - **Drawing in.** The braid is formed on a fell — a circle, or a braiding
   point — and is the carrier footprint scaled toward the axis by a factor *k*.
   Scaling the plane at fixed height cannot pass one yarn through another, so
   every *k* > 0 keeps the topology. Given a yarn diameter, the smallest *k*
   with no two yarns closer than *d* has a closed form over the samples
-  (`horn_gear.take_off.jammed_contraction`): for two samples a height *dz* apart and *s* apart
+  (`take_off.jammed_contraction`): for two samples a height *dz* apart and *s* apart
   sideways, *k* = √(*d*² − *dz*²) / *s*, and the braid jams at the largest.
 - **The fell is only a boundary.** A fell circle, or a braiding point, sets
   the size where the braid starts; a short distance above it the braid is
   drawn to its jammed size instead, by a scale that varies with height. Any
   positive scale at each level keeps the topology, so how it varies does not
   matter.
-- **Tightening** (`horn_gear.take_off.tighten_yarns`) minimises length with
+- **Tightening** (`take_off.tighten_yarns`) minimises length with
   each sample held at its height — the small-slope form of the length
   objective — and enforces non-interpenetration by pushing apart any two
   samples of different yarns closer than *d*. The tension is integrated
@@ -116,7 +130,10 @@ The check that matters is that the result does not depend on the start. Far
 enough from the fell, a braid made at a braiding point, at the jammed fell,
 or at a fell twice that size tightens to the same cross-section — and a flat
 braid comes out as a ribbon (nine carriers: about 4.6 *d* wide by 1.8 *d*
-thick) while a tubular one stays round. That is in the tests.
+thick) while a tubular one stays round. And laying a braid word, drawing it
+in and tightening it, then reading the word back off the yarns, gives the
+word it started from — less any crossing that undoes itself, which tension
+pulls out. Both are in the tests.
 
 What it does not yet do: let samples move along the axis, which a full length
 minimisation would; bending stiffness; periodicity, rather than holding both
