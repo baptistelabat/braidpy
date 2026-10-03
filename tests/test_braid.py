@@ -201,6 +201,20 @@ class TestBraid:
         assert f.n_half_twist == -1
         assert f.n_strands == 3
 
+    def test_canonical_form_counts_half_twists(self):
+        """n_half_twist is the number of half twists Δ in front, as documented.
+
+        It used to be the exponent of math_braid's band generator twist δ, a
+        1/n turn: a full twist read as n_strands rather than 2, and a single
+        half twist as 1 with factors still after it.
+        """
+        for n in (2, 3, 4, 5):
+            half = Braid([1, -1], n_strands=n).half_twist()
+            f = half.get_canonical_factors()
+            assert (n, f.n_half_twist, len(f.Ai)) == (n, 1, 0)
+            f = half.half_twist().get_canonical_factors()
+            assert (n, f.n_half_twist, len(f.Ai)) == (n, 2, 0)
+
     def test_main_generator(self):
         b = Braid([])
         assert b.main_generator is None
