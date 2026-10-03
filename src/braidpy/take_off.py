@@ -21,7 +21,11 @@ on the braid is made the same way.
   produces a word, kumihimo included, can be laid.
 - :func:`disk_trajectories` moves strands between the slots of a disk, and
   :func:`mobidai_trajectories` and :func:`kumihimo_trajectories` read a
-  mobidai or a kumihimo sequence into it.
+  mobidai or a kumihimo sequence into it — the motion, for animating.  For
+  the braid itself, :func:`mobidai_braid` and :func:`kumihimo_braid` keep
+  only the crossings the moves make and lay them round a ring
+  (:func:`disk_braid`): where a disk's strands wait is not where a braid
+  holds them.
 
 Laying
 ------
@@ -424,8 +428,11 @@ def jammed_contraction(rel: np.ndarray, spacing: float, diameter: float) -> floa
         a, b = _level_pairs(n_yarns, offset)
         if len(a) == 0:
             break
-        sideways = np.linalg.norm(rel[a, : n - offset] - rel[b, offset:], axis=-1)
         room = diameter**2 - (offset * spacing) ** 2
+        if offset * spacing >= diameter * (1 - 1e-9):
+            # A diameter or more apart in height: they cannot touch.
+            break
+        sideways = np.linalg.norm(rel[a, : n - offset] - rel[b, offset:], axis=-1)
         if np.any(sideways == 0):
             raise ValueError(
                 "Two yarns pass the same point too close together in height to "
@@ -1167,3 +1174,252 @@ def kumihimo_trajectories(
         # somewhere for a swap to pass.
         slot_names={2 * p + 1: str(p) for p in range(n_slots // 2)},
     )
+
+
+# ── A disk's braid, laid on a ring ────────────────────────────────────────────
+#
+# A disk's strands spend most of their time waiting on the rim while one
+# moves, and where they wait is not the braid's cross-section: laid as it is,
+# a kongo comes out flat and lopsided.  What the moves decide is only the
+# order of the strands round the axis and, where two cross, which goes over.
+# So that is all that is kept: the strands stand evenly round a small ring in
+# their order round the disk, and each crossing the moves make swaps two
+# neighbours on it, the one going over passing inside.
+
+
+def disk_crossings(
+    start: Mapping[Hashable, int],
+    steps: Sequence[Mapping[Hashable, int]],
+    n_slots: int,
+) -> Tuple[List[Hashable], List[Tuple[Hashable, Hashable]]]:
+    """The crossings a disk's moves make, in the order they are made.
+
+    A strand that moves while the others stay passes over each strand
+    between its slot and its new one, one after another, nearest first —
+    the rule :func:`disk_trajectories` draws and the mobidai's own word
+    records.  A step that moves every strand alike turns the disk and
+    crosses nothing.
+
+    Args:
+        start: Each strand's slot, 1-based.
+        steps: Per step, the strands that move and by how many slots, as
+            :func:`mobidai_steps` and :func:`kumihimo_steps` give them.
+        n_slots: Slots round the disk.
+
+    Returns:
+        The strands in slot order from slot 1 at the start, and each crossing
+        as ``(over, under)``.
+
+    Raises:
+        ValueError: If two strands move at once other than by turning the
+            disk, which this cannot order into crossings.
+    """
+    where = dict(start)
+    order = sorted(where, key=lambda k: where[k])
+    crossings: List[Tuple[Hashable, Hashable]] = []
+    for number, step in enumerate(steps):
+        moving = {k: d for k, d in step.items() if d}
+        if not moving:
+            continue
+        if set(moving) == set(where) and len(set(moving.values())) == 1:
+            delta = next(iter(moving.values()))
+            where = {k: (s - 1 + delta) % n_slots + 1 for k, s in where.items()}
+            continue
+        if len(moving) > 1:
+            raise ValueError(f"Step {number} moves several strands at once.")
+        ((mover, delta),) = moving.items()
+        sense = 1 if delta > 0 else -1
+        slot = where[mover]
+        by_slot = {s: k for k, s in where.items()}
+        for _ in range(abs(delta) - 1):
+            slot = (slot - 1 + sense) % n_slots + 1
+            if slot in by_slot:
+                crossings.append((mover, by_slot[slot]))
+        where[mover] = (where[mover] - 1 + delta) % n_slots + 1
+    return order, crossings
+
+
+def ring_trajectories(
+    order: Sequence[Hashable],
+    crossings: Sequence[Tuple[Hashable, Hashable]],
+    diameter: float = 1.0,
+    samples_per_row: int = 12,
+    clockwise: bool = True,
+    label: str = "Strand ",
+) -> StrandTrajectories:
+    """Strands standing evenly round a ring, swapping neighbours as they cross.
+
+    Every crossing is made by two strands next to each other round the ring:
+    they change places, the one going over passing inside, the other outside,
+    a ``diameter`` apart where they meet.  Crossings of different strands are
+    made side by side, in rows, as long as each strand's crossings stay in
+    order; each row takes one unit of time.
+
+    Nothing about which strand passes which, or on which side, is lost —
+    inside is over, as on a disk seen from above — so a braid laid from this
+    is the braid the moves made, with the strands where a braid holds them
+    rather than where a disk does.
+
+    Args:
+        order: The strands round the ring, in slot order.
+        crossings: ``(over, under)`` in the order they are made; each pair
+            must be neighbours on the ring when its turn comes.
+        diameter: Yarn diameter, setting the ring's size and how far apart
+            the two strands of a crossing pass.
+        samples_per_row: Samples per row of crossings.
+        clockwise: Whether the order runs clockwise, seen from above.
+        label: Prefix naming a strand in a drawing.
+
+    Returns:
+        The trajectories, one unit of time per row.
+
+    Raises:
+        ValueError: If a crossing's strands are not neighbours on the ring.
+    """
+    if samples_per_row < 1:
+        raise ValueError("samples_per_row must be at least 1.")
+    n = len(order)
+    rank = {k: i for i, k in enumerate(order)}
+    # Rows: each crossing goes in the first row after its strands' last ones.
+    free_from = {k: 0 for k in order}
+    rows: List[List[Tuple[Hashable, Hashable]]] = []
+    for over, under in crossings:
+        row = max(free_from[over], free_from[under])
+        while len(rows) <= row:
+            rows.append([])
+        rows[row].append((over, under))
+        free_from[over] = free_from[under] = row + 1
+
+    # Even round a ring a little looser than the strands' own width.
+    radius = n * diameter / (2 * np.pi) / 0.8
+    turn = 1 if clockwise else -1
+    # Each strand's place round the ring, in units of one place; it is not
+    # wrapped, so a strand that goes round keeps going round.
+    angle = {k: float(rank[k]) for k in order}
+    slot = dict(rank)
+    fractions = np.arange(samples_per_row) / samples_per_row
+    ease = 0.5 - 0.5 * np.cos(np.pi * fractions)
+    xs: Dict[Hashable, List[float]] = {k: [] for k in order}
+    ys: Dict[Hashable, List[float]] = {k: [] for k in order}
+
+    def place(k: Hashable, a: np.ndarray, r: np.ndarray) -> None:
+        theta = 2 * np.pi * a / n * turn
+        xs[k].extend(r * np.sin(theta))
+        ys[k].extend(r * np.cos(theta))
+
+    for number, row in enumerate(rows):
+        moving: Dict[Hashable, Tuple[float, float]] = {}
+        for over, under in row:
+            gap = (slot[under] - slot[over]) % n
+            if gap not in (1, n - 1):
+                raise ValueError(
+                    f"Crossing {over!r} over {under!r} in row {number}: "
+                    "they are not neighbours on the ring."
+                )
+            step = 1 if gap == 1 else -1
+            moving[over] = (step, -1.0)
+            moving[under] = (-step, 1.0)
+            slot[over], slot[under] = slot[under], slot[over]
+        for k in order:
+            here = angle[k]
+            if k in moving:
+                step, side = moving[k]
+                a = here + step * ease
+                r = radius + side * diameter / 2 * np.sin(np.pi * fractions)
+            else:
+                a = np.full(samples_per_row, here)
+                r = np.full(samples_per_row, radius)
+            place(k, a, r)
+        for k, (step, _) in moving.items():
+            angle[k] += step
+    for k in order:
+        place(k, np.array([angle[k]]), np.array([radius]))
+
+    times = np.arange(len(rows) * samples_per_row + 1) / samples_per_row
+    ring = np.linspace(0, 2 * np.pi, 4 * n + 1)
+    return StrandTrajectories(
+        times=times,
+        xy={k: np.column_stack([xs[k], ys[k]]) for k in order},
+        outlines=(np.column_stack([radius * np.sin(ring), radius * np.cos(ring)]),),
+        axis=(0.0, 0.0),
+        label=label,
+        outline_name="Ring",
+    )
+
+
+def disk_braid(
+    start: Mapping[Hashable, int],
+    steps: Sequence[Mapping[Hashable, int]],
+    n_slots: int,
+    yarn_diameter: float,
+    take_off_per_row: float = 1.5,
+    iterations: int = 300,
+    clockwise: bool = True,
+) -> YarnPaths:
+    """The braid a disk's moves make: laid on a ring, drawn in and tightened.
+
+    The crossings are read off the moves (:func:`disk_crossings`), the
+    strands set evenly round a ring and crossed there
+    (:func:`ring_trajectories`), and the braid laid and tightened as any
+    other (:func:`lay_yarns`, :func:`tighten_yarns`).
+
+    Args:
+        start: Each strand's slot, 1-based.
+        steps: Per step, the strands that move and by how many slots.
+        n_slots: Slots round the disk.
+        yarn_diameter: Yarn diameter.
+        take_off_per_row: Braid taken off per row of crossings, in yarn
+            diameters.  Above one: two strands often cross back over each
+            other a row later, along the same path, and need that much room.
+        iterations: Tightening steps.
+        clockwise: Whether slot numbers go round clockwise, seen from above.
+
+    Returns:
+        The tightened braid.
+    """
+    order, crossings = disk_crossings(start, steps, n_slots)
+    ring = ring_trajectories(order, crossings, yarn_diameter, clockwise=clockwise)
+    paths = lay_yarns(
+        ring, take_off=take_off_per_row * yarn_diameter, yarn_diameter=yarn_diameter
+    )
+    braid, _ = tighten_yarns(paths, yarn_diameter, iterations=iterations)
+    return braid
+
+
+def mobidai_braid(
+    mobidai, yarn_diameter: float, n_cycles: int = 8, **kwargs
+) -> YarnPaths:
+    """The braid a mobidai makes in ``n_cycles`` cycles — see :func:`disk_braid`.
+
+    Args:
+        mobidai: A ``Mobidai`` or ``MobidaiConfig`` (see :mod:`braidpy.mobidai`).
+        yarn_diameter: Yarn diameter.
+        n_cycles: Cycles to work.
+        **kwargs: Passed on to :func:`disk_braid`.
+
+    Returns:
+        The tightened braid, one yarn per strand, keyed as the mobidai's.
+    """
+    config = getattr(mobidai, "config", mobidai)
+    start, steps = mobidai_steps(config, n_cycles)
+    kwargs.setdefault("clockwise", getattr(config, "is_clockwise", True))
+    return disk_braid(start, steps, config.n_slots, yarn_diameter, **kwargs)
+
+
+def kumihimo_braid(
+    kumihimo, yarn_diameter: float, n_strands: Optional[int] = None, **kwargs
+) -> YarnPaths:
+    """The braid a kumihimo sequence makes — see :func:`disk_braid`.
+
+    Args:
+        kumihimo: A ``Kumihimo``, or a pattern of ``S`` and ``R``.
+        yarn_diameter: Yarn diameter.
+        n_strands: Strands, when given a pattern.
+        **kwargs: Passed on to :func:`disk_braid`.
+
+    Returns:
+        The tightened braid.
+    """
+    n_slots, start, steps = kumihimo_steps(kumihimo, n_strands)
+    kwargs.setdefault("clockwise", False)
+    return disk_braid(start, steps, n_slots, yarn_diameter, **kwargs)

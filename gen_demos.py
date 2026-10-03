@@ -27,7 +27,7 @@ from braidpy.horn_gear import (  # noqa: E402
 from braidpy.take_off import (  # noqa: E402
     braid_word_trajectories,
     lay_yarns,
-    mobidai_trajectories,
+    mobidai_braid,
 )
 from braidpy.disk_animation import animate_kumihimo, animate_mobidai  # noqa: E402
 from braidpy.mobidai_catalog import KONGO_8  # noqa: E402
@@ -152,13 +152,11 @@ def other_sources() -> int:
         output_html="demo_kumihimo_8.html",
     )
     print("demo_kumihimo_8.html")
-    disk = mobidai_trajectories(kongo, n_cycles=8, slot_offset=0.5)
-    braid, _ = tighten_yarns(
-        lay_yarns(disk, yarn_diameter=0.12, fell_radius=0.0), 0.12, iterations=150
-    )
+    # The braid itself: its crossings, laid round a ring and tightened.
+    braid = mobidai_braid(kongo, 0.12, n_cycles=8)
     visualize_yarns_from(
         braid,
-        title="Kumihimo, kongo gumi on 8 strands — tightened from a braiding point",
+        title="Kumihimo, kongo gumi on 8 strands — tightened",
         colors=[colour for _, colour in KONGO_8.initial_slots],
         output_html="demo_kumihimo_8_braid.html",
     )
