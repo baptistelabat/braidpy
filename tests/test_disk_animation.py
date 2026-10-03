@@ -45,10 +45,29 @@ def test_a_strand_lifted_over_is_drawn_on_top():
     fig = animate_disk(traj)
     # At rest nobody is lifted; half way through the move strand 0 is.
     _, over, _ = _spokes(fig.frames[0], 2)
-    assert all(len(s.x) == 0 for s in over)
+    assert all(list(s.x) == [None, None] for s in over)
     _, over, _ = _spokes(fig.frames[2], 2)
-    assert len(over[0].x) == 2 and len(over[1].x) == 0
+    assert None not in over[0].x and list(over[1].x) == [None, None]
     assert np.hypot(over[0].x[1], over[0].y[1]) < 1.0  # inside the rim
+
+
+def test_a_strand_set_down_leaves_no_copy_behind():
+    """Every frame says where each overlay is, so none outlives its lift.
+
+    Plotly leaves a trace as it was when a frame gives it no points: an
+    empty overlay once the move ended kept the lifted spoke on screen, a
+    second copy of the strand, until the next lift moved it.
+    """
+    traj = disk_trajectories(
+        {0: 1, 1: 3}, [{0: 4}, {}, {1: -1}], n_slots=8, samples_per_step=4
+    )
+    fig = animate_disk(traj)
+    for frame in fig.frames:
+        _, over, _ = _spokes(frame, 2)
+        assert all(len(s.x) == 2 and len(s.y) == 2 for s in over)
+    # Once strand 0 is set down its overlay is a gap, not its last position.
+    _, over, _ = _spokes(fig.frames[4], 2)
+    assert list(over[0].x) == [None, None]
 
 
 def test_long_sequences_are_sampled_within_the_budget():

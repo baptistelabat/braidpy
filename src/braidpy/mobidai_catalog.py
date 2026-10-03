@@ -85,7 +85,10 @@ KONGO_8 = CataloguedBraid(
         (8, "green"),
         (9, "green"),
     ),
-    moves=((1, 15), (17, 31), (25, 7), (9, 23), (16, 30), (32, 14)),
+    # One cycle.  It brings every pair back one slot round — 32/1 to 31/32 —
+    # and the next is the same four moves from there: the book's next two,
+    # (16, 30) and (32, 14), are this cycle's first two made a slot back.
+    moves=((1, 15), (17, 31), (25, 7), (9, 23)),
 )
 
 SEVEN_ON_EIGHT = CataloguedBraid(

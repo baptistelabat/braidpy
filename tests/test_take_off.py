@@ -312,22 +312,31 @@ def test_mobidai_is_laid_and_tightened():
 def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
     from braidpy.mobidai_catalog import KONGO_8
 
-    # The book lists six moves: a cycle of four, and the next cycle's first
-    # two, one slot back.
-    listed = [(m.from_slot, m.to_slot) for m in KONGO_8.to_config().moves]
-    shifted = [((a - 2) % 32 + 1, (b - 2) % 32 + 1) for a, b in listed[:2]]
-    assert sorted(listed[4:]) == sorted(shifted)
-
-    kongo = KONGO_8.to_config(moves=KONGO_8.to_config().moves[:4])
-    start, steps = mobidai_steps(kongo, n_cycles=32, drift=-1)
+    # The drift is read off the cycle: no one has to say it.
+    start, steps = mobidai_steps(KONGO_8.to_config(), n_cycles=32)
     assert len(steps) == 4 * 32  # no move ever finds its slot empty
     where = dict(start)
     for step in steps:
         for strand, delta in step.items():
             where[strand] = (where[strand] - 1 + delta) % 32 + 1
     assert where == start  # round the whole disk, back where it began
-    # Without the drift the second cycle's moves start from empty slots.
-    assert len(mobidai_steps(kongo, n_cycles=2)[1]) == 4
+    # The second cycle opens with the book's next two moves, (32, 14) and
+    # (16, 30): the strands that started there, sent fourteen slots round.
+    second = [list(step.items())[0] for step in steps[4:6]]
+    made = [(start[k], (start[k] - 1 + d) % 32 + 1) for k, d in second]
+    assert made == [(32, 14), (16, 30)]
+    # Said outright, no drift sends the second cycle's moves to empty slots.
+    assert len(mobidai_steps(KONGO_8.to_config(), n_cycles=2, drift=0)[1]) == 4
+
+
+def test_every_slot_is_named_where_it_is():
+    traj = disk_trajectories({0: 1}, [{}], n_slots=8)
+    assert [name for _, _, name in traj.slots] == [str(s) for s in range(1, 9)]
+    assert traj.slots[0][:2] == pytest.approx((0.0, 1.0))  # slot 1 at the top
+    assert traj.slots[2][:2] == pytest.approx((1.0, 0.0))  # clockwise
+    # Kumihimo names its own positions, not the slots a swap passes through.
+    kumi = kumihimo_trajectories("R", n_strands=8)
+    assert [name for _, _, name in kumi.slots] == [str(p) for p in range(8)]
 
 
 def test_slot_offset_turns_the_numbering():

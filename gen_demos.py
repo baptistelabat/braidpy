@@ -141,20 +141,18 @@ def other_sources() -> int:
     print("demo_word_plait_braid.html")
 
     # Kongo gumi on eight strands, from the catalogue: two strands at the
-    # top, two at the bottom and two each side, as a disk is threaded.  A cycle
-    # is its first four moves; the braider repeats them from wherever the
-    # pairs have crept to, one slot back each time.
-    kongo = KONGO_8.to_config(moves=KONGO_8.to_config().moves[:4])
+    # top, two at the bottom and two each side, as a disk is threaded.  Each
+    # cycle leaves the pairs a slot back, and the next is made from there.
+    kongo = KONGO_8.to_config()
     animate_mobidai(
         kongo,
         n_cycles=8,
-        drift=-1,
         slot_offset=0.5,
         title="Kumihimo, kongo gumi on 8 strands — seen from above",
         output_html="demo_kumihimo_8.html",
     )
     print("demo_kumihimo_8.html")
-    disk = mobidai_trajectories(kongo, n_cycles=8, drift=-1, slot_offset=0.5)
+    disk = mobidai_trajectories(kongo, n_cycles=8, slot_offset=0.5)
     braid, _ = tighten_yarns(
         lay_yarns(disk, yarn_diameter=0.12, fell_radius=0.0), 0.12, iterations=150
     )

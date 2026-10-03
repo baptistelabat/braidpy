@@ -122,10 +122,17 @@ def animate_disk(
                 showlegend=False,
             )
             under.append(go.Scatter(**spoke, opacity=0.35 if lifted else 0.9))
+            # A strand that is not lifted still sends its overlay, as a gap:
+            # Plotly leaves a trace alone when a frame gives it no points, so
+            # an empty one would keep showing the spoke from the last lift.
             over.append(
-                go.Scatter(**{**spoke, "line": dict(color=colour[k], width=5)})
-                if lifted
-                else go.Scatter(x=[], y=[], mode="lines", showlegend=False)
+                go.Scatter(
+                    **{
+                        **spoke,
+                        "line": dict(color=colour[k], width=5),
+                        **({} if lifted else {"x": [None, None], "y": [None, None]}),
+                    }
+                )
             )
         carriers = go.Scatter(
             x=[trajectories.xy[k][i][0] for k in keys],
@@ -146,9 +153,9 @@ def animate_disk(
         return under + over + [carriers]
 
     def rounded(trace: go.Scatter) -> go.Scatter:
-        if trace.x is not None and len(trace.x):
-            trace.x = [round(float(v), 4) for v in trace.x]
-            trace.y = [round(float(v), 4) for v in trace.y]
+        if trace.x is not None:
+            trace.x = [None if v is None else round(float(v), 4) for v in trace.x]
+            trace.y = [None if v is None else round(float(v), 4) for v in trace.y]
         return trace
 
     still: List[go.BaseTraceType] = []
@@ -159,6 +166,35 @@ def animate_disk(
                 y=outline[:, 1],
                 mode="lines",
                 line=dict(color="rgba(110,110,110,0.8)", width=2),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+    if trajectories.slots:
+        # Every slot on the rim, and its number just outside it.
+        xs, ys, names = zip(*trajectories.slots)
+        outward = [
+            np.array([x - centre[0], y - centre[1]]) * 1.09 + np.array(centre)
+            for x, y in zip(xs, ys)
+        ]
+        still.append(
+            go.Scatter(
+                x=xs,
+                y=ys,
+                mode="markers",
+                marker=dict(size=5, color="rgba(110,110,110,0.9)"),
+                hovertext=[f"Slot {name}" for name in names],
+                hoverinfo="text",
+                showlegend=False,
+            )
+        )
+        still.append(
+            go.Scatter(
+                x=[p[0] for p in outward],
+                y=[p[1] for p in outward],
+                mode="text",
+                text=list(names),
+                textfont=dict(size=9, color="rgba(90,90,90,1)"),
                 hoverinfo="skip",
                 showlegend=False,
             )
@@ -196,7 +232,7 @@ def animate_disk(
         for i in samples
     ]
     fig = go.Figure(data=still + strand_traces(0), frames=frames)
-    reach = rim * 1.12
+    reach = rim * 1.2
     fig.update_layout(
         title=title,
         xaxis=dict(
@@ -335,7 +371,7 @@ def animate_kumihimo(
 def animate_mobidai(
     mobidai,
     n_cycles: int = 1,
-    drift: int = 0,
+    drift: Optional[int] = None,
     output_html: Optional[str] = None,
     title: Optional[str] = None,
     samples_per_step: int = 12,
@@ -347,8 +383,8 @@ def animate_mobidai(
     Args:
         mobidai: A :class:`~braidpy.mobidai.Mobidai` or its configuration.
         n_cycles: Cycles to animate.
-        drift: Slots each cycle's moves are shifted from the one before — see
-            :func:`~braidpy.take_off.mobidai_steps`.
+        drift: Slots each cycle's moves are shifted from the one before; read
+            off the cycle if None — see :func:`~braidpy.take_off.mobidai_steps`.
         output_html: If given, write the animation to this HTML file.
         title: Figure title.
         samples_per_step: Frames per move.

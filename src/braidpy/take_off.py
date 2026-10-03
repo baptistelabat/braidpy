@@ -89,6 +89,8 @@ class StrandTrajectories:
             the middle of the samples otherwise.
         label: Prefix naming a strand in a drawing, followed by its key.
         outline_name: What the outlines are, in a drawing's legend.
+        slots: Named places in the plane to mark in a drawing — a disk's
+            slots — as ``(x, y, name)``.
     """
 
     times: np.ndarray
@@ -97,6 +99,7 @@ class StrandTrajectories:
     axis: Optional[Tuple[float, float]] = None
     label: str = "Yarn "
     outline_name: str = "Deck"
+    slots: Tuple[Tuple[float, float, str], ...] = ()
 
     def __post_init__(self) -> None:
         if len(self.times) < 2:
@@ -861,6 +864,7 @@ def disk_trajectories(
     clockwise: bool = True,
     label: str = "Strand ",
     slot_offset: float = 0.0,
+    slot_names: Optional[Mapping[int, str]] = None,
 ) -> StrandTrajectories:
     """Strands moved between the slots round a disk, as trajectories to lay.
 
@@ -893,6 +897,8 @@ def disk_trajectories(
         slot_offset: Slots the numbering is turned by, so slot 1 sits that far
             round from the top.  A kumihimo disk marks the top between its
             last slot and slot 1: half a slot.
+        slot_names: What to call each slot that is marked, by slot number;
+            every slot by its number if None.
 
     Returns:
         The trajectories, one unit of time per step.
@@ -945,9 +951,23 @@ def disk_trajectories(
         clockwise,
         slot_offset,
     )
+    if slot_names is None:
+        slot_names = {slot: str(slot) for slot in range(1, n_slots + 1)}
+    numbered = sorted(slot_names)
+    marks = _disk_point(
+        np.array(numbered, dtype=float),
+        np.full(len(numbered), radius),
+        n_slots,
+        clockwise,
+        slot_offset,
+    )
     return StrandTrajectories(
         times=times,
         xy=xy,
+        slots=tuple(
+            (float(x), float(y), slot_names[slot])
+            for (x, y), slot in zip(marks, numbered)
+        ),
         outlines=(rim,),
         axis=(0.0, 0.0),
         label=label,
@@ -956,7 +976,7 @@ def disk_trajectories(
 
 
 def mobidai_steps(
-    mobidai, n_cycles: int = 1, drift: int = 0
+    mobidai, n_cycles: int = 1, drift: Optional[int] = None
 ) -> Tuple[Dict[Hashable, int], List[Dict[Hashable, int]]]:
     """A mobidai's cycles, as the start and steps :func:`disk_trajectories` takes.
 
@@ -966,15 +986,18 @@ def mobidai_steps(
     nothing, and the disk turns ``n_shift_after_cycle`` slots after each cycle.
 
     Some braids do not come back to the slots they started in after a cycle
-    but one or two slots round from them — kongo gumi creeps one slot back
+    but one or more slots round from them — kongo gumi creeps one slot back
     each time — and the braider simply repeats the same moves from where the
-    strands now are.  ``drift`` says by how much: cycle ``c`` makes every move
-    ``c * drift`` slots round from the first cycle's.
+    strands now are: cycle ``c`` makes every move ``c * drift`` slots round
+    from the first cycle's.  The drift is read off the cycle itself, as
+    :class:`~braidpy.mobidai.Mobidai` does (see
+    :func:`~braidpy.mobidai.cycle_drift`).
 
     Args:
         mobidai: The mobidai, or its configuration.
         n_cycles: Cycles to work.
-        drift: Slots each cycle's moves are shifted from the one before.
+        drift: Slots each cycle's moves are shifted from the one before;
+            read off the cycle if None.
 
     Returns:
         Each strand's starting slot, keyed by strand id, and the steps.
@@ -986,6 +1009,12 @@ def mobidai_steps(
         key = strand.id if getattr(strand, "id", -1) >= 0 else index
         where[key] = strand.position
     start = dict(where)
+    if drift is None:
+        from braidpy.mobidai import cycle_drift
+
+        drift = cycle_drift(
+            list(start.values()), config.moves, n, config.n_shift_after_cycle
+        )
 
     steps: List[Dict[Hashable, int]] = []
     for cycle in range(n_cycles):
@@ -1010,7 +1039,7 @@ def mobidai_steps(
 def mobidai_trajectories(
     mobidai,
     n_cycles: int = 3,
-    drift: int = 0,
+    drift: Optional[int] = None,
     radius: float = 1.0,
     lift: float = 0.15,
     samples_per_step: int = 12,
@@ -1021,8 +1050,8 @@ def mobidai_trajectories(
     Args:
         mobidai: A ``Mobidai`` or ``MobidaiConfig`` (see :mod:`braidpy.mobidai`).
         n_cycles: Cycles to work.
-        drift: Slots each cycle's moves are shifted from the one before — see
-            :func:`mobidai_steps`.
+        drift: Slots each cycle's moves are shifted from the one before; read
+            off the cycle if None — see :func:`mobidai_steps`.
         radius: The disk's radius.
         lift: How far in a moving strand travels, as a fraction of the radius.
         samples_per_step: Samples per move.
@@ -1134,4 +1163,7 @@ def kumihimo_trajectories(
         lift=lift,
         samples_per_step=samples_per_step,
         clockwise=False,
+        # Kumihimo's positions are the odd slots; the even ones are only
+        # somewhere for a swap to pass.
+        slot_names={2 * p + 1: str(p) for p in range(n_slots // 2)},
     )
