@@ -16,6 +16,8 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [ ] Conversion from material braid to parametric braid
 - [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
 - [ ] Kumihimo braid with Marudai diagram
+- [ ] Finger loop braids (Kute-Uchi), a technic used and improved by nuns for centuries
+- [ ] Track plan
 - [ ] Simulation of machine braiding process (hexagonal 3D rotary braiding machine)
 
 ## Basic example
