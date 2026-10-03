@@ -27,7 +27,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "braidvisualiser>=0.2.2",
     "matplotlib>=3.7.5",
     "numpy>=1.21.0",
     "pyqt6>=6.9.0",

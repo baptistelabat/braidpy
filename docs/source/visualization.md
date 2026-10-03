@@ -37,7 +37,10 @@ b.plot()
 
 ![2D braid diagram](2D_braid_diagram.png)
 
-Warning: for now this plot is using [braidvisualizer](https://github.com/rexgreenway/braid-visualiser/tree/main/src/braidvisualiser) and is not following the same color code.
+Strands are coloured the way `b.draw()` colours them in the console, so a strand is
+the same colour wherever you look at it. The strand passing behind is interrupted
+at each crossing; `gap` sets how wide that break is, as a fraction of the distance
+between neighbouring strands.
 
 ## Plot 3D braid
 The third level is 3D visualization. You first need to convert your braidword to a parametric braid.

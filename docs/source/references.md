@@ -27,7 +27,7 @@ relationships between algebraic and geometric braid
 
 ## 🎨 Visualization Tools
 
-- [rexgreenway/braid-visualiser](https://github.com/rexgreenway/braid-visualiser) – Flat diagram visualization, available on [PyPI](https://pypi.org/project/braidvisualiser/)  -> used by braidpy   
+- [rexgreenway/braid-visualiser](https://github.com/rexgreenway/braid-visualiser) – Flat diagram visualization, available on [PyPI](https://pypi.org/project/braidvisualiser/)  -> drew braidpy's 2D diagram until braidpy drew its own, so that a strand keeps one colour between the console and the plot   
 - ([Denbox/Braid-Group-Visualization](https://github.com/Denbox/Braid-Group-Visualization/blob/master/braid_visualization.py) – Flat diagram but lacks good crossing visuals  )
 - [loopspace/braids](https://github.com/loopspace/braids) [LaTeX braids package](https://texdoc.org/serve/braids/0) – LaTeX-based braid rendering available on github. Impressive customization, good for documentation  
   (https://github.com/BnZel/poses_and_braids)
