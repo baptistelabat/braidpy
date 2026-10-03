@@ -335,9 +335,11 @@ def animate_kumihimo(
 def animate_mobidai(
     mobidai,
     n_cycles: int = 1,
+    drift: int = 0,
     output_html: Optional[str] = None,
     title: Optional[str] = None,
     samples_per_step: int = 12,
+    slot_offset: float = 0.0,
     **kwargs,
 ) -> go.Figure:
     """Animate a mobidai's cycles on its disk, seen from above.
@@ -345,19 +347,28 @@ def animate_mobidai(
     Args:
         mobidai: A :class:`~braidpy.mobidai.Mobidai` or its configuration.
         n_cycles: Cycles to animate.
+        drift: Slots each cycle's moves are shifted from the one before — see
+            :func:`~braidpy.take_off.mobidai_steps`.
         output_html: If given, write the animation to this HTML file.
         title: Figure title.
         samples_per_step: Frames per move.
+        slot_offset: Slots the numbering is turned by: 0.5 puts the top of
+            the disk between the last slot and slot 1, as a kumihimo disk is
+            marked.
         **kwargs: Passed on to :func:`animate_disk`.
 
     Returns:
         The figure.
     """
     config = getattr(mobidai, "config", mobidai)
-    _, steps = mobidai_steps(config, n_cycles)
+    _, steps = mobidai_steps(config, n_cycles, drift)
     labels = ["turn" if len(step) == len(config.strands) else "move" for step in steps]
     trajectories = mobidai_trajectories(
-        config, n_cycles=n_cycles, samples_per_step=samples_per_step
+        config,
+        n_cycles=n_cycles,
+        drift=drift,
+        samples_per_step=samples_per_step,
+        slot_offset=slot_offset,
     )
     kwargs.setdefault(
         "colors",

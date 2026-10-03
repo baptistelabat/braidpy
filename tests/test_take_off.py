@@ -307,3 +307,33 @@ def test_mobidai_is_laid_and_tightened():
     assert "Disk" in names and "Braiding point" in names
     assert sum(1 for n in names if n.startswith("Strand ")) == 6
     assert any(t.type == "surface" for t in fig.data)
+
+
+def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
+    from braidpy.mobidai_catalog import KONGO_8
+
+    # The book lists six moves: a cycle of four, and the next cycle's first
+    # two, one slot back.
+    listed = [(m.from_slot, m.to_slot) for m in KONGO_8.to_config().moves]
+    shifted = [((a - 2) % 32 + 1, (b - 2) % 32 + 1) for a, b in listed[:2]]
+    assert sorted(listed[4:]) == sorted(shifted)
+
+    kongo = KONGO_8.to_config(moves=KONGO_8.to_config().moves[:4])
+    start, steps = mobidai_steps(kongo, n_cycles=32, drift=-1)
+    assert len(steps) == 4 * 32  # no move ever finds its slot empty
+    where = dict(start)
+    for step in steps:
+        for strand, delta in step.items():
+            where[strand] = (where[strand] - 1 + delta) % 32 + 1
+    assert where == start  # round the whole disk, back where it began
+    # Without the drift the second cycle's moves start from empty slots.
+    assert len(mobidai_steps(kongo, n_cycles=2)[1]) == 4
+
+
+def test_slot_offset_turns_the_numbering():
+    traj = disk_trajectories({0: 32, 1: 1}, [{}], n_slots=32, slot_offset=0.5)
+    left, right = traj.xy[0][0], traj.xy[1][0]
+    # The top mark between slot 32 and slot 1: the pair straddles it.
+    assert left[0] == pytest.approx(-right[0])
+    assert left[1] == pytest.approx(right[1])
+    assert right[0] > 0
