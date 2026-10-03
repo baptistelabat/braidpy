@@ -30,6 +30,7 @@ from braidpy.take_off import (  # noqa: E402
     lay_yarns,
     mobidai_trajectories,
 )
+from braidpy.disk_animation import animate_kumihimo, animate_mobidai  # noqa: E402
 from braidpy.mobidai import MobidaiConfig, Move, Strand  # noqa: E402
 from braidpy.take_off import visualize_yarns as visualize_yarns_from  # noqa: E402
 from braidpy.horn_gear.examples import (  # noqa: E402
@@ -169,7 +170,13 @@ def other_sources() -> int:
         output_html="demo_kumihimo_8_braid.html",
     )
     print("demo_kumihimo_8_braid.html")
-    return 3
+
+    # The same two disks, animated from above as they are worked.
+    animate_kumihimo("SR" * 4, n_strands=8, output_html="demo_kumihimo_8.html")
+    print("demo_kumihimo_8.html")
+    animate_mobidai(config, n_cycles=2, output_html="demo_mobidai_8.html")
+    print("demo_mobidai_8.html")
+    return 5
 
 
 def main() -> None:

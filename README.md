@@ -21,6 +21,8 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
       computed shape can be checked against the braid it claims to be
 - [ ] Conversion from material braid to parametric braid
 - [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
+- [x] Kumihimo and mobidai disks animated from above, strands as spokes to
+      the braiding point, moving continuously from step to step
 - [ ] Kumihimo braid with Marudai diagram
 - [x] A braid as it comes off whatever made it, in 3D — a horn gear machine,
       a braid word, a mobidai or a kumihimo disk: laid with no tension,
