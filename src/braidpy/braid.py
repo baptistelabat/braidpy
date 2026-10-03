@@ -445,15 +445,38 @@ class Braid:
 
     def get_canonical_factors(self) -> GarsideCanonicalFactors:
         """
-        Get decomposition in left normal form
+        Get decomposition in Artin's left normal form, Δ^k · A_1 ⋯ A_r
+
+        ``n_half_twist`` is ``k``, the number of half twists Δ in front, and
+        each ``A_i`` is a permutation braid — a positive braid in which any
+        two strands cross at most once — given as the permutation it makes.
+        See :func:`~braidpy.garside_canonical_form.artin_left_normal_form`.
+
+        Returns:
+            GarsideCanonicalFactors: the unique decomposition of the braid according to left convention
+        """
+        from braidpy.garside_canonical_form import artin_left_normal_form
+
+        n = StrictlyPositiveInt(self.n_strands)
+        k, factors = artin_left_normal_form(self.generators, n)
+        return GarsideCanonicalFactors(n_half_twist=k, n_strands=n, Ai=factors)
+
+    def get_band_canonical_factors(self) -> GarsideCanonicalFactors:
+        """
+        Get decomposition in the Birman–Ko–Lee (band generator) left normal form
 
         Relies on math_braid implementation from J. Cha et al, "An Efficient Implementation of Braid Groups",
         Advances in Cryptology: Proceedings of ASIACRYPT 2001,
         Lecture Notes in Computer Science (2001), 144--156.
         https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
 
+        Not Artin's form: the twist in front is the band generators' δ, a
+        ``1/n_strands`` turn of every strand together, so ``n_half_twist``
+        here counts those rather than half twists — a full twist is
+        ``n_strands`` of them — and the factors are math_braid's.
+
         Returns:
-            GarsideCanonicalFactors: the unique decomposition of the braid according to left convention
+            GarsideCanonicalFactors: the band generator decomposition
         """
         br = self.no_zero()
         if br.generators:
