@@ -107,9 +107,15 @@ def circulation(
     no ring or a carrier that ends up where it began.
 
     This counts steps around the connection graph, so it needs no layout — and
-    it is a property of the *starting position*, not of the track.  Two
-    carriers on the same track can circulate opposite ways, because one placed
-    in a slot at t=0 sits at a different phase from one that arrived there.
+    it is a property of the *starting position*, not of the track: positions
+    alternate in sign along a track, because a carrier placed in a slot at
+    t=0 sits at a different phase from one that arrived there.
+
+    Only one of those two parities can be occupied at a time, though.  Put
+    carriers on both and they move towards each other and collide on the first
+    step, so a loadable machine fills half of each track and every carrier on
+    a given track circulates the same way.  Carriers going opposite ways are
+    on *different* tracks — which is what a braid is made of.
 
     Args:
         machine: The machine definition.
