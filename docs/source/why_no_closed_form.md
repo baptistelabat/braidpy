@@ -175,21 +175,19 @@ equal-height figure says the clearance is 0.40 of a diameter when it is really
 ### 3.1 A laid rope
 
 *n* strands winding together, no crossings. Each strand is a helix, so the
-family has one parameter, the radius *R*, and every strand touches its two
-neighbours by symmetry. Because the strands are one helix repeated, the
-distance between two of them depends on a single slide *w*:
+family has one parameter — the radius — and symmetry says which strands touch
+without anyone having to search for it. Because the strands are one curve
+repeated, their separation reduces to a single variable and the clearance is
+exact.
 
-> D(w)² = 4R² sin²(πw/λ) + (kλ/n − w)²
+What it does not reduce to is a formula. Locating the minimum of that
+clearance means solving a transcendental equation, so `lay_radius` bisects on
+the exact clearance instead, and the familiar packing radius d/(2 sin(π/n))
+turns out to be only its zero-lay limit — `packing_radius` is labelled as
+such.
 
-which is exact, and its minimum over *w* is `helix_clearance` — one variable,
-no surface to search. At *w = kλ/n* it is the chord between neighbours, which
-is the cross-section packing answer d/(2 sin(π/n)); at *w = 0* it is *kλ/n*,
-which is §3.0 again. The true minimum is generally at neither.
-
-So the packing formula is **only the zero-lay limit**. `packing_radius` keeps
-it, labelled as such; `lay_radius` bisects on the exact clearance for a rope
-that actually has a lay, and the radius it returns is always larger, tending
-to the packing value as the lay grows.
+[The shape of a laid rope](laid_rope.md) carries the clearance function, the
+equation that has no closed-form root, and the figures.
 
 ### 3.2 The classic three-strand flat braid
 
@@ -230,95 +228,32 @@ Published, not derived here: *The geometry of tubular braided structures*,
 page 19 —
 <https://scispace.com/pdf/the-geometry-of-tubular-braided-structures-32b4yiwio2.pdf>.
 A strand winds round the tube at a fixed angle to the axis while its distance
-from the axis swings in and out:
+from the axis swings in and out. That swing is the braid: take it away and the
+strands are helices that would have to pass through one another.
 
-> r(θ) = R + b·sin(nθ/2),  x = r cos θ,  y = r sin θ,  z = R·θ·cot(q)
-
-Out where it passes over a strand coming the other way, in where it passes
-under. That swing is the braid: take it away and the strands are helices that
-would have to pass through one another.
-
-Two things the formula does not say, without which it does not braid, and
-both of which `tubular_braid` supplies:
-
-- **the strands alternate direction round the tube.** Spaced evenly and
-  alternating, two that cross meet where the swing is at its extreme — one
-  fully out, one fully in. Space them otherwise and they meet mid-swing, or,
-  at worst, where the swing is zero and they are in the same place;
-- **the swing follows the direction.** One way bulges out where the other
-  tucks in. A common sign gives both strands of a crossing the same radius,
-  which is a collision.
-
-What the model then promises is exactly one thing: two crossing strands are
-**2b** apart *at the crossing*. Setting b = d/2 makes them touch there. That
-is the clearance everywhere only while the crossings are the tightest spot,
-and they are not always — many strands, a steep braid angle or a thin tube
-and the strands foul each other between crossings instead:
-
-| strands | braid angle | seated at | needs radius | once round in |
-|---|---|---|---|---|
-| 4 | 45° | 0.283 | 0.433 | 2.72 |
-| 8 | 45° | 0.523 | 0.797 | 5.01 |
-| 16 | 45° | 1.025 | 1.556 | 9.78 |
-| 8 | 65° | 0.523 | 1.642 | 4.81 |
-
-(strand diameter 0.4; "seated at" is `packing_radius`, the strands merely
-side by side.)
-
-Unlike the rope, **this radius is available in closed form**, and the
-derivation is short enough to give. Take the two strands of a crossing and
-let *s* and *t* measure how far each has gone past it. At the crossing the
-swing holds them 2b apart. Just beside it the swing has decayed — as
-cos(ns/2), so by b·n²s²/8 to second order — while the angle between them has
-opened by (s + t) and their heights have parted by R·cot(q)·(s − t). Writing
-p = s + t and m = s − t:
-
-> D² ≃ 4b² + p²[(R² − b²) − ¼b²n²] + m²[R²cot²q − ¼b²n²]
-
-with no cross term, the two motions being independent. The crossing is
-therefore the tightest spot exactly when both brackets are non-negative, and
-the narrowest tube is where the first reaches zero:
+Unlike the rope, the narrowest workable radius **is** available in closed
+form:
 
 > **R = b · max( √(1 + n²/4), (n/2)·tan q )**
 
-Two conditions, and which binds says what holds the tube open: the strands'
-own swing, or the rate at which they climb past one another. They change
-places at tan q* = √(1 + 4/n²), which tends to 45° as strands are added — so
-below about 45° the radius does not depend on the braid angle at all, and
-above it the angle is everything. `crossing_binds_above` says which.
+and why it closes is the part that belongs to this argument rather than to the
+tube. A crossing is a point of symmetry for *both* strands, so it is
+automatically a critical point of the distance between them and only the
+second-order terms decide — which is algebra. Two helices of a rope have no
+such point, and locating their nearest approach is the transcendental problem
+of §3.1. Symmetry does the work in both cases; here there is enough of it, and
+there there is not.
 
-It is worth being clear about **why this one closes and the rope's does not**
-(§3.1 searches). A crossing is a point of symmetry for *both* strands, so it
-is automatically a critical point of the distance between them, and only the
-second-order terms decide. Two helices of a rope have no such point: their
-nearest approach is not at the chord between them, and locating it means
-solving (4πR²/λ)·sin(2πw/λ) = 2(λ/n − w), which is transcendental. Symmetry
-does the work in both cases; here there is enough of it, and there it is not.
+One limitation belongs here too, because it bears on what closed form is
+worth: the model cannot make a *tight* tube. At the narrowest radius that does
+not crowd, the strands hide between 0.35 and 0.45 of the surface whatever the
+strand count or braid angle. A shape available in closed form is not therefore
+a realistic one.
 
-And a limitation worth stating plainly, because it is what you notice first
-on looking at a picture: **the model cannot make a tight tube.** At the
-narrowest radius that does not crowd, the strands hide only about 0.4 of the
-surface — and that figure barely moves with the strand count (0.42 at four,
-0.46 at sixteen), the braid angle (0.45 at 45°, 0.37 at 65°) or the swing
-depth. A braid drawn from it looks open, where a real sleeve is closed.
-
-The cause is the sine. Two strands are nearest not *at* their crossing, where
-the swing holds them a full 2b apart, but just beside it, where the swing has
-decayed while the angle between them is still small — and at a smaller radius
-a given angle buys less arc to separate them with. Real yarn escapes this by
-not being round: it flattens where it crosses and stays proud for longer,
-which is a squarer swing than a sine. Modelling that is the obvious next step
-for anyone who wants a picture that looks like braid.
-
-`cover_factor` measures the tightness and `radius_for_cover` inverts it, so
-the gap between the radius that clears and the radius that looks right is two
-numbers rather than an impression. For eight strands at 45° they are 0.797
-and 0.360.
-
-The braid angle is the *mean* helix's. The swing makes the local angle wander
-either side of it and biases it upward — swinging out and in adds path across
-the tube but none along it — which is worth knowing before measuring a braid
-angle off a photograph.
+[The shape of a braided tube](braided_tube.md) gives the curve, the two
+placement rules the published formula leaves unsaid, the derivation of the
+radius, the crossover between its two conditions and the cover limitation,
+with figures.
 
 ### 3.4 What had to be true
 
