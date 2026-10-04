@@ -412,6 +412,48 @@ def test_crossings_are_timed_and_made_in_rows():
     assert crossing_rows(list("abcd"), later, in_turn=True) == [0, 1, 1]
 
 
+def test_strands_sliding_together_cross_nobody():
+    from braidpy.take_off import disk_crossing_steps
+
+    # b and c slide on a slot together; a moving alone crosses who it passes.
+    _, crossings, _ = disk_crossing_steps(
+        {"a": 1, "b": 3, "c": 4}, [{"b": 1, "c": 1}, {"a": 5}], 8
+    )
+    assert crossings == [("a", "b"), ("a", "c")]
+    with pytest.raises(ValueError, match="several strands"):
+        # Not together: b would pass c.
+        disk_crossing_steps({"a": 1, "b": 3, "c": 4}, [{"b": 2, "c": 1}], 8)
+    with pytest.raises(ValueError, match="several strands"):
+        # c is in the way.
+        disk_crossing_steps({"a": 1, "b": 2, "c": 4}, [{"a": 3, "b": 3}], 8)
+
+
+def test_the_annular_word_of_a_disk():
+    from braidpy.take_off import disk_annular_word
+
+    # Clockwise over b then c: the mover is first of each pair, and inside.
+    assert disk_annular_word({"a": 1, "b": 2, "c": 4}, [{"a": 4}], 8) == (
+        [-1, -2],
+        3,
+    )
+    # Anticlockwise over c: c is first, and outside.
+    assert disk_annular_word({"a": 1, "b": 3, "c": 4}, [{"c": -2}], 8) == ([2], 3)
+    # Across the seam: the numbering turns on by one, then a is crossed.
+    assert disk_annular_word({"a": 1, "b": 3, "c": 7}, [{"c": 3}], 8) == (
+        [4, -1],
+        3,
+    )
+    # An anticlockwise disk is read the other way round, from its last slot:
+    # the same moves, mirrored, read the same.
+    mirrored = disk_annular_word({"a": 8, "b": 7, "c": 5}, [{"a": -4}], 8, False)
+    assert mirrored == disk_annular_word({"a": 1, "b": 2, "c": 4}, [{"a": 4}], 8)
+    # A turn of the disk passes nobody; whoever crosses the seam turns the
+    # numbering.
+    assert disk_annular_word({"a": 1, "b": 3, "c": 7}, [{"a": 2, "b": 2, "c": 2}], 8)[
+        0
+    ] == [4]
+
+
 def test_ring_refuses_crossings_of_strangers():
     from braidpy.take_off import ring_trajectories
 

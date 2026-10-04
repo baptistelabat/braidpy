@@ -133,6 +133,63 @@ def rope(n_strands: int) -> List[int]:
     return [turn(n_strands)] * n_strands
 
 
+def solid_word(moves: Sequence[int], n_strands: int) -> List[int]:
+    """The flat braid word of a ring braid with nothing in the middle.
+
+    A solid braid — a kumihimo cord, a solid sinnet — has no core for its
+    strands to go round: they meet in the middle.  Filling the hole of the
+    annulus that way sends each crossing to the flat braid's generator of
+    the same index, and the two moves a flat braid has no room for to what
+    they become once the middle is solid:
+
+    - the turn, every strand carried round one slot towards increasing
+      numbers, is ``σₙ₋₁…σ₂σ₁``: the last strand passes outside every other
+      to the front, a ``1/n`` turn of the whole braid; ``n`` of them are a
+      full twist.  A strand that goes once round inside all the others,
+      crossing them and then the seam, so comes back unlinked;
+    - the crossing whose slots wrap is what the first crossing becomes once
+      the numbering is turned back by one: the turn, ``σ₁``, the turn
+      undone.
+
+    This respects every relation of the ring's moves, so the flat word does
+    not depend on where the ring's numbering starts, up to conjugation.
+
+    Args:
+        moves: Crossings ``±1`` to ``±n_strands``, turns ``±(n_strands + 1)``.
+        n_strands: How many slots the ring has.
+
+    Returns:
+        The word, as signed generator indices from 1 to ``n_strands - 1``,
+        with any generator next to its own inverse cancelled.
+
+    Raises:
+        ValueError: If a move is not one of the ring's.
+    """
+    n = n_strands
+    turning = list(range(n - 1, 0, -1))
+    back = [-g for g in reversed(turning)]
+    word: List[int] = []
+    for move in moves:
+        index, sign = abs(move), (1 if move > 0 else -1)
+        if not 1 <= index <= n + 1:
+            raise ValueError(f"No move {move} on a ring of {n} strands.")
+        if n < 2:
+            continue  # one strand: nothing to cross, nothing to turn
+        if index < n:
+            word.append(move)
+        elif index == n:
+            word += turning + [sign] + back
+        else:
+            word += turning if sign > 0 else back
+    reduced: List[int] = []
+    for g in word:
+        if reduced and reduced[-1] == -g:
+            reduced.pop()
+        else:
+            reduced.append(g)
+    return reduced
+
+
 @dataclass(frozen=True)
 class TubularStrandPath:
     """Where one strand goes round a tubular braid, and what it passed.

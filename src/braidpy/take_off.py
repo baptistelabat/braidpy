@@ -1216,7 +1216,8 @@ def disk_crossing_steps(
     between its slot and its new one, one after another, nearest first —
     the rule :func:`disk_trajectories` draws and the mobidai's own word
     records.  A step that moves every strand alike turns the disk and
-    crosses nothing.
+    crosses nothing; so does one that slides a few strands along together,
+    as long as no strand that stays is in their way.
 
     Args:
         start: Each strand's slot, 1-based.
@@ -1232,7 +1233,8 @@ def disk_crossing_steps(
 
     Raises:
         ValueError: If two strands move at once other than by turning the
-            disk, which this cannot order into crossings.
+            disk or sliding along together, which this cannot order into
+            crossings.
     """
     where = dict(start)
     order = sorted(where, key=lambda k: where[k])
@@ -1242,9 +1244,10 @@ def disk_crossing_steps(
         moving = {k: d for k, d in step.items() if d}
         if not moving:
             continue
-        if set(moving) == set(where) and len(set(moving.values())) == 1:
+        if _slides(where, moving, n_slots):
             delta = next(iter(moving.values()))
-            where = {k: (s - 1 + delta) % n_slots + 1 for k, s in where.items()}
+            for k in moving:
+                where[k] = (where[k] - 1 + delta) % n_slots + 1
             continue
         if len(moving) > 1:
             raise ValueError(f"Step {number} moves several strands at once.")
@@ -1259,6 +1262,119 @@ def disk_crossing_steps(
                 made_at.append(number + passed / abs(delta))
         where[mover] = (where[mover] - 1 + delta) % n_slots + 1
     return order, crossings, made_at
+
+
+def _slides(
+    where: Mapping[Hashable, int], moving: Mapping[Hashable, int], n_slots: int
+) -> bool:
+    """Whether a step carries strands along together, crossing nobody.
+
+    Every strand moves alike — the disk turning — or several move alike and
+    no strand that stays is in the slots they sweep.  A single strand
+    moving is not a slide: it crosses whoever it passes.
+    """
+    if len(set(moving.values())) != 1:
+        return False
+    if set(moving) == set(where):
+        return True
+    if len(moving) < 2:
+        return False
+    delta = next(iter(moving.values()))
+    sense = 1 if delta > 0 else -1
+    staying = {where[k] for k in where if k not in moving}
+    for k in moving:
+        slot = where[k]
+        for _ in range(abs(delta)):
+            slot = (slot - 1 + sense) % n_slots + 1
+            if slot in staying:
+                return False
+    return True
+
+
+def disk_annular_word(
+    start: Mapping[Hashable, int],
+    steps: Sequence[Mapping[Hashable, int]],
+    n_slots: int,
+    clockwise: bool = True,
+) -> Tuple[List[int], int]:
+    """The annular braid a disk's moves make — see :mod:`braidpy.annulus_braid`.
+
+    The strands are numbered in order round the disk, seen from above and
+    read clockwise from the seam between the last slot and slot 1, so an
+    anticlockwise disk is read from its last slot back.  A strand lifted
+    over another — over, seen from above — passes inside it, nearer the
+    braid's axis, and the annulus counts a crossing by who is outside: a
+    move clockwise over a strand is a negative crossing, anticlockwise a
+    positive one.
+
+    A strand passing between the last slot and slot 1, crossing nobody,
+    changes nothing on the disk, but every strand's number then moves on
+    one: a turn (:func:`~braidpy.annulus_braid.turn`), as the disk turning
+    by one strand would be.  Which strands are numbered from where depends
+    only on where slot 1 is; another starting point gives the same braid,
+    conjugated.
+
+    Args:
+        start: Each strand's slot, 1-based.
+        steps: Per step, the strands that move and by how many slots, as
+            :func:`disk_crossings` takes them.
+        n_slots: Slots round the disk.
+        clockwise: Whether slot numbers go round clockwise, seen from above.
+
+    Returns:
+        The word, crossings ``±1`` to ``±n`` and turns ``±(n + 1)``, and the
+        number of strands ``n``.
+
+    Raises:
+        ValueError: As :func:`disk_crossings`.
+    """
+
+    def read(slot: int) -> int:
+        """A slot as numbered clockwise, the seam staying where it is."""
+        return slot if clockwise else n_slots + 1 - slot
+
+    where = {k: read(s) for k, s in start.items()}
+    n = len(where)
+    # The strands in order round the ring, from slot 1.
+    ring = sorted(where, key=lambda k: where[k])
+    word: List[int] = []
+    for number, step in enumerate(steps):
+        moving = {k: (d if clockwise else -d) for k, d in step.items() if d}
+        if not moving:
+            continue
+        sliding = _slides(where, moving, n_slots)
+        if len(moving) > 1 and not sliding:
+            raise ValueError(f"Step {number} moves several strands at once.")
+        delta = next(iter(moving.values()))
+        sense = 1 if delta > 0 else -1
+        for _ in range(abs(delta)):
+            by_slot = {s: k for k, s in where.items()}
+            # Front runners first, so nobody steps into a slot still held.
+            for k in sorted(moving, key=lambda k: -sense * where[k]):
+                here = where[k]
+                there = (here - 1 + sense) % n_slots + 1
+                if sense > 0 and there == 1:
+                    # Last round the ring becomes first: everyone moves on.
+                    ring.remove(k)
+                    ring.insert(0, k)
+                    word.append(n + 1)
+                elif sense < 0 and here == 1:
+                    ring.remove(k)
+                    ring.append(k)
+                    word.append(-(n + 1))
+                other = by_slot.get(there)
+                if not sliding and other is not None and other != k:
+                    i = ring.index(k)
+                    if sense > 0:
+                        # The mover is first of the pair, and inside.
+                        word.append(-(i + 1))
+                        ring[i], ring[i + 1] = ring[i + 1], ring[i]
+                    else:
+                        # The other is first of the pair, and outside.
+                        word.append(i)
+                        ring[i - 1], ring[i] = ring[i], ring[i - 1]
+                where[k] = there
+    return word, n
 
 
 def crossing_rows(

@@ -32,7 +32,16 @@ Requirements:
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Hashable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 import math
 import os
 
@@ -44,6 +53,13 @@ from matplotlib.axes import Axes
 
 import imageio.v2 as imageio  # optional for GIF
 
+from braidpy.annulus_braid import solid_word
+from braidpy.take_off import disk_annular_word, disk_braid
+
+if TYPE_CHECKING:
+    from braidpy.braid import Braid
+    from braidpy.mobidai import MobidaiConfig
+
 OFFSET_DEG = 180  # To match Ahsley book of knots
 # ============================ Core Structures ============================
 
@@ -52,6 +68,14 @@ OFFSET_DEG = 180  # To match Ahsley book of knots
 class AshleySolidSinnet:
     """Ashley-style braid pattern.
 
+    Spaces are numbered anticlockwise, seen from above, from the left of the
+    disk as the book draws it.  A strand is moved over all the strands it
+    passes: from an odd space its right-hand strand, anticlockwise; from an
+    even space its left-hand strand, clockwise.  It goes in at the left
+    (clockwise) end of an odd space and at the right (anticlockwise) end of
+    an even one, so the earliest strand in a space is always the next to
+    leave it.
+
     Attributes:
         initial_counts_per_space (List[int]): Number of strands per sector. 1-based sectors.
         moves (List[Tuple[int, int]]): Sequence of (from_sector, to_sector) moves, each 1-based.
@@ -59,6 +83,238 @@ class AshleySolidSinnet:
 
     initial_counts_per_space: List[int]
     moves: List[Tuple[int, int]]
+
+    @property
+    def n_strands(self) -> int:
+        """How many strands the sinnet has."""
+        return sum(self.initial_counts_per_space)
+
+    def disk(self, n_cycles: int = 1) -> "SinnetDisk":
+        """The sinnet worked on a disk — see :func:`sinnet_disk`."""
+        return sinnet_disk(self, n_cycles)
+
+    def annular_word(self, n_cycles: int = 1) -> List[int]:
+        """The braid it makes, round the ring — see
+        :func:`~braidpy.take_off.disk_annular_word`."""
+        disk = self.disk(n_cycles)
+        word, _ = disk_annular_word(
+            disk.start, disk.steps, disk.n_slots, clockwise=False
+        )
+        return word
+
+    def braid(self, n_cycles: int = 1) -> "Braid":
+        """The braid it makes, as a flat braid word: the ring's, with the
+        middle solid — see :func:`~braidpy.annulus_braid.solid_word`."""
+        from braidpy.braid import Braid
+
+        word = solid_word(self.annular_word(n_cycles), self.n_strands)
+        return Braid(word or [0], self.n_strands)
+
+    def to_mobidai(self) -> "MobidaiConfig":
+        """One cycle as a kumihimo disk (mobidai) pattern — see
+        :func:`sinnet_to_mobidai`."""
+        return sinnet_to_mobidai(self)
+
+    def animate(self, n_cycles: int = 1, **kwargs):
+        """Animate it on its disk, seen from above — see
+        :func:`~braidpy.disk_animation.animate_sinnet`."""
+        from braidpy.disk_animation import animate_sinnet
+
+        return animate_sinnet(self, n_cycles=n_cycles, **kwargs)
+
+    def braid_3d(self, yarn_diameter: float = 0.12, n_cycles: int = 4, **kwargs):
+        """The braid it makes, laid and tightened — see
+        :func:`~braidpy.take_off.disk_braid`."""
+        disk = self.disk(n_cycles)
+        return disk_braid(
+            disk.start,
+            disk.steps,
+            disk.n_slots,
+            yarn_diameter,
+            clockwise=False,
+            **kwargs,
+        )
+
+
+# ============================ On a disk ============================
+
+
+@dataclass
+class SinnetDisk:
+    """A sinnet set out on a disk with a slot for every place a strand stops.
+
+    Each space has ``slots_per_space`` slots side by side, its strands kept
+    together in the middle of them.  Slots are numbered anticlockwise, as
+    the spaces are, from the clockwise end of space 1.
+
+    Attributes:
+        n_spaces: Spaces round the disk.
+        slots_per_space: Slots in each.
+        start: Each strand's slot.  Strands are numbered from 1, space by
+            space and anticlockwise within one, as :func:`init_spaces_from_counts`.
+        steps: The strand each step moves, and by how many slots: a move,
+            over everything it passes, or a few strands sliding along
+            together in a space, over nothing.
+        labels: What each step is.
+    """
+
+    n_spaces: int
+    slots_per_space: int
+    start: Dict[Hashable, int]
+    steps: List[Dict[Hashable, int]]
+    labels: List[str]
+
+    @property
+    def n_slots(self) -> int:
+        return self.n_spaces * self.slots_per_space
+
+    def middle_slot(self, space: int) -> int:
+        """The slot in the middle of a space, where its number is written."""
+        return (space - 1) * self.slots_per_space + (self.slots_per_space + 1) // 2
+
+    @property
+    def slot_offset(self) -> float:
+        """How far round the numbering is turned to draw it as the book does:
+        space 1 starting on the left, anticlockwise from there."""
+        return self.n_slots / 4 + 0.5
+
+
+def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
+    """Work a sinnet on a disk, following every strand.
+
+    Each move takes the earliest strand of its space — the right-hand one of
+    an odd space, the left-hand one of an even space — round the disk over
+    every strand it passes, into its place at the end of the space it goes
+    to.  The strands left behind, and those it joins, then slide along
+    together to the middle of their spaces, so each space always has room
+    either side of its strands.
+
+    Args:
+        sinnet: The sinnet.
+        n_cycles: How many times its moves are made.
+
+    Returns:
+        The disk, and the steps that work it.
+
+    Raises:
+        ValueError: If a move is from or to a space that is not there, or
+            from a space to itself.
+    """
+    counts = list(sinnet.initial_counts_per_space)
+    n_spaces = len(counts)
+    for source, target in sinnet.moves:
+        if not (1 <= source <= n_spaces and 1 <= target <= n_spaces):
+            raise ValueError(f"Move {source} → {target}: no such space.")
+        if source == target:
+            raise ValueError(f"Move {source} → {target}: to its own space.")
+
+    # Room for the fullest a space ever gets, and a slot either side.
+    fullest = max(counts)
+    for _ in range(n_cycles):
+        for source, target in sinnet.moves:
+            if counts[source - 1]:
+                counts[source - 1] -= 1
+                counts[target - 1] += 1
+                fullest = max(fullest, counts[target - 1])
+    width = fullest + 2
+    n_slots = n_spaces * width
+
+    groups = init_spaces_from_counts(list(sinnet.initial_counts_per_space))
+
+    def placed(space: int, count: int) -> List[int]:
+        first = (space - 1) * width + 1 + (width - count) // 2
+        return list(range(first, first + count))
+
+    where: Dict[Hashable, int] = {}
+    for space, strands in groups.items():
+        where.update(zip(strands, placed(space, len(strands))))
+    start: Dict[Hashable, int] = dict(where)
+    steps: List[Dict[Hashable, int]] = []
+    labels: List[str] = []
+
+    def settle(space: int) -> None:
+        """Slide a space's strands to its middle, together."""
+        strands = groups[space]
+        goal: Dict[Hashable, int] = dict(zip(strands, placed(space, len(strands))))
+        shift: Dict[Hashable, int] = {
+            k: goal[k] - where[k] for k in strands if goal[k] != where[k]
+        }
+        if not shift:
+            return
+        if len(set(shift.values())) != 1:  # never: a space only gains or loses one
+            raise AssertionError(f"Space {space} would not slide together.")
+        steps.append(shift)
+        labels.append(f"settle {space}")
+        where.update(goal)
+
+    for _ in range(n_cycles):
+        for source, target in sinnet.moves:
+            leaving = groups[source]
+            if not leaving:
+                continue
+            odd = source % 2 == 1
+            mover = leaving.pop(-1 if odd else 0)
+            joining = groups[target]
+            if target % 2 == 1:
+                there = where[joining[0]] - 1 if joining else placed(target, 1)[0]
+                joining.insert(0, mover)
+            else:
+                there = where[joining[-1]] + 1 if joining else placed(target, 1)[0]
+                joining.append(mover)
+            gap = (there - where[mover]) % n_slots
+            steps.append({mover: gap if odd else gap - n_slots})
+            labels.append(f"{source} → {target}")
+            where[mover] = there
+            settle(source)
+            settle(target)
+    return SinnetDisk(n_spaces, width, start, steps, labels)
+
+
+def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> "MobidaiConfig":
+    """One cycle of a sinnet as a kumihimo disk (mobidai) pattern.
+
+    The disk of :func:`sinnet_disk`, numbered as a mobidai is, every move
+    made from slot to slot the way the sinnet goes round — anticlockwise
+    from an odd space, clockwise from an even one — and every slide made one
+    strand at a time, the front one first.  A sinnet whose cycle brings each
+    space back to its count brings every slot back too, so the pattern is
+    simply repeated.
+
+    Args:
+        sinnet: The sinnet.
+
+    Returns:
+        The pattern.
+    """
+    from braidpy.mobidai import MobidaiConfig, Move, Strand
+
+    disk = sinnet_disk(sinnet, 1)
+    colours = strand_colours(sinnet.n_strands)
+    where = {cast(int, k): slot for k, slot in disk.start.items()}
+    strands = [Strand(colours[k - 1], slot) for k, slot in sorted(where.items())]
+    moves: List[Move] = []
+    for step in disk.steps:
+        delta = next(iter(step.values()))
+        sense = 1 if delta > 0 else -1
+        for k in sorted((cast(int, k) for k in step), key=lambda k: -sense * where[k]):
+            target = (where[k] - 1 + delta) % disk.n_slots + 1
+            moves.append(Move(where[k], target, sense))
+            where[k] = target
+    return MobidaiConfig(
+        strands=strands,
+        moves=moves,
+        n_shift_after_cycle=0,
+        n_slots=disk.n_slots,
+        is_clockwise=False,
+    )
+
+
+def strand_colours(n: int) -> List[str]:
+    """A colour per strand, evenly round the hue circle."""
+    import matplotlib
+
+    hsv = matplotlib.colormaps["hsv"]
+    return [matplotlib.colors.to_hex(hsv(i / max(n, 1))) for i in range(n)]
 
 
 def init_spaces_from_counts(counts: List[int]) -> Dict[int, List[int]]:
@@ -172,11 +428,16 @@ def ashley_single_move_to_artin(
 
 
 def ashley_to_artin_exact(
-    counts: List[int], moves: Dict[int, int]
+    counts: List[int], moves: Dict[int, int] | Sequence[Tuple[int, int]]
 ) -> Tuple[List[int], List[int]]:
     """Convert an Ashley-style braid (sinnet) into an exact Artin braid word.
 
     Ashley braids are described in the Ashley book of knots
+
+    The word is read anticlockwise, and counts a strand moved over, seen
+    from above, as a positive crossing: the mirror image, read from the
+    other side, of :meth:`AshleySolidSinnet.braid`, which reads the braid
+    as braidpy draws one.  The two are the same braid.
 
     This function simulates each strand's movement:
     - Handles wrap-around moves by crossing all other strands in reverse order.
@@ -185,7 +446,9 @@ def ashley_to_artin_exact(
 
     Args:
         counts (List[int]): List of strand counts for each space.
-        moves (Dict[int, int]): Mapping from source space to destination space.
+        moves: ``(source, destination)`` spaces, in order.  A mapping from
+            source to destination is also read, but cannot hold two moves
+            from one space.
 
     Returns:
         Tuple[List[int], List[int]]:
@@ -194,7 +457,8 @@ def ashley_to_artin_exact(
     """
     braid_word: List[int] = []
 
-    for from_space, to_space in moves.items():
+    pairs = moves.items() if isinstance(moves, dict) else moves
+    for from_space, to_space in pairs:
         counts, braid_seq = ashley_single_move_to_artin(counts, from_space, to_space)
         braid_word.extend(braid_seq)
 
@@ -385,6 +649,9 @@ def visualize_sinnet(
     arc_pad_frac: float = 0.12,
 ) -> Dict[str, List[str] | str]:
     """Render an Ashley sinnet into step images and an optional GIF.
+
+    See :meth:`AshleySolidSinnet.animate` for an animation that follows
+    every strand, and the braid growing beside it.
 
     This function draws an initial frame, then a frame per move showing the path
     between sectors, then a final frame after all moves. Each strand ID gets a

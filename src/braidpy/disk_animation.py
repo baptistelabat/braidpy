@@ -34,6 +34,7 @@ from braidpy.take_off import (
     StrandTrajectories,
     crossing_rows,
     disk_crossing_steps,
+    disk_trajectories,
     lay_yarns,
     ring_trajectories,
     tighten_yarns,
@@ -714,6 +715,69 @@ def animate_mobidai(
         step_labels=labels,
         title=title
         or f"Mobidai, {len(config.strands)} strands on {config.n_slots} slots",
+        output_html=output_html,
+        **kwargs,
+    )
+
+
+def animate_sinnet(
+    sinnet,
+    n_cycles: int = 1,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
+    samples_per_step: int = 12,
+    side_view: bool = False,
+    yarn_diameter: float = 0.12,
+    **kwargs,
+) -> go.Figure:
+    """Animate an Ashley solid sinnet on its disk, seen from above.
+
+    Every strand is followed from space to space, lifted over the strands
+    it passes, and the strands of a space slide together to make room —
+    see :func:`~braidpy.ashley_solid_sinnet.sinnet_disk`.  Spaces are
+    numbered as the book draws them: anticlockwise from the left.
+
+    Args:
+        sinnet: An :class:`~braidpy.ashley_solid_sinnet.AshleySolidSinnet`.
+        n_cycles: Times its moves are made.
+        output_html: If given, write the animation to this HTML file.
+        title: Figure title; says how many strands and spaces if None.
+        samples_per_step: Frames per step.
+        side_view: Also show the braid growing below the disk, from the side.
+        yarn_diameter: The yarn's diameter in the side view, the disk's
+            radius being 1.
+        **kwargs: Passed on to :func:`animate_disk`.
+
+    Returns:
+        The figure.
+    """
+    from braidpy.ashley_solid_sinnet import strand_colours, sinnet_disk
+
+    disk = sinnet_disk(sinnet, n_cycles)
+    trajectories = disk_trajectories(
+        disk.start,
+        disk.steps,
+        disk.n_slots,
+        samples_per_step=samples_per_step,
+        clockwise=False,
+        slot_offset=disk.slot_offset,
+        slot_names={
+            disk.middle_slot(space): str(space) for space in range(1, disk.n_spaces + 1)
+        },
+    )
+    kwargs.setdefault("colors", strand_colours(len(disk.start)))
+    if side_view:
+        kwargs.setdefault(
+            "braid",
+            BraidGrowth(
+                disk.start, disk.steps, disk.n_slots, yarn_diameter, clockwise=False
+            ),
+        )
+    return animate_disk(
+        trajectories,
+        step_labels=disk.labels,
+        title=title
+        or f"Ashley solid sinnet, {len(disk.start)} strands in {disk.n_spaces} spaces",
         output_html=output_html,
         **kwargs,
     )
