@@ -126,13 +126,31 @@ class SwitchedMachine(BraidingMachine):
                 continue
             # A switch set on either side governs the crossing, so that the
             # two groups of slots stay apart whichever way a carrier is going.
-            for side, presented in (
-                (conn.gear_a, slot_a),
-                (conn.gear_b, slot_b),
-            ):
-                allowed = self._allowed.get((conn.name, side))
-                if allowed is not None and presented not in allowed:
-                    return False
+            if not self.contact_exchanges(conn, time):
+                return False
+        return True
+
+    def contact_exchanges(self, conn: Connection, time: int) -> bool:
+        """Whether this contact hands anything over at ``time``.
+
+        A switched contact that will not take the slots presented to it is not
+        exchanging, and its deflector holds the two gears' paths apart, so
+        carriers may ride past on either side of it at once.
+
+        Args:
+            conn: The contact in question.
+            time: Step being taken.
+
+        Returns:
+            True if the contact is exchanging this step.
+        """
+        if not conn.name:
+            return True
+        slot_a, slot_b = conn.slots_at(self, time)
+        for side, presented in ((conn.gear_a, slot_a), (conn.gear_b, slot_b)):
+            allowed = self._allowed.get((conn.name, side))
+            if allowed is not None and presented not in allowed:
+                return False
         return True
 
     def next_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:

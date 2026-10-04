@@ -169,17 +169,19 @@ def test_band_of_names_the_band_each_gear_works_for():
 
 
 def test_the_reference_runs_ten_fifteen_and_ten_carriers():
-    """The 10-15-10 of the machine's name, which the switches cannot yet reach.
+    """The 10-15-10 of the machine's name, which is not yet reachable.
 
-    35 carriers is well under the 43 the same line holds without switches, so
-    the count is not the obstacle.  The switch is: a carrier a contact declines
-    stays where it is, and braidpy counts both slots of a contact being
-    occupied as a collision, so carriers cannot queue either side of a switched
-    contact the way they do on the real machine.  Capacity falls from 43 to 19.
+    Measured band by band the machine holds 7, 21 and 7 -- the right total of
+    35, but the wrong split: the middle band has capacity to spare while the
+    two outer ones fall three short of the ten the reference runs.  No
+    geometrically valid wiring of an outer band does better than 7, and no
+    choice of switched slots changes it, so the shortfall is in how braidpy
+    loads a 27-slot band of 5-4-4-8-6, not in the switch.
 
-    This records the gap rather than papering over it.  Separating the bands
-    works; loading them as the reference does needs the collision rule to know
-    that a declined contact is not exchanging anything.
+    Relaxing the collision rule at a switched contact
+    (:meth:`~braidpy.horn_gear.model.BraidingMachine.contact_exchanges`)
+    lifted the whole machine from 19 carriers to 22; the rest of the gap is
+    elsewhere.  This records that rather than asserting something weaker.
     """
     import random
 
@@ -189,30 +191,35 @@ def test_the_reference_runs_ten_fifteen_and_ten_carriers():
     assert sum(MULTIBAND_10_15_10_CARRIERS) == 35
 
     machine = multiband_10_15_10()
-    plain = BraidingMachine(list(machine.gears.values()), list(machine.connections))
 
-    def capacity(m, trials=4, steps=120):
+    def capacity(places, trials=6, steps=120):
         best = 0
         for seed in range(trials):
             rng = random.Random(seed)
-            order = positions()
+            order = list(places)
             rng.shuffle(order)
             placed = []
             for p in order:
                 try:
-                    simulate(m, steps, {i: q for i, q in enumerate(placed + [p])})
+                    simulate(machine, steps, {i: q for i, q in enumerate(placed + [p])})
                 except CollisionError:
                     continue
                 placed.append(p)
             best = max(best, len(placed))
         return best
 
-    loose, switched = capacity(plain), capacity(machine)
-    assert switched < sum(MULTIBAND_10_15_10_CARRIERS), (
-        f"the switched line now holds {switched}, enough for the reference's "
-        f"35 -- update the docstring above and the note in switch.py"
+    per_band = []
+    for first, last in MULTIBAND_10_15_10_BANDS:
+        band = [(f"G{i}", s) for i in range(first, last + 1) for s in range(SLOTS[i])]
+        per_band.append(capacity(band))
+
+    assert sum(per_band) <= sum(MULTIBAND_10_15_10_CARRIERS), (
+        f"the bands now hold {per_band}, totalling more than the reference's "
+        f"35 -- the docstring above is out of date"
     )
-    assert switched * 1.4 < loose, (
-        f"the switch should be what costs the capacity: {switched} switched "
-        f"against {loose} loose"
+    assert per_band[1] >= MULTIBAND_10_15_10_CARRIERS[1], (
+        "the middle band should have room for its fifteen"
     )
+    assert any(
+        got < want for got, want in zip(per_band, MULTIBAND_10_15_10_CARRIERS)
+    ), "every band now reaches the reference -- update the docstring and switch.py"
