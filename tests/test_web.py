@@ -342,11 +342,16 @@ def test_the_page_tightens_as_braidpy_does(spec):
             assert mine["closest"] >= d * (1 - 3e-3)
             assert abs(mine["closest"] - history["closest"][-1]) < 0.01 * d
 
-            def length(xy):
-                yarns = xy.reshape(n_yarns, n, 2)
-                return np.sum(np.hypot(*np.diff(yarns, axis=1).transpose(2, 0, 1)))
+            # Length, the very thing tightening shortens: in 3D, every
+            # sample at its height.  Sideways alone, a plait barely
+            # shortens, and two equally tight ones can differ by more.
+            heights = laid.formed()[:, :, 2:]
 
-            assert abs(length(xy_js) / length(xy_py) - 1) < 0.03
+            def length(xy):
+                yarns = np.concatenate([xy.reshape(n_yarns, n, 2), heights], axis=2)
+                return np.sum(np.linalg.norm(np.diff(yarns, axis=1), axis=-1))
+
+            assert abs(length(xy_js) / length(xy_py) - 1) < 0.02
 
 
 def _laid_paths(spec):
