@@ -268,11 +268,19 @@ function show(result, seconds) {
   const group = new THREE.Group();
   const yarns = [];
   const radius = result.yarn_diameter / 2;
+  const times = result.times || result.strands[0].points.map((_, i) => i);
   for (const strand of result.strands) {
     const points = strand.points.map(([x, y, z]) => new THREE.Vector3(x, y, z));
     const curve = new THREE.CatmullRomCurve3(points, false, "centripetal");
     const segments = Math.min(Math.max(points.length * 3, 64), 4000);
     const radial = 10;
+    // When each tube segment was laid: tubes are cut evenly along their
+    // length, which is not evenly along the points.
+    const segmentTimes = new Float64Array(segments + 1);
+    for (let i = 0; i <= segments; i++) {
+      const along = curve.getUtoTmapping(i / segments) * (points.length - 1);
+      segmentTimes[i] = sample(times, along);
+    }
     const tube = new THREE.Mesh(
       new THREE.TubeGeometry(curve, segments, radius, radial, false),
       new THREE.MeshStandardMaterial({
@@ -283,11 +291,11 @@ function show(result, seconds) {
     );
     tube.name = strand.name;
     const line = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(curve.getPoints(segments)),
+      new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
       new THREE.LineBasicMaterial({ color: strand.colour }),
     );
     group.add(tube, line);
-    yarns.push({ tube, line, segments, radial, heights: points.map((p) => p.z) });
+    yarns.push({ tube, line, segments, radial, segmentTimes });
   }
   for (const core of result.cores || []) {
     const from = new THREE.Vector3(...core.from);
@@ -306,13 +314,31 @@ function show(result, seconds) {
     group.add(mesh);
   }
   scene.add(group);
-  braid = { group, yarns, box: new THREE.Box3().setFromObject(group) };
+  const timeline = result.timeline;
+  const clock = timeline
+    ? timeline.clock
+    : { source: [times[0], times[times.length - 1]], braid: [times[0], times[times.length - 1]] };
+  const span = timeline
+    ? [timeline.times[0], timeline.times[timeline.times.length - 1]]
+    : [clock.source[0], clock.source[clock.source.length - 1]];
+  braid = {
+    group,
+    yarns,
+    times,
+    heights: result.strands[0].points.map((p) => p[2]),
+    clock,
+    span,
+    timeline,
+    colours: result.strands.map((strand) => strand.colour),
+    box: new THREE.Box3().setFromObject(group),
+  };
   showTubes($("tubes").checked);
-  made(Number($("made").max));
   $("made").value = $("made").max;
+  made(Number($("made").max));
   fit();
   describe(result, seconds);
   $("empty").hidden = true;
+  $("topview").hidden = !timeline || !$("showtop").checked;
 }
 
 function showTubes(tubes) {
@@ -323,22 +349,138 @@ function showTubes(tubes) {
   }
 }
 
-// Show the braid as it was when ``value`` thousandths of it were made: the
-// oldest rows first, carried up by the take-off, the newest at the fell.
+// Show the braid as it was ``value`` thousandths of the way through its
+// making, by the clock of whatever made it: the oldest rows first, carried
+// up by the take-off, the newest at the fell.  The top view shows what made
+// it, at that same instant.
 function made(value) {
   if (!braid) return;
   const fraction = value / 1000;
+  const [first, last] = braid.span;
+  const now = first + fraction * (last - first);
+  const laid = interpolate(braid.clock.source, braid.clock.braid, now);
   for (const yarn of braid.yarns) {
-    const shown = Math.max(1, Math.round(fraction * yarn.segments));
+    const shown = Math.max(1, countUpTo(yarn.segmentTimes, laid + 1e-9) - 1);
     yarn.tube.geometry.setDrawRange(0, shown * yarn.radial * 6);
     yarn.line.geometry.setDrawRange(0, shown + 1);
   }
-  const heights = braid.yarns[0].heights;
-  const last = heights.length - 1;
-  const at = Math.round(fraction * last);
-  braid.group.position.z = heights[last] - heights[at];
+  const heights = braid.heights;
+  const newest = interpolate(braid.times, heights, laid);
+  braid.group.position.z = heights[heights.length - 1] - newest;
   for (const child of braid.group.children) {
     if (child.userData.core) child.visible = fraction > 0.999;
+  }
+  drawTop(now);
+}
+
+// ``ys`` at ``x``, between the samples ``xs`` (ascending), held at the ends.
+function interpolate(xs, ys, x) {
+  const n = xs.length;
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[n - 1]) return ys[n - 1];
+  let low = 0;
+  let high = n - 1;
+  while (high - low > 1) {
+    const middle = (low + high) >> 1;
+    if (xs[middle] <= x) low = middle;
+    else high = middle;
+  }
+  const span = xs[high] - xs[low];
+  const t = span > 0 ? (x - xs[low]) / span : 0;
+  return ys[low] + t * (ys[high] - ys[low]);
+}
+
+// ``values`` at a fractional index.
+function sample(values, at) {
+  const low = Math.floor(at);
+  const high = Math.min(low + 1, values.length - 1);
+  return values[low] + (at - low) * (values[high] - values[low]);
+}
+
+// How many of the ascending ``values`` are at most ``limit``.
+function countUpTo(values, limit) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (values[middle] <= limit) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+// ---------------------------------------------------------------- top view
+
+const top = $("topview");
+const topContext = top.getContext("2d");
+
+function drawTop(now) {
+  if (!braid || !braid.timeline || top.hidden) return;
+  const view = braid.timeline;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const size = top.clientWidth;
+  if (top.width !== Math.round(size * ratio)) {
+    top.width = top.height = Math.round(size * ratio);
+  }
+  const ctx = topContext;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+  const style = getComputedStyle(document.documentElement);
+  const ink = style.getPropertyValue("--muted").trim();
+  const scale = (size / 2 - 18) / (view.reach || 1);
+  const x = (p) => size / 2 + p[0] * scale;
+  const y = (p) => size / 2 - p[1] * scale;
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = ink;
+  for (const outline of view.outlines) {
+    ctx.beginPath();
+    outline.forEach((p, i) => (i ? ctx.lineTo(x(p), y(p)) : ctx.moveTo(x(p), y(p))));
+    ctx.stroke();
+  }
+  ctx.fillStyle = ink;
+  ctx.font = "10px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (const [sx, sy, name] of view.slots) {
+    const out = 1 + 11 / (Math.hypot(sx, sy) * scale || 1);
+    ctx.fillText(name, x([sx * out, 0]), y([0, sy * out]));
+  }
+
+  // Where each carrier is now; on a disk, the strands lifted over the others
+  // are drawn last, on top.
+  const last = view.times.length - 1;
+  const span = view.times[last] - view.times[0];
+  const at = Math.min(
+    last,
+    Math.max(0, span > 0 ? ((now - view.times[0]) / span) * last : 0),
+  );
+  const where = view.strands.map((path) => {
+    const low = Math.floor(at);
+    const high = Math.min(low + 1, path.length - 1);
+    const t = at - low;
+    return [
+      path[low][0] + t * (path[high][0] - path[low][0]),
+      path[low][1] + t * (path[high][1] - path[low][1]),
+    ];
+  });
+  const order = where
+    .map((p, i) => [Math.hypot(p[0], p[1]), i])
+    .sort((a, b) => b[0] - a[0])
+    .map(([, i]) => i);
+  for (const i of order) {
+    const p = where[i];
+    ctx.strokeStyle = ctx.fillStyle = braid.colours[i % braid.colours.length];
+    if (view.kind === "disk") {
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(size / 2, size / 2);
+      ctx.lineTo(x(p), y(p));
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(x(p), y(p), view.kind === "disk" ? 3.5 : 4.5, 0, 2 * Math.PI);
+    ctx.fill();
   }
 }
 
@@ -419,6 +561,10 @@ function round(value) {
 // ---------------------------------------------------------------- controls
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
+$("showtop").addEventListener("change", (event) => {
+  top.hidden = !event.target.checked || !braid || !braid.timeline;
+  made(Number($("made").value));
+});
 $("spin").addEventListener("change", (event) => {
   controls.autoRotate = event.target.checked;
 });
@@ -436,7 +582,7 @@ $("grow").addEventListener("click", () => {
   $("grow").textContent = growing ? "⏸ Pause" : "▶ Grow";
   if (growing) {
     if (Number($("made").value) >= 1000) $("made").value = 0;
-    growFrom = performance.now() - Number($("made").value) * 8;
+    growFrom = performance.now() - Number($("made").value) * 12;
   }
 });
 
@@ -459,8 +605,8 @@ $("save").addEventListener("click", () => {
 
 function frame(now) {
   if (growing && braid) {
-    // Eight seconds from nothing to the whole braid.
-    const value = Math.min(1000, (now - growFrom) / 8);
+    // Twelve seconds from nothing to the whole braid.
+    const value = Math.min(1000, (now - growFrom) / 12);
     $("made").value = value;
     made(value);
     if (value >= 1000) {

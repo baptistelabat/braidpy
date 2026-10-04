@@ -130,3 +130,44 @@ def test_nothing_heavy_is_loaded_to_build_a_braid():
         [sys.executable, "-c", code], capture_output=True, text=True, check=True
     )
     assert out.stdout.strip() == "[]"
+
+
+@pytest.mark.parametrize("source", ["word", "kumihimo", "mobidai", "sinnet", "machine"])
+def test_what_made_the_braid_comes_with_it_in_step(source):
+    about = catalogue()[source]
+    result = build(
+        {"source": source, **about["defaults"], "iterations": 5, "cycles": 2}
+    )
+    timeline = result["timeline"]
+    n = len(result["strands"])
+    # A path per yarn, in the same order, sampled at the timeline's times.
+    assert len(timeline["strands"]) == n
+    assert all(len(path) == len(timeline["times"]) for path in timeline["strands"])
+    assert timeline["kind"] in {"disk", "machine", "line"}
+    assert timeline["reach"] > 0
+    # Every point of the braid has a time, and they run oldest first.
+    times = result["times"]
+    assert len(times) == len(result["strands"][0]["points"])
+    assert times == sorted(times)
+    # The clock relates the two, and only ever goes forwards.
+    clock = timeline["clock"]
+    assert len(clock["source"]) == len(clock["braid"]) >= 2
+    assert clock["source"] == sorted(clock["source"])
+    assert clock["braid"] == sorted(clock["braid"])
+    assert clock["braid"][-1] >= times[-1] - 1e-6
+
+
+def test_a_disk_braid_is_made_in_step_with_its_crossings():
+    from braidpy.take_off import disk_crossing_steps, mobidai_steps
+    from braidpy.mobidai_catalog import KONGO_8
+
+    result = build(
+        {"source": "mobidai", "name": "KONGO_8", "cycles": 2, "iterations": 5}
+    )
+    start, steps = mobidai_steps(KONGO_8.to_config(), 2)
+    _, crossings, made_at = disk_crossing_steps(start, steps, 32)
+    clock = result["timeline"]["clock"]
+    # Each crossing reaches the fell as the disk makes it, half way into its row.
+    assert clock["source"][1:-1] == made_at
+    assert all(row % 1 == 0.5 for row in clock["braid"][1:-1])
+    assert len(clock["braid"]) == len(crossings) + 2

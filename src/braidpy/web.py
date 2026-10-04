@@ -240,8 +240,12 @@ def build(spec: Mapping[str, Any]) -> Dict[str, Any]:
         ``points`` of its yarn's centreline, oldest first, the braid's axis
         along z; ``yarn_diameter``; ``info``, what is known of the braid —
         strands, its word and crossings, the permutation it makes; and
-        ``notes`` worth telling whoever asked.  A machine braiding round a
-        core also gives its ``cores``, each a segment ``from`` and ``to``.
+        ``notes`` worth telling whoever asked.  ``times`` says when each
+        point was laid, and ``timeline`` what laid it, seen from above —
+        the carriers' paths, the outlines under them and the slots — with
+        its ``clock`` relating the source's time to the braid's.  A machine
+        braiding round a core also gives its ``cores``, each a segment
+        ``from`` and ``to``.
 
     Raises:
         ValueError: If the description cannot be made.
@@ -310,17 +314,19 @@ def _result(
     names: Optional[Sequence[str]] = None,
     info: Optional[Dict[str, Any]] = None,
     notes: Sequence[str] = (),
+    timeline: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Everything the page draws, as plain data."""
     n = paths.formed_count
     keys: List[Hashable] = list(paths.points)
     stride = max(1, math.ceil(n / _MAX_POINTS))
     centre = np.array([paths.axis[0], paths.axis[1], 0.0])
+    chosen = list(range(0, n, stride))
+    if chosen[-1] != n - 1:
+        chosen.append(n - 1)
     strands = []
     for i, key in enumerate(keys):
-        points = np.asarray(paths.points[key][:n:stride], dtype=float) - centre
-        if stride > 1 and (n - 1) % stride:
-            points = np.vstack([points, paths.points[key][n - 1] - centre])
+        points = np.asarray(paths.points[key], dtype=float)[chosen] - centre
         if not np.all(np.isfinite(points)):
             raise ValueError("The braid could not be laid: its yarns ran off.")
         colour = colours[i % len(colours)] if colours else _PALETTE[i % len(_PALETTE)]
@@ -340,13 +346,115 @@ def _result(
         )
     except Exception:  # an estimate only; never worth failing the braid over
         pass
-    return {
+    result: Dict[str, Any] = {
         "title": title,
         "strands": strands,
+        # When each point was laid, in the source's time: the same for
+        # every yarn, since they are laid together.
+        "times": np.round(np.asarray(paths.times)[chosen], _DECIMALS).tolist(),
         "yarn_diameter": diameter,
         "info": out_info,
         "notes": list(notes),
     }
+    if timeline is not None:
+        result["timeline"] = timeline
+    return result
+
+
+def _timeline(
+    trajectories,
+    keys: Sequence[Hashable],
+    kind: str,
+    clock: Optional[Dict[str, List[float]]] = None,
+) -> Dict[str, Any]:
+    """What made the braid, seen from above, over time: for the page to
+    animate in step with the braid.
+
+    Args:
+        trajectories: The carriers' paths.
+        keys: The strands, in the order the braid gives them.
+        kind: ``disk`` — strands drawn as spokes to the middle — or
+            ``machine``, or ``line``.
+        clock: The source's time at some instants, and the braid's then;
+            the same times if None.
+    """
+    times = np.asarray(trajectories.times, dtype=float)
+    stride = max(1, math.ceil(len(times) / 3000))
+    chosen = list(range(0, len(times), stride))
+    if chosen[-1] != len(times) - 1:
+        chosen.append(len(times) - 1)
+    cx, cy = trajectories.centre()
+    shift = np.array([cx, cy])
+
+    def plane(points) -> List[List[float]]:
+        return np.round(np.asarray(points, dtype=float) - shift, 3).tolist()
+
+    strands = [plane(trajectories.xy[k][chosen]) for k in keys]
+    outlines = [
+        plane(outline[:: max(1, len(outline) // 400)])
+        for outline in trajectories.outlines
+    ]
+    reach = max(
+        float(np.max(np.hypot(*(np.asarray(p) - shift).T)))
+        for p in [*trajectories.xy.values(), *trajectories.outlines]
+    )
+    if clock is None:
+        clock = {
+            "source": [float(times[0]), float(times[-1])],
+            "braid": [float(times[0]), float(times[-1])],
+        }
+    return {
+        "kind": kind,
+        "times": np.round(times[chosen], _DECIMALS).tolist(),
+        "strands": strands,
+        "outlines": outlines,
+        "slots": [
+            [round(x - cx, 3), round(y - cy, 3), name]
+            for x, y, name in trajectories.slots
+        ],
+        "reach": round(reach, 3),
+        "clock": clock,
+    }
+
+
+def _disk_in_step(
+    start,
+    steps,
+    n_slots: int,
+    diameter: float,
+    iterations: int,
+    clockwise: bool,
+):
+    """A disk's braid, laid round a ring with its rows made in the order
+    the disk makes their crossings — as the side view of
+    :class:`~braidpy.disk_animation.BraidGrowth` does — so the page can show
+    the disk and the braid in step.
+
+    Returns:
+        The braid, and its clock: the disk's time at each crossing, and the
+        braid's then.
+    """
+    from braidpy.take_off import (
+        crossing_rows,
+        disk_crossing_steps,
+        lay_yarns,
+        ring_trajectories,
+        tighten_yarns,
+    )
+
+    order, crossings, made_at = disk_crossing_steps(start, steps, n_slots)
+    if not crossings:
+        raise ValueError("These moves cross no strands: there is no braid.")
+    rows = crossing_rows(order, crossings, in_turn=True)
+    ring = ring_trajectories(order, crossings, diameter, clockwise=clockwise, rows=rows)
+    paths = lay_yarns(ring, take_off=1.5 * diameter, yarn_diameter=diameter)
+    if iterations:
+        paths, _ = tighten_yarns(paths, diameter, iterations=iterations)
+    clock = {
+        "source": [0.0, *map(float, made_at), float(len(steps))],
+        "braid": [0.0, *(r + 0.5 for r in rows), float(rows[-1] + 1)],
+    }
+    return paths, clock
 
 
 def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
@@ -391,6 +499,7 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
         paths,
         diameter,
         info=_braid_info(word, n_strands),
+        timeline=_timeline(trajectories, list(paths.points), "line"),
     )
 
 
@@ -406,7 +515,7 @@ def _disk_info(start, steps, n_slots: int, clockwise: bool) -> Dict[str, Any]:
 
 
 def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
-    from braidpy.take_off import disk_braid, kumihimo_steps
+    from braidpy.take_off import kumihimo_steps, kumihimo_trajectories
 
     pattern = re.sub(r"\s+", "", str(spec.get("pattern", "SR"))).upper()
     if not pattern or set(pattern) - {"S", "R"}:
@@ -417,25 +526,27 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
     repeat = _count(spec, "repeat", 8, 1, 50)
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
     n_slots, start, steps = kumihimo_steps(pattern * repeat, n_strands)
-    paths = disk_braid(
+    paths, clock = _disk_in_step(
         start,
         steps,
         n_slots,
         diameter,
-        iterations=_count(spec, "iterations", 200, 0, 2000),
+        _count(spec, "iterations", 200, 0, 2000),
         clockwise=False,
     )
+    disk = kumihimo_trajectories(pattern * repeat, n_strands)
     return _result(
         f"Kumihimo {pattern} × {repeat}, {n_strands} strands",
         paths,
         diameter,
         colours=_hues(n_strands),
         info=_disk_info(start, steps, n_slots, clockwise=False),
+        timeline=_timeline(disk, list(paths.points), "disk", clock),
     )
 
 
 def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
-    from braidpy.take_off import disk_braid, mobidai_steps
+    from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     mobidais = _mobidais()
     name = str(spec.get("name", "KONGO_8"))
@@ -447,26 +558,30 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
     start, steps = mobidai_steps(config, cycles)
     clockwise = getattr(config, "is_clockwise", True)
-    paths = disk_braid(
+    paths, clock = _disk_in_step(
         start,
         steps,
         config.n_slots,
         diameter,
-        iterations=_count(spec, "iterations", 200, 0, 2000),
+        _count(spec, "iterations", 200, 0, 2000),
         clockwise=clockwise,
     )
-    colours = [colour for _, colour in entry.initial_slots]
+    # Coloured by strand, in the order the braid gives them.
+    colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
+    disk = mobidai_trajectories(config, n_cycles=cycles, slot_offset=0.5)
     return _result(
         f"{entry.name[0].upper()}{entry.name[1:]}, {cycles} cycles",
         paths,
         diameter,
-        colours=colours,
+        colours=[colour_of[k] for k in paths.points],
         info=_disk_info(start, steps, config.n_slots, clockwise),
+        timeline=_timeline(disk, list(paths.points), "disk", clock),
     )
 
 
 def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.take_off import disk_trajectories
 
     sinnets = _sinnets()
     name = str(spec.get("name", "abok_3042"))
@@ -475,12 +590,25 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     sinnet = sinnets[name]
     cycles = _count(spec, "cycles", 3, 1, 12)
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
-    paths = sinnet.braid_3d(
-        diameter,
-        n_cycles=cycles,
-        iterations=_count(spec, "iterations", 200, 0, 2000),
-    )
     disk = sinnet.disk(cycles)
+    paths, clock = _disk_in_step(
+        disk.start,
+        disk.steps,
+        disk.n_slots,
+        diameter,
+        _count(spec, "iterations", 200, 0, 2000),
+        clockwise=False,
+    )
+    seen = disk_trajectories(
+        disk.start,
+        disk.steps,
+        disk.n_slots,
+        clockwise=False,
+        slot_offset=disk.slot_offset,
+        slot_names={
+            disk.middle_slot(space): str(space) for space in range(1, disk.n_spaces + 1)
+        },
+    )
     notes = []
     counts = list(sinnet.initial_counts_per_space)
     for source, target in sinnet.moves:
@@ -496,9 +624,10 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         f"{cycles} cycles",
         paths,
         diameter,
-        colours=strand_colours(sinnet.n_strands),
+        colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
         info=_disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False),
         notes=notes,
+        timeline=_timeline(seen, list(paths.points), "disk", clock),
     )
 
 
@@ -562,6 +691,7 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
         diameter,
         info=info,
         notes=notes,
+        timeline=_timeline(paths.trajectories, list(paths.points), "machine"),
     )
     heights = [p[2] for strand in result["strands"] for p in strand["points"]]
     top, fell = float(max(heights)), float(min(heights))

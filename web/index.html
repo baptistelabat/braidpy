@@ -90,6 +90,12 @@
 
     <main class="stage">
       <div id="viewer" class="viewer" aria-label="The braid in 3D"></div>
+      <canvas
+        id="topview"
+        class="topview"
+        hidden
+        aria-label="What made the braid, seen from above"
+      ></canvas>
       <div class="toolbar" role="toolbar" aria-label="View">
         <button id="grow" type="button" title="Watch the braid being made">
           ▶ Grow
@@ -107,6 +113,9 @@
         >
         <label class="check"
           ><input id="spin" type="checkbox" /> Spin</label
+        >
+        <label class="check"
+          ><input id="showtop" type="checkbox" checked /> Top view</label
         >
         <button id="reset" type="button" title="Back to the starting view">
           Reset view
