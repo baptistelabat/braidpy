@@ -432,3 +432,35 @@ def test_the_round_strand_model_cannot_make_a_tight_tube():
         tubular_braid_clearance(tubular_braid(8, tight, angle, diameter), 400)
         < diameter * 0.7
     )
+
+
+@pytest.mark.parametrize("n", [2, 3, 4, 5])
+def test_a_solid_braid_keeps_the_rings_relations(n):
+    """Filling the middle respects what the ring's moves satisfy."""
+    from braidpy import Braid
+    from braidpy.annulus_braid import solid_word
+
+    def flat(moves):
+        # Times σ₁, as the identity cannot be compared.
+        return Braid(solid_word(moves, n) + [1], n)
+
+    t = turn(n)
+    # Turning the numbering on by one makes each crossing the one before.
+    for i in range(2, n + 1):
+        assert flat([t, i, -t]) == flat([i - 1])
+    assert flat([t, 1, -t]) == flat([wrap_crossing(n)])
+    # A whole turn of the ring is a full twist.
+    assert flat([t] * n) == Braid(list(range(1, n)) * n + [1], n)
+    # A strand going once round inside all the others is not linked with
+    # any; going round outside them, it is.
+    inside = [-i for i in range(1, n)] + [t]
+    outside = [i for i in range(1, n)] + [t]
+    assert flat(inside) == Braid([1], n)
+    assert flat(outside) != Braid([1], n)
+
+
+def test_a_solid_braid_refuses_moves_the_ring_has_not():
+    from braidpy.annulus_braid import solid_word
+
+    with pytest.raises(ValueError, match="No move"):
+        solid_word([5], 3)

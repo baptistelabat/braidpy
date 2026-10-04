@@ -24,6 +24,9 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [x] Kumihimo and mobidai disks animated from above, strands as spokes to
       the braiding point, moving continuously from step to step
 - [ ] Kumihimo braid with Marudai diagram
+- [x] Ashley solid sinnets (ABOK #3042–3054): each strand followed round its
+      disk, animated with the braid growing below it, laid in 3D, and
+      converted to a braid word or to a kumihimo disk (mobidai) pattern
 - [x] A braid as it comes off whatever made it, in 3D — a horn gear machine,
       a braid word, a mobidai or a kumihimo disk: laid with no tension,
       converging on a braiding point or fell circle, and tightened
@@ -97,6 +100,20 @@ runs each one, and keeps the fullest that never collides. `visualize_machine`
 and `animate` draw the result, and `gen_demos.py` writes a page per machine —
 flat, tubular, soutache, diamond, and a Jacquard lace machine whose gears
 interpenetrate and whose switches are driven by a punched programme.
+
+## Ashley solid sinnets
+
+The solid sinnets of the Ashley Book of Knots are worked on a disk: each move
+takes the earliest strand of a space over every strand it passes to another
+space.
+
+```python
+from braidpy.solid_sinnets_catalog import abok_3042
+
+abok_3042.braid()        # the braid word one cycle makes
+abok_3042.to_mobidai()   # the same, as a kumihimo disk pattern
+abok_3042.animate(n_cycles=3, side_view=True, output_html="3042.html")
+```
 
 ## The shape a braid takes
 

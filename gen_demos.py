@@ -29,7 +29,13 @@ from braidpy.take_off import (  # noqa: E402
     lay_yarns,
     mobidai_braid,
 )
-from braidpy.disk_animation import animate_kumihimo, animate_mobidai  # noqa: E402
+from braidpy.disk_animation import (  # noqa: E402
+    animate_kumihimo,
+    animate_mobidai,
+    animate_sinnet,
+)
+from braidpy.ashley_solid_sinnet import strand_colours  # noqa: E402
+from braidpy.solid_sinnets_catalog import abok_3042  # noqa: E402
 from braidpy.mobidai_catalog import KONGO_8  # noqa: E402
 from braidpy.take_off import visualize_yarns as visualize_yarns_from  # noqa: E402
 from braidpy.horn_gear.examples import (  # noqa: E402
@@ -168,7 +174,25 @@ def other_sources() -> int:
         "SR" * 8, n_strands=8, side_view=True, output_html="demo_kumihimo_sr_8.html"
     )
     print("demo_kumihimo_sr_8.html")
-    return 4
+
+    # An Ashley solid sinnet, ABOK #3042: eight strands in six spaces, each
+    # moved over all it passes, followed strand by strand on its disk.
+    animate_sinnet(
+        abok_3042,
+        n_cycles=3,
+        side_view=True,
+        title="ABOK #3042, 8-strand round sinnet — the disk, and the braid below",
+        output_html="demo_sinnet_3042.html",
+    )
+    print("demo_sinnet_3042.html")
+    visualize_yarns_from(
+        abok_3042.braid_3d(0.12, n_cycles=4),
+        title="ABOK #3042, 8-strand round sinnet — tightened",
+        colors=strand_colours(abok_3042.n_strands),
+        output_html="demo_sinnet_3042_braid.html",
+    )
+    print("demo_sinnet_3042_braid.html")
+    return 6
 
 
 def main() -> None:
