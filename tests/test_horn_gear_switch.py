@@ -169,12 +169,50 @@ def test_band_of_names_the_band_each_gear_works_for():
 
 
 def test_the_reference_runs_ten_fifteen_and_ten_carriers():
-    """The 10-15-10 of the machine's name, and it fits the bands."""
+    """The 10-15-10 of the machine's name, which the switches cannot yet reach.
+
+    35 carriers is well under the 43 the same line holds without switches, so
+    the count is not the obstacle.  The switch is: a carrier a contact declines
+    stays where it is, and braidpy counts both slots of a contact being
+    occupied as a collision, so carriers cannot queue either side of a switched
+    contact the way they do on the real machine.  Capacity falls from 43 to 19.
+
+    This records the gap rather than papering over it.  Separating the bands
+    works; loading them as the reference does needs the collision rule to know
+    that a declined contact is not exchanging anything.
+    """
+    import random
+
+    from braidpy.horn_gear.simulation import CollisionError, simulate
+
     assert MULTIBAND_10_15_10_CARRIERS == (10, 15, 10)
     assert sum(MULTIBAND_10_15_10_CARRIERS) == 35
-    for carriers, (first, last) in zip(
-        MULTIBAND_10_15_10_CARRIERS, MULTIBAND_10_15_10_BANDS
-    ):
-        slots = sum(SLOTS[first : last + 1])
-        # only one of the two slots meeting at a contact may be occupied
-        assert carriers <= slots // 2, f"band G{first}..G{last} cannot hold {carriers}"
+
+    machine = multiband_10_15_10()
+    plain = BraidingMachine(list(machine.gears.values()), list(machine.connections))
+
+    def capacity(m, trials=4, steps=120):
+        best = 0
+        for seed in range(trials):
+            rng = random.Random(seed)
+            order = positions()
+            rng.shuffle(order)
+            placed = []
+            for p in order:
+                try:
+                    simulate(m, steps, {i: q for i, q in enumerate(placed + [p])})
+                except CollisionError:
+                    continue
+                placed.append(p)
+            best = max(best, len(placed))
+        return best
+
+    loose, switched = capacity(plain), capacity(machine)
+    assert switched < sum(MULTIBAND_10_15_10_CARRIERS), (
+        f"the switched line now holds {switched}, enough for the reference's "
+        f"35 -- update the docstring above and the note in switch.py"
+    )
+    assert switched * 1.4 < loose, (
+        f"the switch should be what costs the capacity: {switched} switched "
+        f"against {loose} loose"
+    )

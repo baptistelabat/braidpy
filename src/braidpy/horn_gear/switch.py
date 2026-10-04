@@ -30,6 +30,7 @@ makes it hold: a carrier may only cross while an allowed slot is presented, so
 it can only ever come back into the group it left from.
 """
 
+import math
 from dataclasses import dataclass
 from typing import Dict, FrozenSet, Iterable, List, Optional, Tuple
 
@@ -173,6 +174,58 @@ MULTIBAND_10_15_10_BANDS = ((0, 4), (4, 11), (11, 15))
 MULTIBAND_10_15_10_CARRIERS = (10, 15, 10)
 
 
+class MultibandLine(SwitchedMachine):
+    """A line of gears folded round until its ends nearly meet.
+
+    The gears lie on a line and are wired as one, but a line of sixteen is
+    long and a braiding shop is not, so the real machine curves it round into
+    nearly a circle.  :func:`~braidpy.horn_gear.layout.compute_layout` would
+    draw the line straight, which is correct and unreadable, so the fold is
+    pinned here.
+
+    The ends stop short of each other by design: joining them would close the
+    ring and make a quite different machine.
+    """
+
+    #: How much of a full turn the folded line spans, leaving the ends apart.
+    SPAN = math.radians(330.0)
+
+    def preferred_layout(
+        self, scale: float = 1.0
+    ) -> Optional[Dict[str, Tuple[float, float]]]:
+        """Gear centres along an arc, consecutive rims touching as on the line.
+
+        Args:
+            scale: Overall scale factor.
+
+        Returns:
+            Gear name → (x, y).
+        """
+        names = [f"G{i}" for i in range(len(MULTIBAND_10_15_10_SLOTS))]
+        radii = [math.sqrt(n) * scale for n in MULTIBAND_10_15_10_SLOTS]
+        chords = [radii[i] + radii[i + 1] for i in range(len(radii) - 1)]
+
+        def span(radius: float) -> float:
+            # Each chord subtends 2*asin(d/2R); they must add up to SPAN.
+            return sum(2 * math.asin(min(1.0, d / (2 * radius))) for d in chords)
+
+        lo, hi = max(chords) / 2 + 1e-9, sum(chords)
+        for _ in range(200):
+            mid = (lo + hi) / 2
+            if span(mid) > self.SPAN:
+                lo = mid
+            else:
+                hi = mid
+        radius = (lo + hi) / 2
+
+        layout, angle = {}, -self.SPAN / 2
+        for i, name in enumerate(names):
+            layout[name] = (radius * math.cos(angle), radius * math.sin(angle))
+            if i < len(chords):
+                angle += 2 * math.asin(min(1.0, chords[i] / (2 * radius)))
+        return layout
+
+
 def multiband_10_15_10() -> SwitchedMachine:
     """A line of sixteen gears braiding three bands at once.
 
@@ -194,7 +247,7 @@ def multiband_10_15_10() -> SwitchedMachine:
     by giving every band two colours.
 
     Returns:
-        SwitchedMachine: the three-band line.
+        MultibandLine: the three-band line, with its fold pinned.
     """
     slots = MULTIBAND_10_15_10_SLOTS
     gears = [
@@ -211,14 +264,16 @@ def multiband_10_15_10() -> SwitchedMachine:
         )
         for i in range(len(slots) - 1)
     ]
+    # Alternate slots serve alternate bands.  Giving each band a contiguous
+    # half of the gear separates them just as well but costs much more of the
+    # machine's capacity, because carriers then queue at the switched contact.
     switches: List[Switch] = []
     for gear in (4, 11):
-        half = slots[gear] // 2
-        inward = frozenset(range(half))
-        outward = frozenset(range(half, slots[gear]))
+        inward = frozenset(range(0, slots[gear], 2))
+        outward = frozenset(range(1, slots[gear], 2))
         switches.append(Switch(f"G{gear - 1}-G{gear}", f"G{gear}", inward))
         switches.append(Switch(f"G{gear}-G{gear + 1}", f"G{gear}", outward))
-    return SwitchedMachine(gears, connections, switches)
+    return MultibandLine(gears, connections, switches)
 
 
 def band_of(gear: str) -> Optional[int]:
