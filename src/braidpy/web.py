@@ -42,6 +42,7 @@ from contextvars import ContextVar
 from typing import (
     Any,
     Callable,
+    Collection,
     Dict,
     Hashable,
     List,
@@ -285,7 +286,7 @@ def catalogue() -> Dict[str, Any]:
         },
         "machine": {
             "title": "Horn gear braiding machine",
-            "defaults": {"name": "tubular_8", "cycles": 2},
+            "defaults": {"name": "tubular_8", "cores": "yarn", "cycles": 2},
             "entries": [
                 {"name": name, "title": title}
                 for name, title in _MACHINE_TITLES.items()
@@ -372,7 +373,13 @@ def _count(spec: Mapping[str, Any], key: str, default: int, low: int, high: int)
     return int(value)
 
 
-def _tightened(paths, diameter: float, iterations: int, core_radius=None):
+def _tightened(
+    paths,
+    diameter: float,
+    iterations: int,
+    core_radius=None,
+    rigid: Sequence[Hashable] = (),
+):
     """The yarns pulled taut — or, for a page that does it itself, as laid,
     with what it needs to do so noted for :func:`_result`."""
     from braidpy.take_off import tighten_yarns
@@ -395,18 +402,25 @@ def _tightened(paths, diameter: float, iterations: int, core_radius=None):
                 "core_radius": None if core_radius is None else float(core_radius),
                 "centre": [float(paths.axis[0]), float(paths.axis[1])],
                 "xy": np.round(formed[:, :, :2].reshape(-1), 9).tolist(),
+                "rigid": [k in rigid for k in paths.points],
             }
         )
         return paths
     tightened, _ = tighten_yarns(
-        paths, diameter, iterations=iterations, core_radius=core_radius
+        paths, diameter, iterations=iterations, core_radius=core_radius, rigid=rigid
     )
     return tightened
 
 
-def _tighten(paths, spec: Mapping[str, Any], diameter: float, default: int = 150):
+def _tighten(
+    paths,
+    spec: Mapping[str, Any],
+    diameter: float,
+    default: int = 150,
+    rigid: Sequence[Hashable] = (),
+):
     iterations = _count(spec, "iterations", default, 0, 2000)
-    return _tightened(paths, diameter, iterations)
+    return _tightened(paths, diameter, iterations, rigid=rigid)
 
 
 def _result(
@@ -850,9 +864,14 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
     diameter = _number(spec, "yarn_diameter", default, 0.01, 10.0)
     layout = compute_layout(machine)
     cores = axial_positions(machine, layout)
-    # A core is a yarn too, one that stays where it enters the braid: drawn
-    # in to the fell and tightened with the others, it ends up inside, held
-    # there by the yarns crossing round it.
+    stiff = str(spec.get("cores", "yarn"))
+    if stiff not in ("yarn", "rigid"):
+        raise ValueError("Cores are either yarn or rigid.")
+    # The cores run up the braid, each in its own place, where the machine
+    # lays it; the yarns are drawn in round them.  A rigid core stays
+    # straight there; a core of yarn is held there at both ends, and gives
+    # way between to the yarns pressing on it — never so far as to pass
+    # another core.
     paths = yarn_paths(
         machine,
         n_cycles=cycles,
@@ -860,7 +879,10 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
         fell_radius=0.0,
         axials=True,
     )
-    paths = _tighten(paths, spec, diameter)
+    paths = _place_cores(paths, cores)
+    paths = _tighten(
+        paths, spec, diameter, rigid=list(cores) if stiff == "rigid" else []
+    )
     info: Dict[str, Any] = {}
     notes = ["Words are read over one cycle of the machine."]
     if cores:
@@ -888,6 +910,23 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
     )
+
+
+def _place_cores(paths, cores: Collection[Hashable]):
+    """The cores, each standing straight in the braid where the machine
+    lays it, all the way down to the fell: drawn in to the braiding point
+    with the yarns, the cores would meet there, and could pass each other."""
+    from dataclasses import replace
+
+    if not cores:
+        return paths
+    points = dict(paths.points)
+    n = paths.formed_count
+    for k in cores:
+        line = points[k].copy()
+        line[:n, :2] = line[0, :2]
+        points[k] = line
+    return replace(paths, points=points)
 
 
 def _hues(n: int) -> List[str]:

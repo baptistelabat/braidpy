@@ -78,6 +78,8 @@
    * @param {boolean} job.hold_top
    * @param {?number} job.core_radius
    * @param {number[]} job.centre  The axis, for the core.
+   * @param {boolean[]} [job.rigid]  Yarns held where they are all along,
+   *     as stiff cores.
    * @param {function(number):void} [progress]  Told the fraction done.
    * @returns {{xy: Float64Array, closest: number}}
    */
@@ -101,7 +103,8 @@
     const free = new Float64Array(rows);
     for (let k = 0; k < rows; k++) {
       const level = k % n;
-      held[k] = level === n - 1 || (level === 0 && job.hold_top) ? 1 : 0;
+      const rigid = job.rigid && job.rigid[Math.floor(k / n)];
+      held[k] = rigid || level === n - 1 || (level === 0 && job.hold_top) ? 1 : 0;
       free[k] = held[k] ? 0 : 1;
     }
     const settle = makeSettle(n, 0.5 * job.step, job.hold_top);

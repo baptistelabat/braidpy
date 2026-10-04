@@ -436,3 +436,14 @@ footer {
     height: 56vh;
   }
 }
+
+.diagram canvas {
+  display: block;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.diagram small {
+  color: var(--muted);
+}

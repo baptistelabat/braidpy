@@ -18,6 +18,13 @@ The page has a form and a 3D view.
   pattern and how often to repeat it; which braid, and for how many cycles.
   The advanced section sets the yarn diameter and how hard the yarns are
   pulled (the tightening steps; 0 lays them with no tension).
+- A braid word is drawn as it is typed, as a 2D diagram — strands running
+  down, the one passing behind broken where they cross — before the braid
+  is made.
+- A machine that braids round **cores** braids them in either as yarn, held
+  at both ends and giving way between to the yarns pressing on it, or as
+  rigid cores, straight; either way each core keeps its own place, where the
+  machine lays it, and no yarn or other core ever passes through it.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
   moves…" shows what the braid chosen before is made of — the slots its
   strands start in and its moves, or its spaces' counts and moves — ready to

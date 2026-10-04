@@ -88,6 +88,16 @@ const FIELDS = {
   ],
   machine: [
     { name: "name", label: "Machine", kind: "entries" },
+    {
+      name: "cores",
+      label: "Cores",
+      kind: "choice",
+      choices: [
+        ["yarn", "Yarn: gives way to the yarns braided round it"],
+        ["rigid", "Rigid: stays straight"],
+      ],
+      hint: "For a machine that braids round cores.",
+    },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
   ],
 };
@@ -113,6 +123,9 @@ function renderFields(source, values = {}) {
         const option = new Option(entry.title, entry.name);
         input.append(option);
       }
+    } else if (field.kind === "choice") {
+      input = document.createElement("select");
+      for (const [value, text] of field.choices) input.append(new Option(text, value));
     } else if (field.kind === "textarea") {
       input = document.createElement("textarea");
       input.rows = 2;
@@ -176,6 +189,7 @@ function renderFields(source, values = {}) {
     }
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
+  if (source === "word") attachDiagram(holder);
   if (about.examples) {
     const examples = document.createElement("div");
     examples.className = "examples";
@@ -191,6 +205,119 @@ function renderFields(source, values = {}) {
     }
     holder.append(examples);
   }
+}
+
+// ----------------------------------------------------------------- diagram
+
+// The braid word drawn as it is typed, before it is made: strands running
+// down the page, the one passing behind broken where they cross.  σᵢ takes
+// strand i over strand i + 1, as braidpy draws it.
+
+// The colours braidpy gives a word's strands (web._PALETTE).
+const PALETTE = [
+  "#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628",
+  "#f781bf", "#999999", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3",
+];
+
+// braidpy.web.parse_word, in JavaScript: 1 -2, s1 s2^-1 or aB.
+function parseWord(text) {
+  text = text.trim();
+  if (!text) return [];
+  if (/^[A-Za-z]+$/.test(text) && !/[sσ]\d/.test(text)) {
+    return [...text].map((c) =>
+      c === c.toLowerCase() ? c.charCodeAt(0) - 96 : -(c.charCodeAt(0) - 64),
+    );
+  }
+  const word = [];
+  for (const token of text.split(/[\s,;.]+/)) {
+    if (!token) continue;
+    if (/^[+-]?\d+$/.test(token)) {
+      word.push(Number(token));
+      continue;
+    }
+    const named = token.match(/^[sσ](\d+)(\^?\(?(-?1)\)?)?$/);
+    if (!named) throw new Error(`Cannot read “${token}” as a generator.`);
+    word.push(named[3] === "-1" ? -Number(named[1]) : Number(named[1]));
+  }
+  if (word.some((g) => g === 0)) throw new Error("Generators are numbered from 1.");
+  return word;
+}
+
+function attachDiagram(holder) {
+  const wordField = holder.querySelector("[name=word]");
+  const strandsField = holder.querySelector("[name=n_strands]");
+  const figure = document.createElement("div");
+  figure.className = "diagram";
+  const canvas = document.createElement("canvas");
+  const caption = document.createElement("small");
+  figure.append(canvas, caption);
+  wordField.closest("label").after(figure);
+  const draw = () => drawDiagram(canvas, caption, wordField.value, Number(strandsField.value));
+  wordField.addEventListener("input", draw);
+  strandsField.addEventListener("input", draw);
+  new ResizeObserver(() => {
+    if (!canvas.isConnected) return;
+    draw();
+  }).observe(figure);
+  draw();
+}
+
+function drawDiagram(canvas, caption, text, strands) {
+  let word;
+  try {
+    word = parseWord(text);
+    caption.textContent = "";
+  } catch (error) {
+    caption.textContent = error.message;
+    canvas.hidden = true;
+    return;
+  }
+  const needed = word.length ? Math.max(...word.map(Math.abs)) + 1 : 2;
+  const n = Math.max(needed, Number.isFinite(strands) ? strands : 0, 2);
+  canvas.hidden = !word.length;
+  if (!word.length) return;
+  if (n > (Number.isFinite(strands) ? strands : n)) {
+    caption.textContent = `σ${needed - 1} needs ${needed} strands: drawn with ${n}.`;
+  }
+  const width = canvas.parentElement.clientWidth;
+  const row = Math.max(6, Math.min(28, 360 / word.length));
+  const height = row * (word.length + 1);
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  const column = Math.min(44, (width - 24) / n);
+  const left = (width - column * (n - 1)) / 2;
+  const X = (slot) => left + slot * column;
+  const lineWidth = Math.max(1.5, Math.min(3, column / 8));
+  const background = getComputedStyle(canvas).backgroundColor;
+  // Which strand is in each slot, row by row.
+  let order = [...Array(n).keys()];
+  ctx.lineCap = "round";
+  const stroke = (strand, from, to, y, wide) => {
+    ctx.beginPath();
+    ctx.moveTo(X(from), y);
+    ctx.bezierCurveTo(X(from), y + row / 2, X(to), y + row / 2, X(to), y + row);
+    ctx.strokeStyle = wide ? background : PALETTE[strand % PALETTE.length];
+    ctx.lineWidth = wide ? lineWidth * 3.5 : lineWidth;
+    ctx.stroke();
+  };
+  word.forEach((g, k) => {
+    const y = row / 2 + k * row;
+    const i = Math.abs(g) - 1;
+    for (let slot = 0; slot < n; slot++) {
+      if (slot !== i && slot !== i + 1) stroke(order[slot], slot, slot, y);
+    }
+    // σᵢ: the strand in slot i passes over; its inverse, under.
+    const [under, over] = g > 0 ? [i + 1, i] : [i, i + 1];
+    stroke(order[under], under, under === i ? i + 1 : i, y);
+    stroke(order[over], over, over === i ? i + 1 : i, y, true);
+    stroke(order[over], over, over === i ? i + 1 : i, y);
+    [order[i], order[i + 1]] = [order[i + 1], order[i]];
+  });
 }
 
 // ------------------------------------------------------------------ editor

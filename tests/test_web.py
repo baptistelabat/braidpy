@@ -106,6 +106,46 @@ def test_a_machine_braids_its_cores_in_as_yarns():
         assert np.all(core["points"][middle][:2] <= high)
 
 
+@pytest.mark.parametrize("cores", ["yarn", "rigid"])
+def test_a_machines_cores_never_cross_or_touch_a_yarn(cores):
+    """Each core keeps its own place, down to the fell: the yarns are pushed
+    off it, and the two cores never come together, let alone pass."""
+    import numpy as np
+
+    result = build(
+        {"source": "machine", "name": "soutache_7", "cycles": 2, "cores": cores}
+    )
+    d = result["yarn_diameter"]
+    assert result["info"]["closest_approach"] >= 0.99 * d
+    a, b = [
+        np.array(s["points"]) for s in result["strands"] if s["name"].startswith("Core")
+    ]
+    gap = a[:, :2] - b[:, :2]
+    assert np.linalg.norm(gap, axis=1).min() >= 0.99 * d
+    # Never on the other side of one another.
+    assert np.all(gap[:, 0] * gap[0, 0] > 0)
+
+
+def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
+    import numpy as np
+
+    def spread(cores):
+        result = build(
+            {"source": "machine", "name": "soutache_5", "cycles": 2, "cores": cores}
+        )
+        core = next(s for s in result["strands"] if s["name"].startswith("Core"))
+        xy = np.array(core["points"])[:, :2]
+        return float(np.ptp(xy, axis=0).max())
+
+    assert spread("rigid") < 1e-9
+    assert spread("yarn") > 0
+
+
+def test_cores_are_yarn_or_rigid():
+    with pytest.raises(ValueError, match="yarn or rigid"):
+        build({"source": "machine", "name": "soutache_5", "cores": "glass"})
+
+
 def test_a_machine_lays_its_cores_only_when_asked():
     from braidpy.horn_gear import yarn_paths
     from braidpy.horn_gear.examples import soutache_braid
@@ -323,6 +363,16 @@ def _node_tighten(job):
         {"source": "word", "word": "1 -2", "repeat": 4},
         {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
         {"source": "machine", "name": "tubular_8", "cycles": 1},
+        # Round cores held straight.  Every yarn meets at the braiding
+        # point, beside them, and which way two part there is decided by
+        # the last digit: alike in the end, not step for step.
+        {
+            "source": "machine",
+            "name": "soutache_7",
+            "cycles": 1,
+            "cores": "rigid",
+            "ties": True,
+        },
         # Kept outside a core round the axis, as tighten_yarns can.
         {
             "source": "kumihimo",
@@ -346,6 +396,7 @@ def test_the_page_tightens_as_braidpy_does(spec):
     from braidpy.take_off import tighten_yarns
 
     core = spec.pop("core_radius", None) if "core_radius" in spec else None
+    ties = spec.pop("ties", False)
     handed = build({**spec, "iterations": 20}, tighten=False)
     job = {**handed["tighten"], "core_radius": core}
     n_yarns, n = job["n_yarns"], job["n"]
@@ -356,13 +407,15 @@ def test_the_page_tightens_as_braidpy_does(spec):
     exact = laid.formed()[:, :, :2].reshape(-1).tolist()
     assert np.allclose(exact, job["xy"], atol=1e-8)
     # Exactly alike at first; tightened through, as tight and as clear.
-    for iterations, close in [(20, 1e-8), (300, None)]:
+    checks = [(300, None)] if ties else [(20, 1e-8), (300, None)]
+    for iterations, close in checks:
         mine = _node_tighten({**job, "xy": exact, "iterations": iterations})
         theirs, history = tighten_yarns(
             laid,
             job["yarn_diameter"],
             iterations=iterations,
             core_radius=job["core_radius"],
+            rigid=[k for k, stiff in zip(laid.points, job["rigid"]) if stiff],
         )
         xy_py = theirs.formed()[:, :, :2].reshape(-1)
         xy_js = np.array(mine["xy"])
