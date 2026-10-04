@@ -91,6 +91,12 @@
     <main class="stage">
       <div id="viewer" class="viewer" aria-label="The braid in 3D"></div>
       <canvas
+        id="section"
+        class="section"
+        hidden
+        aria-label="The braid's cross-section: each strand's track, and a slice"
+      ></canvas>
+      <canvas
         id="topview"
         class="topview"
         hidden
@@ -116,6 +122,9 @@
         >
         <label class="check"
           ><input id="showtop" type="checkbox" checked /> Top view</label
+        >
+        <label class="check"
+          ><input id="showsection" type="checkbox" checked /> Cross-section</label
         >
         <button id="reset" type="button" title="Back to the starting view">
           Reset view

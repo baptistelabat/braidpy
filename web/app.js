@@ -553,6 +553,7 @@ function resize() {
 new ResizeObserver(() => {
   resize();
   if (braid) drawTop(currentTime());
+  drawSection(lastResult);
 }).observe(viewer);
 
 function currentTime() {
@@ -650,6 +651,8 @@ function show(result, seconds, keepView = false) {
   };
   showTubes($("tubes").checked);
   $("topview").hidden = !timeline || !$("showtop").checked;
+  $("section").hidden = !$("showsection").checked;
+  drawSection(result);
   $("made").value = $("made").max;
   made(Number($("made").max));
   if (!keepView) fit();
@@ -731,6 +734,71 @@ function countUpTo(values, limit) {
 }
 
 // ---------------------------------------------------------------- top view
+
+// ------------------------------------------------------------ cross-section
+
+// The braid seen along its axis, once made: each strand's track over the
+// middle of the braid — far from the fell and the held top — and a slice
+// half way up, each yarn a disc as thick as it is.  A regular braid has
+// settled when its strands share one track, each a step along it.
+const section = $("section");
+
+function drawSection(result) {
+  if (!result || section.hidden) return;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const size = section.clientWidth;
+  if (!size) return;
+  section.width = section.height = Math.round(size * ratio);
+  const ctx = section.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+  const n = result.strands[0].points.length;
+  const from = Math.floor(0.3 * n);
+  const to = Math.max(from + 2, Math.ceil(0.7 * n));
+  const middle = result.strands.map((strand) => strand.points.slice(from, to));
+  let cx = 0;
+  let cy = 0;
+  let count = 0;
+  for (const points of middle) {
+    for (const [x, y] of points) {
+      cx += x;
+      cy += y;
+      count++;
+    }
+  }
+  cx /= count;
+  cy /= count;
+  const radius = result.yarn_diameter / 2;
+  let reach = radius;
+  for (const points of middle) {
+    for (const [x, y] of points) reach = Math.max(reach, Math.hypot(x - cx, y - cy) + radius);
+  }
+  const scale = (size / 2 - 14) / reach;
+  const X = (x) => size / 2 + (x - cx) * scale;
+  const Y = (y) => size / 2 - (y - cy) * scale;
+  const style = getComputedStyle(document.documentElement);
+  ctx.fillStyle = style.getPropertyValue("--muted").trim();
+  ctx.font = "10px system-ui, sans-serif";
+  ctx.fillText("Cross-section", 8, 14);
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1;
+  middle.forEach((points, i) => {
+    ctx.strokeStyle = result.strands[i].colour;
+    ctx.beginPath();
+    points.forEach(([x, y], j) => (j ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 0.9;
+  const half = Math.floor((to - from) / 2);
+  middle.forEach((points, i) => {
+    const [x, y] = points[half];
+    ctx.fillStyle = result.strands[i].colour;
+    ctx.beginPath();
+    ctx.arc(X(x), Y(y), radius * scale, 0, 2 * Math.PI);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
 
 const top = $("topview");
 const topContext = top.getContext("2d");
@@ -900,6 +968,10 @@ function round(value) {
 // ---------------------------------------------------------------- controls
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
+$("showsection").addEventListener("change", (event) => {
+  section.hidden = !event.target.checked || !lastResult;
+  drawSection(lastResult);
+});
 $("showtop").addEventListener("change", (event) => {
   top.hidden = !event.target.checked || !braid || !braid.timeline;
   made(Number($("made").value));

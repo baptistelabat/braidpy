@@ -310,6 +310,23 @@ footer {
   pointer-events: none;
 }
 
+.section {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: min(240px, 38vw);
+  aspect-ratio: 1;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.section[hidden] {
+  display: none;
+}
+
 .topview[hidden] {
   display: none;
 }
@@ -400,6 +417,12 @@ footer {
     width: 32vw;
     top: 8px;
     right: 8px;
+  }
+
+  .section {
+    width: 32vw;
+    top: 8px;
+    left: 8px;
   }
 
   .toolbar {
