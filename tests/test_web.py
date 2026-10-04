@@ -6,8 +6,10 @@
 
 import json
 import math
+import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -120,13 +122,15 @@ def test_what_cannot_be_made_is_explained(spec, message):
 
 
 def test_nothing_heavy_is_loaded_to_build_a_braid():
-    """No drawing library: in a browser they would be tens of megabytes."""
+    """No drawing library: in a browser they would be tens of megabytes; nor
+    sympy, seconds to import there."""
     code = (
         "import sys; from braidpy.web import build, catalogue\n"
         "for source, about in catalogue().items():\n"
         "    build({'source': source, **about['defaults'], 'iterations': 1,"
         " 'cycles': 1})\n"
-        "print([m for m in ('plotly', 'matplotlib', 'imageio') if m in sys.modules])"
+        "print([m for m in ('plotly', 'matplotlib', 'imageio', 'sympy', 'math_braid')"
+        " if m in sys.modules])"
     )
     out = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, check=True
@@ -253,3 +257,111 @@ def test_a_disk_braid_turns_with_its_disk():
         {"source": "machine", "name": "flat_3", "cycles": 1, "iterations": 5}
     )
     assert "turn" not in machine["timeline"]
+
+
+def test_a_page_can_tighten_the_yarns_itself():
+    spec = {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2}
+    laid = build({**spec, "iterations": 0})
+    handed = build({**spec, "iterations": 30}, tighten=False)
+    job = handed["tighten"]
+    # As laid, with what tightening them needs.
+    assert handed["strands"] == laid["strands"]
+    assert "closest_approach" not in handed["info"]
+    assert len(job["xy"]) == 2 * job["n_yarns"] * job["n"]
+    assert job["iterations"] == 30 and job["n_yarns"] == 8
+    assert len(job["chosen"]) == len(handed["strands"][0]["points"])
+    # Nothing to hand over when nothing is to be tightened.
+    assert "tighten" not in build({**spec, "iterations": 0}, tighten=False)
+    assert "tighten" not in build({**spec, "iterations": 30})
+
+
+def _node_tighten(job):
+    out = subprocess.run(
+        [
+            "node",
+            "-e",
+            "const {tightenYarns} = require(process.argv[1]);"
+            "const job = JSON.parse(require('fs').readFileSync(0, 'utf8'));"
+            "const r = tightenYarns(job);"
+            "console.log(JSON.stringify({xy: Array.from(r.xy), closest: r.closest}));",
+            str(Path(__file__).resolve().parent.parent / "web" / "tighten.js"),
+        ],
+        input=json.dumps(job),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return json.loads(out.stdout)
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "word", "word": "1 -2", "repeat": 4},
+        {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
+        {"source": "machine", "name": "princess", "cycles": 1},
+    ],
+)
+def test_the_page_tightens_as_braidpy_does(spec):
+    """web/tighten.js is tighten_yarns, step for step.
+
+    Exactly so at first.  Over many steps, rounding differs enough for the
+    contact pushes, which switch on and off at a threshold, to take the two
+    apart a little — into braids that are as tight and as clear as each
+    other.
+    """
+    import numpy as np
+
+    from braidpy.take_off import tighten_yarns
+
+    handed = build({**spec, "iterations": 20}, tighten=False)
+    job = handed["tighten"]
+    n_yarns, n = job["n_yarns"], job["n"]
+
+    # The laid yarns braidpy would have tightened, to the last digit: the
+    # pushes would make even a rounding of them a different braid.
+    laid = _laid_paths(spec)
+    exact = laid.formed()[:, :, :2].reshape(-1).tolist()
+    assert np.allclose(exact, job["xy"], atol=1e-8)
+    # Exactly alike at first; tightened through, as tight and as clear.
+    for iterations, close in [(20, 1e-8), (300, None)]:
+        mine = _node_tighten({**job, "xy": exact, "iterations": iterations})
+        theirs, history = tighten_yarns(
+            laid,
+            job["yarn_diameter"],
+            iterations=iterations,
+            core_radius=job["core_radius"],
+        )
+        xy_py = theirs.formed()[:, :, :2].reshape(-1)
+        xy_js = np.array(mine["xy"])
+        if close is not None:
+            assert np.max(np.abs(xy_js - xy_py)) < close
+        else:
+            d = job["yarn_diameter"]
+            assert mine["closest"] >= d * (1 - 3e-3)
+            assert abs(mine["closest"] - history["closest"][-1]) < 0.01 * d
+
+            def length(xy):
+                yarns = xy.reshape(n_yarns, n, 2)
+                return np.sum(np.hypot(*np.diff(yarns, axis=1).transpose(2, 0, 1)))
+
+            assert abs(length(xy_js) / length(xy_py) - 1) < 0.03
+
+
+def _laid_paths(spec):
+    """The laid yarns ``build`` tightens, captured on their way."""
+    from unittest import mock
+
+    import braidpy.take_off as take_off
+
+    captured = {}
+    real = take_off.tighten_yarns
+
+    def capture(paths, *args, **kwargs):
+        captured.setdefault("paths", paths)
+        return real(paths, *args, **{**kwargs, "iterations": 0})
+
+    with mock.patch.object(take_off, "tighten_yarns", capture):
+        build({**spec, "iterations": 20})
+    return captured["paths"]

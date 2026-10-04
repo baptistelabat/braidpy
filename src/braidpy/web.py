@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import math
 import re
+from contextvars import ContextVar
 from typing import (
     Any,
     Callable,
@@ -294,11 +295,27 @@ def catalogue() -> Dict[str, Any]:
 # -------------------------------------------------------------------- build
 
 
-def build(spec: Mapping[str, Any]) -> Dict[str, Any]:
+# Set while a braid is built for a page that tightens it itself: the yarns
+# are then only laid, and what tightening them needs is handed over instead.
+_PAGE_TIGHTENS: ContextVar[bool] = ContextVar("page_tightens", default=False)
+_TIGHTENING: ContextVar[Optional[Dict[str, Any]]] = ContextVar(
+    "tightening", default=None
+)
+
+
+def build(spec: Mapping[str, Any], tighten: bool = True) -> Dict[str, Any]:
     """The braid a description makes, as data for a page to draw.
 
     Args:
         spec: The description; see the module's documentation.
+        tighten: Tighten the yarns here.  If False they are only laid, and
+            the result carries ``tighten``, everything a page needs to
+            tighten them itself — as Braid Studio does, in JavaScript
+            (``web/tighten.js``), many times faster than numpy in the
+            browser: the samples' ``xy``, yarn after yarn, and
+            :func:`~braidpy.take_off.tighten_yarns`'s settings; with
+            ``chosen``, which of them the strands' points are, and
+            ``centre``, what was taken off them.
 
     Returns:
         ``title``; ``strands``, each with its ``name``, ``colour`` and the
@@ -325,7 +342,13 @@ def build(spec: Mapping[str, Any]) -> Dict[str, Any]:
     }
     if source not in builders:
         raise ValueError(f"Unknown source {source!r}: one of {sorted(builders)}.")
-    return builders[source](spec)
+    later = _PAGE_TIGHTENS.set(not tighten)
+    job = _TIGHTENING.set(None)
+    try:
+        return builders[source](spec)
+    finally:
+        _PAGE_TIGHTENS.reset(later)
+        _TIGHTENING.reset(job)
 
 
 def _number(spec: Mapping[str, Any], key: str, default: float, low: float, high: float):
@@ -348,27 +371,47 @@ def _count(spec: Mapping[str, Any], key: str, default: int, low: int, high: int)
     return int(value)
 
 
-def _tighten(paths, spec: Mapping[str, Any], diameter: float, default: int = 150):
+def _tightened(paths, diameter: float, iterations: int, core_radius=None):
+    """The yarns pulled taut — or, for a page that does it itself, as laid,
+    with what it needs to do so noted for :func:`_result`."""
     from braidpy.take_off import tighten_yarns
 
-    iterations = _count(spec, "iterations", default, 0, 2000)
     if iterations == 0:
         return paths
-    tightened, _ = tighten_yarns(paths, diameter, iterations=iterations)
-    return tightened
-
-
-def _tighten_round(paths, spec: Mapping[str, Any], diameter: float, core_radius):
-    from braidpy.take_off import tighten_yarns
-
-    # Kept outside the core, each step costs more: fewer of them by default.
-    iterations = _count(spec, "iterations", 80, 0, 2000)
-    if iterations == 0:
+    if _PAGE_TIGHTENS.get():
+        formed = paths.formed()
+        _TIGHTENING.set(
+            {
+                "n_yarns": int(formed.shape[0]),
+                "n": int(formed.shape[1]),
+                "spacing": float(paths._level_spacing()),
+                "yarn_diameter": float(diameter),
+                "iterations": int(iterations),
+                # tighten_yarns' own defaults.
+                "step": 20.0,
+                "tolerance": 1e-3,
+                "hold_top": True,
+                "core_radius": None if core_radius is None else float(core_radius),
+                "centre": [float(paths.axis[0]), float(paths.axis[1])],
+                "xy": np.round(formed[:, :, :2].reshape(-1), 9).tolist(),
+            }
+        )
         return paths
     tightened, _ = tighten_yarns(
         paths, diameter, iterations=iterations, core_radius=core_radius
     )
     return tightened
+
+
+def _tighten(paths, spec: Mapping[str, Any], diameter: float, default: int = 150):
+    iterations = _count(spec, "iterations", default, 0, 2000)
+    return _tightened(paths, diameter, iterations)
+
+
+def _tighten_round(paths, spec: Mapping[str, Any], diameter: float, core_radius):
+    # Kept outside the core, each step costs more: fewer of them by default.
+    iterations = _count(spec, "iterations", 80, 0, 2000)
+    return _tightened(paths, diameter, iterations, core_radius=core_radius)
 
 
 def _result(
@@ -405,12 +448,14 @@ def _result(
         )
     out_info: Dict[str, Any] = {"n_strands": len(keys)}
     out_info.update(info or {})
-    try:
-        out_info["closest_approach"] = round(
-            float(paths.closest_approach(include_fell=False)), _DECIMALS
-        )
-    except Exception:  # an estimate only; never worth failing the braid over
-        pass
+    tightening = _TIGHTENING.get()
+    if tightening is None:
+        try:
+            out_info["closest_approach"] = round(
+                float(paths.closest_approach(include_fell=False)), _DECIMALS
+            )
+        except Exception:  # an estimate only; never worth failing the braid over
+            pass
     result: Dict[str, Any] = {
         "title": title,
         "strands": strands,
@@ -423,6 +468,9 @@ def _result(
     }
     if timeline is not None:
         result["timeline"] = timeline
+    if tightening is not None:
+        # The axis taken off the strands' points is the tightening's centre.
+        result["tighten"] = {**tightening, "chosen": chosen}
     return result
 
 
@@ -528,7 +576,6 @@ def _disk_in_step(
         disk_crossing_steps,
         lay_yarns,
         ring_trajectories,
-        tighten_yarns,
     )
 
     order, crossings, made_at = disk_crossing_steps(start, steps, n_slots)
@@ -537,8 +584,7 @@ def _disk_in_step(
     rows = crossing_rows(order, crossings, in_turn=True)
     ring = ring_trajectories(order, crossings, diameter, clockwise=clockwise, rows=rows)
     paths = lay_yarns(ring, take_off=1.5 * diameter, yarn_diameter=diameter)
-    if iterations:
-        paths, _ = tighten_yarns(paths, diameter, iterations=iterations)
+    paths = _tightened(paths, diameter, iterations)
     clock = {
         "source": [0.0, *map(float, made_at), float(len(steps))],
         "braid": [0.0, *(r + 0.5 for r in rows), float(rows[-1] + 1)],

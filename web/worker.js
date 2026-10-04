@@ -12,6 +12,9 @@
 //                {type: "result", id, result, seconds}
 //                {type: "error", id?, message}
 
+// The yarns are tightened here, in JavaScript: see tighten.js.
+importScripts("tighten.js");
+
 let pyodide = null;
 let machinesReady = false;
 
@@ -24,15 +27,15 @@ async function init(pyodideUrl) {
   importScripts(pyodideUrl + "pyodide.js");
   pyodide = await loadPyodide({ indexURL: pyodideUrl });
 
-  status("Loading numpy and sympy…");
-  await pyodide.loadPackage(["numpy", "sympy"], { messageCallback: () => {} });
+  status("Loading numpy…");
+  await pyodide.loadPackage(["numpy"], { messageCallback: () => {} });
 
   status("Loading braidpy…");
   const base = new URL("wheels/", self.location.href);
   const manifest = await (await fetch(new URL("manifest.json", base))).json();
   // Installed as they are, without resolving what they ask for: braidpy's
-  // other dependencies are for drawing, which the page does itself, and
-  // Pyodide's own numpy and sympy serve.
+  // other dependencies are for drawing, which the page does itself, or for
+  // what the page does not ask of it (sympy, for Burau matrices).
   await pyodide.loadPackage(
     manifest.wheels.map((wheel) => new URL(wheel, base).href),
     { messageCallback: () => {} },
@@ -69,21 +72,60 @@ async function build(id, spec) {
     await pyodide.loadPackage(["networkx"], { messageCallback: () => {} });
     machinesReady = true;
   }
-  status("Laying and tightening the yarns…");
+  status("Laying the yarns…");
   const started = performance.now();
   pyodide.globals.set("spec_json", JSON.stringify(spec));
+  let result;
   try {
+    // braidpy lays the yarns and says how to tighten them; the tightening
+    // itself, the slow part, is done below in JavaScript.
     const text = await pyodide.runPythonAsync(
-      "json.dumps(web.build(json.loads(spec_json)))",
+      "json.dumps(web.build(json.loads(spec_json), tighten=False))",
     );
-    const seconds = (performance.now() - started) / 1000;
-    const result = JSON.parse(text);
-    made.set(key, result);
-    if (made.size > KEEP) made.delete(made.keys().next().value);
-    self.postMessage({ type: "result", id, result, seconds });
+    result = JSON.parse(text);
   } catch (error) {
     self.postMessage({ type: "error", id, message: pythonMessage(error) });
+    return;
   }
+  const job = result.tighten;
+  delete result.tighten;
+  if (job) {
+    // Shown as laid straight away, then replaced once tight.
+    self.postMessage({ type: "laid", id, result });
+    status("Tightening the yarns…");
+    const tight = tightenYarns(job, (fraction) =>
+      status(`Tightening the yarns… ${Math.round(100 * fraction)}%`),
+    );
+    result = tightened(result, job, tight);
+  }
+  const seconds = (performance.now() - started) / 1000;
+  made.set(key, result);
+  if (made.size > KEEP) made.delete(made.keys().next().value);
+  self.postMessage({ type: "result", id, result, seconds });
+}
+
+// The strands' points, moved to where the tightening left them: sideways
+// only, so every point keeps its height.
+function tightened(result, job, tight) {
+  const [cx, cy] = job.centre;
+  result.strands.forEach((strand, a) => {
+    strand.points = strand.points.map(([, , z], j) => {
+      const k = a * job.n + job.chosen[j];
+      return [
+        round(tight.xy[2 * k] - cx),
+        round(tight.xy[2 * k + 1] - cy),
+        z,
+      ];
+    });
+  });
+  if (Number.isFinite(tight.closest)) {
+    result.info.closest_approach = round(tight.closest);
+  }
+  return result;
+}
+
+function round(value) {
+  return Math.round(value * 1e4) / 1e4;
 }
 
 // The last line of a Python traceback is what went wrong.

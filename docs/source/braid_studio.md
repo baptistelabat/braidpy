@@ -58,9 +58,18 @@ static files, published with the documentation.
   what can be made, and `build(spec)`, the braid a description makes. Both
   answer in plain data, lists and numbers, so the page needs nothing of
   Python's to draw.
-- `web/worker.js` loads Pyodide, numpy and sympy from Pyodide's CDN, and
-  braidpy and math_braid as wheels from the site. It then answers each
-  description with the braid.
+- `web/worker.js` loads Pyodide and numpy from Pyodide's CDN, and braidpy
+  and math_braid as wheels from the site. It then answers each description:
+  braidpy lays the yarns, the page shows them at once, and
+  `web/tighten.js` tightens them.
+- `web/tighten.js` is `braidpy.take_off.tighten_yarns`, step for step, in
+  JavaScript. Tightening is the one slow part of making a braid: its inner
+  loop runs over a hundred thousand pairs of samples hundreds of times, and
+  as numpy calls in WebAssembly each pass pays a price that compiled
+  JavaScript does not. It is some 20 times faster there. braidpy stays the
+  reference: a test tightens the same braid both ways, and they agree to
+  the last digits for the first tens of steps, and come out as tight and as
+  clear as each other after hundreds.
 - `web/app.js` builds the form from the catalogue, sends descriptions to the
   worker, and draws the answer.
 - `web/build.py` assembles the site in `web/site/`. It copies the page and
@@ -79,23 +88,24 @@ static files, published with the documentation.
 | One source of truth | yes: braidpy, tested | no: two implementations to keep in step | yes |
 | Runs without a server | yes, static files | yes | no: hosting, scaling, cost |
 | First visit | ~15 MB to download, then cached | small | small |
-| Speed | numpy in WebAssembly: 1–10 s a braid | could be faster | fast, but a round trip |
+| Speed | ~1 s a braid, tightening in JavaScript | as fast | fast, but a round trip |
 | Effort | small, done | large: laying, tightening, every source | moderate, plus operations |
 
 A port would make the page lighter, but every algorithm — reading moves into
 crossings, laying, tightening, the Garside form — would then exist twice and
 drift apart. Pyodide keeps the page exactly as right as braidpy is, and every
-improvement to braidpy reaches the page by itself. Should speed ever matter
-more than that, the one hot loop worth porting is the tightening (see below).
+improvement to braidpy reaches the page by itself. The one exception is the
+tightening, the hot loop, ported to JavaScript and tested against braidpy.
 
 ### Keeping it light
 
 Drawing libraries — plotly, matplotlib, imageio — are tens of megabytes in a
 browser, and the page does not need them: it draws with three.js. braidpy
 therefore imports them only when something is drawn with them
-(`braidpy.utils.lazy_module`), and a test checks that building any braid
-loads none of them. The page loads numpy and sympy, plus networkx for the
-machines, and only when one is first chosen.
+(`braidpy.utils.lazy_module`), and so with sympy and math_braid, seconds to
+import in a browser and needed only for Burau matrices and comparing braids;
+a test checks that building any braid loads none of them. The page loads
+numpy, plus networkx for the machines when one is first chosen.
 
 ## Trying it locally
 
@@ -126,10 +136,14 @@ full twists; a cache of recent braids; STL, OBJ and JSON export.
    mended: it fails on negative crossings, and takes the determinant of the
    Burau matrix rather than of the identity less it — and its closure drawn
    as a knot or link.
-4. **Speed.** Tightening is the slow step, and the Garside form for big
-   braids (beyond 12 strands it is not computed here). A coarse braid first,
-   refined after; and, if needed, that one loop ported to JavaScript or
-   WebGPU.
+4. **Speed for big braids.** With the tightening in JavaScript, an 8-strand
+   braid takes well under a second; a 22-strand sinnet still takes several,
+   and its time grows with the strands squared. That is where the GPU
+   earns its keep: WebGPU compute shaders running the contact pushes over
+   every pair at once, several rounds per dispatch so the page is not
+   waiting on each, with the JavaScript kept for browsers without WebGPU.
+   The Garside form for big braids (beyond 12 strands it is not computed
+   here) is the other slow step.
 5. **Printable.** Tubes closed at their ends, and merged where they touch,
    for an STL a slicer takes as it is.
 6. **Offline.** As a progressive web app, it could work with no connection

@@ -471,13 +471,17 @@ worker.onmessage = ({ data }) => {
     $("build").disabled = false;
     $("build").textContent = "Make the braid";
     submit();
+  } else if (data.type === "laid") {
+    if (data.id !== pending) return;
+    show(data.result, null);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
     $("build").disabled = false;
     setStatus(
       data.seconds ? `Made in ${data.seconds.toFixed(1)} s.` : "Made before: shown again.",
     );
-    show(data.result, data.seconds);
+    // The tight braid replaces the laid one where the view already is.
+    show(data.result, data.seconds, shownLaid === data.id);
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
     $("build").disabled = !catalogue;
@@ -568,7 +572,10 @@ function dispose(object) {
   });
 }
 
-function show(result, seconds) {
+let shownLaid = null;
+
+function show(result, seconds, keepView = false) {
+  shownLaid = seconds === null ? pending : null;
   if (braid) {
     scene.remove(braid.group);
     dispose(braid.group);
@@ -645,7 +652,7 @@ function show(result, seconds) {
   $("topview").hidden = !timeline || !$("showtop").checked;
   $("made").value = $("made").max;
   made(Number($("made").max));
-  fit();
+  if (!keepView) fit();
   describe(result, seconds);
   $("empty").hidden = true;
 }
@@ -856,6 +863,7 @@ function describe(result, seconds) {
         : `${info.closest_approach} for a yarn of ${round(result.yarn_diameter)}`,
     ],
     ["Computed in", seconds ? `${seconds.toFixed(1)} s` : undefined],
+    ["", seconds === null ? "As laid — tightening…" : undefined],
   ];
   const list = $("info");
   list.replaceChildren();
