@@ -62,6 +62,39 @@ def _math_braid_sdist(into: Path) -> Path:
     return sdist
 
 
+# Where each page file names another: there, its name gets a fingerprint of
+# that file, so a browser holding an old copy fetches the new one.
+_REFERENCES = {
+    "index.html": ['href="style.css"', 'src="app.js"'],
+    "app.js": ['new Worker("worker.js")'],
+    "worker.js": ['importScripts("tighten.js", "rope.js")'],
+}
+
+
+def _copy_page(site: Path) -> None:
+    """The page's own files, each naming the others by their fingerprint."""
+    import hashlib
+
+    stamp = {
+        name: hashlib.sha256((WEB / name).read_bytes()).hexdigest()[:10]
+        for name in PAGE
+    }
+    # Fingerprints of what a file names go into it, so files naming others
+    # are stamped after those: worker.js before app.js before index.html.
+    text = {name: (WEB / name).read_text() for name in PAGE}
+    for name in ["worker.js", "app.js", "index.html"]:
+        for snippet in _REFERENCES[name]:
+            if snippet not in text[name]:
+                raise RuntimeError(f"{name} no longer has {snippet!r}.")
+            stamped = snippet
+            for other in PAGE:
+                stamped = stamped.replace(f'"{other}"', f'"{other}?v={stamp[other]}"')
+            text[name] = text[name].replace(snippet, stamped)
+        stamp[name] = hashlib.sha256(text[name].encode()).hexdigest()[:10]
+    for name in PAGE:
+        (site / name).write_text(text[name])
+
+
 def build(site: Path) -> None:
     if not (THREE / "build" / "three.module.js").exists():
         raise SystemExit("three.js is missing: run `npm install` in web/ first.")
@@ -69,8 +102,7 @@ def build(site: Path) -> None:
         shutil.rmtree(site)
     site.mkdir(parents=True)
 
-    for name in PAGE:
-        shutil.copy2(WEB / name, site / name)
+    _copy_page(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")
