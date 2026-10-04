@@ -13,7 +13,7 @@
 //                {type: "error", id?, message}
 
 // The yarns are tightened here, in JavaScript: see tighten.js.
-importScripts("tighten.js");
+importScripts("tighten.js", "rope.js");
 
 let pyodide = null;
 let machinesReady = false;
@@ -89,14 +89,25 @@ async function build(id, spec) {
   }
   const job = result.tighten;
   delete result.tighten;
+  const physics = spec.settle === "physics";
+  if (job && physics && result.timeline?.kind !== "disk") {
+    result.notes = [
+      ...(result.notes || []),
+      "Settling by physics is for disk braids for now: these yarns were tightened sideways.",
+    ];
+  }
   if (job) {
     // Shown as laid straight away, then replaced once tight.
     self.postMessage({ type: "laid", id, result });
-    status("Tightening the yarns…");
-    const tight = tightenYarns(job, (fraction) =>
-      status(`Tightening the yarns… ${Math.round(100 * fraction)}%`),
-    );
-    result = tightened(result, job, tight);
+    if (physics && result.timeline?.kind === "disk") {
+      result = settled(id, result, job);
+    } else {
+      status("Tightening the yarns…");
+      const tight = tightenYarns(job, (fraction) =>
+        status(`Tightening the yarns… ${Math.round(100 * fraction)}%`),
+      );
+      result = tightened(result, job, tight);
+    }
   }
   const seconds = (performance.now() - started) / 1000;
   made.set(key, result);
@@ -122,6 +133,97 @@ function tightened(result, job, tight) {
     result.info.closest_approach = round(tight.closest);
   }
   return result;
+}
+
+// The braid settled by its own physics (rope.js): pulled clear of itself
+// sideways first, then each yarn a chain of beads, clamped at the fell,
+// fed at its oldest end from a bobbin pulling it back, and the braid drawn
+// off by a weight lighter than the yarns' pull, so it is beaten up until
+// its crossings jam.  Shown as it goes.
+function settled(id, result, job) {
+  status("Pulling the yarns clear…");
+  const clear = tightenYarns({ ...job, iterations: Math.min(job.iterations, 30) });
+  const d = job.yarn_diameter;
+  const [cx, cy] = job.centre;
+  const yarns = [];
+  for (let a = 0; a < job.n_yarns; a++) {
+    const points = [];
+    for (let i = job.n - 1; i >= 0; i--) {
+      const k = a * job.n + i;
+      points.push(
+        (clear.xy[2 * k] - cx) / d,
+        (clear.xy[2 * k + 1] - cy) / d,
+        ((job.n - 1 - i) * job.spacing) / d,
+      );
+    }
+    yarns.push(relay(points, 0.5));
+  }
+  const height = ((job.n - 1) * job.spacing) / d;
+  const started = performance.now();
+  let shown = started;
+  const rest = settleRope({
+    yarns,
+    spacing: 0.5,
+    feed: 1,
+    force: 0.25 * job.n_yarns,
+    turns: true,
+    stretch: 100,
+    contact: 100,
+    steps: 200000,
+    tolerance: 1e-3,
+    progress: ({ yarns: now, rise, largestForce }) => {
+      status(
+        `Settling by physics… ${((performance.now() - started) / 1000).toFixed(0)} s, ` +
+          `${Math.round((100 * -rise) / height)}% shorter`,
+      );
+      if (performance.now() - shown > 700) {
+        shown = performance.now();
+        self.postMessage({ type: "laid", id, result: onLevels(result, now, d) });
+      }
+      void largestForce;
+    },
+  });
+  const out = onLevels(result, rest.yarns, d);
+  out.info.closest_approach = round((1 - rest.deepest) * d);
+  out.notes = [
+    ...(out.notes || []),
+    `Settled by physics: beaten up from ${height.toFixed(1)} to ` +
+      `${(height + rest.rise).toFixed(1)} yarn diameters long, the end turning ` +
+      `${((rest.turn * 180) / Math.PI).toFixed(0)}°.`,
+  ];
+  return out;
+}
+
+// Each yarn at the heights the page draws it at, highest first — its
+// heights scaled to the settled braid's length.
+function onLevels(result, yarns, d) {
+  const out = structuredClone(result);
+  const top = Math.max(...yarns.map((y) => y[y.length - 1]));
+  out.strands.forEach((strand, a) => {
+    const y = yarns[a];
+    const laidTop = strand.points[0][2] || 1;
+    strand.points = strand.points.map(([, , z]) => {
+      const want = (z / laidTop) * top;
+      // Where the yarn, going up, first comes to that height.
+      for (let i = 3; i < y.length; i += 3) {
+        if (y[i + 2] >= want) {
+          const f = (want - y[i - 1]) / (y[i + 2] - y[i - 1] || 1);
+          return [
+            round((y[i - 3] + f * (y[i] - y[i - 3])) * d),
+            round((y[i - 2] + f * (y[i + 1] - y[i - 2])) * d),
+            round(want * d),
+          ];
+        }
+      }
+      return [round(y[y.length - 3] * d), round(y[y.length - 2] * d), round(want * d)];
+    });
+  });
+  return out;
+}
+
+// A yarn's points again, evenly spaced, as rope.js wants them.
+function relay(points, spacing) {
+  return Array.from(self.relayYarn(Float64Array.from(points), spacing));
 }
 
 function round(value) {

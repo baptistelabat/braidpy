@@ -563,6 +563,7 @@ function writeSpec(spec) {
   renderFields(spec.source, spec);
   $("yarn_diameter").value = spec.yarn_diameter ?? "";
   $("iterations").value = spec.iterations ?? "";
+  $("settle").value = spec.settle ?? "sideways";
 }
 
 function specFromHash() {
@@ -600,15 +601,17 @@ worker.onmessage = ({ data }) => {
     submit();
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
-    show(data.result, null);
+    // Settling sends the braid as it goes: the view stays put.
+    show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
     $("build").disabled = false;
     setStatus(
       data.seconds ? `Made in ${data.seconds.toFixed(1)} s.` : "Made before: shown again.",
     );
-    // The tight braid replaces the laid one where the view already is.
-    show(data.result, data.seconds, shownLaid === data.id);
+    // The tight braid replaces the laid one where the view already is —
+    // unless it was beaten up, much shorter than it was laid.
+    show(data.result, data.seconds, shownLaid === data.id && $("settle").value !== "physics");
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
     $("build").disabled = !catalogue;

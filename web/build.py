@@ -30,7 +30,7 @@ from pathlib import Path
 
 WEB = Path(__file__).resolve().parent
 ROOT = WEB.parent
-PAGE = ["index.html", "style.css", "app.js", "worker.js", "tighten.js"]
+PAGE = ["index.html", "style.css", "app.js", "worker.js", "tighten.js", "rope.js"]
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
 

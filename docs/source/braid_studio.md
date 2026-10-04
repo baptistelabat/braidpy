@@ -25,6 +25,13 @@ The page has a form and a 3D view.
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the
   machine lays it, and no yarn or other core ever passes through it.
+- **Settle the yarns** chooses how a braid is tightened: sideways, fast,
+  keeping the pitch it was laid with; or, for a disk braid, by physics
+  (`web/rope.js`, in beta). Each yarn is then an elastic chain of beads,
+  clamped at the fell and fed at its other end from a bobbin pulling it
+  back; the braid is drawn off by a weight lighter than the yarns' pull, so
+  it is beaten up until its crossings jam, as on a marudai. The view
+  follows it as it settles.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
   moves…" shows what the braid chosen before is made of — the slots its
   strands start in and its moves, or its spaces' counts and moves — ready to
