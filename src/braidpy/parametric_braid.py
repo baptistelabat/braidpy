@@ -11,18 +11,26 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+from __future__ import annotations
+
 import math
 from enum import Enum
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, cast
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 from braidpy.parametric_strand import ParametricStrand
 from braidpy.utils import StrictlyPositiveInt, PositiveFloat, terminal_colors
 
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+    import plotly.graph_objects as go
+    from mpl_toolkits.mplot3d import Axes3D
+else:
+    plt = lazy_module("matplotlib.pyplot")
+    go = lazy_module("plotly.graph_objects")
 
 
 class Plotter(str, Enum):
@@ -213,7 +221,7 @@ class ParametricBraid:
         """
         if plotter == Plotter.MATPLOTLIB:
             fig = plt.figure()
-            ax = cast(Axes3D, fig.add_subplot(111, projection="3d"))
+            ax = cast("Axes3D", fig.add_subplot(111, projection="3d"))
             for i, strand in enumerate(self.strands):
                 path = strand.sample(n_sample)
                 x, y, z = zip(*path)

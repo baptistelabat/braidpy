@@ -11,10 +11,18 @@ Features:
 - Displays step labels, strand IDs, and pattern info
 """
 
-from typing import List, Optional
-import matplotlib
-import matplotlib.pyplot as plt
+from typing import TYPE_CHECKING, List, Optional
+
 import numpy as np
+
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import matplotlib
+    import matplotlib.pyplot as plt
+else:
+    matplotlib = lazy_module("matplotlib")
+    plt = lazy_module("matplotlib.pyplot")
 
 
 class Kumihimo:
