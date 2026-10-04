@@ -74,10 +74,13 @@ def build(site: Path) -> None:
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")
-    shutil.copy2(
-        THREE / "examples" / "jsm" / "controls" / "OrbitControls.js",
-        vendor / "addons" / "controls" / "OrbitControls.js",
-    )
+    (vendor / "addons" / "exporters").mkdir(parents=True)
+    for addon in [
+        "controls/OrbitControls.js",
+        "exporters/STLExporter.js",
+        "exporters/OBJExporter.js",
+    ]:
+        shutil.copy2(THREE / "examples" / "jsm" / addon, vendor / "addons" / addon)
     shutil.copy2(THREE / "LICENSE", vendor / "LICENSE")
 
     wheels = site / "wheels"

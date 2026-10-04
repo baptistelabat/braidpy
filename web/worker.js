@@ -50,7 +50,20 @@ from braidpy import web
   self.postMessage({ type: "ready", catalogue, version: manifest.version });
 }
 
+// The last few braids made, by what they were made from: going back to one
+// is then instant.
+const made = new Map();
+const KEEP = 12;
+
 async function build(id, spec) {
+  const key = JSON.stringify(spec, Object.keys(spec).sort());
+  if (made.has(key)) {
+    const result = made.get(key);
+    made.delete(key);
+    made.set(key, result);
+    self.postMessage({ type: "result", id, result, seconds: 0 });
+    return;
+  }
   if (spec.source === "machine" && !machinesReady) {
     status("Loading networkx, for the machines…");
     await pyodide.loadPackage(["networkx"], { messageCallback: () => {} });
@@ -64,7 +77,10 @@ async function build(id, spec) {
       "json.dumps(web.build(json.loads(spec_json)))",
     );
     const seconds = (performance.now() - started) / 1000;
-    self.postMessage({ type: "result", id, result: JSON.parse(text), seconds });
+    const result = JSON.parse(text);
+    made.set(key, result);
+    if (made.size > KEEP) made.delete(made.keys().next().value);
+    self.postMessage({ type: "result", id, result, seconds });
   } catch (error) {
     self.postMessage({ type: "error", id, message: pythonMessage(error) });
   }

@@ -123,9 +123,13 @@
         <button id="share" type="button" title="Copy a link to this braid">
           Copy link
         </button>
-        <button id="save" type="button" title="Save a picture of the braid">
-          Save PNG
-        </button>
+        <select id="save" aria-label="Save the braid">
+          <option value="" selected disabled>Save…</option>
+          <option value="png">Picture (PNG)</option>
+          <option value="stl">For 3D printing (STL)</option>
+          <option value="obj">3D model (OBJ)</option>
+          <option value="json">Yarn points (JSON)</option>
+        </select>
       </div>
       <div id="empty" class="empty">
         <p>The braid appears here.</p>

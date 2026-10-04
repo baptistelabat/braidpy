@@ -311,6 +311,11 @@ footer {
   accent-color: var(--accent);
 }
 
+.toolbar select {
+  width: auto;
+  padding: 6px 8px;
+}
+
 .check {
   display: inline-flex;
   align-items: center;

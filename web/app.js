@@ -7,6 +7,8 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
+import { STLExporter } from "three/addons/exporters/STLExporter.js";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
@@ -244,7 +246,9 @@ worker.onmessage = ({ data }) => {
   } else if (data.type === "result") {
     if (data.id !== pending) return;
     $("build").disabled = false;
-    setStatus(`Made in ${data.seconds.toFixed(1)} s.`);
+    setStatus(
+      data.seconds ? `Made in ${data.seconds.toFixed(1)} s.` : "Made before: shown again.",
+    );
     show(data.result, data.seconds);
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
@@ -585,6 +589,20 @@ function describe(result, seconds) {
     ["Exponent sum", info.exponent_sum],
     ["Permutation", info.permutation && info.permutation.join(" ")],
     ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    [
+      "Closed up",
+      info.components === undefined
+        ? undefined
+        : info.components === 1
+          ? "a knot"
+          : `a link of ${info.components} pieces`,
+    ],
+    [
+      "Normal form",
+      info.garside &&
+        `Δ^${info.garside.half_twists} and ${info.garside.factors} permutation braids`,
+    ],
+    ["Full twists", info.garside && info.garside.full_twists],
     ["Word", info.word, true],
     ["Ring word", info.annular_word, true],
     [
@@ -593,7 +611,7 @@ function describe(result, seconds) {
         ? undefined
         : `${info.closest_approach} for a yarn of ${round(result.yarn_diameter)}`,
     ],
-    ["Computed in", `${seconds.toFixed(1)} s`],
+    ["Computed in", seconds ? `${seconds.toFixed(1)} s` : undefined],
   ];
   const list = $("info");
   list.replaceChildren();
@@ -664,12 +682,53 @@ $("share").addEventListener("click", async () => {
   }
 });
 
-$("save").addEventListener("click", () => {
-  if (!lastResult) return;
+function fileName(extension) {
+  return lastResult.title.replace(/[^\w-]+/g, "_") + "." + extension;
+}
+
+function download(name, href) {
   const link = document.createElement("a");
-  link.download = lastResult.title.replace(/[^\w-]+/g, "_") + ".png";
-  link.href = renderer.domElement.toDataURL("image/png");
+  link.download = name;
+  link.href = href;
   link.click();
+  if (href.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
+$("save").addEventListener("change", (event) => {
+  const what = event.target.value;
+  event.target.value = "";
+  if (!lastResult || !braid) return;
+  if (what === "png") {
+    download(fileName("png"), renderer.domElement.toDataURL("image/png"));
+    return;
+  }
+  if (what === "json") {
+    const blob = new Blob([JSON.stringify(lastResult)], { type: "application/json" });
+    download(fileName("json"), URL.createObjectURL(blob));
+    return;
+  }
+  // The whole braid as solid tubes, as made, in the braid's own units.
+  const solid = new THREE.Group();
+  for (const yarn of braid.yarns) {
+    const tube = new THREE.Mesh(yarn.tube.geometry.clone(), yarn.tube.material);
+    tube.geometry.setDrawRange(0, Infinity);
+    tube.name = yarn.tube.name;
+    solid.add(tube);
+  }
+  for (const child of braid.group.children) {
+    if (child.userData.core) solid.add(child.clone());
+  }
+  solid.updateMatrixWorld(true);
+  if (what === "stl") {
+    const data = new STLExporter().parse(solid, { binary: true });
+    download(fileName("stl"), URL.createObjectURL(new Blob([data])));
+  } else if (what === "obj") {
+    const text = new OBJExporter().parse(solid);
+    download(fileName("obj"), URL.createObjectURL(new Blob([text])));
+  }
+  solid.traverse((child) => {
+    if (child.isMesh && !child.userData.core) child.geometry.dispose();
+  });
 });
 
 function frame(now) {

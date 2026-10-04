@@ -534,9 +534,39 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
     }
     if word:
         braid = Braid(word, n_strands)
-        info["permutation"] = [int(p) for p in braid.perm()]
+        permutation = [int(p) for p in braid.perm()]
+        info["permutation"] = permutation
         info["pure"] = bool(braid.is_pure())
+        info["components"] = _cycles(permutation)
+        # The Garside normal form costs more the more strands there are:
+        # beyond this, minutes in a browser.
+        if n_strands <= 12 and len(word) <= 300:
+            factors = braid.get_canonical_factors()
+            least = int(factors.n_half_twist)
+            most = least + len(factors.Ai)
+            info["garside"] = {
+                "half_twists": least,
+                "factors": len(factors.Ai),
+                # As Braid.full_twists has it, without computing it twice.
+                "full_twists": int(math.floor((least + most) / 4 + 0.5)),
+            }
     return info
+
+
+def _cycles(permutation: Sequence[int]) -> int:
+    """How many separate pieces a braid's closure makes: its permutation's
+    cycles."""
+    seen = set()
+    cycles = 0
+    for start in range(len(permutation)):
+        if start in seen:
+            continue
+        cycles += 1
+        here = start
+        while here not in seen:
+            seen.add(here)
+            here = permutation[here] - 1
+    return cycles
 
 
 def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:

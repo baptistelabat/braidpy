@@ -18,14 +18,23 @@ The page has a form and a 3D view.
   pattern and how often to repeat it; which braid, and for how many cycles.
   The advanced section sets the yarn diameter and how hard the yarns are
   pulled (the tightening steps; 0 lays them with no tension).
+- A disk braid or a sinnet can also be **your own**: choosing "Your own
+  moves…" shows what the braid chosen before is made of — the slots its
+  strands start in and its moves, or its spaces' counts and moves — ready to
+  change.
 - The braid is drawn as tubes, one colour per yarn, and can be turned, zoomed
-  and spun. **Grow** replays it being made: the oldest rows first, carried up
-  as the newest form at the fell.
+  and spun. **Grow** replays it being made, by the clock of whatever made
+  it: the oldest rows first, carried up as the newest form at the fell. An
+  inset shows what made it, seen from above, at the same instant — the disk
+  with its strands as spokes, the machine's gears and carriers.
 - Beside it, what is known of the braid: its strands, crossings and word (its
-  ring word too, for a disk braid), the permutation it makes, how close the
-  yarns come.
+  ring word too, for a disk braid), the permutation it makes, what it closes
+  up into (a knot, or a link of so many pieces), its Garside normal form and
+  full twists, how close the yarns come.
 - The address bar always describes the braid shown, so **Copy link** shares
-  it; **Save PNG** keeps a picture.
+  it. **Save…** keeps a picture, the yarns as an STL file for 3D printing or
+  an OBJ model, or their points as JSON.
+- The last few braids made are kept: going back to one is instant.
 
 ## How it is built
 
@@ -98,19 +107,24 @@ or `make studio` and `make studio-serve`. To use a Pyodide of your own rather th
 
 ## What comes next
 
-1. **Watch it being made.** The disk seen from above — kumihimo, mobidai,
-   sinnet, machine — animated beside the braid, in step with it, as the
-   Plotly pages already do; braidpy already computes the trajectories.
-2. **Your own patterns.** Moves typed in, for a mobidai (slot to slot) or a
-   sinnet (counts per space and moves), as easily as a word is now; then a
-   disk to click on.
-3. **More about the braid.** Its Garside normal form and full twists, its
-   Alexander polynomial, its closure as a knot or link — all computed by
-   braidpy already.
-4. **Speed.** Tightening is the slow step. Cache what was made; compute a
-   coarse braid first and refine it; and, if needed, port that one loop to
-   JavaScript or WebGPU.
-5. **Out of the browser.** Export the yarns as OBJ or STL for 3D printing, or
-   as the points themselves.
+Done so far, beyond making and drawing a braid: watching it being made with
+what made it seen from above; your own disk braids and sinnets; the braid's
+closure, normal form and full twists; a cache of recent braids; STL, OBJ and
+JSON export.
+
+1. **Draw your own patterns.** Click a disk's slots to make moves, rather
+   than typing them; the same for a machine's gears and carriers.
+2. **The disk and the braid turned alike.** The braid hangs from the disk
+   and turns with it, as the Plotly side view shows; the 3D view could too.
+3. **More about the braid.** Its Alexander polynomial — once braidpy's is
+   mended: it fails on negative crossings, and takes the determinant of the
+   Burau matrix rather than of the identity less it — and its closure drawn
+   as a knot or link.
+4. **Speed.** Tightening is the slow step, and the Garside form for big
+   braids (beyond 12 strands it is not computed here). A coarse braid first,
+   refined after; and, if needed, that one loop ported to JavaScript or
+   WebGPU.
+5. **Printable.** Tubes closed at their ends, and merged where they touch,
+   for an STL a slicer takes as it is.
 6. **Offline.** As a progressive web app, it could work with no connection
    once visited.
