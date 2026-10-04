@@ -431,6 +431,7 @@ def _timeline(
     keys: Sequence[Hashable],
     kind: str,
     clock: Optional[Dict[str, List[float]]] = None,
+    ring=None,
 ) -> Dict[str, Any]:
     """What made the braid, seen from above, over time: for the page to
     animate in step with the braid.
@@ -442,6 +443,11 @@ def _timeline(
             ``machine``, or ``line``.
         clock: The source's time at some instants, and the braid's then;
             the same times if None.
+        ring: For a disk, the strands round the ring the braid was laid
+            from: the braid then hangs from the disk turned so each strand
+            at the fell is nearest its carrier — see
+            :meth:`~braidpy.disk_animation.BraidGrowth.turn_at` — and how
+            far it is turned is given at each instant, as ``turn``.
     """
     times = np.asarray(trajectories.times, dtype=float)
     stride = max(1, math.ceil(len(times) / 3000))
@@ -468,6 +474,23 @@ def _timeline(
             "source": [float(times[0]), float(times[-1])],
             "braid": [float(times[0]), float(times[-1])],
         }
+    turn = None
+    if ring is not None:
+        rows = np.interp(times[chosen], clock["source"], clock["braid"])
+        pull = np.zeros(len(chosen), dtype=complex)
+        for k in keys:
+            at = np.asarray(trajectories.xy[k][chosen], dtype=float) - shift
+            on = np.asarray(ring.xy[k], dtype=float)
+            x = np.interp(rows, ring.times, on[:, 0])
+            y = np.interp(rows, ring.times, on[:, 1])
+            carrier = at[:, 0] + 1j * at[:, 1]
+            fell = x + 1j * y
+            pull += (
+                carrier
+                / np.maximum(np.abs(carrier), 1e-12)
+                * np.conj(fell / np.maximum(np.abs(fell), 1e-12))
+            )
+        turn = np.round(np.unwrap(np.angle(pull)), 4).tolist()
     return {
         "kind": kind,
         "times": np.round(times[chosen], _DECIMALS).tolist(),
@@ -479,6 +502,7 @@ def _timeline(
         ],
         "reach": round(reach, 3),
         "clock": clock,
+        **({"turn": turn} if turn is not None else {}),
     }
 
 
@@ -519,7 +543,7 @@ def _disk_in_step(
         "source": [0.0, *map(float, made_at), float(len(steps))],
         "braid": [0.0, *(r + 0.5 for r in rows), float(rows[-1] + 1)],
     }
-    return paths, clock
+    return paths, clock, ring
 
 
 def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
@@ -621,7 +645,7 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
     repeat = _count(spec, "repeat", 8, 1, 50)
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
     n_slots, start, steps = kumihimo_steps(pattern * repeat, n_strands)
-    paths, clock = _disk_in_step(
+    paths, clock, ring = _disk_in_step(
         start,
         steps,
         n_slots,
@@ -636,7 +660,7 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
         diameter,
         colours=_hues(n_strands),
         info=_disk_info(start, steps, n_slots, clockwise=False),
-        timeline=_timeline(disk, list(paths.points), "disk", clock),
+        timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
 
 
@@ -674,7 +698,7 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
     start, steps = mobidai_steps(config, cycles)
     clockwise = getattr(config, "is_clockwise", True)
-    paths, clock = _disk_in_step(
+    paths, clock, ring = _disk_in_step(
         start,
         steps,
         config.n_slots,
@@ -691,7 +715,7 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
         diameter,
         colours=[colour_of[k] for k in paths.points],
         info=_disk_info(start, steps, config.n_slots, clockwise),
-        timeline=_timeline(disk, list(paths.points), "disk", clock),
+        timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
 
 
@@ -720,7 +744,7 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     cycles = _count(spec, "cycles", 3, 1, 12)
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
     disk = sinnet.disk(cycles)
-    paths, clock = _disk_in_step(
+    paths, clock, ring = _disk_in_step(
         disk.start,
         disk.steps,
         disk.n_slots,
@@ -756,7 +780,7 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
         info=_disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False),
         notes=notes,
-        timeline=_timeline(seen, list(paths.points), "disk", clock),
+        timeline=_timeline(seen, list(paths.points), "disk", clock, ring),
     )
 
 

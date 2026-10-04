@@ -232,3 +232,24 @@ def test_your_own_disk_braid_is_checked(spec, message):
 def test_your_own_sinnet_is_checked():
     with pytest.raises(ValueError, match="between spaces"):
         build({"source": "sinnet", "name": "custom", "counts": "2 1 1", "moves": "1>4"})
+
+
+def test_a_disk_braid_turns_with_its_disk():
+    """Four quarter turns of a kumihimo disk turn its braid once round."""
+    result = build(
+        {
+            "source": "kumihimo",
+            "pattern": "SR",
+            "n_strands": 8,
+            "repeat": 4,
+            "iterations": 5,
+        }
+    )
+    turn = result["timeline"]["turn"]
+    assert len(turn) == len(result["timeline"]["times"])
+    assert abs(abs(turn[-1] - turn[0]) - 2 * math.pi) < 0.2
+    # A machine has no disk to hang from.
+    machine = build(
+        {"source": "machine", "name": "flat_3", "cycles": 1, "iterations": 5}
+    )
+    assert "turn" not in machine["timeline"]

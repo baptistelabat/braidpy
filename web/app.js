@@ -448,6 +448,11 @@ function made(value) {
   const heights = braid.heights;
   const newest = interpolate(braid.times, heights, laid);
   braid.group.position.z = heights[heights.length - 1] - newest;
+  // A disk's braid hangs from it and turns with it.
+  const timeline = braid.timeline;
+  braid.group.rotation.z = timeline?.turn
+    ? interpolate(timeline.times, timeline.turn, now)
+    : 0;
   for (const child of braid.group.children) {
     if (child.userData.core) child.visible = fraction > 0.999;
   }
