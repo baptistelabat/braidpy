@@ -1,0 +1,90 @@
+name: Braid Studio
+run-name: Braid Studio — build, test${{ github.event_name == 'push' && ' and publish' || '' }}
+
+# The web page: braidpy run in the browser by Pyodide, drawn with three.js.
+# Built and tried in a real browser on every change to it or to braidpy;
+# published beside the documentation, under studio/, from develop.
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "src/**"
+      - "web/**"
+      - "pyproject.toml"
+      - ".github/workflows/braid_studio.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "web/**"
+      - "pyproject.toml"
+      - ".github/workflows/braid_studio.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: braid-studio-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch three.js
+        working-directory: web
+        run: npm ci
+
+      - name: Build the site
+        run: uv run --no-project python web/build.py
+
+      - name: Install a browser
+        run: uv run --no-project --with playwright python -m playwright install --with-deps chromium
+
+      - name: Make a braid of every kind, in the browser
+        run: uv run --no-project --with playwright python web/smoke_test.py --screenshots web/screenshots
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: braid-studio-screenshots
+          path: web/screenshots
+          if-no-files-found: ignore
+
+      - name: Keep the site
+        uses: actions/upload-artifact@v4
+        with:
+          name: braid-studio-site
+          path: web/site
+          include-hidden-files: true
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: braid-studio-site
+          path: site
+
+      - name: Publish under studio/, beside the documentation
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: site
+          destination_dir: studio
+          keep_files: true
+          commit_message: "Braid Studio from ${{ github.sha }}"

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Braid Studio — braidpy</title>
+    <meta
+      name="description"
+      content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet or a braiding machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <aside class="panel">
+      <header>
+        <h1>Braid Studio</h1>
+        <p class="lede">
+          Describe a braid and see it laid and tightened in 3D, computed by
+          <a href="https://github.com/baptistelabat/braidpy">braidpy</a> in
+          your browser.
+        </p>
+      </header>
+
+      <form id="form" autocomplete="off">
+        <label class="field">
+          <span>Made by</span>
+          <select id="source" name="source"></select>
+        </label>
+
+        <div id="fields"></div>
+
+        <details class="advanced">
+          <summary>Yarn and tightening</summary>
+          <label class="field">
+            <span>Yarn diameter</span>
+            <input
+              id="yarn_diameter"
+              name="yarn_diameter"
+              type="number"
+              step="any"
+              min="0"
+              placeholder="default"
+            />
+          </label>
+          <label class="field">
+            <span>Tightening steps</span>
+            <input
+              id="iterations"
+              name="iterations"
+              type="number"
+              min="0"
+              max="2000"
+              step="10"
+              placeholder="default"
+            />
+            <small>0 lays the yarns with no tension.</small>
+          </label>
+        </details>
+
+        <button id="build" type="submit" disabled>Loading…</button>
+        <p id="status" class="status" role="status" aria-live="polite">
+          Starting…
+        </p>
+      </form>
+
+      <section id="about" class="about" hidden>
+        <h2 id="title"></h2>
+        <dl id="info"></dl>
+        <ul id="notes" class="notes"></ul>
+      </section>
+
+      <footer>
+        <p>
+          Everything is computed here, in your browser: Python runs through
+          <a href="https://pyodide.org">Pyodide</a>, drawing through
+          <a href="https://threejs.org">three.js</a>.
+        </p>
+      </footer>
+    </aside>
+
+    <main class="stage">
+      <div id="viewer" class="viewer" aria-label="The braid in 3D"></div>
+      <div class="toolbar" role="toolbar" aria-label="View">
+        <button id="grow" type="button" title="Watch the braid being made">
+          ▶ Grow
+        </button>
+        <input
+          id="made"
+          type="range"
+          min="0"
+          max="1000"
+          value="1000"
+          aria-label="How much of the braid is made"
+        />
+        <label class="check"
+          ><input id="tubes" type="checkbox" checked /> Tubes</label
+        >
+        <label class="check"
+          ><input id="spin" type="checkbox" /> Spin</label
+        >
+        <button id="reset" type="button" title="Back to the starting view">
+          Reset view
+        </button>
+        <button id="share" type="button" title="Copy a link to this braid">
+          Copy link
+        </button>
+        <button id="save" type="button" title="Save a picture of the braid">
+          Save PNG
+        </button>
+      </div>
+      <div id="empty" class="empty">
+        <p>The braid appears here.</p>
+      </div>
+    </main>
+  </body>
+</html>
