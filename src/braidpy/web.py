@@ -269,7 +269,9 @@ def catalogue() -> Dict[str, Any]:
             "entries": [
                 {
                     "name": name,
-                    "title": f"ABOK #{name.split('_')[1]} ({sinnet.n_strands} strands)",
+                    "title": f"ABOK #{name.split('_')[1]}, {sinnet.n_strands}-strand "
+                    + (sinnet.shape or "sinnet"),
+                    "shape": sinnet.shape,
                     "pattern": {
                         "counts": " ".join(
                             str(c) for c in sinnet.initial_counts_per_space
@@ -812,12 +814,16 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
             "cycle: the catalogue's moves may be mistranscribed."
         )
     called = "Your own" if name == "custom" else f"ABOK #{name.split('_')[1]},"
+    info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
+    if sinnet.shape:
+        info["expected_shape"] = sinnet.shape
     return _result(
-        f"{called} {sinnet.n_strands}-strand sinnet, {cycles} cycles",
+        f"{called} {sinnet.n_strands}-strand {sinnet.shape or 'sinnet'}, "
+        f"{cycles} cycles",
         paths,
         diameter,
         colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
-        info=_disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False),
+        info=info,
         notes=notes,
         timeline=_timeline(seen, list(paths.points), "disk", clock, ring),
     )

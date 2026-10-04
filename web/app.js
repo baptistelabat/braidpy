@@ -904,6 +904,7 @@ function describe(result, seconds) {
   const info = result.info;
   const rows = [
     ["Strands", info.n_strands],
+    ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
     ["Crossings", info.crossings],
     ["Exponent sum", info.exponent_sum],
     ["Permutation", info.permutation && info.permutation.join(" ")],
