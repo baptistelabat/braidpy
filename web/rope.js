@@ -9,8 +9,11 @@
 // - stretching: k_s/2 (|x_{i+1} - x_i| - s)^2 per link — stiff, so yarn
 //   barely stretches;
 // - bending: k_b/2 |x_{i-1} - 2 x_i + x_{i+1}|^2 / s^2 per bead — slight;
-// - contact: k_c/2 (d - r)^2 for any two segments of different yarns (or of
-//   one yarn, far apart along it) whose axes come closer than a diameter d;
+// - contact, for any two segments of different yarns (or of one yarn, far
+//   apart along it): a yarn is a firm core inside a soft surface.  Closer
+//   than a diameter d, the surfaces press together, k_r/2 (d - r)^2; closer
+//   than d - w, the cores too, k_c/2 (d - w - r)^2, much stiffer.  Yarns
+//   feel each other coming, meet gently, and touch at about a diameter;
 //
 // and the ends' work: the yarns' bottom ends are clamped, and their top ends
 // are fixed to an end plate, which moves up and down — pulled up by a force
@@ -20,7 +23,9 @@
 // The minimum of that energy is the braid at rest, its yarns pulled taut.
 // It is found by FIRE (Bitzek et al., Phys. Rev. Lett. 97, 170201, 2006):
 // damped dynamics that speed up while going downhill and stop dead when
-// going up.  Every force here is the gradient of the energy, so at rest
+// going up.  The damping is FIRE's own — each step turns the velocity
+// towards the force, and any step uphill stops every bead — so there is no
+// friction term to tune.  Every force here is the gradient of the energy, so at rest
 // they balance: the tests check that they do.
 //
 // Lengths are in yarn diameters.
@@ -38,7 +43,10 @@
    * @param {boolean} [job.turns]  Whether the end plate may turn.
    * @param {number} [job.stretch]  k_s.
    * @param {number} [job.bend]  k_b.
-   * @param {number} [job.contact]  k_c.
+   * @param {number} [job.contact]  k_c, the cores'.
+   * @param {number} [job.soft]  k_r, the soft surfaces'.
+   * @param {number} [job.shell]  w, how thick the soft surface is, of a
+   *     diameter; 0 for a yarn hard all through.
    * @param {number} [job.steps]  The most steps to take.
    * @param {number} [job.tolerance]  Stop once no force is larger.
    * @returns {Object} The yarns at rest, the end plate's rise and turn, and
@@ -48,6 +56,9 @@
     const ks = job.stretch ?? 400;
     const kb = job.bend ?? 0.5;
     const kc = job.contact ?? 400;
+    const kr = job.soft ?? 5;
+    const shell = job.shell ?? 0.1;
+    const core = 1 - shell;
     const force = job.force ?? 1;
     const turns = Boolean(job.turns);
     const steps = job.steps ?? 20000;
@@ -195,9 +206,12 @@
         const pz = x[3 * g + 2] + u * (x[3 * g + 5] - x[3 * g + 2]) - x[3 * h + 2] - v * (x[3 * h + 5] - x[3 * h + 2]);
         const r = Math.hypot(px, py, pz);
         if (r >= 1) continue;
-        contacts++;
-        deepest = Math.max(deepest, 1 - r);
-        const push = (kc * (1 - r)) / Math.max(r, 1e-9);
+        let push = (kr * (1 - r)) / Math.max(r, 1e-9);
+        if (r < core) {
+          contacts++;
+          deepest = Math.max(deepest, core - r);
+          push += (kc * (core - r)) / Math.max(r, 1e-9);
+        }
         for (let c = 0; c < 3; c++) {
           const p = push * [px, py, pz][c];
           f[3 * g + c] += (1 - u) * p;
