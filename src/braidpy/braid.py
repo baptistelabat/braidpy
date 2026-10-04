@@ -12,10 +12,14 @@ License: Mozilla Public License 2.0
 """
 
 import enum
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
-from sympy import Matrix, eye, symbols
+
+if TYPE_CHECKING:
+    # sympy is only needed for the Burau matrices, and is slow to import —
+    # seconds, in a browser: imported there, when they are asked for.
+    from sympy import Matrix
 from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
@@ -30,15 +34,19 @@ from braidpy.utils import (
     int_to_superscript,
     int_to_subscript,
     colorize,
+    lazy_module,
     StrictlyPositiveInt,
     PositiveInt,
 )
 
 
-import math_braid
+if TYPE_CHECKING:
+    import math_braid
+else:
+    # It imports sympy, slow to import: only when braids are compared.
+    math_braid = lazy_module("math_braid")
 from collections.abc import Iterable
 
-t = symbols("t")
 
 # Define a type alias for clarity
 SignedCrossingIndex = int
@@ -532,11 +540,14 @@ class Braid:
                 n_half_twist=0, n_strands=StrictlyPositiveInt(br.n_strands), Ai=()
             )
 
-    def to_matrix(self) -> Matrix:
+    def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
         Burau matrix representation if faithful for n_strands=3 or n_strands=4, but not faithful for n_strand>=5
         https://arxiv.org/abs/2607.05283
         """
+        from sympy import eye, symbols
+
+        t = symbols("t")
         matrix = eye(self.n_strands)
 
         for gen in self.generators:
@@ -562,7 +573,9 @@ class Braid:
         Return the reduced Burau representation
         https://en.wikipedia.org/wiki/Burau_representation
         """
+        from sympy import eye, symbols
 
+        t = symbols("t")
         matrix = eye(self.n_strands - 1)
 
         for gen in self.generators:
