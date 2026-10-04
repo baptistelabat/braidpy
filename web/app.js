@@ -41,10 +41,47 @@ const FIELDS = {
   ],
   mobidai: [
     { name: "name", label: "Braid", kind: "entries" },
+    {
+      name: "slots",
+      label: "Strands start in slots",
+      kind: "text",
+      custom: true,
+      hint: "One slot per strand; slots are numbered clockwise from the top.",
+    },
+    {
+      name: "moves",
+      label: "Moves, in order",
+      kind: "textarea",
+      custom: true,
+      hint: "From slot > to slot, for example 1>15, 17>31. A strand goes the short way round, over the strands it passes.",
+    },
+    { name: "n_slots", label: "Slots", kind: "number", min: 3, max: 128, custom: true },
+    {
+      name: "shift",
+      label: "Turn after a cycle",
+      kind: "number",
+      min: -128,
+      max: 128,
+      custom: true,
+    },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 40 },
   ],
   sinnet: [
     { name: "name", label: "Sinnet", kind: "entries" },
+    {
+      name: "counts",
+      label: "Strands in each space",
+      kind: "text",
+      custom: true,
+      hint: "Spaces are numbered anticlockwise from the left.",
+    },
+    {
+      name: "moves",
+      label: "Moves, in order",
+      kind: "textarea",
+      custom: true,
+      hint: "From space > to space. Odd spaces send their right-hand strand anticlockwise, even spaces their left-hand one clockwise, over all.",
+    },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
   machine: [
@@ -95,6 +132,7 @@ function renderFields(source, values = {}) {
       hint.textContent = field.hint;
       label.append(hint);
     }
+    if (field.custom) label.dataset.custom = "";
     if (field.kind === "number") numbers.push(label);
     else holder.append(label);
   }
@@ -103,6 +141,37 @@ function renderFields(source, values = {}) {
     row.className = "row";
     row.append(...numbers);
     holder.append(row);
+  }
+  // "Your own moves…" shows what a catalogued braid is made of, ready to
+  // change: it starts from the braid chosen before.
+  const entries = holder.querySelector("select[name=name]");
+  if (entries) {
+    let previous = entries.value;
+    const reveal = () => {
+      const custom = entries.value === "custom";
+      for (const label of holder.querySelectorAll("[data-custom]")) {
+        label.hidden = !custom;
+      }
+      if (custom) {
+        const from = about.entries.find((entry) => entry.name === previous);
+        for (const [key, value] of Object.entries(from?.pattern || {})) {
+          const input = holder.querySelector(`[name=${key}]`);
+          if (input && (input.value === "" || from)) input.value = value;
+        }
+      } else {
+        previous = entries.value;
+      }
+    };
+    entries.addEventListener("change", reveal);
+    if (entries.value === "custom") {
+      for (const label of holder.querySelectorAll("[data-custom]")) {
+        label.hidden = false;
+      }
+    } else {
+      for (const label of holder.querySelectorAll("[data-custom]")) {
+        label.hidden = true;
+      }
+    }
   }
   if (about.examples) {
     const examples = document.createElement("div");
@@ -125,7 +194,7 @@ function readSpec() {
   const spec = { source: $("source").value };
   for (const element of $("form").elements) {
     if (!element.name || element.name === "source") continue;
-    if (element.value === "") continue;
+    if (element.value === "" || element.closest("[hidden]")) continue;
     spec[element.name] =
       element.type === "number" ? Number(element.value) : element.value;
   }

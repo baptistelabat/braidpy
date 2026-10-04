@@ -107,6 +107,10 @@ form {
   gap: 4px;
 }
 
+.field[hidden] {
+  display: none;
+}
+
 .field > span {
   font-weight: 600;
   font-size: 13px;

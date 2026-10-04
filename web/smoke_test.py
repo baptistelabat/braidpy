@@ -36,6 +36,16 @@ CASES = [
     ({"source": "mobidai", "name": "KONGO_8", "cycles": 2}, 8),
     ({"source": "sinnet", "name": "abok_3042", "cycles": 1}, 8),
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
+    (
+        {
+            "source": "sinnet",
+            "name": "custom",
+            "counts": "2 1 2 1 2 1",
+            "moves": "1>5, 4>2, 5>3, 2>6, 3>1, 6>4",
+            "cycles": 1,
+        },
+        9,
+    ),
 ]
 
 
@@ -102,7 +112,10 @@ def main() -> int:
             if args.screenshots:
                 args.screenshots.mkdir(parents=True, exist_ok=True)
                 page.wait_for_timeout(500)
-                page.screenshot(path=args.screenshots / f"{spec['source']}.png")
+                name = spec["source"] + (
+                    "_custom" if spec.get("name") == "custom" else ""
+                )
+                page.screenshot(path=args.screenshots / f"{name}.png")
             page.close()
         browser.close()
     server.shutdown()

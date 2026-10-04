@@ -75,6 +75,8 @@ def test_a_kumihimo_pattern():
 @pytest.mark.parametrize("source", ["mobidai", "sinnet", "machine"])
 def test_every_catalogue_entry_is_made(source):
     for entry in catalogue()[source]["entries"]:
+        if entry["name"] == "custom":
+            continue  # made from what is typed in: see below
         result = build(
             {"source": source, "name": entry["name"], "cycles": 1, "iterations": 5}
         )
@@ -171,3 +173,62 @@ def test_a_disk_braid_is_made_in_step_with_its_crossings():
     assert clock["source"][1:-1] == made_at
     assert all(row % 1 == 0.5 for row in clock["braid"][1:-1])
     assert len(clock["braid"]) == len(crossings) + 2
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["1>15, 17>31", "1->15; 17->31", "(1, 15) (17, 31)", "1 15\n17 31", "1→15 17→31"],
+)
+def test_moves_are_read_however_they_are_written(text):
+    from braidpy.web import parse_moves
+
+    assert parse_moves(text) == [(1, 15), (17, 31)]
+
+
+@pytest.mark.parametrize(
+    "text, message", [("", "at least one"), ("1>2, 3", "each move")]
+)
+def test_moves_that_cannot_be_read_say_so(text, message):
+    from braidpy.web import parse_moves
+
+    with pytest.raises(ValueError, match=f"(?i){message}"):
+        parse_moves(text)
+
+
+@pytest.mark.parametrize("source", ["mobidai", "sinnet"])
+def test_a_catalogued_braid_typed_in_is_the_same_braid(source):
+    """What the catalogue shows of a braid, made as your own, is that braid."""
+    entry = catalogue()[source]["entries"][0]
+    as_listed = build(
+        {"source": source, "name": entry["name"], "cycles": 2, "iterations": 5}
+    )
+    typed = build(
+        {
+            "source": source,
+            "name": "custom",
+            **entry["pattern"],
+            "cycles": 2,
+            "iterations": 5,
+        }
+    )
+    assert typed["info"]["word"] == as_listed["info"]["word"]
+    assert typed["strands"][0]["points"] == as_listed["strands"][0]["points"]
+    assert catalogue()[source]["entries"][-1]["name"] == "custom"
+
+
+@pytest.mark.parametrize(
+    "spec, message",
+    [
+        ({"slots": "1 1", "moves": "1>2"}, "same slot"),
+        ({"slots": "1 40", "moves": "1>2"}, "numbered from 1 to 32"),
+        ({"slots": "1 2", "moves": "1>40"}, "between slots"),
+    ],
+)
+def test_your_own_disk_braid_is_checked(spec, message):
+    with pytest.raises(ValueError, match=message):
+        build({"source": "mobidai", "name": "custom", "n_slots": 32, **spec})
+
+
+def test_your_own_sinnet_is_checked():
+    with pytest.raises(ValueError, match="between spaces"):
+        build({"source": "sinnet", "name": "custom", "counts": "2 1 1", "moves": "1>4"})

@@ -38,11 +38,21 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Any, Callable, Dict, Hashable, List, Mapping, Optional, Sequence
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 import numpy as np
 
-__all__ = ["build", "catalogue", "parse_word"]
+__all__ = ["build", "catalogue", "parse_moves", "parse_word"]
 
 # Points along a yarn are rounded to this many decimals: a tenth of a
 # thousandth of a yarn is finer than any screen.
@@ -108,6 +118,43 @@ def parse_word(text: str) -> List[int]:
     if any(g == 0 for g in word):
         raise ValueError("Generators are numbered from 1.")
     return word
+
+
+def parse_moves(text: str) -> List[Tuple[int, int]]:
+    """Moves from one place to another, as ``(from, to)`` pairs.
+
+    Reads ``1>15, 17>31``, ``1->15; 17->31``, ``1 15, 17 31``, ``(1, 15)
+    (17, 31)``, one move per line, and the like: what matters is the order
+    of the numbers, taken two by two.
+
+    Args:
+        text: The moves.
+
+    Returns:
+        The moves, in order.
+
+    Raises:
+        ValueError: If there are no moves, or an odd number of places.
+    """
+    if re.search(r"[^\d\s,;:()\[\]>→\-]", text):
+        raise ValueError("Write moves as from>to pairs, for example 1>15, 17>31.")
+    numbers = [int(n) for n in re.findall(r"\d+", text)]
+    if not numbers:
+        raise ValueError("Give at least one move, for example 1>15.")
+    if len(numbers) % 2:
+        raise ValueError("Each move needs a place to go from and one to go to.")
+    return list(zip(numbers[::2], numbers[1::2]))
+
+
+def _numbers(text: Any, what: str) -> List[int]:
+    numbers = [int(n) for n in re.findall(r"-?\d+", str(text))]
+    if not numbers:
+        raise ValueError(f"Give the {what}, as numbers.")
+    return numbers
+
+
+def _moves_text(moves: Sequence[Tuple[int, int]]) -> str:
+    return ", ".join(f"{a}>{b}" for a, b in moves)
 
 
 # ---------------------------------------------------------------- catalogue
@@ -199,10 +246,21 @@ def catalogue() -> Dict[str, Any]:
             "entries": [
                 {
                     "name": key,
-                    "title": f"{entry.name} ({entry.n_strands} strands)",
+                    "title": entry.name[0].upper()
+                    + entry.name[1:]
+                    + (
+                        "" if "strand" in entry.name else f", {entry.n_strands} strands"
+                    ),
+                    "pattern": {
+                        "n_slots": entry.n_slots,
+                        "slots": " ".join(str(slot) for slot, _ in entry.initial_slots),
+                        "moves": _moves_text(entry.moves),
+                        "shift": entry.n_shift_after_cycle,
+                    },
                 }
                 for key, entry in mobidais.items()
-            ],
+            ]
+            + [{"name": "custom", "title": "Your own moves…"}],
         },
         "sinnet": {
             "title": "Ashley solid sinnet",
@@ -211,9 +269,16 @@ def catalogue() -> Dict[str, Any]:
                 {
                     "name": name,
                     "title": f"ABOK #{name.split('_')[1]} ({sinnet.n_strands} strands)",
+                    "pattern": {
+                        "counts": " ".join(
+                            str(c) for c in sinnet.initial_counts_per_space
+                        ),
+                        "moves": _moves_text(sinnet.moves),
+                    },
                 }
                 for name, sinnet in sinnets.items()
-            ],
+            ]
+            + [{"name": "custom", "title": "Your own moves…"}],
         },
         "machine": {
             "title": "Horn gear braiding machine",
@@ -548,11 +613,32 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
 def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
+    from braidpy.mobidai_catalog import CataloguedBraid
+
     mobidais = _mobidais()
     name = str(spec.get("name", "KONGO_8"))
-    if name not in mobidais:
+    if name == "custom":
+        n_slots = _count(spec, "n_slots", 32, 3, 128)
+        slots = _numbers(spec.get("slots", ""), "slots the strands start in")
+        if len(set(slots)) < len(slots):
+            raise ValueError("Two strands start in the same slot.")
+        if not all(1 <= slot <= n_slots for slot in slots):
+            raise ValueError(f"Slots are numbered from 1 to {n_slots}.")
+        moves = parse_moves(str(spec.get("moves", "")))
+        if not all(1 <= p <= n_slots for move in moves for p in move):
+            raise ValueError(f"Moves are between slots 1 to {n_slots}.")
+        entry = CataloguedBraid(
+            name="your own disk braid",
+            n_slots=n_slots,
+            initial_slots=tuple(zip(slots, _hues(len(slots)))),
+            moves=tuple(moves),
+            n_shift_after_cycle=_count(spec, "shift", 0, -128, 128),
+            source="",
+        )
+    elif name in mobidais:
+        entry = mobidais[name]
+    else:
         raise ValueError(f"No mobidai braid {name!r}: one of {sorted(mobidais)}.")
-    entry = mobidais[name]
     config = entry.to_config()
     cycles = _count(spec, "cycles", 6, 1, 40)
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
@@ -583,11 +669,24 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     from braidpy.ashley_solid_sinnet import strand_colours
     from braidpy.take_off import disk_trajectories
 
+    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
+
     sinnets = _sinnets()
     name = str(spec.get("name", "abok_3042"))
-    if name not in sinnets:
+    if name == "custom":
+        counts = _numbers(spec.get("counts", ""), "strands in each space")
+        if len(counts) < 2 or min(counts) < 0 or sum(counts) < 2:
+            raise ValueError("Give two spaces or more, holding two strands or more.")
+        if sum(counts) > 64:
+            raise ValueError("That is over 64 strands.")
+        moves = parse_moves(str(spec.get("moves", "")))
+        if not all(1 <= p <= len(counts) for move in moves for p in move):
+            raise ValueError(f"Moves are between spaces 1 to {len(counts)}.")
+        sinnet = AshleySolidSinnet(counts, moves)
+    elif name in sinnets:
+        sinnet = sinnets[name]
+    else:
         raise ValueError(f"No sinnet {name!r}: one of {sorted(sinnets)}.")
-    sinnet = sinnets[name]
     cycles = _count(spec, "cycles", 3, 1, 12)
     diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
     disk = sinnet.disk(cycles)
@@ -619,9 +718,9 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
             "Its moves do not bring every space back to its count after a "
             "cycle: the catalogue's moves may be mistranscribed."
         )
+    called = "Your own" if name == "custom" else f"ABOK #{name.split('_')[1]},"
     return _result(
-        f"ABOK #{name.split('_')[1]}, {sinnet.n_strands}-strand sinnet, "
-        f"{cycles} cycles",
+        f"{called} {sinnet.n_strands}-strand sinnet, {cycles} cycles",
         paths,
         diameter,
         colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
