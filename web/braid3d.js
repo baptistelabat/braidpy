@@ -42,7 +42,8 @@
   const LIFT = 1.6; // a moving yarn rides this high over the others
   const DEPTH = 7; // below the mirror, the braid is made
   const KEEP = 3; // made beads still touched, below that
-  const OVER = 1.5; // down to this deep, a moving yarn goes over the others
+  const RAISE = 3; // a moving yarn's carrier is raised this high
+  const FELL = -1; // the braid is drawn down to keep its fell here
 
   // Solve (I + h L) x = b in place in values[0..n), L the second difference
   // along a chain whose two ends are held: the Thomas algorithm.
@@ -81,18 +82,24 @@
     const nYarns = job.start.length;
     const nSlots = job.n_slots;
     const sense = job.clockwise ? -1 : 1;
-    const weight = job.weight === undefined ? 0.6 : job.weight;
+    const weight = job.weight === undefined ? 0.3 : job.weight;
     const rim = 7 + nYarns / 4;
-    const hole = 0.6 + 0.35 * Math.sqrt(nYarns);
+    const hole = rim / 2;
+    // Near enough the axis to be in the braid, or about to be.
+    const braidRadius = 1.5 + 0.35 * Math.sqrt(nYarns);
     const angleOf = (slot) => (sense * 2 * Math.PI * (slot - 1)) / nSlots;
 
-    // Carriers: where each yarn is pulled to; lifted while it moves.
+    // Carriers: where each yarn is pulled to.  A carrier on the move is
+    // raised in over the hole and taken round there, above where the yarns
+    // meet, so its yarn passes over those it sweeps, not round them.
     const angle = job.start.map(angleOf);
+    const radius = job.start.map(() => rim);
+    const raised = new Float64Array(nYarns);
     const lifted = new Uint8Array(nYarns);
     const carrier = (a) => [
-      rim * Math.cos(angle[a]),
-      rim * Math.sin(angle[a]),
-      0.5 + (lifted[a] ? LIFT : 0),
+      radius[a] * Math.cos(angle[a]),
+      radius[a] * Math.sin(angle[a]),
+      0.5 + raised[a],
     ];
 
     function line(corners) {
@@ -372,13 +379,6 @@
             vx = 1;
             vy = vz = 0;
           }
-          // A moving yarn goes over the yarns it passes, up at the mirror
-          // where they meet, not round them.
-          const ls = lifted[yarnOf[s]], lt = lifted[yarnOf[t]];
-          if (ls !== lt && p[3 * s + 2] + p[3 * t + 2] > -2 * OVER) {
-            vx = vy = 0;
-            vz = ls ? 1 : -1;
-          }
           const ws0 = mobile[s] * (1 - u), ws1 = mobile[s + 1] * u;
           const wt0 = mobile[t] * (1 - v), wt1 = mobile[t + 1] * v;
           const total = ws0 * ws0 + ws1 * ws1 + wt0 * wt0 + wt1 * wt1;
@@ -433,8 +433,8 @@
         if (!mobile[g]) continue;
         const mx = p[3 * g] - was[3 * g], my = p[3 * g + 1] - was[3 * g + 1], mz = p[3 * g + 2] - was[3 * g + 2];
         const size = Math.sqrt(mx * mx + my * my + mz * mz);
-        if (size > MOVE / 2) {
-          const f = MOVE / 2 / size;
+        if (size > MOVE) {
+          const f = MOVE / size;
           p[3 * g] = was[3 * g] + mx * f;
           p[3 * g + 1] = was[3 * g + 1] + my * f;
           p[3 * g + 2] = was[3 * g + 2] + mz * f;
@@ -442,21 +442,23 @@
       }
     }
 
-    // The braid, and the yarns down in the hole with it, go down with the
-    // weight while the yarns, where they come up out of the hole, draw them
-    // up less than the weight draws them down — and up while more.  Only
-    // the made beads are moved: the rest follow.
+    // The take-off: whenever a yarn near the axis rises above the fell's
+    // height, the made braid is drawn down, the crossings above it with it.
+    // It draws no further: what packs the crossings together is the yarns'
+    // pull out to their carriers, beating each new one up against the last,
+    // so the braid's pitch is what jamming leaves.
     let lastUp = 0;
     function takeOff() {
-      let up = 0;
+      let top = -Infinity;
       for (let a = 0; a < nYarns; a++) {
-        let g = first[a] + kept[a];
-        while (g < first[a + 1] - 1 && p[3 * g + 2] < -0.5) g++;
-        const dx = p[3 * g] - p[3 * g - 3], dy = p[3 * g + 1] - p[3 * g - 2], dz = p[3 * g + 2] - p[3 * g - 1];
-        up += dz / Math.max(Math.hypot(dx, dy, dz), 1e-300);
+        // Not the yarn on the move, raised over the others.
+        if (lifted[a]) continue;
+        for (let g = first[a] + kept[a]; g < first[a + 1]; g++) {
+          if (Math.hypot(p[3 * g], p[3 * g + 1]) < braidRadius) top = Math.max(top, p[3 * g + 2]);
+        }
       }
-      const by = Math.max(-MOVE / 2, Math.min(MOVE / 2, (up - weight * nYarns) / nYarns));
-      lastUp = up / nYarns;
+      lastUp = top;
+      const by = -Math.max(0, Math.min(MOVE / 10, top - FELL));
       if (!by) return;
       for (const y of yarns) {
         for (let i = 0; i < y.made.length - kept[yarns.indexOf(y)]; i++) y.made[i][2] += by;
@@ -513,33 +515,65 @@
         neighbours();
         continue;
       }
-      // One yarn lifted over those it passes; several sliding along
-      // together pass nobody, and stay down.
-      const lift = moving.length === 1 && Math.abs(moving[0][1]) > 1;
-      if (lift) {
-        lifted[moving[0][0]] = 1;
-        setCarrier(moving[0][0]);
-        relax(6, number);
-      }
+      // One yarn raised over those it passes; several sliding along
+      // together pass nobody, and stay down on the rim.
       const arcs = moving.map(([a, delta]) => [a, (sense * 2 * Math.PI * delta) / nSlots]);
       const longest = Math.max(...arcs.map(([, arc]) => Math.abs(arc)));
-      const parts = Math.max(1, Math.ceil((longest * rim) / 1.0));
-      for (let part = 1; part <= parts; part++) {
-        for (const [a, arc] of arcs) {
+      if (moving.length === 1 && Math.abs(moving[0][1]) > 1) {
+        const [[a, arc]] = arcs;
+        const inner = 0.5 + 0.35 * Math.sqrt(nYarns);
+        lifted[a] = 1;
+        const travel = (toRadius, toRaise) => {
+          const [r0, h0] = [radius[a], raised[a]];
+          const parts = Math.max(1, Math.ceil(Math.hypot(toRadius - r0, toRaise - h0) / 0.4));
+          for (let part = 1; part <= parts; part++) {
+            radius[a] = r0 + ((toRadius - r0) * part) / parts;
+            raised[a] = h0 + ((toRaise - h0) * part) / parts;
+            setCarrier(a);
+            relax(5, number + 0.5 * (part / parts) * (toRadius < r0 ? 0 : 1));
+          }
+        };
+        travel(inner, RAISE);
+        const parts = Math.max(1, Math.ceil((Math.abs(arc) * inner) / 0.3));
+        for (let part = 1; part <= parts; part++) {
           angle[a] += arc / parts;
           setCarrier(a);
+          relax(5, number + (0.5 * part) / parts);
         }
-        relax(5, number + part / parts);
-      }
-      for (const [a] of moving) {
+        travel(rim, 0);
         lifted[a] = 0;
-        setCarrier(a);
+      } else {
+        const parts = Math.max(1, Math.ceil((longest * rim) / 0.4));
+        for (let part = 1; part <= parts; part++) {
+          for (const [a, arc] of arcs) {
+            angle[a] += arc / parts;
+            setCarrier(a);
+          }
+          relax(5, number + part / parts);
+        }
       }
       relax(job.settle || 30, number + 1);
       if (job.debug) console.error(number, "up", lastUp.toFixed(3), "bottom", Math.min(...yarns.map((y) => y.made[0][2])).toFixed(2), "made", yarns.map((y) => y.made.length).join(","), "beads", first[nYarns], "pairs", pairs.length / 2);
       if (progress) progress((number + 1) / steps.length);
     }
     relax(60, steps.length);
+    if (job.debug) {
+      const slack = () => {
+        let total = 0;
+        for (const y of yarns) {
+          const c = [y.made[y.made.length - 1], ...y.active];
+          let L = 0;
+          for (let i = 1; i < c.length; i++) L += Math.hypot(c[i][0] - c[i - 1][0], c[i][1] - c[i - 1][1], c[i][2] - c[i - 1][2]);
+          const a = c[0], b = c[c.length - 1];
+          total += L - Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        }
+        return total.toFixed(1);
+      };
+      for (let k = 0; k < 6; k++) {
+        console.error("slack", slack());
+        relax(100, steps.length);
+      }
+    }
 
     if (job.raw) {
       scatter();
