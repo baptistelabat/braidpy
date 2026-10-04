@@ -153,6 +153,32 @@ button:focus-visible {
   gap: 10px;
 }
 
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor[hidden] {
+  display: none;
+}
+
+.editor canvas {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  align-self: center;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.editor small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .examples {
   display: flex;
   flex-wrap: wrap;

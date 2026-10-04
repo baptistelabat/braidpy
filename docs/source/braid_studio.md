@@ -21,12 +21,15 @@ The page has a form and a 3D view.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
   moves…" shows what the braid chosen before is made of — the slots its
   strands start in and its moves, or its spaces' counts and moves — ready to
-  change.
+  change, as text or by clicking on a drawing of the disk: a strand, then
+  the slot it goes to (or a space, then the space a strand goes to).
 - The braid is drawn as tubes, one colour per yarn, and can be turned, zoomed
   and spun. **Grow** replays it being made, by the clock of whatever made
   it: the oldest rows first, carried up as the newest form at the fell. An
   inset shows what made it, seen from above, at the same instant — the disk
-  with its strands as spokes, the machine's gears and carriers.
+  with its strands as spokes, the machine's gears and carriers — and a
+  disk's braid turns with the disk, each strand at the fell nearest its
+  carrier.
 - Beside it, what is known of the braid: its strands, crossings and word (its
   ring word too, for a disk braid), the permutation it makes, what it closes
   up into (a knot, or a link of so many pieces), its Garside normal form and
@@ -108,14 +111,17 @@ or `make studio` and `make studio-serve`. To use a Pyodide of your own rather th
 ## What comes next
 
 Done so far, beyond making and drawing a braid: watching it being made with
-what made it seen from above; your own disk braids and sinnets; the braid's
-closure, normal form and full twists; a cache of recent braids; STL, OBJ and
-JSON export.
+what made it seen from above, the braid turning with its disk; your own disk
+braids and sinnets, typed or clicked; the braid's closure, normal form and
+full twists; a cache of recent braids; STL, OBJ and JSON export.
 
-1. **Draw your own patterns.** Click a disk's slots to make moves, rather
-   than typing them; the same for a machine's gears and carriers.
-2. **The disk and the braid turned alike.** The braid hangs from the disk
-   and turns with it, as the Plotly side view shows; the 3D view could too.
+1. **Which way up.** A disk's braid is drawn growing up from the fell, as
+   braidpy draws every braid it lays; a real kumihimo hangs below its disk.
+   The two are mirror images. Drawn hanging, the braid would be the real one
+   — and the sign of the words braidpy gives disk braids is worth settling
+   at the same time (see the sinnet and mobidai conventions).
+2. **Your own machines.** Gears and carriers placed by clicking, as a
+   disk's moves are now.
 3. **More about the braid.** Its Alexander polynomial — once braidpy's is
    mended: it fails on negative crossings, and takes the determinant of the
    Burau matrix rather than of the identity less it — and its closure drawn
