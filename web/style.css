@@ -345,7 +345,7 @@ footer {
 @media (max-width: 760px) {
   body {
     grid-template-columns: 1fr;
-    grid-template-rows: 58vh auto;
+    grid-template-rows: auto auto;
     overflow: auto;
     height: auto;
   }
@@ -360,12 +360,30 @@ footer {
 
   .stage {
     order: 1;
-    height: 58vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .viewer {
+    position: relative;
+    inset: auto;
+    height: 56vh;
+  }
+
+  .topview {
+    width: 32vw;
+    top: 8px;
+    right: 8px;
   }
 
   .toolbar {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    position: static;
+    margin: 8px;
+    gap: 6px;
+  }
+
+  .empty {
+    bottom: auto;
+    height: 56vh;
   }
 }

@@ -318,7 +318,15 @@ function resize() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 }
-new ResizeObserver(resize).observe(viewer);
+new ResizeObserver(() => {
+  resize();
+  if (braid) drawTop(currentTime());
+}).observe(viewer);
+
+function currentTime() {
+  const [first, last] = braid.span;
+  return first + (Number($("made").value) / 1000) * (last - first);
+}
 resize();
 
 // What is drawn: per yarn its tube and its line, each revealed up to how
@@ -406,12 +414,12 @@ function show(result, seconds) {
     box: new THREE.Box3().setFromObject(group),
   };
   showTubes($("tubes").checked);
+  $("topview").hidden = !timeline || !$("showtop").checked;
   $("made").value = $("made").max;
   made(Number($("made").max));
   fit();
   describe(result, seconds);
   $("empty").hidden = true;
-  $("topview").hidden = !timeline || !$("showtop").checked;
 }
 
 function showTubes(tubes) {
@@ -515,7 +523,10 @@ function drawTop(now) {
   ctx.font = "10px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  for (const [sx, sy, name] of view.slots) {
+  // As many names as there is room for round the rim.
+  const every = Math.max(1, Math.ceil(view.slots.length / (size / 16)));
+  for (const [index, [sx, sy, name]] of view.slots.entries()) {
+    if (index % every) continue;
     const out = 1 + 11 / (Math.hypot(sx, sy) * scale || 1);
     ctx.fillText(name, x([sx * out, 0]), y([0, sy * out]));
   }
