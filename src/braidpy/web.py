@@ -325,9 +325,8 @@ def build(spec: Mapping[str, Any], tighten: bool = True) -> Dict[str, Any]:
         ``notes`` worth telling whoever asked.  ``times`` says when each
         point was laid, and ``timeline`` what laid it, seen from above —
         the carriers' paths, the outlines under them and the slots — with
-        its ``clock`` relating the source's time to the braid's.  A machine
-        braiding round a core also gives its ``cores``, each a segment
-        ``from`` and ``to``.
+        its ``clock`` relating the source's time to the braid's.  A
+        machine's axial cores are yarns among the others, named ``Core``.
 
     Raises:
         ValueError: If the description cannot be made.
@@ -406,12 +405,6 @@ def _tightened(paths, diameter: float, iterations: int, core_radius=None):
 def _tighten(paths, spec: Mapping[str, Any], diameter: float, default: int = 150):
     iterations = _count(spec, "iterations", default, 0, 2000)
     return _tightened(paths, diameter, iterations)
-
-
-def _tighten_round(paths, spec: Mapping[str, Any], diameter: float, core_radius):
-    # Kept outside the core, each step costs more: fewer of them by default.
-    iterations = _count(spec, "iterations", 80, 0, 2000)
-    return _tightened(paths, diameter, iterations, core_radius=core_radius)
 
 
 def _result(
@@ -851,59 +844,44 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
     diameter = _number(spec, "yarn_diameter", default, 0.01, 10.0)
     layout = compute_layout(machine)
     cores = axial_positions(machine, layout)
-    notes = ["Words are read over one cycle of the machine."]
-    if not cores:
-        paths = yarn_paths(
-            machine, n_cycles=cycles, yarn_diameter=diameter, fell_radius=0.0
-        )
-        paths = _tighten(paths, spec, diameter)
-    elif len(cores) == 1:
-        # Braided over a core as thick as a yarn: drawn in round it, and
-        # kept outside it as the yarns are pulled tight.
-        paths = yarn_paths(
-            machine, n_cycles=cycles, yarn_diameter=diameter, fell_radius=diameter
-        )
-        paths = _tighten_round(paths, spec, diameter, core_radius=diameter / 2)
-    else:
-        # Several cores, side by side: each takes its own yarns, which no
-        # single braiding point describes.  Laid as they come off.
-        paths = yarn_paths(machine, n_cycles=cycles, yarn_diameter=diameter)
-        notes.append(
-            "It braids round several cores at once: its yarns are laid as "
-            "they come off, not drawn in and tightened."
-        )
+    # A core is a yarn too, one that stays where it enters the braid: drawn
+    # in to the fell and tightened with the others, it ends up inside, held
+    # there by the yarns crossing round it.
+    paths = yarn_paths(
+        machine,
+        n_cycles=cycles,
+        yarn_diameter=diameter,
+        fell_radius=0.0,
+        axials=True,
+    )
+    paths = _tighten(paths, spec, diameter)
     info: Dict[str, Any] = {}
+    notes = ["Words are read over one cycle of the machine."]
     if cores:
-        notes[0] = (
-            "It braids round a core, which its word would need as a strand "
-            "of its own: no word is given."
-        )
+        notes = [
+            "It braids round a core, drawn here in grey as the yarn it is; its "
+            "word would need the core as a strand of its own: no word is given."
+        ]
     elif name.startswith("tubular"):
         annular = annular_word(machine)
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
         info["crossings"] = len(annular.generators)
     else:
         info.update(_braid_info(flat_word(machine), len(paths.points)))
-    result = _result(
+    keys = list(paths.points)
+    carriers = [k for k in keys if k not in cores]
+    colour = {k: _PALETTE[i % len(_PALETTE)] for i, k in enumerate(carriers)}
+    colour.update({k: "#8a857c" for k in cores})
+    return _result(
         _MACHINE_TITLES[name] + f", {cycles} cycles",
         paths,
         diameter,
+        colours=[colour[k] for k in keys],
+        names=[f"Core {k}" if k in cores else f"Yarn {k}" for k in keys],
         info=info,
         notes=notes,
-        timeline=_timeline(paths.trajectories, list(paths.points), "machine"),
+        timeline=_timeline(paths.trajectories, keys, "machine"),
     )
-    heights = [p[2] for strand in result["strands"] for p in strand["points"]]
-    top, fell = float(max(heights)), float(min(heights))
-    result["cores"] = [
-        {
-            "name": f"Core {core}",
-            "diameter": diameter,
-            "from": [round(x - paths.axis[0], 4), round(y - paths.axis[1], 4), fell],
-            "to": [round(x - paths.axis[0], 4), round(y - paths.axis[1], 4), top],
-        }
-        for core, (x, y) in cores.items()
-    ]
-    return result
 
 
 def _hues(n: int) -> List[str]:

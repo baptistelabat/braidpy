@@ -86,12 +86,34 @@ def test_every_catalogue_entry_is_made(source):
         json.dumps(result)
 
 
-def test_a_machine_over_a_core_shows_it():
-    result = build(
-        {"source": "machine", "name": "princess", "cycles": 1, "iterations": 5}
-    )
-    assert [core["name"] for core in result["cores"]] == ["Core cord"]
+def test_a_machine_braids_its_cores_in_as_yarns():
+    """A core is a yarn that stays where it enters the braid: it is tightened
+    with the others, and ends up inside, among them."""
+    import numpy as np
+
+    result = build({"source": "machine", "name": "soutache_5", "cycles": 2})
+    cores = [s for s in result["strands"] if s["name"].startswith("Core")]
+    yarns = [s for s in result["strands"] if not s["name"].startswith("Core")]
+    assert [s["name"] for s in cores] == ["Core cord_A", "Core cord_B"]
+    assert len(yarns) == 5
     assert "word" not in result["info"]
+    # Half way up, each core is among the yarns, not off to one side.
+    middle = len(cores[0]["points"]) // 2
+    xy = np.array([s["points"][middle][:2] for s in yarns])
+    low, high = xy.min(axis=0), xy.max(axis=0)
+    for core in cores:
+        assert np.all(low <= core["points"][middle][:2])
+        assert np.all(core["points"][middle][:2] <= high)
+
+
+def test_a_machine_lays_its_cores_only_when_asked():
+    from braidpy.horn_gear import yarn_paths
+    from braidpy.horn_gear.examples import soutache_braid
+
+    machine = soutache_braid()
+    plain = yarn_paths(machine, n_cycles=1).points
+    cored = yarn_paths(machine, n_cycles=1, axials=True).points
+    assert set(cored) - set(plain) == {"cord_A", "cord_B"}
 
 
 def test_the_catalogue_is_plain_data_with_defaults():
@@ -300,7 +322,15 @@ def _node_tighten(job):
     [
         {"source": "word", "word": "1 -2", "repeat": 4},
         {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
-        {"source": "machine", "name": "princess", "cycles": 1},
+        {"source": "machine", "name": "tubular_8", "cycles": 1},
+        # Kept outside a core round the axis, as tighten_yarns can.
+        {
+            "source": "kumihimo",
+            "pattern": "SR",
+            "n_strands": 8,
+            "repeat": 2,
+            "core_radius": 0.06,
+        },
     ],
 )
 def test_the_page_tightens_as_braidpy_does(spec):
@@ -315,8 +345,9 @@ def test_the_page_tightens_as_braidpy_does(spec):
 
     from braidpy.take_off import tighten_yarns
 
+    core = spec.pop("core_radius", None) if "core_radius" in spec else None
     handed = build({**spec, "iterations": 20}, tighten=False)
-    job = handed["tighten"]
+    job = {**handed["tighten"], "core_radius": core}
     n_yarns, n = job["n_yarns"], job["n"]
 
     # The laid yarns braidpy would have tightened, to the last digit: the
