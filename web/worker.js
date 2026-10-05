@@ -13,7 +13,7 @@
 //                {type: "error", id?, message}
 
 // The yarns are tightened here, in JavaScript: see tighten.js.
-importScripts("tighten.js", "rope.js");
+importScripts("tighten.js", "rope.js", "form.js");
 
 let pyodide = null;
 let machinesReady = false;
@@ -89,7 +89,7 @@ async function build(id, spec) {
   }
   const job = result.tighten;
   delete result.tighten;
-  const physics = spec.settle === "physics";
+  const physics = spec.settle === "physics" || spec.settle === "crossing";
   if (job && physics && result.timeline?.kind !== "disk") {
     result.notes = [
       ...(result.notes || []),
@@ -100,7 +100,7 @@ async function build(id, spec) {
     // Shown as laid straight away, then replaced once tight.
     self.postMessage({ type: "laid", id, result });
     if (physics && result.timeline?.kind === "disk") {
-      result = settled(id, result, job);
+      result = spec.settle === "crossing" ? formed(id, result, job) : settled(id, result, job);
     } else {
       status("Tightening the yarns…");
       const tight = tightenYarns(job, (fraction) =>
@@ -195,6 +195,88 @@ function settled(id, result, job) {
       `${((rest.turn * 180) / Math.PI).toFixed(0)}°.`,
   ];
   return out;
+}
+
+// The braid made crossing by crossing (form.js): from its oldest row up,
+// each row beaten up against the made braid, with friction, and frozen
+// into it; then the whole settled by its own physics (rope.js), as above,
+// from that start rather than from the braid as laid.
+function formed(id, result, job) {
+  status("Pulling the yarns clear…");
+  const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
+  const d = job.yarn_diameter;
+  const [cx, cy] = job.centre;
+  // Oldest end first, rising.
+  const yarns = [];
+  for (let a = 0; a < job.n_yarns; a++) {
+    const points = [];
+    for (let i = 0; i < job.n; i++) {
+      const k = a * job.n + i;
+      points.push((clear.xy[2 * k] - cx) / d, (clear.xy[2 * k + 1] - cy) / d, (i * job.spacing) / d);
+    }
+    yarns.push(points);
+  }
+  const height = ((job.n - 1) * job.spacing) / d;
+  const started = performance.now();
+  let shown = started;
+  const show = (now) => {
+    if (performance.now() - shown > 700) {
+      shown = performance.now();
+      self.postMessage({ type: "laid", id, result: onLevels(result, fellFirst(now), d) });
+    }
+  };
+  const made = formBraid({
+    yarns,
+    // As braidpy lays a disk braid: a row every one and a half diameters.
+    row: 1.5,
+    friction: 0.3,
+    feed: 1,
+    weight: 0.25 * job.n_yarns,
+    progress: ({ fraction, yarns: now }) => {
+      status(
+        `Making it crossing by crossing… ${Math.round(100 * fraction)}%, ` +
+          `${((performance.now() - started) / 1000).toFixed(0)} s`,
+      );
+      show(now);
+    },
+  });
+  const madeHeight = Math.max(...made.yarns.map((y) => y[y.length - 1]));
+  const rest = settleRope({
+    yarns: made.yarns,
+    spacing: 0.5,
+    feed: 1,
+    force: 0.25 * job.n_yarns,
+    turns: true,
+    stretch: 100,
+    contact: 100,
+    steps: 200000,
+    tolerance: 1e-3,
+    progress: ({ yarns: now }) => {
+      status(`Settling it… ${((performance.now() - started) / 1000).toFixed(0)} s`);
+      show(now);
+    },
+  });
+  const out = onLevels(result, fellFirst(rest.yarns), d);
+  out.info.closest_approach = round((1 - rest.deepest) * d);
+  out.notes = [
+    ...(out.notes || []),
+    `Made crossing by crossing, with friction: beaten up from ${height.toFixed(1)} to ` +
+      `${madeHeight.toFixed(1)} yarn diameters long; then settled to ` +
+      `${(madeHeight + rest.rise).toFixed(1)}, the end turning ` +
+      `${((rest.turn * 180) / Math.PI).toFixed(0)}°.`,
+  ];
+  return out;
+}
+
+// Yarns turned over, newest end first, the fell at height 0: as rope.js
+// gives them, for onLevels.
+function fellFirst(yarns) {
+  const top = Math.max(...yarns.map((y) => Math.max(...y.filter((_, k) => k % 3 === 2))));
+  return yarns.map((y) => {
+    const out = [];
+    for (let i = y.length - 3; i >= 0; i -= 3) out.push(y[i], y[i + 1], top - y[i + 2]);
+    return out;
+  });
 }
 
 // Each yarn at the heights the page draws it at, highest first — its

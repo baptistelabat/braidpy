@@ -76,3 +76,21 @@ def test_a_sinnet_beaten_up_is_the_same_braid(tmp_path):
     assert after == before
     # Exact linking numbers are whole: the closures really are closed.
     assert all(abs(x - round(x)) < 0.01 for x in result["after"]["links"])
+
+
+def test_a_sinnet_made_crossing_by_crossing_is_the_same_braid(tmp_path):
+    """ABOK #3044, made row by row with friction as the page makes it, then
+    settled: far shorter at each stage, and its closure's loops link each
+    other as the laid braid's did."""
+    from braidpy.web import build
+
+    spec = {"source": "sinnet", "name": "abok_3044", "cycles": 2, "settle": "crossing"}
+    job = tmp_path / "job.json"
+    job.write_text(json.dumps(build(spec, tighten=False)["tighten"]))
+    result = _run("formed", job)
+    assert result["largestForce"] < 1e-3
+    assert result["deepestEver"] < 0.05
+    assert result["madeHeight"] < 0.5 * result["height"]
+    laid = [round(x) for x in result["laid"]["links"]]
+    assert [round(x) for x in result["made"]["links"]] == laid
+    assert [round(x) for x in result["settled"]["links"]] == laid

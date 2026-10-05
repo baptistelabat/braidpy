@@ -206,6 +206,11 @@
                   if (h <= g) continue;
                   if (cells[3 * h] !== i + di || cells[3 * h + 1] !== j + dj || cells[3 * h + 2] !== k + dk) continue;
                   if (yarnOf[h] === yarnOf[g] && h - g < gap) continue;
+                  // Near enough to touch before the list is rebuilt.
+                  const mx = x[3 * g] + x[3 * g + 3] - x[3 * h] - x[3 * h + 3];
+                  const my = x[3 * g + 1] + x[3 * g + 4] - x[3 * h + 1] - x[3 * h + 4];
+                  const mz = x[3 * g + 2] + x[3 * g + 5] - x[3 * h + 2] - x[3 * h + 5];
+                  if (mx * mx + my * my + mz * mz > 4 * reach * reach) continue;
                   found.push(g, h);
                 }
               }

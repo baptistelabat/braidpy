@@ -611,7 +611,7 @@ worker.onmessage = ({ data }) => {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
-    show(data.result, data.seconds, shownLaid === data.id && $("settle").value !== "physics");
+    show(data.result, data.seconds, shownLaid === data.id && $("settle").value === "sideways");
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
     $("build").disabled = !catalogue;

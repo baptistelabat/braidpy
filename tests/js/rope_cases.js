@@ -7,6 +7,7 @@ const { layWord, readWord } = require("./braidgeo.js");
 const { linkingMatrix } = require("./linking.js");
 const { tightenYarns } = require(path.join(__dirname, "..", "..", "web", "tighten.js"));
 const { relay } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
+const { form } = require(path.join(__dirname, "..", "..", "web", "form.js"));
 
 function helices(turns, height, radius, spacing) {
   return [0, Math.PI].map((phase) => {
@@ -61,6 +62,45 @@ const cases = {
     const word = [1, -2, 1, -2, 1, -2];
     const plait = settle({ yarns: layWord(word, 3), spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
     return { ropeLaid: ys, rope: rope.yarns, plaitLaid: layWord(word, 3), plait: plait.yarns };
+  },
+  // A sinnet made crossing by crossing, as the page makes it, then
+  // settled: its closure's linking numbers at each stage.
+  formed() {
+    const job = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
+    const d = job.yarn_diameter;
+    const [cx, cy] = job.centre;
+    const yarns = [];
+    for (let a = 0; a < job.n_yarns; a++) {
+      const points = [];
+      for (let i = 0; i < job.n; i++) {
+        const k = a * job.n + i;
+        points.push((clear.xy[2 * k] - cx) / d, (clear.xy[2 * k + 1] - cy) / d, (i * job.spacing) / d);
+      }
+      yarns.push(Array.from(relay(Float64Array.from(points), 0.5)));
+    }
+    const made = form({ yarns, row: 1.5, friction: 0.3, feed: 1, weight: 0.25 * job.n_yarns });
+    const rest = settle({
+      yarns: made.yarns,
+      spacing: 0.5,
+      feed: 1,
+      force: 0.25 * job.n_yarns,
+      turns: true,
+      stretch: 100,
+      contact: 100,
+      steps: 60000,
+      tolerance: 1e-3,
+    });
+    const top = (ys) => Math.max(...ys.map((y) => y[y.length - 1]));
+    return {
+      laid: linkingMatrix(yarns, 0),
+      made: linkingMatrix(made.yarns, 0),
+      settled: linkingMatrix(rest.yarns, rest.turn),
+      height: top(yarns),
+      madeHeight: top(made.yarns),
+      deepestEver: Math.max(made.deepestEver, rest.deepestEver),
+      largestForce: rest.largestForce,
+    };
   },
   // A sinnet, laid by braidpy (its tightening job read from a file), beaten
   // up as the page beats it up: its closure's linking numbers before and

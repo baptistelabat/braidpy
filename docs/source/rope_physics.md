@@ -120,40 +120,72 @@ apart could part the wrong way.
 On the page, ABOK #3044 over 4 cycles beats up from 55 to 11 diameters long in
 about 7 s.
 
-## Friction
+## Making it crossing by crossing, with friction
 
-Real yarn has friction, and it matters: it is what keeps a braid tight once
-each crossing is beaten, and why a braid can hold more than one shape. The
-model has none, for two reasons.
+Beaten up all at once, under one weight, a long braid takes a long while: the
+weight must draw the whole laid length down, and the solver's steps are short.
+And friction would only freeze it part way. A braid is not made so: it is
+made a crossing at a time, each new one beaten up against the made braid,
+and friction holds what is made. `web/form.js` makes it so — the third
+**Settle** choice, *made crossing by crossing, with friction, then settled*.
 
-- **One energy.** Friction is not the gradient of any energy: it depends on
-  how the yarns got where they are. With it, there is no single minimum to
-  look for, and FIRE, which finds one, no longer applies.
-- **All at once.** The page beats up the whole braid at once, under one
-  weight. Friction would only freeze it part way: the crossings near the plate
-  beaten, those far away still loose.
+The yarns, as braidpy laid them (their crossings in the order they are made),
+are in three parts:
 
-Friction belongs with the next step: **making the braid crossing by
-crossing**, as on a marudai — each move adds a crossing at the fell, the yarns
-beat it up against the made braid, and friction holds what is made, while the
-weight draws it off. That needs a dynamic simulation with history: each
-contact keeping a tangential spring from where its two yarns first touched,
-slipping once its force reaches $\mu$ times the normal push (Coulomb, as in the
-discrete-element method), and a damping of the motion in place of FIRE's
-stops. An earlier attempt at the crossing-by-crossing simulation
-(`web/braid3d.js`) was not built on one energy and did not give a tight
-braid; this solver is meant to be its foundation instead.
+- **made**: below a working window, the braid beaten up so far, frozen;
+- **working**: the window, about two rows, where the yarns move, with the
+  stretching, bending and contact above, plus friction;
+- **to come**: above it, the rest of the braid as laid, moving as one block.
+  The yarns' tension draws it down onto the window and a weight draws it up,
+  as the end plate above: while the yarns pull harder, the newest row is
+  beaten up against the made braid, until its crossings jam.
+
+Each yarn slides into the window from the block at its tension, as from a
+bobbin. Once the window is at rest, all but its top two diameters are frozen
+into the made braid, and the window takes in the next row from the block.
+The block only moves as one, and nothing in the window passes through what
+is above or below it, so the braid made is the braid laid: the linking
+numbers check it, as above.
+
+**Friction.** Two yarns in contact hold each other along their surfaces with
+a spring, from where they first touched, until its pull reaches $\mu$ times
+the push between them, when they slip: Coulomb's law, as the discrete element
+method has it ($\mu = 0.3$, spring stiffness 20). The springs are kept from
+step to step and from row to row: the window remembers. Friction is not the
+gradient of any energy, but FIRE needs only forces, so the window is settled
+the same way.
+
+**Then settled.** The made braid is a good start, not the end: each row was
+beaten against a frozen braid, and the frozen braid keeps whatever twist and
+width it was made with. So the whole is settled afterwards by `rope.js`, as
+the second **Settle** choice does from the laid braid — which, from this start,
+takes a second or two.
+
+| ABOK sinnet | laid | beaten up at once | made crossing by crossing | then settled |
+|---|---|---|---|---|
+| #3044, 8 strands, 4 cycles | 55.5 long | 11.3, in 4.5 s | 13.1, in 5 s | 11.1, in 1.3 s more |
+| #3048, 17 strands, 3 cycles | 204 long | about 10, in 2.5 to 4.5 min | 7.9, in 80 s | 6.1, in 1 s more |
+
+Lengths in yarn diameters; times in Node, a page in a browser takes about the
+same. Friction changes little here: #3044 is made 13.1 long with it, 12.6
+without.
 
 ## Limits, and what is next
 
-- **Speed.** A 17-strand sinnet (ABOK #3048, 3 cycles) is laid 207 diameters
-  long, about 7000 beads, and takes minutes to beat up: the page's progress
-  shows little for a long while, then rises. The time step is set by the
+- **Speed.** A 17-strand sinnet (ABOK #3048, 3 cycles) is laid 204 diameters
+  long, about 7000 beads, and takes minutes to beat up at once: the page's
+  progress shows little for a long while, then rises. Made crossing by
+  crossing it takes 80 s. The time step is set by the
   stiffest springs; the length to travel, by how long the braid is laid.
   Fewer beads (the made part frozen), a shorter start, or the GPU would help.
 - **Shapes.** Cross-sections start to differ — #3044's tracks lean toward a
-  triangle — but the yarns are not packed tight yet: gaps remain. Friction and
-  beating crossing by crossing may be what is missing.
+  triangle — but the yarns are not packed tight yet: gaps remain. Made
+  crossing by crossing, the braid keeps the width it was laid with: braidpy
+  lays a sinnet's strands round a ring, the first rows freeze at that ring's
+  radius, and each later row is beaten against them and pressed by the laid
+  braid above, at the same radius. A real braid draws in to the fell, its
+  yarns spreading out above it to their carriers: the block above should
+  rather be yarns running out to carriers.
 - **Which braids.** Disk braids only. Word and machine braids are laid with all
   their yarns meeting at one point at the fell, which cannot be clamped apart;
   they still settle sideways.
