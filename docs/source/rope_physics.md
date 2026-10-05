@@ -225,6 +225,17 @@ heights would have shown its mirror image — the sum of the Gauss linking
 integrand over its pairs of yarns, which a mirror flips, says it is the
 same braid, by hand, as braidpy's.
 
+**Words and machines.** Tried, and not used yet. A braid word or a
+machine's word can be played on the marudai too — each crossing two
+neighbouring carriers swapping places, the one passing under going first,
+the one passing over then laid across it. With many carriers round the
+disk, as on a tubular machine, a braid forms. With two to four, as most
+braid words have, it does not: their pull is not balanced round the disk,
+and two yarns crossing at the shallow angle neighbouring carriers make
+lock bead into bead rather than sliding down to the tip; a word that
+twists the whole bundle, such as (σ₁σ₂)³, unwinds as the braid turns.
+Words and machines are tightened sideways meanwhile.
+
 What it does not check: that the braid made is the one braidpy laid. A
 move passes over the yarns on its way, the short way round, as braidpy's
 disk crossings do; a move of more than nine tenths of a half turn is made

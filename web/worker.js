@@ -89,7 +89,10 @@ async function build(id, spec) {
   }
   const job = result.tighten;
   delete result.tighten;
-  const physics = ["physics", "crossing", "marudai"].includes(spec.settle);
+  // Automatic: a disk braid is made on a marudai — the closest to a real
+  // braid — and any other tightened sideways.
+  const settle = (spec.settle ?? "auto") === "auto" ? (result.disk ? "marudai" : "sideways") : spec.settle;
+  const physics = ["physics", "crossing", "marudai"].includes(settle);
   if (job && physics && result.timeline?.kind !== "disk") {
     result.notes = [
       ...(result.notes || []),
@@ -100,8 +103,8 @@ async function build(id, spec) {
     // Shown as laid straight away, then replaced once tight.
     self.postMessage({ type: "laid", id, result });
     if (physics && result.timeline?.kind === "disk") {
-      if (spec.settle === "marudai" && result.disk) result = onMarudai(id, result, job);
-      else if (spec.settle === "crossing") result = formed(id, result, job);
+      if (settle === "marudai" && result.disk) result = onMarudai(id, result, job);
+      else if (settle === "crossing") result = formed(id, result, job);
       else result = settled(id, result, job);
     } else {
       status("Tightening the yarns…");
@@ -110,6 +113,7 @@ async function build(id, spec) {
       );
       result = tightened(result, job, tight);
     }
+    result.settled = physics && result.timeline?.kind === "disk" ? settle : "sideways";
   }
   const seconds = (performance.now() - started) / 1000;
   made.set(key, result);

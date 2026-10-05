@@ -563,7 +563,7 @@ function writeSpec(spec) {
   renderFields(spec.source, spec);
   $("yarn_diameter").value = spec.yarn_diameter ?? "";
   $("iterations").value = spec.iterations ?? "";
-  $("settle").value = spec.settle ?? "sideways";
+  $("settle").value = spec.settle ?? "auto";
 }
 
 function specFromHash() {
@@ -611,7 +611,7 @@ worker.onmessage = ({ data }) => {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
-    show(data.result, data.seconds, shownLaid === data.id && $("settle").value === "sideways");
+    show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
     $("build").disabled = !catalogue;
@@ -695,6 +695,10 @@ resize();
 // What is drawn: per yarn its tube and its line, each revealed up to how
 // much of the braid is made.
 let braid = null;
+// Whether braids hang from their fell, as from a kumihimo disk or a marudai,
+// or rise from it, as from a braiding machine: disk braids hang unless
+// asked otherwise, others rise.
+const hangs = { disk: true, other: false };
 
 function dispose(object) {
   object.traverse((child) => {
@@ -708,8 +712,8 @@ let shownLaid = null;
 function show(result, seconds, keepView = false) {
   shownLaid = seconds === null ? pending : null;
   if (braid) {
-    scene.remove(braid.group);
-    dispose(braid.group);
+    scene.remove(braid.turner);
+    dispose(braid.turner);
   }
   lastResult = result;
   const group = new THREE.Group();
@@ -760,8 +764,17 @@ function show(result, seconds, keepView = false) {
     mesh.userData.core = true;
     group.add(mesh);
   }
-  scene.add(group);
+  // The braid in the disk's turn, then turned rising from its fell or hanging
+  // from it: a half turn about a level axis, so it is still the same braid,
+  // not its mirror image.
+  const stand = new THREE.Group();
+  const turner = new THREE.Group();
+  stand.add(group);
+  turner.add(stand);
+  scene.add(turner);
   const timeline = result.timeline;
+  const kind = timeline?.kind === "disk" ? "disk" : "other";
+  $("hanging").checked = hangs[kind];
   const clock = timeline
     ? timeline.clock
     : { source: [times[0], times[times.length - 1]], braid: [times[0], times[times.length - 1]] };
@@ -770,6 +783,9 @@ function show(result, seconds, keepView = false) {
     : [clock.source[0], clock.source[clock.source.length - 1]];
   braid = {
     group,
+    stand,
+    turner,
+    kind,
     yarns,
     times,
     heights: result.strands[0].points.map((p) => p[2]),
@@ -777,8 +793,10 @@ function show(result, seconds, keepView = false) {
     span,
     timeline,
     colours: result.strands.map((strand) => strand.colour),
-    box: new THREE.Box3().setFromObject(group),
+    box: null,
   };
+  stand.rotation.x = hangs[kind] ? Math.PI : 0;
+  braid.box = new THREE.Box3().setFromObject(turner);
   showTubes($("tubes").checked);
   $("topview").hidden = !timeline || !$("showtop").checked;
   $("section").hidden = !$("showsection").checked;
@@ -818,7 +836,7 @@ function made(value) {
   braid.group.position.z = heights[heights.length - 1] - newest;
   // A disk's braid hangs from it and turns with it.
   const timeline = braid.timeline;
-  braid.group.rotation.z = timeline?.turn
+  braid.turner.rotation.z = timeline?.turn
     ? interpolate(timeline.times, timeline.turn, now)
     : 0;
   for (const child of braid.group.children) {
@@ -904,8 +922,10 @@ function drawSection(result) {
     for (const [x, y] of points) reach = Math.max(reach, Math.hypot(x - cx, y - cy) + radius);
   }
   const scale = (size / 2 - 14) / reach;
+  // Seen from above: a hanging braid is turned over about the x axis.
+  const up = braid && braid.stand.rotation.x ? -1 : 1;
   const X = (x) => size / 2 + (x - cx) * scale;
-  const Y = (y) => size / 2 - (y - cy) * scale;
+  const Y = (y) => size / 2 - up * (y - cy) * scale;
   const style = getComputedStyle(document.documentElement);
   ctx.fillStyle = style.getPropertyValue("--muted").trim();
   ctx.font = "10px system-ui, sans-serif";
@@ -1109,6 +1129,15 @@ $("showtop").addEventListener("change", (event) => {
 });
 $("spin").addEventListener("change", (event) => {
   controls.autoRotate = event.target.checked;
+});
+$("hanging").addEventListener("change", (event) => {
+  if (!braid) return;
+  hangs[braid.kind] = event.target.checked;
+  braid.stand.rotation.x = event.target.checked ? Math.PI : 0;
+  made(Number($("made").value));
+  braid.box = new THREE.Box3().setFromObject(braid.turner);
+  drawSection(lastResult);
+  fit();
 });
 $("reset").addEventListener("click", fit);
 $("made").addEventListener("input", (event) => {

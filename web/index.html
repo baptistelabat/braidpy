@@ -65,18 +65,18 @@
             />
             <small>0 lays the yarns with no tension.</small>
           </label>
+          <label class="field">
+            <span>Settle the yarns</span>
+            <select id="settle" name="settle">
+              <option value="auto">Automatic: a disk braid made on a marudai, others sideways</option>
+              <option value="marudai">On a marudai: move by move, each yarn laid over and drawn tight</option>
+              <option value="sideways">Sideways: fast, keeps the laid pitch</option>
+              <option value="physics">Physics: beaten up until it jams (beta)</option>
+              <option value="crossing">Physics: made crossing by crossing, with friction, then settled (beta)</option>
+            </select>
+            <small>All but sideways are for disk braids — kumihimo, mobidai, sinnets.</small>
+          </label>
         </details>
-
-        <label class="field">
-          <span>Settle the yarns</span>
-          <select id="settle" name="settle">
-            <option value="sideways">Sideways: fast, keeps the laid pitch</option>
-            <option value="marudai">Marudai: made move by move, each yarn laid over and drawn tight (beta)</option>
-            <option value="physics">Physics: beaten up until it jams (beta)</option>
-            <option value="crossing">Physics: made crossing by crossing, with friction, then settled (beta)</option>
-          </select>
-          <small>Physics is for disk braids — kumihimo, mobidai, sinnets — for now.</small>
-        </label>
 
         <button id="build" type="submit" disabled>Loading…</button>
         <p id="status" class="status" role="status" aria-live="polite">
@@ -130,6 +130,9 @@
         >
         <label class="check"
           ><input id="spin" type="checkbox" /> Spin</label
+        >
+        <label class="check" title="The braid hanging from its fell, as from a kumihimo disk or a marudai; off, it rises from the fell, as from a braiding machine"
+          ><input id="hanging" type="checkbox" /> Hanging</label
         >
         <label class="check"
           ><input id="showtop" type="checkbox" checked /> Top view</label

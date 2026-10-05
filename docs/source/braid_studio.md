@@ -25,17 +25,22 @@ The page has a form and a 3D view.
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the
   machine lays it, and no yarn or other core ever passes through it.
-- **Settle the yarns** chooses how a braid is tightened: sideways, fast,
-  keeping the pitch it was laid with; or, for a disk braid, by physics
-  (`web/rope.js`, in beta). Each yarn is then an elastic chain of beads,
-  clamped at the fell and fed at its other end from a bobbin pulling it
-  back; the braid is drawn off by a weight lighter than the yarns' pull, so
-  it is beaten up until its crossings jam. Or, for a disk braid, **made
-  on a marudai** (`web/marudai.js`, in beta): the disk's own moves, one by
-  one, each moved yarn laid over the others and drawn tight, as
-  braid3dmin makes a braid. It is the closest to a real braid of the three,
-  sinnets taking the shape of their cross-sections. The view follows each
-  as it goes.
+- A disk braid — kumihimo, mobidai, a sinnet — is **made on a marudai**
+  (`web/marudai.js`): the disk's own moves, one by one, each moved yarn
+  laid over the others and drawn tight, as braid3dmin makes a braid. It is
+  the closest to a real braid, sinnets taking the shapes of their
+  cross-sections. Any other braid is tightened **sideways**, fast, keeping
+  the pitch it was laid with. Under "Yarn and tightening", **Settle the
+  yarns** can choose otherwise: sideways for a disk braid too, or, for a
+  disk braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
+  chain of beads, clamped at the fell and fed from a bobbin, the braid
+  beaten up until its crossings jam — or made crossing by crossing, with
+  friction. The view follows each as it goes.
+- **Hanging** shows a braid hanging from its fell, as from a kumihimo disk
+  or a marudai, or, unticked, rising from it, as from a braiding machine.
+  Disk braids hang unless asked otherwise. It is a half turn of the view
+  about a level axis: the braid stays the braid it is, where only flipping
+  its heights would show its mirror image.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
   moves…" shows what the braid chosen before is made of — the slots its
   strands start in and its moves, or its spaces' counts and moves — ready to
