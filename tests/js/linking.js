@@ -3,7 +3,7 @@
 // subtends: Klenin and Langowski, Biopolymers 54, 307, 2000).  A yarn
 // passing through a yarn of another closed loop changes their linking
 // number by one, however the yarns fold.
-function closeUp(yarns, turnBack = 0) {
+function closeUp(yarns, turnBack = 0, pairing = null, bottomTurnBack = 0) {
   const n = yarns.length;
   const ends = yarns.map((y) => ({ b: y.slice(0, 3), t: y.slice(y.length - 3) }));
   const zb = Math.min(...yarns.map((y) => y[2])) - 3;
@@ -12,7 +12,7 @@ function closeUp(yarns, turnBack = 0) {
   const ang = (p) => Math.atan2(p[1], p[0]);
   // Top end of yarn a, turned back, joins the bottom end nearest it in angle.
   const tops = ends.map(({ t }) => { const c = Math.cos(-turnBack), s = Math.sin(-turnBack); return [c * t[0] - s * t[1], s * t[0] + c * t[1], t[2]]; });
-  const next = tops.map((t) => { let best = -1, d = Infinity; ends.forEach(({ b }, k) => { let e = Math.abs(((ang(t) - ang(b) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI); if (e < d) { d = e; best = k; } }); return best; });
+  const next = pairing || tops.map((t) => { let best = -1, d = Infinity; ends.forEach(({ b }, k) => { let e = Math.abs(((ang(t) - ang(b) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI); if (e < d) { d = e; best = k; } }); return best; });
   if (new Set(next).size !== n) throw new Error("ends do not pair up");
   const loops = yarns.map((y, a) => {
     const pts = [];
@@ -20,9 +20,14 @@ function closeUp(yarns, turnBack = 0) {
     const top = pts[pts.length - 1];
     // Turn the end back, rigidly, all ends alike, just above the braid.
     for (let k = 1; k <= 30; k++) { const f = -turnBack * k / 30, c = Math.cos(f), s = Math.sin(f); pts.push([c * top[0] - s * top[1], s * top[0] + c * top[1], top[2] + 0.1 * k]); }
-    const t = pts[pts.length - 1], b = ends[next[a]].b, u = ang(t), v = ang(b);
+    const t = pts[pts.length - 1], b0 = ends[next[a]].b, u = ang(t);
     const lift = zt + 0.5 * a, sink = zb - 0.5 * a;
-    pts.push([t[0], t[1], lift], [R * Math.cos(u), R * Math.sin(u), lift], [R * Math.cos(u), R * Math.sin(u), sink], [R * Math.cos(v), R * Math.sin(v), sink], [b[0], b[1], sink], [b[0], b[1], b[2]]);
+    // The bottom end, turned back too, below the braid: rigidly, all alike.
+    const cb = Math.cos(-bottomTurnBack), sb = Math.sin(-bottomTurnBack);
+    const b = [cb * b0[0] - sb * b0[1], sb * b0[0] + cb * b0[1], b0[2]];
+    const v = ang(b);
+    pts.push([t[0], t[1], lift], [R * Math.cos(u), R * Math.sin(u), lift], [R * Math.cos(u), R * Math.sin(u), sink], [R * Math.cos(v), R * Math.sin(v), sink], [b[0], b[1], sink]);
+    for (let k = 29; k >= 0; k--) { const f = -bottomTurnBack * k / 30, c = Math.cos(f), s = Math.sin(f); pts.push([c * b0[0] - s * b0[1], s * b0[0] + c * b0[1], b0[2] - 0.1 * (k + 1)]); }
     return { pts, next: next[a] };
   });
   // Components: follow yarn -> next yarn's start.
@@ -50,8 +55,8 @@ function link(A, B) {
   }
   return total / (4 * Math.PI);
 }
-function linkingMatrix(yarns, turnBack) {
-  const comps = closeUp(yarns, turnBack);
+function linkingMatrix(yarns, turnBack, pairing = null, bottomTurnBack = 0) {
+  const comps = closeUp(yarns, turnBack, pairing, bottomTurnBack);
   const m = [];
   for (let i = 0; i < comps.length; i++) for (let j = i + 1; j < comps.length; j++) m.push(Math.round(link(comps[i], comps[j]) * 1000) / 1000);
   return { components: comps.length, links: m };

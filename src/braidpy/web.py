@@ -563,6 +563,25 @@ def _timeline(
     }
 
 
+def _disk_program(
+    start, steps, n_slots: int, clockwise: bool, keys: Sequence[Hashable]
+) -> Dict[str, Any]:
+    """What a disk does, for the page to make the braid itself, move by
+    move: each strand's slot to start with, in the order of the strands
+    given, and per step the strands that move, by index, and by how many
+    slots."""
+    index = {k: i for i, k in enumerate(keys)}
+    return {
+        "n_slots": int(n_slots),
+        "clockwise": bool(clockwise),
+        "start": [int(start[k]) for k in keys],
+        "steps": [
+            [[index[k], int(delta)] for k, delta in step.items() if delta]
+            for step in steps
+        ],
+    }
+
+
 def _disk_in_step(
     start,
     steps,
@@ -709,7 +728,7 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
         clockwise=False,
     )
     disk = kumihimo_trajectories(pattern * repeat, n_strands)
-    return _result(
+    result = _result(
         f"Kumihimo {pattern} × {repeat}, {n_strands} strands",
         paths,
         diameter,
@@ -717,6 +736,8 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info=_disk_info(start, steps, n_slots, clockwise=False),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
+    result["disk"] = _disk_program(start, steps, n_slots, False, list(paths.points))
+    return result
 
 
 def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
@@ -764,7 +785,7 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     # Coloured by strand, in the order the braid gives them.
     colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
     disk = mobidai_trajectories(config, n_cycles=cycles, slot_offset=0.5)
-    return _result(
+    result = _result(
         f"{entry.name[0].upper()}{entry.name[1:]}, {cycles} cycles",
         paths,
         diameter,
@@ -772,6 +793,10 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info=_disk_info(start, steps, config.n_slots, clockwise),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
+    result["disk"] = _disk_program(
+        start, steps, config.n_slots, clockwise, list(paths.points)
+    )
+    return result
 
 
 def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
@@ -831,7 +856,7 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
     if sinnet.shape:
         info["expected_shape"] = sinnet.shape
-    return _result(
+    result = _result(
         f"{called} {sinnet.n_strands}-strand {sinnet.shape or 'sinnet'}, "
         f"{cycles} cycles",
         paths,
@@ -841,6 +866,10 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         notes=notes,
         timeline=_timeline(seen, list(paths.points), "disk", clock, ring),
     )
+    result["disk"] = _disk_program(
+        disk.start, disk.steps, disk.n_slots, False, list(paths.points)
+    )
+    return result
 
 
 def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
