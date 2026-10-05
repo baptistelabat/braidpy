@@ -184,6 +184,44 @@ const cases = {
     const radius = cut.reduce((s, p) => s + Math.hypot(p[0] - mx, p[1] - my), 0) / cut.length;
     return { tip: out.tip, closest, radius, crossings: cut.length };
   },
+
+  // A braid made on a marudai, and braidpy's own as the page draws it, by
+  // the sum of the Gauss linking integrand over their pairs of yarns: a
+  // mirror image flips its sign.  The made braid as the page shows it,
+  // turned upside down.
+  handedness() {
+    const { disk, strands } = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const made = make(disk);
+    const yarns = made.yarns.map((y) => {
+      const points = [];
+      for (let i = 0; i < y.length; i += 3) points.push([y[i], y[i + 1], y[i + 2]]);
+      return points;
+    });
+    const top = Math.max(...yarns.flat().map((p) => p[2]));
+    const shown = yarns.map((y) => y.map(([x, yy, z]) => [x, -yy, top - z]));
+    return { braidpy: gauss(strands), made: gauss(shown), tip: made.tip };
+  },
 };
+
+function gauss(yarns) {
+  let sum = 0;
+  for (let a = 0; a < yarns.length; a++) {
+    for (let b = a + 1; b < yarns.length; b++) {
+      const A = yarns[a], B = yarns[b];
+      for (let i = 0; i + 1 < A.length; i++) {
+        for (let j = 0; j + 1 < B.length; j++) {
+          const da = [0, 1, 2].map((k) => A[i + 1][k] - A[i][k]);
+          const db = [0, 1, 2].map((k) => B[j + 1][k] - B[j][k]);
+          const r = [0, 1, 2].map((k) => (A[i][k] + A[i + 1][k] - B[j][k] - B[j + 1][k]) / 2);
+          const d = Math.hypot(...r);
+          if (d < 1e-9) continue;
+          const cross = [da[1] * db[2] - da[2] * db[1], da[2] * db[0] - da[0] * db[2], da[0] * db[1] - da[1] * db[0]];
+          sum += (cross[0] * r[0] + cross[1] * r[1] + cross[2] * r[2]) / (d * d * d);
+        }
+      }
+    }
+  }
+  return sum / (4 * Math.PI);
+}
 
 console.log(JSON.stringify(cases[process.argv[2]]()));

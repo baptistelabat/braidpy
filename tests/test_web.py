@@ -454,3 +454,55 @@ def _laid_paths(spec):
     with mock.patch.object(take_off, "tighten_yarns", capture):
         build({**spec, "iterations": 20})
     return captured["paths"]
+
+
+@pytest.mark.parametrize(
+    "word, n_strands",
+    [
+        ("1 -2", 3),
+        ("1 1 1", 2),
+        ("1 2 3", 4),
+        ("3 2 1", 4),
+        ("-1 -2", 3),
+        ("1 -2 3 -2", 4),
+        ("1 2 -3 4", 5),
+    ],
+)
+def test_a_word_is_played_on_a_ring_as_the_same_braid(word, n_strands):
+    """A braid word, rolled onto a ring of carriers for the page to make
+    move by move: a full run of crossings round the ring is a turn of the
+    bobbins, every other crossing a swap of neighbours; read back as a flat
+    word, the moves are the word — numbered round the ring one way or the
+    other, a half turn of the whole braid about its axis."""
+    from braidpy.annulus_braid import solid_word
+    from braidpy.web import _ring_moves
+
+    flat = parse_word(word) * 3
+    moves, mirrored = _ring_moves(flat, n_strands)
+    expected = (
+        [(n_strands - abs(g)) * (1 if g > 0 else -1) for g in flat]
+        if mirrored
+        else flat
+    )
+    assert solid_word(moves, n_strands) == solid_word(expected, n_strands)
+
+
+def test_a_rope_like_word_is_made_by_turning():
+    """σ₁σ₂σ₃ over and over is a four-strand rope: made by turning the
+    bobbins, not by carrying one strand round under all the others."""
+    from braidpy.web import _ring_moves
+
+    moves, _ = _ring_moves(parse_word("1 2 3") * 4, 4)
+    assert moves == [5] * 4
+
+
+def test_a_word_comes_with_its_moves_on_a_ring():
+    result = build(
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 4}, tighten=False
+    )
+    disk = result["disk"]
+    assert disk["held"] is True
+    assert sorted(disk["start"]) == sorted(set(disk["start"]))
+    assert len(disk["start"]) == 3
+    # Each crossing a swap in three moves: there is no turn in a plait.
+    assert len(disk["steps"]) == 8

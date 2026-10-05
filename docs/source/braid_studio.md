@@ -29,8 +29,9 @@ The page has a form and a 3D view.
   (`web/marudai.js`): the disk's own moves, one by one, each moved yarn
   laid over the others and drawn tight, as braid3dmin makes a braid. It is
   the closest to a real braid, sinnets taking the shapes of their
-  cross-sections. Any other braid is tightened **sideways**, fast, keeping
-  the pitch it was laid with. Under "Yarn and tightening", **Settle the
+  cross-sections. A braid word is made there too, its strands rolled onto
+  a ring of bobbins, the braid held. A machine's braid is tightened
+  **sideways**, fast, keeping the pitch it was laid with. Under "Yarn and tightening", **Settle the
   yarns** can choose otherwise: sideways for a disk braid too, or, for a
   disk braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
   chain of beads, clamped at the fell and fed from a bobbin, the braid

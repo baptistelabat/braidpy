@@ -89,21 +89,25 @@ async function build(id, spec) {
   }
   const job = result.tighten;
   delete result.tighten;
-  // Automatic: a disk braid is made on a marudai — the closest to a real
-  // braid — and any other tightened sideways.
-  const settle = (spec.settle ?? "auto") === "auto" ? (result.disk ? "marudai" : "sideways") : spec.settle;
-  const physics = ["physics", "crossing", "marudai"].includes(settle);
-  if (job && physics && result.timeline?.kind !== "disk") {
+  // Automatic: a braid whose moves are known — a disk braid, or a word
+  // rolled onto a ring — is made on a marudai, the closest to a real braid;
+  // any other is tightened sideways.
+  let settle = (spec.settle ?? "auto") === "auto" ? (result.disk ? "marudai" : "sideways") : spec.settle;
+  const disk = result.timeline?.kind === "disk";
+  if (job && settle !== "sideways" && !(settle === "marudai" ? result.disk : disk)) {
     result.notes = [
       ...(result.notes || []),
-      "Settling by physics is for disk braids for now: these yarns were tightened sideways.",
+      settle === "marudai"
+        ? "Only disk braids and braid words are made on a marudai for now: these yarns were tightened sideways."
+        : "Settling by physics is for disk braids for now: these yarns were tightened sideways.",
     ];
+    settle = "sideways";
   }
   if (job) {
     // Shown as laid straight away, then replaced once tight.
     self.postMessage({ type: "laid", id, result });
-    if (physics && result.timeline?.kind === "disk") {
-      if (settle === "marudai" && result.disk) result = onMarudai(id, result, job);
+    if (settle !== "sideways") {
+      if (settle === "marudai") result = onMarudai(id, result, job);
       else if (settle === "crossing") result = formed(id, result, job);
       else result = settled(id, result, job);
     } else {
@@ -113,7 +117,7 @@ async function build(id, spec) {
       );
       result = tightened(result, job, tight);
     }
-    result.settled = physics && result.timeline?.kind === "disk" ? settle : "sideways";
+    result.settled = settle;
   }
   const seconds = (performance.now() - started) / 1000;
   made.set(key, result);

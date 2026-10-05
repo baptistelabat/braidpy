@@ -51,7 +51,7 @@
 
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
 
-  function Machine(nThreads) {
+  function Machine(nThreads, turning = true) {
     // ------------------------------------------------------------ beads
     let cap = 1024;
     let X = new Float64Array(cap), Y = new Float64Array(cap), Z = new Float64Array(cap);
@@ -455,7 +455,7 @@
         else if (tg < th) hi = h;
         else { lo = g; hi = h; }
       }
-      const f = (lo + hi) / 2;
+      const f = turning ? (lo + hi) / 2 : 0;
       const order = [...threads.keys()].sort((p, q) => threads[p].dir - threads[q].dir);
       if (Math.abs(f) > 0.01) turn(ax, az, f);
       if (f > 0) order.reverse();
@@ -488,7 +488,11 @@
     // ------------------------------------------------------------ start
     function start(angles) {
       angles.forEach((a, t) => {
-        const r = nThreads / 3;
+        // As the method has it, a third of a unit per yarn; but with six
+        // yarns or fewer, their start beads would touch or overlap: far
+        // enough apart, then, for them to clear each other.
+        const touching = 1 / Math.sin(Math.PI / Math.max(2, nThreads));
+        const r = nThreads / 3 > touching ? nThreads / 3 : 1.1 * touching;
         fixed[addBead(t, Math.cos(a) * r, 0, Math.sin(a) * r)] = 1;
         fixed[addBead(t, Math.cos(a) * r, 1, Math.sin(a) * r)] = 1;
         lay(t, a);
@@ -520,6 +524,10 @@
    * @param {boolean} [job.split]  A move of more than nine tenths of a half
    *     turn goes in two halves, so it passes over what lies on its own
    *     side round (true).
+   * @param {boolean} [job.held]  The braid held, as a braider holds it,
+   *     rather than hanging free: it does not turn to balance, and when every
+   *     yarn moves alike the bobbins turn round it, twisting the yarns in,
+   *     rather than the disk and the braid turning together.
    * @param {number[]} [job.from]  Each yarn's slot to lay it from first, if
    *     not job.start: the yarns then go from these to job.start as a first
    *     step.
@@ -534,7 +542,7 @@
     // braid3dmin's angles turn the other way round from ours.
     const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
     const split = job.split ?? true;
-    const machine = Machine(n);
+    const machine = Machine(n, job.turning ?? !job.held);
     const first = job.from ?? job.start;
     machine.start(first.map(angleOf));
     for (let t = 0; t < n; t++) machine.lay(t, job.from ? angleOf(job.start[t]) : machine.threads[t].dir);
@@ -544,6 +552,17 @@
       if (!moving.length) return;
       if (moving.length === n && moving.every(([, d]) => d === moving[0][1])) {
         const by = (sense * 2 * Math.PI * moving[0][1]) / job.n_slots;
+        if (job.held) {
+          // The braid held, the bobbins turned: each carried round its rim,
+          // a little at a time, never as far as the next one; the yarns'
+          // pull twists them in at the tip.
+          const parts = Math.max(2, Math.ceil((2 * Math.abs(by) * n) / (2 * Math.PI)));
+          for (let k = 0; k < parts; k++) {
+            for (let t = 0; t < n; t++) machine.lay(t, machine.threads[t].dir - by / parts);
+            machine.relax();
+          }
+          return;
+        }
         machine.turn(0, 0, by);
         for (const thread of machine.threads) thread.dir -= by;
         return;

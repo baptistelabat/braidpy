@@ -114,3 +114,50 @@ def test_a_sinnet_made_on_a_marudai_matches_braid3dmin(tmp_path):
     assert result["crossings"] == 8
     assert result["radius"] == pytest.approx(1.5, abs=0.25)
     assert result["closest"] > 0.85
+
+
+def test_a_plait_is_made_on_a_marudai_from_its_word(tmp_path):
+    """The plait, its word rolled onto a ring of three bobbins and made move
+    by move, each crossing a swap of neighbours: a braid forms, a few
+    diameters long, its yarns clear of each other."""
+    from braidpy.web import build
+
+    disk = build(
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 6}, tighten=False
+    )["disk"]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    result = _run("marudai", program)
+    assert result["tip"] > 5
+    assert result["crossings"] == 3
+    assert result["closest"] > 0.85
+
+
+@pytest.mark.parametrize(
+    "word, n_strands, repeat",
+    [("1 2 -3 4", 5, 4), ("1 1 1", 2, 2), ("1 2 3", 4, 4)],
+)
+def test_a_word_made_on_a_marudai_keeps_its_hand(tmp_path, word, n_strands, repeat):
+    """Made on a marudai and shown as the page shows it, a braid word is the
+    braid braidpy draws for it, not its mirror image: the sum of the Gauss
+    linking integrand over pairs of yarns, which a mirror flips, has the
+    same sign.  ``1 2 3`` is made by turning the bobbins round the held
+    braid, a rope's twist."""
+    from braidpy.web import build
+
+    result = build(
+        {"source": "word", "word": word, "n_strands": n_strands, "repeat": repeat}
+    )
+    case = tmp_path / "case.json"
+    case.write_text(
+        json.dumps(
+            {
+                "disk": result["disk"],
+                "strands": [s["points"][::2] for s in result["strands"]],
+            }
+        )
+    )
+    hand = _run("handedness", case)
+    assert hand["tip"] > 1
+    assert abs(hand["braidpy"]) > 1
+    assert hand["made"] * hand["braidpy"] > 0

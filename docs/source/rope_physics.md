@@ -225,16 +225,31 @@ heights would have shown its mirror image — the sum of the Gauss linking
 integrand over its pairs of yarns, which a mirror flips, says it is the
 same braid, by hand, as braidpy's.
 
-**Words and machines.** Tried, and not used yet. A braid word or a
-machine's word can be played on the marudai too — each crossing two
-neighbouring carriers swapping places, the one passing under going first,
-the one passing over then laid across it. With many carriers round the
-disk, as on a tubular machine, a braid forms. With two to four, as most
-braid words have, it does not: their pull is not balanced round the disk,
-and two yarns crossing at the shallow angle neighbouring carriers make
-lock bead into bead rather than sliding down to the tip; a word that
-twists the whole bundle, such as (σ₁σ₂)³, unwinds as the braid turns.
-Words and machines are tightened sideways meanwhile.
+**Braid words.** A braid word is made on the marudai too, its row of
+strands rolled onto a ring of bobbins, evenly round it so their pull is
+balanced. Each crossing is two neighbours swapping places: the one passing
+under goes most of the way first, the one passing over is laid across it,
+then the first goes the rest of the way. A full run of crossings round the
+ring, `σₙ₋₁…σ₁` or its inverse, is the bobbins all turning one place round
+— `braidpy.annulus_braid.turn`, as a braider lays up a rope — rather
+than one strand carried all the way round under the others, which the
+pull cannot draw down to the tip; the ring is numbered whichever way round
+finds the more such runs, the other way being a half turn of the whole
+braid about its axis. A braid word is held, as a braider holds a plait:
+it does not turn to balance, and turning the bobbins twists the yarns in.
+Read back with `solid_word`, the moves are
+the word; made, the braid has the word's hand, by the sign of the Gauss
+linking sum. With six strands or fewer, the yarns start on a ring wide
+enough for them to clear each other.
+
+Plaits and braids of alternating crossings come out well. Rope-like words
+— two-ply, or `σ₁σ₂σ₃` over and over — come out with the right twist but
+short: the pull, mostly outwards to the rim, draws a rope's twist in at
+the tip less than it draws a sinnet's crossings.
+
+**Machines** are tightened sideways for now: their carriers' paths, rather
+than their words, should drive the moves, so the braid made keeps in step
+with the drawing of the machine.
 
 What it does not check: that the braid made is the one braidpy laid. A
 move passes over the yarns on its way, the short way round, as braidpy's

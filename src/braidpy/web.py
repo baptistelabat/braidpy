@@ -667,6 +667,90 @@ def _cycles(permutation: Sequence[int]) -> int:
     return cycles
 
 
+def _ring_moves(word: Sequence[int], n_strands: int) -> Tuple[List[int], bool]:
+    """A flat braid word as moves on a ring of carriers, for the page to make
+    it move by move as on a marudai: the row of strands rolled round the
+    ring.
+
+    A full run of crossings round the ring — ``σₙ₋₁…σ₁``, or its inverse
+    ``σ₁⁻¹…σₙ₋₁⁻¹`` — is the bobbins all turning one place round
+    (:func:`braidpy.annulus_braid.turn`), as a braider lays up a rope;
+    carried out as crossings, one strand would go all the way round under
+    the others.  Every other crossing is a swap of neighbours.  The ring is
+    numbered whichever way round finds the more turns: the other way is a
+    half turn of the whole braid about its axis, ``σᵢ`` read as ``σₙ₋ᵢ``.
+
+    Returns:
+        The moves — crossings ``±1`` to ``±(n - 1)``, turns ``±(n + 1)``, as
+        :func:`braidpy.annulus_braid.solid_word` reads them — and whether
+        the ring is numbered the other way round.
+    """
+    n = n_strands
+    word = [int(g) for g in word]
+    up = list(range(n - 1, 0, -1))
+    down = [-g for g in reversed(up)]
+
+    def rolled(letters: List[int]) -> List[int]:
+        moves: List[int] = []
+        k = 0
+        while k < len(letters):
+            if letters[k : k + n - 1] == up:
+                moves.append(n + 1)
+                k += n - 1
+            elif letters[k : k + n - 1] == down:
+                moves.append(-(n + 1))
+                k += n - 1
+            else:
+                moves.append(letters[k])
+                k += 1
+        return moves
+
+    straight = rolled(word)
+    mirrored = rolled([(n - abs(g)) * (1 if g > 0 else -1) for g in word])
+    if len(mirrored) < len(straight):
+        return mirrored, True
+    return straight, False
+
+
+def _ring_program(
+    moves: Sequence[int], n_strands: int, mirrored: bool
+) -> Dict[str, Any]:
+    """Ring moves (:func:`_ring_moves`) as a disk program for the page, the
+    braid held while the bobbins turn.  Strand ``k`` starts in place ``k``
+    round the ring, or ``n - 1 - k`` numbered the other way; each place is
+    ``slots`` slots on from the last.
+
+    A swap is three moves: the strand passing under goes most of the way
+    first, the one passing over is then laid across it, and the first goes
+    the rest of the way."""
+    n = n_strands
+    slots = 12
+    at = [n - 1 - p if mirrored else p for p in range(n)]
+    start = [0] * n
+    for place, strand in enumerate(at):
+        start[strand] = 1 + slots * place
+    steps: List[List[List[int]]] = []
+    for move in moves:
+        index, sign = abs(move), (1 if move > 0 else -1)
+        if index == n + 1:
+            steps.append([[strand, sign * slots] for strand in range(n)])
+            at = at[-1:] + at[:-1] if sign > 0 else at[1:] + at[:1]
+            continue
+        a, b = index - 1, index % n
+        over, under = (at[b], at[a]) if sign > 0 else (at[a], at[b])
+        way = slots if under == at[a] else -slots
+        most = round(0.75 * way)
+        steps.append([[under, most], [over, -way], [under, way - most]])
+        at[a], at[b] = at[b], at[a]
+    return {
+        "n_slots": n * slots,
+        "clockwise": False,
+        "start": start,
+        "steps": steps,
+        "held": True,
+    }
+
+
 def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
     from braidpy.braid import Braid
     from braidpy.take_off import braid_word_trajectories, lay_yarns
@@ -686,7 +770,7 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
     trajectories = braid_word_trajectories(Braid(word, n_strands))
     paths = lay_yarns(trajectories, yarn_diameter=diameter, fell_radius=0.0)
     paths = _tighten(paths, spec, diameter)
-    return _result(
+    result = _result(
         f"Braid word {spec.get('word', '')}"
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
@@ -694,6 +778,9 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info=_braid_info(word, n_strands),
         timeline=_timeline(trajectories, list(paths.points), "line"),
     )
+    moves, mirrored = _ring_moves(word, n_strands)
+    result["disk"] = _ring_program(moves, n_strands, mirrored)
+    return result
 
 
 def _disk_info(start, steps, n_slots: int, clockwise: bool) -> Dict[str, Any]:
