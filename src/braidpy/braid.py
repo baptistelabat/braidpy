@@ -734,7 +734,6 @@ class Braid:
         """
         n_strands = self.n_strands or max(abs(g) for g in self.generators) + 1
         n_segments = len(self.generators) + 1
-        duration_per_gen = 1 / n_segments
 
         strand_paths = [
             [row[strand] for row in self.slot_history()] for strand in range(n_strands)
@@ -751,8 +750,10 @@ class Braid:
                 i1 = path[k + 1]
                 x0 = i0 * amplitude
                 x1 = i1 * amplitude
-                t_start = k * duration_per_gen
-                t_end = (k + 1) * duration_per_gen
+                # As fractions of the whole, not sums of steps: summed, the
+                # last segment can stop short of 1 by a rounding error.
+                t_start = k / n_segments
+                t_end = (k + 1) / n_segments
                 gen = self.generators[k]
                 if i0 == i1 or gen == 0:
                     arc_func = make_idle_arc(x0, t_start, t_end)
@@ -766,8 +767,8 @@ class Braid:
                 arcs.append((t_start, t_end, arc_func))
 
             # Final segment (idle)
-            t_final_start = (n_segments - 1) * duration_per_gen
-            t_final_end = t_final_start + duration_per_gen
+            t_final_start = (n_segments - 1) / n_segments
+            t_final_end = 1.0
             x_final = path[-1] * amplitude
             arcs.append(
                 (
