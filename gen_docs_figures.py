@@ -561,6 +561,398 @@ def tube_cover_gap(png_dir: Path | None) -> None:
     )
 
 
+# ---------------------------------------------------------------- the rope solver
+
+ROPE_CASES = Path(__file__).parent / "tests" / "js" / "rope_cases.js"
+YARN = [
+    "#1b6ac9",
+    "#c2410c",
+    "#15803d",
+    "#7c3aed",
+    "#b45309",
+    "#0f766e",
+    "#be185d",
+    "#4d7c0f",
+]
+
+
+def _node(*args: str) -> dict:
+    """A case of tests/js/rope_cases.js: web/rope.js run by Node."""
+    import json
+    import subprocess
+
+    out = subprocess.run(
+        ["node", str(ROPE_CASES), *args], capture_output=True, text=True, check=True
+    )
+    return json.loads(out.stdout)
+
+
+def _xyz(yarn: Sequence[float]) -> np.ndarray:
+    return np.asarray(yarn, dtype=float).reshape(-1, 3)
+
+
+def rope_model(png_dir: Path | None) -> None:
+    """A yarn as beads; two yarns in contact; the contact force law."""
+    from matplotlib.patches import Circle, FancyArrowPatch
+
+    fig, (chain, contact, law) = plt.subplots(
+        1, 3, figsize=(11.5, 3.8), gridspec_kw={"width_ratios": [1.15, 1.25, 1.0]}
+    )
+    fig.subplots_adjust(wspace=0.35)
+
+    # The yarn: a tube, its centreline a chain of beads.
+    t = np.linspace(0, 1, 9)
+    xs, ys = 3.6 * t, 0.55 * np.sin(2.6 * t * math.pi / 2)
+    for x, y in zip(xs, ys):
+        chain.add_patch(Circle((x, y), 0.5, color=OUT, alpha=0.08, lw=0))
+    chain.plot(xs, ys, color=OUT, lw=1.4)
+    chain.plot(xs, ys, "o", color=OUT, ms=5)
+    chain.annotate(
+        "",
+        xy=(xs[3], ys[3] - 0.18),
+        xytext=(xs[2], ys[2] - 0.18),
+        arrowprops=dict(arrowstyle="<->", color=INK, lw=0.9),
+    )
+    chain.text(
+        (xs[2] + xs[3]) / 2,
+        (ys[2] + ys[3]) / 2 - 0.42,
+        "link $s$\nstretch $k_s$",
+        ha="center",
+        va="top",
+        fontsize=8,
+    )
+    chain.plot(xs[5:8], ys[5:8], color=IN, lw=2.6, alpha=0.6)
+    chain.text(
+        xs[6],
+        ys[6] + 0.32,
+        "three beads:\nbending $k_b$",
+        ha="center",
+        fontsize=8,
+        color=IN,
+    )
+    chain.annotate(
+        "",
+        xy=(xs[0], ys[0] + 0.5),
+        xytext=(xs[0], ys[0] - 0.5),
+        arrowprops=dict(arrowstyle="<->", color=MUTED, lw=0.8),
+    )
+    chain.text(xs[0] - 0.12, ys[0], "$d$", ha="right", va="center", color=MUTED)
+    chain.set_title("a yarn: beads on its centreline")
+    chain.set_xlim(-0.8, 4.3)
+    chain.set_ylim(-1.3, 1.5)
+
+    # Two yarns, one passing over the other, seen from the side.
+    contact.add_patch(Circle((0, 0), 0.5, color=IN, alpha=0.25, lw=0))
+    contact.add_patch(Circle((0, 0), 0.45, fill=False, color=IN, lw=0.8, ls="--"))
+    contact.plot(
+        [-1.6, 1.6], [0.95, 0.6], color=OUT, lw=10, alpha=0.25, solid_capstyle="round"
+    )
+    contact.plot([-1.6, 1.6], [0.95, 0.6], color=OUT, lw=1.2)
+    contact.plot(0, 0, "o", color=IN, ms=4)
+    q = (0.083, 0.768)
+    contact.plot(*q, "o", color=OUT, ms=4)
+    contact.plot([0, q[0]], [0, q[1]], color=INK, lw=0.7, ls=":")
+    contact.add_patch(
+        FancyArrowPatch(
+            q,
+            (q[0] + 0.11, q[1] + 0.95),
+            arrowstyle="-|>",
+            mutation_scale=12,
+            color=MARK,
+            lw=1.6,
+        )
+    )
+    contact.text(
+        q[0] + 0.2,
+        q[1] + 0.9,
+        "push, along the line\njoining the closest points:\nmostly up, here",
+        color=MARK,
+        fontsize=8,
+        va="top",
+    )
+    contact.add_patch(
+        FancyArrowPatch(
+            (-1.5, 1.25),
+            (-0.6, 1.14),
+            arrowstyle="<|-|>",
+            mutation_scale=10,
+            color=MUTED,
+            lw=1.0,
+        )
+    )
+    contact.text(
+        -1.05,
+        1.42,
+        "sliding along: no force\n(no friction)",
+        ha="center",
+        va="bottom",
+        color=MUTED,
+        fontsize=8,
+    )
+    contact.text(
+        0,
+        -0.62,
+        "yarn passing under, seen end on:\nsoft surface over a firm core",
+        ha="center",
+        va="top",
+        fontsize=8,
+        color=IN,
+    )
+    contact.set_title("two yarns touching")
+    contact.set_xlim(-1.9, 2.4)
+    contact.set_ylim(-1.3, 2.0)
+
+    for ax in (chain, contact):
+        ax.set_aspect("equal")
+        ax.axis("off")
+
+    # The force law: none apart, soft then stiff.
+    shell, kr, kc = 0.1, 5.0, 100.0
+    r = np.linspace(0.8, 1.1, 400)
+    force = np.where(r < 1, kr * (1 - r), 0) + np.where(
+        r < 1 - shell, kc * (1 - shell - r), 0
+    )
+    law.plot(r, force, color=INK, lw=1.6)
+    law.axvline(1.0, color=MUTED, lw=0.8, ls="--")
+    law.axvline(1 - shell, color=MUTED, lw=0.8, ls="--")
+    law.text(1.005, 8.6, "a diameter apart:\nsurfaces meet", fontsize=8, color=MUTED)
+    law.text(0.905, 8.6, "cores\nmeet", fontsize=8, color=MUTED)
+    law.annotate(
+        "soft: $k_r$",
+        xy=(0.95, 0.3),
+        xytext=(0.96, 2.6),
+        fontsize=8,
+        color=IN,
+        arrowprops=dict(arrowstyle="->", color=IN, lw=0.8),
+    )
+    law.annotate(
+        "stiff: $k_c$",
+        xy=(0.86, 4.5),
+        xytext=(0.865, 6.4),
+        fontsize=8,
+        color=IN,
+        arrowprops=dict(arrowstyle="->", color=IN, lw=0.8),
+    )
+    law.set_xlabel("distance between centrelines, in diameters")
+    law.set_ylabel("push")
+    law.set_ylim(0, 10)
+    law.set_title("contact force against distance")
+    _save(
+        fig,
+        "rope_model",
+        png_dir,
+        "Every force is the gradient of one energy: stretching, bending, contact, and the work of the "
+        "ends (next figure).",
+    )
+
+
+def rope_ends(png_dir: Path | None) -> None:
+    """The braid's ends: clamped at the fell, held by a plate, fed from bobbins."""
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+    z = np.linspace(0, 6, 300)
+    for k, colour in enumerate(YARN[:4]):
+        x = 0.9 * np.sin(2.1 * z + k * math.pi / 2)
+        ax.plot(x, z, color=colour, lw=2.4, alpha=0.85)
+    ax.add_patch(Rectangle((-1.6, -0.35), 3.2, 0.35, color=MUTED, alpha=0.35, lw=0))
+    ax.text(
+        -1.75,
+        -0.18,
+        "the fell: each yarn\nclamped where it is",
+        ha="right",
+        va="center",
+        fontsize=8,
+    )
+    ax.add_patch(Rectangle((-1.6, 6.0), 3.2, 0.25, color=INK, alpha=0.75, lw=0))
+    ax.text(
+        -1.75,
+        6.12,
+        "end plate: rises, turns,\nholds the ends apart",
+        ha="right",
+        va="center",
+        fontsize=8,
+    )
+    ax.add_patch(
+        FancyArrowPatch(
+            (0, 6.3), (0, 7.6), arrowstyle="-|>", mutation_scale=14, color=MARK, lw=1.8
+        )
+    )
+    ax.text(
+        0.12, 7.35, "$W$: the braid drawn off,\nby a weight", color=MARK, fontsize=8
+    )
+    ax.annotate(
+        "",
+        xy=(1.25, 6.55),
+        xytext=(-1.25, 6.55),
+        arrowprops=dict(
+            arrowstyle="->", color=MUTED, lw=1.0, connectionstyle="arc3,rad=-0.35"
+        ),
+    )
+    ax.text(1.35, 6.75, "free to turn", color=MUTED, fontsize=8)
+    for k, colour in enumerate(YARN[:4]):
+        x0 = 0.9 * math.sin(2.1 * 6 + k * math.pi / 2)
+        bx = 2.6 + 0.55 * k
+        ax.plot([x0, bx], [6.12, 6.12 + 0.15 * (k + 1)], color=colour, lw=1.0, ls=":")
+        ax.plot(
+            [bx, bx],
+            [6.12 + 0.15 * (k + 1), 3.6 - 0.25 * k],
+            color=colour,
+            lw=1.0,
+            ls=":",
+        )
+        ax.add_patch(
+            Rectangle(
+                (bx - 0.13, 3.3 - 0.25 * k), 0.26, 0.3, color=colour, alpha=0.8, lw=0
+            )
+        )
+    ax.add_patch(
+        FancyArrowPatch(
+            (3.4, 2.4),
+            (3.4, 1.6),
+            arrowstyle="-|>",
+            mutation_scale=12,
+            color=IN,
+            lw=1.6,
+        )
+    )
+    ax.text(
+        3.6,
+        2.0,
+        "$T$ per yarn: each yarn fed\nthrough the plate from a bobbin\npulling it back",
+        color=IN,
+        fontsize=8,
+        va="center",
+    )
+    ax.text(
+        0,
+        3.0,
+        "beaten up while\n$W < n\\,T\\cos\\alpha$",
+        ha="center",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=MUTED, lw=0.6),
+    )
+    ax.set_xlim(-4.6, 7.4)
+    ax.set_ylim(-0.8, 8.0)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    _save(
+        fig,
+        "rope_ends",
+        png_dir,
+        "The plate settles where the weight balances the yarns' pull along the axis: n yarns at angle "
+        "alpha to it pull it\ndown by n T cos(alpha). A light weight draws the yarns round, until the "
+        "crossings jam and the contacts take the rest.",
+    )
+
+
+def rope_results(png_dir: Path | None) -> None:
+    """The solver's own results: a rope, a plait, and a sinnet beaten up."""
+    import json
+    import shutil
+    import tempfile
+
+    if shutil.which("node") is None:
+        print("  rope_results: skipped, needs Node.js")
+        return
+    from braidpy.web import build
+
+    shapes = _node("shapes")
+    spec = {"source": "sinnet", "name": "abok_3044", "cycles": 4, "settle": "physics"}
+    with tempfile.TemporaryDirectory() as scratch:
+        job = Path(scratch) / "job.json"
+        job.write_text(json.dumps(build(spec, tighten=False)["tighten"]))
+        sinnet = _node("sinnet", str(job), "shapes")
+    assert [round(x) for x in sinnet["after"]["links"]] == [
+        round(x) for x in sinnet["before"]["links"]
+    ]
+
+    fig = plt.figure(figsize=(11, 7.4))
+    grid = fig.add_gridspec(2, 6, height_ratios=[1, 1.05])
+
+    def side(ax, yarns, title, colours=YARN):
+        for k, y in enumerate(yarns):
+            p = _xyz(y)
+            ax.plot(
+                p[:, 0], p[:, 2], color=colours[k % len(colours)], lw=2.2, alpha=0.9
+            )
+        ax.set_aspect("equal")
+        ax.set_title(title, fontsize=9)
+        ax.tick_params(labelsize=7)
+
+    def section(ax, yarns, title, colours=YARN):
+        tops = [_xyz(y)[:, 2].max() for y in yarns]
+        height = min(tops)
+        lo, hi, mid = 0.3 * height, 0.7 * height, 0.5 * height
+        from matplotlib.patches import Circle
+
+        middle = np.concatenate(
+            [_xyz(y)[(_xyz(y)[:, 2] > lo) & (_xyz(y)[:, 2] < hi)] for y in yarns]
+        )
+        cx, cy = middle[:, :2].mean(axis=0)
+        for k, y in enumerate(yarns):
+            p = _xyz(y)
+            m = (p[:, 2] > lo) & (p[:, 2] < hi)
+            colour = colours[k % len(colours)]
+            ax.plot(p[m, 0] - cx, p[m, 1] - cy, color=colour, lw=0.8, alpha=0.6)
+            for i in range(len(p) - 1):
+                if (p[i, 2] - mid) * (p[i + 1, 2] - mid) <= 0 and p[i, 2] != p[
+                    i + 1, 2
+                ]:
+                    f = (mid - p[i, 2]) / (p[i + 1, 2] - p[i, 2])
+                    c = p[i] + f * (p[i + 1] - p[i])
+                    ax.add_patch(
+                        Circle(
+                            (c[0] - cx, c[1] - cy), 0.5, color=colour, alpha=0.75, lw=0
+                        )
+                    )
+                    break
+        ax.set_aspect("equal")
+        ax.autoscale()
+        ax.set_title(title, fontsize=9)
+        ax.tick_params(labelsize=7)
+
+    side(fig.add_subplot(grid[0, 0]), shapes["ropeLaid"], "two-ply rope,\nlaid loose")
+    side(fig.add_subplot(grid[0, 1]), shapes["rope"], "pulled taut:\nradius 1/2")
+    section(
+        fig.add_subplot(grid[0, 2]), shapes["rope"], "its cross-section:\none track"
+    )
+    side(fig.add_subplot(grid[0, 3]), shapes["plaitLaid"], "plait, laid")
+    side(fig.add_subplot(grid[0, 4]), shapes["plait"], "pulled taut,\nfree to turn")
+    section(
+        fig.add_subplot(grid[0, 5]),
+        shapes["plait"],
+        "its cross-section:\none flat track",
+    )
+
+    side(
+        fig.add_subplot(grid[1, 0]),
+        sinnet["laid"],
+        "ABOK #3044, 4 cycles:\nlaid by braidpy",
+    )
+    side(fig.add_subplot(grid[1, 1]), sinnet["settled"], "beaten up")
+    section(fig.add_subplot(grid[1, 2]), sinnet["settled"], "beaten up:\ncross-section")
+    history = np.asarray(sinnet["history"], dtype=float)
+    ax = fig.add_subplot(grid[1, 3:])
+    ax.plot(history[:, 0], sinnet["height"] + history[:, 1], color=INK, lw=1.5)
+    ax.set_xlabel("steps")
+    ax.set_ylabel("braid length, diameters", color=INK)
+    twin = ax.twinx()
+    twin.semilogy(history[:, 0], history[:, 2], color=IN, lw=1.0)
+    twin.set_ylabel("largest force left", color=IN)
+    twin.spines["right"].set_visible(True)
+    twin.tick_params(colors=IN)
+    ax.set_title("how the sinnet settles", fontsize=9)
+    fig.tight_layout()
+    _save(
+        fig,
+        "rope_results",
+        png_dir,
+        "Computed by web/rope.js (tests/js/rope_cases.js). The sinnet's closure links the same before "
+        "and after, checked here and in tests/test_rope.py.",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--png", type=Path, default=None, help="also write PNG copies")
@@ -576,7 +968,11 @@ def main() -> int:
     tube_swing(args.png)
     tube_radius_conditions(args.png)
     tube_cover_gap(args.png)
-    print("\n7 figures written to docs/source/")
+    print("the rope solver:")
+    rope_model(args.png)
+    rope_ends(args.png)
+    rope_results(args.png)
+    print("\n10 figures written to docs/source/")
     return 0
 
 
