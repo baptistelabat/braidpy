@@ -11,9 +11,9 @@ Run it::
 Edit :data:`LOADING` to put the carriers where you want them.  Set it to None
 to have the script search for the fullest loading it can find instead.
 
-A loading that cannot run is reported rather than drawn: the step it fails at
-and the two carriers that meet are printed, which is usually more use than an
-animation that stops.
+A loading that cannot run is still drawn, up to the last step before it goes
+wrong, so the trouble can be watched rather than only read about.  The step it
+fails at and the carriers that meet are printed as well.
 """
 
 import random
@@ -35,8 +35,9 @@ from braidpy.horn_gear.visualization import animate, visualize_machine
 #:
 #:     G0  G1  G2  G3  G4  G5  G6  G7  G8  G9 G10 G11 G12 G13 G14 G15
 #:      5   4   4   8   6   8   4   4   4   4   8   6   8   4   4   5
-#:                     ^                           ^
-#:                   switched                    switched
+#: Each 6-slot gear is switched on *both* of its contacts -- G3-G4 and G4-G5
+#: for the first, G10-G11 and G11-G12 for the second -- so carriers arriving
+#: from either side ride round it and go back the way they came.
 #:
 #: Bands: G0-G4, G4-G11, G11-G15.  The two 6-slot gears belong to the bands on
 #: both sides of them.  Set to None to search for the fullest loading instead.
@@ -101,8 +102,17 @@ def band_of(gear: str) -> Optional[int]:
     return None
 
 
-def report(machine, places: List[Tuple[str, int]]) -> None:
-    """Say what the loading is and where it fails, if it does."""
+def report(machine, places: List[Tuple[str, int]]) -> int:
+    """Say what the loading is, and how far it gets.
+
+    Args:
+        machine: The machine to run.
+        places: Where the carriers start.
+
+    Returns:
+        How many steps can be animated -- all of them if the loading runs, or
+        the steps before it goes wrong if it does not.
+    """
     per_band: Dict[int, int] = {0: 0, 1: 0, 2: 0}
     for gear, _ in places:
         per_band[band_of(gear)] += 1
@@ -110,10 +120,13 @@ def report(machine, places: List[Tuple[str, int]]) -> None:
     print(f"the reference runs {' / '.join(map(str, MULTIBAND_10_15_10_CARRIERS))}")
     try:
         simulate(machine, CHECK_STEPS, dict(enumerate(places)))
-        print(f"runs {CHECK_STEPS} steps without a collision")
     except CollisionError as exc:
-        print(f"WILL NOT RUN: {exc}")
-        raise SystemExit(1)
+        print(f"COLLIDES: {exc}")
+        safe = max(0, exc.step - 1)
+        print(f"animating the {safe} step(s) before it, so it can be watched")
+        return safe
+    print(f"runs {CHECK_STEPS} steps without a collision")
+    return N_STEPS
 
 
 def main() -> None:
@@ -125,7 +138,10 @@ def main() -> None:
     )
 
     places = LOADING if LOADING is not None else search(machine)
-    report(machine, places)
+    steps = report(machine, places)
+    if steps == 0:
+        print("the very first step collides; nothing to animate")
+        return
 
     carriers = dict(enumerate(places))
     compute_layout(machine)  # fails loudly here rather than inside the drawing
@@ -136,7 +152,7 @@ def main() -> None:
     )
     animate(
         machine,
-        n_steps=N_STEPS,
+        n_steps=steps,
         n_substeps=N_SUBSTEPS,
         carrier_positions=carriers,
         output_html="demo_multiband_animated.html",
