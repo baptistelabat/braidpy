@@ -135,6 +135,25 @@ def test_braid_word_survives_laying_drawing_in_and_tightening(word):
     assert _free_reduce(_word_of_yarns(tight)) == _free_reduce(word)
 
 
+@pytest.mark.parametrize(
+    "word, n_strands",
+    [((1, -3, 5, 2, -4), 6), ((1, 3, 5, 7, -2, -4, -6) * 4, 8)],
+)
+def test_a_word_with_many_idle_strands_can_be_laid(word, n_strands):
+    """Each crossing moves two strands; the others stand still.  When one
+    strand leaves its place another arrives there, at the very same point,
+    a crossing's time later.  The default take-off is the strands' mean
+    speed, slow when most of them stand still, and lifted them less than a
+    diameter apart there: no drawing-in can separate two yarns at one point,
+    and laying failed.  Laid now, the yarns clear each other, and it is
+    still the braid the word names."""
+    traj = braid_word_trajectories(Braid(word, n_strands))
+    lay_yarns(traj, yarn_diameter=0.45, fell_radius=0.0)  # as Braid Studio does
+    jammed = lay_yarns(traj, yarn_diameter=0.45)
+    assert jammed.closest_approach() == pytest.approx(0.45)
+    assert _word_of_yarns(jammed) == list(word)
+
+
 def test_braid_word_layout():
     traj = braid_word_trajectories(Braid([1]), spacing=2.0, lift=0.25)
     xs = sorted(xy[0, 0] for xy in traj.xy.values())
