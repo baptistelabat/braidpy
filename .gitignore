@@ -170,3 +170,6 @@ output.json
 tests/3strands_*.b3d
 tests/3strands_*.json
 tests/abok3054*.json
+
+# generated demo figures
+demo_*.png

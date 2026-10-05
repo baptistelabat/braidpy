@@ -237,3 +237,8 @@ https://www.youtube.com/watch?v=qSPfs9S0Pag
 https://github.com/ElsevierSoftwareX/SOFTX-D-17-00056
 https://github.com/louisepb/TexGen
 https://craftdesignonline.com/braid-3d/
+
+## Multiband braiding machine
+Circuit drawing of a 3-band 10-15-10 machine, from which
+`braidpy.horn_gear.multiband_10_15_10` is taken:
+https://www.atelierdetressage.paris/wp-content/uploads/2022/05/Dessin-du-circuit-sur-un-3-bandes-10-15-10.png
