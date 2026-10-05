@@ -3,510 +3,576 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // A disk braid made as on a marudai: move by move, each moved yarn laid
-// over the others, pulled taut by its bobbin, the braid turning to balance.
+// over the others and drawn tight, the braid turning to balance.
 //
-// The ideas are those of braid3dmin, a kumihimo simulation in three.js, as
-// docs/source/braid3D.md describes it; the code is this project's own, on
-// the physics of rope.js.
+// The method is that of braid3dmin, a kumihimo simulation in three.js, as
+// docs/source/braid3D.md describes it; the code is this project's own.
 //
-// - Each yarn is a chain of beads from the start of the braid, held fixed,
-//   up through the braid to its free end, which its bobbin pulls with a
-//   tension T towards its carrier: on the rim, a little above the braid's
-//   tip, so the yarns leave the braid nearly level, as they do over a
-//   marudai's mirror.
-// - A move takes one yarn's carrier round the rim, past the carriers of the
-//   yarns it crosses.  The yarn's free end is carried with it: lifted above
-//   every yarn it is to pass over and laid round them, at the rim of the
-//   braid's tails, in the move's sense.  It is laid over them, so it passes
-//   over them; then its bobbin pulls it taut, and it slides in over them to
-//   the tip of the braid, where the crossing is made.
-// - Each yarn's tail is kept a few diameters long beyond the tip: yarn is
-//   fed in from the bobbin as the braid takes it up.
-// - The braid near its tip settles by the physics of rope.js — stretching,
-//   bending, soft-over-firm contact — found by FIRE.  Well below the tip it
-//   is made: frozen.
-// - Hanging free, the braid turns until the bobbins pull it no way round.
+// - Each yarn is a chain of beads a unit apart, two units thick.  A link
+//   pulls its beads together only when stretched, as a rope does; two beads
+//   less than two units apart push each other away.
+// - Each yarn's end is drawn towards its carrier, out on the rim and above
+//   the braid's tip, by a constant pull: its bobbin.  The end is never drawn
+//   back in.
+// - A move lays the yarn's end over the top of everything on its way to its
+//   new carrier, then draws the new stretch tight as a string would go:
+//   each bead to between its neighbours, or round a yarn in the way.
+// - The braid then relaxes from what moved: a bead at a time, each moved by
+//   its forces, its neighbours and the beads near it then put on the queue,
+//   with steps shrinking until the queue dies down.
+// - Hanging free, the braid turns until its yarns' ends pull it no way round.
+// - Well behind a yarn's end, the braid is made: frozen.
 //
-// Lengths are in yarn diameters.
+// Inside, lengths are in units of half a yarn diameter, y up, as the method
+// was given; what comes out is in yarn diameters, z up.
 
 (function (root) {
   "use strict";
 
-  const SPACING = 0.5;
-  const TAIL = 3.5; // the tails' length beyond the braid
-  const FREEZE = 5; // below the tip by this, the braid is made
-  const LIFT = 1.1; // a moved yarn is laid this far over the others
+  const REACH = 20; // the rim's box: ends beyond it are cut off
+  const RIM = REACH - 1; // the carriers' circle
+  const WEIGHT = 2; // the carriers stand REACH / WEIGHT above the braid's tip
+  const PULL = 1.2; // the bobbins' pull
+  const STIFF = 10; // links and contacts
+  const TAIL = Math.round(Math.sqrt(REACH * REACH * (1 + 1 / (WEIGHT * WEIGHT)))); // beads from tip to rim
+  const KEEP = 40; // beads behind what moved left free
+  const CHUNK = 20000;
+
+  // Spatial grid: cells of CELL units, so the 27 round a point hold all
+  // beads within CELL of it: all a bead touches, and all it may wake once it
+  // has moved its most.  y wraps round, the braid's made part leaving it.
+  const CELL = 2.6;
+  const NXZ = 20, NY = 64;
+  const OXZ = (NXZ * CELL) / 2;
+
+  // The height map: the top of the yarns, per half unit square.
+  const HM = 2 * REACH + 4;
+  const HW = 2 * HM + 1;
+
+  const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
+
+  function Machine(nThreads) {
+    // ------------------------------------------------------------ beads
+    let cap = 1024;
+    let X = new Float64Array(cap), Y = new Float64Array(cap), Z = new Float64Array(cap);
+    let LX = new Float64Array(cap), LY = new Float64Array(cap), LZ = new Float64Array(cap);
+    let stamped = new Uint8Array(cap), fixed = new Uint8Array(cap), queued = new Uint8Array(cap);
+    let owner = new Int32Array(cap), place = new Int32Array(cap);
+    let cellOf = new Int32Array(cap), cellNext = new Int32Array(cap), cellPrev = new Int32Array(cap);
+    let count = 0;
+    const free = [];
+
+    function grow() {
+      cap *= 2;
+      const more = (A) => { const B = new A.constructor(cap); B.set(A); return B; };
+      X = more(X); Y = more(Y); Z = more(Z); LX = more(LX); LY = more(LY); LZ = more(LZ);
+      stamped = more(stamped); fixed = more(fixed); queued = more(queued);
+      owner = more(owner); place = more(place);
+      cellOf = more(cellOf); cellNext = more(cellNext); cellPrev = more(cellPrev);
+    }
+
+    const head = new Int32Array(NXZ * NXZ * NY).fill(-1);
+    const cx = (x) => Math.min(NXZ - 1, Math.max(0, Math.floor((x + OXZ) / CELL)));
+    const cy = (y) => Math.floor(y / CELL) & (NY - 1);
+    const cellAt = (x, y, z) => (cx(x) * NXZ + cx(z)) * NY + cy(y);
+
+    function unlink(b) {
+      const c = cellOf[b];
+      if (c < 0) return;
+      if (cellPrev[b] >= 0) cellNext[cellPrev[b]] = cellNext[b];
+      else head[c] = cellNext[b];
+      if (cellNext[b] >= 0) cellPrev[cellNext[b]] = cellPrev[b];
+      cellOf[b] = -1;
+    }
+    function link(b) {
+      const c = cellAt(X[b], Y[b], Z[b]);
+      if (c === cellOf[b]) return;
+      unlink(b);
+      cellOf[b] = c;
+      cellPrev[b] = -1;
+      cellNext[b] = head[c];
+      if (head[c] >= 0) cellPrev[head[c]] = b;
+      head[c] = b;
+    }
+    function moveTo(b, x, y, z) {
+      X[b] = x; Y[b] = y; Z[b] = z;
+      if (cellOf[b] >= 0 || !fixed[b]) link(b);
+    }
+
+    // Every bead within CELL of (x, y, z), and some further.
+    const around = [];
+    function near(x, y, z) {
+      around.length = 0;
+      const i0 = cx(x), k0 = cx(z), j0 = Math.floor(y / CELL);
+      const i1 = Math.min(NXZ - 1, i0 + 1), k1 = Math.min(NXZ - 1, k0 + 1);
+      for (let i = Math.max(0, i0 - 1); i <= i1; i++) {
+        for (let k = Math.max(0, k0 - 1); k <= k1; k++) {
+          const column = (i * NXZ + k) * NY;
+          for (let j = j0 - 1; j <= j0 + 1; j++) {
+            for (let b = head[column + (j & (NY - 1))]; b >= 0; b = cellNext[b]) around.push(b);
+          }
+        }
+      }
+      return around;
+    }
+
+    // ------------------------------------------------------------ yarns
+    const threads = [];
+    for (let t = 0; t < nThreads; t++) threads.push({ beads: [], dir: 0, tx: 0, ty: 0, tz: 0 });
+    const last = (t) => threads[t].beads[threads[t].beads.length - 1];
+    const prevOf = (b) => (place[b] > 0 ? threads[owner[b]].beads[place[b] - 1] : -1);
+    const nextOf = (b) => {
+      const list = threads[owner[b]].beads;
+      return place[b] + 1 < list.length ? list[place[b] + 1] : -1;
+    };
+
+    function addBead(t, x, y, z) {
+      if (count === cap) grow();
+      const b = free.length ? free.pop() : count++;
+      const list = threads[t].beads;
+      owner[b] = t; place[b] = list.length; list.push(b);
+      fixed[b] = 0; queued[b] = 0; stamped[b] = 0; cellOf[b] = -1;
+      X[b] = x; Y[b] = y; Z[b] = z;
+      link(b);
+      return b;
+    }
+    function dropLast(t) {
+      const b = threads[t].beads.pop();
+      unlink(b);
+      fixed[b] = 1;
+      queued[b] = 0;
+      free.push(b);
+    }
+
+    // ------------------------------------------------------------ queue
+    let queue = [];
+    function enqueue(b) {
+      if (b < 0 || queued[b] || fixed[b]) return;
+      queued[b] = 1;
+      queue.push(b);
+    }
+
+    // ------------------------------------------------------------ heights
+    const hmH = new Float64Array(HW * HW), hmT = new Int32Array(HW * HW);
+    let highest = 0;
+    function hmClear() { hmH.fill(-2); hmT.fill(-1); highest = 0; }
+    hmClear();
+    function hmPut(x, y, z, t) {
+      const c = Math.round(x * 2 - 0.5), l = Math.round(z * 2 - 0.5);
+      highest = Math.max(highest, y);
+      for (let f = -1; f <= 2; f++) {
+        for (let e = -1; e <= 2; e++) {
+          const i = c + f + HM, k = l + e + HM;
+          if (i < 0 || k < 0 || i >= HW || k >= HW) continue;
+          const h = f < 0 || f > 1 || e < 0 || e > 1 ? y - 1 : y;
+          const at = i * HW + k;
+          if (hmH[at] < h) { hmH[at] = h; hmT[at] = t; }
+        }
+      }
+    }
+    function hmAt(x, z) {
+      const i = Math.round(x * 2) + HM, k = Math.round(z * 2) + HM;
+      if (i < 0 || k < 0 || i >= HW || k >= HW) return -1;
+      return i * HW + k;
+    }
+
+    let tip = 1;
+
+    // The squared distance from (x, y, z) to the nearest bead of another
+    // yarn than t, if under CELL; else 100.
+    function clearance(x, y, z, t) {
+      let best = 100;
+      for (const o of near(x, y, z)) {
+        if (owner[o] === t) continue;
+        const dx = X[o] - x, dy = Y[o] - y, dz = Z[o] - z;
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < best) best = d;
+      }
+      return best;
+    }
+
+    // ------------------------------------------------------------ laying
+
+    // Thread t's end goes to the carrier at angle `to`: up over what lies
+    // on its way, then out to the rim, then drawn tight.
+    function lay(t, to, gentle) {
+      const thread = threads[t];
+      const list = thread.beads;
+      for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) {
+        const b = list[i];
+        LX[b] = X[b]; LY[b] = Y[b]; LZ[b] = Z[b]; stamped[b] = 1;
+      }
+      let top = highest - 2;
+      const e0 = last(t);
+      let x = X[e0], y = Y[e0], z = Z[e0];
+      thread.dir = to;
+      const rx = Math.cos(to) * RIM, rz = Math.sin(to) * RIM;
+      let dx = rx - x, dz = rz - z;
+      let dist = Math.hypot(dx, dz);
+      if (dist < 0.001) return;
+      dx /= dist; dz /= dist;
+      for (let g = 0; g < dist; g++) {
+        const at = hmAt(x, z);
+        x += dx; z += dz;
+        if (at < 0 || hmT[at] === t) continue;
+        top = Math.max(top, hmH[at]);
+      }
+      x = X[e0]; z = Z[e0];
+      while (y < top + 2) addBead(t, x, ++y, z);
+      const ry = Math.max(y, tip + REACH / WEIGHT);
+      let dy;
+      dx = rx - x; dy = ry - y; dz = rz - z;
+      dist = Math.hypot(dx, dy, dz);
+      if (dist < 0.001) return;
+      dx /= dist; dy /= dist; dz /= dist;
+      for (let g = 0; g < dist; g++) { x += dx; y += dy; z += dz; addBead(t, x, y, z); }
+      addBead(t, x, --y, z);
+      addBead(t, x, --y, z);
+      drawTight(t, gentle);
+      relay(t);
+      const end = last(t);
+      thread.tx = X[end]; thread.ty = Y[end]; thread.tz = Z[end];
+      enqueue(end);
+      for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) hmPut(X[list[i]], Y[list[i]], Z[list[i]], t);
+    }
+
+    // Each free bead to between its neighbours, as a string drawn tight;
+    // where another yarn is in the way, round it.
+    function drawTight(t, gentle) {
+      const list = threads[t].beads;
+      for (let i = list.length - 2; i >= 0 && !fixed[list[i]]; i--) enqueue(list[i]);
+      const least = gentle ? 0.0001 : 0.003;
+      for (let k = 0; k < queue.length; k++) {
+        const b = queue[k];
+        queued[b] = 0;
+        const p = prevOf(b), n = nextOf(b);
+        if (p < 0 || n < 0) continue;
+        const mx = (X[p] + X[n]) / 2, my = (Y[p] + Y[n]) / 2, mz = (Z[p] + Z[n]) / 2;
+        const l = Math.hypot(X[b] - mx, Y[b] - my, Z[b] - mz);
+        if (l < least) continue;
+        const room = clearance(mx, my, mz, t);
+        let moved = false;
+        if (room > 4) {
+          moveTo(b, mx, my, mz);
+          moved = true;
+        } else {
+          // Round the yarn in the way: half way there, and aside, either side.
+          const kx = mx - X[b], ky = my - Y[b], kz = mz - Z[b];
+          const hx = mx - X[p], hy = my - Y[p], hz = mz - Z[p];
+          if (hx * hx + hy * hy + hz * hz < 1e-8) continue;
+          let ox = ky * hz - kz * hy, oy = kz * hx - kx * hz, oz = kx * hy - ky * hx;
+          const m = Math.hypot(ox, oy, oz);
+          if (m < 1e-5) continue;
+          const s = (0.866 * l) / m;
+          ox *= s; oy *= s; oz *= s;
+          const here = Math.min(4, clearance(X[b], Y[b], Z[b], t));
+          for (const side of [1, -1]) {
+            const rx = X[b] + kx / 2 + side * ox, ry = Y[b] + ky / 2 + side * oy, rz = Z[b] + kz / 2 + side * oz;
+            const there = clearance(rx, ry, rz, t);
+            if (there > room && there > here) {
+              moveTo(b, rx, ry, rz);
+              moved = true;
+              break;
+            }
+          }
+        }
+        if (moved && l >= least) { enqueue(p); enqueue(n); }
+      }
+      queue = [];
+    }
+
+    // Lay the beads that moved out again a unit apart; freeze those well
+    // behind them.
+    function relay(t) {
+      const list = threads[t].beads;
+      let c = list.length - 1;
+      for (; c > 0; c--) {
+        const b = list[c];
+        if (fixed[b]) break;
+        if (stamped[b] && Math.hypot(LX[b] - X[b], LY[b] - Y[b], LZ[b] - Z[b]) < 0.001) break;
+      }
+      for (let j = c - KEEP; j >= 0 && !fixed[list[j]]; j--) fixed[list[j]] = 1;
+      const path = [];
+      for (let j = c + 1; j < list.length; j++) path.push([X[list[j]], Y[list[j]], Z[list[j]]]);
+      while (list.length > c + 1) dropLast(t);
+      const b0 = list[c];
+      let ox = X[b0], oy = Y[b0], oz = Z[b0];
+      let k = 0;
+      while (k < path.length) {
+        let m = 0;
+        while (m < 1 && k < path.length) {
+          const [px, py, pz] = path[k];
+          const d = Math.hypot(px - ox, py - oy, pz - oz);
+          if (m + d <= 1) {
+            ox = px; oy = py; oz = pz; m += d; k++;
+          } else {
+            const f = (1 - m) / d;
+            ox += (px - ox) * f; oy += (py - oy) * f; oz += (pz - oz) * f;
+            m = 1;
+            enqueue(addBead(t, ox, oy, oz));
+          }
+        }
+      }
+    }
+
+    // ------------------------------------------------------------ relaxing
+
+    let strength = 0.1;
+    function relaxBead(b) {
+      if (fixed[b]) return;
+      const t = owner[b], i = place[b];
+      const p = prevOf(b), n = nextOf(b);
+      const x = X[b], y = Y[b], z = Z[b];
+      let fx = 0, fy = 0, fz = 0;
+      for (let side = 0; side < 2; side++) {
+        const o = side ? n : p;
+        if (o < 0) continue;
+        const dx = X[o] - x, dy = Y[o] - y, dz = Z[o] - z;
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 > 1) {
+          const d = Math.sqrt(d2), f = ((d - 1) * STIFF) / d;
+          fx += dx * f; fy += dy * f; fz += dz * f;
+        }
+      }
+      const thread = threads[t];
+      let px = 0, py = 0, pz = 0;
+      if (n < 0) {
+        px = thread.tx; py = thread.ty - y; pz = thread.tz;
+        const m = Math.hypot(px, py, pz);
+        px *= PULL / m; py *= PULL / m; pz *= PULL / m;
+        fx += px; fy += py; fz += pz;
+      }
+      const others = near(x, y, z);
+      for (let k = 0; k < others.length; k++) {
+        const o = others[k];
+        if (o === b || (owner[o] === t && Math.abs(place[o] - i) <= 2)) continue;
+        const dx = x - X[o], dy = y - Y[o], dz = z - Z[o];
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < 4 && d2 > 0) {
+          const d = Math.sqrt(d2), f = ((2 - d) * STIFF) / d;
+          fx += dx * f; fy += dy * f; fz += dz * f;
+        }
+      }
+      fx *= strength; fy *= strength; fz *= strength;
+      const s = fx * fx + fy * fy + fz * fz;
+      if (s <= 0.0001) return;
+      if (s > 0.09) { const c = 0.3 / Math.sqrt(s); fx *= c; fy *= c; fz *= c; }
+      if (n >= 0 || fx * px + fy * py + fz * pz > 0) moveTo(b, x + fx, y + fy, z + fz);
+      enqueue(p);
+      enqueue(n);
+      if (n < 0) {
+        if (queue.length) enqueue(b);
+        return;
+      }
+      // Wake the other yarns' beads near where it now is: all among those
+      // found round where it was.
+      const nx = X[b], ny = Y[b], nz = Z[b];
+      for (let k = 0; k < others.length; k++) {
+        const o = others[k];
+        if (owner[o] === t) continue;
+        const dx = X[o] - nx, dy = Y[o] - ny, dz = Z[o] - nz;
+        if (dx * dx + dy * dy + dz * dz < 5.3) enqueue(o);
+      }
+    }
+
+    let lastMoved = new Set();
+    let updates = 0;
+    function relax() {
+      if (!queue.length) for (const t of lastMoved) enqueue(last(t));
+      else lastMoved = new Set(queue.map((b) => owner[b]));
+      strength = 0.11;
+      let peak = queue.length;
+      for (;;) {
+        let done = 0;
+        while (queue.length && done < CHUNK) {
+          peak = Math.max(peak, queue.length);
+          const batch = queue;
+          queue = [];
+          for (const b of batch) {
+            queued[b] = 0;
+            relaxBead(b);
+            done++;
+          }
+        }
+        updates += done;
+        strength *= 0.9;
+        if (!(queue.length > peak / 10 && strength > 0.01)) break;
+      }
+      for (const b of queue) queued[b] = 0;
+      queue = [];
+      for (let t = 0; t < nThreads; t++) trim(t);
+      heights();
+      findTip();
+      balance();
+      forget();
+    }
+
+    function trim(t) {
+      const list = threads[t].beads;
+      while (list.length && !fixed[last(t)]) {
+        const b = last(t);
+        if (Math.abs(X[b]) > REACH || Math.abs(Z[b]) > REACH) dropLast(t);
+        else break;
+      }
+    }
+
+    function heights() {
+      hmClear();
+      for (let t = 0; t < nThreads; t++) {
+        const list = threads[t].beads;
+        for (let i = list.length - 1; i >= 0 && i >= list.length - 2 * TAIL; i--) hmPut(X[list[i]], Y[list[i]], Z[list[i]], t);
+      }
+    }
+
+    function findTip() {
+      let s = 0;
+      for (const thread of threads) s += Y[thread.beads[Math.max(0, thread.beads.length - TAIL)]];
+      tip = s / nThreads;
+    }
+
+    // Turn the braid about its axis until its yarns' ends pull it no way
+    // round, then lay the ends out to their carriers again.
+    function balance() {
+      let ax = 0, az = 0;
+      for (let t = 0; t < nThreads; t++) { ax += X[last(t)]; az += Z[last(t)]; }
+      ax /= nThreads; az /= nThreads;
+      const span = REACH - 4;
+      const lean = threads.map((thread) => {
+        const list = thread.beads;
+        if (list.length < 20) return 0;
+        const e = list[list.length - 1], b = list[list.length - 2];
+        const cxv = ax - X[e], czv = az - Z[e];
+        const out = Math.atan2(czv, cxv), back = Math.atan2(Z[b] - Z[e], X[b] - X[e]);
+        const arm = Math.max(-span, Math.min(span, Math.sin(wrap(back - out)) * Math.hypot(cxv, czv)));
+        return Math.asin(arm / span);
+      });
+      const torque = (f) => lean.reduce((s, r) => s + Math.sin(Math.min(Math.PI / 2, Math.max(-Math.PI / 2, wrap(r + f)))), 0);
+      let lo = -Math.PI / 4, hi = Math.PI / 4;
+      while (hi - lo > 0.001) {
+        const g = (2 * lo + hi) / 3, h = (lo + 2 * hi) / 3;
+        const tg = Math.abs(torque(g)), th = Math.abs(torque(h));
+        if (tg > th) lo = g;
+        else if (tg < th) hi = h;
+        else { lo = g; hi = h; }
+      }
+      const f = (lo + hi) / 2;
+      const order = [...threads.keys()].sort((p, q) => threads[p].dir - threads[q].dir);
+      if (Math.abs(f) > 0.01) turn(ax, az, f);
+      if (f > 0) order.reverse();
+      for (const t of order) lay(t, threads[t].dir);
+    }
+
+    // The whole braid turned by f about the vertical through (ax, az).
+    function turn(ax, az, f) {
+      const c = Math.cos(f), s = Math.sin(f);
+      for (const thread of threads) {
+        for (const b of thread.beads) {
+          const x = X[b] - ax, z = Z[b] - az;
+          moveTo(b, ax + x * c + z * s, Y[b], az - x * s + z * c);
+        }
+      }
+    }
+
+    // The made braid, well below anything free, leaves the grid.
+    function forget() {
+      let low = Infinity;
+      for (const thread of threads) {
+        const list = thread.beads;
+        for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) low = Math.min(low, Y[list[i]]);
+      }
+      for (const thread of threads) {
+        for (const b of thread.beads) if (fixed[b] && cellOf[b] >= 0 && Y[b] < low - 3 * CELL) unlink(b);
+      }
+    }
+
+    // ------------------------------------------------------------ start
+    function start(angles) {
+      angles.forEach((a, t) => {
+        const r = nThreads / 3;
+        fixed[addBead(t, Math.cos(a) * r, 0, Math.sin(a) * r)] = 1;
+        fixed[addBead(t, Math.cos(a) * r, 1, Math.sin(a) * r)] = 1;
+        lay(t, a);
+      });
+    }
+
+    return {
+      start,
+      lay,
+      relax,
+      turn,
+      threads,
+      get tip() { return tip; },
+      get updates() { return updates; },
+      positions: (t) => threads[t].beads.map((b) => [X[b], Y[b], Z[b]]),
+    };
+  }
 
   /**
+   * A disk braid made move by move.
+   *
    * @param {Object} job
    * @param {number} job.n_slots  Slots round the disk.
    * @param {number[]} job.start  Each yarn's slot, from 1.
-   * @param {number[][][]} job.steps  Per step, [yarn, slots moved].
+   * @param {number[][][]} job.steps  Per step, [yarn, slots moved].  When
+   *     every yarn moves alike, the disk turns; else each yarn named is
+   *     moved, in turn, and the braid relaxes.
    * @param {boolean} job.clockwise  Slots numbered clockwise, from above.
-   * @param {number} [job.tension]  T.
-   * @param {number} [job.rise]  How steeply the yarns rise from the tip to
-   *     their carriers, in radians.
+   * @param {boolean} [job.split]  A move of more than nine tenths of a half
+   *     turn goes in two halves, so it passes over what lies on its own
+   *     side round (true).
+   * @param {number[]} [job.from]  Each yarn's slot to lay it from first, if
+   *     not job.start: the yarns then go from these to job.start as a first
+   *     step.
    * @param {function(Object):void} [job.progress]
-   * @returns {{yarns: number[][], tip: number, turned: number}} Each
-   *     yarn's beads, oldest first, cut at the braid's tip.
+   * @returns {{yarns: number[][], whole: number[][], tip: number, updates: number}}
+   *     Each yarn's beads, flat [x, y, z, …] in yarn diameters, z up,
+   *     oldest first: cut at the braid's tip, and whole.
    */
   function make(job) {
-    const nYarns = job.start.length;
-    const nSlots = job.n_slots;
+    const n = job.start.length;
     const sense = job.clockwise ? -1 : 1;
-    const tension = job.tension ?? 1;
-    const rise = job.rise ?? 0.25;
-    const ks = 100, kb = 0.5, kr = 5, kc = 100, core = 0.9;
-    const braidRadius = 0.3 + 0.55 * Math.sqrt(nYarns);
-    const tailRadius = braidRadius + TAIL;
-    const rim = 12 + nYarns / 2;
-    const angleOf = (slot) => (sense * 2 * Math.PI * (slot - 1)) / nSlots;
-
-    // Each yarn: its beads, oldest first; how many at the start are made;
-    // where its carrier is.
-    const angle = job.start.map(angleOf);
-    const yarns = [];
-    // The braid starts tied round a ring, the yarns evenly round it in the
-    // order of their slots, far enough apart to clear each other; from it
-    // each runs out to its carrier's angle.  Kept in order, none crosses.
-    const ring = Math.max(0.6, (0.6 * nYarns) / Math.PI);
-    const order = [...Array(nYarns).keys()].sort((p, q) => job.start[p] - job.start[q]);
-    const place = new Array(nYarns);
-    order.forEach((a, k) => (place[a] = (2 * Math.PI * k) / nYarns + angle[order[0]]));
-    for (let a = 0; a < nYarns; a++) {
-      const t = place[a];
-      const points = [];
-      for (let z = 0; z <= 1.5; z += SPACING) points.push([ring * Math.cos(t), ring * Math.sin(t), z]);
-      const out = [Math.cos(angle[a]) * tailRadius, Math.sin(angle[a]) * tailRadius];
-      const from = [ring * Math.cos(t), ring * Math.sin(t)];
-      const length = Math.hypot(out[0] - from[0], out[1] - from[1]);
-      for (let k = 1; k * SPACING <= length; k++) {
-        const f = (k * SPACING) / length;
-        points.push([from[0] + f * (out[0] - from[0]), from[1] + f * (out[1] - from[1]), 1.5]);
+    // braid3dmin's angles turn the other way round from ours.
+    const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
+    const split = job.split ?? true;
+    const machine = Machine(n);
+    const first = job.from ?? job.start;
+    machine.start(first.map(angleOf));
+    for (let t = 0; t < n; t++) machine.lay(t, job.from ? angleOf(job.start[t]) : machine.threads[t].dir);
+    machine.relax();
+    job.steps.forEach((step, number) => {
+      const moving = step.filter(([, d]) => d);
+      if (!moving.length) return;
+      if (moving.length === n && moving.every(([, d]) => d === moving[0][1])) {
+        const by = (sense * 2 * Math.PI * moving[0][1]) / job.n_slots;
+        machine.turn(0, 0, by);
+        for (const thread of machine.threads) thread.dir -= by;
+        return;
       }
-      yarns.push({ beads: points, made: 1 });
-    }
-    let tip = 1.5;
-    let turned = 0;
-    let steps = 0;
-
-    function target(a) {
-      return [rim * Math.cos(angle[a]), rim * Math.sin(angle[a]), tip + rim * Math.tan(rise)];
-    }
-
-    // ------------------------------------------------------------ settling
-
-    // FIRE on every bead not made, its end pulled towards its carrier.
-    function settle(maxSteps) {
-      const first = [];
-      const x = [];
-      const free = [];
-      const yarnOf = [];
-      yarns.forEach((y, a) => {
-        first.push(x.length / 3);
-        y.beads.forEach((p, i) => {
-          x.push(p[0], p[1], p[2]);
-          free.push(i >= y.made ? 1 : 0);
-          yarnOf.push(a);
-        });
-      });
-      first.push(x.length / 3);
-      const n = first[nYarns];
-      const pos = Float64Array.from(x);
-      const mobile = Uint8Array.from(free);
-      const owner = Int32Array.from(yarnOf);
-      const rest = yarns.map((y) => y.rest ?? SPACING);
-      const ends = yarns.map((_, a) => first[a + 1] - 1);
-      const goal = yarns.map((_, a) => target(a));
-
-      // Segments that can matter: any with a mobile end, and the made ones
-      // just below them.
-      const low = tip - FREEZE - 2;
-      const segs = [];
-      for (let a = 0; a < nYarns; a++) {
-        for (let g = first[a]; g < first[a + 1] - 1; g++) {
-          if (Math.max(pos[3 * g + 2], pos[3 * g + 5]) >= low) segs.push(g);
-        }
+      for (const [a, d] of moving) {
+        const sweep = -(sense * 2 * Math.PI * d) / job.n_slots;
+        const parts = split && Math.abs(sweep) > Math.PI * 0.9 ? 2 : 1;
+        for (let k = 0; k < parts; k++) machine.lay(a, machine.threads[a].dir + sweep / parts);
       }
-      const gap = Math.ceil(2 / SPACING) + 1;
-      const reach = 1 + 2 * SPACING + 0.5;
-      let pairs = new Int32Array(0);
-      const built = new Float64Array(3 * n);
-      function neighbours() {
-        const grid = new Map();
-        const cell = new Int32Array(3 * n);
-        for (const g of segs) {
-          const i = Math.floor((pos[3 * g] + pos[3 * g + 3]) / 2 / reach);
-          const j = Math.floor((pos[3 * g + 1] + pos[3 * g + 4]) / 2 / reach);
-          const k = Math.floor((pos[3 * g + 2] + pos[3 * g + 5]) / 2 / reach);
-          cell[3 * g] = i;
-          cell[3 * g + 1] = j;
-          cell[3 * g + 2] = k;
-          const key = (i * 73856093) ^ (j * 19349663) ^ (k * 83492791);
-          let list = grid.get(key);
-          if (!list) grid.set(key, (list = []));
-          list.push(g);
-        }
-        const found = [];
-        for (const g of segs) {
-          const i = cell[3 * g], j = cell[3 * g + 1], k = cell[3 * g + 2];
-          for (let di = -1; di <= 1; di++) {
-            for (let dj = -1; dj <= 1; dj++) {
-              for (let dk = -1; dk <= 1; dk++) {
-                const list = grid.get(((i + di) * 73856093) ^ ((j + dj) * 19349663) ^ ((k + dk) * 83492791));
-                if (!list) continue;
-                for (const h of list) {
-                  if (h <= g) continue;
-                  if (cell[3 * h] !== i + di || cell[3 * h + 1] !== j + dj || cell[3 * h + 2] !== k + dk) continue;
-                  if (owner[h] === owner[g] && h - g < gap) continue;
-                  if (!mobile[g] && !mobile[g + 1] && !mobile[h] && !mobile[h + 1]) continue;
-                  const mx = pos[3 * g] + pos[3 * g + 3] - pos[3 * h] - pos[3 * h + 3];
-                  const my = pos[3 * g + 1] + pos[3 * g + 4] - pos[3 * h + 1] - pos[3 * h + 4];
-                  const mz = pos[3 * g + 2] + pos[3 * g + 5] - pos[3 * h + 2] - pos[3 * h + 5];
-                  if (mx * mx + my * my + mz * mz > 4 * reach * reach) continue;
-                  found.push(g, h);
-                }
-              }
-            }
-          }
-        }
-        pairs = Int32Array.from(found);
-        built.set(pos);
+      machine.relax();
+      if (job.progress) {
+        job.progress({ fraction: (number + 1) / job.steps.length, tip: machine.tip / 2, yarns: () => shape().yarns });
       }
-      function stale() {
-        for (let k = 0; k < 3 * n; k += 3) {
-          const dx = pos[k] - built[k], dy = pos[k + 1] - built[k + 1], dz = pos[k + 2] - built[k + 2];
-          if (dx * dx + dy * dy + dz * dz > 0.0625) return true;
-        }
-        return false;
-      }
+    });
+    return { ...shape(), updates: machine.updates };
 
-      const f = new Float64Array(3 * n);
-      function forces() {
-        f.fill(0);
-        for (let a = 0; a < nYarns; a++) {
-          const s0 = rest[a];
-          for (let g = first[a]; g < first[a + 1] - 1; g++) {
-            if (!mobile[g] && !mobile[g + 1]) continue;
-            const dx = pos[3 * g + 3] - pos[3 * g], dy = pos[3 * g + 4] - pos[3 * g + 1], dz = pos[3 * g + 5] - pos[3 * g + 2];
-            const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            const t = (ks * (r - s0)) / r;
-            f[3 * g] += t * dx;
-            f[3 * g + 1] += t * dy;
-            f[3 * g + 2] += t * dz;
-            f[3 * g + 3] -= t * dx;
-            f[3 * g + 4] -= t * dy;
-            f[3 * g + 5] -= t * dz;
-          }
-          const b = kb / (s0 * s0);
-          for (let g = first[a] + 1; g < first[a + 1] - 1; g++) {
-            if (!mobile[g - 1] && !mobile[g] && !mobile[g + 1]) continue;
-            for (let c = 0; c < 3; c++) {
-              const curve = pos[3 * g - 3 + c] - 2 * pos[3 * g + c] + pos[3 * g + 3 + c];
-              f[3 * g - 3 + c] -= b * curve;
-              f[3 * g + c] += 2 * b * curve;
-              f[3 * g + 3 + c] -= b * curve;
-            }
-          }
-          // The bobbin.
-          const e = ends[a];
-          const gx = goal[a][0] - pos[3 * e], gy = goal[a][1] - pos[3 * e + 1], gz = goal[a][2] - pos[3 * e + 2];
-          const gl = Math.max(Math.hypot(gx, gy, gz), 1e-9);
-          f[3 * e] += (tension * gx) / gl;
-          f[3 * e + 1] += (tension * gy) / gl;
-          f[3 * e + 2] += (tension * gz) / gl;
-        }
-        for (let q = 0; q < pairs.length; q += 2) {
-          const i = 3 * pairs[q], j = 3 * pairs[q + 1];
-          const ax = pos[i + 3] - pos[i], ay = pos[i + 4] - pos[i + 1], az = pos[i + 5] - pos[i + 2];
-          const bx = pos[j + 3] - pos[j], by = pos[j + 4] - pos[j + 1], bz = pos[j + 5] - pos[j + 2];
-          const rx = pos[i] - pos[j], ry = pos[i + 1] - pos[j + 1], rz = pos[i + 2] - pos[j + 2];
-          const aa = ax * ax + ay * ay + az * az;
-          const bb = bx * bx + by * by + bz * bz;
-          const ab = ax * bx + ay * by + az * bz;
-          const ar = ax * rx + ay * ry + az * rz;
-          const br = bx * rx + by * ry + bz * rz;
-          const den = aa * bb - ab * ab;
-          let u = den > 1e-12 * aa * bb ? (ab * br - ar * bb) / den : 0;
-          u = u < 0 ? 0 : u > 1 ? 1 : u;
-          let w = (ab * u + br) / bb;
-          if (w < 0) {
-            w = 0;
-            u = Math.min(1, Math.max(0, -ar / aa));
-          } else if (w > 1) {
-            w = 1;
-            u = Math.min(1, Math.max(0, (ab - ar) / aa));
-          }
-          const px = rx + u * ax - w * bx, py = ry + u * ay - w * by, pz = rz + u * az - w * bz;
-          const r2 = px * px + py * py + pz * pz;
-          if (r2 >= 1) continue;
-          const r = Math.sqrt(r2);
-          let push = (kr * (1 - r)) / Math.max(r, 1e-9);
-          if (r < core) {
-            push += (kc * (core - r)) / Math.max(r, 1e-9);
-            deepestEver = Math.max(deepestEver, core - r);
-          }
-          const qx = push * px, qy = push * py, qz = push * pz;
-          f[i] += (1 - u) * qx;
-          f[i + 1] += (1 - u) * qy;
-          f[i + 2] += (1 - u) * qz;
-          f[i + 3] += u * qx;
-          f[i + 4] += u * qy;
-          f[i + 5] += u * qz;
-          f[j] -= (1 - w) * qx;
-          f[j + 1] -= (1 - w) * qy;
-          f[j + 2] -= (1 - w) * qz;
-          f[j + 3] -= w * qx;
-          f[j + 4] -= w * qy;
-          f[j + 5] -= w * qz;
-        }
-      }
-
-      const v = new Float64Array(3 * n);
-      let dt = 0.01, alpha = 0.1, downhill = 0, step = 0;
-      neighbours();
-      for (; step < maxSteps; step++) {
-        if (stale()) neighbours();
-        forces();
-        let power = 0, fNorm = 0, vNorm = 0, largest = 0;
-        for (let g = 0; g < n; g++) {
-          if (!mobile[g]) continue;
-          for (let c = 0; c < 3; c++) {
-            const k = 3 * g + c;
-            power += f[k] * v[k];
-            fNorm += f[k] * f[k];
-            vNorm += v[k] * v[k];
-            if (Math.abs(f[k]) > largest) largest = Math.abs(f[k]);
-          }
-        }
-        if (largest < 2e-3) break;
-        fNorm = Math.sqrt(fNorm);
-        vNorm = Math.sqrt(vNorm);
-        const mix = fNorm > 0 ? (alpha * vNorm) / fNorm : 0;
-        for (let g = 0; g < n; g++) {
-          if (!mobile[g]) continue;
-          for (let c = 0; c < 3; c++) v[3 * g + c] = (1 - alpha) * v[3 * g + c] + mix * f[3 * g + c];
-        }
-        if (power > 0) {
-          if (++downhill > 5) {
-            dt = Math.min(dt * 1.1, 0.05);
-            alpha *= 0.99;
-          }
-        } else {
-          downhill = 0;
-          dt *= 0.5;
-          alpha = 0.1;
-          v.fill(0);
-        }
-        for (let g = 0; g < n; g++) {
-          if (!mobile[g]) continue;
-          v[3 * g] += dt * f[3 * g];
-          v[3 * g + 1] += dt * f[3 * g + 1];
-          v[3 * g + 2] += dt * f[3 * g + 2];
-          const mx = dt * v[3 * g], my = dt * v[3 * g + 1], mz = dt * v[3 * g + 2];
-          const size = Math.sqrt(mx * mx + my * my + mz * mz);
-          const k = size > 0.1 ? 0.1 / size : 1;
-          pos[3 * g] += mx * k;
-          pos[3 * g + 1] += my * k;
-          pos[3 * g + 2] += mz * k;
-        }
-      }
-      steps += step;
-      yarns.forEach((y, a) => {
-        y.beads = y.beads.map((_, i) => {
-          const g = first[a] + i;
-          return [pos[3 * g], pos[3 * g + 1], pos[3 * g + 2]];
-        });
-      });
-    }
-    let deepestEver = 0;
-
-    // ------------------------------------------------------------ the braid
-
-    // Where the braid's tip is: the highest beads still inside its radius,
-    // yarn by yarn, on average.
-    function findTip() {
-      let sum = 0;
-      for (const y of yarns) {
-        let high = 0;
-        for (const p of y.beads) if (Math.hypot(p[0], p[1]) < braidRadius + 0.5) high = Math.max(high, p[2]);
-        sum += high;
-      }
-      tip = Math.max(tip, sum / nYarns);
-    }
-
-    // Each yarn's tail kept about TAIL beyond the braid: fed from its
-    // bobbin, or wound back.
-    function feed() {
-      yarns.forEach((y, a) => {
-        const b = y.beads;
-        const reachOf = (p) => Math.hypot(p[0], p[1]);
-        while (b.length > y.made + 3 && reachOf(b[b.length - 1]) > tailRadius + 1) b.pop();
-        const goal = target(a);
-        while (reachOf(b[b.length - 1]) < tailRadius - 1) {
-          const e = b[b.length - 1];
-          const d = [goal[0] - e[0], goal[1] - e[1], goal[2] - e[2]];
-          const l = Math.hypot(...d);
-          b.push([e[0] + (SPACING * d[0]) / l, e[1] + (SPACING * d[1]) / l, e[2] + (SPACING * d[2]) / l]);
-        }
-      });
-    }
-
-    // Deep enough, made.
-    function freeze() {
-      for (const y of yarns) {
-        while (y.made < y.beads.length - 4 && y.beads[y.made][2] < tip - FREEZE) y.made++;
-      }
-    }
-
-    // Hanging free, the braid turns until its bobbins pull it no way round.
-    function balance() {
-      const torque = (phi) => {
-        const c = Math.cos(phi), s = Math.sin(phi);
-        let total = 0;
-        yarns.forEach((y, a) => {
-          const e = y.beads[y.beads.length - 1];
-          const x = c * e[0] - s * e[1], yy = s * e[0] + c * e[1];
-          const g = target(a);
-          const dx = g[0] - x, dy = g[1] - yy, dz = g[2] - e[2];
-          const l = Math.hypot(dx, dy, dz);
-          total += (x * dy - yy * dx) / l;
-        });
-        return total;
+    // The yarns as they are, in our units and frame.
+    function shape() {
+      const tip = machine.tip / 2;
+      const ours = (p) => [p[0] / 2, -p[2] / 2, p[1] / 2];
+      const whole = machine.threads.map((_, t) => machine.positions(t).map(ours));
+      return {
+        yarns: whole.map((y) => y.filter((p) => p[2] <= tip).flat()),
+        whole: whole.map((y) => y.flat()),
+        tip,
       };
-      // The turn where the torque changes sign, near no turn.
-      let lo = -0.4, hi = 0.4;
-      if (torque(lo) * torque(hi) > 0) return;
-      for (let k = 0; k < 40; k++) {
-        const mid = (lo + hi) / 2;
-        if (torque(lo) * torque(mid) <= 0) hi = mid;
-        else lo = mid;
-      }
-      const phi = (lo + hi) / 2;
-      const c = Math.cos(phi), s = Math.sin(phi);
-      for (const y of yarns) {
-        y.beads = y.beads.map(([x, yy, z]) => [c * x - s * yy, s * x + c * yy, z]);
-      }
-      turned += phi;
-    }
-
-    // A move: the yarn's end carried round the rim of the tails, laid over
-    // every yarn there, from its old carrier's angle to its new one.
-    function move(a, delta) {
-      const sweep = (sense * 2 * Math.PI * delta) / nSlots;
-      const y = yarns[a];
-      const from = Math.atan2(y.beads[y.beads.length - 1][1], y.beads[y.beads.length - 1][0]);
-      // Above every other yarn round the rim, in the sector swept.
-      let height = tip;
-      yarns.forEach((other, b) => {
-        if (b === a) return;
-        for (const p of other.beads) {
-          const r = Math.hypot(p[0], p[1]);
-          if (r < braidRadius - 0.5) continue;
-          // How far round from where the end starts, in the move's sense.
-          const turn = Math.sign(sweep) * (Math.atan2(p[1], p[0]) - from);
-          const off = ((turn % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-          if (off <= Math.abs(sweep) + 0.3 || off >= 2 * Math.PI - 0.3) height = Math.max(height, p[2]);
-        }
-      });
-      height += LIFT;
-      const end = y.beads[y.beads.length - 1];
-      // Out first, beyond every tail, where there is nothing to pass
-      // through, so a yarn lying across this one stays across it; then up;
-      // then round.
-      const r0 = tailRadius + 2;
-      const r1 = Math.hypot(end[0], end[1]);
-      const ux = end[0] / r1, uy = end[1] / r1;
-      for (let r = r1 + SPACING; r < r0; r += SPACING) y.beads.push([r * ux, r * uy, end[2]]);
-      for (let z = end[2] + SPACING; z < height; z += SPACING) y.beads.push([r0 * ux, r0 * uy, z]);
-      const turns = Math.ceil((Math.abs(sweep) * r0) / SPACING);
-      for (let k = 1; k <= turns; k++) {
-        const t = from + (sweep * k) / turns;
-        y.beads.push([r0 * Math.cos(t), r0 * Math.sin(t), height]);
-      }
-      angle[a] += sweep;
-    }
-
-    // For finding faults: the closest any two yarns' beads come.
-    function closestBeads() {
-      let best = Infinity, where = null;
-      for (let a = 0; a < nYarns; a++) {
-        for (let b = a + 1; b < nYarns; b++) {
-          for (const p of yarns[a].beads) {
-            if (p[2] < tip - FREEZE - 2) continue;
-            for (const q of yarns[b].beads) {
-              const d = Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
-              if (d < best) { best = d; where = [a, b, p[2].toFixed(1)]; }
-            }
-          }
-        }
-      }
-      return [best, where];
-    }
-    const check = (label) => {
-      if (!job.debug) return;
-      const [d, where] = closestBeads();
-      if (d < 0.7) job.debug(label, d.toFixed(3), JSON.stringify(where));
-    };
-
-    // ------------------------------------------------------------ the moves
-
-    feed();
-    settle(3000);
-    const all = job.steps;
-    for (let number = 0; number < all.length; number++) {
-      const moving = all[number].filter(([, d]) => d);
-      if (!moving.length) continue;
-      if (moving.length === nYarns && moving.every(([, d]) => d === moving[0][1])) {
-        // The disk turns, and the braid hanging from it: nothing crosses.
-        const by = (sense * 2 * Math.PI * moving[0][1]) / nSlots;
-        const c = Math.cos(by), s = Math.sin(by);
-        for (const y of yarns) y.beads = y.beads.map(([x, yy, z]) => [c * x - s * yy, s * x + c * yy, z]);
-        for (let a = 0; a < nYarns; a++) angle[a] += by;
-        continue;
-      }
-      check(`step ${number} before`);
-      if (moving.length === 1 && Math.abs(moving[0][1]) > 1) {
-        move(moving[0][0], moving[0][1]);
-        check(`step ${number} laid over`);
-      } else {
-        // Carriers sliding along together pass nobody: their yarns follow.
-        for (const [a, d] of moving) angle[a] += (sense * 2 * Math.PI * d) / nSlots;
-      }
-      settle(8000);
-      check(`step ${number} settled`);
-      findTip();
-      feed();
-      check(`step ${number} fed`);
-      balance();
-      check(`step ${number} balanced`);
-      freeze();
-      if (job.progress) job.progress({ fraction: (number + 1) / all.length, yarns: cut(), tip });
-    }
-    settle(8000);
-    findTip();
-    return {
-      yarns: cut(),
-      whole: yarns.map((y) => y.beads.flat()),
-      tip,
-      turned,
-      steps,
-      deepestEver,
-    };
-
-    // Each yarn up to the braid's tip: the tails left off.
-    function cut() {
-      return yarns.map((y) => {
-        const out = [];
-        for (const p of y.beads) {
-          if (p[2] > tip + 0.5 && Math.hypot(p[0], p[1]) > braidRadius) break;
-          out.push(p[0], p[1], p[2]);
-        }
-        return out;
-      });
     }
   }
 
   root.makeOnMarudai = make;
-  if (typeof module !== "undefined" && module.exports) module.exports = { make };
+  if (typeof module !== "undefined" && module.exports) module.exports = { make, Machine };
 })(typeof self !== "undefined" ? self : globalThis);

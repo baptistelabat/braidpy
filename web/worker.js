@@ -13,7 +13,7 @@
 //                {type: "error", id?, message}
 
 // The yarns are tightened here, in JavaScript: see tighten.js.
-importScripts("tighten.js", "rope.js", "form.js");
+importScripts("tighten.js", "rope.js", "form.js", "marudai.js");
 
 let pyodide = null;
 let machinesReady = false;
@@ -89,7 +89,7 @@ async function build(id, spec) {
   }
   const job = result.tighten;
   delete result.tighten;
-  const physics = spec.settle === "physics" || spec.settle === "crossing";
+  const physics = ["physics", "crossing", "marudai"].includes(spec.settle);
   if (job && physics && result.timeline?.kind !== "disk") {
     result.notes = [
       ...(result.notes || []),
@@ -100,7 +100,9 @@ async function build(id, spec) {
     // Shown as laid straight away, then replaced once tight.
     self.postMessage({ type: "laid", id, result });
     if (physics && result.timeline?.kind === "disk") {
-      result = spec.settle === "crossing" ? formed(id, result, job) : settled(id, result, job);
+      if (spec.settle === "marudai" && result.disk) result = onMarudai(id, result, job);
+      else if (spec.settle === "crossing") result = formed(id, result, job);
+      else result = settled(id, result, job);
     } else {
       status("Tightening the yarns…");
       const tight = tightenYarns(job, (fraction) =>
@@ -266,6 +268,42 @@ function formed(id, result, job) {
       `${((rest.turn * 180) / Math.PI).toFixed(0)}°.`,
   ];
   return out;
+}
+
+// The braid made move by move as on a marudai (marudai.js): the disk's own
+// moves, each moved yarn laid over the others to its new carrier and drawn
+// tight, the braid relaxing and turning to balance after each step.
+function onMarudai(id, result, job) {
+  const d = job.yarn_diameter;
+  const started = performance.now();
+  let shown = started;
+  const made = makeOnMarudai({
+    ...result.disk,
+    progress: ({ fraction, tip, yarns }) => {
+      status(
+        `Making it move by move… ${Math.round(100 * fraction)}%, ` +
+          `${((performance.now() - started) / 1000).toFixed(0)} s`,
+      );
+      if (performance.now() - shown > 700 && tip > 0.5) {
+        shown = performance.now();
+        self.postMessage({ type: "laid", id, result: onLevels(result, upsideDown(yarns()), d) });
+      }
+    },
+  });
+  const out = onLevels(result, upsideDown(made.yarns), d);
+  out.notes = [
+    ...(out.notes || []),
+    `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
+  ];
+  return out;
+}
+
+// A braid made as on a marudai, its fell on top, turned upside down for
+// the page, which draws the fell at the bottom: newest end first, the fell
+// at height 0.  Turned over, not reflected — y changes sign with z — so it
+// stays the braid it is, not its mirror image.
+function upsideDown(yarns) {
+  return fellFirst(yarns.map((y) => y.map((v, k) => (k % 3 === 1 ? -v : v))));
 }
 
 // Yarns turned over, newest end first, the fell at height 0: as rope.js

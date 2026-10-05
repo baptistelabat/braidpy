@@ -30,8 +30,12 @@ The page has a form and a 3D view.
   (`web/rope.js`, in beta). Each yarn is then an elastic chain of beads,
   clamped at the fell and fed at its other end from a bobbin pulling it
   back; the braid is drawn off by a weight lighter than the yarns' pull, so
-  it is beaten up until its crossings jam, as on a marudai. The view
-  follows it as it settles.
+  it is beaten up until its crossings jam. Or, for a disk braid, **made
+  on a marudai** (`web/marudai.js`, in beta): the disk's own moves, one by
+  one, each moved yarn laid over the others and drawn tight, as
+  braid3dmin makes a braid. It is the closest to a real braid of the three,
+  sinnets taking the shape of their cross-sections. The view follows each
+  as it goes.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
   moves…" shows what the braid chosen before is made of — the slots its
   strands start in and its moves, or its spaces' counts and moves — ready to

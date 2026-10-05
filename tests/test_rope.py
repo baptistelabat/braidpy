@@ -94,3 +94,23 @@ def test_a_sinnet_made_crossing_by_crossing_is_the_same_braid(tmp_path):
     laid = [round(x) for x in result["laid"]["links"]]
     assert [round(x) for x in result["made"]["links"]] == laid
     assert [round(x) for x in result["settled"]["links"]] == laid
+
+
+def test_a_sinnet_made_on_a_marudai_matches_braid3dmin(tmp_path):
+    """ABOK #3044 over 4 cycles, made move by move by marudai.js from
+    braidpy's own disk program.  braid3dmin, made to do the same moves,
+    makes it 7.27 diameters long, its yarns half way up about 1.5 diameters
+    from its axis: so does marudai.js, within what the order beads are
+    moved in changes; and no two yarns come much closer than a diameter."""
+    from braidpy.web import build
+
+    disk = build({"source": "sinnet", "name": "abok_3044", "cycles": 4}, tighten=False)[
+        "disk"
+    ]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    result = _run("marudai", program)
+    assert result["tip"] == pytest.approx(7.27, rel=0.15)
+    assert result["crossings"] == 8
+    assert result["radius"] == pytest.approx(1.5, abs=0.25)
+    assert result["closest"] > 0.85

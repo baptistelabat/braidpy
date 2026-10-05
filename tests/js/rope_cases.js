@@ -8,6 +8,7 @@ const { linkingMatrix } = require("./linking.js");
 const { tightenYarns } = require(path.join(__dirname, "..", "..", "web", "tighten.js"));
 const { relay } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
 const { form } = require(path.join(__dirname, "..", "..", "web", "form.js"));
+const { make } = require(path.join(__dirname, "..", "..", "web", "marudai.js"));
 
 function helices(turns, height, radius, spacing) {
   return [0, Math.PI].map((phase) => {
@@ -144,6 +145,44 @@ const cases = {
       largestForce: out.largestForce,
       ...(process.argv[4] === "shapes" ? { laid: yarns, settled: out.yarns, history } : {}),
     };
+  },
+
+  // A disk braid made move by move (marudai.js), from braidpy's disk
+  // program: how long it is, how close its yarns come above the start, and
+  // how far from the axis they lie half way up.
+  marudai() {
+    const disk = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const out = make(disk);
+    const yarns = out.yarns;
+    let closest = Infinity;
+    for (let a = 0; a < yarns.length; a++) {
+      for (let b = a + 1; b < yarns.length; b++) {
+        const A = yarns[a], B = yarns[b];
+        for (let i = 0; i < A.length; i += 3) {
+          if (A[i + 2] < 1) continue;
+          for (let j = 0; j < B.length; j += 3) {
+            if (B[j + 2] < 1) continue;
+            closest = Math.min(closest, Math.hypot(A[i] - B[j], A[i + 1] - B[j + 1], A[i + 2] - B[j + 2]));
+          }
+        }
+      }
+    }
+    // Where each yarn crosses half the braid's length, about their middle.
+    const half = out.tip / 2;
+    const cut = [];
+    for (const y of yarns) {
+      for (let i = 3; i < y.length; i += 3) {
+        if ((y[i - 1] - half) * (y[i + 2] - half) <= 0 && y[i - 1] !== y[i + 2]) {
+          const f = (half - y[i - 1]) / (y[i + 2] - y[i - 1]);
+          cut.push([y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])]);
+          break;
+        }
+      }
+    }
+    const mx = cut.reduce((s, p) => s + p[0], 0) / cut.length;
+    const my = cut.reduce((s, p) => s + p[1], 0) / cut.length;
+    const radius = cut.reduce((s, p) => s + Math.hypot(p[0] - mx, p[1] - my), 0) / cut.length;
+    return { tip: out.tip, closest, radius, crossings: cut.length };
   },
 };
 

@@ -11,7 +11,9 @@ leaves.
 
 **By physics** (`web/rope.js`, in beta, for disk braids) lets the braid find
 that state itself. This page explains how, and what it does and does not do
-yet.
+yet. **Made on a marudai** (`web/marudai.js`, last below) makes the braid as
+a braider would, move by move: so far, the one that gives sinnets their
+shapes.
 
 ## The model
 
@@ -170,6 +172,64 @@ Lengths in yarn diameters; times in Node, a page in a browser takes about the
 same. Friction changes little here: #3044 is made 13.1 long with it, 12.6
 without.
 
+## Made on a marudai, move by move
+
+`web/marudai.js` makes a disk braid the way braid3dmin, a kumihimo
+simulation in three.js, makes it (its method is described in
+[a page of its own](braid3D.md)); the code is this project's own. braidpy's disk program —
+the slots the yarns start in, then per step which yarns move, by how much —
+is played move by move:
+
+- Each yarn is a chain of beads half a diameter apart. A link pulls its two
+  beads together only when stretched, as a rope does, and two beads closer
+  than a diameter push each other apart: both by springs, stiffness 10.
+- Each yarn's end is drawn by its bobbin, a constant pull of 1.2, towards
+  its carrier: on a rim 9.5 diameters from the axis, 5 above the braid's
+  tip. The end is never drawn back in.
+- A move lays the yarn's end over the top of everything on its way — the
+  yarns' heights near the tip are kept, half a unit square at a time — and
+  out to its new carrier; then draws the new stretch tight as a string
+  would go: each bead to between its neighbours, or, where another yarn is
+  in the way, round it, either side. The beads moved are laid out again
+  evenly, and the yarn well behind them is frozen.
+- The braid then relaxes from what moved, a bead at a time: each moved a
+  step along its force, its neighbours and the beads near it then queued
+  in turn, the steps shrinking by a tenth each round until the queue dies
+  down. This does not find the braid's rest: it lets the crossing just
+  made draw in, as a braider's pull does, and leaves the braid made below.
+- Hanging free, the braid then turns about its axis until the yarns' ends
+  pull it no way round, and the ends are laid out to their carriers again.
+
+Checked against braid3dmin itself, run headless on the same moves (not
+part of this project):
+
+| | braid3dmin | marudai.js |
+|---|---|---|
+| ABOK #3073, 20-strand square, 11 cycles, from a braid3dmin design | 23.6 long, square, in 117 s | 23.7 long, square, in 12 s |
+| ABOK #3044, 8-strand triangle, 10 cycles, braidpy's program | 23.1 long, in 260 s | 23.6 long, in 26 s |
+
+Lengths in yarn diameters, times in Node. Seen from above, the yarns of
+#3073 halfway up run in the same square grid, the same 2.6 diameters from
+the axis on average; the order beads are moved in changes a braid's length
+by a few per cent. It is fast for three reasons: the beads in flat arrays,
+not objects; their neighbours found in a grid of cells rather than
+registered in every cell around; and each bead's neighbours looked up once
+per move rather than twice.
+
+It makes the braid as a marudai does, the made braid hanging below the
+fell, the yarns going out and up to their carriers; seen from above, the
+disk's slots go round as braidpy numbers them. The page draws a braid's
+fell at the bottom, as a braiding machine makes it, so the braid is turned
+upside down for it: a half turn about a horizontal axis. Only flipping its
+heights would have shown its mirror image — the sum of the Gauss linking
+integrand over its pairs of yarns, which a mirror flips, says it is the
+same braid, by hand, as braidpy's.
+
+What it does not check: that the braid made is the one braidpy laid. A
+move passes over the yarns on its way, the short way round, as braidpy's
+disk crossings do; a move of more than nine tenths of a half turn is made
+in two halves, so it goes round the side braidpy's goes.
+
 ## Limits, and what is next
 
 - **Speed.** A 17-strand sinnet (ABOK #3048, 3 cycles) is laid 204 diameters
@@ -178,7 +238,8 @@ without.
   crossing it takes 80 s. The time step is set by the
   stiffest springs; the length to travel, by how long the braid is laid.
   Fewer beads (the made part frozen), a shorter start, or the GPU would help.
-- **Shapes.** Cross-sections start to differ — #3044's tracks lean toward a
+- **Shapes.** Made on a marudai, sinnets take their shapes (above). By
+  the two other settles, cross-sections start to differ — #3044's tracks lean toward a
   triangle — but the yarns are not packed tight yet: gaps remain. Made
   crossing by crossing, the braid keeps the width it was laid with: braidpy
   lays a sinnet's strands round a ring, the first rows freeze at that ring's

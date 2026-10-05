@@ -38,6 +38,7 @@ PAGE = [
     "tighten.js",
     "rope.js",
     "form.js",
+    "marudai.js",
 ]
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
@@ -75,7 +76,7 @@ def _math_braid_sdist(into: Path) -> Path:
 _REFERENCES = {
     "index.html": ['href="style.css"', 'src="app.js"'],
     "app.js": ['new Worker("worker.js")'],
-    "worker.js": ['importScripts("tighten.js", "rope.js", "form.js")'],
+    "worker.js": ['importScripts("tighten.js", "rope.js", "form.js", "marudai.js")'],
 }
 
 
