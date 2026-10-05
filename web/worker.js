@@ -307,20 +307,34 @@ function onMarudai(id, result, job) {
   return out;
 }
 
-// The yarns' tails above the fell, out to their carriers, and the marudai's
-// mirror they lie over, in the page's units, turned upside down as the
-// braid is (upsideDown, fellFirst): the fell at height 0.
+// The yarns' tails above the fell, and the marudai's mirror they lie over,
+// in the page's units, turned upside down as the braid is (upsideDown,
+// fellFirst): the fell at height 0.  The tails come up from the fell to the
+// hole in the mirror, where marudai.js pulls them; from there they lie flat
+// across the mirror to its edge, and drop over it towards their bobbins,
+// as on a real marudai.
+const MIRROR = 2.5; // the mirror's radius, in its hole's
 function onMarudaiFrame(made, d) {
   let top = -Infinity;
   for (const y of made.yarns) for (let i = 2; i < y.length; i += 3) top = Math.max(top, y[i]);
+  const hole = 0.97 * made.rim.radius * d;
+  const outer = MIRROR * made.rim.radius * d;
+  const level = (top - made.rim.height) * d;
+  // The bobbins hang on the braid's side of the mirror: towards the fell.
+  const drop = 0.4 * made.rim.radius * d;
   const page = (y) => {
     const out = [];
-    for (let i = 0; i < y.length; i += 3) out.push([round(y[i] * d), round(-y[i + 1] * d), round((top - y[i + 2]) * d)]);
-    return out;
+    for (let i = 0; i < y.length; i += 3) out.push([y[i] * d, -y[i + 1] * d, (top - y[i + 2]) * d]);
+    const [x, yy] = out[out.length - 1];
+    const r = Math.hypot(x, yy) || 1;
+    const ux = x / r, uy = yy / r;
+    const at = (radius, z) => [ux * radius, uy * radius, z];
+    out.push(at(Math.max(r, hole) + 0.5 * d, level), at(outer, level), at(1.02 * outer, level + 0.3 * drop), at(1.03 * outer, level + drop));
+    return out.map((p) => p.map(round));
   };
   return {
     tails: made.tails.map(page),
-    disk: { z: round((top - made.rim.height) * d), radius: round(made.rim.radius * d), hole: round(2 * d) },
+    disk: { z: round(level), radius: round(outer), hole: round(hole) },
   };
 }
 

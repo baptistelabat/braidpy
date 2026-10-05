@@ -791,7 +791,7 @@ function show(result, seconds, keepView = false) {
     });
     const { z, radius: rim, hole } = result.marudai.disk;
     const mirror = new THREE.Mesh(
-      new THREE.RingGeometry(hole, rim * 1.08, 96),
+      new THREE.RingGeometry(hole, rim, 128),
       new THREE.MeshStandardMaterial({
         color: 0xc9bfae,
         roughness: 0.4,

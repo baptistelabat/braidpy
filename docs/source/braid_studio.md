@@ -40,8 +40,10 @@ The page has a form and a 3D view.
 - **Hanging** shows a braid hanging from its fell, as from a kumihimo disk
   or a marudai, or, unticked, rising from it, as from a braiding machine.
   Braids made on a marudai hang unless asked otherwise. Made, they show
-  their yarns' tails too, from the fell out over a see-through mirror to
-  their carriers, as the top view has them. It is a half turn of the view
+  their yarns' tails too, as on a real marudai: up from the fell to the
+  hole in a see-through mirror, flat across it, and over its edge towards
+  their bobbins. The physics pulls each yarn at the hole, where the mirror
+  takes the pull; the rest is drawn. It is a half turn of the view
   about a level axis: the braid stays the braid it is, where only flipping
   its heights would show its mirror image.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
