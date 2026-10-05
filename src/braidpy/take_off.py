@@ -275,7 +275,9 @@ def lay_yarns(
     Args:
         trajectories: Where the strands went.
         take_off: Length of braid drawn off per unit of time.  Defaults to
-            :func:`default_take_off`.
+            :func:`default_take_off` — or, with ``yarn_diameter``, faster if
+            need be, so that two yarns passing the same point are a diameter
+            apart in height there; see :func:`least_take_off`.
         fell_radius: Radius of the fell circle the braid is formed on; 0 for
             a braiding point.
         yarn_diameter: Draw the braid in as far as yarns this thick allow —
@@ -296,14 +298,16 @@ def lay_yarns(
         The yarns, one per strand.
     """
     traj = trajectories
-    if take_off is None:
-        take_off = default_take_off(traj)
-    if take_off <= 0:
-        raise ValueError("take_off must be positive.")
     if axis is None:
         axis = traj.centre()
     centre = np.asarray(axis, dtype=float)
     rel = np.stack([xy - centre for xy in traj.xy.values()])
+    if take_off is None:
+        take_off = default_take_off(traj)
+        if yarn_diameter is not None:
+            take_off = max(take_off, least_take_off(traj, yarn_diameter, take_off))
+    if take_off <= 0:
+        raise ValueError("take_off must be positive.")
     deck_radius = float(np.max(np.linalg.norm(rel, axis=2)))
     if yarn_diameter is not None:
         spacing = take_off * float(traj.times[1] - traj.times[0])
@@ -403,6 +407,43 @@ def _closest_approach(formed: np.ndarray, spacing: float) -> float:
         best = min(best, float(np.sqrt(np.min(np.sum(diff**2, axis=-1)))))
         offset += 1
     return best
+
+
+def least_take_off(
+    trajectories: StrandTrajectories, yarn_diameter: float, take_off: float
+) -> float:
+    """The slowest take-off that lifts yarns passing the same point a diameter
+    apart, at least ``take_off``.
+
+    Where one strand leaves a place and another comes to the very same point
+    later — as each crossing of a braid word does, one strand arriving where
+    the other left — no drawing-in can separate them
+    (:func:`jammed_contraction`): only the height the take-off puts between
+    them can.  The fewer strands move at a time, the slower the default
+    take-off, and the closer in height they come.
+
+    Args:
+        trajectories: Where the strands went, sampled evenly in time.
+        yarn_diameter: Yarn diameter.
+        take_off: The take-off to start from.
+
+    Returns:
+        ``take_off``, or a little faster than the least take-off that keeps
+        the closest such pair a diameter apart.
+    """
+    centre = np.asarray(trajectories.centre(), dtype=float)
+    rel = np.stack([xy - centre for xy in trajectories.xy.values()])
+    n_yarns, n, _ = rel.shape
+    dt = float(trajectories.times[1] - trajectories.times[0])
+    scale = float(np.max(np.abs(rel))) or 1.0
+    for offset in _offsets(take_off * dt, yarn_diameter, n):
+        if offset == 0:
+            continue  # at the same time: no take-off can part them
+        a, b = _level_pairs(n_yarns, offset)
+        sideways = np.linalg.norm(rel[a, : n - offset] - rel[b, offset:], axis=-1)
+        if np.any(sideways <= 1e-12 * scale):
+            return max(take_off, 1.01 * yarn_diameter / (offset * dt))
+    return take_off
 
 
 def jammed_contraction(rel: np.ndarray, spacing: float, diameter: float) -> float:
