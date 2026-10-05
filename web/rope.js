@@ -319,7 +319,9 @@
       placeTops();
       neighbours();
       for (; step < steps; step++) {
-        if (step % 4 === 0 && stale()) neighbours();
+        // Every step: two beads moving a tenth of a diameter each, apart,
+        // would otherwise close the list's margin unseen.
+        if (stale()) neighbours();
         forces();
         let up = force;
         let torque = 0;

@@ -17,9 +17,12 @@ pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node
 CASES = Path(__file__).parent / "js" / "rope_cases.js"
 
 
-def _run(case):
+def _run(case, *args):
     out = subprocess.run(
-        ["node", str(CASES), case], capture_output=True, text=True, check=True
+        ["node", str(CASES), case, *map(str, args)],
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return json.loads(out.stdout)
 
@@ -49,3 +52,23 @@ def test_a_plait_pulled_taut_stays_the_same_plait():
     assert result["settled"] == result["laid"]
     assert result["deepest"] < 0.01
     assert abs(result["turn"]) < 0.2 * 2 * math.pi
+
+
+def test_a_sinnet_beaten_up_is_the_same_braid(tmp_path):
+    """ABOK #3044, laid by braidpy and beaten up as the page beats it up:
+    far shorter, and no yarn has passed through another — its closure's
+    loops link each other as they did."""
+    from braidpy.web import build
+
+    spec = {"source": "sinnet", "name": "abok_3044", "cycles": 2, "settle": "physics"}
+    job = tmp_path / "job.json"
+    job.write_text(json.dumps(build(spec, tighten=False)["tighten"]))
+    result = _run("sinnet", job)
+    assert result["largestForce"] < 1e-3
+    assert result["settledHeight"] < 0.5 * result["height"]
+    assert result["after"]["components"] == result["before"]["components"]
+    before = [round(x) for x in result["before"]["links"]]
+    after = [round(x) for x in result["after"]["links"]]
+    assert after == before
+    # Exact linking numbers are whole: the closures really are closed.
+    assert all(abs(x - round(x)) < 0.01 for x in result["after"]["links"])

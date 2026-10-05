@@ -141,6 +141,22 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
     assert spread("yarn") > 0
 
 
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "sinnet", "name": "abok_3048", "cycles": 2},
+        {"source": "mobidai", "name": "KONGO_8", "cycles": 2},
+        {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
+    ],
+)
+def test_a_disk_braid_to_be_settled_by_physics_is_laid_closer(spec):
+    """Settled by physics, a disk braid is beaten up anyway: it is laid with
+    its rows closer, so there is less of it to beat up."""
+    loose = build(spec, tighten=False)["tighten"]
+    close = build({**spec, "settle": "physics"}, tighten=False)["tighten"]
+    assert close["spacing"] * close["n"] < 0.75 * loose["spacing"] * loose["n"]
+
+
 def test_cores_are_yarn_or_rigid():
     with pytest.raises(ValueError, match="yarn or rigid"):
         build({"source": "machine", "name": "soutache_5", "cores": "glass"})

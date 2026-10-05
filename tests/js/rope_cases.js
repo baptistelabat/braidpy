@@ -2,7 +2,11 @@
 // web/rope.js and prints what the test checks, as JSON.
 const path = require("path");
 const { settle } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
+const fs = require("fs");
 const { layWord, readWord } = require("./braidgeo.js");
+const { linkingMatrix } = require("./linking.js");
+const { tightenYarns } = require(path.join(__dirname, "..", "..", "web", "tighten.js"));
+const { relay } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
 
 function helices(turns, height, radius, spacing) {
   return [0, Math.PI].map((phase) => {
@@ -47,6 +51,44 @@ const cases = {
     const word = [1, -2, 1, -2];
     const out = settle({ yarns: layWord(word, 3), spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
     return { laid: word, settled: readWord(out.yarns), turn: out.turn, deepest: out.deepest, largestForce: out.largestForce };
+  },
+  // A sinnet, laid by braidpy (its tightening job read from a file), beaten
+  // up as the page beats it up: its closure's linking numbers before and
+  // after.
+  sinnet() {
+    const job = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const clear = tightenYarns({ ...job, iterations: Math.min(job.iterations, 30) });
+    const d = job.yarn_diameter;
+    const [cx, cy] = job.centre;
+    const yarns = [];
+    for (let a = 0; a < job.n_yarns; a++) {
+      const points = [];
+      for (let i = job.n - 1; i >= 0; i--) {
+        const k = a * job.n + i;
+        points.push((clear.xy[2 * k] - cx) / d, (clear.xy[2 * k + 1] - cy) / d, ((job.n - 1 - i) * job.spacing) / d);
+      }
+      yarns.push(Array.from(relay(Float64Array.from(points), 0.5)));
+    }
+    const out = settle({
+      yarns,
+      spacing: 0.5,
+      feed: 1,
+      force: 0.25 * job.n_yarns,
+      turns: true,
+      stretch: 100,
+      contact: 100,
+      steps: 60000,
+      tolerance: 1e-3,
+    });
+    const height = ((job.n - 1) * job.spacing) / d;
+    return {
+      before: linkingMatrix(yarns, 0),
+      after: linkingMatrix(out.yarns, out.turn),
+      height,
+      settledHeight: height + out.rise,
+      deepestEver: out.deepestEver,
+      largestForce: out.largestForce,
+    };
   },
 };
 
