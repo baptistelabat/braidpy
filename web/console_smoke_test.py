@@ -152,6 +152,36 @@ def main() -> int:
         )
         print("taking one of them off clears the warning")
 
+        # an empty machine must still show its gears turning: the slots sweep
+        # through intermediate poses rather than jumping from step to step
+        page.locator("#clear").click()
+        page.wait_for_function(
+            "() => Number(document.getElementById('count').textContent) === 0",
+            timeout=30_000,
+        )
+        poses = page.evaluate(
+            """async () => {
+              const pick = () => document.querySelector(
+                '#view circle[data-gear="G7"][data-slot="0"]');
+              const seen = [];
+              const take = () => {
+                const c = pick();
+                if (c) seen.push(Number(c.getAttribute('cx')).toFixed(4));
+              };
+              take();
+              const timer = setInterval(take, 20);
+              document.getElementById('forward').click();
+              await new Promise((r) => setTimeout(r, 900));
+              clearInterval(timer);
+              return [...new Set(seen)];
+            }"""
+        )
+        print(f"an empty machine sweeps through {len(poses)} poses in one step")
+        if len(poses) < 3:
+            problems.append(
+                f"a step should sweep through poses, saw {len(poses)}: {poses}"
+            )
+
         # Run keeps turning the handle by itself, and stops when told
         page.locator("#reload").click()
         page.wait_for_function(

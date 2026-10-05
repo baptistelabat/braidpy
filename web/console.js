@@ -14,7 +14,13 @@ const SVG = "http://www.w3.org/2000/svg";
 const PYODIDE =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
-const RUN_MS = 220;
+// Stepping by hand shows the step in a few distinct poses, so the way a gear
+// turns can be read off its slots moving even with nothing riding them.
+const SUBSTEPS = 3;
+const SUBSTEP_MS = 70;
+// Running glides instead, a step every STEP_MS, drawn every frame the browser
+// offers rather than in poses.
+const STEP_MS = 420;
 
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -39,7 +45,8 @@ let carriers = []; // [[gear, slot], ...]
 let time = 0;
 let past = []; // {carriers, time} before each step taken
 let clashes = []; // what braidpy last reported as met
-let running = null; // the interval id while the handle turns itself
+let running = false; // true while the handle is turning itself
+let frac = 0; // how far into the current step the drawing is, 0 to 1
 
 function say(text) {
   statusLine.textContent = text;
@@ -99,6 +106,7 @@ async function load(name) {
   }
   carriers = shape.loading.map((p) => [p[0], p[1]]);
   time = 0;
+  frac = 0;
   past = [];
   clashes = [];
   draw();
@@ -121,7 +129,8 @@ function enable(on) {
 // step; the slot index itself is not mirrored.
 function slotAt(gear, slot) {
   const angle =
-    gear.offset + (2 * Math.PI * (slot + gear.direction * time)) / gear.slots;
+    gear.offset +
+    (2 * Math.PI * (slot + gear.direction * (time + frac))) / gear.slots;
   return [
     gear.x + gear.ride * Math.cos(angle),
     gear.y + gear.ride * Math.sin(angle),
@@ -270,8 +279,39 @@ async function check(prefix) {
   }
 }
 
-async function forward() {
-  if (!shape) return;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Sweep the drawing from one step's pose to the next, so the gears are seen
+// to turn.  The carriers stay on the slots they are riding while it does --
+// they only change gear at the end of the step, which is where braidpy moves
+// them.
+async function sweep(from, to) {
+  for (let n = 1; n <= SUBSTEPS; n += 1) {
+    frac = from + ((to - from) * n) / SUBSTEPS;
+    draw();
+    if (n < SUBSTEPS) await sleep(SUBSTEP_MS);
+  }
+}
+
+// The same sweep, but drawn every frame the browser gives us, for running.
+function glide(ms) {
+  return new Promise((resolve) => {
+    const started = performance.now();
+    function frame(now) {
+      const gone = Math.min(1, (now - started) / ms);
+      frac = gone;
+      draw();
+      if (gone < 1 && running) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+async function forward(smooth = false) {
+  if (!shape) return false;
   let answer;
   try {
     answer = await ask({
@@ -285,9 +325,12 @@ async function forward() {
     say(`braidpy could not step it: ${error.message}`);
     return false;
   }
+  if (smooth) await glide(STEP_MS);
+  else await sweep(0, 1);
   past.push({ carriers: carriers.map((c) => c.slice()), time });
   carriers = answer.carriers.map((p) => [p[0], p[1]]);
   time = answer.time;
+  frac = 0;
   clashes = answer.collisions;
   draw();
   if (clashes.length) {
@@ -302,7 +345,7 @@ async function forward() {
   return true;
 }
 
-function back() {
+async function back() {
   if (!past.length) {
     say("Nothing to go back to.");
     return;
@@ -311,33 +354,39 @@ function back() {
   carriers = was.carriers.map((c) => c.slice());
   time = was.time;
   clashes = [];
+  // The pose at frac 1 of the earlier step is the one just left, so sweeping
+  // down from it runs the same motion backwards.
+  frac = 1;
+  await sweep(1, 0);
+  frac = 0;
   draw();
   say(`Back to step ${time}.`);
 }
 
 function stop() {
-  if (running !== null) {
-    clearInterval(running);
-    running = null;
+  if (running) {
+    running = false;
     buttons.play.textContent = "▶ Run";
   }
 }
 
-function play() {
-  if (running !== null) {
+// One step at a time, each swept through its substeps, rather than a timer
+// that might fire again before the last step has finished drawing.
+async function play() {
+  if (running) {
     stop();
     say(`Stopped at step ${time}.`);
     return;
   }
+  running = true;
   buttons.play.textContent = "❚❚ Stop";
-  let busy = false;
-  running = setInterval(async () => {
-    if (busy) return;
-    busy = true;
-    const fine = await forward();
-    busy = false;
-    if (!fine) stop();
-  }, RUN_MS);
+  while (running) {
+    const fine = await forward(true);
+    if (!fine) {
+      stop();
+      return;
+    }
+  }
 }
 
 buttons.forward.addEventListener("click", () => {
@@ -353,6 +402,7 @@ buttons.reload.addEventListener("click", async () => {
   stop();
   carriers = shape.loading.map((p) => [p[0], p[1]]);
   time = 0;
+  frac = 0;
   past = [];
   await check("Back to the suggested loading.");
 });
@@ -365,6 +415,7 @@ buttons.clear.addEventListener("click", async () => {
 buttons.rewind.addEventListener("click", async () => {
   stop();
   time = 0;
+  frac = 0;
   past = [];
   await check("Back to step 0.");
 });
