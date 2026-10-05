@@ -532,9 +532,11 @@
    *     not job.start: the yarns then go from these to job.start as a first
    *     step.
    * @param {function(Object):void} [job.progress]
-   * @returns {{yarns: number[][], whole: number[][], tip: number, updates: number}}
+   * @returns {{yarns: number[][], whole: number[][], tails: number[][],
+   *     rim: {radius: number, height: number}, tip: number, updates: number}}
    *     Each yarn's beads, flat [x, y, z, …] in yarn diameters, z up,
-   *     oldest first: cut at the braid's tip, and whole.
+   *     oldest first: cut at the braid's tip, whole, and its tail from the
+   *     tip out to its carrier; and the carriers' circle.
    */
   function make(job) {
     const n = job.start.length;
@@ -580,13 +582,31 @@
     return { ...shape(), updates: machine.updates };
 
     // The yarns as they are, in our units and frame.
+    function mean(values) {
+      const kept = values.filter(Number.isFinite);
+      return kept.length ? kept.reduce((sum, v) => sum + v, 0) / kept.length : NaN;
+    }
     function shape() {
       const tip = machine.tip / 2;
       const ours = (p) => [p[0] / 2, -p[2] / 2, p[1] / 2];
       const whole = machine.threads.map((_, t) => machine.positions(t).map(ours));
+      // Each yarn's tail: from the last of it in the braid out to its
+      // carrier.
+      const tails = whole.map((y) => {
+        let from = 0;
+        y.forEach((p, i) => { if (p[2] <= tip) from = i; });
+        return y.slice(from).flat();
+      });
       return {
         yarns: whole.map((y) => y.filter((p) => p[2] <= tip).flat()),
         whole: whole.map((y) => y.flat()),
+        tails,
+        // Where the yarns' ends are, about the carriers' circle: the
+        // marudai's mirror they lie over.
+        rim: {
+          radius: mean(tails.map((t) => Math.hypot(t[t.length - 3], t[t.length - 2]))) || RIM / 2,
+          height: mean(tails.map((t) => t[t.length - 1])) || tip + REACH / WEIGHT / 2,
+        },
         tip,
       };
     }

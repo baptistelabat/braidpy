@@ -696,8 +696,8 @@ resize();
 // much of the braid is made.
 let braid = null;
 // Whether braids hang from their fell, as from a kumihimo disk or a marudai,
-// or rise from it, as from a braiding machine: disk braids hang unless
-// asked otherwise, others rise.
+// or rise from it, as from a braiding machine: braids made on a marudai —
+// disk braids and words — hang unless asked otherwise, machines' rise.
 const hangs = { disk: true, other: false };
 
 function dispose(object) {
@@ -764,6 +764,47 @@ function show(result, seconds, keepView = false) {
     mesh.userData.core = true;
     group.add(mesh);
   }
+  // Made on a marudai: each yarn's tail above the fell, out to its carrier,
+  // and the marudai's mirror they lie over, seen through.
+  const tails = [];
+  if (result.marudai) {
+    result.marudai.tails.forEach((points, i) => {
+      if (points.length < 2) return;
+      const colour = result.strands[i].colour;
+      const curve = new THREE.CatmullRomCurve3(
+        points.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
+        false,
+        "centripetal",
+      );
+      const segments = Math.min(Math.max(points.length * 3, 32), 2000);
+      const tube = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, segments, radius, 10, false),
+        new THREE.MeshStandardMaterial({ color: colour, roughness: 0.55, metalness: 0.05 }),
+      );
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
+        new THREE.LineBasicMaterial({ color: colour }),
+      );
+      tube.userData.whole = line.userData.whole = true;
+      group.add(tube, line);
+      tails.push({ tube, line });
+    });
+    const { z, radius: rim, hole } = result.marudai.disk;
+    const mirror = new THREE.Mesh(
+      new THREE.RingGeometry(hole, rim * 1.08, 96),
+      new THREE.MeshStandardMaterial({
+        color: 0xc9bfae,
+        roughness: 0.4,
+        transparent: true,
+        opacity: 0.28,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    );
+    mirror.position.z = z;
+    mirror.userData.whole = true;
+    group.add(mirror);
+  }
   // The braid in the disk's turn, then turned rising from its fell or hanging
   // from it: a half turn about a level axis, so it is still the same braid,
   // not its mirror image.
@@ -773,7 +814,8 @@ function show(result, seconds, keepView = false) {
   turner.add(stand);
   scene.add(turner);
   const timeline = result.timeline;
-  const kind = timeline?.kind === "disk" ? "disk" : "other";
+  // Made on a marudai — a disk braid, or a word rolled onto one — or not.
+  const kind = result.disk ? "disk" : "other";
   $("hanging").checked = hangs[kind];
   const clock = timeline
     ? timeline.clock
@@ -787,6 +829,7 @@ function show(result, seconds, keepView = false) {
     turner,
     kind,
     yarns,
+    tails,
     times,
     heights: result.strands[0].points.map((p) => p[2]),
     clock,
@@ -810,10 +853,11 @@ function show(result, seconds, keepView = false) {
 
 function showTubes(tubes) {
   if (!braid) return;
-  for (const yarn of braid.yarns) {
+  for (const yarn of [...braid.yarns, ...braid.tails]) {
     yarn.tube.visible = tubes;
     yarn.line.visible = !tubes;
   }
+  made(Number($("made").value));
 }
 
 // Show the braid as it was ``value`` thousandths of the way through its
@@ -839,8 +883,14 @@ function made(value) {
   braid.turner.rotation.z = timeline?.turn
     ? interpolate(timeline.times, timeline.turn, now)
     : 0;
+  // The cores, and a marudai's tails and mirror, once the braid is made.
+  const tubes = $("tubes").checked;
   for (const child of braid.group.children) {
     if (child.userData.core) child.visible = fraction > 0.999;
+    if (child.userData.whole) {
+      const kind = child.isMesh && child.geometry.type === "TubeGeometry" ? tubes : child.isLine ? !tubes : true;
+      child.visible = fraction > 0.999 && kind;
+    }
   }
   drawTop(now);
 }

@@ -299,11 +299,29 @@ function onMarudai(id, result, job) {
     },
   });
   const out = onLevels(result, upsideDown(made.yarns), d);
+  out.marudai = onMarudaiFrame(made, d);
   out.notes = [
     ...(out.notes || []),
     `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
   ];
   return out;
+}
+
+// The yarns' tails above the fell, out to their carriers, and the marudai's
+// mirror they lie over, in the page's units, turned upside down as the
+// braid is (upsideDown, fellFirst): the fell at height 0.
+function onMarudaiFrame(made, d) {
+  let top = -Infinity;
+  for (const y of made.yarns) for (let i = 2; i < y.length; i += 3) top = Math.max(top, y[i]);
+  const page = (y) => {
+    const out = [];
+    for (let i = 0; i < y.length; i += 3) out.push([round(y[i] * d), round(-y[i + 1] * d), round((top - y[i + 2]) * d)]);
+    return out;
+  };
+  return {
+    tails: made.tails.map(page),
+    disk: { z: round((top - made.rim.height) * d), radius: round(made.rim.radius * d), hole: round(2 * d) },
+  };
 }
 
 // A braid made as on a marudai, its fell on top, turned upside down for
