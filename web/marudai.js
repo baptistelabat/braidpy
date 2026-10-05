@@ -228,12 +228,22 @@
       for (let g = 0; g < dist; g++) { x += dx; y += dy; z += dz; addBead(t, x, y, z); }
       addBead(t, x, --y, z);
       addBead(t, x, --y, z);
+      seen("carried", t);
       drawTight(t, gentle);
       relay(t);
       const end = last(t);
       thread.tx = X[end]; thread.ty = Y[end]; thread.tz = Z[end];
       enqueue(end);
       for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) hmPut(X[list[i]], Y[list[i]], Z[list[i]], t);
+      seen("drawn", t);
+    }
+
+    // Someone watching: told when a yarn has been carried over the others,
+    // when drawn tight, and when the braid has settled after a step — not
+    // while the braid turns to balance and its ends are laid out again.
+    let watcher = null, quiet = false;
+    function seen(what, t) {
+      if (watcher && !quiet) watcher(what, t);
     }
 
     // Each free bead to between its neighbours, as a string drawn tight;
@@ -403,8 +413,11 @@
       for (let t = 0; t < nThreads; t++) trim(t);
       heights();
       findTip();
+      quiet = true;
       balance();
+      quiet = false;
       forget();
+      seen("settled", -1);
     }
 
     function trim(t) {
@@ -508,6 +521,19 @@
       get tip() { return tip; },
       get updates() { return updates; },
       positions: (t) => threads[t].beads.map((b) => [X[b], Y[b], Z[b]]),
+      // Every yarn's beads, flat, in yarn diameters, z up, as make returns them.
+      snapshot() {
+        return threads.map(({ beads }) => {
+          const out = new Float32Array(3 * beads.length);
+          beads.forEach((b, i) => {
+            out[3 * i] = X[b] / 2;
+            out[3 * i + 1] = -Z[b] / 2;
+            out[3 * i + 2] = Y[b] / 2;
+          });
+          return out;
+        });
+      },
+      watch(f) { watcher = f; },
     };
   }
 
@@ -531,6 +557,9 @@
    * @param {number[]} [job.from]  Each yarn's slot to lay it from first, if
    *     not job.start: the yarns then go from these to job.start as a first
    *     step.
+   * @param {function(Object):void} [job.watch]  Told of each yarn carried
+   *     over the others, drawn tight, and of the braid settled after each
+   *     step: {what, thread, step, tip, yarns}, the yarns whole as returned.
    * @param {function(Object):void} [job.progress]
    * @returns {{yarns: number[][], whole: number[][], tails: number[][],
    *     rim: {radius: number, height: number}, tip: number, updates: number}}
@@ -545,11 +574,18 @@
     const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
     const split = job.split ?? true;
     const machine = Machine(n, job.turning ?? !job.held);
+    let current = -1;
+    if (job.watch) {
+      machine.watch((what, thread) =>
+        job.watch({ what, thread, step: current, tip: machine.tip / 2, yarns: machine.snapshot() }),
+      );
+    }
     const first = job.from ?? job.start;
     machine.start(first.map(angleOf));
     for (let t = 0; t < n; t++) machine.lay(t, job.from ? angleOf(job.start[t]) : machine.threads[t].dir);
     machine.relax();
     job.steps.forEach((step, number) => {
+      current = number;
       const moving = step.filter(([, d]) => d);
       if (!moving.length) return;
       if (moving.length === n && moving.every(([, d]) => d === moving[0][1])) {
@@ -567,6 +603,7 @@
         }
         machine.turn(0, 0, by);
         for (const thread of machine.threads) thread.dir -= by;
+        if (job.watch) job.watch({ what: "turned", thread: -1, step: number, tip: machine.tip / 2, yarns: machine.snapshot() });
         return;
       }
       for (const [a, d] of moving) {

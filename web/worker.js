@@ -285,21 +285,44 @@ function onMarudai(id, result, job) {
   const d = job.yarn_diameter;
   const started = performance.now();
   let shown = started;
+  // Each moment of the making, kept for Grow to replay, and shown as it
+  // comes, a few times a second; the mirror as the first moments have it.
+  const frames = [];
+  let mirror = null;
   const made = makeOnMarudai({
     ...result.disk,
-    progress: ({ fraction, tip, yarns }) => {
+    watch: (frame) => {
+      frames.push(frame);
+      if (performance.now() - shown < 80) return;
+      shown = performance.now();
+      if (!mirror) {
+        const ends = frame.yarns.filter((y) => y.length).map((y) => [y[y.length - 3], y[y.length - 2], y[y.length - 1]]);
+        mirror = mirrorOf(
+          {
+            rim: {
+              radius: ends.reduce((s, [x, y]) => s + Math.hypot(x, y), 0) / ends.length,
+              height: ends.reduce((s, [, , z]) => s + z, 0) / ends.length,
+            },
+            tip: frame.tip,
+          },
+          d,
+        );
+      }
+      const disk = { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) };
+      self.postMessage({ type: "frame", id, frame: pageFrame(frame, d, mirror), disk, colours: result.strands.map((s) => s.colour) });
+    },
+    progress: ({ fraction }) => {
       status(
         `Making it move by move… ${Math.round(100 * fraction)}%, ` +
           `${((performance.now() - started) / 1000).toFixed(0)} s`,
       );
-      if (performance.now() - shown > 700 && tip > 0.5) {
-        shown = performance.now();
-        self.postMessage({ type: "laid", id, result: onLevels(result, upsideDown(yarns()), d) });
-      }
     },
   });
   const out = onLevels(result, upsideDown(made.yarns), d);
-  out.marudai = onMarudaiFrame(made, d);
+  // Kept to a few hundred moments: Grow replays them in twelve seconds.
+  const every = Math.max(1, Math.ceil(frames.length / 600));
+  const kept = frames.filter((_, i) => i % every === 0 || i === frames.length - 1);
+  out.marudai = onMarudaiFrame(made, d, kept);
   out.notes = [
     ...(out.notes || []),
     `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
@@ -312,29 +335,59 @@ function onMarudai(id, result, job) {
 // fellFirst): the fell at height 0.  The tails come up from the fell to the
 // hole in the mirror, where marudai.js pulls them; from there they lie flat
 // across the mirror to its edge, and drop over it towards their bobbins,
-// as on a real marudai.
+// as on a real marudai.  A yarn being carried over the others to its new
+// place is still above the mirror: it lies across at its own height.
 const MIRROR = 2.5; // the mirror's radius, in its hole's
-function onMarudaiFrame(made, d) {
+function mirrorOf(made, d) {
+  return {
+    hole: 0.97 * made.rim.radius * d,
+    radius: MIRROR * made.rim.radius * d,
+    // How far above the fell the mirror is, as the yarns' ends are.
+    above: (made.rim.height - made.tip) * d,
+    drop: 0.4 * made.rim.radius * d,
+  };
+}
+
+// One yarn, flat [x, y, z, …] as marudai.js gives it, in the page's frame,
+// the fell (``tip``) at height 0, and on across the mirror and over its edge.
+function onMirror(yarn, tip, d, mirror) {
+  const out = [];
+  for (let i = 0; i < yarn.length; i += 3) out.push([yarn[i] * d, -yarn[i + 1] * d, (tip - yarn[i + 2]) * d]);
+  // While the yarns are first laid out, those still to come have nothing.
+  if (!out.length) return out;
+  const [x, y, z] = out[out.length - 1];
+  const r = Math.hypot(x, y) || 1;
+  const ux = x / r, uy = y / r;
+  const level = Math.min(-mirror.above, z);
+  const at = (radius, height) => [ux * radius, uy * radius, height];
+  out.push(
+    at(Math.max(r, mirror.hole) + 0.5 * d, level),
+    at(mirror.radius, level),
+    at(1.02 * mirror.radius, -mirror.above + 0.3 * mirror.drop),
+    at(1.03 * mirror.radius, -mirror.above + mirror.drop),
+  );
+  return out;
+}
+
+function onMarudaiFrame(made, d, frames) {
   let top = -Infinity;
   for (const y of made.yarns) for (let i = 2; i < y.length; i += 3) top = Math.max(top, y[i]);
-  const hole = 0.97 * made.rim.radius * d;
-  const outer = MIRROR * made.rim.radius * d;
-  const level = (top - made.rim.height) * d;
-  // The bobbins hang on the braid's side of the mirror: towards the fell.
-  const drop = 0.4 * made.rim.radius * d;
-  const page = (y) => {
-    const out = [];
-    for (let i = 0; i < y.length; i += 3) out.push([y[i] * d, -y[i + 1] * d, (top - y[i + 2]) * d]);
-    const [x, yy] = out[out.length - 1];
-    const r = Math.hypot(x, yy) || 1;
-    const ux = x / r, uy = yy / r;
-    const at = (radius, z) => [ux * radius, uy * radius, z];
-    out.push(at(Math.max(r, hole) + 0.5 * d, level), at(outer, level), at(1.02 * outer, level + 0.3 * drop), at(1.03 * outer, level + drop));
-    return out.map((p) => p.map(round));
-  };
+  const mirror = mirrorOf(made, d);
   return {
-    tails: made.tails.map(page),
-    disk: { z: round(level), radius: round(outer), hole: round(hole) },
+    tails: made.tails.map((tail) => onMirror(tail, top, d, mirror).map((p) => p.map(round))),
+    disk: { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) },
+    frames: frames.map((frame) => pageFrame(frame, d, mirror)),
+  };
+}
+
+// A moment in the making, for the page to draw: every yarn whole, in the
+// page's frame, its fell at height 0.
+function pageFrame(frame, d, mirror) {
+  return {
+    what: frame.what,
+    thread: frame.thread,
+    step: frame.step,
+    yarns: frame.yarns.map((yarn) => Float32Array.from(onMirror(yarn, frame.tip, d, mirror).flat())),
   };
 }
 

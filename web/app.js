@@ -599,6 +599,18 @@ worker.onmessage = ({ data }) => {
     $("build").disabled = false;
     $("build").textContent = "Make the braid";
     submit();
+  } else if (data.type === "frame") {
+    if (data.id !== pending || !braid) return;
+    // The making, as it goes: framed on it from its first moment.
+    showFrame(data.frame, data.disk, data.colours);
+    if (!braid.framed) {
+      braid.framed = true;
+      braid.turner.updateMatrixWorld(true);
+      braid.box = new THREE.Box3().setFromObject(braid.frame);
+      fit();
+    }
+    const [first, last] = braid.span;
+    drawTop(first + Math.max(0, Math.min(1, (data.frame.step + 1) / braid.steps)) * (last - first));
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
     // Settling sends the braid as it goes: the view stays put.
@@ -720,8 +732,17 @@ function show(result, seconds, keepView = false) {
   const yarns = [];
   const radius = result.yarn_diameter / 2;
   const times = result.times || result.strands[0].points.map((_, i) => i);
-  for (const strand of result.strands) {
-    const points = strand.points.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+  result.strands.forEach((strand, k) => {
+    let laid = strand.points;
+    // Made on a marudai: the yarn goes on, one tube, out of the braid at
+    // the fell to its carrier over the mirror.
+    const tail = result.marudai?.tails[k];
+    if (tail) {
+      const fell = laid[laid.length - 1][2];
+      laid = [...laid, ...tail.filter(([, , z]) => z < fell)];
+    }
+    const points = laid.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+    const pointTimes = points.length > times.length ? [...times, ...Array(points.length - times.length).fill(times[times.length - 1])] : times;
     const curve = new THREE.CatmullRomCurve3(points, false, "centripetal");
     const segments = Math.min(Math.max(points.length * 3, 64), 4000);
     const radial = 10;
@@ -730,7 +751,7 @@ function show(result, seconds, keepView = false) {
     const segmentTimes = new Float64Array(segments + 1);
     for (let i = 0; i <= segments; i++) {
       const along = curve.getUtoTmapping(i / segments) * (points.length - 1);
-      segmentTimes[i] = sample(times, along);
+      segmentTimes[i] = sample(pointTimes, along);
     }
     const tube = new THREE.Mesh(
       new THREE.TubeGeometry(curve, segments, radius, radial, false),
@@ -747,7 +768,7 @@ function show(result, seconds, keepView = false) {
     );
     group.add(tube, line);
     yarns.push({ tube, line, segments, radial, segmentTimes });
-  }
+  });
   for (const core of result.cores || []) {
     const from = new THREE.Vector3(...core.from);
     const to = new THREE.Vector3(...core.to);
@@ -764,44 +785,10 @@ function show(result, seconds, keepView = false) {
     mesh.userData.core = true;
     group.add(mesh);
   }
-  // Made on a marudai: each yarn's tail above the fell, out to its carrier,
-  // and the marudai's mirror they lie over, seen through.
+  // Made on a marudai: the mirror the yarns lie over, seen through.
   const tails = [];
   if (result.marudai) {
-    result.marudai.tails.forEach((points, i) => {
-      if (points.length < 2) return;
-      const colour = result.strands[i].colour;
-      const curve = new THREE.CatmullRomCurve3(
-        points.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
-        false,
-        "centripetal",
-      );
-      const segments = Math.min(Math.max(points.length * 3, 32), 2000);
-      const tube = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, segments, radius, 10, false),
-        new THREE.MeshStandardMaterial({ color: colour, roughness: 0.55, metalness: 0.05 }),
-      );
-      const line = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
-        new THREE.LineBasicMaterial({ color: colour }),
-      );
-      tube.userData.whole = line.userData.whole = true;
-      group.add(tube, line);
-      tails.push({ tube, line });
-    });
-    const { z, radius: rim, hole } = result.marudai.disk;
-    const mirror = new THREE.Mesh(
-      new THREE.RingGeometry(hole, rim, 128),
-      new THREE.MeshStandardMaterial({
-        color: 0xc9bfae,
-        roughness: 0.4,
-        transparent: true,
-        opacity: 0.28,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      }),
-    );
-    mirror.position.z = z;
+    const mirror = mirrorMesh(result.marudai.disk);
     mirror.userData.whole = true;
     group.add(mirror);
   }
@@ -830,6 +817,11 @@ function show(result, seconds, keepView = false) {
     kind,
     yarns,
     tails,
+    radius,
+    frames: result.marudai?.frames,
+    disk: result.marudai?.disk,
+    steps: result.disk?.steps.length || 1,
+    frame: null,
     times,
     heights: result.strands[0].points.map((p) => p[2]),
     clock,
@@ -851,6 +843,65 @@ function show(result, seconds, keepView = false) {
   $("empty").hidden = true;
 }
 
+// A marudai's mirror, seen through: a ring from its hole to its edge.
+function mirrorMesh({ z, radius, hole }) {
+  const mirror = new THREE.Mesh(
+    new THREE.RingGeometry(hole, radius, 128),
+    new THREE.MeshStandardMaterial({
+      color: 0xc9bfae,
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.28,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+  );
+  mirror.position.z = z;
+  return mirror;
+}
+
+// A moment in the making on a marudai, in place of the braid as made:
+// every yarn whole, from the start of the braid out over the mirror to its
+// bobbin, one tube each, and the mirror.
+function showFrame(frame, disk, colours) {
+  if (!braid) return;
+  clearFrame();
+  const shown = new THREE.Group();
+  const tubes = $("tubes").checked;
+  frame.yarns.forEach((flat, i) => {
+    const points = [];
+    for (let k = 0; k < flat.length; k += 3) points.push(new THREE.Vector3(flat[k], flat[k + 1], flat[k + 2]));
+    if (points.length < 2) return;
+    const curve = new THREE.CatmullRomCurve3(points, false, "centripetal");
+    const segments = Math.min(Math.max(points.length * 2, 32), 1500);
+    shown.add(
+      tubes
+        ? new THREE.Mesh(
+            new THREE.TubeGeometry(curve, segments, braid.radius, 8, false),
+            new THREE.MeshStandardMaterial({ color: colours[i], roughness: 0.55, metalness: 0.05 }),
+          )
+        : new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
+            new THREE.LineBasicMaterial({ color: colours[i] }),
+          ),
+    );
+  });
+  if (disk) shown.add(mirrorMesh(disk));
+  for (const child of braid.group.children) child.visible = false;
+  braid.group.add(shown);
+  braid.frame = shown;
+  braid.group.position.z = 0;
+  // The braid's own turning is in the moment already.
+  braid.turner.rotation.z = 0;
+}
+
+function clearFrame() {
+  if (!braid?.frame) return;
+  braid.group.remove(braid.frame);
+  dispose(braid.frame);
+  braid.frame = null;
+}
+
 function showTubes(tubes) {
   if (!braid) return;
   for (const yarn of [...braid.yarns, ...braid.tails]) {
@@ -868,6 +919,21 @@ function made(value) {
   if (!braid) return;
   const fraction = value / 1000;
   const [first, last] = braid.span;
+  // Made on a marudai: the making itself, move by move, until it is made.
+  const frames = braid.frames;
+  if (frames?.length && fraction < 0.999) {
+    const frame = frames[Math.min(frames.length - 1, Math.floor(fraction * frames.length))];
+    showFrame(frame, braid.disk, braid.colours);
+    const step = Math.max(0, Math.min(1, (frame.step + 1) / braid.steps));
+    drawTop(first + step * (last - first));
+    return;
+  }
+  clearFrame();
+  const tubesShown = $("tubes").checked;
+  for (const yarn of braid.yarns) {
+    yarn.tube.visible = tubesShown;
+    yarn.line.visible = !tubesShown;
+  }
   const now = first + fraction * (last - first);
   const laid = interpolate(braid.clock.source, braid.clock.braid, now);
   for (const yarn of braid.yarns) {

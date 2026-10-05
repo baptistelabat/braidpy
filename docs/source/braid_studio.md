@@ -43,7 +43,10 @@ The page has a form and a 3D view.
   their yarns' tails too, as on a real marudai: up from the fell to the
   hole in a see-through mirror, flat across it, and over its edge towards
   their bobbins. The physics pulls each yarn at the hole, where the mirror
-  takes the pull; the rest is drawn. It is a half turn of the view
+  takes the pull; the rest is drawn. The making shows as it goes — each
+  yarn carried up over the others to its new place, drawn tight, the braid
+  settling — and **Grow** replays it, move by move, before showing the
+  braid made. It is a half turn of the view
   about a level axis: the braid stays the braid it is, where only flipping
   its heights would show its mirror image.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
