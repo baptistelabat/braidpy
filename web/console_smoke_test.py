@@ -114,17 +114,22 @@ def main() -> int:
             "() => Number(document.getElementById('count').textContent) === 1",
             timeout=30_000,
         )
-        page.locator("#forward").click()
+        # three nudges of the handle make one step; three back undo it
+        for _ in range(3):
+            page.locator("#forward").click()
+            page.wait_for_timeout(400)
         page.wait_for_function(
             "() => document.getElementById('step').textContent === '1'",
             timeout=30_000,
         )
-        page.locator("#back").click()
+        for _ in range(3):
+            page.locator("#back").click()
+            page.wait_for_timeout(400)
         page.wait_for_function(
             "() => document.getElementById('step').textContent === '0'",
             timeout=30_000,
         )
-        print("the handle turns both ways")
+        print("three nudges make a step, and three back undo it")
 
         # two carriers either side of a contact are already on the same point,
         # so the page should ring them without the machine moving at all
@@ -152,35 +157,48 @@ def main() -> int:
         )
         print("taking one of them off clears the warning")
 
-        # an empty machine must still show its gears turning: the slots sweep
-        # through intermediate poses rather than jumping from step to step
+        # a nudge of the handle must turn the gears without completing a step,
+        # and must be visible on an empty machine
         page.locator("#clear").click()
         page.wait_for_function(
             "() => Number(document.getElementById('count').textContent) === 0",
             timeout=30_000,
         )
-        poses = page.evaluate(
-            """async () => {
-              const pick = () => document.querySelector(
-                '#view circle[data-gear="G7"][data-slot="0"]');
-              const seen = [];
-              const take = () => {
-                const c = pick();
-                if (c) seen.push(Number(c.getAttribute('cx')).toFixed(4));
-              };
-              take();
-              const timer = setInterval(take, 20);
-              document.getElementById('forward').click();
-              await new Promise((r) => setTimeout(r, 900));
-              clearInterval(timer);
-              return [...new Set(seen)];
-            }"""
+        page.locator("#rewind").click()
+        page.wait_for_function(
+            "() => document.getElementById('step').textContent === '0'",
+            timeout=30_000,
         )
-        print(f"an empty machine sweeps through {len(poses)} poses in one step")
-        if len(poses) < 3:
-            problems.append(
-                f"a step should sweep through poses, saw {len(poses)}: {poses}"
+
+        def slot_x():
+            return page.evaluate(
+                """() => Number(document.querySelector(
+                     '#view circle[data-gear="G7"][data-slot="0"]'
+                   ).getAttribute('cx'))"""
             )
+
+        before = slot_x()
+        page.locator("#forward").click()
+        page.wait_for_function(
+            "() => document.getElementById('step').textContent.includes('/')",
+            timeout=30_000,
+        )
+        after = slot_x()
+        shown = page.locator("#step").text_content()
+        print(f"one nudge: slot moved {abs(after - before):.3f}, step reads {shown!r}")
+        if after == before:
+            problems.append("a nudge should turn the gears on an empty machine")
+        if "1/3" not in shown:
+            problems.append(f"a nudge should be part of a step, step reads {shown!r}")
+
+        page.locator("#forward").click()
+        page.wait_for_timeout(400)
+        page.locator("#forward").click()
+        page.wait_for_function(
+            "() => document.getElementById('step').textContent === '1'",
+            timeout=30_000,
+        )
+        print("the third nudge completes the step")
 
         # Run keeps turning the handle by itself, and stops when told
         page.locator("#reload").click()
