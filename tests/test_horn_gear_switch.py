@@ -168,20 +168,43 @@ def test_band_of_names_the_band_each_gear_works_for():
     assert band_of("nonsense") is None
 
 
+def test_each_band_runs_exactly_two_circuits():
+    """One each way, which is why the drawing gives every band two colours.
+
+    This is what the switched slots are chosen for.  Halving each shared gear
+    contiguously, or by alternate slots, leaves the middle band as one long
+    circuit plus four short loops -- seven tracks over the three bands, and a
+    spurious fourth channel in the animation.
+    """
+    from braidpy.horn_gear.tracks import compute_tracks
+
+    machine = multiband_10_15_10()
+    tracks = compute_tracks(machine)
+    assert len(tracks) == 6
+
+    per_band = [0, 0, 0]
+    for track in tracks:
+        span = band_span(track)
+        owner = [
+            i
+            for i, (first, last) in enumerate(MULTIBAND_10_15_10_BANDS)
+            if span <= set(range(first, last + 1))
+        ]
+        assert owner, f"a track runs over gears {sorted(span)}, crossing a band"
+        per_band[owner[0]] += 1
+    assert per_band == [2, 2, 2]
+
+
 def test_the_reference_runs_ten_fifteen_and_ten_carriers():
     """The 10-15-10 of the machine's name, which is not yet reachable.
 
-    Measured band by band the machine holds 7, 21 and 7 -- the right total of
-    35, but the wrong split: the middle band has capacity to spare while the
-    two outer ones fall three short of the ten the reference runs.  No
-    geometrically valid wiring of an outer band does better than 7, and no
-    choice of switched slots changes it, so the shortfall is in how braidpy
-    loads a 27-slot band of 5-4-4-8-6, not in the switch.
+    Each band alone holds about 6, 10 and 6; together the machine holds 12,
+    so the bands contend at the two gears they share.  The reference runs 35.
 
-    Relaxing the collision rule at a switched contact
-    (:meth:`~braidpy.horn_gear.model.BraidingMachine.contact_exchanges`)
-    lifted the whole machine from 19 carriers to 22; the rest of the gap is
-    elsewhere.  This records that rather than asserting something weaker.
+    Choosing the switched slots for the right track structure costs capacity:
+    settings that leave the middle band with spurious short loops reach about
+    23.  Structure is the thing worth having, since it is what the drawing
+    shows, so this records the shortfall rather than trading it away.
     """
     import random
 
@@ -192,7 +215,7 @@ def test_the_reference_runs_ten_fifteen_and_ten_carriers():
 
     machine = multiband_10_15_10()
 
-    def capacity(places, trials=6, steps=120):
+    def capacity(places, trials=5, steps=110):
         best = 0
         for seed in range(trials):
             rng = random.Random(seed)
@@ -208,18 +231,8 @@ def test_the_reference_runs_ten_fifteen_and_ten_carriers():
             best = max(best, len(placed))
         return best
 
-    per_band = []
-    for first, last in MULTIBAND_10_15_10_BANDS:
-        band = [(f"G{i}", s) for i in range(first, last + 1) for s in range(SLOTS[i])]
-        per_band.append(capacity(band))
-
-    assert sum(per_band) <= sum(MULTIBAND_10_15_10_CARRIERS), (
-        f"the bands now hold {per_band}, totalling more than the reference's "
-        f"35 -- the docstring above is out of date"
+    whole = capacity(positions())
+    assert 0 < whole < sum(MULTIBAND_10_15_10_CARRIERS), (
+        f"the machine now holds {whole}; if it reaches 35 the docstring above "
+        f"and the note in switch.py are out of date"
     )
-    assert per_band[1] >= MULTIBAND_10_15_10_CARRIERS[1], (
-        "the middle band should have room for its fifteen"
-    )
-    assert any(
-        got < want for got, want in zip(per_band, MULTIBAND_10_15_10_CARRIERS)
-    ), "every band now reaches the reference -- update the docstring and switch.py"

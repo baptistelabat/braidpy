@@ -262,7 +262,7 @@ def multiband_10_15_10() -> SwitchedMachine:
     its own carriers, and the line braids three bands of ten, fifteen and ten.
 
     Each band runs two circuits, one each way, which is what the drawing shows
-    by giving every band two colours.
+    by giving every band two colours -- six closed tracks in all.
 
     Returns:
         MultibandLine: the three-band line, with its fold pinned.
@@ -272,6 +272,7 @@ def multiband_10_15_10() -> SwitchedMachine:
         HornGear(f"G{i}", n, direction=+1 if i % 2 == 0 else -1)
         for i, n in enumerate(slots)
     ]
+    # A gear's two contacts sit opposite each other along the line.
     connections = [
         Connection(
             f"G{i}",
@@ -282,14 +283,16 @@ def multiband_10_15_10() -> SwitchedMachine:
         )
         for i in range(len(slots) - 1)
     ]
-    # Alternate slots serve alternate bands.  Giving each band a contiguous
-    # half of the gear separates them just as well but costs much more of the
-    # machine's capacity, because carriers then queue at the switched contact.
+    # Which slots of each shared gear serve the band on either side.  Found by
+    # searching: of the 800 ways to halve the two gears, 120 give every band
+    # exactly two circuits -- the two the drawing colours separately -- and
+    # this pair holds the most carriers of those.  Halving each gear
+    # contiguously, or by alternate slots, leaves the middle band as a long
+    # circuit plus four short loops, which draws as a spurious fourth channel.
     switches: List[Switch] = []
-    for gear in (4, 11):
-        inward = frozenset(range(0, slots[gear], 2))
-        outward = frozenset(range(1, slots[gear], 2))
-        switches.append(Switch(f"G{gear - 1}-G{gear}", f"G{gear}", inward))
+    for gear, inward in ((4, (2, 3, 5)), (11, (1, 3, 4))):
+        outward = frozenset(range(slots[gear])) - frozenset(inward)
+        switches.append(Switch(f"G{gear - 1}-G{gear}", f"G{gear}", frozenset(inward)))
         switches.append(Switch(f"G{gear}-G{gear + 1}", f"G{gear}", outward))
     return MultibandLine(gears, connections, switches)
 
