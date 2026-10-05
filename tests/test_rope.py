@@ -65,6 +65,10 @@ def test_a_sinnet_beaten_up_is_the_same_braid(tmp_path):
     job.write_text(json.dumps(build(spec, tighten=False)["tighten"]))
     result = _run("sinnet", job)
     assert result["largestForce"] < 1e-3
+    # Pulled clear first: no yarn starts inside another's core, nor gets
+    # far into one on the way.
+    assert result["startOverlap"] < 0.01
+    assert result["deepestEver"] < 0.05
     assert result["settledHeight"] < 0.5 * result["height"]
     assert result["after"]["components"] == result["before"]["components"]
     before = [round(x) for x in result["before"]["links"]]

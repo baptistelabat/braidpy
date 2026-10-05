@@ -52,12 +52,22 @@ const cases = {
     const out = settle({ yarns: layWord(word, 3), spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
     return { laid: word, settled: readWord(out.yarns), turn: out.turn, deepest: out.deepest, largestForce: out.largestForce };
   },
+  // For the documentation's figures: the yarns, settled, and how the
+  // settling went.
+  shapes() {
+    const ys = helices(2, 10, 1, 0.5);
+    const spacing = Math.hypot(ys[0][3] - ys[0][0], ys[0][4] - ys[0][1], ys[0][5] - ys[0][2]);
+    const rope = settle({ yarns: ys, spacing, force: 1, turns: false, steps: 60000, tolerance: 1e-3 });
+    const word = [1, -2, 1, -2, 1, -2];
+    const plait = settle({ yarns: layWord(word, 3), spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
+    return { ropeLaid: ys, rope: rope.yarns, plaitLaid: layWord(word, 3), plait: plait.yarns };
+  },
   // A sinnet, laid by braidpy (its tightening job read from a file), beaten
   // up as the page beats it up: its closure's linking numbers before and
   // after.
   sinnet() {
     const job = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
-    const clear = tightenYarns({ ...job, iterations: Math.min(job.iterations, 30) });
+    const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
     const d = job.yarn_diameter;
     const [cx, cy] = job.centre;
     const yarns = [];
@@ -69,7 +79,10 @@ const cases = {
       }
       yarns.push(Array.from(relay(Float64Array.from(points), 0.5)));
     }
+    const start = settle({ yarns, spacing: 0.5, stretch: 100, contact: 100, steps: 1 });
+    const history = [];
     const out = settle({
+      progress: ({ step, rise, largestForce }) => history.push([step, rise, largestForce]),
       yarns,
       spacing: 0.5,
       feed: 1,
@@ -87,7 +100,9 @@ const cases = {
       height,
       settledHeight: height + out.rise,
       deepestEver: out.deepestEver,
+      startOverlap: start.deepestEver,
       largestForce: out.largestForce,
+      ...(process.argv[4] === "shapes" ? { laid: yarns, settled: out.yarns, history } : {}),
     };
   },
 };

@@ -563,14 +563,6 @@ def _timeline(
     }
 
 
-def _pitch(spec: Mapping[str, Any]) -> float:
-    """How far apart a disk braid's rows are laid, in yarn diameters: far
-    enough for the sideways tightening to work in, or, for a braid the page
-    settles by physics, which beats it up anyway, close, so there is less
-    of it to beat up."""
-    return 1.0 if spec.get("settle") == "physics" else 1.5
-
-
 def _disk_in_step(
     start,
     steps,
@@ -578,7 +570,6 @@ def _disk_in_step(
     diameter: float,
     iterations: int,
     clockwise: bool,
-    pitch: float = 1.5,
 ):
     """A disk's braid, laid round a ring with its rows made in the order
     the disk makes their crossings — as the side view of
@@ -601,7 +592,7 @@ def _disk_in_step(
         raise ValueError("These moves cross no strands: there is no braid.")
     rows = crossing_rows(order, crossings, in_turn=True)
     ring = ring_trajectories(order, crossings, diameter, clockwise=clockwise, rows=rows)
-    paths = lay_yarns(ring, take_off=pitch * diameter, yarn_diameter=diameter)
+    paths = lay_yarns(ring, take_off=1.5 * diameter, yarn_diameter=diameter)
     paths = _tightened(paths, diameter, iterations)
     clock = {
         "source": [0.0, *map(float, made_at), float(len(steps))],
@@ -716,7 +707,6 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
         diameter,
         _count(spec, "iterations", 200, 0, 2000),
         clockwise=False,
-        pitch=_pitch(spec),
     )
     disk = kumihimo_trajectories(pattern * repeat, n_strands)
     return _result(
@@ -770,7 +760,6 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
         diameter,
         _count(spec, "iterations", 200, 0, 2000),
         clockwise=clockwise,
-        pitch=_pitch(spec),
     )
     # Coloured by strand, in the order the braid gives them.
     colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
@@ -817,7 +806,6 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         diameter,
         _count(spec, "iterations", 200, 0, 2000),
         clockwise=False,
-        pitch=_pitch(spec),
     )
     seen = disk_trajectories(
         disk.start,

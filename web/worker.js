@@ -141,8 +141,11 @@ function tightened(result, job, tight) {
 // off by a weight lighter than the yarns' pull, so it is beaten up until
 // its crossings jam.  Shown as it goes.
 function settled(id, result, job) {
+  // Pulled clear sideways first, far enough that no two yarns overlap when
+  // seen in 3D: overlaps left for the physics to push apart could part
+  // the wrong way.
   status("Pulling the yarns clear…");
-  const clear = tightenYarns({ ...job, iterations: Math.min(job.iterations, 30) });
+  const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
   const d = job.yarn_diameter;
   const [cx, cy] = job.centre;
   const yarns = [];
