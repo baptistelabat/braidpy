@@ -4,9 +4,14 @@
 
 """Animate the three-band 10-15-10 machine, with a loading you choose.
 
-Run it::
+Run it from a checkout of this branch::
 
-    python demo_multiband.py
+    cd ~/CascadeProjects/braidpy-multiband
+    PYTHONPATH=$PWD/src ~/CascadeProjects/braidpy/.venv/bin/python demo_multiband.py
+
+The ``PYTHONPATH`` matters: braidpy is installed into the virtualenv from the
+main checkout, which is on another branch and has no switch module, so without
+it the import fails with ``No module named 'braidpy.horn_gear.switch'``.
 
 Edit :data:`LOADING` to put the carriers where you want them.  Set it to None
 to have the script search for the fullest loading it can find instead.
