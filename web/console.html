@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Machine console — braidpy</title>
+    <meta
+      name="description"
+      content="Work a braiding machine by hand: place the carriers on its slots, turn the handle a step at a time either way, and see where two of them would meet."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="console.css" />
+    <script type="module" src="console.js"></script>
+  </head>
+  <body>
+    <aside class="panel">
+      <header>
+        <h1>Machine console</h1>
+        <p class="lede">
+          Place the carriers yourself, then turn the handle. Computed by
+          <a href="https://github.com/baptistelabat/braidpy">braidpy</a> in
+          your browser — the same step and the same collisions as the library.
+        </p>
+      </header>
+
+      <label class="field">
+        <span>Machine</span>
+        <select id="machine" disabled></select>
+      </label>
+
+      <div class="transport">
+        <button id="back" type="button" disabled title="Turn the handle back one step">
+          ◀ Step
+        </button>
+        <button id="play" type="button" disabled title="Keep turning until something stops it">
+          ▶ Run
+        </button>
+        <button id="forward" type="button" disabled title="Turn the handle one step">
+          Step ▶
+        </button>
+      </div>
+
+      <div class="transport">
+        <button id="reload" type="button" disabled title="Back to the suggested loading">
+          Reload
+        </button>
+        <button id="clear" type="button" disabled title="Take every carrier off">
+          Empty
+        </button>
+        <button id="rewind" type="button" disabled title="Back to step 0, carriers as they are now">
+          Rewind
+        </button>
+      </div>
+
+      <dl class="readout">
+        <dt>Step</dt><dd id="step">0</dd>
+        <dt>Carriers</dt><dd id="count">0</dd>
+      </dl>
+
+      <p id="status" class="status" role="status" aria-live="polite">Starting…</p>
+
+      <section class="about">
+        <h2>Working it</h2>
+        <ul class="notes">
+          <li><strong>Click a slot</strong> to put a carrier on it, or to take one off — at any step.</li>
+          <li>A <strong>collision</strong> stops the run and is ringed in red. Take one of the two carriers off and carry on.</li>
+          <li>Stepping back restores what was there before, so you can undo a step you did not like.</li>
+          <li>Switched contacts are drawn as a double mark: there a carrier may be sent back the way it came.</li>
+        </ul>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <svg id="view" role="img" aria-label="The machine, its slots and its carriers"></svg>
+    </main>
+  </body>
+</html>

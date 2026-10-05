@@ -1,0 +1,108 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+/* The console's own bits, over Braid Studio's stylesheet. */
+
+.transport {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.transport button {
+  flex: 1;
+  padding: 0.5rem 0.3rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.transport button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.readout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0.75rem 0 0;
+}
+
+.readout dt {
+  font-weight: 600;
+}
+
+.readout dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+#view {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: manipulation;
+}
+
+.gear {
+  fill: none;
+  stroke: #9aa0a6;
+  stroke-width: 0.03;
+}
+
+.gear-switched {
+  stroke: #202124;
+  stroke-width: 0.07;
+  stroke-dasharray: 0.22 0.16;
+}
+
+.gear-label {
+  fill: #80868b;
+  font-size: 0.3px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot {
+  fill: #fff;
+  stroke: #bdc1c6;
+  stroke-width: 0.025;
+  cursor: pointer;
+}
+
+.slot:hover {
+  stroke: #202124;
+  stroke-width: 0.06;
+}
+
+.carrier {
+  fill: #e8a33d;
+  stroke: #3c4043;
+  stroke-width: 0.025;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.contact {
+  fill: none;
+  stroke: #9aa0a6;
+  stroke-width: 0.025;
+}
+
+.contact-switched {
+  stroke: #d93025;
+  stroke-width: 0.05;
+}
+
+.clash {
+  fill: none;
+  stroke: #d93025;
+  stroke-width: 0.09;
+}
+
+/* The scene is flipped about the user-space origin so the drawing matches
+ * braidpy's own figures.  No transform-box here: fill-box would flip it
+ * about its own bounding box instead and carry it out of the viewBox. */

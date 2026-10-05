@@ -66,6 +66,15 @@ TITLES = {
 }
 
 
+def catalogue() -> List[Dict[str, str]]:
+    """The machines on offer, for the page's menu.
+
+    Returns:
+        One entry per machine, with its ``id`` and ``title``.
+    """
+    return [{"id": name, "title": TITLES.get(name, name)} for name in machines()]
+
+
 def _machine(name: str) -> BraidingMachine:
     builders = machines()
     if name not in builders:
