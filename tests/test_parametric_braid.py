@@ -45,6 +45,28 @@ def test_braid_to_parametric_strands():
     assert len(p0) == 3
 
 
+@pytest.mark.parametrize("n_generators", range(1, 31))
+def test_a_strand_reaches_the_end_of_its_time_whatever_the_word_length(
+    n_generators,
+):
+    """Every strand is defined over the whole of [0, 1], to its very end.
+
+    Each generator takes 1 / (n_generators + 1) of the time; summed in
+    floating point, the last segment can stop just short of 1 (for five
+    generators, at 0.9999999999999999), and ``evaluate(1.0)`` then raised
+    "Time 1.0 is out of bounds for this strand"."""
+    word = [(-1) ** k * (1 + k % 3) for k in range(n_generators)]
+    for strand in Braid(word, n_strands=4).to_parametric_strands():
+        assert strand.evaluate(0.0)[2] == 0.0
+        assert strand.evaluate(1.0)[2] == 1.0
+
+
+def test_a_five_generator_word_can_be_laid_out():
+    """The word the bug was found with, in Braid Studio."""
+    strands = Braid((1, -3, 5, 2, -4), n_strands=6).to_parametric_strands()
+    assert [strand.evaluate(1.0)[2] for strand in strands] == [1.0] * 6
+
+
 def test_closest_approach_finds_the_tightest_spot():
     """A measurement on any strands at all, whoever made them.
 
