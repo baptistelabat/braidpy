@@ -194,24 +194,26 @@
     // ------------------------------------------------------------ laying
 
     // Thread t's end goes to the carrier at angle `to`: up over what lies
-    // on its way, then out to the rim, then drawn tight.
-    function lay(t, to, gentle) {
+    // on its way, then out to the rim, then drawn tight.  Carried round
+    // with the others, not `over` them, it goes straight out to the rim,
+    // passing nobody.
+    function lay(t, to, gentle, over = true) {
       const thread = threads[t];
       const list = thread.beads;
       for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) {
         const b = list[i];
         LX[b] = X[b]; LY[b] = Y[b]; LZ[b] = Z[b]; stamped[b] = 1;
       }
-      let top = highest - 2;
       const e0 = last(t);
       let x = X[e0], y = Y[e0], z = Z[e0];
+      let top = over ? highest - 2 : y - 2;
       thread.dir = to;
       const rx = Math.cos(to) * RIM, rz = Math.sin(to) * RIM;
       let dx = rx - x, dz = rz - z;
       let dist = Math.hypot(dx, dz);
       if (dist < 0.001) return;
       dx /= dist; dz /= dist;
-      for (let g = 0; g < dist; g++) {
+      for (let g = 0; over && g < dist; g++) {
         const at = hmAt(x, z);
         x += dx; z += dz;
         if (at < 0 || hmT[at] === t) continue;
@@ -229,7 +231,10 @@
       addBead(t, x, --y, z);
       addBead(t, x, --y, z);
       seen("carried", t);
-      drawTight(t, gentle);
+      // Carried round with the others, a yarn is not drawn tight on its
+      // own: the one drawn last would go straight, the others round it.
+      if (over) drawTight(t, gentle);
+      else for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) enqueue(list[i]);
       relay(t);
       const end = last(t);
       thread.tx = X[end]; thread.ty = Y[end]; thread.tz = Z[end];
@@ -328,6 +333,15 @@
     // ------------------------------------------------------------ relaxing
 
     let strength = 0.1;
+    // The same shuffles every time: the same braid every time.
+    let seed = 12345;
+    function shuffle(list) {
+      for (let i = list.length - 1; i > 0; i--) {
+        seed = (seed * 1103515245 + 12345) % 2147483648;
+        const j = Math.floor((seed / 2147483648) * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+    }
     function relaxBead(b) {
       if (fixed[b]) return;
       const t = owner[b], i = place[b];
@@ -398,6 +412,9 @@
           peak = Math.max(peak, queue.length);
           const batch = queue;
           queue = [];
+          // Held, in no fixed order: an order would favour one yarn, and the
+          // twist of a rope would gather round it as a core.
+          if (!turning) shuffle(batch);
           for (const b of batch) {
             queued[b] = 0;
             relaxBead(b);
@@ -472,7 +489,9 @@
       const order = [...threads.keys()].sort((p, q) => threads[p].dir - threads[q].dir);
       if (Math.abs(f) > 0.01) turn(ax, az, f);
       if (f > 0) order.reverse();
-      for (const t of order) lay(t, threads[t].dir);
+      // Held, the yarns are laid out again to their carriers without being
+      // carried over each other.
+      for (const t of order) lay(t, threads[t].dir, false, turning);
     }
 
     // The whole braid turned by f about the vertical through (ax, az).
@@ -483,6 +502,28 @@
           const x = X[b] - ax, z = Z[b] - az;
           moveTo(b, ax + x * c + z * s, Y[b], az - x * s + z * c);
         }
+      }
+    }
+
+    // The bobbins carried round by f together, the braid held: each yarn's
+    // free part turns with them about the axis, all of it at its carrier
+    // and none of it at the braid's tip, twisting the yarns in there.
+    function twist(f) {
+      for (const thread of threads) {
+        const list = thread.beads;
+        const end = last(threads.indexOf(thread));
+        const top = Math.max(Y[end], tip + 1);
+        for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) {
+          const b = list[i];
+          const w = Math.max(0, Math.min(1, (Y[b] - tip) / (top - tip)));
+          if (!w) continue;
+          const c = Math.cos(f * w), s = Math.sin(f * w);
+          moveTo(b, X[b] * c - Z[b] * s, Y[b], X[b] * s + Z[b] * c);
+          enqueue(b);
+        }
+        thread.dir += f;
+        const c = Math.cos(f), s = Math.sin(f);
+        [thread.tx, thread.tz] = [thread.tx * c - thread.tz * s, thread.tx * s + thread.tz * c];
       }
     }
 
@@ -515,6 +556,7 @@
     return {
       start,
       lay,
+      twist,
       relax,
       turn,
       threads,
@@ -596,7 +638,7 @@
           // pull twists them in at the tip.
           const parts = Math.max(2, Math.ceil((2 * Math.abs(by) * n) / (2 * Math.PI)));
           for (let k = 0; k < parts; k++) {
-            for (let t = 0; t < n; t++) machine.lay(t, machine.threads[t].dir - by / parts);
+            machine.twist(-by / parts);
             machine.relax();
           }
           return;

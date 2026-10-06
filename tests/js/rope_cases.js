@@ -182,7 +182,33 @@ const cases = {
     const mx = cut.reduce((s, p) => s + p[0], 0) / cut.length;
     const my = cut.reduce((s, p) => s + p[1], 0) / cut.length;
     const radius = cut.reduce((s, p) => s + Math.hypot(p[0] - mx, p[1] - my), 0) / cut.length;
-    return { tip: out.tip, closest, radius, crossings: cut.length };
+    // Each yarn's mean distance from the yarns' middle, slice by slice up
+    // the braid clear of its ends.
+    const radii = yarns.map(() => 0);
+    let slices = 0;
+    for (let z = 2; z < out.tip - 2; z += 0.5) {
+      const at = yarns.map((y) => {
+        for (let i = 3; i < y.length; i += 3) {
+          if ((y[i - 1] - z) * (y[i + 2] - z) <= 0 && y[i - 1] !== y[i + 2]) {
+            const f = (z - y[i - 1]) / (y[i + 2] - y[i - 1]);
+            return [y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])];
+          }
+        }
+        return null;
+      });
+      if (at.some((p) => !p)) continue;
+      const cx = at.reduce((s, p) => s + p[0], 0) / at.length;
+      const cy = at.reduce((s, p) => s + p[1], 0) / at.length;
+      at.forEach((p, k) => (radii[k] += Math.hypot(p[0] - cx, p[1] - cy)));
+      slices++;
+    }
+    return {
+      tip: out.tip,
+      closest,
+      radius,
+      crossings: cut.length,
+      radii: radii.map((r) => r / Math.max(slices, 1)),
+    };
   },
 
   // A braid made on a marudai, and braidpy's own as the page draws it, by

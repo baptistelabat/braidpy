@@ -231,19 +231,19 @@ def catalogue() -> Dict[str, Any]:
             "defaults": {"word": "1 -2", "n_strands": 3, "repeat": 6},
             "examples": [
                 {"word": "1 -2", "n_strands": 3, "repeat": 6, "title": "Plait"},
-                {"word": "1 2 3", "n_strands": 4, "repeat": 4, "title": "Twist"},
+                {"word": "1 2 3", "n_strands": 4, "repeat": 12, "title": "Twist"},
                 {
                     "word": "1 -2 3 -2",
                     "n_strands": 4,
                     "repeat": 4,
                     "title": "Four-strand flat",
                 },
-                {"word": "1 1 1", "n_strands": 2, "repeat": 2, "title": "Two-ply"},
+                {"word": "1 1 1", "n_strands": 2, "repeat": 8, "title": "Two-ply"},
                 {
                     "layout": "ring",
                     "word": "4",
                     "n_strands": 3,
-                    "repeat": 9,
+                    "repeat": 36,
                     "title": "Rope, as a ring word",
                 },
             ],
@@ -894,6 +894,7 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
     else:
         rolled, mirrored = _ring_moves(word, n_strands)
         result["disk"] = _ring_program(rolled, n_strands, mirrored)
+    result["info"]["made"] = repeat
     return result
 
 
@@ -950,6 +951,7 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
     result["disk"] = _disk_program(start, steps, n_slots, False, list(paths.points))
+    result["info"]["made"] = repeat
     return result
 
 
@@ -1013,6 +1015,7 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     result["disk"] = _disk_program(
         start, steps, config.n_slots, clockwise, list(paths.points)
     )
+    result["info"]["made"] = cycles
     return result
 
 
@@ -1096,6 +1099,7 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     result["disk"] = _disk_program(
         disk.start, disk.steps, disk.n_slots, False, list(paths.points)
     )
+    result["info"]["made"] = cycles
     return result
 
 
@@ -1174,6 +1178,9 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
         # Read over one cycle of the machine.
         info.update(_braid_info(flat_word(machine), len(paths.points)))
         info["repeated"] = "cycle"
+        info["made"] = cycles
+        # The cycles made, not the one read.
+        info["pure"] = cycles % info.get("pure_after", 1) == 0
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     colour = {k: _PALETTE[i % len(_PALETTE)] for i, k in enumerate(carriers)}

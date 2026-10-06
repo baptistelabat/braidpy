@@ -218,21 +218,44 @@ function renderFields(source, values = {}) {
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
   if (source === "word") attachDiagram(holder);
-  if (about.examples) {
-    const examples = document.createElement("div");
-    examples.className = "examples";
-    for (const example of about.examples) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = example.title;
-      button.addEventListener("click", () => {
-        renderFields(source, example);
-        submit();
-      });
-      examples.append(button);
-    }
-    holder.append(examples);
+  if (about.examples) attachExamples(source, about.examples, holder);
+}
+
+// A source's examples, chosen from a list at the top of its fields, as a
+// catalogue's braids are: choosing one makes it.  Changing what it is made
+// of makes it your own.
+function attachExamples(source, examples, holder) {
+  const label = document.createElement("label");
+  label.className = "field";
+  const title = document.createElement("span");
+  title.textContent = "Braid";
+  const list = document.createElement("select");
+  list.id = "field-example";
+  examples.forEach((example, k) => list.append(new Option(example.title, String(k))));
+  list.append(new Option("Your own…", "custom"));
+  label.append(title, list);
+  holder.prepend(label);
+  const shown = () => {
+    const value = (name) => holder.querySelector(`[name=${name}]`)?.value ?? "";
+    const same = (example) =>
+      Object.entries(example).every(
+        ([key, wanted]) =>
+          key === "title" ||
+          String(wanted).replace(/\s+/g, " ").trim() === value(key).replace(/\s+/g, " ").trim(),
+      ) && (example.layout ?? "row") === (value("layout") || "row");
+    const k = examples.findIndex(same);
+    list.value = k < 0 ? "custom" : String(k);
+  };
+  list.addEventListener("change", () => {
+    if (list.value === "custom") return;
+    renderFields(source, examples[Number(list.value)]);
+    submit();
+  });
+  for (const input of holder.querySelectorAll("input, select:not(#field-example), textarea")) {
+    input.addEventListener("input", shown);
+    input.addEventListener("change", shown);
   }
+  shown();
 }
 
 // ----------------------------------------------------------------- diagram
@@ -1398,20 +1421,21 @@ function describe(result, seconds) {
   const info = result.info;
   const rows = [
     ["Strands", info.n_strands],
-    ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
-    ["Crossings", info.crossings],
-    ["Exponent sum", info.exponent_sum],
-    ["Permutation", info.permutation && info.permutation.join(" ")],
-    ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
     [
       // Every strand back where it started: after so many of its words, or
-      // of its moves' cycles.
+      // of its moves' cycles; so many made, and whether that is pure.
       "Pure after",
       info.repeated &&
         (info.pure_after === null
           ? `over 64 ${info.repeated}s`
-          : `${info.pure_after} ${info.repeated}${info.pure_after > 1 ? "s" : ""}`),
+          : times(info.pure_after, info.repeated)),
     ],
+    ["Made", info.made && info.repeated && times(info.made, info.repeated)],
+    ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
+    ["Crossings", info.crossings],
+    ["Exponent sum", info.exponent_sum],
+    ["Permutation", info.permutation && info.permutation.join(" ")],
     [
       "Closed up",
       info.components === undefined
@@ -1463,6 +1487,10 @@ function describe(result, seconds) {
       return item;
     }),
   );
+}
+
+function times(count, what) {
+  return `${count} ${what}${count > 1 ? "s" : ""}`;
 }
 
 function round(value) {

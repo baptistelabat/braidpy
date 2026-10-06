@@ -14,6 +14,9 @@ The page has a form and a 3D view.
 - **Made by** picks the source: a braid word; kumihimo's `S`/`R` moves; a
   braid from the mobidai catalogue; an Ashley solid sinnet; or a braiding
   machine.
+- A braid word starts from a list of examples — a plait, a twist, a flat
+  four-strand braid, a two-ply, a rope — as the other sources start from
+  their catalogues; changing the word makes it your own.
 - Each source asks for what it needs: the word and the number of strands; the
   pattern and how often to repeat it; which braid, and for how many cycles.
   The advanced section sets the yarn diameter and how hard the yarns are
@@ -25,7 +28,9 @@ The page has a form and a 3D view.
   on a marudai: `1` to `n - 1` cross neighbours as in a braid word, `n`
   crosses the last strand and the first, across the seam, and `n + 1` turns
   every strand one place round. It is drawn on a cylinder cut at the seam,
-  and made on the marudai move by move as written.
+  and made on the marudai move by move as written. A turn carries every
+  bobbin round together, passing nobody, the braid held: the yarns twist
+  into a rope, each as far from its axis as the others.
 - A machine that braids round **cores** braids them in either as yarn, held
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the
@@ -82,10 +87,10 @@ The page has a form and a 3D view.
   disk's braid turns with the disk, each strand at the fell nearest its
   carrier.
 - Over the view, in a card that folds away to its title, what is known of
-  the braid: its strands, crossings and word (its ring word too, for a disk
-  braid), the permutation it makes, whether it is pure and after how many of
-  its words or cycles it would be — every strand back where it started —
-  what it closes up into (a knot, or a link of so many pieces), its Garside
+  the braid: its strands; after how many of its words or cycles it is pure
+  — every strand back where it started — how many were made, and so
+  whether it is; its crossings and word (its ring word too, for a disk
+  braid), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
   normal form and full twists, how close the yarns come.
 - The view's switches — tubes, spin, hanging, the top view and the
   cross-section — are in the toolbar's **View** menu.

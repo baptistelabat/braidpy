@@ -620,3 +620,23 @@ def test_how_many_repeats_make_it_pure_counts_its_unit(spec):
     if k > 1:
         fewer = build({**spec, "repeat": k - 1, "cycles": k - 1}, tighten=False)
         assert not fewer["info"]["pure"]
+
+
+@pytest.mark.parametrize(
+    "spec, made",
+    [
+        ({"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 4}, 4),
+        ({"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 3}, 3),
+        ({"source": "mobidai", "name": "KONGO_8", "cycles": 5}, 5),
+        ({"source": "sinnet", "name": "abok_3042", "cycles": 2}, 2),
+        ({"source": "machine", "name": "tubular_8", "cycles": 1}, None),
+        ({"source": "machine", "name": "flat_3", "cycles": 2}, 2),
+    ],
+)
+def test_a_braid_says_how_many_repeats_were_made(spec, made):
+    """Beside how many repeats make it pure, how many were made — and so
+    whether what was made is."""
+    info = build(spec, tighten=False)["info"]
+    assert info.get("made") == made
+    if made:
+        assert info["pure"] == (made % info["pure_after"] == 0)

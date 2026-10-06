@@ -133,6 +133,24 @@ def test_a_plait_is_made_on_a_marudai_from_its_word(tmp_path):
     assert result["closest"] > 0.85
 
 
+def test_a_rope_is_made_on_a_marudai_with_no_core(tmp_path):
+    """Three bobbins turned round the held braid, a place at a time: a
+    three-strand rope, each yarn as far from its axis as the others — not
+    two twisted round the third, left straight as a core."""
+    from braidpy.web import build
+
+    disk = build(
+        {"source": "word", "layout": "ring", "word": "4", "n_strands": 3, "repeat": 36},
+        tighten=False,
+    )["disk"]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    result = _run("marudai", program)
+    assert result["tip"] > 10
+    assert min(result["radii"]) > 0.6 * max(result["radii"])
+    assert result["closest"] > 0.85
+
+
 @pytest.mark.parametrize(
     "word, n_strands, repeat",
     [("1 2 -3 4", 5, 4), ("1 1 1", 2, 2), ("1 2 3", 4, 4)],
