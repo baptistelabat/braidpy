@@ -698,8 +698,8 @@ def _disk_unit(
             [int(p) for p in Braid(word, n).perm()] if word else list(range(1, n + 1))
         )
 
-    k = _order(permutation(1))
-    if k > 1 and _order(permutation(k)) != 1:
+    k: Optional[int] = _order(permutation(1))
+    if k and k > 1 and _order(permutation(k)) != 1:
         k = next(
             (k for k in range(2, _MOST_CYCLES + 1) if _order(permutation(k)) == 1),
             None,
@@ -1073,14 +1073,14 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
     called = "Your own" if name == "custom" else f"ABOK #{name.split('_')[1]},"
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
 
-    def cycles(k: int):
+    def worked(k: int):
         made = sinnet.disk(k)
         return made.start, made.steps, made.n_slots
 
     # Cycles that do not come back to the counts they started from do not
     # repeat: there is no saying when they are pure.
     if not notes:
-        _disk_unit(info, cycles, False)
+        _disk_unit(info, worked, False)
     if sinnet.shape:
         info["expected_shape"] = sinnet.shape
     result = _result(
