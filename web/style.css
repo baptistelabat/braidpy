@@ -303,6 +303,22 @@ button:disabled {
 .about dd code {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
+  /* A long word in three lines; all of it copied. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.about .actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.about .actions button {
+  font-size: 12px;
+  padding: 2px 8px;
 }
 
 .notes {

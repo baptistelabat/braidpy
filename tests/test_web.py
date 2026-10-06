@@ -501,7 +501,9 @@ def test_a_word_comes_with_its_moves_on_a_ring():
         {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 4}, tighten=False
     )
     disk = result["disk"]
-    assert disk["held"] is True
+    # Hanging free, as a disk braid does; held only while the bobbins turn.
+    assert disk["held"] is False
+    assert disk["twists"] is True
     assert sorted(disk["start"]) == sorted(set(disk["start"]))
     assert len(disk["start"]) == 3
     # Each crossing a swap in three moves: there is no turn in a plait.
@@ -640,3 +642,13 @@ def test_a_braid_says_how_many_repeats_were_made(spec, made):
     assert info.get("made") == made
     if made:
         assert info["pure"] == (made % info["pure_after"] == 0)
+
+
+def test_a_long_word_is_cut_short_in_the_title():
+    word = " ".join(["1 -2"] * 30)
+    title = build({"source": "word", "word": word, "n_strands": 3}, tighten=False)[
+        "title"
+    ]
+    assert title.startswith("Braid word 1 -2 1 -2")
+    assert title.endswith("…")
+    assert len(title) < 50

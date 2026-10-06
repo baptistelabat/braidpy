@@ -133,6 +133,36 @@ def test_a_plait_is_made_on_a_marudai_from_its_word(tmp_path):
     assert result["closest"] > 0.85
 
 
+@pytest.mark.parametrize("name", ["abok_3042", "abok_3044"])
+@pytest.mark.parametrize("key, layout", [("word", "row"), ("annular_word", "ring")])
+def test_a_braids_own_word_typed_in_makes_the_same_braid(tmp_path, name, key, layout):
+    """The word braidpy gives a sinnet — its braid word, or its ring word —
+    typed in as a braid word and made on a marudai is the sinnet again: as
+    thick, near enough as long, its yarns clear of each other."""
+    from braidpy.web import build
+
+    def made(spec):
+        disk = build(spec, tighten=False)["disk"]
+        program = tmp_path / "disk.json"
+        program.write_text(json.dumps(disk))
+        return _run("marudai", program)
+
+    sinnet = build({"source": "sinnet", "name": name, "cycles": 4}, tighten=False)
+    info = sinnet["info"]
+    own = made({"source": "sinnet", "name": name, "cycles": 4})
+    typed = made(
+        {
+            "source": "word",
+            "layout": layout,
+            "word": info[key],
+            "n_strands": info["n_strands"],
+        }
+    )
+    assert typed["radius"] == pytest.approx(own["radius"], rel=0.15)
+    assert typed["tip"] == pytest.approx(own["tip"], rel=0.3)
+    assert typed["closest"] > 0.75
+
+
 def test_a_rope_is_made_on_a_marudai_with_no_core(tmp_path):
     """Three bobbins turned round the held braid, a place at a time: a
     three-strand rope, each yarn as far from its axis as the others — not

@@ -795,8 +795,9 @@ def _ring_moves(word: Sequence[int], n_strands: int) -> Tuple[List[int], bool]:
 def _ring_program(
     moves: Sequence[int], n_strands: int, mirrored: bool
 ) -> Dict[str, Any]:
-    """Ring moves (:func:`_ring_moves`) as a disk program for the page, the
-    braid held while the bobbins turn.  Strand ``k`` starts in place ``k``
+    """Ring moves (:func:`_ring_moves`) as a disk program for the page: the
+    braid hanging free, as a disk braid does, and held only while the
+    bobbins turn round it, twisting the yarns in.  Strand ``k`` starts in place ``k``
     round the ring, or ``n - 1 - k`` numbered the other way; each place is
     ``slots`` slots on from the last.
 
@@ -827,8 +828,16 @@ def _ring_program(
         "clockwise": False,
         "start": start,
         "steps": steps,
-        "held": True,
+        "twists": True,
+        # Nothing but turns is a rope: held all the while it is laid up.
+        "held": all(abs(move) == n + 1 for move in moves),
     }
+
+
+def _shortened(text: str, most: int = 32) -> str:
+    """A long word cut short for a title."""
+    text = " ".join(text.split())
+    return text if len(text) <= most else text[:most].rsplit(" ", 1)[0] + " …"
 
 
 def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
@@ -880,7 +889,7 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info["annular_word"] = " ".join(str(g) for g in moves)
     result = _result(
         ("Ring word " if ring else "Braid word ")
-        + str(spec.get("word", ""))
+        + _shortened(str(spec.get("word", "")))
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
         diameter,

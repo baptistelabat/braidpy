@@ -51,7 +51,12 @@
 
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
 
-  function Machine(nThreads, turning = true) {
+  function Machine(nThreads, turning = true, twisted = !turning) {
+    // Held for a while, as the bobbins turn round the braid; then free again.
+    function hold(held) {
+      turning = !held;
+      twisted = held;
+    }
     // ------------------------------------------------------------ beads
     let cap = 1024;
     let X = new Float64Array(cap), Y = new Float64Array(cap), Z = new Float64Array(cap);
@@ -414,7 +419,7 @@
           queue = [];
           // Held, in no fixed order: an order would favour one yarn, and the
           // twist of a rope would gather round it as a core.
-          if (!turning) shuffle(batch);
+          if (twisted) shuffle(batch);
           for (const b of batch) {
             queued[b] = 0;
             relaxBead(b);
@@ -491,7 +496,7 @@
       if (f > 0) order.reverse();
       // Held, the yarns are laid out again to their carriers without being
       // carried over each other.
-      for (const t of order) lay(t, threads[t].dir, false, turning);
+      for (const t of order) lay(t, threads[t].dir, false, !twisted);
     }
 
     // The whole braid turned by f about the vertical through (ax, az).
@@ -555,6 +560,7 @@
 
     return {
       start,
+      hold,
       lay,
       twist,
       relax,
@@ -596,6 +602,9 @@
    *     rather than hanging free: it does not turn to balance, and when every
    *     yarn moves alike the bobbins turn round it, twisting the yarns in,
    *     rather than the disk and the braid turning together.
+   * @param {boolean} [job.twists]  When every yarn moves alike, the bobbins
+   *     turn round the braid, held for as long as they turn, twisting the
+   *     yarns in; it hangs free again for the other moves (job.held).
    * @param {number[]} [job.from]  Each yarn's slot to lay it from first, if
    *     not job.start: the yarns then go from these to job.start as a first
    *     step.
@@ -615,6 +624,7 @@
     // braid3dmin's angles turn the other way round from ours.
     const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
     const split = job.split ?? true;
+    const twists = job.twists ?? !!job.held;
     const machine = Machine(n, job.turning ?? !job.held);
     let current = -1;
     if (job.watch) {
@@ -632,15 +642,17 @@
       if (!moving.length) return;
       if (moving.length === n && moving.every(([, d]) => d === moving[0][1])) {
         const by = (sense * 2 * Math.PI * moving[0][1]) / job.n_slots;
-        if (job.held) {
-          // The braid held, the bobbins turned: each carried round its rim,
+        if (twists) {
+          // The bobbins turned: each carried round its rim,
           // a little at a time, never as far as the next one; the yarns'
           // pull twists them in at the tip.
           const parts = Math.max(2, Math.ceil((2 * Math.abs(by) * n) / (2 * Math.PI)));
+          if (!job.held) machine.hold(true);
           for (let k = 0; k < parts; k++) {
             machine.twist(-by / parts);
             machine.relax();
           }
+          if (!job.held) machine.hold(false);
           return;
         }
         machine.turn(0, 0, by);

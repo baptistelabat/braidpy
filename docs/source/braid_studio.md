@@ -92,6 +92,14 @@ The page has a form and a 3D view.
   whether it is; its crossings and word (its ring word too, for a disk
   braid), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
   normal form and full twists, how close the yarns come.
+  Long words show three lines; **Make from it** makes the braid again from
+  its own word or ring word, as a braid word — the same braid, made on the
+  marudai much as the disk made it — and **Copy** copies it. The braid is
+  drawn in the middle of what the card leaves free.
+- A braid word or ring word is made on the marudai hanging free, as a disk
+  braid is; when the bobbins turn together it is held while they turn,
+  twisting the yarns in, and a word of nothing but turns — a rope — is held
+  all the while.
 - The view's switches — tubes, spin, hanging, the top view and the
   cross-section — are in the toolbar's **View** menu.
 - The address bar always describes the braid shown, so **Copy link** shares

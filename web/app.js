@@ -872,13 +872,32 @@ function resize() {
   renderer.domElement.style.width = width + "px";
   renderer.domElement.style.height = height + "px";
   camera.aspect = width / height;
-  camera.updateProjectionMatrix();
+  clearOfCard();
 }
 new ResizeObserver(() => {
   resize();
   if (braid) drawTop(currentTime());
   drawSection(lastResult);
 }).observe(viewer);
+
+// What is known of the braid lies over the view's left: the braid is drawn
+// in the middle of what it leaves free, not behind it.
+function cardCover() {
+  const card = $("about");
+  if (card.hidden || getComputedStyle(card).position !== "absolute") return 0;
+  return card.getBoundingClientRect().right - viewer.getBoundingClientRect().left;
+}
+
+function clearOfCard() {
+  const { clientWidth: width, clientHeight: height } = viewer;
+  if (!width || !height) return;
+  const cover = Math.min(cardCover(), width / 2);
+  if (cover > 0) camera.setViewOffset(width, height, -cover / 2, 0, width, height);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+}
+$("about").addEventListener("toggle", clearOfCard);
+new ResizeObserver(clearOfCard).observe($("about"));
 
 function currentTime() {
   const [first, last] = braid.span;
@@ -1395,7 +1414,9 @@ function fit() {
   const across = Math.max(size.x, size.y);
   const fov = THREE.MathUtils.degToRad(camera.fov);
   const tall = height / 2 / Math.tan(fov / 2);
-  const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect, 0.3);
+  // Wide enough for what the card leaves free.
+  const free = Math.max(0.5, 1 - Math.min(cardCover(), viewer.clientWidth / 2) / viewer.clientWidth);
+  const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect * free, 0.3);
   const distance = 1.25 * Math.max(tall, wide, across * 2);
   // Seen from the side the strands' seam is not: a disk braid made on a
   // marudai from the top view's bottom, as it is turned; others turned
@@ -1450,8 +1471,8 @@ function describe(result, seconds) {
         `Δ^${info.garside.half_twists} and ${info.garside.factors} permutation braids`,
     ],
     ["Full twists", info.garside && info.garside.full_twists],
-    ["Word", info.word, true],
-    ["Ring word", info.annular_word, true],
+    ["Word", info.word, { layout: "row" }],
+    ["Ring word", info.annular_word, { layout: "ring" }],
     [
       "Closest yarns",
       info.closest_approach === undefined
@@ -1471,9 +1492,10 @@ function describe(result, seconds) {
     if (code) {
       const text = String(value);
       const element = document.createElement("code");
-      element.textContent = text.length > 600 ? text.slice(0, 600) + " …" : text;
+      element.textContent = text;
       element.title = text;
       detail.append(element);
+      if (code.layout) detail.append(wordActions(text, code.layout, info.n_strands));
     } else {
       detail.textContent = value;
     }
@@ -1487,6 +1509,61 @@ function describe(result, seconds) {
       return item;
     }),
   );
+}
+
+// A braid's own word, to make again as a braid word — the same braid — or
+// to copy.
+function wordActions(word, layout, strands) {
+  const actions = document.createElement("span");
+  actions.className = "actions";
+  const make = document.createElement("button");
+  make.type = "button";
+  make.textContent = "Make from it";
+  make.title = `Make this ${layout === "ring" ? "ring word" : "braid word"} as a braid word, once`;
+  make.addEventListener("click", () => {
+    // The same yarn, for the same look.
+    const yarn = lastResult?.yarn_diameter;
+    writeSpec({ source: "word", layout, word, n_strands: strands, repeat: 1 });
+    if (yarn) $("yarn_diameter").value = round(yarn);
+    submit();
+  });
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.textContent = "Copy";
+  copy.addEventListener("click", () => copyText(word, copy));
+  actions.append(make, copy);
+  return actions;
+}
+
+// Text to the clipboard, said so on the button that asked; where the
+// browser will not, the text shown to copy by hand.
+async function copyText(text, button) {
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    copied = true;
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+    area.remove();
+  }
+  if (!copied) {
+    window.prompt("Copy it from here:", text);
+    return;
+  }
+  const was = button.textContent;
+  button.textContent = "Copied ✓";
+  setTimeout(() => (button.textContent = was), 1500);
 }
 
 function times(count, what) {
@@ -1538,14 +1615,7 @@ $("grow").addEventListener("click", () => {
   }
 });
 
-$("share").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(location.href);
-    setStatus("Link copied.");
-  } catch {
-    setStatus("Copy the address bar to share this braid.");
-  }
-});
+$("share").addEventListener("click", () => copyText(location.href, $("share")));
 
 function fileName(extension) {
   return lastResult.title.replace(/[^\w-]+/g, "_") + "." + extension;
