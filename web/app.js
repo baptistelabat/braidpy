@@ -23,12 +23,21 @@ const $ = (id) => document.getElementById(id);
 const FIELDS = {
   word: [
     {
+      name: "layout",
+      label: "Strands",
+      kind: "choice",
+      choices: [
+        ["row", "In a row: a braid word"],
+        ["ring", "Round a ring: a ring word"],
+      ],
+    },
+    {
       name: "word",
       label: "Braid word",
       kind: "textarea",
       hint: "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB.",
     },
-    { name: "n_strands", label: "Strands", kind: "number", min: 2, max: 32 },
+    { name: "n_strands", label: "How many", kind: "number", min: 2, max: 32 },
     { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },
   ],
   kumihimo: [
@@ -262,16 +271,46 @@ function parseWord(text) {
   return word;
 }
 
+// A ring word reads the strands round a circle, as on a marudai: past the
+// braid word's crossings, n crosses the last strand and the first, across
+// the seam, and n + 1 turns every strand one place round.
+const WORD_HINTS = {
+  row: ["Braid word", "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB."],
+  ring: [
+    "Ring word",
+    "As a braid word, round a ring of n strands: n crosses the last strand and the first, across the seam; n + 1 turns every strand one place round. Drawn on a cylinder cut at the seam.",
+  ],
+};
+
 function attachDiagram(holder) {
   const wordField = holder.querySelector("[name=word]");
   const strandsField = holder.querySelector("[name=n_strands]");
+  const layoutField = holder.querySelector("[name=layout]");
+  const wordLabel = wordField.closest("label");
+  const named = () => {
+    const [title, hint] = WORD_HINTS[layoutField.value] || WORD_HINTS.row;
+    wordLabel.querySelector("span").textContent = title;
+    wordLabel.querySelector("small").textContent = hint;
+  };
+  layoutField.addEventListener("change", () => {
+    named();
+    draw();
+  });
+  named();
   const figure = document.createElement("div");
   figure.className = "diagram";
   const canvas = document.createElement("canvas");
   const caption = document.createElement("small");
   figure.append(canvas, caption);
   wordField.closest("label").after(figure);
-  const draw = () => drawDiagram(canvas, caption, wordField.value, Number(strandsField.value));
+  const draw = () =>
+    drawDiagram(
+      canvas,
+      caption,
+      wordField.value,
+      Number(strandsField.value),
+      layoutField.value === "ring",
+    );
   wordField.addEventListener("input", draw);
   strandsField.addEventListener("input", draw);
   new ResizeObserver(() => {
@@ -281,7 +320,7 @@ function attachDiagram(holder) {
   draw();
 }
 
-function drawDiagram(canvas, caption, text, strands) {
+function drawDiagram(canvas, caption, text, strands, ring = false) {
   let word;
   try {
     word = parseWord(text);
@@ -291,12 +330,17 @@ function drawDiagram(canvas, caption, text, strands) {
     canvas.hidden = true;
     return;
   }
-  const needed = word.length ? Math.max(...word.map(Math.abs)) + 1 : 2;
-  const n = Math.max(needed, Number.isFinite(strands) ? strands : 0, 2);
+  const given = Number.isFinite(strands) && strands > 0 ? strands : 0;
+  const top = word.length ? Math.max(...word.map(Math.abs)) : 1;
+  // Round a ring, n + 1 is the greatest move there is: a turn.
+  const needed = ring ? top - 1 : top + 1;
+  const n = Math.max(needed, given || (ring ? top : needed), 2);
   canvas.hidden = !word.length;
   if (!word.length) return;
-  if (n > (Number.isFinite(strands) ? strands : n)) {
-    caption.textContent = `σ${needed - 1} needs ${needed} strands: drawn with ${n}.`;
+  if (given && n > given) {
+    caption.textContent = ring
+      ? `On a ring of ${given} strands, moves go up to ${given + 1}: drawn with ${n}.`
+      : `σ${needed - 1} needs ${needed} strands: drawn with ${n}.`;
   }
   const width = canvas.parentElement.clientWidth;
   const row = Math.max(6, Math.min(28, 360 / word.length));
@@ -308,7 +352,10 @@ function drawDiagram(canvas, caption, text, strands) {
   canvas.height = Math.round(height * ratio);
   const ctx = canvas.getContext("2d");
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  const column = Math.min(44, (width - 24) / n);
+  // A ring is drawn on a cylinder cut at its seam: half a column each side,
+  // where a strand leaving one edge comes back at the other.
+  const columns = ring ? n : n - 1;
+  const column = Math.min(44, (width - 24) / Math.max(columns, 1));
   const left = (width - column * (n - 1)) / 2;
   const X = (slot) => left + slot * column;
   const lineWidth = Math.max(1.5, Math.min(3, column / 8));
@@ -316,26 +363,64 @@ function drawDiagram(canvas, caption, text, strands) {
   // Which strand is in each slot, row by row.
   let order = [...Array(n).keys()];
   ctx.lineCap = "round";
-  const stroke = (strand, from, to, y, wide) => {
+  if (ring) {
+    ctx.save();
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = getComputedStyle(canvas).borderTopColor;
+    ctx.lineWidth = 1;
+    for (const x of [X(-0.5), X(n - 0.5)]) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    ctx.restore();
     ctx.beginPath();
-    ctx.moveTo(X(from), y);
-    ctx.bezierCurveTo(X(from), y + row / 2, X(to), y + row / 2, X(to), y + row);
-    ctx.strokeStyle = wide ? background : PALETTE[strand % PALETTE.length];
-    ctx.lineWidth = wide ? lineWidth * 3.5 : lineWidth;
-    ctx.stroke();
+    ctx.rect(X(-0.5), 0, X(n - 0.5) - X(-0.5), height);
+    ctx.clip();
+  }
+  // From one slot to another, a row down.  Round a ring, slot n is slot 0
+  // seen past the right-hand edge, and slot -1 the last past the left: what
+  // goes off one edge comes back in at the other.
+  const stroke = (strand, from, to, y, wide) => {
+    const shifts = [0];
+    if (ring && Math.max(from, to) >= n) shifts.push(n);
+    if (ring && Math.min(from, to) < 0) shifts.push(-n);
+    for (const shift of shifts) {
+      const a = X(from - shift);
+      const b = X(to - shift);
+      ctx.beginPath();
+      ctx.moveTo(a, y);
+      ctx.bezierCurveTo(a, y + row / 2, b, y + row / 2, b, y + row);
+      ctx.strokeStyle = wide ? background : PALETTE[strand % PALETTE.length];
+      ctx.lineWidth = wide ? lineWidth * 3.5 : lineWidth;
+      ctx.stroke();
+    }
   };
   word.forEach((g, k) => {
     const y = row / 2 + k * row;
-    const i = Math.abs(g) - 1;
-    for (let slot = 0; slot < n; slot++) {
-      if (slot !== i && slot !== i + 1) stroke(order[slot], slot, slot, y);
+    const index = Math.abs(g);
+    if (ring && index === n + 1) {
+      // A turn: every strand one place round, passing nobody.
+      const way = g > 0 ? 1 : -1;
+      for (let slot = 0; slot < n; slot++) stroke(order[slot], slot, slot + way, y);
+      order = way > 0 ? [order[n - 1], ...order.slice(0, -1)] : [...order.slice(1), order[0]];
+      return;
     }
-    // σᵢ: the strand in slot i passes over; its inverse, under.
-    const [under, over] = g > 0 ? [i + 1, i] : [i, i + 1];
-    stroke(order[under], under, under === i ? i + 1 : i, y);
-    stroke(order[over], over, over === i ? i + 1 : i, y, true);
-    stroke(order[over], over, over === i ? i + 1 : i, y);
-    [order[i], order[i + 1]] = [order[i + 1], order[i]];
+    // σᵢ: the strand in slot i - 1 passes over — outside, round a ring —
+    // its inverse, under.  Round a ring, σₙ crosses the last slot and the
+    // first, drawn as slot n.
+    const i = index - 1;
+    const j = (i + 1) % n;
+    for (let slot = 0; slot < n; slot++) {
+      if (slot !== i && slot !== j) stroke(order[slot], slot, slot, y);
+    }
+    const [under, over] = g > 0 ? [order[j], order[i]] : [order[i], order[j]];
+    const [underWay, overWay] = g > 0 ? [[i + 1, i], [i, i + 1]] : [[i, i + 1], [i + 1, i]];
+    stroke(under, ...underWay, y);
+    stroke(over, ...overWay, y, true);
+    stroke(over, ...overWay, y);
+    [order[i], order[j]] = [order[j], order[i]];
   });
 }
 
@@ -1318,6 +1403,15 @@ function describe(result, seconds) {
     ["Exponent sum", info.exponent_sum],
     ["Permutation", info.permutation && info.permutation.join(" ")],
     ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    [
+      // Every strand back where it started: after so many of its words, or
+      // of its moves' cycles.
+      "Pure after",
+      info.repeated &&
+        (info.pure_after === null
+          ? `over 64 ${info.repeated}s`
+          : `${info.pure_after} ${info.repeated}${info.pure_after > 1 ? "s" : ""}`),
+    ],
     [
       "Closed up",
       info.components === undefined

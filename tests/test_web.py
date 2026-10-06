@@ -537,3 +537,86 @@ def test_a_sinnet_disk_is_drawn_with_its_spaces():
         assert angle == pytest.approx(
             (before + after) / 2, abs=0.3 * (after - before)
         ), name
+
+
+def test_a_ring_word_is_made_as_its_moves_round_the_ring():
+    """A ring word is read with the strands round a circle: 1 to n - 1 cross
+    neighbours as in a braid word, n crosses the last strand and the first,
+    across the seam, and n + 1 turns every strand one place round.  It is
+    made move by move as written, and is the braid its flat word is."""
+    from braidpy.annulus_braid import solid_word
+
+    spec = {"source": "word", "layout": "ring", "word": "1 3 -2", "n_strands": 3}
+    result = build({**spec, "repeat": 2}, tighten=False)
+    moves = [1, 3, -2] * 2
+    assert result["info"]["annular_word"] == "1 3 -2 1 3 -2"
+    assert result["info"]["word"] == " ".join(map(str, solid_word(moves, 3)))
+    assert result["title"].startswith("Ring word")
+    # Each crossing is a swap in three moves, the seam's as any other.
+    steps = result["disk"]["steps"]
+    assert len(steps) == len(moves)
+    assert all(len(step) == 3 for step in steps)
+
+
+def test_a_ring_word_turns_the_bobbins():
+    result = build(
+        {"source": "word", "layout": "ring", "word": "4", "n_strands": 3, "repeat": 3},
+        tighten=False,
+    )
+    steps = result["disk"]["steps"]
+    assert len(steps) == 3
+    assert all(len(step) == 3 for step in steps)
+    assert result["info"]["word"] == "2 1 2 1 2 1"
+
+
+@pytest.mark.parametrize(
+    "spec, message",
+    [
+        ({"word": "5", "n_strands": 3}, "up to 4"),
+        ({"word": "1 -1", "n_strands": 3}, "crosses nothing"),
+    ],
+)
+def test_a_ring_word_that_cannot_be_made_says_so(spec, message):
+    with pytest.raises(ValueError, match=message):
+        build({"source": "word", "layout": "ring", **spec}, tighten=False)
+
+
+@pytest.mark.parametrize(
+    "word, n_strands, repeats",
+    [("1 -2", 3, 3), ("1 1", 2, 1), ("1", 2, 2), ("1 3", 4, 2), ("1 2 4", 5, 6)],
+)
+def test_a_braid_says_how_many_times_to_repeat_it_to_be_pure(word, n_strands, repeats):
+    """Repeated as many times as its permutation's order, every strand is
+    back where it started: the braid is pure."""
+    from braidpy.braid import Braid
+
+    info = build(
+        {"source": "word", "word": word, "n_strands": n_strands}, tighten=False
+    )["info"]
+    assert info["pure_after"] == repeats
+    assert Braid(parse_word(word) * repeats, n_strands).is_pure()
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 6},
+        {"source": "word", "layout": "ring", "word": "1 3", "n_strands": 3},
+        {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
+        {"source": "mobidai", "name": "KONGO_8", "cycles": 2},
+        {"source": "sinnet", "name": "abok_3042", "cycles": 2},
+    ],
+)
+def test_how_many_repeats_make_it_pure_counts_its_unit(spec):
+    """The repeats asked for are the braid's word, or its moves' cycle: so
+    many of them, and no fewer, make a pure braid, whatever was made."""
+    unit = build({**spec, "repeat": 1, "cycles": 1}, tighten=False)["info"]
+    info = build(spec, tighten=False)["info"]
+    assert info["pure_after"] == unit["pure_after"]
+    assert info["repeated"] == ("cycle" if "cycles" in spec else "repeat")
+    k = unit["pure_after"]
+    again = build({**spec, "repeat": k, "cycles": k}, tighten=False)["info"]
+    assert again["pure"]
+    if k > 1:
+        fewer = build({**spec, "repeat": k - 1, "cycles": k - 1}, tighten=False)
+        assert not fewer["info"]["pure"]

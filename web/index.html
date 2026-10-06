@@ -84,12 +84,6 @@
         </p>
       </form>
 
-      <section id="about" class="about" hidden>
-        <h2 id="title"></h2>
-        <dl id="info"></dl>
-        <ul id="notes" class="notes"></ul>
-      </section>
-
       <footer>
         <p>
           Everything is computed here, in your browser: Python runs through
@@ -113,6 +107,11 @@
         hidden
         aria-label="What made the braid, seen from above"
       ></canvas>
+      <details id="about" class="about card" open hidden>
+        <summary><h2 id="title"></h2></summary>
+        <dl id="info"></dl>
+        <ul id="notes" class="notes"></ul>
+      </details>
       <div class="toolbar" role="toolbar" aria-label="View">
         <button id="grow" type="button" title="Watch the braid being made">
           ▶ Grow
@@ -125,21 +124,22 @@
           value="1000"
           aria-label="How much of the braid is made"
         />
-        <label class="check"
-          ><input id="tubes" type="checkbox" checked /> Tubes</label
-        >
-        <label class="check"
-          ><input id="spin" type="checkbox" /> Spin</label
-        >
-        <label class="check" title="The braid hanging from its fell, as from a kumihimo disk or a marudai; off, it rises from the fell, as from a braiding machine"
-          ><input id="hanging" type="checkbox" /> Hanging</label
-        >
-        <label class="check"
-          ><input id="showtop" type="checkbox" checked /> Top view</label
-        >
-        <label class="check"
-          ><input id="showsection" type="checkbox" checked /> Cross-section</label
-        >
+        <details class="menu">
+          <summary>View</summary>
+          <div class="menu-items">
+            <label class="check"><input id="tubes" type="checkbox" checked /> Tubes</label>
+            <label class="check"><input id="spin" type="checkbox" /> Spin</label>
+            <label
+              class="check"
+              title="The braid hanging from its fell, as from a kumihimo disk or a marudai; off, it rises from the fell, as from a braiding machine"
+              ><input id="hanging" type="checkbox" /> Hanging</label
+            >
+            <label class="check"><input id="showtop" type="checkbox" checked /> Top view</label>
+            <label class="check"
+              ><input id="showsection" type="checkbox" checked /> Cross-section</label
+            >
+          </div>
+        </details>
         <button id="reset" type="button" title="Back to the starting view">
           Reset view
         </button>

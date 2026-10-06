@@ -20,7 +20,10 @@ A description says where the braid comes from:
 
 ``{"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 6}``
     A braid word: signed generator indices (``1 -2``), ``s1 s2^-1``, or
-    letters (``aB``, ``a`` for σ₁ and ``A`` its inverse).
+    letters (``aB``, ``a`` for σ₁ and ``A`` its inverse).  With ``"layout":
+    "ring"``, a ring word, the strands round a circle: ``n`` crosses the
+    last strand and the first, across the seam, and ``n + 1`` turns them
+    all one place round.
 ``{"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 8}``
     Kumihimo's own moves: swap top and bottom, rotate a quarter.
 ``{"source": "mobidai", "name": "KONGO_8", "cycles": 8}``
@@ -236,6 +239,13 @@ def catalogue() -> Dict[str, Any]:
                     "title": "Four-strand flat",
                 },
                 {"word": "1 1 1", "n_strands": 2, "repeat": 2, "title": "Two-ply"},
+                {
+                    "layout": "ring",
+                    "word": "4",
+                    "n_strands": 3,
+                    "repeat": 9,
+                    "title": "Rope, as a ring word",
+                },
             ],
         },
         "kumihimo": {
@@ -635,6 +645,7 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
         permutation = [int(p) for p in braid.perm()]
         info["permutation"] = permutation
         info["pure"] = bool(braid.is_pure())
+        info["pure_after"] = _order(permutation)
         info["components"] = _cycles(permutation)
         # The Garside normal form costs more the more strands there are:
         # beyond this, minutes in a browser.
@@ -649,6 +660,75 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
                 "full_twists": int(math.floor((least + most) / 4 + 0.5)),
             }
     return info
+
+
+def _unit(info: Dict[str, Any], word: Sequence[int], n_strands: int, repeated: str):
+    """Says in ``info`` how many of the braid's unit — its word repeated, or
+    its moves' cycle, as ``repeated`` names it — make a pure braid."""
+    from braidpy.braid import Braid
+
+    word = [int(g) for g in word]
+    info["pure_after"] = (
+        _order([int(p) for p in Braid(word, n_strands).perm()]) if word else 1
+    )
+    info["repeated"] = repeated
+    return info
+
+
+def _disk_unit(
+    info: Dict[str, Any],
+    cycles: Callable[[int], Tuple[Any, Any, int]],
+    clockwise: bool,
+    repeated: str = "cycle",
+):
+    """:func:`_unit` for a disk braid, whose ``cycles(k)`` are the start,
+    steps and slots of ``k`` cycles of its moves.  A braid that creeps round the disk
+    from cycle to cycle, as kongo gumi does, is not its first cycle repeated:
+    its cycles are counted until the braid is pure, up to
+    :data:`_MOST_CYCLES`."""
+    from braidpy.annulus_braid import solid_word
+    from braidpy.braid import Braid
+    from braidpy.take_off import disk_annular_word
+
+    def permutation(k: int) -> List[int]:
+        start, steps, n_slots = cycles(k)
+        annular, n = disk_annular_word(start, steps, n_slots, clockwise=clockwise)
+        word = solid_word(annular, n)
+        return (
+            [int(p) for p in Braid(word, n).perm()] if word else list(range(1, n + 1))
+        )
+
+    k = _order(permutation(1))
+    if k > 1 and _order(permutation(k)) != 1:
+        k = next(
+            (k for k in range(2, _MOST_CYCLES + 1) if _order(permutation(k)) == 1),
+            None,
+        )
+    info["pure_after"] = k
+    info["repeated"] = repeated
+    return info
+
+
+# Cycles counted, at most, to find when a creeping disk braid is pure.
+_MOST_CYCLES = 64
+
+
+def _order(permutation: Sequence[int]) -> int:
+    """How many times a braid is repeated before it is pure, every strand
+    back where it started: the least common multiple of its permutation's
+    cycles' lengths."""
+    seen = set()
+    order = 1
+    for start in range(len(permutation)):
+        length = 0
+        here = start
+        while here not in seen:
+            seen.add(here)
+            here = permutation[here] - 1
+            length += 1
+        if length:
+            order = order * length // math.gcd(order, length)
+    return order
 
 
 def _cycles(permutation: Sequence[int]) -> int:
@@ -752,34 +832,68 @@ def _ring_program(
 
 
 def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
+    from braidpy.annulus_braid import solid_word
     from braidpy.braid import Braid
     from braidpy.take_off import braid_word_trajectories, lay_yarns
 
+    layout = str(spec.get("layout", "row"))
+    if layout not in ("row", "ring"):
+        raise ValueError("Strands are either in a row or round a ring.")
+    ring = layout == "ring"
     word = parse_word(str(spec.get("word", "")))
     if not word:
         raise ValueError("Give a braid word, for example 1 -2.")
     repeat = _count(spec, "repeat", 1, 1, 50)
-    needed = max(abs(g) for g in word) + 1
-    n_strands = _count(spec, "n_strands", needed, 2, 32)
-    if n_strands < needed:
-        raise ValueError(f"σ{needed - 1} needs at least {needed} strands.")
-    word = word * repeat
+    top = max(abs(g) for g in word)
+    if ring:
+        # Round a ring, the greatest move is taken for the seam's crossing.
+        n_strands = _count(spec, "n_strands", max(top, 2), 2, 32)
+        if top > n_strands + 1:
+            raise ValueError(
+                f"On a ring of {n_strands} strands, moves go up to "
+                f"{n_strands + 1}, a turn."
+            )
+        moves = word * repeat
+        word = solid_word(moves, n_strands)
+        if not word:
+            raise ValueError("That ring word crosses nothing once laid flat.")
+    else:
+        needed = top + 1
+        n_strands = _count(spec, "n_strands", needed, 2, 32)
+        if n_strands < needed:
+            raise ValueError(f"σ{needed - 1} needs at least {needed} strands.")
+        word = word * repeat
     if len(word) > 400:
         raise ValueError("That is over 400 crossings: repeat it fewer times.")
     diameter = _number(spec, "yarn_diameter", 0.45, 0.05, 0.95)
     trajectories = braid_word_trajectories(Braid(word, n_strands))
     paths = lay_yarns(trajectories, yarn_diameter=diameter, fell_radius=0.0)
     paths = _tighten(paths, spec, diameter)
+    info = _braid_info(word, n_strands)
+    once = (
+        solid_word(moves[: len(moves) // repeat], n_strands)
+        if ring
+        else word[: len(word) // repeat]
+    )
+    _unit(info, once, n_strands, "repeat")
+    if ring:
+        info["annular_word"] = " ".join(str(g) for g in moves)
     result = _result(
-        f"Braid word {spec.get('word', '')}"
+        ("Ring word " if ring else "Braid word ")
+        + str(spec.get("word", ""))
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
         diameter,
-        info=_braid_info(word, n_strands),
+        info=info,
         timeline=_timeline(trajectories, list(paths.points), "line"),
     )
-    moves, mirrored = _ring_moves(word, n_strands)
-    result["disk"] = _ring_program(moves, n_strands, mirrored)
+    # Made move by move round a ring: a ring word as it is written, a braid
+    # word rolled onto the ring.
+    if ring:
+        result["disk"] = _ring_program(moves, n_strands, False)
+    else:
+        rolled, mirrored = _ring_moves(word, n_strands)
+        result["disk"] = _ring_program(rolled, n_strands, mirrored)
     return result
 
 
@@ -792,6 +906,13 @@ def _disk_info(start, steps, n_slots: int, clockwise: bool) -> Dict[str, Any]:
     info = _braid_info(solid_word(annular, n), n)
     info["annular_word"] = " ".join(str(g) for g in annular)
     return info
+
+
+def _kumihimo_cycles(pattern: str, n_strands: int):
+    from braidpy.take_off import kumihimo_steps
+
+    n_slots, start, steps = kumihimo_steps(pattern, n_strands)
+    return start, steps, n_slots
 
 
 def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
@@ -820,7 +941,12 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
         paths,
         diameter,
         colours=_hues(n_strands),
-        info=_disk_info(start, steps, n_slots, clockwise=False),
+        info=_disk_unit(
+            _disk_info(start, steps, n_slots, clockwise=False),
+            lambda k: _kumihimo_cycles(pattern * k, n_strands),
+            False,
+            "repeat",
+        ),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
     result["disk"] = _disk_program(start, steps, n_slots, False, list(paths.points))
@@ -877,7 +1003,11 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
         paths,
         diameter,
         colours=[colour_of[k] for k in paths.points],
-        info=_disk_info(start, steps, config.n_slots, clockwise),
+        info=_disk_unit(
+            _disk_info(start, steps, config.n_slots, clockwise),
+            lambda k: (*mobidai_steps(config, k), config.n_slots),
+            clockwise,
+        ),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
     result["disk"] = _disk_program(
@@ -942,6 +1072,15 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         )
     called = "Your own" if name == "custom" else f"ABOK #{name.split('_')[1]},"
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
+
+    def cycles(k: int):
+        made = sinnet.disk(k)
+        return made.start, made.steps, made.n_slots
+
+    # Cycles that do not come back to the counts they started from do not
+    # repeat: there is no saying when they are pure.
+    if not notes:
+        _disk_unit(info, cycles, False)
     if sinnet.shape:
         info["expected_shape"] = sinnet.shape
     result = _result(
@@ -1032,7 +1171,9 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
         info["crossings"] = len(annular.generators)
     else:
+        # Read over one cycle of the machine.
         info.update(_braid_info(flat_word(machine), len(paths.points)))
+        info["repeated"] = "cycle"
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     colour = {k: _PALETTE[i % len(_PALETTE)] for i, k in enumerate(carriers)}

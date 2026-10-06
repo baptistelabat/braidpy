@@ -21,6 +21,11 @@ The page has a form and a 3D view.
 - A braid word is drawn as it is typed, as a 2D diagram — strands running
   down, the one passing behind broken where they cross — before the braid
   is made.
+- A braid word can also be a **ring word**, its strands round a circle as
+  on a marudai: `1` to `n - 1` cross neighbours as in a braid word, `n`
+  crosses the last strand and the first, across the seam, and `n + 1` turns
+  every strand one place round. It is drawn on a cylinder cut at the seam,
+  and made on the marudai move by move as written.
 - A machine that braids round **cores** braids them in either as yarn, held
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the
@@ -76,10 +81,14 @@ The page has a form and a 3D view.
   with its strands as spokes, the machine's gears and carriers — and a
   disk's braid turns with the disk, each strand at the fell nearest its
   carrier.
-- Beside it, what is known of the braid: its strands, crossings and word (its
-  ring word too, for a disk braid), the permutation it makes, what it closes
-  up into (a knot, or a link of so many pieces), its Garside normal form and
-  full twists, how close the yarns come.
+- Over the view, in a card that folds away to its title, what is known of
+  the braid: its strands, crossings and word (its ring word too, for a disk
+  braid), the permutation it makes, whether it is pure and after how many of
+  its words or cycles it would be — every strand back where it started —
+  what it closes up into (a knot, or a link of so many pieces), its Garside
+  normal form and full twists, how close the yarns come.
+- The view's switches — tubes, spin, hanging, the top view and the
+  cross-section — are in the toolbar's **View** menu.
 - The address bar always describes the braid shown, so **Copy link** shares
   it. **Save…** keeps a picture, the yarns as an STL file for 3D printing or
   an OBJ model, or their points as JSON.
