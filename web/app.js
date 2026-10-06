@@ -55,7 +55,7 @@ const FIELDS = {
       label: "Moves, in order",
       kind: "textarea",
       custom: true,
-      hint: "From slot > to slot, for example 1>15, 17>31. A strand goes the short way round, over the strands it passes.",
+      hint: "From slot > to slot, for example 1>15, 17>31. A strand goes the short way round, over the strands it passes. Change them, here or on the disk, to make your own braid: the one chosen stays as it is.",
     },
     { name: "n_slots", label: "Slots", kind: "number", min: 3, max: 128, custom: true },
     {
@@ -103,6 +103,8 @@ const FIELDS = {
 };
 
 let catalogue = null;
+// Sources whose catalogued braids always show what they are made of.
+const ALWAYS_SHOWN = new Set(["mobidai"]);
 
 function renderFields(source, values = {}) {
   const about = catalogue[source];
@@ -158,33 +160,50 @@ function renderFields(source, values = {}) {
     holder.append(row);
   }
   // "Your own moves…" shows what a catalogued braid is made of, ready to
-  // change: it starts from the braid chosen before.
+  // change: it starts from the braid chosen before.  A kumihimo disk's
+  // braid shows its moves always, ready to change: changing them makes it
+  // your own, and the catalogued braid stays as it was, to choose again.
   const entries = holder.querySelector("select[name=name]");
   if (entries) {
+    const always = ALWAYS_SHOWN.has(source);
     let previous = entries.value;
-    const reveal = () => {
-      const custom = entries.value === "custom";
-      for (const label of holder.querySelectorAll("[data-custom]")) {
-        label.hidden = !custom;
+    let filling = false;
+    const fill = (name) => {
+      const entry = about.entries.find((e) => e.name === name);
+      filling = true;
+      for (const [key, value] of Object.entries(entry?.pattern || {})) {
+        const input = holder.querySelector(`[name=${key}]`);
+        if (input) input.value = value;
       }
+      filling = false;
+    };
+    const showCustom = (shown) => {
+      for (const label of holder.querySelectorAll("[data-custom]")) label.hidden = !shown;
+    };
+    entries.addEventListener("change", () => {
+      const custom = entries.value === "custom";
+      showCustom(custom || always);
       if (custom) {
-        const from = about.entries.find((entry) => entry.name === previous);
-        for (const [key, value] of Object.entries(from?.pattern || {})) {
-          const input = holder.querySelector(`[name=${key}]`);
-          if (input && (input.value === "" || from)) input.value = value;
+        // From the braid chosen before, unless it is already showing.
+        if (!always) {
+          const from = about.entries.find((entry) => entry.name === previous);
+          for (const [key, value] of Object.entries(from?.pattern || {})) {
+            const input = holder.querySelector(`[name=${key}]`);
+            if (input && (input.value === "" || from)) input.value = value;
+          }
         }
       } else {
         previous = entries.value;
+        if (always) fill(entries.value);
       }
-    };
-    entries.addEventListener("change", reveal);
-    if (entries.value === "custom") {
+    });
+    showCustom(entries.value === "custom" || always);
+    if (always && entries.value !== "custom") fill(entries.value);
+    if (always) {
       for (const label of holder.querySelectorAll("[data-custom]")) {
-        label.hidden = false;
-      }
-    } else {
-      for (const label of holder.querySelectorAll("[data-custom]")) {
-        label.hidden = true;
+        label.addEventListener("input", () => {
+          if (!filling && entries.value !== "custom") entries.value = "custom";
+        });
       }
     }
   }
@@ -364,23 +383,25 @@ function attachEditor(source, holder) {
   label.after(box);
 
   let chosen = null;
+  // Moves changed here are changed as if typed: the braid becomes your own.
+  const changed = () => {
+    chosen = null;
+    moves.dispatchEvent(new Event("input", { bubbles: true }));
+  };
   const add = (from, to) => {
     const list = moves.value.trim();
     moves.value = (list ? list + ", " : "") + `${from}>${to}`;
-    chosen = null;
-    draw();
+    changed();
   };
   undo.addEventListener("click", () => {
     const list = pairs(moves.value);
     list.pop();
     moves.value = list.map(([a, b]) => `${a}>${b}`).join(", ");
-    chosen = null;
-    draw();
+    changed();
   });
   clear.addEventListener("click", () => {
     moves.value = "";
-    chosen = null;
-    draw();
+    changed();
   });
 
   // What there is to draw and click: places round a circle, and who is
@@ -549,9 +570,12 @@ function attachEditor(source, holder) {
 
 function readSpec() {
   const spec = { source: $("source").value };
+  // A catalogued braid is named; what it is made of is the catalogue's.
+  const named = $("form").querySelector("select[name=name]")?.value !== "custom";
   for (const element of $("form").elements) {
     if (!element.name || element.name === "source") continue;
     if (element.value === "" || element.closest("[hidden]")) continue;
+    if (named && element.closest("[data-custom]")) continue;
     spec[element.name] =
       element.type === "number" ? Number(element.value) : element.value;
   }
