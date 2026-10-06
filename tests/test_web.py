@@ -502,7 +502,39 @@ def test_a_word_comes_with_its_moves_on_a_ring():
     )
     disk = result["disk"]
     assert disk["held"] is True
+    assert disk["mirrored"] is False
     assert sorted(disk["start"]) == sorted(set(disk["start"]))
     assert len(disk["start"]) == 3
     # Each crossing a swap in three moves: there is no turn in a plait.
     assert len(disk["steps"]) == 8
+
+
+def test_a_sinnet_disk_is_drawn_with_its_spaces():
+    """Seen from above, a sinnet's disk shows its spaces as sectors: a line
+    from the middle to the rim between each two, each space's number half
+    way between its two lines."""
+    result = build(
+        {"source": "sinnet", "name": "abok_3044", "cycles": 1}, tighten=False
+    )
+    view = result["timeline"]
+    n_spaces = len(view["slots"])
+    rim, *sectors = view["outlines"]
+    assert len(sectors) == n_spaces
+    for line in sectors:
+        (x0, y0), (x1, y1) = line[0], line[-1]
+        assert math.hypot(x0, y0) == pytest.approx(0, abs=1e-6)
+        assert math.hypot(x1, y1) == pytest.approx(math.hypot(*rim[0]), rel=1e-3)
+    boundaries = sorted(
+        math.atan2(line[-1][1], line[-1][0]) % (2 * math.pi) for line in sectors
+    )
+    for x, y, name in view["slots"]:
+        angle = math.atan2(y, x) % (2 * math.pi)
+        before = max(
+            (b for b in boundaries if b < angle), default=boundaries[-1] - 2 * math.pi
+        )
+        after = min(
+            (b for b in boundaries if b > angle), default=boundaries[0] + 2 * math.pi
+        )
+        assert angle == pytest.approx(
+            (before + after) / 2, abs=0.3 * (after - before)
+        ), name

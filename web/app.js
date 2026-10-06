@@ -707,6 +707,70 @@ resize();
 // What is drawn: per yarn its tube and its line, each revealed up to how
 // much of the braid is made.
 let braid = null;
+let lastSeconds = null;
+// How far round the vertical the starting view is turned, per source, so
+// the braid's seam — where its numbering round the ring closes, and no
+// strand crosses — is away from the viewer.
+const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2 };
+
+// A braid word made on a marudai, rolled round a ring, unrolled again: cut
+// along its seam, where the ring's last place meets its first and no strand
+// crosses, and laid flat, each point's angle round the axis become how far
+// along the strip it is, its distance from the axis how deep — a change of
+// coordinates that keeps the braid's hand.  Its strands then lie side by
+// side in the word's order, crossing where its diagram crosses them.
+function unroll(result) {
+  const n = result.strands.length;
+  // The seam, in the page's frame: half a place on from the first.
+  const seam = Math.PI / n;
+  // About the braid's own axis, where it is at each height: the strands'
+  // middle there (they are all drawn at the same heights).
+  const levels = result.strands[0].points.length;
+  const middle = [];
+  for (let i = 0; i < levels; i++) {
+    let mx = 0;
+    let my = 0;
+    for (const strand of result.strands) {
+      mx += strand.points[i][0] / n;
+      my += strand.points[i][1] / n;
+    }
+    middle.push([mx, my]);
+  }
+  let total = 0;
+  let count = 0;
+  for (const strand of result.strands) {
+    strand.points.forEach(([x, y], i) => {
+      total += Math.hypot(x - middle[i][0], y - middle[i][1]);
+      count++;
+    });
+  }
+  const across = total / count || result.yarn_diameter;
+  // Neighbouring places a diameter and a half apart, as the diagram has
+  // them, rather than as far apart as round the braid: a stretch across,
+  // which keeps the braid's hand too.
+  const spacing = (1.5 * result.yarn_diameter * n) / (2 * Math.PI);
+  // Numbered the other way round the ring, the braid is turned half round
+  // about its axis: turned back.
+  const back = result.disk.mirrored ? -1 : 1;
+  const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
+  return result.strands.map((strand) => {
+    let along = null;
+    let last = 0;
+    return strand.points.map(([px, py, z], i) => {
+      const x = px - middle[i][0];
+      const y = py - middle[i][1];
+      const angle = Math.atan2(y, x);
+      along = along === null ? (((seam - angle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) : along + wrap(last - angle);
+      last = angle;
+      // Hanging from its fell, as the marudai made it, read upwards from its
+      // oldest end: then each crossing has in front the strand its diagram
+      // has, and the strands are in the diagram's order left to right.  (Read
+      // downwards, as the diagram is drawn, it is that same braid only seen
+      // from behind.)
+      return [back * spacing * along, -back * (Math.hypot(x, y) - across), -z];
+    });
+  });
+}
 // Whether braids hang from their fell, as from a kumihimo disk or a marudai,
 // or rise from it, as from a braiding machine: braids made on a marudai —
 // disk braids and words — hang unless asked otherwise, machines' rise.
@@ -728,15 +792,20 @@ function show(result, seconds, keepView = false) {
     dispose(braid.turner);
   }
   lastResult = result;
+  lastSeconds = seconds;
   const group = new THREE.Group();
   const yarns = [];
   const radius = result.yarn_diameter / 2;
   const times = result.times || result.strands[0].points.map((_, i) => i);
+  // A braid word made on a marudai, unrolled to look like its diagram.
+  const word = result.timeline?.kind === "line" && Boolean(result.disk);
+  $("unrolledbox").hidden = !word;
+  const flat = word && result.marudai && $("unrolled").checked ? unroll(result) : null;
   result.strands.forEach((strand, k) => {
-    let laid = strand.points;
+    let laid = flat ? flat[k] : strand.points;
     // Made on a marudai: the yarn goes on, one tube, out of the braid at
     // the fell to its carrier over the mirror.
-    const tail = result.marudai?.tails[k];
+    const tail = flat ? null : result.marudai?.tails[k];
     if (tail) {
       const fell = laid[laid.length - 1][2];
       laid = [...laid, ...tail.filter(([, , z]) => z < fell)];
@@ -787,7 +856,7 @@ function show(result, seconds, keepView = false) {
   }
   // Made on a marudai: the mirror the yarns lie over, seen through.
   const tails = [];
-  if (result.marudai) {
+  if (result.marudai && !flat) {
     const mirror = mirrorMesh(result.marudai.disk);
     mirror.userData.whole = true;
     group.add(mirror);
@@ -818,7 +887,9 @@ function show(result, seconds, keepView = false) {
     yarns,
     tails,
     radius,
-    frames: result.marudai?.frames,
+    frames: flat ? null : result.marudai?.frames,
+    unrolled: Boolean(flat),
+    source: $("source").value,
     disk: result.marudai?.disk,
     steps: result.disk?.steps.length || 1,
     frame: null,
@@ -830,7 +901,7 @@ function show(result, seconds, keepView = false) {
     colours: result.strands.map((strand) => strand.colour),
     box: null,
   };
-  stand.rotation.x = hangs[kind] ? Math.PI : 0;
+  stand.rotation.x = hangs[kind] && !flat ? Math.PI : 0;
   braid.box = new THREE.Box3().setFromObject(turner);
   showTubes($("tubes").checked);
   $("topview").hidden = !timeline || !$("showtop").checked;
@@ -1153,7 +1224,12 @@ function fit() {
   const tall = height / 2 / Math.tan(fov / 2);
   const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect, 0.3);
   const distance = 1.25 * Math.max(tall, wide, across * 2);
-  const direction = new THREE.Vector3(1, -0.45, 0.25).normalize();
+  // Seen from the side the strands' seam is not: turned about the vertical
+  // as each kind of braid needs it.  An unrolled braid word is seen face on,
+  // as its diagram is.
+  const direction = braid.unrolled
+    ? new THREE.Vector3(0, -1, 0.12).normalize()
+    : new THREE.Vector3(1, -0.45, 0.25).normalize().applyAxisAngle(new THREE.Vector3(0, 0, 1), VIEW_TURN[braid.source] ?? 0);
   camera.position.copy(centre).addScaledVector(direction, distance);
   camera.near = distance / 100;
   camera.far = distance * 100;
@@ -1246,8 +1322,11 @@ $("showtop").addEventListener("change", (event) => {
 $("spin").addEventListener("change", (event) => {
   controls.autoRotate = event.target.checked;
 });
+$("unrolled").addEventListener("change", () => {
+  if (lastResult) show(lastResult, lastSeconds);
+});
 $("hanging").addEventListener("change", (event) => {
-  if (!braid) return;
+  if (!braid || braid.unrolled) return;
   hangs[braid.kind] = event.target.checked;
   braid.stand.rotation.x = event.target.checked ? Math.PI : 0;
   made(Number($("made").value));

@@ -748,6 +748,7 @@ def _ring_program(
         "start": start,
         "steps": steps,
         "held": True,
+        "mirrored": mirrored,
     }
 
 
@@ -929,6 +930,7 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
             disk.middle_slot(space): str(space) for space in range(1, disk.n_spaces + 1)
         },
     )
+    seen = _with_sectors(seen, disk)
     notes = []
     counts = list(sinnet.initial_counts_per_space)
     for source, target in sinnet.moves:
@@ -957,6 +959,26 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         disk.start, disk.steps, disk.n_slots, False, list(paths.points)
     )
     return result
+
+
+def _with_sectors(seen, disk):
+    """A sinnet's disk as the book draws it: its spaces as sectors, a line
+    from the middle to the rim half a slot before each space's first."""
+    import dataclasses
+
+    from braidpy.take_off import _disk_point
+
+    lines = tuple(
+        _disk_point(
+            np.full(2, (space - 1) * disk.slots_per_space + 0.5),
+            np.array([0.0, 1.0]),
+            disk.n_slots,
+            False,
+            disk.slot_offset,
+        )
+        for space in range(1, disk.n_spaces + 1)
+    )
+    return dataclasses.replace(seen, outlines=seen.outlines + lines)
 
 
 def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
