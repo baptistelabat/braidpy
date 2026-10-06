@@ -15,6 +15,7 @@ why_no_closed_form.md
 solving_numerically.md
 braid3D.md
 braid_algebra.md
+comparing_braids.md
 usage.md
 references.md
 reference.md
