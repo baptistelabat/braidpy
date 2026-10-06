@@ -104,7 +104,7 @@ const FIELDS = {
 
 let catalogue = null;
 // Sources whose catalogued braids always show what they are made of.
-const ALWAYS_SHOWN = new Set(["mobidai"]);
+const ALWAYS_SHOWN = new Set(["mobidai", "sinnet"]);
 
 function renderFields(source, values = {}) {
   const about = catalogue[source];
@@ -161,7 +161,7 @@ function renderFields(source, values = {}) {
   }
   // "Your own moves…" shows what a catalogued braid is made of, ready to
   // change: it starts from the braid chosen before.  A kumihimo disk's
-  // braid shows its moves always, ready to change: changing them makes it
+  // braid, or an Ashley sinnet, shows its moves always, ready to change: changing them makes it
   // your own, and the catalogued braid stays as it was, to choose again.
   const entries = holder.querySelector("select[name=name]");
   if (entries) {
@@ -648,6 +648,7 @@ worker.onmessage = ({ data }) => {
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
     show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
+    showDefaults(data.result.used);
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
     $("build").disabled = !catalogue;
@@ -670,7 +671,56 @@ $("form").addEventListener("submit", (event) => {
   submit();
 });
 
-$("source").addEventListener("change", () => renderFields($("source").value));
+$("source").addEventListener("change", () => {
+  renderFields($("source").value);
+  forgetDefaults();
+});
+
+// ---------------------------------------------------------------- defaults
+
+// A setting left empty takes the braid's own default, shown greyed with
+// "default" once the braid is made.  Going into the field puts the default
+// in, so its arrows step from there; leaving it unchanged empties it again.
+const SETTINGS = {
+  yarn_diameter: (used) => round(used.yarn_diameter),
+  iterations: (used) => used.iterations,
+};
+
+function forgetDefaults() {
+  for (const name of Object.keys(SETTINGS)) {
+    const input = $(name);
+    delete input.dataset.default;
+    input.placeholder = "default";
+  }
+}
+
+function showDefaults(used) {
+  if (!used) return;
+  for (const [name, value] of Object.entries(SETTINGS)) {
+    const input = $(name);
+    const shown = value(used);
+    if (shown === null || shown === undefined) {
+      delete input.dataset.default;
+      input.placeholder = name === "iterations" ? "not used on a marudai" : "default";
+    } else if (input.value === "" || input.value === input.dataset.default) {
+      input.dataset.default = String(shown);
+      input.placeholder = `${shown} (default)`;
+    }
+  }
+}
+
+for (const name of Object.keys(SETTINGS)) {
+  const input = $(name);
+  input.addEventListener("focus", () => {
+    if (input.value === "" && input.dataset.default) {
+      input.value = input.dataset.default;
+      input.select();
+    }
+  });
+  input.addEventListener("blur", () => {
+    if (input.value === input.dataset.default) input.value = "";
+  });
+}
 
 // ------------------------------------------------------------------- scene
 

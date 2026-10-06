@@ -119,6 +119,12 @@ async function build(id, spec) {
     }
     result.settled = settle;
   }
+  // What the braid was made with, for the page to show what was taken by
+  // default: the marudai pulls its yarns tight itself, in no set steps.
+  result.used = {
+    yarn_diameter: result.yarn_diameter,
+    iterations: settle === "marudai" && job ? null : job?.iterations ?? 0,
+  };
   const seconds = (performance.now() - started) / 1000;
   made.set(key, result);
   if (made.size > KEEP) made.delete(made.keys().next().value);

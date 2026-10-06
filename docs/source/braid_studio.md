@@ -61,9 +61,14 @@ The page has a form and a 3D view.
   strands start in and its moves, or its spaces' counts and moves — ready to
   change, as text or by clicking on a drawing of the disk: a strand, then
   the slot it goes to (or a space, then the space a strand goes to).
-  A kumihimo disk's braid shows what it is made of always, ready to change
-  there: changing a move, its slots or its turn makes it your own, and the
-  catalogued braid stays as it was, to choose again.
+  A kumihimo disk's braid, or an Ashley sinnet, shows what it is made of
+  always, ready to change there: changing a move, its slots, its counts or
+  its turn makes it your own, and the catalogued braid stays as it was, to
+  choose again.
+- The yarn diameter and the tightening steps, left empty, take the braid's
+  own defaults, shown greyed with "default" once it is made; going into the
+  field puts the default in, so that its arrows step from there. The
+  marudai draws its yarns tight itself, without tightening steps.
 - The braid is drawn as tubes, one colour per yarn, and can be turned, zoomed
   and spun. **Grow** replays it being made, by the clock of whatever made
   it: the oldest rows first, carried up as the newest form at the fell. An
