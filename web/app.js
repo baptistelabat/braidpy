@@ -707,70 +707,51 @@ resize();
 // What is drawn: per yarn its tube and its line, each revealed up to how
 // much of the braid is made.
 let braid = null;
-let lastSeconds = null;
 // How far round the vertical the starting view is turned, per source, so
 // the braid's seam — where its numbering round the ring closes, and no
 // strand crosses — is away from the viewer.
 const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2 };
 
-// A braid word made on a marudai, rolled round a ring, unrolled again: cut
-// along its seam, where the ring's last place meets its first and no strand
-// crosses, and laid flat, each point's angle round the axis become how far
-// along the strip it is, its distance from the axis how deep — a change of
-// coordinates that keeps the braid's hand.  Its strands then lie side by
-// side in the word's order, crossing where its diagram crosses them.
-function unroll(result) {
-  const n = result.strands.length;
-  // The seam, in the page's frame: half a place on from the first.
-  const seam = Math.PI / n;
-  // About the braid's own axis, where it is at each height: the strands'
-  // middle there (they are all drawn at the same heights).
-  const levels = result.strands[0].points.length;
-  const middle = [];
-  for (let i = 0; i < levels; i++) {
-    let mx = 0;
-    let my = 0;
-    for (const strand of result.strands) {
-      mx += strand.points[i][0] / n;
-      my += strand.points[i][1] / n;
-    }
-    middle.push([mx, my]);
-  }
-  let total = 0;
-  let count = 0;
-  for (const strand of result.strands) {
-    strand.points.forEach(([x, y], i) => {
-      total += Math.hypot(x - middle[i][0], y - middle[i][1]);
-      count++;
-    });
-  }
-  const across = total / count || result.yarn_diameter;
-  // Neighbouring places a diameter and a half apart, as the diagram has
-  // them, rather than as far apart as round the braid: a stretch across,
-  // which keeps the braid's hand too.
-  const spacing = (1.5 * result.yarn_diameter * n) / (2 * Math.PI);
-  // Numbered the other way round the ring, the braid is turned half round
-  // about its axis: turned back.
-  const back = result.disk.mirrored ? -1 : 1;
-  const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
-  return result.strands.map((strand) => {
-    let along = null;
-    let last = 0;
-    return strand.points.map(([px, py, z], i) => {
-      const x = px - middle[i][0];
-      const y = py - middle[i][1];
-      const angle = Math.atan2(y, x);
-      along = along === null ? (((seam - angle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) : along + wrap(last - angle);
-      last = angle;
-      // Hanging from its fell, as the marudai made it, read upwards from its
-      // oldest end: then each crossing has in front the strand its diagram
-      // has, and the strands are in the diagram's order left to right.  (Read
-      // downwards, as the diagram is drawn, it is that same braid only seen
-      // from behind.)
-      return [back * spacing * along, -back * (Math.hypot(x, y) - across), -z];
-    });
-  });
+// Where a disk's numbering closes — between its first slot (or space) and
+// its last — as an angle seen from above, in the top view's frame.
+function seamOf(timeline) {
+  if (timeline?.kind !== "disk") return null;
+  const named = timeline.slots.filter(([, , name]) => Number.isFinite(Number(name)));
+  if (named.length < 2) return null;
+  // Numbered from 0 or from 1.
+  const first = named.reduce((a, b) => (Number(b[2]) < Number(a[2]) ? b : a));
+  const last = named.reduce((a, b) => (Number(b[2]) > Number(a[2]) ? b : a));
+  const unit = ([x, y]) => [x / (Math.hypot(x, y) || 1), y / (Math.hypot(x, y) || 1)];
+  const [ax, ay] = unit(first);
+  const [bx, by] = unit(last);
+  return Math.atan2(ay + by, ax + bx);
 }
+
+// A disk braid made on a marudai, seen in the top view's frame turned so
+// its seam is up, away from the viewer at the bottom: how far to turn the
+// 3D braid about the vertical for its carriers to be where the top view
+// has them.  Measured where they start: each strand's slot as marudai.js
+// takes it, in the 3D view, hanging or not, against where the top view has
+// it.  The braid turning as it is made turns both alike.
+function alignment() {
+  const view = braid.timeline;
+  const program = braid.program;
+  const sense = program.clockwise ? -1 : 1;
+  let sx = 0;
+  let sy = 0;
+  program.start.forEach((slot, k) => {
+    const angle = (sense * 2 * Math.PI * (slot - 1)) / program.n_slots;
+    // The page has the braid turned over (y the other way); hanging turns
+    // it back.
+    const seen = braid.stand.rotation.x ? angle : -angle;
+    const [tx, ty] = view.strands[k][0];
+    const d = seen - Math.atan2(ty, tx);
+    sx += Math.cos(d);
+    sy += Math.sin(d);
+  });
+  return braid.topTurn - Math.atan2(sy, sx);
+}
+
 // Whether braids hang from their fell, as from a kumihimo disk or a marudai,
 // or rise from it, as from a braiding machine: braids made on a marudai —
 // disk braids and words — hang unless asked otherwise, machines' rise.
@@ -792,20 +773,15 @@ function show(result, seconds, keepView = false) {
     dispose(braid.turner);
   }
   lastResult = result;
-  lastSeconds = seconds;
   const group = new THREE.Group();
   const yarns = [];
   const radius = result.yarn_diameter / 2;
   const times = result.times || result.strands[0].points.map((_, i) => i);
-  // A braid word made on a marudai, unrolled to look like its diagram.
-  const word = result.timeline?.kind === "line" && Boolean(result.disk);
-  $("unrolledbox").hidden = !word;
-  const flat = word && result.marudai && $("unrolled").checked ? unroll(result) : null;
   result.strands.forEach((strand, k) => {
-    let laid = flat ? flat[k] : strand.points;
+    let laid = strand.points;
     // Made on a marudai: the yarn goes on, one tube, out of the braid at
     // the fell to its carrier over the mirror.
-    const tail = flat ? null : result.marudai?.tails[k];
+    const tail = result.marudai?.tails[k];
     if (tail) {
       const fell = laid[laid.length - 1][2];
       laid = [...laid, ...tail.filter(([, , z]) => z < fell)];
@@ -856,7 +832,7 @@ function show(result, seconds, keepView = false) {
   }
   // Made on a marudai: the mirror the yarns lie over, seen through.
   const tails = [];
-  if (result.marudai && !flat) {
+  if (result.marudai) {
     const mirror = mirrorMesh(result.marudai.disk);
     mirror.userData.whole = true;
     group.add(mirror);
@@ -887,8 +863,7 @@ function show(result, seconds, keepView = false) {
     yarns,
     tails,
     radius,
-    frames: flat ? null : result.marudai?.frames,
-    unrolled: Boolean(flat),
+    frames: result.marudai?.frames,
     source: $("source").value,
     disk: result.marudai?.disk,
     steps: result.disk?.steps.length || 1,
@@ -901,7 +876,14 @@ function show(result, seconds, keepView = false) {
     colours: result.strands.map((strand) => strand.colour),
     box: null,
   };
-  stand.rotation.x = hangs[kind] && !flat ? Math.PI : 0;
+  stand.rotation.x = hangs[kind] ? Math.PI : 0;
+  // A disk's top view turned so its seam is away from the viewer, and the
+  // braid made on a marudai turned to match it.
+  const seam = seamOf(timeline);
+  braid.topTurn = seam === null ? 0 : Math.PI / 2 - seam;
+  braid.program = result.disk;
+  braid.aligned = seam !== null && Boolean(result.disk) && result.settled !== "sideways";
+  if (braid.aligned) turner.rotation.z = alignment();
   braid.box = new THREE.Box3().setFromObject(turner);
   showTubes($("tubes").checked);
   $("topview").hidden = !timeline || !$("showtop").checked;
@@ -963,7 +945,7 @@ function showFrame(frame, disk, colours) {
   braid.frame = shown;
   braid.group.position.z = 0;
   // The braid's own turning is in the moment already.
-  braid.turner.rotation.z = 0;
+  braid.turner.rotation.z = braid.aligned ? alignment() : 0;
 }
 
 function clearFrame() {
@@ -1017,9 +999,11 @@ function made(value) {
   braid.group.position.z = heights[heights.length - 1] - newest;
   // A disk's braid hangs from it and turns with it.
   const timeline = braid.timeline;
-  braid.turner.rotation.z = timeline?.turn
-    ? interpolate(timeline.times, timeline.turn, now)
-    : 0;
+  braid.turner.rotation.z = braid.aligned
+    ? alignment()
+    : timeline?.turn
+      ? interpolate(timeline.times, timeline.turn, now)
+      : 0;
   // The cores, and a marudai's tails and mirror, once the braid is made.
   const tubes = $("tubes").checked;
   for (const child of braid.group.children) {
@@ -1111,8 +1095,12 @@ function drawSection(result) {
   const scale = (size / 2 - 14) / reach;
   // Seen from above: a hanging braid is turned over about the x axis.
   const up = braid && braid.stand.rotation.x ? -1 : 1;
-  const X = (x) => size / 2 + (x - cx) * scale;
-  const Y = (y) => size / 2 - up * (y - cy) * scale;
+  // As the 3D view has it from above: turned with the braid.
+  const turn = braid ? braid.turner.rotation.z : 0;
+  const tc = Math.cos(turn);
+  const ts = Math.sin(turn);
+  const X = (x, y) => size / 2 + (tc * (x - cx) - ts * up * (y - cy)) * scale;
+  const Y = (y, x) => size / 2 - (ts * (x - cx) + tc * up * (y - cy)) * scale;
   const style = getComputedStyle(document.documentElement);
   ctx.fillStyle = style.getPropertyValue("--muted").trim();
   ctx.font = "10px system-ui, sans-serif";
@@ -1122,7 +1110,7 @@ function drawSection(result) {
   middle.forEach((points, i) => {
     ctx.strokeStyle = result.strands[i].colour;
     ctx.beginPath();
-    points.forEach(([x, y], j) => (j ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+    points.forEach(([x, y], j) => (j ? ctx.lineTo(X(x, y), Y(y, x)) : ctx.moveTo(X(x, y), Y(y, x))));
     ctx.stroke();
   });
   ctx.globalAlpha = 0.9;
@@ -1131,7 +1119,7 @@ function drawSection(result) {
     const [x, y] = points[half];
     ctx.fillStyle = result.strands[i].colour;
     ctx.beginPath();
-    ctx.arc(X(x), Y(y), radius * scale, 0, 2 * Math.PI);
+    ctx.arc(X(x, y), Y(y, x), radius * scale, 0, 2 * Math.PI);
     ctx.fill();
   });
   ctx.globalAlpha = 1;
@@ -1154,8 +1142,11 @@ function drawTop(now) {
   const style = getComputedStyle(document.documentElement);
   const ink = style.getPropertyValue("--muted").trim();
   const scale = (size / 2 - 18) / (view.reach || 1);
-  const x = (p) => size / 2 + p[0] * scale;
-  const y = (p) => size / 2 - p[1] * scale;
+  // Turned so the disk's seam is up, away from the viewer.
+  const c = Math.cos(braid.topTurn || 0);
+  const s = Math.sin(braid.topTurn || 0);
+  const x = (p) => size / 2 + (c * p[0] - s * p[1]) * scale;
+  const y = (p) => size / 2 - (s * p[0] + c * p[1]) * scale;
 
   ctx.lineWidth = 1;
   ctx.strokeStyle = ink;
@@ -1173,7 +1164,7 @@ function drawTop(now) {
   for (const [index, [sx, sy, name]] of view.slots.entries()) {
     if (index % every) continue;
     const out = 1 + 11 / (Math.hypot(sx, sy) * scale || 1);
-    ctx.fillText(name, x([sx * out, 0]), y([0, sy * out]));
+    ctx.fillText(name, x([sx * out, sy * out]), y([sx * out, sy * out]));
   }
 
   // Where each carrier is now; on a disk, the strands lifted over the others
@@ -1224,12 +1215,14 @@ function fit() {
   const tall = height / 2 / Math.tan(fov / 2);
   const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect, 0.3);
   const distance = 1.25 * Math.max(tall, wide, across * 2);
-  // Seen from the side the strands' seam is not: turned about the vertical
-  // as each kind of braid needs it.  An unrolled braid word is seen face on,
-  // as its diagram is.
-  const direction = braid.unrolled
-    ? new THREE.Vector3(0, -1, 0.12).normalize()
-    : new THREE.Vector3(1, -0.45, 0.25).normalize().applyAxisAngle(new THREE.Vector3(0, 0, 1), VIEW_TURN[braid.source] ?? 0);
+  // Seen from the side the strands' seam is not: a disk braid made on a
+  // marudai from the top view's bottom, as it is turned; others turned
+  // about the vertical as each kind of braid needs it.
+  const direction = braid.aligned
+    ? new THREE.Vector3(0.2, -1, 0.3).normalize()
+    : new THREE.Vector3(1, -0.45, 0.25)
+        .normalize()
+        .applyAxisAngle(new THREE.Vector3(0, 0, 1), VIEW_TURN[braid.source] ?? 0);
   camera.position.copy(centre).addScaledVector(direction, distance);
   camera.near = distance / 100;
   camera.far = distance * 100;
@@ -1322,11 +1315,8 @@ $("showtop").addEventListener("change", (event) => {
 $("spin").addEventListener("change", (event) => {
   controls.autoRotate = event.target.checked;
 });
-$("unrolled").addEventListener("change", () => {
-  if (lastResult) show(lastResult, lastSeconds);
-});
 $("hanging").addEventListener("change", (event) => {
-  if (!braid || braid.unrolled) return;
+  if (!braid) return;
   hangs[braid.kind] = event.target.checked;
   braid.stand.rotation.x = event.target.checked ? Math.PI : 0;
   made(Number($("made").value));

@@ -502,7 +502,6 @@ def test_a_word_comes_with_its_moves_on_a_ring():
     )
     disk = result["disk"]
     assert disk["held"] is True
-    assert disk["mirrored"] is False
     assert sorted(disk["start"]) == sorted(set(disk["start"]))
     assert len(disk["start"]) == 3
     # Each crossing a swap in three moves: there is no turn in a plait.

@@ -748,7 +748,6 @@ def _ring_program(
         "start": start,
         "steps": steps,
         "held": True,
-        "mirrored": mirrored,
     }
 
 

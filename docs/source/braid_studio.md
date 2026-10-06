@@ -37,18 +37,13 @@ The page has a form and a 3D view.
   chain of beads, clamped at the fell and fed from a bobbin, the braid
   beaten up until its crossings jam — or made crossing by crossing, with
   friction. The view follows each as it goes.
-- A braid word made on a marudai is shown **unrolled**: cut along its seam,
-  where the ring's last place meets its first and no strand crosses, and
-  laid flat — the change of coordinates keeps the braid's hand. Its strands
-  then lie in the word's order, left to right, and at each crossing the
-  strand in front is the one its diagram puts in front. It hangs from its
-  fell as the marudai made it, its oldest end at the bottom: it reads
-  upwards, where the diagram reads down — read down, it is the same braid
-  seen from behind. Unticked, it is shown round.
-- The view starts turned so the braid's seam — where the ring's numbering
-  closes — is away from you: half round for a braid word or a kumihimo, a
-  quarter round for a sinnet. A sinnet's disk, seen from above, shows its
-  spaces as numbered sectors, as the book draws it.
+- A disk's top view is turned so its seam — where its numbering closes,
+  between its first slot or space and its last — is up, away from you; a
+  braid made on a marudai is turned to match, each yarn going to its
+  carrier where the top view has it, and seen from the top view's bottom,
+  the seam behind it. A braid word is seen half round, its ring's seam
+  behind it too. A sinnet's disk shows its spaces as numbered sectors, as
+  the book draws them.
 - **Hanging** shows a braid hanging from its fell, as from a kumihimo disk
   or a marudai, or, unticked, rising from it, as from a braiding machine.
   Braids made on a marudai hang unless asked otherwise. Made, they show
