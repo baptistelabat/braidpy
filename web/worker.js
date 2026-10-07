@@ -124,6 +124,9 @@ async function build(id, spec) {
   result.used = {
     yarn_diameter: result.yarn_diameter,
     iterations: settle === "marudai" && job ? null : job?.iterations ?? 0,
+    // The braid's own choices, for the page to mark as its defaults.
+    settle: job ? (result.disk ? "marudai" : "sideways") : undefined,
+    twist: result.disk ? (result.disk.held ? "keep" : result.disk.twists ? "turns" : "free") : undefined,
   };
   const seconds = (performance.now() - started) / 1000;
   made.set(key, result);
@@ -298,7 +301,11 @@ function onMarudai(id, result, job) {
   // Kept, the braid is held throughout, its twist kept; untwisted, it
   // hangs free throughout, and turning the bobbins together turns it along.
   const twist = job.twist ?? "auto";
-  const holding = twist === "keep" ? { held: true, twists: true } : twist === "free" ? { held: false, twists: false } : {};
+  const holding = {
+    keep: { held: true, twists: true },
+    turns: { held: false, twists: true },
+    free: { held: false, twists: false },
+  }[twist] ?? {};
   const made = makeOnMarudai({
     ...result.disk,
     ...holding,

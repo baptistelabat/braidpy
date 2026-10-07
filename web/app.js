@@ -684,6 +684,8 @@ function readSpec() {
     if (!element.name || element.name === "source") continue;
     if (element.value === "" || element.closest("[hidden]")) continue;
     if (named && element.closest("[data-custom]")) continue;
+    // A choice left as the braid's own default is the braid's to make.
+    if (element.name in CHOICES && element.dataset.chosen !== "1") continue;
     spec[element.name] =
       element.type === "number" ? Number(element.value) : element.value;
   }
@@ -695,8 +697,7 @@ function writeSpec(spec) {
   renderFields(spec.source, spec);
   $("yarn_diameter").value = spec.yarn_diameter ?? "";
   $("iterations").value = spec.iterations ?? "";
-  $("settle").value = spec.settle ?? "auto";
-  $("twist").value = spec.twist ?? "auto";
+  guessChoices(spec.source, spec);
 }
 
 function specFromHash() {
@@ -783,6 +784,7 @@ $("form").addEventListener("submit", (event) => {
 $("source").addEventListener("change", () => {
   renderFields($("source").value);
   forgetDefaults();
+  guessChoices($("source").value);
 });
 
 // ---------------------------------------------------------------- defaults
@@ -805,6 +807,7 @@ function forgetDefaults() {
 
 function showDefaults(used) {
   if (!used) return;
+  for (const [name, choice] of Object.entries(CHOICES)) markDefault($(name), choice.used(used));
   for (const [name, value] of Object.entries(SETTINGS)) {
     const input = $(name);
     const shown = value(used);
@@ -816,6 +819,42 @@ function showDefaults(used) {
       input.placeholder = `${shown} (default)`;
     }
   }
+}
+
+// A choice not made is the braid's own, selected and marked "default":
+// guessed from its source until it is made, then as it was made.  Chosen
+// otherwise, it stays chosen.
+const CHOICES = {
+  settle: { guess: (source) => (source === "machine" ? "sideways" : "marudai"), used: (u) => u.settle },
+  twist: { guess: (source) => (source === "word" ? "turns" : "free"), used: (u) => u.twist },
+};
+
+function markDefault(select, value) {
+  if (!value) return;
+  for (const option of select.options) {
+    option.dataset.text ??= option.textContent;
+    option.textContent = option.dataset.text + (option.value === value ? " (default)" : "");
+  }
+  const chosen = select.dataset.chosen === "1";
+  select.dataset.default = value;
+  if (!chosen) select.value = value;
+}
+
+function guessChoices(source, spec = {}) {
+  for (const [name, choice] of Object.entries(CHOICES)) {
+    const select = $(name);
+    const given = spec[name] && spec[name] !== "auto" ? spec[name] : null;
+    select.dataset.chosen = given ? "1" : "";
+    markDefault(select, choice.guess(source));
+    if (given) select.value = given;
+  }
+}
+
+for (const name of Object.keys(CHOICES)) {
+  const select = $(name);
+  select.addEventListener("change", () => {
+    select.dataset.chosen = select.value === select.dataset.default ? "" : "1";
+  });
 }
 
 for (const name of Object.keys(SETTINGS)) {

@@ -51,10 +51,13 @@
 
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
 
-  function Machine(nThreads, turning = true, twisted = !turning) {
-    // Held for a while, as the bobbins turn round the braid; then free again.
+  function Machine(nThreads, turning = true) {
+    // While the bobbins turn round the braid, together: held, and the yarns
+    // carried round with them, not over each other; then as before again.
+    const balancing = turning;
+    let twisted = false;
     function hold(held) {
-      turning = !held;
+      turning = held ? false : balancing;
       twisted = held;
     }
     // ------------------------------------------------------------ beads
@@ -632,6 +635,14 @@
         job.watch({ what, thread, step: current, tip: machine.tip / 2, yarns: machine.snapshot() }),
       );
     }
+    // Nothing but the bobbins turning together, a rope: carried round with
+    // each other from the first, never over each other.
+    const uniform = (step) => {
+      const moving = step.filter(([, d]) => d);
+      return moving.length === n && moving.every(([, d]) => d === moving[0][1]);
+    };
+    const rope = twists && job.steps.length > 0 && job.steps.every(uniform);
+    if (rope) machine.hold(true);
     const first = job.from ?? job.start;
     machine.start(first.map(angleOf));
     for (let t = 0; t < n; t++) machine.lay(t, job.from ? angleOf(job.start[t]) : machine.threads[t].dir);
@@ -647,12 +658,12 @@
           // a little at a time, never as far as the next one; the yarns'
           // pull twists them in at the tip.
           const parts = Math.max(2, Math.ceil((2 * Math.abs(by) * n) / (2 * Math.PI)));
-          if (!job.held) machine.hold(true);
+          machine.hold(true);
           for (let k = 0; k < parts; k++) {
             machine.twist(-by / parts);
             machine.relax();
           }
-          if (!job.held) machine.hold(false);
+          if (!rope) machine.hold(false);
           return;
         }
         machine.turn(0, 0, by);

@@ -163,6 +163,23 @@ def test_a_braids_own_word_typed_in_makes_the_same_braid(tmp_path, name, key, la
     assert typed["closest"] > 0.75
 
 
+def test_a_braid_held_is_as_tight_as_one_hanging_free(tmp_path):
+    """Held, so that it never turns to balance, a sinnet is drawn as tight as
+    hanging free: no slack.  (Braid Studio's "kept".)"""
+    from braidpy.web import build
+
+    disk = build({"source": "sinnet", "name": "abok_3042", "cycles": 4}, tighten=False)[
+        "disk"
+    ]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    free = _run("marudai", program)
+    program.write_text(json.dumps({**disk, "held": True, "twists": True}))
+    held = _run("marudai", program)
+    assert held["radius"] < 1.1 * free["radius"]
+    assert held["closest"] > 0.85
+
+
 def test_a_rope_hanging_free_untwists(tmp_path):
     """The same bobbins turned round a braid left free to turn: it turns
     along with them, and nothing is twisted in — no rope.  (Braid Studio's

@@ -105,7 +105,13 @@ The page has a form and a 3D view.
   (a kumihimo's R moves too); or untwisted, the braid hanging free
   throughout, so the bobbins turning together carry it round with them and
   twist nothing in — a rope then comes straight back out, and the page says
-  the braid is no longer the one its word says.
+  the braid is no longer the one its word says. Held, the yarns are laid
+  out to their carriers and drawn tight after every move as when free; only
+  while the bobbins turn together are they carried round, not over each
+  other.
+- These choices offer no "automatic": each braid's own is selected and
+  marked "(default)" — guessed from its source, then as it was made — and
+  only one chosen otherwise goes into the link.
 - The view's switches — tubes, spin, hanging, the top view and the
   cross-section — are in the toolbar's **View** menu.
 - The address bar always describes the braid shown, so **Copy link** shares
