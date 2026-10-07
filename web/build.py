@@ -136,6 +136,11 @@ def build(site: Path) -> None:
             indent=2,
         )
     )
+    # uv build leaves a .gitignore of "*" beside its wheels: published by
+    # committing to gh-pages, they would be left out, and the page would
+    # find no braidpy.
+    for ignore in site.rglob(".gitignore"):
+        ignore.unlink()
     # GitHub Pages: serve the files as they are.
     (site / ".nojekyll").write_text("")
     print(f"Braid Studio written to {site}")
