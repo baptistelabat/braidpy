@@ -109,6 +109,14 @@ The page has a form and a 3D view.
   out to their carriers and drawn tight after every move as when free; only
   while the bobbins turn together are they carried round, not over each
   other.
+- **Twist** applies to each way of settling the yarns as it can: on a
+  marudai, kept, held while the bobbins turn together, or untwisted;
+  settled by physics, the end plate the braid is drawn off by held still
+  (kept) or free to turn (untwisted); tightened sideways it is not offered,
+  the yarns keeping the twist they were laid with.
+- A sinnet's disk, to click your own moves on, is numbered as its top view
+  is: anticlockwise from the top, the first space and the last meeting
+  there.
 - These choices offer no "automatic": each braid's own is selected and
   marked "(default)" — guessed from its source, then as it was made — and
   only one chosen otherwise goes into the link.

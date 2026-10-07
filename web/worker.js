@@ -108,8 +108,8 @@ async function build(id, spec) {
     self.postMessage({ type: "laid", id, result });
     if (settle !== "sideways") {
       if (settle === "marudai") result = onMarudai(id, result, { ...job, twist: spec.twist });
-      else if (settle === "crossing") result = formed(id, result, job);
-      else result = settled(id, result, job);
+      else if (settle === "crossing") result = formed(id, result, { ...job, twist: spec.twist });
+      else result = settled(id, result, { ...job, twist: spec.twist });
     } else {
       status("Tightening the yarns…");
       const tight = tightenYarns(job, (fraction) =>
@@ -126,7 +126,16 @@ async function build(id, spec) {
     iterations: settle === "marudai" && job ? null : job?.iterations ?? 0,
     // The braid's own choices, for the page to mark as its defaults.
     settle: job ? (result.disk ? "marudai" : "sideways") : undefined,
-    twist: result.disk ? (result.disk.held ? "keep" : result.disk.twists ? "turns" : "free") : undefined,
+    twist:
+      !job || settle === "sideways"
+        ? undefined
+        : settle !== "marudai"
+          ? "free"
+          : result.disk.held
+            ? "keep"
+            : result.disk.twists
+              ? "turns"
+              : "free",
   };
   const seconds = (performance.now() - started) / 1000;
   made.set(key, result);
@@ -188,7 +197,8 @@ function settled(id, result, job) {
     spacing: 0.5,
     feed: 1,
     force: 0.25 * job.n_yarns,
-    turns: true,
+    // The end plate free to turn, the braid untwists; held, its twist is kept.
+    turns: job.twist !== "keep",
     stretch: 100,
     contact: 100,
     steps: 200000,
@@ -265,7 +275,8 @@ function formed(id, result, job) {
     spacing: 0.5,
     feed: 1,
     force: 0.25 * job.n_yarns,
-    turns: true,
+    // The end plate free to turn, the braid untwists; held, its twist is kept.
+    turns: job.twist !== "keep",
     stretch: 100,
     contact: 100,
     steps: 200000,

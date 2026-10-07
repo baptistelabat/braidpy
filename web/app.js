@@ -84,7 +84,7 @@ const FIELDS = {
       label: "Strands in each space",
       kind: "text",
       custom: true,
-      hint: "Spaces are numbered anticlockwise from the left.",
+      hint: "Spaces are numbered anticlockwise from the top, as the top view shows them: the first and the last meet there.",
     },
     {
       name: "moves",
@@ -545,12 +545,13 @@ function attachEditor(source, holder) {
 
   // Where a place is on the canvas: a disk's slots clockwise from the top,
   // half a slot round, as the page draws it; a sinnet's spaces
-  // anticlockwise from the left, as the book does.
+  // anticlockwise from the top, the first and the last meeting there, as
+  // the top view shows them.
   function place(index, n, size, fraction = 0.5) {
     const turn =
       source === "mobidai"
         ? -Math.PI / 2 + (2 * Math.PI * (index - 1 + fraction)) / n
-        : Math.PI - (2 * Math.PI * (index - 1 + fraction)) / n;
+        : -Math.PI / 2 - (2 * Math.PI * (index - 1 + fraction)) / n;
     return [Math.cos(turn), Math.sin(turn)];
   }
 
@@ -650,9 +651,9 @@ function attachEditor(source, holder) {
       if (view.at.has(slot)) chosen = slot;
       else if (chosen !== null) return add(chosen, slot);
     } else {
-      // Anticlockwise from the left, in the plane with y up.
+      // Anticlockwise from the top, in the plane with y up.
       const angle = Math.atan2(-y, x);
-      const round = (((angle - Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const round = (((angle - Math.PI / 2) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       const space = (Math.floor((round * view.n) / (2 * Math.PI)) % view.n) + 1;
       if (chosen === null) {
         if (view.groups[space - 1].length) chosen = space;
@@ -808,6 +809,7 @@ function forgetDefaults() {
 function showDefaults(used) {
   if (!used) return;
   for (const [name, choice] of Object.entries(CHOICES)) markDefault($(name), choice.used(used));
+  fitTwist();
   for (const [name, value] of Object.entries(SETTINGS)) {
     const input = $(name);
     const shown = value(used);
@@ -826,8 +828,33 @@ function showDefaults(used) {
 // otherwise, it stays chosen.
 const CHOICES = {
   settle: { guess: (source) => (source === "machine" ? "sideways" : "marudai"), used: (u) => u.settle },
-  twist: { guess: (source) => (source === "word" ? "turns" : "free"), used: (u) => u.twist },
+  twist: {
+    guess: (source) =>
+      $("settle").value !== "marudai" ? "free" : source === "word" ? "turns" : "free",
+    used: (u) => u.twist,
+  },
 };
+
+// The twist as each way of settling the yarns can have it: on a marudai,
+// kept, held while the bobbins turn, or untwisted; settled by physics, the
+// end plate held or turning; tightened sideways, nothing to choose — the
+// yarns keep the twist they were laid with.
+function fitTwist() {
+  const settle = $("settle").value;
+  const twist = $("twist");
+  twist.closest("label").hidden = settle === "sideways";
+  const turns = twist.querySelector("option[value=turns]");
+  turns.hidden = turns.disabled = settle !== "marudai";
+  if (settle !== "marudai" && twist.dataset.default === "turns") {
+    markDefault(twist, CHOICES.twist.guess($("source").value));
+  }
+  if (turns.disabled && twist.value === "turns") twist.value = twist.dataset.default;
+}
+
+$("settle").addEventListener("change", () => {
+  markDefault($("twist"), CHOICES.twist.guess($("source").value));
+  fitTwist();
+});
 
 function markDefault(select, value) {
   if (!value) return;
@@ -848,6 +875,7 @@ function guessChoices(source, spec = {}) {
     markDefault(select, choice.guess(source));
     if (given) select.value = given;
   }
+  fitTwist();
 }
 
 for (const name of Object.keys(CHOICES)) {
