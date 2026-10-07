@@ -1,0 +1,2009 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// Braid Studio: describe a braid, and braidpy — running in a worker through
+// Pyodide — lays and tightens it; three.js draws it here.
+
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
+import { STLExporter } from "three/addons/exporters/STLExporter.js";
+
+const PYODIDE_URL =
+  new URLSearchParams(location.search).get("pyodide") ||
+  "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
+
+const $ = (id) => document.getElementById(id);
+
+// ------------------------------------------------------------------ fields
+
+// What each source asks for.  ``entries`` and ``examples`` come from
+// braidpy's own catalogue once it has loaded.
+const FIELDS = {
+  word: [
+    {
+      name: "layout",
+      label: "Strands",
+      kind: "choice",
+      choices: [
+        ["row", "In a row: a braid word"],
+        ["ring", "Round a ring: a ring word"],
+      ],
+    },
+    {
+      name: "word",
+      label: "Braid word",
+      kind: "textarea",
+      hint: "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB.",
+    },
+    { name: "n_strands", label: "How many", kind: "number", min: 2, max: 32 },
+    { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },
+  ],
+  kumihimo: [
+    {
+      name: "pattern",
+      label: "Moves",
+      kind: "text",
+      hint: "S swaps the top and bottom strands, R turns the disk a quarter.",
+    },
+    { name: "n_strands", label: "Strands", kind: "number", min: 4, max: 32, step: 4 },
+    { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },
+  ],
+  mobidai: [
+    { name: "name", label: "Braid", kind: "entries" },
+    {
+      name: "slots",
+      label: "Strands start in slots",
+      kind: "text",
+      custom: true,
+      hint: "One slot per strand; slots are numbered clockwise from the top.",
+    },
+    {
+      name: "moves",
+      label: "Moves, in order",
+      kind: "textarea",
+      custom: true,
+      hint: "From slot > to slot, for example 1>15, 17>31. A strand goes the short way round, over the strands it passes. Change them, here or on the disk, to make your own braid: the one chosen stays as it is.",
+    },
+    { name: "n_slots", label: "Slots", kind: "number", min: 3, max: 128, custom: true },
+    {
+      name: "shift",
+      label: "Turn after a cycle",
+      kind: "number",
+      min: -128,
+      max: 128,
+      custom: true,
+    },
+    { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 40 },
+  ],
+  sinnet: [
+    { name: "name", label: "Sinnet", kind: "entries" },
+    {
+      name: "counts",
+      label: "Strands in each space",
+      kind: "text",
+      custom: true,
+      hint: "Spaces are numbered anticlockwise from the top, as the top view shows them: the first and the last meet there.",
+    },
+    {
+      name: "moves",
+      label: "Moves, in order",
+      kind: "textarea",
+      custom: true,
+      hint: "From space > to space. Odd spaces send their right-hand strand anticlockwise, even spaces their left-hand one clockwise, over all.",
+    },
+    { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
+  ],
+  machine: [
+    { name: "name", label: "Machine", kind: "entries" },
+    {
+      name: "carriers",
+      label: "Carriers",
+      kind: "text",
+      hint: "Each as gear:slot, slots numbered from each gear's first. Click a slot on the machine to put a carrier on it or take it off: carriers that meet stop the braiding there.",
+    },
+    {
+      name: "cores",
+      label: "Cores",
+      kind: "choice",
+      choices: [
+        ["yarn", "Yarn: gives way to the yarns braided round it"],
+        ["rigid", "Rigid: stays straight"],
+      ],
+      hint: "For a machine that braids round cores.",
+    },
+    { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
+  ],
+};
+
+let catalogue = null;
+// Sources whose catalogued braids always show what they are made of.
+const ALWAYS_SHOWN = new Set(["mobidai", "sinnet"]);
+
+function renderFields(source, values = {}) {
+  const about = catalogue[source];
+  const defaults = { ...about.defaults, ...values };
+  const holder = $("fields");
+  holder.replaceChildren();
+  const numbers = [];
+  for (const field of FIELDS[source]) {
+    const label = document.createElement("label");
+    label.className = "field";
+    const title = document.createElement("span");
+    title.textContent = field.label;
+    label.append(title);
+    let input;
+    if (field.kind === "entries") {
+      input = document.createElement("select");
+      for (const entry of about.entries) {
+        const option = new Option(entry.title, entry.name);
+        input.append(option);
+      }
+    } else if (field.kind === "choice") {
+      input = document.createElement("select");
+      for (const [value, text] of field.choices) input.append(new Option(text, value));
+    } else if (field.kind === "textarea") {
+      input = document.createElement("textarea");
+      input.rows = 2;
+      input.spellcheck = false;
+    } else {
+      input = document.createElement("input");
+      input.type = field.kind;
+      if (field.kind === "text") input.spellcheck = false;
+      for (const key of ["min", "max", "step"]) {
+        if (field[key] !== undefined) input[key] = field[key];
+      }
+    }
+    input.name = field.name;
+    input.id = `field-${field.name}`;
+    if (defaults[field.name] !== undefined) input.value = defaults[field.name];
+    label.append(input);
+    if (field.hint) {
+      const hint = document.createElement("small");
+      hint.textContent = field.hint;
+      label.append(hint);
+    }
+    if (field.custom) label.dataset.custom = "";
+    if (field.kind === "number") numbers.push(label);
+    else holder.append(label);
+  }
+  if (numbers.length) {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.append(...numbers);
+    holder.append(row);
+  }
+  // "Your own moves…" shows what a catalogued braid is made of, ready to
+  // change: it starts from the braid chosen before.  A kumihimo disk's
+  // braid, or an Ashley sinnet, shows its moves always, ready to change: changing them makes it
+  // your own, and the catalogued braid stays as it was, to choose again.
+  const entries = holder.querySelector("select[name=name]");
+  if (entries) {
+    const always = ALWAYS_SHOWN.has(source);
+    let previous = entries.value;
+    let filling = false;
+    const fill = (name) => {
+      const entry = about.entries.find((e) => e.name === name);
+      filling = true;
+      for (const [key, value] of Object.entries(entry?.pattern || {})) {
+        const input = holder.querySelector(`[name=${key}]`);
+        if (input) input.value = value;
+      }
+      filling = false;
+    };
+    const showCustom = (shown) => {
+      for (const label of holder.querySelectorAll("[data-custom]")) label.hidden = !shown;
+    };
+    entries.addEventListener("change", () => {
+      const custom = entries.value === "custom";
+      showCustom(custom || always);
+      if (custom) {
+        // From the braid chosen before, unless it is already showing.
+        if (!always) {
+          const from = about.entries.find((entry) => entry.name === previous);
+          for (const [key, value] of Object.entries(from?.pattern || {})) {
+            const input = holder.querySelector(`[name=${key}]`);
+            if (input && (input.value === "" || from)) input.value = value;
+          }
+        }
+      } else {
+        previous = entries.value;
+        if (always) fill(entries.value);
+      }
+    });
+    showCustom(entries.value === "custom" || always);
+    if (always && entries.value !== "custom") fill(entries.value);
+    if (always) {
+      for (const label of holder.querySelectorAll("[data-custom]")) {
+        label.addEventListener("input", () => {
+          if (!filling && entries.value !== "custom") entries.value = "custom";
+        });
+      }
+    }
+  }
+  if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
+  if (source === "word") attachDiagram(holder);
+  if (source === "machine") attachMachine(holder);
+  if (about.examples) attachExamples(source, about.examples, holder);
+}
+
+// A source's examples, chosen from a list at the top of its fields, as a
+// catalogue's braids are: choosing one makes it.  Changing what it is made
+// of makes it your own.
+function attachExamples(source, examples, holder) {
+  const label = document.createElement("label");
+  label.className = "field";
+  const title = document.createElement("span");
+  title.textContent = "Braid";
+  const list = document.createElement("select");
+  list.id = "field-example";
+  examples.forEach((example, k) => list.append(new Option(example.title, String(k))));
+  list.append(new Option("Your own…", "custom"));
+  label.append(title, list);
+  holder.prepend(label);
+  const shown = () => {
+    const value = (name) => holder.querySelector(`[name=${name}]`)?.value ?? "";
+    const same = (example) =>
+      Object.entries(example).every(
+        ([key, wanted]) =>
+          key === "title" ||
+          String(wanted).replace(/\s+/g, " ").trim() === value(key).replace(/\s+/g, " ").trim(),
+      ) && (example.layout ?? "row") === (value("layout") || "row");
+    const k = examples.findIndex(same);
+    list.value = k < 0 ? "custom" : String(k);
+  };
+  list.addEventListener("change", () => {
+    if (list.value === "custom") return;
+    renderFields(source, examples[Number(list.value)]);
+    submit();
+  });
+  for (const input of holder.querySelectorAll("input, select:not(#field-example), textarea")) {
+    input.addEventListener("input", shown);
+    input.addEventListener("change", shown);
+  }
+  shown();
+}
+
+// ----------------------------------------------------------------- diagram
+
+// The braid word drawn as it is typed, before it is made: strands running
+// down the page, the one passing behind broken where they cross.  σᵢ takes
+// strand i over strand i + 1, as braidpy draws it.
+
+// The colours braidpy gives a word's strands (web._PALETTE).
+const PALETTE = [
+  "#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628",
+  "#f781bf", "#999999", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3",
+];
+
+// braidpy.web.parse_word, in JavaScript: 1 -2, s1 s2^-1 or aB.
+function parseWord(text) {
+  text = text.trim();
+  if (!text) return [];
+  if (/^[A-Za-z]+$/.test(text) && !/[sσ]\d/.test(text)) {
+    return [...text].map((c) =>
+      c === c.toLowerCase() ? c.charCodeAt(0) - 96 : -(c.charCodeAt(0) - 64),
+    );
+  }
+  const word = [];
+  for (const token of text.split(/[\s,;.]+/)) {
+    if (!token) continue;
+    if (/^[+-]?\d+$/.test(token)) {
+      word.push(Number(token));
+      continue;
+    }
+    const named = token.match(/^[sσ](\d+)(\^?\(?(-?1)\)?)?$/);
+    if (!named) throw new Error(`Cannot read “${token}” as a generator.`);
+    word.push(named[3] === "-1" ? -Number(named[1]) : Number(named[1]));
+  }
+  if (word.some((g) => g === 0)) throw new Error("Generators are numbered from 1.");
+  return word;
+}
+
+// A ring word reads the strands round a circle, as on a marudai: past the
+// braid word's crossings, n crosses the last strand and the first, across
+// the seam, and n + 1 turns every strand one place round.
+const WORD_HINTS = {
+  row: ["Braid word", "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB."],
+  ring: [
+    "Ring word",
+    "As a braid word, round a ring of n strands: n crosses the last strand and the first, across the seam; n + 1 turns every strand one place round. Drawn on a cylinder cut at the seam.",
+  ],
+};
+
+function attachDiagram(holder) {
+  const wordField = holder.querySelector("[name=word]");
+  const strandsField = holder.querySelector("[name=n_strands]");
+  const layoutField = holder.querySelector("[name=layout]");
+  const wordLabel = wordField.closest("label");
+  const named = () => {
+    const [title, hint] = WORD_HINTS[layoutField.value] || WORD_HINTS.row;
+    wordLabel.querySelector("span").textContent = title;
+    wordLabel.querySelector("small").textContent = hint;
+  };
+  layoutField.addEventListener("change", () => {
+    named();
+    draw();
+  });
+  named();
+  const figure = document.createElement("div");
+  figure.className = "diagram";
+  const canvas = document.createElement("canvas");
+  const caption = document.createElement("small");
+  figure.append(canvas, caption);
+  wordField.closest("label").after(figure);
+  const draw = () =>
+    drawDiagram(
+      canvas,
+      caption,
+      wordField.value,
+      Number(strandsField.value),
+      layoutField.value === "ring",
+    );
+  wordField.addEventListener("input", draw);
+  strandsField.addEventListener("input", draw);
+  new ResizeObserver(() => {
+    if (!canvas.isConnected) return;
+    draw();
+  }).observe(figure);
+  draw();
+}
+
+function drawDiagram(canvas, caption, text, strands, ring = false) {
+  let word;
+  try {
+    word = parseWord(text);
+    caption.textContent = "";
+  } catch (error) {
+    caption.textContent = error.message;
+    canvas.hidden = true;
+    return;
+  }
+  const given = Number.isFinite(strands) && strands > 0 ? strands : 0;
+  const top = word.length ? Math.max(...word.map(Math.abs)) : 1;
+  // Round a ring, n + 1 is the greatest move there is: a turn.
+  const needed = ring ? top - 1 : top + 1;
+  const n = Math.max(needed, given || (ring ? top : needed), 2);
+  canvas.hidden = !word.length;
+  if (!word.length) return;
+  if (given && n > given) {
+    caption.textContent = ring
+      ? `On a ring of ${given} strands, moves go up to ${given + 1}: drawn with ${n}.`
+      : `σ${needed - 1} needs ${needed} strands: drawn with ${n}.`;
+  }
+  const width = canvas.parentElement.clientWidth;
+  const row = Math.max(6, Math.min(28, 360 / word.length));
+  const height = row * (word.length + 1);
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  // A ring is drawn on a cylinder cut at its seam: half a column each side,
+  // where a strand leaving one edge comes back at the other.
+  const columns = ring ? n : n - 1;
+  const column = Math.min(44, (width - 24) / Math.max(columns, 1));
+  const left = (width - column * (n - 1)) / 2;
+  const X = (slot) => left + slot * column;
+  const lineWidth = Math.max(1.5, Math.min(3, column / 8));
+  const background = getComputedStyle(canvas).backgroundColor;
+  // Which strand is in each slot, row by row.
+  let order = [...Array(n).keys()];
+  ctx.lineCap = "round";
+  if (ring) {
+    ctx.save();
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = getComputedStyle(canvas).borderTopColor;
+    ctx.lineWidth = 1;
+    for (const x of [X(-0.5), X(n - 0.5)]) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.rect(X(-0.5), 0, X(n - 0.5) - X(-0.5), height);
+    ctx.clip();
+  }
+  // From one slot to another, a row down.  Round a ring, slot n is slot 0
+  // seen past the right-hand edge, and slot -1 the last past the left: what
+  // goes off one edge comes back in at the other.
+  const stroke = (strand, from, to, y, wide) => {
+    const shifts = [0];
+    if (ring && Math.max(from, to) >= n) shifts.push(n);
+    if (ring && Math.min(from, to) < 0) shifts.push(-n);
+    for (const shift of shifts) {
+      const a = X(from - shift);
+      const b = X(to - shift);
+      ctx.beginPath();
+      ctx.moveTo(a, y);
+      ctx.bezierCurveTo(a, y + row / 2, b, y + row / 2, b, y + row);
+      ctx.strokeStyle = wide ? background : PALETTE[strand % PALETTE.length];
+      ctx.lineWidth = wide ? lineWidth * 3.5 : lineWidth;
+      ctx.stroke();
+    }
+  };
+  word.forEach((g, k) => {
+    const y = row / 2 + k * row;
+    const index = Math.abs(g);
+    if (ring && index === n + 1) {
+      // A turn: every strand one place round, passing nobody.
+      const way = g > 0 ? 1 : -1;
+      for (let slot = 0; slot < n; slot++) stroke(order[slot], slot, slot + way, y);
+      order = way > 0 ? [order[n - 1], ...order.slice(0, -1)] : [...order.slice(1), order[0]];
+      return;
+    }
+    // σᵢ: the strand in slot i - 1 passes over — outside, round a ring —
+    // its inverse, under.  Round a ring, σₙ crosses the last slot and the
+    // first, drawn as slot n.
+    const i = index - 1;
+    const j = (i + 1) % n;
+    for (let slot = 0; slot < n; slot++) {
+      if (slot !== i && slot !== j) stroke(order[slot], slot, slot, y);
+    }
+    const [under, over] = g > 0 ? [order[j], order[i]] : [order[i], order[j]];
+    const [underWay, overWay] = g > 0 ? [[i + 1, i], [i, i + 1]] : [[i, i + 1], [i + 1, i]];
+    stroke(under, ...underWay, y);
+    stroke(over, ...overWay, y, true);
+    stroke(over, ...overWay, y);
+    [order[i], order[j]] = [order[j], order[i]];
+  });
+}
+
+// ----------------------------------------------------------------- machine
+
+// A machine seen from above as it starts, to load by hand: its gears, the
+// contacts between them, and every slot, a carrier on it or not.  Clicking a
+// slot puts a carrier on it or takes it off; two carriers on the same point
+// are ringed at once, and where carriers met when it was made, too.
+const machineShapes = new Map();
+let machineWanted = null;
+
+function askMachine(name) {
+  machineWanted = name;
+  if (machineShapes.has(name)) document.dispatchEvent(new CustomEvent("machine-shape"));
+  else worker.postMessage({ type: "geometry", name });
+}
+
+function loadingText(loading) {
+  return loading.map(([gear, slot]) => `${gear}:${slot}`).join(" ");
+}
+
+function readLoading(text) {
+  return String(text)
+    .split(/[\s,;]+/)
+    .map((token) => token.match(/^([^:\s]+):(\d+)$/))
+    .filter(Boolean)
+    .map((m) => [m[1], Number(m[2])]);
+}
+
+function attachMachine(holder) {
+  const names = holder.querySelector("select[name=name]");
+  const field = holder.querySelector("[name=carriers]");
+  const label = field.closest("label");
+  const box = document.createElement("div");
+  box.className = "editor machine";
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute("aria-label", "The machine from above: click a slot to put a carrier on it or take it off");
+  const help = document.createElement("small");
+  const own = document.createElement("button");
+  own.type = "button";
+  own.textContent = "Its own loading";
+  const empty = document.createElement("button");
+  empty.type = "button";
+  empty.textContent = "Take all off";
+  const buttons = document.createElement("div");
+  buttons.className = "examples";
+  buttons.append(own, empty);
+  box.append(canvas, help, buttons);
+  label.after(box);
+
+  let view = null;
+  const shape = () => machineShapes.get(names.value);
+  const slotAt = (gear, slot) => {
+    const angle = gear.offset + (2 * Math.PI * slot) / gear.slots;
+    return [gear.x + gear.ride * Math.cos(angle), gear.y + gear.ride * Math.sin(angle)];
+  };
+  // The machine's own loading is its default: left as it is, it is not
+  // written into the link.
+  const fill = () => {
+    const known = shape();
+    if (!known) return;
+    const mine = loadingText(known.loading);
+    if (!field.value.trim() || field.value === field.dataset.default) field.value = mine;
+    field.dataset.default = mine;
+    draw();
+  };
+  const changed = () => field.dispatchEvent(new Event("input", { bubbles: true }));
+  own.addEventListener("click", () => {
+    field.value = field.dataset.default ?? "";
+    changed();
+  });
+  empty.addEventListener("click", () => {
+    field.value = "";
+    changed();
+  });
+  field.addEventListener("input", () => {
+    met = [];
+    draw();
+  });
+  names.addEventListener("change", () => {
+    field.value = "";
+    met = [];
+    askMachine(names.value);
+    draw();
+  });
+  document.addEventListener("machine-shape", () => {
+    if (canvas.isConnected) fill();
+  });
+  document.addEventListener("machine-met", (event) => {
+    if (!canvas.isConnected) return;
+    met = event.detail;
+    draw();
+  });
+  let met = [];
+
+  function draw() {
+    if (!canvas.isConnected) return observer.disconnect();
+    const known = shape();
+    const style = getComputedStyle(document.documentElement);
+    const muted = style.getPropertyValue("--muted").trim();
+    const line = style.getPropertyValue("--line").trim();
+    const error = style.getPropertyValue("--error").trim();
+    if (!known) {
+      help.textContent = "Drawing the machine…";
+      view = null;
+      return;
+    }
+    let lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+    for (const g of known.gears) {
+      lo = [Math.min(lo[0], g.x - g.radius), Math.min(lo[1], g.y - g.radius)];
+      hi = [Math.max(hi[0], g.x + g.radius), Math.max(hi[1], g.y + g.radius)];
+    }
+    // As wide as the panel, as tall as the machine needs.
+    const wide = hi[0] - lo[0], tall = hi[1] - lo[1];
+    const width = canvas.clientWidth || 300;
+    const height = Math.round(Math.max(0.35, Math.min(1, (tall + 0.6) / (wide + 0.6))) * width);
+    canvas.style.height = `${height}px`;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    const scale = Math.min((width - 24) / wide, (height - 24) / tall);
+    const cx = (lo[0] + hi[0]) / 2, cy = (lo[1] + hi[1]) / 2;
+    // y up, as braidpy draws its machines.
+    const X = (x) => width / 2 + (x - cx) * scale;
+    const Y = (y) => height / 2 - (y - cy) * scale;
+    const dot = Math.max(4, Math.min(8, scale * 0.14));
+    ctx.lineWidth = 1;
+    for (const g of known.gears) {
+      ctx.strokeStyle = line;
+      ctx.beginPath();
+      ctx.arc(X(g.x), Y(g.y), g.radius * scale, 0, 2 * Math.PI);
+      ctx.stroke();
+      ctx.fillStyle = muted;
+      ctx.font = "11px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(g.name, X(g.x), Y(g.y));
+    }
+    for (const c of known.contacts) {
+      ctx.fillStyle = line;
+      ctx.beginPath();
+      ctx.arc(X(c.x), Y(c.y), 2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    const loading = readLoading(field.value);
+    const index = new Map(loading.map(([g, slot], i) => [`${g}:${slot}`, i]));
+    const places = [];
+    for (const g of known.gears) {
+      for (let slot = 0; slot < g.slots; slot++) {
+        const [x, y] = slotAt(g, slot);
+        const i = index.get(`${g.name}:${slot}`);
+        places.push({ gear: g.name, slot, x: X(x), y: Y(y), carrier: i });
+        ctx.beginPath();
+        ctx.arc(X(x), Y(y), i === undefined ? dot * 0.55 : dot, 0, 2 * Math.PI);
+        if (i === undefined) {
+          ctx.strokeStyle = muted;
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = PALETTE[i % PALETTE.length];
+          ctx.fill();
+        }
+      }
+    }
+    // Two carriers on the same point already, or where they met when made.
+    const taken = places.filter((p) => p.carrier !== undefined);
+    const clash = new Set();
+    for (let a = 0; a < taken.length; a++) {
+      for (let b = a + 1; b < taken.length; b++) {
+        if (Math.hypot(taken[a].x - taken[b].x, taken[a].y - taken[b].y) < dot) {
+          clash.add(taken[a]);
+          clash.add(taken[b]);
+        }
+      }
+    }
+    for (const [g, slot] of met) {
+      const p = places.find((q) => q.gear === g && q.slot === slot);
+      if (p) clash.add(p);
+    }
+    ctx.strokeStyle = error;
+    ctx.lineWidth = 2;
+    for (const p of clash) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, dot * 1.9, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+    view = { places, dot };
+    const count = loading.length;
+    help.textContent = clash.size && !met.length
+      ? "Two carriers are on the same point, ringed: take one off."
+      : met.length
+        ? "Ringed: where carriers met, and the braiding stopped."
+        : `${count} carrier${count === 1 ? "" : "s"} on ${known.gears.length} gears. Click a slot to put a carrier on it or take it off.`;
+  }
+
+  canvas.addEventListener("click", (event) => {
+    if (!view) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left, y = event.clientY - rect.top;
+    let best = null;
+    for (const p of view.places) {
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < view.dot * 2.2 && (!best || d < best.d)) best = { ...p, d };
+    }
+    if (!best) return;
+    const loading = readLoading(field.value);
+    const at = loading.findIndex(([g, slot]) => g === best.gear && slot === best.slot);
+    if (at >= 0) loading.splice(at, 1);
+    else loading.push([best.gear, best.slot]);
+    field.value = loadingText(loading);
+    changed();
+  });
+  const observer = new ResizeObserver(draw);
+  observer.observe(canvas);
+  askMachine(names.value);
+  draw();
+}
+
+// ------------------------------------------------------------------ editor
+
+// Your own moves, made by clicking: a strand (or a space), then where it
+// goes.  The moves typed in and the disk drawn here are the same list.
+
+function hue(i, n) {
+  return `hsl(${(360 * i) / Math.max(n, 1)}, 100%, 50%)`;
+}
+
+function pairs(text) {
+  const numbers = (String(text).match(/\d+/g) || []).map(Number);
+  const out = [];
+  for (let i = 0; i + 1 < numbers.length; i += 2) out.push([numbers[i], numbers[i + 1]]);
+  return out;
+}
+
+function attachEditor(source, holder) {
+  const moves = holder.querySelector("[name=moves]");
+  const label = moves.closest("label");
+  const box = document.createElement("div");
+  box.className = "editor";
+  box.dataset.custom = "";
+  box.hidden = label.hidden;
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute(
+    "aria-label",
+    source === "mobidai"
+      ? "The disk: click a strand, then the slot it goes to"
+      : "The spaces: click a space to move from, then one to move to",
+  );
+  const help = document.createElement("small");
+  const undo = document.createElement("button");
+  undo.type = "button";
+  undo.textContent = "Undo move";
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.textContent = "Clear moves";
+  const buttons = document.createElement("div");
+  buttons.className = "examples";
+  buttons.append(undo, clear);
+  box.append(canvas, help, buttons);
+  label.after(box);
+
+  let chosen = null;
+  // Moves changed here are changed as if typed: the braid becomes your own.
+  const changed = () => {
+    chosen = null;
+    moves.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  const add = (from, to) => {
+    const list = moves.value.trim();
+    moves.value = (list ? list + ", " : "") + `${from}>${to}`;
+    changed();
+  };
+  undo.addEventListener("click", () => {
+    const list = pairs(moves.value);
+    list.pop();
+    moves.value = list.map(([a, b]) => `${a}>${b}`).join(", ");
+    changed();
+  });
+  clear.addEventListener("click", () => {
+    moves.value = "";
+    changed();
+  });
+
+  // What there is to draw and click: places round a circle, and who is
+  // where once every move so far is made.
+  function state() {
+    if (source === "mobidai") {
+      const n = Math.max(3, Number(holder.querySelector("[name=n_slots]").value) || 32);
+      const start = (holder.querySelector("[name=slots]").value.match(/\d+/g) || []).map(Number);
+      const at = new Map(start.map((slot, i) => [slot, i]));
+      for (const [from, to] of pairs(moves.value)) {
+        if (!at.has(from) || at.has(to)) continue;
+        at.set(to, at.get(from));
+        at.delete(from);
+      }
+      return { n, at, strands: start.length };
+    }
+    const counts = (holder.querySelector("[name=counts]").value.match(/\d+/g) || []).map(Number);
+    const groups = [];
+    let next = 0;
+    for (const count of counts) {
+      groups.push(Array.from({ length: count }, () => next++));
+    }
+    for (const [from, to] of pairs(moves.value)) {
+      const leaving = groups[from - 1];
+      const joining = groups[to - 1];
+      if (!leaving || !joining || !leaving.length || from === to) continue;
+      const mover = from % 2 ? leaving.pop() : leaving.shift();
+      if (to % 2) joining.unshift(mover);
+      else joining.push(mover);
+    }
+    return { n: counts.length, groups, strands: next };
+  }
+
+  // Where a place is on the canvas: a disk's slots clockwise from the top,
+  // half a slot round, as the page draws it; a sinnet's spaces
+  // anticlockwise from the top, the first and the last meeting there, as
+  // the top view shows them.
+  function place(index, n, size, fraction = 0.5) {
+    const turn =
+      source === "mobidai"
+        ? -Math.PI / 2 + (2 * Math.PI * (index - 1 + fraction)) / n
+        : -Math.PI / 2 - (2 * Math.PI * (index - 1 + fraction)) / n;
+    return [Math.cos(turn), Math.sin(turn)];
+  }
+
+  function draw() {
+    // Gone with its fields, when another source was chosen.
+    if (!canvas.isConnected) return observer.disconnect();
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const size = canvas.clientWidth || 260;
+    canvas.width = canvas.height = Math.round(size * ratio);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    const style = getComputedStyle(document.documentElement);
+    const muted = style.getPropertyValue("--muted").trim();
+    const accent = style.getPropertyValue("--accent").trim();
+    const c = size / 2;
+    const r = size / 2 - 22;
+    const view = state();
+    ctx.strokeStyle = muted;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(c, c, r, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.font = "10px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (source === "mobidai") {
+      const every = Math.max(1, Math.ceil(view.n / 16));
+      for (let slot = 1; slot <= view.n; slot++) {
+        const [x, y] = place(slot, view.n, size);
+        ctx.fillStyle = muted;
+        ctx.beginPath();
+        ctx.arc(c + r * x, c + r * y, 2, 0, 2 * Math.PI);
+        ctx.fill();
+        if ((slot - 1) % every === 0) ctx.fillText(slot, c + (r + 12) * x, c + (r + 12) * y);
+      }
+      for (const [slot, strand] of view.at) {
+        const [x, y] = place(slot, view.n, size);
+        ctx.fillStyle = hue(strand, view.strands);
+        ctx.beginPath();
+        ctx.arc(c + r * x, c + r * y, slot === chosen ? 8 : 5.5, 0, 2 * Math.PI);
+        ctx.fill();
+        if (slot === chosen) {
+          ctx.strokeStyle = accent;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    } else {
+      for (let space = 1; space <= view.n; space++) {
+        const [x0, y0] = place(space, view.n, size, 0);
+        ctx.strokeStyle = muted;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(c + (r - 26) * x0, c + (r - 26) * y0);
+        ctx.lineTo(c + (r + 4) * x0, c + (r + 4) * y0);
+        ctx.stroke();
+        const [lx, ly] = place(space, view.n, size);
+        ctx.fillStyle = space === chosen ? accent : muted;
+        ctx.font = space === chosen ? "bold 12px system-ui, sans-serif" : "11px system-ui, sans-serif";
+        ctx.fillText(space, c + (r + 13) * lx, c + (r + 13) * ly);
+        const group = view.groups[space - 1];
+        group.forEach((strand, i) => {
+          const fraction = 0.15 + (0.7 * (i + 0.5)) / group.length;
+          const [x, y] = place(space, view.n, size, fraction);
+          ctx.fillStyle = hue(strand, view.strands);
+          ctx.beginPath();
+          ctx.arc(c + (r - 12) * x, c + (r - 12) * y, 5, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+      }
+    }
+    const count = pairs(moves.value).length;
+    help.textContent =
+      chosen === null
+        ? source === "mobidai"
+          ? `Click a strand, then the slot it goes to. ${count} move${count === 1 ? "" : "s"}.`
+          : `Click the space a strand leaves, then the one it goes to. ${count} move${count === 1 ? "" : "s"}.`
+        : source === "mobidai"
+          ? `Now the slot strand at ${chosen} goes to.`
+          : `Now the space it goes to, from space ${chosen}.`;
+  }
+
+  canvas.addEventListener("click", (event) => {
+    const box = canvas.getBoundingClientRect();
+    const size = box.width;
+    const x = event.clientX - box.left - size / 2;
+    const y = event.clientY - box.top - size / 2;
+    const view = state();
+    if (source === "mobidai") {
+      // The nearest slot to where the click was.
+      const angle = Math.atan2(y, x);
+      const slot =
+        ((Math.round(((angle + Math.PI / 2) * view.n) / (2 * Math.PI) - 0.5) % view.n) + view.n) %
+          view.n +
+        1;
+      if (view.at.has(slot)) chosen = slot;
+      else if (chosen !== null) return add(chosen, slot);
+    } else {
+      // Anticlockwise from the top, in the plane with y up.
+      const angle = Math.atan2(-y, x);
+      const round = (((angle - Math.PI / 2) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const space = (Math.floor((round * view.n) / (2 * Math.PI)) % view.n) + 1;
+      if (chosen === null) {
+        if (view.groups[space - 1].length) chosen = space;
+      } else if (space === chosen) {
+        chosen = null;
+      } else {
+        return add(chosen, space);
+      }
+    }
+    draw();
+  });
+  for (const input of holder.querySelectorAll("input, textarea")) {
+    input.addEventListener("input", draw);
+  }
+  holder.querySelector("select[name=name]").addEventListener("change", () => {
+    chosen = null;
+    requestAnimationFrame(draw);
+  });
+  const observer = new ResizeObserver(draw);
+  observer.observe(canvas);
+  draw();
+}
+
+function readSpec() {
+  const spec = { source: $("source").value };
+  // A catalogued braid is named; what it is made of is the catalogue's.
+  const named = $("form").querySelector("select[name=name]")?.value !== "custom";
+  for (const element of $("form").elements) {
+    if (!element.name || element.name === "source") continue;
+    // Every carrier taken off is no carriers, not the machine's own.
+    if (element.name === "carriers" && !element.value.trim() && element.dataset.default) {
+      spec.carriers = "none";
+      continue;
+    }
+    if (element.value === "" || element.closest("[hidden]")) continue;
+    if (named && element.closest("[data-custom]")) continue;
+    // A machine's own loading is the machine's to make.
+    if (element.name === "carriers" && element.value === element.dataset.default) continue;
+    // A choice left as the braid's own default is the braid's to make.
+    if (element.name in CHOICES && element.dataset.chosen !== "1") continue;
+    spec[element.name] =
+      element.type === "number" ? Number(element.value) : element.value;
+  }
+  return spec;
+}
+
+function writeSpec(spec) {
+  $("source").value = spec.source;
+  renderFields(spec.source, spec);
+  $("yarn_diameter").value = spec.yarn_diameter ?? "";
+  $("iterations").value = spec.iterations ?? "";
+  guessChoices(spec.source, spec);
+}
+
+function specFromHash() {
+  if (!location.hash.slice(1)) return null;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const spec = Object.fromEntries(params.entries());
+  if (!catalogue[spec.source]) return null;
+  return spec;
+}
+
+// ------------------------------------------------------------------ worker
+
+const worker = new Worker("worker.js?v=1943e5600c");
+let pending = 0;
+let lastResult = null;
+
+function setStatus(text, error = false) {
+  $("status").textContent = text;
+  $("status").classList.toggle("error", error);
+}
+
+worker.onmessage = ({ data }) => {
+  if (data.type === "status") {
+    setStatus(data.text);
+  } else if (data.type === "ready") {
+    catalogue = data.catalogue;
+    const select = $("source");
+    for (const [source, about] of Object.entries(catalogue)) {
+      select.append(new Option(about.title, source));
+    }
+    const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
+    writeSpec(spec);
+    $("build").disabled = false;
+    $("build").textContent = "Make the braid";
+    submit();
+  } else if (data.type === "geometry") {
+    machineShapes.set(data.name, data.shape);
+    if (data.name === machineWanted) document.dispatchEvent(new CustomEvent("machine-shape"));
+  } else if (data.type === "frame") {
+    if (data.id !== pending || !braid) return;
+    // The making, as it goes: framed on it from its first moment.
+    showFrame(data.frame, data.disk, data.colours);
+    if (!braid.framed) {
+      braid.framed = true;
+      braid.turner.updateMatrixWorld(true);
+      braid.box = new THREE.Box3().setFromObject(braid.frame);
+      fit();
+    }
+    const [first, last] = braid.span;
+    drawTop(first + Math.max(0, Math.min(1, (data.frame.step + 1) / braid.steps)) * (last - first));
+  } else if (data.type === "laid") {
+    if (data.id !== pending) return;
+    // Settling sends the braid as it goes: the view stays put.
+    show(data.result, null, shownLaid === data.id);
+  } else if (data.type === "result") {
+    if (data.id !== pending) return;
+    $("build").disabled = false;
+    setStatus(
+      data.seconds ? `Made in ${data.seconds.toFixed(1)} s.` : "Made before: shown again.",
+    );
+    // The tight braid replaces the laid one where the view already is —
+    // unless it was beaten up, much shorter than it was laid.
+    show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
+    showDefaults(data.result.used);
+    document.dispatchEvent(
+      new CustomEvent("machine-met", { detail: data.result.info?.collision?.at ?? [] }),
+    );
+  } else if (data.type === "error") {
+    if (data.id !== undefined && data.id !== pending) return;
+    $("build").disabled = !catalogue;
+    setStatus(data.message, true);
+  }
+};
+
+worker.postMessage({ type: "init", pyodideUrl: PYODIDE_URL });
+
+// Published as a beta, it says so.
+if (location.pathname.includes("/studio-beta/")) {
+  const badge = document.createElement("span");
+  badge.className = "beta";
+  badge.textContent = "beta";
+  badge.title = "Braid Studio as it is being made: it may change, or break";
+  document.querySelector("h1").append(" ", badge);
+}
+
+function submit() {
+  const spec = readSpec();
+  pending += 1;
+  $("build").disabled = true;
+  history.replaceState(null, "", "#" + new URLSearchParams(spec).toString());
+  worker.postMessage({ type: "build", id: pending, spec });
+}
+
+$("form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  submit();
+});
+
+$("source").addEventListener("change", () => {
+  renderFields($("source").value);
+  forgetDefaults();
+  guessChoices($("source").value);
+});
+
+// ---------------------------------------------------------------- defaults
+
+// A setting left empty takes the braid's own default, shown greyed with
+// "default" once the braid is made.  Going into the field puts the default
+// in, so its arrows step from there; leaving it unchanged empties it again.
+const SETTINGS = {
+  yarn_diameter: (used) => round(used.yarn_diameter),
+  iterations: (used) => used.iterations,
+};
+
+function forgetDefaults() {
+  for (const name of Object.keys(SETTINGS)) {
+    const input = $(name);
+    delete input.dataset.default;
+    input.placeholder = "default";
+  }
+}
+
+function showDefaults(used) {
+  if (!used) return;
+  for (const [name, choice] of Object.entries(CHOICES)) markDefault($(name), choice.used(used));
+  fitTwist();
+  for (const [name, value] of Object.entries(SETTINGS)) {
+    const input = $(name);
+    const shown = value(used);
+    if (shown === null || shown === undefined) {
+      delete input.dataset.default;
+      input.placeholder = name === "iterations" ? "not used on a marudai" : "default";
+    } else if (input.value === "" || input.value === input.dataset.default) {
+      input.dataset.default = String(shown);
+      input.placeholder = `${shown} (default)`;
+    }
+  }
+}
+
+// A choice not made is the braid's own, selected and marked "default":
+// guessed from its source until it is made, then as it was made.  Chosen
+// otherwise, it stays chosen.
+const CHOICES = {
+  settle: { guess: (source) => (source === "machine" ? "sideways" : "marudai"), used: (u) => u.settle },
+  twist: {
+    guess: (source) =>
+      $("settle").value !== "marudai" ? "free" : source === "word" ? "turns" : "free",
+    used: (u) => u.twist,
+  },
+};
+
+// The twist as each way of settling the yarns can have it: on a marudai,
+// kept, held while the bobbins turn, or untwisted; settled by physics, the
+// end plate held or turning; tightened sideways, nothing to choose — the
+// yarns keep the twist they were laid with.
+function fitTwist() {
+  const settle = $("settle").value;
+  const twist = $("twist");
+  twist.closest("label").hidden = settle === "sideways";
+  const turns = twist.querySelector("option[value=turns]");
+  turns.hidden = turns.disabled = settle !== "marudai";
+  if (settle !== "marudai" && twist.dataset.default === "turns") {
+    markDefault(twist, CHOICES.twist.guess($("source").value));
+  }
+  if (turns.disabled && twist.value === "turns") twist.value = twist.dataset.default;
+}
+
+$("settle").addEventListener("change", () => {
+  markDefault($("twist"), CHOICES.twist.guess($("source").value));
+  fitTwist();
+});
+
+function markDefault(select, value) {
+  if (!value) return;
+  for (const option of select.options) {
+    option.dataset.text ??= option.textContent;
+    option.textContent = option.dataset.text + (option.value === value ? " (default)" : "");
+  }
+  const chosen = select.dataset.chosen === "1";
+  select.dataset.default = value;
+  if (!chosen) select.value = value;
+}
+
+function guessChoices(source, spec = {}) {
+  for (const [name, choice] of Object.entries(CHOICES)) {
+    const select = $(name);
+    const given = spec[name] && spec[name] !== "auto" ? spec[name] : null;
+    select.dataset.chosen = given ? "1" : "";
+    markDefault(select, choice.guess(source));
+    if (given) select.value = given;
+  }
+  fitTwist();
+}
+
+for (const name of Object.keys(CHOICES)) {
+  const select = $(name);
+  select.addEventListener("change", () => {
+    select.dataset.chosen = select.value === select.dataset.default ? "" : "1";
+  });
+}
+
+for (const name of Object.keys(SETTINGS)) {
+  const input = $(name);
+  input.addEventListener("focus", () => {
+    if (input.value === "" && input.dataset.default) {
+      input.value = input.dataset.default;
+      input.select();
+    }
+  });
+  input.addEventListener("blur", () => {
+    if (input.value === input.dataset.default) input.value = "";
+  });
+}
+
+// ------------------------------------------------------------------- scene
+
+const viewer = $("viewer");
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  preserveDrawingBuffer: true,
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+viewer.append(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 1000);
+camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotateSpeed = 1.5;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8478, 1.6));
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(4, -6, 8);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+fill.position.set(-6, 4, -2);
+scene.add(fill);
+
+function stageColour() {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue("--stage")
+    .trim();
+}
+scene.background = new THREE.Color(stageColour());
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  scene.background = new THREE.Color(stageColour());
+});
+
+function resize() {
+  const { clientWidth: width, clientHeight: height } = viewer;
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  renderer.domElement.style.width = width + "px";
+  renderer.domElement.style.height = height + "px";
+  camera.aspect = width / height;
+  clearOfCard();
+}
+new ResizeObserver(() => {
+  resize();
+  if (braid) drawTop(currentTime());
+  drawSection(lastResult);
+}).observe(viewer);
+
+// What is known of the braid lies over the view's left: the braid is drawn
+// in the middle of what it leaves free, not behind it.
+function cardCover() {
+  const card = $("about");
+  if (card.hidden || getComputedStyle(card).position !== "absolute") return 0;
+  return card.getBoundingClientRect().right - viewer.getBoundingClientRect().left;
+}
+
+function clearOfCard() {
+  const { clientWidth: width, clientHeight: height } = viewer;
+  if (!width || !height) return;
+  const cover = Math.min(cardCover(), width / 2);
+  if (cover > 0) camera.setViewOffset(width, height, -cover / 2, 0, width, height);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+}
+$("about").addEventListener("toggle", clearOfCard);
+new ResizeObserver(clearOfCard).observe($("about"));
+
+function currentTime() {
+  const [first, last] = braid.span;
+  return first + (Number($("made").value) / 1000) * (last - first);
+}
+resize();
+
+// What is drawn: per yarn its tube and its line, each revealed up to how
+// much of the braid is made.
+let braid = null;
+// How far round the vertical the starting view is turned, per source, so
+// the braid's seam — where its numbering round the ring closes, and no
+// strand crosses — is away from the viewer.
+const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2 };
+
+// Where a disk's numbering closes — between its first slot (or space) and
+// its last — as an angle seen from above, in the top view's frame.
+function seamOf(timeline) {
+  if (timeline?.kind !== "disk") return null;
+  const named = timeline.slots.filter(([, , name]) => Number.isFinite(Number(name)));
+  if (named.length < 2) return null;
+  // Numbered from 0 or from 1.
+  const first = named.reduce((a, b) => (Number(b[2]) < Number(a[2]) ? b : a));
+  const last = named.reduce((a, b) => (Number(b[2]) > Number(a[2]) ? b : a));
+  const unit = ([x, y]) => [x / (Math.hypot(x, y) || 1), y / (Math.hypot(x, y) || 1)];
+  const [ax, ay] = unit(first);
+  const [bx, by] = unit(last);
+  return Math.atan2(ay + by, ax + bx);
+}
+
+// A disk braid made on a marudai, seen in the top view's frame turned so
+// its seam is up, away from the viewer at the bottom: how far to turn the
+// 3D braid about the vertical for its carriers to be where the top view
+// has them.  Measured where they start: each strand's slot as marudai.js
+// takes it, in the 3D view, hanging or not, against where the top view has
+// it.  The braid turning as it is made turns both alike.
+function alignment() {
+  const view = braid.timeline;
+  const program = braid.program;
+  const sense = program.clockwise ? -1 : 1;
+  let sx = 0;
+  let sy = 0;
+  program.start.forEach((slot, k) => {
+    const angle = (sense * 2 * Math.PI * (slot - 1)) / program.n_slots;
+    // The page has the braid turned over (y the other way); hanging turns
+    // it back.
+    const seen = braid.stand.rotation.x ? angle : -angle;
+    const [tx, ty] = view.strands[k][0];
+    const d = seen - Math.atan2(ty, tx);
+    sx += Math.cos(d);
+    sy += Math.sin(d);
+  });
+  return braid.topTurn - Math.atan2(sy, sx);
+}
+
+// Whether braids hang from their fell, as from a kumihimo disk or a marudai,
+// or rise from it, as from a braiding machine: braids made on a marudai —
+// disk braids and words — hang unless asked otherwise, machines' rise.
+const hangs = { disk: true, other: false };
+
+function dispose(object) {
+  object.traverse((child) => {
+    child.geometry?.dispose();
+    child.material?.dispose();
+  });
+}
+
+let shownLaid = null;
+
+function show(result, seconds, keepView = false) {
+  shownLaid = seconds === null ? pending : null;
+  if (braid) {
+    scene.remove(braid.turner);
+    dispose(braid.turner);
+  }
+  lastResult = result;
+  const group = new THREE.Group();
+  const yarns = [];
+  const radius = result.yarn_diameter / 2;
+  const times = result.times || result.strands[0].points.map((_, i) => i);
+  result.strands.forEach((strand, k) => {
+    let laid = strand.points;
+    // Made on a marudai: the yarn goes on, one tube, out of the braid at
+    // the fell to its carrier over the mirror.
+    const tail = result.marudai?.tails[k];
+    if (tail) {
+      const fell = laid[laid.length - 1][2];
+      laid = [...laid, ...tail.filter(([, , z]) => z < fell)];
+    }
+    const points = laid.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+    const pointTimes = points.length > times.length ? [...times, ...Array(points.length - times.length).fill(times[times.length - 1])] : times;
+    const curve = new THREE.CatmullRomCurve3(points, false, "centripetal");
+    const segments = Math.min(Math.max(points.length * 3, 64), 4000);
+    const radial = 10;
+    // When each tube segment was laid: tubes are cut evenly along their
+    // length, which is not evenly along the points.
+    const segmentTimes = new Float64Array(segments + 1);
+    for (let i = 0; i <= segments; i++) {
+      const along = curve.getUtoTmapping(i / segments) * (points.length - 1);
+      segmentTimes[i] = sample(pointTimes, along);
+    }
+    const tube = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, segments, radius, radial, false),
+      new THREE.MeshStandardMaterial({
+        color: strand.colour,
+        roughness: 0.55,
+        metalness: 0.05,
+      }),
+    );
+    tube.name = strand.name;
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
+      new THREE.LineBasicMaterial({ color: strand.colour }),
+    );
+    group.add(tube, line);
+    yarns.push({ tube, line, segments, radial, segmentTimes });
+  });
+  for (const core of result.cores || []) {
+    const from = new THREE.Vector3(...core.from);
+    const to = new THREE.Vector3(...core.to);
+    const length = from.distanceTo(to);
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(core.diameter / 2, core.diameter / 2, length, 16),
+      new THREE.MeshStandardMaterial({ color: 0x77736c, roughness: 0.8 }),
+    );
+    mesh.position.copy(from.clone().add(to).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      to.clone().sub(from).normalize(),
+    );
+    mesh.userData.core = true;
+    group.add(mesh);
+  }
+  // Made on a marudai: the mirror the yarns lie over, seen through.
+  const tails = [];
+  if (result.marudai) {
+    const mirror = mirrorMesh(result.marudai.disk);
+    mirror.userData.whole = true;
+    group.add(mirror);
+  }
+  // The braid in the disk's turn, then turned rising from its fell or hanging
+  // from it: a half turn about a level axis, so it is still the same braid,
+  // not its mirror image.
+  const stand = new THREE.Group();
+  const turner = new THREE.Group();
+  stand.add(group);
+  turner.add(stand);
+  scene.add(turner);
+  const timeline = result.timeline;
+  // Made on a marudai — a disk braid, or a word rolled onto one — or not.
+  const kind = result.disk ? "disk" : "other";
+  $("hanging").checked = hangs[kind];
+  const clock = timeline
+    ? timeline.clock
+    : { source: [times[0], times[times.length - 1]], braid: [times[0], times[times.length - 1]] };
+  const span = timeline
+    ? [timeline.times[0], timeline.times[timeline.times.length - 1]]
+    : [clock.source[0], clock.source[clock.source.length - 1]];
+  braid = {
+    group,
+    stand,
+    turner,
+    kind,
+    yarns,
+    tails,
+    radius,
+    frames: result.marudai?.frames,
+    source: $("source").value,
+    disk: result.marudai?.disk,
+    steps: result.disk?.steps.length || 1,
+    frame: null,
+    times,
+    heights: result.strands[0].points.map((p) => p[2]),
+    clock,
+    span,
+    timeline,
+    colours: result.strands.map((strand) => strand.colour),
+    box: null,
+  };
+  stand.rotation.x = hangs[kind] ? Math.PI : 0;
+  // A disk's top view turned so its seam is away from the viewer, and the
+  // braid made on a marudai turned to match it.
+  const seam = seamOf(timeline);
+  braid.topTurn = seam === null ? 0 : Math.PI / 2 - seam;
+  braid.program = result.disk;
+  braid.aligned = seam !== null && Boolean(result.disk) && result.settled !== "sideways";
+  if (braid.aligned) turner.rotation.z = alignment();
+  braid.box = new THREE.Box3().setFromObject(turner);
+  showTubes($("tubes").checked);
+  $("topview").hidden = !timeline || !$("showtop").checked;
+  $("section").hidden = !$("showsection").checked;
+  drawSection(result);
+  $("made").value = $("made").max;
+  made(Number($("made").max));
+  if (!keepView) fit();
+  describe(result, seconds);
+  $("empty").hidden = true;
+}
+
+// A marudai's mirror, seen through: a ring from its hole to its edge.
+function mirrorMesh({ z, radius, hole }) {
+  const mirror = new THREE.Mesh(
+    new THREE.RingGeometry(hole, radius, 128),
+    new THREE.MeshStandardMaterial({
+      color: 0xc9bfae,
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.28,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+  );
+  mirror.position.z = z;
+  return mirror;
+}
+
+// A moment in the making on a marudai, in place of the braid as made:
+// every yarn whole, from the start of the braid out over the mirror to its
+// bobbin, one tube each, and the mirror.
+function showFrame(frame, disk, colours) {
+  if (!braid) return;
+  clearFrame();
+  const shown = new THREE.Group();
+  const tubes = $("tubes").checked;
+  frame.yarns.forEach((flat, i) => {
+    const points = [];
+    for (let k = 0; k < flat.length; k += 3) points.push(new THREE.Vector3(flat[k], flat[k + 1], flat[k + 2]));
+    if (points.length < 2) return;
+    const curve = new THREE.CatmullRomCurve3(points, false, "centripetal");
+    const segments = Math.min(Math.max(points.length * 2, 32), 1500);
+    shown.add(
+      tubes
+        ? new THREE.Mesh(
+            new THREE.TubeGeometry(curve, segments, braid.radius, 8, false),
+            new THREE.MeshStandardMaterial({ color: colours[i], roughness: 0.55, metalness: 0.05 }),
+          )
+        : new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
+            new THREE.LineBasicMaterial({ color: colours[i] }),
+          ),
+    );
+  });
+  if (disk) shown.add(mirrorMesh(disk));
+  for (const child of braid.group.children) child.visible = false;
+  braid.group.add(shown);
+  braid.frame = shown;
+  braid.group.position.z = 0;
+  // The braid's own turning is in the moment already.
+  braid.turner.rotation.z = braid.aligned ? alignment() : 0;
+}
+
+function clearFrame() {
+  if (!braid?.frame) return;
+  braid.group.remove(braid.frame);
+  dispose(braid.frame);
+  braid.frame = null;
+}
+
+function showTubes(tubes) {
+  if (!braid) return;
+  for (const yarn of [...braid.yarns, ...braid.tails]) {
+    yarn.tube.visible = tubes;
+    yarn.line.visible = !tubes;
+  }
+  made(Number($("made").value));
+}
+
+// Show the braid as it was ``value`` thousandths of the way through its
+// making, by the clock of whatever made it: the oldest rows first, carried
+// up by the take-off, the newest at the fell.  The top view shows what made
+// it, at that same instant.
+function made(value) {
+  if (!braid) return;
+  const fraction = value / 1000;
+  const [first, last] = braid.span;
+  // Made on a marudai: the making itself, move by move, until it is made.
+  const frames = braid.frames;
+  if (frames?.length && fraction < 0.999) {
+    const frame = frames[Math.min(frames.length - 1, Math.floor(fraction * frames.length))];
+    showFrame(frame, braid.disk, braid.colours);
+    const step = Math.max(0, Math.min(1, (frame.step + 1) / braid.steps));
+    drawTop(first + step * (last - first));
+    return;
+  }
+  clearFrame();
+  const tubesShown = $("tubes").checked;
+  for (const yarn of braid.yarns) {
+    yarn.tube.visible = tubesShown;
+    yarn.line.visible = !tubesShown;
+  }
+  const now = first + fraction * (last - first);
+  const laid = interpolate(braid.clock.source, braid.clock.braid, now);
+  for (const yarn of braid.yarns) {
+    const shown = Math.max(1, countUpTo(yarn.segmentTimes, laid + 1e-9) - 1);
+    yarn.tube.geometry.setDrawRange(0, shown * yarn.radial * 6);
+    yarn.line.geometry.setDrawRange(0, shown + 1);
+  }
+  const heights = braid.heights;
+  const newest = interpolate(braid.times, heights, laid);
+  braid.group.position.z = heights[heights.length - 1] - newest;
+  // A disk's braid hangs from it and turns with it.
+  const timeline = braid.timeline;
+  braid.turner.rotation.z = braid.aligned
+    ? alignment()
+    : timeline?.turn
+      ? interpolate(timeline.times, timeline.turn, now)
+      : 0;
+  // The cores, and a marudai's tails and mirror, once the braid is made.
+  const tubes = $("tubes").checked;
+  for (const child of braid.group.children) {
+    if (child.userData.core) child.visible = fraction > 0.999;
+    if (child.userData.whole) {
+      const kind = child.isMesh && child.geometry.type === "TubeGeometry" ? tubes : child.isLine ? !tubes : true;
+      child.visible = fraction > 0.999 && kind;
+    }
+  }
+  drawTop(now);
+}
+
+// ``ys`` at ``x``, between the samples ``xs`` (ascending), held at the ends.
+function interpolate(xs, ys, x) {
+  const n = xs.length;
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[n - 1]) return ys[n - 1];
+  let low = 0;
+  let high = n - 1;
+  while (high - low > 1) {
+    const middle = (low + high) >> 1;
+    if (xs[middle] <= x) low = middle;
+    else high = middle;
+  }
+  const span = xs[high] - xs[low];
+  const t = span > 0 ? (x - xs[low]) / span : 0;
+  return ys[low] + t * (ys[high] - ys[low]);
+}
+
+// ``values`` at a fractional index.
+function sample(values, at) {
+  const low = Math.floor(at);
+  const high = Math.min(low + 1, values.length - 1);
+  return values[low] + (at - low) * (values[high] - values[low]);
+}
+
+// How many of the ascending ``values`` are at most ``limit``.
+function countUpTo(values, limit) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (values[middle] <= limit) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+// ---------------------------------------------------------------- top view
+
+// ------------------------------------------------------------ cross-section
+
+// The braid seen along its axis, once made: each strand's track over the
+// middle of the braid — far from the fell and the held top — and a slice
+// half way up, each yarn a disc as thick as it is.  A regular braid has
+// settled when its strands share one track, each a step along it.
+const section = $("section");
+
+function drawSection(result) {
+  if (!result || section.hidden) return;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const size = section.clientWidth;
+  if (!size) return;
+  section.width = section.height = Math.round(size * ratio);
+  const ctx = section.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+  const n = result.strands[0].points.length;
+  const from = Math.floor(0.3 * n);
+  const to = Math.max(from + 2, Math.ceil(0.7 * n));
+  const middle = result.strands.map((strand) => strand.points.slice(from, to));
+  let cx = 0;
+  let cy = 0;
+  let count = 0;
+  for (const points of middle) {
+    for (const [x, y] of points) {
+      cx += x;
+      cy += y;
+      count++;
+    }
+  }
+  cx /= count;
+  cy /= count;
+  const radius = result.yarn_diameter / 2;
+  let reach = radius;
+  for (const points of middle) {
+    for (const [x, y] of points) reach = Math.max(reach, Math.hypot(x - cx, y - cy) + radius);
+  }
+  const scale = (size / 2 - 14) / reach;
+  // Seen from above: a hanging braid is turned over about the x axis.
+  const up = braid && braid.stand.rotation.x ? -1 : 1;
+  // As the 3D view has it from above: turned with the braid.
+  const turn = braid ? braid.turner.rotation.z : 0;
+  const tc = Math.cos(turn);
+  const ts = Math.sin(turn);
+  const X = (x, y) => size / 2 + (tc * (x - cx) - ts * up * (y - cy)) * scale;
+  const Y = (y, x) => size / 2 - (ts * (x - cx) + tc * up * (y - cy)) * scale;
+  const style = getComputedStyle(document.documentElement);
+  ctx.fillStyle = style.getPropertyValue("--muted").trim();
+  ctx.font = "10px system-ui, sans-serif";
+  ctx.fillText("Cross-section", 8, 14);
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1;
+  middle.forEach((points, i) => {
+    ctx.strokeStyle = result.strands[i].colour;
+    ctx.beginPath();
+    points.forEach(([x, y], j) => (j ? ctx.lineTo(X(x, y), Y(y, x)) : ctx.moveTo(X(x, y), Y(y, x))));
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 0.9;
+  const half = Math.floor((to - from) / 2);
+  middle.forEach((points, i) => {
+    const [x, y] = points[half];
+    ctx.fillStyle = result.strands[i].colour;
+    ctx.beginPath();
+    ctx.arc(X(x, y), Y(y, x), radius * scale, 0, 2 * Math.PI);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+const top = $("topview");
+const topContext = top.getContext("2d");
+
+function drawTop(now) {
+  if (!braid || !braid.timeline || top.hidden) return;
+  const view = braid.timeline;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const size = top.clientWidth;
+  if (top.width !== Math.round(size * ratio)) {
+    top.width = top.height = Math.round(size * ratio);
+  }
+  const ctx = topContext;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+  const style = getComputedStyle(document.documentElement);
+  const ink = style.getPropertyValue("--muted").trim();
+  const scale = (size / 2 - 18) / (view.reach || 1);
+  // Turned so the disk's seam is up, away from the viewer.
+  const c = Math.cos(braid.topTurn || 0);
+  const s = Math.sin(braid.topTurn || 0);
+  const x = (p) => size / 2 + (c * p[0] - s * p[1]) * scale;
+  const y = (p) => size / 2 - (s * p[0] + c * p[1]) * scale;
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = ink;
+  for (const outline of view.outlines) {
+    ctx.beginPath();
+    outline.forEach((p, i) => (i ? ctx.lineTo(x(p), y(p)) : ctx.moveTo(x(p), y(p))));
+    ctx.stroke();
+  }
+  ctx.fillStyle = ink;
+  ctx.font = "10px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  // As many names as there is room for round the rim.
+  const every = Math.max(1, Math.ceil(view.slots.length / (size / 16)));
+  for (const [index, [sx, sy, name]] of view.slots.entries()) {
+    if (index % every) continue;
+    const out = 1 + 11 / (Math.hypot(sx, sy) * scale || 1);
+    ctx.fillText(name, x([sx * out, sy * out]), y([sx * out, sy * out]));
+  }
+
+  // Where each carrier is now; on a disk, the strands lifted over the others
+  // are drawn last, on top.
+  const last = view.times.length - 1;
+  const span = view.times[last] - view.times[0];
+  const at = Math.min(
+    last,
+    Math.max(0, span > 0 ? ((now - view.times[0]) / span) * last : 0),
+  );
+  const where = view.strands.map((path) => {
+    const low = Math.floor(at);
+    const high = Math.min(low + 1, path.length - 1);
+    const t = at - low;
+    return [
+      path[low][0] + t * (path[high][0] - path[low][0]),
+      path[low][1] + t * (path[high][1] - path[low][1]),
+    ];
+  });
+  const order = where
+    .map((p, i) => [Math.hypot(p[0], p[1]), i])
+    .sort((a, b) => b[0] - a[0])
+    .map(([, i]) => i);
+  for (const i of order) {
+    const p = where[i];
+    ctx.strokeStyle = ctx.fillStyle = braid.colours[i % braid.colours.length];
+    if (view.kind === "disk") {
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(size / 2, size / 2);
+      ctx.lineTo(x(p), y(p));
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(x(p), y(p), view.kind === "disk" ? 3.5 : 4.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+}
+
+function fit() {
+  if (!braid) return;
+  const box = braid.box;
+  const centre = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const height = size.z;
+  const across = Math.max(size.x, size.y);
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  const tall = height / 2 / Math.tan(fov / 2);
+  // Wide enough for what the card leaves free.
+  const free = Math.max(0.5, 1 - Math.min(cardCover(), viewer.clientWidth / 2) / viewer.clientWidth);
+  const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect * free, 0.3);
+  const distance = 1.25 * Math.max(tall, wide, across * 2);
+  // Seen from the side the strands' seam is not: a disk braid made on a
+  // marudai from the top view's bottom, as it is turned; others turned
+  // about the vertical as each kind of braid needs it.
+  const direction = braid.aligned
+    ? new THREE.Vector3(0.2, -1, 0.3).normalize()
+    : new THREE.Vector3(1, -0.45, 0.25)
+        .normalize()
+        .applyAxisAngle(new THREE.Vector3(0, 0, 1), VIEW_TURN[braid.source] ?? 0);
+  camera.position.copy(centre).addScaledVector(direction, distance);
+  camera.near = distance / 100;
+  camera.far = distance * 100;
+  camera.updateProjectionMatrix();
+  controls.target.copy(centre);
+  controls.update();
+}
+
+// ------------------------------------------------------------- the braid
+
+function describe(result, seconds) {
+  $("about").hidden = false;
+  $("title").textContent = result.title;
+  const info = result.info;
+  const rows = [
+    ["Strands", info.n_strands],
+    [
+      // Every strand back where it started: after so many of its words, or
+      // of its moves' cycles; so many made, and whether that is pure.
+      "Pure after",
+      info.repeated &&
+        (info.pure_after === null
+          ? `over 64 ${info.repeated}s`
+          : times(info.pure_after, info.repeated)),
+    ],
+    ["Made", info.made && info.repeated && times(info.made, info.repeated)],
+    ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
+    ["Crossings", info.crossings],
+    ["Exponent sum", info.exponent_sum],
+    ["Permutation", info.permutation && info.permutation.join(" ")],
+    [
+      "Closed up",
+      info.components === undefined
+        ? undefined
+        : info.components === 1
+          ? "a knot"
+          : `a link of ${info.components} pieces`,
+    ],
+    [
+      "Normal form",
+      info.garside &&
+        `Δ^${info.garside.half_twists} and ${info.garside.factors} permutation braids`,
+    ],
+    ["Full twists", info.garside && info.garside.full_twists],
+    ["Word", info.word, { layout: "row" }],
+    ["Ring word", info.annular_word, { layout: "ring" }],
+    [
+      "Closest yarns",
+      info.closest_approach === undefined
+        ? undefined
+        : `${info.closest_approach} for a yarn of ${round(result.yarn_diameter)}`,
+    ],
+    ["Computed in", seconds ? `${seconds.toFixed(1)} s` : undefined],
+    ["", seconds === null ? "As laid — tightening…" : undefined],
+  ];
+  const list = $("info");
+  list.replaceChildren();
+  for (const [name, value, code] of rows) {
+    if (value === undefined || value === null || value === "") continue;
+    const term = document.createElement("dt");
+    term.textContent = name;
+    const detail = document.createElement("dd");
+    if (code) {
+      const text = String(value);
+      const element = document.createElement("code");
+      element.textContent = text;
+      element.title = text;
+      detail.append(element);
+      if (code.layout) detail.append(wordActions(text, code.layout, info.n_strands));
+    } else {
+      detail.textContent = value;
+    }
+    list.append(term, detail);
+  }
+  const notes = $("notes");
+  notes.replaceChildren(
+    ...result.notes.map((note) => {
+      const item = document.createElement("li");
+      item.textContent = note;
+      return item;
+    }),
+  );
+}
+
+// A braid's own word, to make again as a braid word — the same braid — or
+// to copy.
+function wordActions(word, layout, strands) {
+  const actions = document.createElement("span");
+  actions.className = "actions";
+  const make = document.createElement("button");
+  make.type = "button";
+  make.textContent = "Make from it";
+  make.title = `Make this ${layout === "ring" ? "ring word" : "braid word"} as a braid word, once`;
+  make.addEventListener("click", () => {
+    // The same yarn, for the same look.
+    const yarn = lastResult?.yarn_diameter;
+    writeSpec({ source: "word", layout, word, n_strands: strands, repeat: 1 });
+    if (yarn) $("yarn_diameter").value = round(yarn);
+    submit();
+  });
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.textContent = "Copy";
+  copy.addEventListener("click", () => copyText(word, copy));
+  actions.append(make, copy);
+  return actions;
+}
+
+// Text to the clipboard, said so on the button that asked; where the
+// browser will not, the text shown to copy by hand.
+async function copyText(text, button) {
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    copied = true;
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+    area.remove();
+  }
+  if (!copied) {
+    window.prompt("Copy it from here:", text);
+    return;
+  }
+  const was = button.textContent;
+  button.textContent = "Copied ✓";
+  setTimeout(() => (button.textContent = was), 1500);
+}
+
+function times(count, what) {
+  return `${count} ${what}${count > 1 ? "s" : ""}`;
+}
+
+function round(value) {
+  return Number(value.toPrecision(3));
+}
+
+// ---------------------------------------------------------------- controls
+
+$("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
+$("showsection").addEventListener("change", (event) => {
+  section.hidden = !event.target.checked || !lastResult;
+  drawSection(lastResult);
+});
+$("showtop").addEventListener("change", (event) => {
+  top.hidden = !event.target.checked || !braid || !braid.timeline;
+  made(Number($("made").value));
+});
+$("spin").addEventListener("change", (event) => {
+  controls.autoRotate = event.target.checked;
+});
+$("hanging").addEventListener("change", (event) => {
+  if (!braid) return;
+  hangs[braid.kind] = event.target.checked;
+  braid.stand.rotation.x = event.target.checked ? Math.PI : 0;
+  made(Number($("made").value));
+  braid.box = new THREE.Box3().setFromObject(braid.turner);
+  drawSection(lastResult);
+  fit();
+});
+$("reset").addEventListener("click", fit);
+$("made").addEventListener("input", (event) => {
+  growing = false;
+  $("grow").textContent = "▶ Grow";
+  made(Number(event.target.value));
+});
+
+let growing = false;
+let growFrom = 0;
+$("grow").addEventListener("click", () => {
+  growing = !growing;
+  $("grow").textContent = growing ? "⏸ Pause" : "▶ Grow";
+  if (growing) {
+    if (Number($("made").value) >= 1000) $("made").value = 0;
+    growFrom = performance.now() - Number($("made").value) * 12;
+  }
+});
+
+$("share").addEventListener("click", () => copyText(location.href, $("share")));
+
+function fileName(extension) {
+  return lastResult.title.replace(/[^\w-]+/g, "_") + "." + extension;
+}
+
+function download(name, href) {
+  const link = document.createElement("a");
+  link.download = name;
+  link.href = href;
+  link.click();
+  if (href.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
+$("save").addEventListener("change", (event) => {
+  const what = event.target.value;
+  event.target.value = "";
+  if (!lastResult || !braid) return;
+  if (what === "png") {
+    download(fileName("png"), renderer.domElement.toDataURL("image/png"));
+    return;
+  }
+  if (what === "json") {
+    const blob = new Blob([JSON.stringify(lastResult)], { type: "application/json" });
+    download(fileName("json"), URL.createObjectURL(blob));
+    return;
+  }
+  // The whole braid as solid tubes, as made, in the braid's own units.
+  const solid = new THREE.Group();
+  for (const yarn of braid.yarns) {
+    const tube = new THREE.Mesh(yarn.tube.geometry.clone(), yarn.tube.material);
+    tube.geometry.setDrawRange(0, Infinity);
+    tube.name = yarn.tube.name;
+    solid.add(tube);
+  }
+  for (const child of braid.group.children) {
+    if (child.userData.core) solid.add(child.clone());
+  }
+  solid.updateMatrixWorld(true);
+  if (what === "stl") {
+    const data = new STLExporter().parse(solid, { binary: true });
+    download(fileName("stl"), URL.createObjectURL(new Blob([data])));
+  } else if (what === "obj") {
+    const text = new OBJExporter().parse(solid);
+    download(fileName("obj"), URL.createObjectURL(new Blob([text])));
+  }
+  solid.traverse((child) => {
+    if (child.isMesh && !child.userData.core) child.geometry.dispose();
+  });
+});
+
+function frame(now) {
+  if (growing && braid) {
+    // Twelve seconds from nothing to the whole braid.
+    const value = Math.min(1000, (now - growFrom) / 12);
+    $("made").value = value;
+    made(value);
+    if (value >= 1000) {
+      growing = false;
+      $("grow").textContent = "▶ Grow";
+    }
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// For tests: what the page holds.
+window.braidStudio = {
+  get result() {
+    return lastResult;
+  },
+  get drawn() {
+    return braid ? braid.yarns.length : 0;
+  },
+};
