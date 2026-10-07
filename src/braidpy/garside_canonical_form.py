@@ -11,10 +11,14 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from dataclasses import dataclass
-from typing import Tuple
+from __future__ import annotations
 
-from math_braid.canonical_factor import CanonicalFactor
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Tuple
+
+if TYPE_CHECKING:
+    # math_braid imports sympy, slow to import: only named here for types.
+    from math_braid.canonical_factor import CanonicalFactor
 
 from braidpy.utils import PositiveInt, StrictlyPositiveInt
 

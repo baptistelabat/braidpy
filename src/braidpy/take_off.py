@@ -61,6 +61,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 from typing import (
+    TYPE_CHECKING,
+    Collection,
     Dict,
     Hashable,
     List,
@@ -71,7 +73,12 @@ from typing import (
 )
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 
 @dataclass(frozen=True)
@@ -492,6 +499,7 @@ def tighten_yarns(
     core_radius: Optional[float] = None,
     tolerance: float = 1e-3,
     hold_top: bool = True,
+    rigid: Collection[Hashable] = (),
 ) -> Tuple[YarnPaths, Dict[str, List[float]]]:
     """Pull the yarns taut above the fell, without letting them overlap.
 
@@ -524,6 +532,8 @@ def tighten_yarns(
             push accepts.
         hold_top: Hold the oldest end where it is, as the take-off does.  Left
             free, the end can turn about the axis and untwist the braid.
+        rigid: Yarns held where they are all along, as stiff cores: the
+            others are pushed off them, and they never move.
 
     Returns:
         The tightened braid, and its history: ``"length"``, the total yarn
@@ -546,6 +556,7 @@ def tighten_yarns(
     xy = formed[:, :, :2].reshape(-1, 2)
     level = np.tile(np.arange(n), n_yarns)
     held = (level == n - 1) | ((level == 0) & hold_top)
+    held |= np.repeat([k in set(rigid) for k in paths.points], n)
 
     # Backward Euler on the tension: (I + step * L) x_new = x, with L the
     # second difference along a yarn — the fell end fixed, the top end fixed

@@ -24,6 +24,8 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
 - [x] Kumihimo and mobidai disks animated from above, strands as spokes to
       the braiding point, moving continuously from step to step
 - [ ] Kumihimo braid with Marudai diagram
+- [x] Braid Studio: a web page that makes any of these braids and shows it in
+      3D, with braidpy running in the browser
 - [x] Ashley solid sinnets (ABOK #3042–3054): each strand followed round its
       disk, animated with the braid growing below it, laid in 3D, and
       converted to a braid word or to a kumihimo disk (mobidai) pattern
@@ -100,6 +102,19 @@ runs each one, and keeps the fullest that never collides. `visualize_machine`
 and `animate` draw the result, and `gen_demos.py` writes a page per machine —
 flat, tubular, soutache, diamond, and a Jacquard lace machine whose gears
 interpenetrate and whose switches are driven by a punched programme.
+
+## Braid Studio, in the browser
+
+[Braid Studio](https://baptistelabat.github.io/braidpy/studio/) is braidpy on
+a web page. Describe a braid as a braid word, a kumihimo pattern, a disk
+braid, an Ashley sinnet or a braiding machine, and it is laid and tightened in
+3D. braidpy itself runs in your browser through Pyodide, and three.js draws
+the result. See [its plan](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braid_studio.md),
+or run it locally:
+
+```sh
+make studio && make studio-serve   # then open http://localhost:8000
+```
 
 ## Ashley solid sinnets
 

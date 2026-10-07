@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Braid Studio — braidpy</title>
+    <meta
+      name="description"
+      content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet or a braiding machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <aside class="panel">
+      <header>
+        <h1>Braid Studio</h1>
+        <p class="lede">
+          Describe a braid and see it laid and tightened in 3D, computed by
+          <a href="https://github.com/baptistelabat/braidpy">braidpy</a> in
+          your browser.
+        </p>
+      </header>
+
+      <form id="form" autocomplete="off">
+        <label class="field">
+          <span>Made by</span>
+          <select id="source" name="source"></select>
+        </label>
+
+        <div id="fields"></div>
+
+        <details class="advanced">
+          <summary>Yarn and tightening</summary>
+          <label class="field">
+            <span>Yarn diameter</span>
+            <input
+              id="yarn_diameter"
+              name="yarn_diameter"
+              type="number"
+              step="any"
+              min="0"
+              placeholder="default"
+            />
+          </label>
+          <label class="field">
+            <span>Tightening steps</span>
+            <input
+              id="iterations"
+              name="iterations"
+              type="number"
+              min="0"
+              max="2000"
+              step="10"
+              placeholder="default"
+            />
+            <small>0 lays the yarns with no tension. The marudai draws its yarns tight itself, without these.</small>
+          </label>
+          <label class="field">
+            <span>Settle the yarns</span>
+            <select id="settle" name="settle">
+              <option value="marudai">On a marudai: move by move, each yarn laid over and drawn tight</option>
+              <option value="sideways">Sideways: fast, keeps the laid pitch</option>
+              <option value="physics">Physics: beaten up until it jams (beta)</option>
+              <option value="crossing">Physics: made crossing by crossing, with friction, then settled (beta)</option>
+            </select>
+            <small>The marudai takes disk braids and braid words; physics, disk braids only.</small>
+          </label>
+          <label class="field">
+            <span>Twist</span>
+            <select id="twist" name="twist">
+              <option value="keep">Kept: the braid held, never turning; turning the bobbins twists the yarns in</option>
+              <option value="turns">Held while every bobbin turns together, hanging free otherwise</option>
+              <option value="free">Untwisted: the braid hanging free, turning as its yarns pull it</option>
+            </select>
+            <small>Each braid's own is marked "default". On a marudai, untwisted, the bobbins turning together carry the braid round with them: a rope's twist comes straight back out. Settled by physics, the end the braid is drawn off by is held or turns. Tightened sideways, the yarns keep the twist they were laid with.</small>
+          </label>
+        </details>
+
+        <button id="build" type="submit" disabled>Loading…</button>
+        <p id="status" class="status" role="status" aria-live="polite">
+          Starting…
+        </p>
+      </form>
+
+      <footer>
+        <p>
+          Everything is computed here, in your browser: Python runs through
+          <a href="https://pyodide.org">Pyodide</a>, drawing through
+          <a href="https://threejs.org">three.js</a>.
+        </p>
+      </footer>
+    </aside>
+
+    <main class="stage">
+      <div id="viewer" class="viewer" aria-label="The braid in 3D"></div>
+      <canvas
+        id="section"
+        class="section"
+        hidden
+        aria-label="The braid's cross-section: each strand's track, and a slice"
+      ></canvas>
+      <canvas
+        id="topview"
+        class="topview"
+        hidden
+        aria-label="What made the braid, seen from above"
+      ></canvas>
+      <details id="about" class="about card" open hidden>
+        <summary><h2 id="title"></h2></summary>
+        <dl id="info"></dl>
+        <ul id="notes" class="notes"></ul>
+      </details>
+      <div class="toolbar" role="toolbar" aria-label="View">
+        <button id="grow" type="button" title="Watch the braid being made">
+          ▶ Grow
+        </button>
+        <input
+          id="made"
+          type="range"
+          min="0"
+          max="1000"
+          value="1000"
+          aria-label="How much of the braid is made"
+        />
+        <details class="menu">
+          <summary>View</summary>
+          <div class="menu-items">
+            <label class="check"><input id="tubes" type="checkbox" checked /> Tubes</label>
+            <label class="check"><input id="spin" type="checkbox" /> Spin</label>
+            <label
+              class="check"
+              title="The braid hanging from its fell, as from a kumihimo disk or a marudai; off, it rises from the fell, as from a braiding machine"
+              ><input id="hanging" type="checkbox" /> Hanging</label
+            >
+            <label class="check"><input id="showtop" type="checkbox" checked /> Top view</label>
+            <label class="check"
+              ><input id="showsection" type="checkbox" checked /> Cross-section</label
+            >
+          </div>
+        </details>
+        <button id="reset" type="button" title="Back to the starting view">
+          Reset view
+        </button>
+        <button id="share" type="button" title="Copy a link to this braid">
+          Copy link
+        </button>
+        <select id="save" aria-label="Save the braid">
+          <option value="" selected disabled>Save…</option>
+          <option value="png">Picture (PNG)</option>
+          <option value="stl">For 3D printing (STL)</option>
+          <option value="obj">3D model (OBJ)</option>
+          <option value="json">Yarn points (JSON)</option>
+        </select>
+      </div>
+      <div id="empty" class="empty">
+        <p>The braid appears here.</p>
+      </div>
+    </main>
+  </body>
+</html>

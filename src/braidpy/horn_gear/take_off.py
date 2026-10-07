@@ -19,11 +19,16 @@ rate in proportion to its gears.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass, field, replace
+from typing import TYPE_CHECKING, Dict, Hashable, List, Optional, Tuple
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 from braidpy.take_off import (
     StrandTrajectories,
@@ -169,6 +174,7 @@ def yarn_paths(
     n_substeps: int = 12,
     scale: float = 1.0,
     n_cycles: int = 3,
+    axials: bool = False,
     **lay,
 ) -> YarnPaths:
     """The braid a machine has made after ``n_steps`` steps.
@@ -192,9 +198,13 @@ def yarn_paths(
             ``take_off / n_substeps`` below it, or contacts go unseen.
         scale: Layout scale.
         n_cycles: Cycles to braid for when ``n_steps`` is None.
+        axials: Lay the axial cores too, each a yarn that stays where it
+            enters the braid, named after the axial: drawn in to the fell
+            and tightened with the others, it ends up inside the braid,
+            held there by the yarns crossing round it, as a core is.
 
     Returns:
-        The yarns, one per carrier.
+        The yarns, one per carrier, and one per axial if asked for.
     """
     if carrier_positions is None:
         carrier_positions = machine.default_carriers()
@@ -208,6 +218,12 @@ def yarn_paths(
     traj = carrier_trajectories(
         machine, n_steps, carrier_positions, n_substeps=n_substeps, scale=scale
     )
+    if axials and machine.axials:
+        standing: Dict[Hashable, np.ndarray] = {
+            name: np.tile(np.asarray(position, dtype=float), (len(traj.times), 1))
+            for name, position in axial_positions(machine, traj.layout).items()
+        }
+        traj = replace(traj, xy={**traj.xy, **standing})
     return lay_yarns(traj, take_off=take_off, **lay)
 
 

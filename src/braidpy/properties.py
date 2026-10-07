@@ -11,15 +11,18 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import List, Optional
-from sympy import Poly, symbols, simplify
+from typing import TYPE_CHECKING, List, Optional
 from .braid import Braid
 
-t = symbols("t")
+if TYPE_CHECKING:
+    from sympy import Poly
 
 
-def alexander_polynomial(braid: Braid) -> Poly:
+def alexander_polynomial(braid: Braid) -> "Poly":
     """Compute the Alexander polynomial of a braid."""
+    from sympy import Poly, simplify, symbols
+
+    t = symbols("t")
     matrix = braid.to_matrix()
 
     # Reduced Burau: delete last row and column

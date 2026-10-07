@@ -1,0 +1,9 @@
+{
+  "name": "braid-studio",
+  "private": true,
+  "description": "Braid Studio: braidpy in the browser. Only three.js is vendored from here; see build.py.",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "three": "0.170.0"
+  }
+}
