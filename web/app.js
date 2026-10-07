@@ -1007,6 +1007,15 @@ worker.onmessage = ({ data }) => {
 
 worker.postMessage({ type: "init", pyodideUrl: PYODIDE_URL });
 
+// Published as a beta, it says so.
+if (location.pathname.includes("/studio-beta/")) {
+  const badge = document.createElement("span");
+  badge.className = "beta";
+  badge.textContent = "beta";
+  badge.title = "Braid Studio as it is being made: it may change, or break";
+  document.querySelector("h1").append(" ", badge);
+}
+
 function submit() {
   const spec = readSpec();
   pending += 1;

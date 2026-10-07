@@ -3,11 +3,12 @@ run-name: Braid Studio — build, test${{ github.event_name == 'push' && ' and p
 
 # The web page: braidpy run in the browser by Pyodide, drawn with three.js.
 # Built and tried in a real browser on every change to it or to braidpy;
-# published beside the documentation, under studio/, from develop.
+# published beside the documentation, under studio/, from develop — and as
+# a beta, under studio-beta/, from the branch it is being made on.
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, claude/web-app]
     paths:
       - "src/**"
       - "web/**"
@@ -79,12 +80,12 @@ jobs:
           name: braid-studio-site
           path: site
 
-      - name: Publish under studio/, beside the documentation
+      - name: Publish under studio/ (or studio-beta/), beside the documentation
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: site
-          destination_dir: studio
+          destination_dir: ${{ github.ref_name == 'develop' && 'studio' || 'studio-beta' }}
           keep_files: true
           commit_message: "Braid Studio from ${{ github.sha }}"
