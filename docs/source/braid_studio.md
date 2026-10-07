@@ -11,9 +11,10 @@ why, and what comes next.
 
 The page has a form and a 3D view.
 
-- **Made by** picks the source: a braid word; kumihimo's `S`/`R` moves; a
-  braid from the mobidai catalogue; an Ashley solid sinnet; or a braiding
-  machine.
+- **Made by** picks the source: a braid word; a braid from the mobidai
+  catalogue; an Ashley solid sinnet; or a braiding machine. Kumihimo's
+  `S`/`R` moves are out of the menu for now, but a link to one still makes
+  it.
 - A braid word starts from a list of examples — a plait, a twist, a flat
   four-strand braid, a two-ply, a rope — as the other sources start from
   their catalogues; changing the word makes it your own.

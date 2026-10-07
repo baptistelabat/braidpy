@@ -118,6 +118,8 @@ const FIELDS = {
 };
 
 let catalogue = null;
+// Sources left out of the "Made by" menu for now.
+const UNLISTED = new Set(["kumihimo"]);
 // Sources whose catalogued braids always show what they are made of.
 const ALWAYS_SHOWN = new Set(["mobidai", "sinnet"]);
 
@@ -958,10 +960,12 @@ worker.onmessage = ({ data }) => {
   } else if (data.type === "ready") {
     catalogue = data.catalogue;
     const select = $("source");
+    const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
     for (const [source, about] of Object.entries(catalogue)) {
+      // Out of the menu for now, but still made from a link to it.
+      if (UNLISTED.has(source) && spec.source !== source) continue;
       select.append(new Option(about.title, source));
     }
-    const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
     writeSpec(spec);
     $("build").disabled = false;
     $("build").textContent = "Make the braid";
