@@ -67,11 +67,7 @@ async function build(id, spec) {
     self.postMessage({ type: "result", id, result, seconds: 0 });
     return;
   }
-  if (spec.source === "machine" && !machinesReady) {
-    status("Loading networkx, for the machines…");
-    await pyodide.loadPackage(["networkx"], { messageCallback: () => {} });
-    machinesReady = true;
-  }
+  if (spec.source === "machine") await machinery();
   status("Laying the yarns…");
   const started = performance.now();
   pyodide.globals.set("spec_json", JSON.stringify(spec));
@@ -518,12 +514,28 @@ function pythonMessage(error) {
 }
 
 let queue = Promise.resolve();
+// A machine from above, for the page to load it by hand.
+async function geometry(name) {
+  await machinery();
+  pyodide.globals.set("machine_name", name);
+  const text = await pyodide.runPythonAsync("json.dumps(web.machine_geometry(machine_name))");
+  self.postMessage({ type: "geometry", name, shape: JSON.parse(text) });
+}
+
+async function machinery() {
+  if (machinesReady) return;
+  status("Loading networkx, for the machines…");
+  await pyodide.loadPackage(["networkx"], { messageCallback: () => {} });
+  machinesReady = true;
+}
+
 self.onmessage = (event) => {
   const message = event.data;
   queue = queue.then(async () => {
     try {
       if (message.type === "init") await init(message.pyodideUrl);
       else if (message.type === "build") await build(message.id, message.spec);
+      else if (message.type === "geometry") await geometry(message.name);
     } catch (error) {
       self.postMessage({
         type: "error",

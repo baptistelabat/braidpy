@@ -175,6 +175,11 @@ button:focus-visible {
   background: var(--field);
 }
 
+.editor.machine canvas {
+  max-width: none;
+  aspect-ratio: auto;
+}
+
 .editor small {
   color: var(--muted);
   font-size: 12px;

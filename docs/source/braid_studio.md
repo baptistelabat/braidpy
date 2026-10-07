@@ -31,6 +31,15 @@ The page has a form and a 3D view.
   and made on the marudai move by move as written. A turn carries every
   bobbin round together, passing nobody, the braid held: the yarns twist
   into a rope, each as far from its axis as the others.
+- A braiding machine is drawn from above in the panel, as it starts: its
+  gears, the contacts between them and every slot, its carriers on them.
+  Click a slot to put a carrier on it or take it off, or type them in as
+  `gear:slot`; **Its own loading** puts back the machine's. Two carriers on
+  the same point are ringed at once. Carriers that meet as the machine turns
+  stop the braiding there: the braid is what it made until then, the note
+  says at which step and where, and the carriers that met are ringed where
+  they started. Left as the machine loads itself, the loading is not
+  written into the link.
 - A machine that braids round **cores** braids them in either as yarn, held
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the

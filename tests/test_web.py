@@ -652,3 +652,77 @@ def test_a_long_word_is_cut_short_in_the_title():
     assert title.startswith("Braid word 1 -2 1 -2")
     assert title.endswith("…")
     assert len(title) < 50
+
+
+def test_a_machine_is_drawn_for_the_page_to_load_by_hand():
+    """Its gears, where their slots are, and its own loading."""
+    from braidpy.web import _machines, machine_geometry
+
+    shape = machine_geometry("tubular_8")
+    json.dumps(shape)
+    assert {g["name"] for g in shape["gears"]} == {"A", "B", "C", "D"}
+    for gear in shape["gears"]:
+        assert {"x", "y", "radius", "ride", "slots", "direction", "offset"} <= set(gear)
+    assert shape["contacts"]
+    own = _machines()["tubular_8"]().default_carriers()
+    assert shape["loading"] == [list(own[k]) for k in sorted(own)]
+
+
+def test_a_machine_loaded_by_hand():
+    """Its carriers given as gear:slot: its own loading is the same braid; a
+    carrier fewer, a yarn fewer."""
+    from braidpy.web import machine_geometry
+
+    loading = machine_geometry("flat_9")["loading"]
+    text = " ".join(f"{g}:{s}" for g, s in loading)
+    spec = {"source": "machine", "name": "flat_9", "cycles": 1}
+    own = build(spec, tighten=False)
+    same = build({**spec, "carriers": text}, tighten=False)
+    assert same["info"] == own["info"]
+    fewer = build({**spec, "carriers": " ".join(text.split()[1:])}, tighten=False)
+    assert len(fewer["strands"]) == len(own["strands"]) - 1
+
+
+def test_carriers_that_meet_stop_the_braiding():
+    """Two carriers meeting stops the machine: the braid is made up to there,
+    and the note says where."""
+    from braidpy.web import machine_geometry
+
+    loading = machine_geometry("flat_9")["loading"]
+    # One carrier more, on A:1, meets another four steps on.
+    crowded = " ".join(f"{g}:{s}" for g, s in loading) + " A:1"
+    result = build(
+        {"source": "machine", "name": "flat_9", "cycles": 2, "carriers": crowded},
+        tighten=False,
+    )
+    assert any("stopped" in note for note in result["notes"])
+    assert result["info"]["collision"]["step"] == 4
+    # Ringed where they started, the one added among them.
+    assert ["A", 1] in result["info"]["collision"]["at"]
+    assert len(result["strands"]) == len(loading) + 1
+
+
+def test_carriers_that_meet_at_once_cannot_be_braided():
+    with pytest.raises(ValueError, match="meet as soon as"):
+        build(
+            {"source": "machine", "name": "tubular_8", "carriers": "A:0 D:0"},
+            tighten=False,
+        )
+
+
+@pytest.mark.parametrize(
+    "carriers, message",
+    [
+        ("A:0 A:0", "same"),
+        ("Z:0", "No gear"),
+        ("A:99", "slot"),
+        ("A0", "gear:slot"),
+        ("none", "at least one"),
+    ],
+)
+def test_a_loading_that_cannot_be_braided_says_so(carriers, message):
+    with pytest.raises(ValueError, match=message):
+        build(
+            {"source": "machine", "name": "tubular_8", "carriers": carriers},
+            tighten=False,
+        )
