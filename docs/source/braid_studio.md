@@ -99,7 +99,13 @@ The page has a form and a 3D view.
 - A braid word or ring word is made on the marudai hanging free, as a disk
   braid is; when the bobbins turn together it is held while they turn,
   twisting the yarns in, and a word of nothing but turns — a rope — is held
-  all the while.
+  all the while. Under "Yarn and tightening", **Twist, on the marudai**
+  can choose otherwise: kept, the braid held throughout, so it never turns
+  to balance and turning the bobbins together always twists the yarns in
+  (a kumihimo's R moves too); or untwisted, the braid hanging free
+  throughout, so the bobbins turning together carry it round with them and
+  twist nothing in — a rope then comes straight back out, and the page says
+  the braid is no longer the one its word says.
 - The view's switches — tubes, spin, hanging, the top view and the
   cross-section — are in the toolbar's **View** menu.
 - The address bar always describes the braid shown, so **Copy link** shares

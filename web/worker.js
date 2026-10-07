@@ -107,7 +107,7 @@ async function build(id, spec) {
     // Shown as laid straight away, then replaced once tight.
     self.postMessage({ type: "laid", id, result });
     if (settle !== "sideways") {
-      if (settle === "marudai") result = onMarudai(id, result, job);
+      if (settle === "marudai") result = onMarudai(id, result, { ...job, twist: spec.twist });
       else if (settle === "crossing") result = formed(id, result, job);
       else result = settled(id, result, job);
     } else {
@@ -295,8 +295,13 @@ function onMarudai(id, result, job) {
   // comes, a few times a second; the mirror as the first moments have it.
   const frames = [];
   let mirror = null;
+  // Kept, the braid is held throughout, its twist kept; untwisted, it
+  // hangs free throughout, and turning the bobbins together turns it along.
+  const twist = job.twist ?? "auto";
+  const holding = twist === "keep" ? { held: true, twists: true } : twist === "free" ? { held: false, twists: false } : {};
   const made = makeOnMarudai({
     ...result.disk,
+    ...holding,
     watch: (frame) => {
       frames.push(frame);
       if (performance.now() - shown < 80) return;
@@ -333,6 +338,20 @@ function onMarudai(id, result, job) {
     ...(out.notes || []),
     `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
   ];
+  // Every bobbin turning together, the braid hanging free: it turns along,
+  // and what those turns would have twisted in is not there.
+  const n = result.disk.start.length;
+  const turns = result.disk.steps.some(
+    (step) => step.length === n && step.every(([, d]) => d && d === step[0][1]),
+  );
+  // (A disk braid's own turns carry the braid round anyway, as a disk does.)
+  if (twist === "free" && turns && result.disk.twists) {
+    out.notes.push(
+      made.tip < 1
+        ? "Untwisted: hanging free, the braid turned along with the bobbins, and nothing braided."
+        : "Untwisted: hanging free, the braid turned along with the bobbins, so their turns twisted nothing in. It is no longer the braid its word says.",
+    );
+  }
   return out;
 }
 

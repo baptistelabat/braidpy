@@ -163,6 +163,21 @@ def test_a_braids_own_word_typed_in_makes_the_same_braid(tmp_path, name, key, la
     assert typed["closest"] > 0.75
 
 
+def test_a_rope_hanging_free_untwists(tmp_path):
+    """The same bobbins turned round a braid left free to turn: it turns
+    along with them, and nothing is twisted in — no rope.  (Braid Studio's
+    "untwisted".)"""
+    from braidpy.web import build
+
+    disk = build(
+        {"source": "word", "layout": "ring", "word": "4", "n_strands": 3, "repeat": 12},
+        tighten=False,
+    )["disk"]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps({**disk, "held": False, "twists": False}))
+    assert _run("marudai", program)["tip"] < 1
+
+
 def test_a_rope_is_made_on_a_marudai_with_no_core(tmp_path):
     """Three bobbins turned round the held braid, a place at a time: a
     three-strand rope, each yarn as far from its axis as the others — not

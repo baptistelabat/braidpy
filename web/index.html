@@ -76,6 +76,15 @@
             </select>
             <small>The marudai takes disk braids and braid words; physics, disk braids only.</small>
           </label>
+          <label class="field">
+            <span>Twist, on the marudai</span>
+            <select id="twist" name="twist">
+              <option value="auto">Automatic: hanging free, held while every bobbin turns together</option>
+              <option value="keep">Kept: the braid held, never turning; turning the bobbins twists the yarns in</option>
+              <option value="free">Untwisted: the braid hanging free, turning as its yarns pull it</option>
+            </select>
+            <small>Untwisted, the bobbins turning together carry the braid round with them: a rope's twist comes straight back out.</small>
+          </label>
         </details>
 
         <button id="build" type="submit" disabled>Loading…</button>

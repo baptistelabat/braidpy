@@ -696,6 +696,7 @@ function writeSpec(spec) {
   $("yarn_diameter").value = spec.yarn_diameter ?? "";
   $("iterations").value = spec.iterations ?? "";
   $("settle").value = spec.settle ?? "auto";
+  $("twist").value = spec.twist ?? "auto";
 }
 
 function specFromHash() {
