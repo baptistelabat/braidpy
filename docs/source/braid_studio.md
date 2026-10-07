@@ -104,8 +104,9 @@ The page has a form and a 3D view.
   to balance and turning the bobbins together always twists the yarns in
   (a kumihimo's R moves too); or untwisted, the braid hanging free
   throughout, so the bobbins turning together carry it round with them and
-  twist nothing in — a rope then comes straight back out, and the page says
-  the braid is no longer the one its word says. Held, the yarns are laid
+  twist nothing in — a rope then comes straight back out, its yarns
+  hanging straight and side by side, and the page says the braid is no
+  longer the one its word says. Held, the yarns are laid
   out to their carriers and drawn tight after every move as when free; only
   while the bobbins turn together are they carried round, not over each
   other.

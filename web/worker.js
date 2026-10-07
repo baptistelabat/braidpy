@@ -347,7 +347,27 @@ function onMarudai(id, result, job) {
       );
     },
   });
-  const out = onLevels(result, upsideDown(made.yarns), d);
+  // Nothing braided — untwisted, a rope's turns only carried the braid
+  // round — the yarns hang straight down from where they leave the mirror,
+  // side by side, as long as the braid was laid.
+  let yarns = made.yarns;
+  if (!(made.tip >= 1)) {
+    const zs = result.strands.flatMap((s) => s.points.map((p) => p[2]));
+    const long = Math.max(2, (Math.max(...zs) - Math.min(...zs)) / d);
+    const rows = Math.ceil(2 * long);
+    // Touching, round their middle, each on the side its tail leaves for.
+    const n = made.tails.length;
+    const apart = n > 1 ? 0.5 / Math.sin(Math.PI / n) : 0;
+    yarns = made.tails.map((tail, k) => {
+      const angle =
+        tail.length >= 6 ? Math.atan2(tail[tail.length - 2], tail[tail.length - 3]) : (2 * Math.PI * k) / n;
+      const [x, y] = [apart * Math.cos(angle), apart * Math.sin(angle)];
+      const points = [];
+      for (let i = 0; i <= rows; i++) points.push(x, y, made.tip - long + (long * i) / rows);
+      return points;
+    });
+  }
+  const out = onLevels(result, upsideDown(yarns), d);
   // Kept to a few hundred moments: Grow replays them in twelve seconds.
   const every = Math.max(1, Math.ceil(frames.length / 600));
   const kept = frames.filter((_, i) => i % every === 0 || i === frames.length - 1);
@@ -366,8 +386,8 @@ function onMarudai(id, result, job) {
   if (twist === "free" && turns && result.disk.twists) {
     out.notes.push(
       made.tip < 1
-        ? "Untwisted: hanging free, the braid turned along with the bobbins, and nothing braided."
-        : "Untwisted: hanging free, the braid turned along with the bobbins, so their turns twisted nothing in. It is no longer the braid its word says.",
+        ? "Untwisted: hanging free, the braid turned along with the bobbins, and nothing braided: the yarns hang straight, side by side. The words above are the word asked for, not what was made."
+        : "Untwisted: hanging free, the braid turned along with the bobbins, so their turns twisted nothing in. It is no longer the braid its word says: the words above are the word asked for.",
     );
   }
   return out;
