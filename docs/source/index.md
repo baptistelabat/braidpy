@@ -14,6 +14,7 @@ braided_tube.md
 why_no_closed_form.md
 solving_numerically.md
 braid3D.md
+rope_physics.md
 braid_algebra.md
 usage.md
 references.md
