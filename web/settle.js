@@ -273,7 +273,9 @@ async function onMarudai(id, result, job) {
     onDisk.done <= program.steps.length &&
     JSON.stringify(program.steps.slice(0, onDisk.done)) === onDisk.made;
   if (!goesOn) {
-    onDisk = { same, done: 0, made: "[]", frames: [], mirror: null, making: beginOnMarudai(program) };
+    const making = beginOnMarudai(program);
+    // Grow starts from the yarns as they are laid out, before any move.
+    onDisk = { same, done: 0, made: "[]", frames: [making.look()], mirror: null, making };
   }
   const from = onDisk.done;
   const making = onDisk.making;
