@@ -19,6 +19,12 @@ numbers and strings — so the page needs nothing of Python's to draw it.
 A description says where the braid comes from — by default, the first
 source offered:
 
+``{"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 6}``
+    A braid word: signed generator indices (``1 -2``), ``s1 s2^-1``, or
+    letters (``aB``, ``a`` for σ₁ and ``A`` its inverse).  With ``"layout":
+    "ring"``, a ring word, the strands round a circle: ``n`` crosses the
+    last strand and the first, across the seam, and ``n + 1`` turns them
+    all one place round.
 ``{"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 8}``
     Kumihimo's own moves: swap top and bottom, rotate a quarter.
 ``{"source": "mobidai", "name": "KONGO_8", "cycles": 8}``
@@ -34,7 +40,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping
 
-from braidpy.web import disks
+from braidpy.web import disks, words
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING
 from braidpy.web._spec import parse_moves, parse_word
 
@@ -42,7 +48,7 @@ __all__ = ["build", "catalogue", "parse_moves", "parse_word"]
 
 # What can be made, in the order the page offers it: each source's
 # catalogue entry, and what builds it.
-_SOURCES = {**disks.SOURCES}
+_SOURCES = {**words.SOURCES, **disks.SOURCES}
 
 
 def catalogue() -> Dict[str, Any]:
