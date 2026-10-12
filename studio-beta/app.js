@@ -968,7 +968,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=cb61b3731c");
+  settler = new Worker("settle.js?v=66791561b1");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -1151,12 +1151,11 @@ const CHOICES = {
   },
 };
 
-// The ways of settling the yarns each source can have: a disk braid any;
-// a braid word made on a marudai or tightened sideways, physics needing
-// yarns laid from a disk; a machine's braid tightened sideways.  Those it
-// cannot have are not offered.
+// The ways of settling the yarns each source can have: a disk braid or a
+// braid word any — a word to settle by physics is laid round a ring, as
+// from a disk; a machine's braid tightened sideways.  Those it cannot have
+// are not offered.
 const SETTLES = {
-  word: ["marudai", "sideways"],
   machine: ["sideways"],
 };
 

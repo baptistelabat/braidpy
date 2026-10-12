@@ -108,6 +108,44 @@ function tightened(result, job, tight) {
   return result;
 }
 
+// The yarns pulled clear sideways, ten rounds at a time, as tight as they
+// go while every pair winds round each other as it was laid.  Tightened
+// level by level, two yarns can circle each other at one level without
+// touching, undoing a turn of the braid between levels; the physics would
+// keep that wrong turn.  The round before a pair's winding changes by half
+// a turn is kept.
+function pulledClear(job) {
+  const most = Math.max(job.iterations, 100);
+  let clear = tightenYarns({ ...job, iterations: 0 });
+  const laid = windings(clear.xy, job.n_yarns, job.n);
+  for (let done = 0; done < most; done += 10) {
+    const next = tightenYarns({ ...job, xy: clear.xy, iterations: 10 });
+    const now = windings(next.xy, job.n_yarns, job.n);
+    if (now.some((w, k) => Math.abs(w - laid[k]) > Math.PI)) break;
+    clear = next;
+  }
+  return clear;
+}
+
+// How far each pair of yarns winds round the other from the first level to
+// the last, in radians: x and y, yarn after yarn, level by level.
+function windings(xy, nYarns, n) {
+  const out = [];
+  for (let a = 0; a < nYarns; a++) {
+    for (let b = a + 1; b < nYarns; b++) {
+      let total = 0;
+      let last = null;
+      for (let i = 0; i < n; i++) {
+        const angle = Math.atan2(xy[2 * (b * n + i) + 1] - xy[2 * (a * n + i) + 1], xy[2 * (b * n + i)] - xy[2 * (a * n + i)]);
+        if (last !== null) total += Math.atan2(Math.sin(angle - last), Math.cos(angle - last));
+        last = angle;
+      }
+      out.push(total);
+    }
+  }
+  return out;
+}
+
 // The braid settled by its own physics (rope.js): pulled clear of itself
 // sideways first, then each yarn a chain of beads, clamped at the fell,
 // fed at its oldest end from a bobbin pulling it back, and the braid drawn
@@ -118,7 +156,7 @@ function settled(id, result, job) {
   // seen in 3D: overlaps left for the physics to push apart could part
   // the wrong way.
   status("Pulling the yarns clear…");
-  const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
+  const clear = pulledClear(job);
   const d = job.yarn_diameter;
   const [cx, cy] = job.centre;
   const yarns = [];
@@ -160,7 +198,8 @@ function settled(id, result, job) {
       void largestForce;
     },
   });
-  const out = onLevels(result, rest.yarns, d);
+  const straight = unbraided(rest, height, job.twist);
+  const out = onLevels(result, straight || rest.yarns, d);
   out.info.closest_approach = round((1 - rest.deepest) * d);
   out.notes = [
     ...(out.notes || []),
@@ -168,8 +207,33 @@ function settled(id, result, job) {
       `${(height + rest.rise).toFixed(1)} yarn diameters long, the end turning ` +
       `${((rest.turn * 180) / Math.PI).toFixed(0)}°.`,
   ];
+  if (straight) out.notes.push(UNBRAIDED);
   return out;
 }
+
+// Untwisted, a braid that was only twist — a rope, a two-ply — has nothing
+// left to jam once its end has turned it out: its yarns would be drawn in
+// to nothing.  They hang straight instead, side by side, touching round
+// their middle, each where its end left the plate, as long as the braid
+// was laid; null for a braid still braided.
+function unbraided(rest, height, twist) {
+  if (twist === "keep") return null;
+  const tops = rest.yarns.map((y) => Math.max(...y.filter((_, k) => k % 3 === 2)));
+  if (Math.max(...tops) >= 1) return null;
+  const n = rest.yarns.length;
+  const apart = n > 1 ? 0.5 / Math.sin(Math.PI / n) : 0;
+  const rows = Math.ceil(2 * height);
+  return rest.yarns.map((y) => {
+    const angle = Math.atan2(y[y.length - 2], y[y.length - 3]);
+    const [x, yy] = [apart * Math.cos(angle), apart * Math.sin(angle)];
+    const points = [];
+    for (let i = 0; i <= rows; i++) points.push(x, yy, (height * i) / rows);
+    return points;
+  });
+}
+
+const UNBRAIDED =
+  "Untwisted: hanging free, the end turned the braid's twist out, and nothing is left braided: the yarns hang straight, side by side. The words above are the braid asked for, not what was made.";
 
 // The braid made crossing by crossing (form.js): from its oldest row up,
 // each row beaten up against the made braid, with friction, and frozen
@@ -177,7 +241,7 @@ function settled(id, result, job) {
 // from that start rather than from the braid as laid.
 function formed(id, result, job) {
   status("Pulling the yarns clear…");
-  const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
+  const clear = pulledClear(job);
   const d = job.yarn_diameter;
   const [cx, cy] = job.centre;
   // Oldest end first, rising.
@@ -231,7 +295,8 @@ function formed(id, result, job) {
       show(now);
     },
   });
-  const out = onLevels(result, fellFirst(rest.yarns), d);
+  const straight = unbraided(rest, height, job.twist);
+  const out = onLevels(result, straight || fellFirst(rest.yarns), d);
   out.info.closest_approach = round((1 - rest.deepest) * d);
   out.notes = [
     ...(out.notes || []),
@@ -240,6 +305,7 @@ function formed(id, result, job) {
       `${(madeHeight + rest.rise).toFixed(1)}, the end turning ` +
       `${((rest.turn * 180) / Math.PI).toFixed(0)}°.`,
   ];
+  if (straight) out.notes.push(UNBRAIDED);
   return out;
 }
 
