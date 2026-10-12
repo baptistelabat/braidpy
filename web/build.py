@@ -35,6 +35,7 @@ PAGE = [
     "style.css",
     "app.js",
     "worker.js",
+    "settle.js",
     "tighten.js",
     "rope.js",
     "form.js",
@@ -75,8 +76,8 @@ def _math_braid_sdist(into: Path) -> Path:
 # that file, so a browser holding an old copy fetches the new one.
 _REFERENCES = {
     "index.html": ['href="style.css"', 'src="app.js"'],
-    "app.js": ['new Worker("worker.js")'],
-    "worker.js": ['importScripts("tighten.js", "rope.js", "form.js", "marudai.js")'],
+    "app.js": ['new Worker("worker.js")', 'new Worker("settle.js")'],
+    "settle.js": ['importScripts("tighten.js", "rope.js", "form.js", "marudai.js")'],
 }
 
 
@@ -89,9 +90,9 @@ def _copy_page(site: Path) -> None:
         for name in PAGE
     }
     # Fingerprints of what a file names go into it, so files naming others
-    # are stamped after those: worker.js before app.js before index.html.
+    # are stamped after those: settle.js before app.js before index.html.
     text = {name: (WEB / name).read_text() for name in PAGE}
-    for name in ["worker.js", "app.js", "index.html"]:
+    for name in ["settle.js", "app.js", "index.html"]:
         for snippet in _REFERENCES[name]:
             if snippet not in text[name]:
                 raise RuntimeError(f"{name} no longer has {snippet!r}.")

@@ -8,7 +8,7 @@ const { linkingMatrix } = require("./linking.js");
 const { tightenYarns } = require(path.join(__dirname, "..", "..", "web", "tighten.js"));
 const { relay } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
 const { form } = require(path.join(__dirname, "..", "..", "web", "form.js"));
-const { make } = require(path.join(__dirname, "..", "..", "web", "marudai.js"));
+const { make, begin } = require(path.join(__dirname, "..", "..", "web", "marudai.js"));
 
 function helices(turns, height, radius, spacing) {
   return [0, Math.PI].map((phase) => {
@@ -209,6 +209,20 @@ const cases = {
       crossings: cut.length,
       radii: radii.map((r) => r / Math.max(slices, 1)),
     };
+  },
+
+  // A disk braid made on a marudai in two goes — its first moves, then on
+  // from there to the end — and at once: the same braid, bead for bead.
+  continued() {
+    const disk = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const half = Math.floor(disk.steps.length / 2);
+    const making = begin({ ...disk, steps: disk.steps.slice(0, half) });
+    disk.steps.slice(0, half).forEach((step, k) => making.step(step, k));
+    making.hooks.total = disk.steps.length;
+    disk.steps.slice(half).forEach((step, k) => making.step(step, half + k));
+    const twice = making.result();
+    const once = make(disk);
+    return { same: JSON.stringify(twice.yarns) === JSON.stringify(once.yarns), tip: once.tip };
   },
 
   // A braid made on a marudai, and braidpy's own as the page draws it, by

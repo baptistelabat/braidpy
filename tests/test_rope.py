@@ -163,6 +163,21 @@ def test_a_braids_own_word_typed_in_makes_the_same_braid(tmp_path, name, key, la
     assert typed["closest"] > 0.75
 
 
+def test_a_braid_made_on_from_where_it_was_left_is_the_same_braid(tmp_path):
+    """Braid Studio makes more of a braid from where it left it: made in two
+    goes, it is the braid made at once."""
+    from braidpy.web import build
+
+    disk = build({"source": "sinnet", "name": "abok_3042", "cycles": 2}, tighten=False)[
+        "disk"
+    ]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    result = _run("continued", program)
+    assert result["tip"] > 1
+    assert result["same"]
+
+
 def test_a_braid_held_is_as_tight_as_one_hanging_free(tmp_path):
     """Held, so that it never turns to balance, a sinnet is drawn as tight as
     hanging free: no slack.  (Braid Studio's "kept".)"""

@@ -136,6 +136,14 @@ The page has a form and a 3D view.
 - The address bar always describes the braid shown, so **Copy link** shares
   it. **Save…** keeps a picture, the yarns as an STL file for 3D printing or
   an OBJ model, or their points as JSON.
+- **Braid** makes the braid described. Asking for another while one is
+  being made stops it at once: the yarns are settled in a worker of their
+  own (`web/settle.js`), apart from braidpy's, which is ended and started
+  again without reloading Python. On the marudai, asking for more of the
+  same braid — more repeats or cycles — goes on from where it was left,
+  making only the moves still to come, even while it is still being made;
+  the note says from which move. **Reset** stops whatever is being made and
+  forgets the marudai, so the next braid is made from the start.
 - The last few braids made are kept: going back to one is instant.
 
 ## How it is built

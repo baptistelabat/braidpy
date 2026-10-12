@@ -227,6 +227,15 @@ button:disabled {
   cursor: progress;
 }
 
+.actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.actions-row #build {
+  flex: 1;
+}
+
 #build {
   background: var(--accent);
   color: var(--accent-ink);

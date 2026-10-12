@@ -86,7 +86,16 @@
           </label>
         </details>
 
-        <button id="build" type="submit" disabled>Loading…</button>
+        <div class="actions-row">
+          <button id="build" type="submit" disabled>Loading…</button>
+          <button
+            id="restart"
+            type="button"
+            title="Stop what is being made, and make the next braid from the start"
+          >
+            Reset
+          </button>
+        </div>
         <p id="status" class="status" role="status" aria-live="polite">
           Starting…
         </p>
