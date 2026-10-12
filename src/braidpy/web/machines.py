@@ -9,21 +9,13 @@ draws it from above, to load it by hand."""
 from __future__ import annotations
 
 import re
-from typing import (
-    Any,
-    Callable,
-    Collection,
-    Dict,
-    Hashable,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-)
+from typing import Any, Callable, Collection, Dict, Hashable, List, Optional, Tuple
 
 from braidpy.web._info import _braid_info
 from braidpy.web._result import _PALETTE, _result, _tighten, _timeline
-from braidpy.web._spec import _count, _number
+from braidpy.web._settings import Machine
+from braidpy.web._spec import defaults
+from braidpy.web._types import Info, MachineGeometry, Result, Source, Spec
 
 
 def _machines() -> Dict[str, Callable[[], Any]]:
@@ -42,20 +34,7 @@ def _machines() -> Dict[str, Callable[[], Any]]:
     }
 
 
-_MACHINE_TITLES = {
-    "flat_3": "Flat braid, 3 carriers",
-    "flat_4": "Flat braid, 4 carriers",
-    "flat_9": "Flat braid, 9 carriers on a single track",
-    "soutache_5": "Soutache, 2 gears of 5",
-    "soutache_7": "Soutache, 2 gears of 7",
-    "princess": "Princess, 5/6/5 gears, 8 carriers",
-    "tubular_8": "Tubular braid, 8 carriers",
-    "tubular_12": "Tubular braid, 12 carriers",
-    "tubular_16": "Tubular braid, 16 carriers",
-}
-
-
-def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
+def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import (
         axial_positions,
         compute_layout,
@@ -65,19 +44,18 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
     from braidpy.horn_gear.word import annular_word, flat_word
 
     machines = _machines()
-    name = str(spec.get("name", "tubular_8"))
+    name = Machine.name.read(spec)
     if name not in machines:
         raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
     machine = machines[name]()
-    cycles = _count(spec, "cycles", 2, 1, 8)
+    cycles = Machine.cycles.read(spec)
     radii = gear_radii(machine)
-    # A fifth of a gear radius is a plausible yarn.
-    default = 0.2 * sum(radii.values()) / len(radii)
-    diameter = _number(spec, "yarn_diameter", default, 0.01, 10.0)
+    default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
+    diameter = Machine.yarn_diameter.read(spec, default=default)
     layout = compute_layout(machine)
     cores = axial_positions(machine, layout)
-    stiff = str(spec.get("cores", "yarn"))
-    if stiff not in ("yarn", "rigid"):
+    stiff = Machine.cores.read(spec)
+    if stiff not in Machine.stiffness:
         raise ValueError("Cores are either yarn or rigid.")
     # The cores run up the braid, each in its own place, where the machine
     # lays it; the yarns are drawn in round them.  A rigid core stays
@@ -123,7 +101,7 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
     paths = _tighten(
         paths, spec, diameter, rigid=list(cores) if stiff == "rigid" else []
     )
-    info: Dict[str, Any] = {}
+    info: Info = {}
     notes = ["Words are read over one cycle of the machine."]
     if stopped is not None:
         # The carriers that met, where they started: as the page draws
@@ -159,13 +137,13 @@ def _from_machine(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info["repeated"] = "cycle"
         info["made"] = cycles
         # The cycles made, not the one read.
-        info["pure"] = cycles % info.get("pure_after", 1) == 0
+        info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     colour = {k: _PALETTE[i % len(_PALETTE)] for i, k in enumerate(carriers)}
-    colour.update({k: "#8a857c" for k in cores})
+    colour.update({k: Machine.core_colour for k in cores})
     return _result(
-        _MACHINE_TITLES[name] + f", {cycles} cycles",
+        Machine.titles[name] + f", {cycles} cycles",
         paths,
         diameter,
         colours=[colour[k] for k in keys],
@@ -206,7 +184,7 @@ def _met(error: Any) -> str:
     return " and ".join(f"{g}:{slot}" for g, slot in error.collisions)
 
 
-def machine_geometry(name: str) -> Dict[str, Any]:
+def machine_geometry(name: str) -> MachineGeometry:
     """A machine as the page draws it from above, to load it by hand: its
     gears — where, how big, the circle their carriers ride, their slots, the
     way they turn and where their first slot is — the contacts between them,
@@ -274,14 +252,16 @@ def _place_cores(paths, cores: Collection[Hashable]):
     return replace(paths, points=points)
 
 
-def _machine_entry() -> Dict[str, Any]:
+def _machine_entry() -> Source:
     return {
         "title": "Horn gear braiding machine",
-        "defaults": {"name": "tubular_8", "cores": "yarn", "cycles": 2},
+        "defaults": defaults(*Machine.shown),
         "entries": [
-            {"name": name, "title": title} for name, title in _MACHINE_TITLES.items()
+            {"name": name, "title": title} for name, title in Machine.titles.items()
         ],
     }
 
 
-SOURCES = {"machine": (_machine_entry, _from_machine)}
+SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
+    "machine": (_machine_entry, _from_machine)
+}
