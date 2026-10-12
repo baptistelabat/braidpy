@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 
@@ -42,3 +43,43 @@ def braidword_alpha_to_numeric(braidword: str) -> List[int]:
             raise ValueError(f"Invalid character in braidword: {ch}")
         numeric_word.append(num)
     return numeric_word
+
+
+def parse_word(text: str) -> List[int]:
+    """A braid word, as signed generator indices.
+
+    Reads ``1 -2 1`` (or with commas), ``s1 s2^-1 s1`` (``σ`` too), and
+    letters, ``aBa``: ``a`` is σ₁, ``b`` σ₂ and so on, a capital the inverse
+    (:func:`braidword_alpha_to_numeric`).
+
+    Args:
+        text: The word.
+
+    Returns:
+        The generators; empty for an empty word.
+
+    Raises:
+        ValueError: If the text is none of these.
+    """
+    text = text.strip()
+    if not text:
+        return []
+    if re.fullmatch(r"[A-Za-z]+", text) and not re.search(r"[sσ]\d", text):
+        return braidword_alpha_to_numeric(text)
+    word: List[int] = []
+    for token in re.split(r"[\s,;.]+", text):
+        if not token:
+            continue
+        plain = re.fullmatch(r"[+-]?\d+", token)
+        if plain:
+            word.append(int(token))
+            continue
+        named = re.fullmatch(r"[sσ](\d+)(\^?\(?(-?1)\)?)?", token)
+        if named:
+            index = int(named.group(1))
+            word.append(-index if named.group(3) == "-1" else index)
+            continue
+        raise ValueError(f"Cannot read {token!r} as a generator.")
+    if any(g == 0 for g in word):
+        raise ValueError("Generators are numbered from 1.")
+    return word

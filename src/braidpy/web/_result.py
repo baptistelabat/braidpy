@@ -23,6 +23,10 @@ _DECIMALS = 4
 # Above this many points along a yarn, the page gets one in so many.
 _MAX_POINTS = 1500
 
+# Above this many instants, the timeline of what made a braid gets one in
+# so many: smooth enough for Grow to replay, small enough to send.
+_MAX_TIMES = 3000
+
 # The same colours the horn gear animation gives its carriers.
 _PALETTE = [
     "#e41a1c",
@@ -182,7 +186,7 @@ def _timeline(
             far it is turned is given at each instant, as ``turn``.
     """
     times = np.asarray(trajectories.times, dtype=float)
-    stride = max(1, math.ceil(len(times) / 3000))
+    stride = max(1, math.ceil(len(times) / _MAX_TIMES))
     chosen = list(range(0, len(times), stride))
     if chosen[-1] != len(times) - 1:
         chosen.append(len(times) - 1)
