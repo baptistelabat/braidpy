@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Mapping, Sequence, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from braidpy.braidword import parse_word
 
@@ -69,3 +70,54 @@ def _count(spec: Mapping[str, Any], key: str, default: int, low: int, high: int)
     if value != int(value):
         raise ValueError(f"{key} should be a whole number.")
     return int(value)
+
+
+@dataclass(frozen=True)
+class Count:
+    """A whole number a description may give as ``key``: its default, and the
+    bounds it must keep to."""
+
+    key: str
+    default: int
+    low: int
+    high: int
+
+    def read(self, spec: Mapping[str, Any], default: Optional[int] = None) -> int:
+        """The number given, checked; ``default`` if not, or this one's own."""
+        own = self.default if default is None else default
+        return _count(spec, self.key, own, self.low, self.high)
+
+
+@dataclass(frozen=True)
+class Number:
+    """A number a description may give as ``key``: its default, and the
+    bounds it must keep to."""
+
+    key: str
+    default: float
+    low: float
+    high: float
+
+    def read(self, spec: Mapping[str, Any], default: Optional[float] = None) -> float:
+        """The number given, checked; ``default`` if not, or this one's own."""
+        own = self.default if default is None else default
+        return float(_number(spec, self.key, own, self.low, self.high))
+
+
+@dataclass(frozen=True)
+class Text:
+    """Text a description may give as ``key``, and its default."""
+
+    key: str
+    default: str
+
+    def read(self, spec: Mapping[str, Any]) -> str:
+        """The text given, or the default."""
+        return str(spec.get(self.key, self.default))
+
+
+def defaults(
+    *settings: Union[Count, Number, Text],
+) -> Dict[str, Union[str, int, float]]:
+    """The settings' defaults, by key: as the catalogue gives them."""
+    return {setting.key: setting.default for setting in settings}

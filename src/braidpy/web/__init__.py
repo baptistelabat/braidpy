@@ -32,20 +32,29 @@ tightening steps; 0 lays the yarns without tightening them.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping
+from typing import Dict
 
 from braidpy.web import disks
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING
 from braidpy.web._spec import parse_moves, parse_word
+from braidpy.web._types import Result, Source, Spec
 
-__all__ = ["build", "catalogue", "parse_moves", "parse_word"]
+__all__ = [
+    "Result",
+    "Source",
+    "Spec",
+    "build",
+    "catalogue",
+    "parse_moves",
+    "parse_word",
+]
 
 # What can be made, in the order the page offers it: each source's
 # catalogue entry, and what builds it.
 _SOURCES = {**disks.SOURCES}
 
 
-def catalogue() -> Dict[str, Any]:
+def catalogue() -> Dict[str, Source]:
     """What the page can make, with sensible defaults for each source.
 
     Returns:
@@ -55,7 +64,7 @@ def catalogue() -> Dict[str, Any]:
     return {source: entry() for source, (entry, _) in _SOURCES.items()}
 
 
-def build(spec: Mapping[str, Any], tighten: bool = True) -> Dict[str, Any]:
+def build(spec: Spec, tighten: bool = True) -> Result:
     """The braid a description makes, as data for a page to draw.
 
     Args:

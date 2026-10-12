@@ -180,3 +180,15 @@ def test_a_braid_says_how_many_repeats_were_made(spec, made):
     assert info.get("made") == made
     if made:
         assert info["pure"] == (made % info["pure_after"] == 0)
+
+
+@pytest.mark.parametrize("source", ["kumihimo", "mobidai", "sinnet"])
+def test_a_disk_braid_made_from_its_catalogue_defaults_is_made_by_default(source):
+    """The page starts from the catalogue's defaults; a description that
+    gives none of them makes the same braid: both read one table."""
+    given = build(
+        {"source": source, **catalogue()[source]["defaults"], "iterations": 1},
+        tighten=False,
+    )
+    assumed = build({"source": source, "iterations": 1}, tighten=False)
+    assert given == assumed

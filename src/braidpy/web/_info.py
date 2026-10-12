@@ -9,17 +9,19 @@ Garside normal form."""
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from braidpy.web._types import Info
 
-def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
+
+def _braid_info(word: Sequence[int], n_strands: int) -> Info:
     """What is known of a flat braid word: its crossings and permutation."""
     from braidpy.braid import Braid
 
     word = [int(g) for g in word]
-    info: Dict[str, Any] = {
+    info: Info = {
         "word": " ".join(str(g) for g in word),
         "crossings": len(word),
         "exponent_sum": int(sum(np.sign(word))),
@@ -46,7 +48,7 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Dict[str, Any]:
     return info
 
 
-def _unit(info: Dict[str, Any], word: Sequence[int], n_strands: int, repeated: str):
+def _unit(info: Info, word: Sequence[int], n_strands: int, repeated: str) -> Info:
     """Says in ``info`` how many of the braid's unit — its word repeated, or
     its moves' cycle, as ``repeated`` names it — make a pure braid."""
     from braidpy.braid import Braid
@@ -60,11 +62,11 @@ def _unit(info: Dict[str, Any], word: Sequence[int], n_strands: int, repeated: s
 
 
 def _disk_unit(
-    info: Dict[str, Any],
+    info: Info,
     cycles: Callable[[int], Tuple[Any, Any, int]],
     clockwise: bool,
     repeated: str = "cycle",
-):
+) -> Info:
     """:func:`_unit` for a disk braid, whose ``cycles(k)`` are the start,
     steps and slots of ``k`` cycles of its moves.  A braid that creeps round the disk
     from cycle to cycle, as kongo gumi does, is not its first cycle repeated:
@@ -131,7 +133,7 @@ def _cycles(permutation: Sequence[int]) -> int:
     return cycles
 
 
-def _disk_info(start, steps, n_slots: int, clockwise: bool) -> Dict[str, Any]:
+def _disk_info(start, steps, n_slots: int, clockwise: bool) -> Info:
     """A disk braid's word, read round the ring and with the middle solid."""
     from braidpy.annulus_braid import solid_word
     from braidpy.take_off import disk_annular_word
