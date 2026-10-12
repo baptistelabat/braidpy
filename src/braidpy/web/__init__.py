@@ -31,6 +31,8 @@ source offered:
     A disk braid from the catalogue (:mod:`braidpy.mobidai_catalog`).
 ``{"source": "sinnet", "name": "abok_3042", "cycles": 4}``
     An Ashley solid sinnet (:mod:`braidpy.solid_sinnets_catalog`).
+``{"source": "machine", "name": "tubular_8", "cycles": 3}``
+    A horn gear braiding machine (:mod:`braidpy.horn_gear.examples`).
 
 Every description may also give ``yarn_diameter`` and ``iterations``, the
 tightening steps; 0 lays the yarns without tightening them.
@@ -40,15 +42,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping
 
-from braidpy.web import disks, words
+from braidpy.web import disks, machines, words
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING
 from braidpy.web._spec import parse_moves, parse_word
+from braidpy.web.machines import machine_geometry
 
-__all__ = ["build", "catalogue", "parse_moves", "parse_word"]
+__all__ = ["build", "catalogue", "machine_geometry", "parse_moves", "parse_word"]
 
 # What can be made, in the order the page offers it: each source's
 # catalogue entry, and what builds it.
-_SOURCES = {**words.SOURCES, **disks.SOURCES}
+_SOURCES = {**words.SOURCES, **disks.SOURCES, **machines.SOURCES}
 
 
 def catalogue() -> Dict[str, Any]:
@@ -83,7 +86,8 @@ def build(spec: Mapping[str, Any], tighten: bool = True) -> Dict[str, Any]:
         ``notes`` worth telling whoever asked.  ``times`` says when each
         point was laid, and ``timeline`` what laid it, seen from above —
         the carriers' paths, the outlines under them and the slots — with
-        its ``clock`` relating the source's time to the braid's.
+        its ``clock`` relating the source's time to the braid's.  A
+        machine's axial cores are yarns among the others, named ``Core``.
 
     Raises:
         ValueError: If the description cannot be made.
