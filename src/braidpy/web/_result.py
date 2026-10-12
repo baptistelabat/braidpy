@@ -14,6 +14,8 @@ from typing import Any, Dict, Hashable, List, Optional, Sequence, cast
 
 import numpy as np
 
+from braidpy.utils import PALETTE
+
 from braidpy.web._settings import ITERATIONS
 from braidpy.web._spec import Count
 from braidpy.web._types import Clock, Info, Result, Spec, Strand, Tightening, Timeline
@@ -29,21 +31,6 @@ _MAX_POINTS = 1500
 # so many: smooth enough for Grow to replay, small enough to send.
 _MAX_TIMES = 3000
 
-# The same colours the horn gear animation gives its carriers.
-_PALETTE = [
-    "#e41a1c",
-    "#377eb8",
-    "#4daf4a",
-    "#984ea3",
-    "#ff7f00",
-    "#a65628",
-    "#f781bf",
-    "#999999",
-    "#66c2a5",
-    "#fc8d62",
-    "#8da0cb",
-    "#e78ac3",
-]
 
 # Set while a braid is built for a page that tightens it itself: the yarns
 # are then only laid, and what tightening them needs is handed over instead.
@@ -126,7 +113,7 @@ def _result(
         points = np.asarray(paths.points[key], dtype=float)[chosen] - centre
         if not np.all(np.isfinite(points)):
             raise ValueError("The braid could not be laid: its yarns ran off.")
-        colour = colours[i % len(colours)] if colours else _PALETTE[i % len(_PALETTE)]
+        colour = colours[i % len(colours)] if colours else PALETTE[i % len(PALETTE)]
         name = names[i] if names else f"Strand {key}"
         strands.append(
             {
