@@ -44,7 +44,7 @@ import math
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import numpy as np
-from braidpy.utils import lazy_module
+from braidpy.utils import PALETTE, lazy_module, play_controls
 
 if TYPE_CHECKING:
     import plotly.graph_objects as go
@@ -132,21 +132,6 @@ _GEAR_COLOURS = {
     "trigonometric": ("rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"),
     "held": ("rgba(140,140,140,0.14)", "rgba(110,110,110,0.65)"),
 }
-
-_PALETTE = [
-    "#e41a1c",
-    "#377eb8",
-    "#4daf4a",
-    "#984ea3",
-    "#ff7f00",
-    "#a65628",
-    "#f781bf",
-    "#999999",
-    "#66c2a5",
-    "#fc8d62",
-    "#8da0cb",
-    "#e78ac3",
-]
 
 
 def _rounded(trace: go.BaseTraceType) -> go.BaseTraceType:
@@ -395,7 +380,7 @@ def _track_traces(
                 x=xs_all,
                 y=ys_all,
                 mode="lines",
-                line=dict(color=_PALETTE[index % len(_PALETTE)], width=width),
+                line=dict(color=PALETTE[index % len(PALETTE)], width=width),
                 opacity=opacity,
                 name=label,
                 hoverinfo="skip",
@@ -992,7 +977,7 @@ def animate(
         )
 
     carrier_colors = {
-        c.carrier_id: _PALETTE[i % len(_PALETTE)]
+        c.carrier_id: PALETTE[i % len(PALETTE)]
         for i, c in enumerate(history[0].carriers)
     }
 
@@ -1143,72 +1128,7 @@ def animate(
         yaxis=dict(showgrid=False, zeroline=False, visible=False),
         plot_bgcolor="white",
         margin=dict(l=20, r=20, t=80, b=20),
-        updatemenus=[
-            dict(
-                type="buttons",
-                showactive=False,
-                y=1.08,
-                x=0.5,
-                xanchor="center",
-                buttons=[
-                    dict(
-                        label="▶ Play",
-                        method="animate",
-                        args=[
-                            None,
-                            {
-                                "frame": {
-                                    "duration": frame_duration_ms,
-                                    "redraw": True,
-                                },
-                                "fromcurrent": True,
-                                "transition": {"duration": 0},
-                            },
-                        ],
-                    ),
-                    dict(
-                        label="⏸ Pause",
-                        method="animate",
-                        args=[
-                            [None],
-                            {
-                                "frame": {"duration": 0, "redraw": False},
-                                "mode": "immediate",
-                            },
-                        ],
-                    ),
-                ],
-            )
-        ],
-        sliders=[
-            dict(
-                steps=[
-                    dict(
-                        args=[
-                            [fn],
-                            {
-                                "frame": {"duration": 0, "redraw": True},
-                                "mode": "immediate",
-                            },
-                        ],
-                        label=label,
-                        method="animate",
-                    )
-                    for fn, label in slider_marks
-                ],
-                active=0,
-                y=0,
-                x=0,
-                xanchor="left",
-                len=1.0,
-                # Plotly's read-out repeats the active notch's label, and the
-                # notches between two steps have none to repeat: it would blank
-                # out eight frames in nine while the animation ran.  The
-                # numbered ticks say where the machine is instead.
-                currentvalue=dict(prefix="Step: ", visible=False),
-                transition=dict(duration=0),
-            )
-        ],
+        **play_controls(frame_duration_ms, slider_marks),
     )
 
     if output_html:
