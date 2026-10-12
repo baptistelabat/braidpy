@@ -745,12 +745,13 @@ class Braid:
         Returns:
             A list of ParametricStrand objects representing the strands.
         """
-        n_strands = self.n_strands or max(abs(g) for g in self.generators) + 1
-        n_segments = len(self.generators) + 1
+        # Read once: both are worked out afresh each time they are asked for.
+        generators = self.generators
+        history = self.slot_history()
+        n_strands = self.n_strands or max(abs(g) for g in generators) + 1
+        n_segments = len(generators) + 1
 
-        strand_paths = [
-            [row[strand] for row in self.slot_history()] for strand in range(n_strands)
-        ]
+        strand_paths = [[row[strand] for row in history] for strand in range(n_strands)]
 
         # Generate arc sequences for each strand
         strand_arc_sequences: List[List[Arc]] = []
@@ -767,7 +768,7 @@ class Braid:
                 # last segment can stop short of 1 by a rounding error.
                 t_start = k / n_segments
                 t_end = (k + 1) / n_segments
-                gen = self.generators[k]
+                gen = generators[k]
                 if i0 == i1 or gen == 0:
                     arc_func = make_idle_arc(x0, t_start, t_end)
                 else:
