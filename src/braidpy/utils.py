@@ -11,6 +11,8 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+import importlib
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 # ANSI color codes (foreground)
@@ -121,6 +123,40 @@ else:
             if val <= 0:
                 raise ValueError(f"Value must be > 0, got {val}")
             return super().__new__(cls, val)
+
+
+class _LazyModule(ModuleType):
+    """A module imported the first time something is asked of it."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self._lazy_name = name
+        self._lazy_module: Optional[ModuleType] = None
+
+    def __getattr__(self, attr: str) -> Any:
+        if attr.startswith("_lazy_"):
+            raise AttributeError(attr)
+        if self._lazy_module is None:
+            self._lazy_module = importlib.import_module(self._lazy_name)
+        return getattr(self._lazy_module, attr)
+
+
+def lazy_module(name: str) -> Any:
+    """A module that is only imported when first used.
+
+    Drawing libraries — plotly, matplotlib — are heavy, and most of braidpy
+    computes without them: in a browser, through Pyodide, not loading them
+    is the difference between a page that opens and one that downloads tens
+    of megabytes first.  Modules that draw import them this way, and keep
+    the real import under ``TYPE_CHECKING`` for the type checker.
+
+    Args:
+        name: The module's dotted name.
+
+    Returns:
+        A stand-in that imports the module on first attribute access.
+    """
+    return _LazyModule(name)
 
 
 class FunctionalException(Exception):

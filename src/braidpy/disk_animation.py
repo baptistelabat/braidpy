@@ -25,10 +25,15 @@ disk and animate it; :func:`animate_disk` does the drawing for any disk.
 
 from __future__ import annotations
 
-from typing import Dict, Hashable, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Hashable, List, Mapping, Optional, Sequence
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 from braidpy.take_off import (
     StrandTrajectories,

@@ -13,9 +13,15 @@ associated with the braiding moves.
 from __future__ import annotations
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional
-import matplotlib.pyplot as plt
+from typing import TYPE_CHECKING, Dict, List, Optional
 import numpy as np
+
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+else:
+    plt = lazy_module("matplotlib.pyplot")
 
 
 # ---------------------------------------------------------------------------
