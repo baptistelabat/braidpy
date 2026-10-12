@@ -200,6 +200,9 @@ static files, published with the documentation.
   since PyPI has no wheel of it.
 - `web/smoke_test.py` serves the site, opens it in a headless browser and
   makes a braid of every kind there.
+- `.github/workflows/braid_studio.yml` builds and smoke-tests the site on
+  every pull request touching braidpy or the page. On `develop`, it publishes
+  the site to `gh-pages` under `studio/`, beside the documentation.
 
 ### Why not a JavaScript port, or a Python server?
 
