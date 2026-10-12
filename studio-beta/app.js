@@ -331,9 +331,13 @@ function attachDiagram(holder) {
   named();
   const figure = document.createElement("div");
   figure.className = "diagram";
+  // However long the word, rows stay readable: the drawing scrolls.
+  const scroller = document.createElement("div");
+  scroller.className = "diagram-scroll";
   const canvas = document.createElement("canvas");
+  scroller.append(canvas);
   const caption = document.createElement("small");
-  figure.append(canvas, caption);
+  figure.append(scroller, caption);
   wordField.closest("label").after(figure);
   const draw = () =>
     drawDiagram(
@@ -374,9 +378,13 @@ function drawDiagram(canvas, caption, text, strands, ring = false) {
       ? `On a ring of ${given} strands, moves go up to ${given + 1}: drawn with ${n}.`
       : `σ${needed - 1} needs ${needed} strands: drawn with ${n}.`;
   }
-  const width = canvas.parentElement.clientWidth;
-  const row = Math.max(6, Math.min(28, 360 / word.length));
+  // Rows and columns no smaller than can be read: a long word, or many
+  // strands, scrolls rather than shrinks.
+  const room = canvas.parentElement.clientWidth;
+  const row = Math.max(14, Math.min(28, 360 / word.length));
   const height = row * (word.length + 1);
+  const across = ring ? n : n - 1;
+  const width = Math.max(room, 24 + 14 * across);
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
@@ -386,8 +394,7 @@ function drawDiagram(canvas, caption, text, strands, ring = false) {
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   // A ring is drawn on a cylinder cut at its seam: half a column each side,
   // where a strand leaving one edge comes back at the other.
-  const columns = ring ? n : n - 1;
-  const column = Math.min(44, (width - 24) / Math.max(columns, 1));
+  const column = Math.min(44, (width - 24) / Math.max(across, 1));
   const left = (width - column * (n - 1)) / 2;
   const X = (slot) => left + slot * column;
   const lineWidth = Math.max(1.5, Math.min(3, column / 8));
