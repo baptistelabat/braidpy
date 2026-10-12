@@ -56,7 +56,10 @@ The page has a form and a 3D view.
   disk braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
   chain of beads, clamped at the fell and fed from a bobbin, the braid
   beaten up until its crossings jam — or made crossing by crossing, with
-  friction. The view follows each as it goes.
+  friction. The view follows each as it goes. Only the ways a braid can
+  be settled are offered: a braid word on a marudai or sideways (it is laid
+  as a flat row of strands, not from a disk, which the physics needs), a
+  machine's braid sideways.
 - A disk's top view is turned so its seam — where its numbering closes,
   between its first slot or space and its last — is up, away from you; a
   braid made on a marudai is turned to match, each yarn going to its

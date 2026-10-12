@@ -1151,11 +1151,32 @@ const CHOICES = {
   },
 };
 
+// The ways of settling the yarns each source can have: a disk braid any;
+// a braid word made on a marudai or tightened sideways, physics needing
+// yarns laid from a disk; a machine's braid tightened sideways.  Those it
+// cannot have are not offered.
+const SETTLES = {
+  word: ["marudai", "sideways"],
+  machine: ["sideways"],
+};
+
+function fitSettle() {
+  const settle = $("settle");
+  const can = SETTLES[$("source").value];
+  for (const option of settle.options) option.hidden = option.disabled = can ? !can.includes(option.value) : false;
+  if (settle.selectedOptions[0]?.disabled) {
+    settle.dataset.chosen = "";
+    settle.value = settle.dataset.default;
+    markDefault($("twist"), CHOICES.twist.guess($("source").value));
+  }
+}
+
 // The twist as each way of settling the yarns can have it: on a marudai,
 // kept, held while the bobbins turn, or untwisted; settled by physics, the
 // end plate held or turning; tightened sideways, nothing to choose — the
 // yarns keep the twist they were laid with.
 function fitTwist() {
+  fitSettle();
   const settle = $("settle").value;
   const twist = $("twist");
   twist.closest("label").hidden = settle === "sideways";
