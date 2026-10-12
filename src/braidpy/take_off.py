@@ -736,9 +736,9 @@ def visualize_yarns(
         The figure.
     """
     if colors is None:
-        from braidpy.horn_gear.visualization import _PALETTE
+        from braidpy.utils import PALETTE
 
-        colors = _PALETTE
+        colors = PALETTE
 
     if title is None:
         if paths.fell_radius is None:
@@ -1159,10 +1159,16 @@ def kumihimo_steps(
 
     Returns:
         The number of slots, each strand's starting slot, and the steps.
+
+    Raises:
+        ValueError: If the pattern is empty or has other moves, or the
+            strands are not a multiple of four.
     """
     if isinstance(kumihimo, str):
         if n_strands is None:
             raise ValueError("A pattern needs n_strands.")
+        if not kumihimo or set(kumihimo) - {"S", "R"}:
+            raise ValueError("A kumihimo pattern is made of S (swap) and R (rotate).")
         n = n_strands
         moves = [m if m == "S" else "R**1" for m in kumihimo]
         start_order = list(range(n))

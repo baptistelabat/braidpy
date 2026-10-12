@@ -76,7 +76,6 @@ class Kumihimo:
     pattern = Text("pattern", "SR")
     # Its moves take the strands in fours: top, bottom, left and right.
     n_strands = Count("n_strands", 8, low=4, high=32)
-    strands_in = 4
     repeat = Count("repeat", 8, low=1, high=50)
     shown = (pattern, n_strands, repeat)
 
