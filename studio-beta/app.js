@@ -968,7 +968,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=d92adf7e7f");
+  settler = new Worker("settle.js?v=cb61b3731c");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -1027,8 +1027,7 @@ function heard(data) {
       braid.box = new THREE.Box3().setFromObject(braid.frame);
       fit();
     }
-    const [first, last] = braid.span;
-    drawTop(first + Math.max(0, Math.min(1, (data.frame.step + 1) / braid.steps)) * (last - first));
+    topAtFrame(data.frame);
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
     // Settling sends the braid as it goes: the view stays put.
@@ -1563,8 +1562,7 @@ function made(value) {
   if (frames?.length && fraction < 0.999) {
     const frame = frames[Math.min(frames.length - 1, Math.floor(fraction * frames.length))];
     showFrame(frame, braid.disk, braid.colours);
-    const step = Math.max(0, Math.min(1, (frame.step + 1) / braid.steps));
-    drawTop(first + step * (last - first));
+    topAtFrame(frame);
     return;
   }
   clearFrame();
@@ -1600,6 +1598,16 @@ function made(value) {
     }
   }
   drawTop(now);
+}
+
+// The top view at a moment of the making on a marudai: during a move, the
+// yarns it has carried so far already where it takes them, the others still
+// where they were.
+function topAtFrame(frame) {
+  const [first, last] = braid.span;
+  const at = (k) => first + Math.max(0, Math.min(1, k / braid.steps)) * (last - first);
+  const moved = frame.moved && new Set(frame.moved);
+  drawTop(at(frame.step + 1), moved && { before: at(frame.step), moved });
 }
 
 // ``ys`` at ``x``, between the samples ``xs`` (ascending), held at the ends.
@@ -1714,7 +1722,10 @@ function drawSection(result) {
 const top = $("topview");
 const topContext = top.getContext("2d");
 
-function drawTop(now) {
+// ``partly``, during a move made yarn by yarn: the time it started, and the
+// yarns already carried, shown at ``now``; the others are shown where they
+// were when it started.
+function drawTop(now, partly) {
   if (!braid || !braid.timeline || top.hidden) return;
   const view = braid.timeline;
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -1757,11 +1768,11 @@ function drawTop(now) {
   // are drawn last, on top.
   const last = view.times.length - 1;
   const span = view.times[last] - view.times[0];
-  const at = Math.min(
-    last,
-    Math.max(0, span > 0 ? ((now - view.times[0]) / span) * last : 0),
-  );
-  const where = view.strands.map((path) => {
+  const index = (time) => Math.min(last, Math.max(0, span > 0 ? ((time - view.times[0]) / span) * last : 0));
+  const after = index(now);
+  const before = partly ? index(partly.before) : after;
+  const where = view.strands.map((path, i) => {
+    const at = !partly || partly.moved.has(i) ? after : before;
     const low = Math.floor(at);
     const high = Math.min(low + 1, path.length - 1);
     const t = at - low;
