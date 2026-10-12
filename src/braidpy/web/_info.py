@@ -9,7 +9,7 @@ Garside normal form."""
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -19,6 +19,7 @@ from braidpy.web._types import Info
 def _braid_info(word: Sequence[int], n_strands: int) -> Info:
     """What is known of a flat braid word: its crossings and permutation."""
     from braidpy.braid import Braid
+    from braidpy.pure_braid import closing_repeats, components
 
     word = [int(g) for g in word]
     info: Info = {
@@ -28,11 +29,10 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
     }
     if word:
         braid = Braid(word, n_strands)
-        permutation = [int(p) for p in braid.perm()]
-        info["permutation"] = permutation
+        info["permutation"] = [int(p) for p in braid.perm()]
         info["pure"] = bool(braid.is_pure())
-        info["pure_after"] = _order(permutation)
-        info["components"] = _cycles(permutation)
+        info["pure_after"] = closing_repeats(braid, limit=None)
+        info["components"] = components(braid)
         # The Garside normal form costs more the more strands there are:
         # beyond this, minutes in a browser.
         if n_strands <= 12 and len(word) <= 300:
@@ -52,10 +52,11 @@ def _unit(info: Info, word: Sequence[int], n_strands: int, repeated: str) -> Inf
     """Says in ``info`` how many of the braid's unit — its word repeated, or
     its moves' cycle, as ``repeated`` names it — make a pure braid."""
     from braidpy.braid import Braid
+    from braidpy.pure_braid import closing_repeats
 
     word = [int(g) for g in word]
     info["pure_after"] = (
-        _order([int(p) for p in Braid(word, n_strands).perm()]) if word else 1
+        closing_repeats(Braid(word, n_strands), limit=None) if word else 1
     )
     info["repeated"] = repeated
     return info
@@ -74,22 +75,20 @@ def _disk_unit(
     :data:`_MOST_CYCLES`."""
     from braidpy.annulus_braid import solid_word
     from braidpy.braid import Braid
+    from braidpy.pure_braid import closing_repeats
+
     from braidpy.take_off import disk_annular_word
 
-    def permutation(k: int) -> List[int]:
+    def repeats(k: int) -> Optional[int]:
+        """How many of ``k`` cycles make a pure braid."""
         start, steps, n_slots = cycles(k)
         annular, n = disk_annular_word(start, steps, n_slots, clockwise=clockwise)
         word = solid_word(annular, n)
-        return (
-            [int(p) for p in Braid(word, n).perm()] if word else list(range(1, n + 1))
-        )
+        return closing_repeats(Braid(word, n), limit=None) if word else 1
 
-    k: Optional[int] = _order(permutation(1))
-    if k and k > 1 and _order(permutation(k)) != 1:
-        k = next(
-            (k for k in range(2, _MOST_CYCLES + 1) if _order(permutation(k)) == 1),
-            None,
-        )
+    k: Optional[int] = repeats(1)
+    if k and k > 1 and repeats(k) != 1:
+        k = next((k for k in range(2, _MOST_CYCLES + 1) if repeats(k) == 1), None)
     info["pure_after"] = k
     info["repeated"] = repeated
     return info
@@ -97,40 +96,6 @@ def _disk_unit(
 
 # Cycles counted, at most, to find when a creeping disk braid is pure.
 _MOST_CYCLES = 64
-
-
-def _order(permutation: Sequence[int]) -> int:
-    """How many times a braid is repeated before it is pure, every strand
-    back where it started: the least common multiple of its permutation's
-    cycles' lengths."""
-    seen = set()
-    order = 1
-    for start in range(len(permutation)):
-        length = 0
-        here = start
-        while here not in seen:
-            seen.add(here)
-            here = permutation[here] - 1
-            length += 1
-        if length:
-            order = order * length // math.gcd(order, length)
-    return order
-
-
-def _cycles(permutation: Sequence[int]) -> int:
-    """How many separate pieces a braid's closure makes: its permutation's
-    cycles."""
-    seen = set()
-    cycles = 0
-    for start in range(len(permutation)):
-        if start in seen:
-            continue
-        cycles += 1
-        here = start
-        while here not in seen:
-            seen.add(here)
-            here = permutation[here] - 1
-    return cycles
 
 
 def _disk_info(start, steps, n_slots: int, clockwise: bool) -> Info:

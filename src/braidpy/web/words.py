@@ -10,8 +10,9 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
 
+from braidpy.utils import PALETTE
 from braidpy.web._info import _braid_info, _unit
-from braidpy.web._result import _PALETTE, _result, _tighten, _timeline
+from braidpy.web._result import _result, _tighten, _timeline
 from braidpy.web._settings import DISK_ITERATIONS, Word
 from braidpy.web._spec import parse_word
 from braidpy.web._types import DiskProgram, Result, Source, Spec
@@ -189,7 +190,7 @@ def _from_word(spec: Spec) -> Result:
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
         diameter,
-        colours=[_PALETTE[int(k) % len(_PALETTE)] for k in keys],
+        colours=[PALETTE[int(k) % len(PALETTE)] for k in keys],
         names=[f"Strand {k}" for k in keys],
         info=info,
         timeline=timeline,
