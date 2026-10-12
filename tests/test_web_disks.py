@@ -30,7 +30,7 @@ def test_a_kumihimo_pattern():
     "spec, message",
     [
         ({"source": "kumihimo", "pattern": "SX"}, "S \\(swap\\)"),
-        ({"source": "kumihimo", "n_strands": 6}, "multiple of 4"),
+        ({"source": "kumihimo", "n_strands": 6}, "multiple of four"),
         ({"source": "mobidai", "name": "nope"}, "No mobidai"),
         ({"source": "sinnet", "name": "nope"}, "No sinnet"),
     ],

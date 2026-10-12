@@ -11,7 +11,6 @@ associated with the braiding moves.
 """
 
 from __future__ import annotations
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Dict, List, Optional
 import numpy as np
@@ -309,15 +308,9 @@ class Mobidai:
             ValueError: If a generator cannot be read, which would mean the
                 tracker had written something this cannot parse.
         """
-        out: List[int] = []
-        for move_word in self.braid_word:
-            for token in move_word.split():
-                match = re.fullmatch(r"s(\d+)(\^-1)?", token)
-                if match is None:
-                    raise ValueError(f"Cannot read generator {token!r}.")
-                index = int(match.group(1))
-                out.append(-index if match.group(2) else index)
-        return out
+        from braidpy.braidword import parse_word
+
+        return parse_word(" ".join(self.braid_word))
 
     def single_step(
         self, move: Move, slots: Dict[int, Optional[Strand]]
