@@ -563,6 +563,13 @@ footer {
   }
 }
 
+.diagram-scroll {
+  max-height: 320px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  border-radius: 8px;
+}
+
 .diagram canvas {
   display: block;
   background: var(--field);

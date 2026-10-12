@@ -872,10 +872,16 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
         if n_strands < needed:
             raise ValueError(f"σ{needed - 1} needs at least {needed} strands.")
         word = word * repeat
-    if len(word) > 400:
-        raise ValueError("That is over 400 crossings: repeat it fewer times.")
+    if len(word) > 2000:
+        raise ValueError("That is over 2000 crossings: repeat it fewer times.")
     diameter = _number(spec, "yarn_diameter", 0.45, 0.05, 0.95)
-    trajectories = braid_word_trajectories(Braid(word, n_strands))
+    # A long word is laid with fewer samples a crossing, as few as six: the
+    # work of laying grows as the square of them, and laid it is only a
+    # first sight of the braid, made then on the marudai.
+    samples = 24 if len(word) <= 100 else max(6, round(24 * 100 / len(word)))
+    trajectories = braid_word_trajectories(
+        Braid(word, n_strands), samples_per_crossing=samples
+    )
     paths = lay_yarns(trajectories, yarn_diameter=diameter, fell_radius=0.0)
     paths = _tighten(paths, spec, diameter)
     info = _braid_info(word, n_strands)
