@@ -658,7 +658,10 @@
     machine.start(first.map(angleOf));
     for (let t = 0; t < n; t++) machine.lay(t, job.from ? angleOf(job.start[t]) : machine.threads[t].dir);
     machine.relax();
-    return { step, hooks, result: () => ({ ...shape(), updates: machine.updates }) };
+    // The marudai as it stands, for whoever watches: before the first move,
+    // its yarns laid from the start.
+    const look = () => ({ what: "start", thread: -1, step: current, tip: machine.tip / 2, yarns: machine.snapshot() });
+    return { step, look, hooks, result: () => ({ ...shape(), updates: machine.updates }) };
 
     function step(moves, number) {
       current = number;
