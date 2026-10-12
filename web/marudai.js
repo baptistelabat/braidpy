@@ -660,7 +660,7 @@
     machine.relax();
     // The marudai as it stands, for whoever watches: before the first move,
     // its yarns laid from the start.
-    const look = () => ({ what: "start", thread: -1, step: current, tip: machine.tip / 2, yarns: machine.snapshot() });
+    const look = () => ({ what: "start", thread: -1, step: current, moved: [], tip: machine.tip / 2, yarns: machine.snapshot() });
     return { step, look, hooks, result: () => ({ ...shape(), updates: machine.updates }) };
 
     function step(moves, number) {

@@ -283,6 +283,12 @@ async function onMarudai(id, result, job) {
   // comes, a few times a second; the mirror as the first moments have it.
   making.hooks.total = program.steps.length;
   making.hooks.watch = (frame) => {
+    // Which yarns this move has carried so far, for the top view to show
+    // them on their way while the others wait; once settled, all of them.
+    if (onDisk.moving?.step !== frame.step) onDisk.moving = { step: frame.step, threads: [] };
+    const moving = onDisk.moving;
+    if (frame.what === "carried" && !moving.threads.includes(frame.thread)) moving.threads.push(frame.thread);
+    frame.moved = frame.what === "settled" || frame.what === "turned" ? null : [...moving.threads];
     onDisk.frames.push(frame);
     if (performance.now() - shown < 80) return;
     shown = performance.now();
@@ -427,6 +433,7 @@ function pageFrame(frame, d, mirror) {
     what: frame.what,
     thread: frame.thread,
     step: frame.step,
+    moved: frame.moved,
     yarns: frame.yarns.map((yarn) => Float32Array.from(onMirror(yarn, frame.tip, d, mirror).flat())),
   };
 }
