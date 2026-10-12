@@ -1,5 +1,6 @@
 import math
 from dataclasses import dataclass
+import bisect
 from typing import Callable, List, Tuple
 
 from braidpy.utils import StrictlyPositiveInt
@@ -67,10 +68,19 @@ def combine_arcs(arcs: List[Arc]) -> Callable[[float], Tuple[float, float, float
         A function from t to (x, y, z), switching arcs over time.
     """
 
+    # The first arc ending at or after t, found by halving rather than by
+    # looking through them all: a long word has hundreds of arcs a strand.
+    ends = [t1 for _, t1, _ in arcs]
+
     def strand_func(t: float) -> Tuple[float, float, float]:
-        for t0, t1, arc in arcs:
+        k = bisect.bisect_left(ends, t)
+        while k < len(arcs):
+            t0, t1, arc = arcs[k]
             if t0 <= t <= t1:
                 return arc(t)
+            if t0 > t:
+                break
+            k += 1
         raise ValueError(f"Time {t} is out of bounds for this strand.")
 
     return strand_func
