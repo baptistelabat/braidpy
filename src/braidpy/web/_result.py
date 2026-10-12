@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import math
 from contextvars import ContextVar
-from typing import Any, Dict, Hashable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Hashable, List, Optional, Sequence, cast
 
 import numpy as np
 
-from braidpy.web._spec import _count
+from braidpy.web._settings import ITERATIONS
+from braidpy.web._spec import Count
+from braidpy.web._types import Clock, Info, Result, Spec, Strand, Tightening, Timeline
 
 # Points along a yarn are rounded to this many decimals: a tenth of a
 # thousandth of a yarn is finer than any screen.
@@ -93,13 +95,12 @@ def _tightened(
 
 def _tighten(
     paths,
-    spec: Mapping[str, Any],
+    spec: Spec,
     diameter: float,
-    default: int = 150,
+    iterations: Count = ITERATIONS,
     rigid: Sequence[Hashable] = (),
 ):
-    iterations = _count(spec, "iterations", default, 0, 2000)
-    return _tightened(paths, diameter, iterations, rigid=rigid)
+    return _tightened(paths, diameter, iterations.read(spec), rigid=rigid)
 
 
 def _result(
@@ -108,10 +109,10 @@ def _result(
     diameter: float,
     colours: Optional[Sequence[str]] = None,
     names: Optional[Sequence[str]] = None,
-    info: Optional[Dict[str, Any]] = None,
+    info: Optional[Info] = None,
     notes: Sequence[str] = (),
-    timeline: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    timeline: Optional[Timeline] = None,
+) -> Result:
     """Everything the page draws, as plain data."""
     n = paths.formed_count
     keys: List[Hashable] = list(paths.points)
@@ -120,7 +121,7 @@ def _result(
     chosen = list(range(0, n, stride))
     if chosen[-1] != n - 1:
         chosen.append(n - 1)
-    strands = []
+    strands: List[Strand] = []
     for i, key in enumerate(keys):
         points = np.asarray(paths.points[key], dtype=float)[chosen] - centre
         if not np.all(np.isfinite(points)):
@@ -134,7 +135,7 @@ def _result(
                 "points": np.round(points, _DECIMALS).tolist(),
             }
         )
-    out_info: Dict[str, Any] = {"n_strands": len(keys)}
+    out_info: Info = {"n_strands": len(keys)}
     out_info.update(info or {})
     tightening = _TIGHTENING.get()
     if tightening is None:
@@ -144,7 +145,7 @@ def _result(
             )
         except Exception:  # an estimate only; never worth failing the braid over
             pass
-    result: Dict[str, Any] = {
+    result: Result = {
         "title": title,
         "strands": strands,
         # When each point was laid, in the source's time: the same for
@@ -158,7 +159,7 @@ def _result(
         result["timeline"] = timeline
     if tightening is not None:
         # The axis taken off the strands' points is the tightening's centre.
-        result["tighten"] = {**tightening, "chosen": chosen}
+        result["tighten"] = cast(Tightening, {**tightening, "chosen": chosen})
     return result
 
 
@@ -166,9 +167,9 @@ def _timeline(
     trajectories,
     keys: Sequence[Hashable],
     kind: str,
-    clock: Optional[Dict[str, List[float]]] = None,
+    clock: Optional[Clock] = None,
     ring=None,
-) -> Dict[str, Any]:
+) -> Timeline:
     """What made the braid, seen from above, over time: for the page to
     animate in step with the braid.
 
@@ -227,7 +228,7 @@ def _timeline(
                 * np.conj(fell / np.maximum(np.abs(fell), 1e-12))
             )
         turn = np.round(np.unwrap(np.angle(pull)), 4).tolist()
-    return {
+    timeline: Timeline = {
         "kind": kind,
         "times": np.round(times[chosen], _DECIMALS).tolist(),
         "strands": strands,
@@ -238,8 +239,10 @@ def _timeline(
         ],
         "reach": round(reach, 3),
         "clock": clock,
-        **({"turn": turn} if turn is not None else {}),
     }
+    if turn is not None:
+        timeline["turn"] = turn
+    return timeline
 
 
 def _hues(n: int) -> List[str]:
