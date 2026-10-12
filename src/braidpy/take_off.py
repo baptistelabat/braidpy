@@ -61,6 +61,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 from typing import (
+    TYPE_CHECKING,
     Dict,
     Hashable,
     List,
@@ -71,7 +72,12 @@ from typing import (
 )
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 
 @dataclass(frozen=True)

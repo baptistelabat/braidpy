@@ -45,20 +45,27 @@ from typing import (
 import math
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Wedge, FancyArrowPatch, Circle
-import matplotlib.cm as cm
-from matplotlib.axes import Axes
-
-import imageio.v2 as imageio  # optional for GIF
 
 from braidpy.annulus_braid import solid_word
 from braidpy.take_off import disk_annular_word, disk_braid
+from braidpy.utils import lazy_module
 
 if TYPE_CHECKING:
+    import imageio.v2 as imageio
+    import matplotlib
+    import matplotlib.patches as patches
+    import matplotlib.pyplot as plt
+    from matplotlib.axes import Axes
+
     from braidpy.braid import Braid
     from braidpy.mobidai import MobidaiConfig
+else:
+    # Only drawing needs these: not loaded until something is drawn.
+    imageio = lazy_module("imageio.v2")
+    matplotlib = lazy_module("matplotlib")
+    patches = lazy_module("matplotlib.patches")
+    plt = lazy_module("matplotlib.pyplot")
 
 OFFSET_DEG = 180  # To match Ahsley book of knots
 # ============================ Core Structures ============================
@@ -311,10 +318,13 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> "MobidaiConfig":
 
 def strand_colours(n: int) -> List[str]:
     """A colour per strand, evenly round the hue circle."""
-    import matplotlib
+    import colorsys
 
-    hsv = matplotlib.colormaps["hsv"]
-    return [matplotlib.colors.to_hex(hsv(i / max(n, 1))) for i in range(n)]
+    out = []
+    for i in range(n):
+        r, g, b = colorsys.hsv_to_rgb(i / max(n, 1), 1.0, 1.0)
+        out.append(f"#{round(255 * r):02x}{round(255 * g):02x}{round(255 * b):02x}")
+    return out
 
 
 def init_spaces_from_counts(counts: List[int]) -> Dict[int, List[int]]:
@@ -549,7 +559,7 @@ def _draw_disk_state(
     for i in range(n_spaces):
         theta1_deg = 360.0 * i / n_spaces + OFFSET_DEG
         theta2_deg = 360.0 * (i + 1) / n_spaces + OFFSET_DEG
-        w = Wedge(
+        w = patches.Wedge(
             (0, 0),
             r_outer,
             theta1_deg,
@@ -592,7 +602,7 @@ def _draw_disk_state(
                 if strand_colors
                 else (0, 0, 0, 1)
             )
-            axis.add_patch(Circle((x, y), 0.02, color=color))
+            axis.add_patch(patches.Circle((x, y), 0.02, color=color))
             if show_ids:
                 axis.text(
                     x,
@@ -620,7 +630,7 @@ def _draw_disk_state(
             xa, ya = centers[a]
             xb, yb = centers[b]
             axis.add_patch(
-                FancyArrowPatch(
+                patches.FancyArrowPatch(
                     (xa, ya),
                     (xb, yb),
                     arrowstyle="->",
@@ -685,7 +695,7 @@ def visualize_sinnet(
 
     # Color map assignment (stable by ID)
     total_strands = sum(initial_counts)
-    cmap = cm.get_cmap("tab20", total_strands if total_strands > 0 else 1)
+    cmap = matplotlib.colormaps["tab20"].resampled(max(total_strands, 1))
     strand_colors = {
         sid: cmap((sid - 1) % cmap.N) for sid in range(1, total_strands + 1)
     }
