@@ -11,13 +11,22 @@ marudai."""
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Hashable, Mapping, Sequence
+from typing import Any, Callable, Dict, Hashable, List, Sequence, Tuple
 
 import numpy as np
 
 from braidpy.web._info import _disk_info, _disk_unit
 from braidpy.web._result import _hues, _result, _tightened, _timeline
-from braidpy.web._spec import _count, _moves_text, _number, _numbers, parse_moves
+from braidpy.web._settings import (
+    DISK_ITERATIONS,
+    DISK_YARN,
+    OWN,
+    Kumihimo,
+    Mobidai,
+    Sinnet,
+)
+from braidpy.web._spec import _moves_text, _numbers, defaults, parse_moves
+from braidpy.web._types import DiskProgram, Entry, Result, Source, Spec
 
 
 def _sinnets() -> Dict[str, Any]:
@@ -44,7 +53,7 @@ def _mobidais() -> Dict[str, Any]:
 
 def _disk_program(
     start, steps, n_slots: int, clockwise: bool, keys: Sequence[Hashable]
-) -> Dict[str, Any]:
+) -> DiskProgram:
     """What a disk does, for the page to make the braid itself, move by
     move: each strand's slot to start with, in the order of the strands
     given, and per step the strands that move, by index, and by how many
@@ -106,24 +115,24 @@ def _kumihimo_cycles(pattern: str, n_strands: int):
     return start, steps, n_slots
 
 
-def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
+def _from_kumihimo(spec: Spec) -> Result:
     from braidpy.take_off import kumihimo_steps, kumihimo_trajectories
 
-    pattern = re.sub(r"\s+", "", str(spec.get("pattern", "SR"))).upper()
+    pattern = re.sub(r"\s+", "", Kumihimo.pattern.read(spec)).upper()
     if not pattern or set(pattern) - {"S", "R"}:
         raise ValueError("A kumihimo pattern is made of S (swap) and R (rotate).")
-    n_strands = _count(spec, "n_strands", 8, 4, 32)
-    if n_strands % 4:
-        raise ValueError("Kumihimo needs a multiple of 4 strands.")
-    repeat = _count(spec, "repeat", 8, 1, 50)
-    diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
+    n_strands = Kumihimo.n_strands.read(spec)
+    if n_strands % Kumihimo.strands_in:
+        raise ValueError(f"Kumihimo needs a multiple of {Kumihimo.strands_in} strands.")
+    repeat = Kumihimo.repeat.read(spec)
+    diameter = DISK_YARN.read(spec)
     n_slots, start, steps = kumihimo_steps(pattern * repeat, n_strands)
     paths, clock, ring = _disk_in_step(
         start,
         steps,
         n_slots,
         diameter,
-        _count(spec, "iterations", 200, 0, 2000),
+        DISK_ITERATIONS.read(spec),
         clockwise=False,
     )
     disk = kumihimo_trajectories(pattern * repeat, n_strands)
@@ -145,15 +154,15 @@ def _from_kumihimo(spec: Mapping[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
+def _from_mobidai(spec: Spec) -> Result:
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     from braidpy.mobidai_catalog import CataloguedBraid
 
     mobidais = _mobidais()
-    name = str(spec.get("name", "KONGO_8"))
-    if name == "custom":
-        n_slots = _count(spec, "n_slots", 32, 3, 128)
+    name = Mobidai.name.read(spec)
+    if name == OWN:
+        n_slots = Mobidai.n_slots.read(spec)
         slots = _numbers(spec.get("slots", ""), "slots the strands start in")
         if len(set(slots)) < len(slots):
             raise ValueError("Two strands start in the same slot.")
@@ -167,7 +176,7 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
             n_slots=n_slots,
             initial_slots=tuple(zip(slots, _hues(len(slots)))),
             moves=tuple(moves),
-            n_shift_after_cycle=_count(spec, "shift", 0, -128, 128),
+            n_shift_after_cycle=Mobidai.shift.read(spec),
             source="",
         )
     elif name in mobidais:
@@ -175,8 +184,8 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     else:
         raise ValueError(f"No mobidai braid {name!r}: one of {sorted(mobidais)}.")
     config = entry.to_config()
-    cycles = _count(spec, "cycles", 6, 1, 40)
-    diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
+    cycles = Mobidai.cycles.read(spec)
+    diameter = DISK_YARN.read(spec)
     start, steps = mobidai_steps(config, cycles)
     clockwise = getattr(config, "is_clockwise", True)
     paths, clock, ring = _disk_in_step(
@@ -184,7 +193,7 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
         steps,
         config.n_slots,
         diameter,
-        _count(spec, "iterations", 200, 0, 2000),
+        DISK_ITERATIONS.read(spec),
         clockwise=clockwise,
     )
     # Coloured by strand, in the order the braid gives them.
@@ -209,20 +218,20 @@ def _from_mobidai(spec: Mapping[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
+def _from_sinnet(spec: Spec) -> Result:
     from braidpy.ashley_solid_sinnet import strand_colours
     from braidpy.take_off import disk_trajectories
 
     from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 
     sinnets = _sinnets()
-    name = str(spec.get("name", "abok_3042"))
-    if name == "custom":
+    name = Sinnet.name.read(spec)
+    if name == OWN:
         counts = _numbers(spec.get("counts", ""), "strands in each space")
         if len(counts) < 2 or min(counts) < 0 or sum(counts) < 2:
             raise ValueError("Give two spaces or more, holding two strands or more.")
-        if sum(counts) > 64:
-            raise ValueError("That is over 64 strands.")
+        if sum(counts) > Sinnet.most_strands:
+            raise ValueError(f"That is over {Sinnet.most_strands} strands.")
         moves = parse_moves(str(spec.get("moves", "")))
         if not all(1 <= p <= len(counts) for move in moves for p in move):
             raise ValueError(f"Moves are between spaces 1 to {len(counts)}.")
@@ -231,15 +240,15 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
         sinnet = sinnets[name]
     else:
         raise ValueError(f"No sinnet {name!r}: one of {sorted(sinnets)}.")
-    cycles = _count(spec, "cycles", 3, 1, 12)
-    diameter = _number(spec, "yarn_diameter", 0.12, 0.02, 0.5)
+    cycles = Sinnet.cycles.read(spec)
+    diameter = DISK_YARN.read(spec)
     disk = sinnet.disk(cycles)
     paths, clock, ring = _disk_in_step(
         disk.start,
         disk.steps,
         disk.n_slots,
         diameter,
-        _count(spec, "iterations", 200, 0, 2000),
+        DISK_ITERATIONS.read(spec),
         clockwise=False,
     )
     seen = disk_trajectories(
@@ -263,7 +272,7 @@ def _from_sinnet(spec: Mapping[str, Any]) -> Dict[str, Any]:
             "Its moves do not bring every space back to its count after a "
             "cycle: the catalogue's moves may be mistranscribed."
         )
-    called = "Your own" if name == "custom" else f"ABOK #{name.split('_')[1]},"
+    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
 
     def worked(k: int):
@@ -313,61 +322,61 @@ def _with_sectors(seen, disk):
     return dataclasses.replace(seen, outlines=seen.outlines + lines)
 
 
-def _kumihimo_entry() -> Dict[str, Any]:
+def _kumihimo_entry() -> Source:
     return {
         "title": "Kumihimo (S/R moves)",
-        "defaults": {"pattern": "SR", "n_strands": 8, "repeat": 8},
+        "defaults": defaults(*Kumihimo.shown),
     }
 
 
-def _mobidai_entry() -> Dict[str, Any]:
+def _mobidai_entry() -> Source:
     mobidais = _mobidais()
+    entries: List[Entry] = [
+        {
+            "name": key,
+            "title": entry.name[0].upper()
+            + entry.name[1:]
+            + ("" if "strand" in entry.name else f", {entry.n_strands} strands"),
+            "pattern": {
+                "n_slots": entry.n_slots,
+                "slots": " ".join(str(slot) for slot, _ in entry.initial_slots),
+                "moves": _moves_text(entry.moves),
+                "shift": entry.n_shift_after_cycle,
+            },
+        }
+        for key, entry in mobidais.items()
+    ]
     return {
         "title": "Kumihimo disk (mobidai)",
-        "defaults": {"name": "KONGO_8", "cycles": 6},
-        "entries": [
-            {
-                "name": key,
-                "title": entry.name[0].upper()
-                + entry.name[1:]
-                + ("" if "strand" in entry.name else f", {entry.n_strands} strands"),
-                "pattern": {
-                    "n_slots": entry.n_slots,
-                    "slots": " ".join(str(slot) for slot, _ in entry.initial_slots),
-                    "moves": _moves_text(entry.moves),
-                    "shift": entry.n_shift_after_cycle,
-                },
-            }
-            for key, entry in mobidais.items()
-        ]
-        + [{"name": "custom", "title": "Your own moves…"}],
+        "defaults": defaults(*Mobidai.shown),
+        "entries": entries + [{"name": OWN, "title": "Your own moves…"}],
     }
 
 
-def _sinnet_entry() -> Dict[str, Any]:
+def _sinnet_entry() -> Source:
     sinnets = _sinnets()
+    entries: List[Entry] = [
+        {
+            "name": name,
+            "title": f"ABOK #{name.split('_')[1]}, {sinnet.n_strands}-strand "
+            + (sinnet.shape or "sinnet"),
+            "shape": sinnet.shape,
+            "pattern": {
+                "counts": " ".join(str(c) for c in sinnet.initial_counts_per_space),
+                "moves": _moves_text(sinnet.moves),
+            },
+        }
+        for name, sinnet in sinnets.items()
+    ]
     return {
         "title": "Ashley solid sinnet",
-        "defaults": {"name": "abok_3042", "cycles": 3},
-        "entries": [
-            {
-                "name": name,
-                "title": f"ABOK #{name.split('_')[1]}, {sinnet.n_strands}-strand "
-                + (sinnet.shape or "sinnet"),
-                "shape": sinnet.shape,
-                "pattern": {
-                    "counts": " ".join(str(c) for c in sinnet.initial_counts_per_space),
-                    "moves": _moves_text(sinnet.moves),
-                },
-            }
-            for name, sinnet in sinnets.items()
-        ]
-        + [{"name": "custom", "title": "Your own moves…"}],
+        "defaults": defaults(*Sinnet.shown),
+        "entries": entries + [{"name": OWN, "title": "Your own moves…"}],
     }
 
 
 # Each source: its catalogue entry, and what builds it.
-SOURCES = {
+SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "kumihimo": (_kumihimo_entry, _from_kumihimo),
     "mobidai": (_mobidai_entry, _from_mobidai),
     "sinnet": (_sinnet_entry, _from_sinnet),
