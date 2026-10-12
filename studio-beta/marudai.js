@@ -622,6 +622,16 @@
    *     tip out to its carrier; and the carriers' circle.
    */
   function make(job) {
+    const making = begin(job);
+    job.steps.forEach((step, number) => making.step(step, number));
+    return making.result();
+  }
+
+  // A braid being made: the marudai set up, its moves made one by one with
+  // step(), and the braid as it is so far with result().  Kept, it can be
+  // made on with more moves; watch, progress and the number of steps there
+  // are to make are in hooks, to change as it goes.
+  function begin(job) {
     const n = job.start.length;
     const sense = job.clockwise ? -1 : 1;
     // braid3dmin's angles turn the other way round from ours.
@@ -629,12 +639,13 @@
     const split = job.split ?? true;
     const twists = job.twists ?? !!job.held;
     const machine = Machine(n, job.turning ?? !job.held);
+    const hooks = { watch: job.watch, progress: job.progress, total: job.steps.length };
     let current = -1;
-    if (job.watch) {
-      machine.watch((what, thread) =>
-        job.watch({ what, thread, step: current, tip: machine.tip / 2, yarns: machine.snapshot() }),
-      );
-    }
+    machine.watch((what, thread) => {
+      if (hooks.watch) {
+        hooks.watch({ what, thread, step: current, tip: machine.tip / 2, yarns: machine.snapshot() });
+      }
+    });
     // Nothing but the bobbins turning together, a rope: carried round with
     // each other from the first, never over each other.
     const uniform = (step) => {
@@ -647,9 +658,11 @@
     machine.start(first.map(angleOf));
     for (let t = 0; t < n; t++) machine.lay(t, job.from ? angleOf(job.start[t]) : machine.threads[t].dir);
     machine.relax();
-    job.steps.forEach((step, number) => {
+    return { step, hooks, result: () => ({ ...shape(), updates: machine.updates }) };
+
+    function step(moves, number) {
       current = number;
-      const moving = step.filter(([, d]) => d);
+      const moving = moves.filter(([, d]) => d);
       if (!moving.length) return;
       if (moving.length === n && moving.every(([, d]) => d === moving[0][1])) {
         const by = (sense * 2 * Math.PI * moving[0][1]) / job.n_slots;
@@ -668,7 +681,7 @@
         }
         machine.turn(0, 0, by);
         for (const thread of machine.threads) thread.dir -= by;
-        if (job.watch) job.watch({ what: "turned", thread: -1, step: number, tip: machine.tip / 2, yarns: machine.snapshot() });
+        if (hooks.watch) hooks.watch({ what: "turned", thread: -1, step: number, tip: machine.tip / 2, yarns: machine.snapshot() });
         return;
       }
       for (const [a, d] of moving) {
@@ -677,11 +690,10 @@
         for (let k = 0; k < parts; k++) machine.lay(a, machine.threads[a].dir + sweep / parts);
       }
       machine.relax();
-      if (job.progress) {
-        job.progress({ fraction: (number + 1) / job.steps.length, tip: machine.tip / 2, yarns: () => shape().yarns });
+      if (hooks.progress) {
+        hooks.progress({ fraction: (number + 1) / hooks.total, tip: machine.tip / 2, yarns: () => shape().yarns });
       }
-    });
-    return { ...shape(), updates: machine.updates };
+    }
 
     // The yarns as they are, in our units and frame.
     function mean(values) {
@@ -715,5 +727,6 @@
   }
 
   root.makeOnMarudai = make;
-  if (typeof module !== "undefined" && module.exports) module.exports = { make, Machine };
+  root.beginOnMarudai = begin;
+  if (typeof module !== "undefined" && module.exports) module.exports = { make, begin, Machine };
 })(typeof self !== "undefined" ? self : globalThis);

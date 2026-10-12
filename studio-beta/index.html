@@ -9,7 +9,7 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet or a braiding machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=947c452698" />
+    <link rel="stylesheet" href="style.css?v=eda0f1f791" />
     <script type="importmap">
       {
         "imports": {
@@ -18,7 +18,7 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=d9746f090f"></script>
+    <script type="module" src="app.js?v=3aafcb97c6"></script>
   </head>
   <body>
     <aside class="panel">
@@ -86,7 +86,16 @@
           </label>
         </details>
 
-        <button id="build" type="submit" disabled>Loading…</button>
+        <div class="actions-row">
+          <button id="build" type="submit" disabled>Loading…</button>
+          <button
+            id="restart"
+            type="button"
+            title="Stop what is being made, and make the next braid from the start"
+          >
+            Reset
+          </button>
+        </div>
         <p id="status" class="status" role="status" aria-live="polite">
           Starting…
         </p>

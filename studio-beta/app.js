@@ -945,7 +945,7 @@ function specFromHash() {
 
 // ------------------------------------------------------------------ worker
 
-const worker = new Worker("worker.js?v=1943e5600c");
+const worker = new Worker("worker.js?v=a571e95027");
 let pending = 0;
 let lastResult = null;
 
@@ -954,7 +954,44 @@ function setStatus(text, error = false) {
   $("status").classList.toggle("error", error);
 }
 
+// The yarns are settled in a worker of their own (settle.js): ended and
+// started again, it stops at once whatever it was making.  It keeps the
+// braid on its marudai between braids, to make more of it.
+let settler = null;
+let settling = null; // {id, settle} while it works
+function startSettler() {
+  if (settler) settler.terminate();
+  settler = new Worker("settle.js?v=41903b4d11");
+  settling = null;
+  settler.onmessage = ({ data }) => {
+    if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
+    heard(data);
+  };
+}
+startSettler();
+
+// The braids made, by what they were made from: going back to one is then
+// instant.
+const madeBefore = new Map();
+const KEEP = 12;
+const keys = new Map(); // id -> what it was made from
+
 worker.onmessage = ({ data }) => {
+  // Laid by braidpy: shown, and handed on to be settled — stopping what
+  // was being settled unless it can go on from it, on the marudai.
+  if (data.type === "laid" && "settle" in data) {
+    if (data.id !== pending) return;
+    if (settling && settling.settle !== "marudai") startSettler();
+    settling = { id: data.id, settle: data.settle };
+    const { result, job, settle, twist } = data;
+    settler.postMessage({ type: "settle", id: data.id, result, job, settle, twist });
+    heard({ type: "laid", id: data.id, result });
+    return;
+  }
+  heard(data);
+};
+
+function heard(data) {
   if (data.type === "status") {
     setStatus(data.text);
   } else if (data.type === "ready") {
@@ -968,7 +1005,7 @@ worker.onmessage = ({ data }) => {
     }
     writeSpec(spec);
     $("build").disabled = false;
-    $("build").textContent = "Make the braid";
+    $("build").textContent = "Braid";
     submit();
   } else if (data.type === "geometry") {
     machineShapes.set(data.name, data.shape);
@@ -991,7 +1028,10 @@ worker.onmessage = ({ data }) => {
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
-    $("build").disabled = false;
+    if (keys.has(data.id) && data.seconds) {
+      madeBefore.set(keys.get(data.id), data.result);
+      if (madeBefore.size > KEEP) madeBefore.delete(madeBefore.keys().next().value);
+    }
     setStatus(
       data.seconds ? `Made in ${data.seconds.toFixed(1)} s.` : "Made before: shown again.",
     );
@@ -1004,10 +1044,9 @@ worker.onmessage = ({ data }) => {
     );
   } else if (data.type === "error") {
     if (data.id !== undefined && data.id !== pending) return;
-    $("build").disabled = !catalogue;
     setStatus(data.message, true);
   }
-};
+}
 
 worker.postMessage({ type: "init", pyodideUrl: PYODIDE_URL });
 
@@ -1020,13 +1059,33 @@ if (location.pathname.includes("/studio-beta/")) {
   document.querySelector("h1").append(" ", badge);
 }
 
+// Braid: the braid described — made before, shown again; more of the one
+// on the marudai, made on from it; anything else made anew, stopping what
+// was being made.
 function submit() {
   const spec = readSpec();
   pending += 1;
-  $("build").disabled = true;
   history.replaceState(null, "", "#" + new URLSearchParams(spec).toString());
+  const key = JSON.stringify(spec, Object.keys(spec).sort());
+  keys.set(pending, key);
+  if (madeBefore.has(key)) {
+    const result = madeBefore.get(key);
+    madeBefore.delete(key);
+    madeBefore.set(key, result);
+    heard({ type: "result", id: pending, result, seconds: 0 });
+    return;
+  }
   worker.postMessage({ type: "build", id: pending, spec });
 }
+
+// Reset: stop whatever is being made, and forget the marudai and the
+// braids made, so that the next is made from the start.
+$("restart").addEventListener("click", () => {
+  pending += 1;
+  startSettler();
+  madeBefore.clear();
+  setStatus("Reset: the next braid is made from the start.");
+});
 
 $("form").addEventListener("submit", (event) => {
   event.preventDefault();
