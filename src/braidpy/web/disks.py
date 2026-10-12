@@ -119,11 +119,7 @@ def _from_kumihimo(spec: Spec) -> Result:
     from braidpy.take_off import kumihimo_steps, kumihimo_trajectories
 
     pattern = re.sub(r"\s+", "", Kumihimo.pattern.read(spec)).upper()
-    if not pattern or set(pattern) - {"S", "R"}:
-        raise ValueError("A kumihimo pattern is made of S (swap) and R (rotate).")
     n_strands = Kumihimo.n_strands.read(spec)
-    if n_strands % Kumihimo.strands_in:
-        raise ValueError(f"Kumihimo needs a multiple of {Kumihimo.strands_in} strands.")
     repeat = Kumihimo.repeat.read(spec)
     diameter = DISK_YARN.read(spec)
     n_slots, start, steps = kumihimo_steps(pattern * repeat, n_strands)
