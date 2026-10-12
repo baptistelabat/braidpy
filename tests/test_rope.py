@@ -256,3 +256,37 @@ def test_a_word_made_on_a_marudai_keeps_its_hand(tmp_path, word, n_strands, repe
     assert hand["tip"] > 1
     assert abs(hand["braidpy"]) > 1
     assert hand["made"] * hand["braidpy"] > 0
+
+
+@pytest.mark.parametrize(
+    "how, twist", [("settled", "keep"), ("settled", "free"), ("formed", "keep")]
+)
+def test_a_twisted_word_settled_by_physics_keeps_or_loses_its_twist(
+    tmp_path, how, twist
+):
+    """σ₁ sixteen times, eight full turns of two yarns, laid round a ring
+    and settled by physics as the page settles it.  Held, the yarns keep
+    every turn: none is undone by pulling them clear sideways first, nor
+    by one passing through the other.  Free, the end turns all eight out."""
+    from braidpy.web import build
+
+    spec = {
+        "source": "word",
+        "word": "1",
+        "n_strands": 2,
+        "repeat": 16,
+        "settle": "physics",
+    }
+    path = tmp_path / "result.json"
+    path.write_text(json.dumps(build(spec, tighten=False)))
+    result = _run("paged", path, how, twist)
+    assert [abs(round(x)) for x in result["laid"]["links"]] == [8]
+    assert result["settled"]["links"] == pytest.approx(
+        result["laid"]["links"], abs=0.01
+    )
+    turns = abs(result["turn"]) / (2 * math.pi)
+    if twist == "keep":
+        assert turns == 0
+    else:
+        assert turns == pytest.approx(8, abs=0.1)
+        assert any(note.startswith("Untwisted") for note in result["notes"])

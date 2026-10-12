@@ -834,6 +834,56 @@ def _ring_program(
     }
 
 
+def _ring_steps(program: Dict[str, Any]):
+    """A ring program (:func:`_ring_program`) as a disk's start and steps,
+    as :func:`braidpy.take_off.disk_crossing_steps` takes them: strands by
+    index, a turn of every bobbin one step, other moves one at a time."""
+    start = dict(enumerate(program["start"]))
+    n = len(start)
+    steps: List[Dict[int, int]] = []
+    for step in program["steps"]:
+        if len(step) == n and len({delta for _, delta in step}) == 1:
+            steps.append({k: delta for k, delta in step})
+        else:
+            steps.extend({k: delta} for k, delta in step)
+    return start, steps
+
+
+def _word_round_ring(
+    word: Sequence[int], n_strands: int, diameter: float, iterations: int
+):
+    """A flat braid word laid round a ring, as a disk braid is: each
+    crossing two neighbours swapping places, none rolled into a turn of the
+    bobbins — a turn on a disk crosses nothing, and the twist it stands for
+    would be lost.  Read back round the ring, it is the word.
+
+    Returns:
+        The braid, and its timeline, the ring seen from above."""
+    from braidpy.take_off import disk_trajectories
+
+    program = _ring_program(word, n_strands, False)
+    start, steps = _ring_steps(program)
+    n_slots = program["n_slots"]
+    paths, clock, ring = _disk_in_step(
+        start, steps, n_slots, diameter, iterations, clockwise=True
+    )
+    disk = disk_trajectories(start, steps, n_slots, clockwise=True)
+    return paths, _timeline(disk, list(paths.points), "disk", clock, ring)
+
+
+def _in_order(program: Dict[str, Any], keys: Sequence[Any]) -> Dict[str, Any]:
+    """A ring program, its strands numbered 0, 1, … renumbered in the
+    order ``keys`` gives them, as the braid's strands are."""
+    index = {int(k): i for i, k in enumerate(keys)}
+    if all(index[k] == k for k in index):
+        return program
+    start = [0] * len(keys)
+    for k, slot in enumerate(program["start"]):
+        start[index[k]] = slot
+    steps = [[[index[k], delta] for k, delta in step] for step in program["steps"]]
+    return {**program, "start": start, "steps": steps}
+
+
 def _shortened(text: str, most: int = 32) -> str:
     """A long word cut short for a title."""
     text = " ".join(text.split())
@@ -879,11 +929,22 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
     # work of laying grows as the square of them, and laid it is only a
     # first sight of the braid, made then on the marudai.
     samples = 24 if len(word) <= 100 else max(6, round(24 * 100 / len(word)))
-    trajectories = braid_word_trajectories(
-        Braid(word, n_strands), samples_per_crossing=samples
-    )
-    paths = lay_yarns(trajectories, yarn_diameter=diameter, fell_radius=0.0)
-    paths = _tighten(paths, spec, diameter)
+    # Settled by physics, the strands are laid round a ring, as from a disk:
+    # in a row, they would be held at one point at the fell, and the yarns'
+    # twist could come undone through it.
+    on_ring = str(spec.get("settle", "")) in ("physics", "crossing")
+    if on_ring:
+        paths, timeline = _word_round_ring(
+            word, n_strands, diameter, _count(spec, "iterations", 200, 0, 2000)
+        )
+    else:
+        trajectories = braid_word_trajectories(
+            Braid(word, n_strands), samples_per_crossing=samples
+        )
+        paths = lay_yarns(trajectories, yarn_diameter=diameter, fell_radius=0.0)
+        paths = _tighten(paths, spec, diameter)
+        timeline = _timeline(trajectories, list(paths.points), "line")
+    keys = list(paths.points)
     info = _braid_info(word, n_strands)
     once = (
         solid_word(moves[: len(moves) // repeat], n_strands)
@@ -899,16 +960,19 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
         diameter,
+        colours=[_PALETTE[int(k) % len(_PALETTE)] for k in keys],
+        names=[f"Strand {k}" for k in keys],
         info=info,
-        timeline=_timeline(trajectories, list(paths.points), "line"),
+        timeline=timeline,
     )
     # Made move by move round a ring: a ring word as it is written, a braid
     # word rolled onto the ring.
     if ring:
-        result["disk"] = _ring_program(moves, n_strands, False)
+        program = _ring_program(moves, n_strands, False)
     else:
         rolled, mirrored = _ring_moves(word, n_strands)
-        result["disk"] = _ring_program(rolled, n_strands, mirrored)
+        program = _ring_program(rolled, n_strands, mirrored)
+    result["disk"] = _in_order(program, keys)
     result["info"]["made"] = repeat
     return result
 

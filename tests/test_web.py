@@ -496,6 +496,36 @@ def test_a_rope_like_word_is_made_by_turning():
     assert moves == [5] * 4
 
 
+@pytest.mark.parametrize(
+    "word, n_strands",
+    [("1", 2), ("1 2 3", 4), ("1 -2", 3), ("7 6 5 4 4 3 2 1 7 6 5 4 3 2 1", 8)],
+)
+def test_a_word_to_settle_by_physics_is_laid_round_a_ring(word, n_strands):
+    """Settled by physics, a word is laid round a ring as a disk braid is,
+    every crossing kept as two neighbours swapping places — none rolled
+    into a turn of the bobbins, which on a disk crosses nothing: read back
+    round the ring, it is the word, its twist and all."""
+    from braidpy.annulus_braid import solid_word
+    from braidpy.take_off import disk_annular_word
+    from braidpy.web import _ring_program, _ring_steps
+
+    flat = parse_word(word) * 3
+    program = _ring_program(flat, n_strands, False)
+    start, steps = _ring_steps(program)
+    annular, n = disk_annular_word(start, steps, program["n_slots"], clockwise=True)
+    assert list(solid_word(annular, n)) == flat
+
+    spec = {"source": "word", "word": word, "n_strands": n_strands, "repeat": 3}
+    laid = build({**spec, "settle": "physics"}, tighten=False)
+    row = build(spec, tighten=False)
+    assert laid["timeline"]["kind"] == "disk"
+    assert row["timeline"]["kind"] == "line"
+    # The same braid, made the same way on a marudai.
+    assert laid["info"]["word"] == row["info"]["word"]
+    assert [s["name"] for s in laid["strands"]] == [s["name"] for s in row["strands"]]
+    assert laid["disk"] == row["disk"]
+
+
 def test_a_word_comes_with_its_moves_on_a_ring():
     result = build(
         {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 4}, tighten=False
