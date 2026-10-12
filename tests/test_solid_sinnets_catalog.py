@@ -40,3 +40,22 @@ def test_every_move_is_between_spaces_and_crosses_real_strands(name):
     assert word, "a sinnet with no crossings is not a sinnet"
     assert all(1 <= abs(g) <= n_strands - 1 for g in word)
     assert sum(counts) == n_strands
+
+
+def test_every_sinnet_has_the_shape_the_book_gives_it():
+    """Each entry's shape is its cross-section as the catalogue's own note
+    for it names it, as in ABOK ("8-strand round", "11-strand triangle"),
+    and its strands are as many as the note says."""
+    import inspect
+    import re
+
+    import braidpy.solid_sinnets_catalog as catalogue
+
+    notes = re.findall(
+        r"ABOK #(\d+)\s*\n\s*(\d+)-strand ([a-z ]+?)\s*\n", inspect.getsource(catalogue)
+    )
+    assert len(notes) == len(_catalogue())
+    for number, strands, shape in notes:
+        sinnet = _catalogue()[f"abok_{number}"]
+        assert sinnet.shape == shape
+        assert sinnet.n_strands == int(strands)

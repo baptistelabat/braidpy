@@ -86,10 +86,13 @@ class AshleySolidSinnet:
     Attributes:
         initial_counts_per_space (List[int]): Number of strands per sector. 1-based sectors.
         moves (List[Tuple[int, int]]): Sequence of (from_sector, to_sector) moves, each 1-based.
+        shape (Optional[str]): The cross-section the sinnet takes when made, as
+            the book names it: "round", "triangle", "hexagon"…
     """
 
     initial_counts_per_space: List[int]
     moves: List[Tuple[int, int]]
+    shape: Optional[str] = None
 
     @property
     def n_strands(self) -> int:
