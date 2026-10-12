@@ -12,7 +12,8 @@ import re
 from typing import Any, Callable, Collection, Dict, Hashable, List, Optional, Tuple
 
 from braidpy.web._info import _braid_info
-from braidpy.web._result import _PALETTE, _result, _tighten, _timeline
+from braidpy.utils import PALETTE
+from braidpy.web._result import _result, _tighten, _timeline
 from braidpy.web._settings import Machine
 from braidpy.web._spec import defaults
 from braidpy.web._types import Info, MachineGeometry, Result, Source, Spec
@@ -140,7 +141,7 @@ def _from_machine(spec: Spec) -> Result:
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
-    colour = {k: _PALETTE[i % len(_PALETTE)] for i, k in enumerate(carriers)}
+    colour = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(carriers)}
     colour.update({k: Machine.core_colour for k in cores})
     return _result(
         Machine.titles[name] + f", {cycles} cycles",
