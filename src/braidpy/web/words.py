@@ -8,11 +8,13 @@ marudai."""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
 
 from braidpy.web._info import _braid_info, _unit
 from braidpy.web._result import _PALETTE, _result, _tighten, _timeline
-from braidpy.web._spec import _count, _number, parse_word
+from braidpy.web._settings import DISK_ITERATIONS, Word
+from braidpy.web._spec import parse_word
+from braidpy.web._types import DiskProgram, Result, Source, Spec
 from braidpy.web.disks import _disk_in_step
 
 
@@ -61,9 +63,7 @@ def _ring_moves(word: Sequence[int], n_strands: int) -> Tuple[List[int], bool]:
     return straight, False
 
 
-def _ring_program(
-    moves: Sequence[int], n_strands: int, mirrored: bool
-) -> Dict[str, Any]:
+def _ring_program(moves: Sequence[int], n_strands: int, mirrored: bool) -> DiskProgram:
     """Ring moves (:func:`_ring_moves`) as a disk program for the page: the
     braid hanging free, as a disk braid does, and held only while the
     bobbins turn round it, twisting the yarns in.  Strand ``k`` starts in place ``k``
@@ -103,7 +103,7 @@ def _ring_program(
     }
 
 
-def _ring_steps(program: Dict[str, Any]):
+def _ring_steps(program: DiskProgram):
     """A ring program (:func:`_ring_program`) as a disk's start and steps,
     as :func:`braidpy.take_off.disk_crossing_steps` takes them: strands by
     index, a turn of every bobbin one step, other moves one at a time."""
@@ -140,7 +140,7 @@ def _word_round_ring(
     return paths, _timeline(disk, list(paths.points), "disk", clock, ring)
 
 
-def _in_order(program: Dict[str, Any], keys: Sequence[Any]) -> Dict[str, Any]:
+def _in_order(program: DiskProgram, keys: Sequence[Any]) -> DiskProgram:
     """A ring program, its strands numbered 0, 1, … renumbered in the
     order ``keys`` gives them, as the braid's strands are."""
     index = {int(k): i for i, k in enumerate(keys)}
@@ -150,7 +150,7 @@ def _in_order(program: Dict[str, Any], keys: Sequence[Any]) -> Dict[str, Any]:
     for k, slot in enumerate(program["start"]):
         start[index[k]] = slot
     steps = [[[index[k], delta] for k, delta in step] for step in program["steps"]]
-    return {**program, "start": start, "steps": steps}
+    return cast(DiskProgram, {**program, "start": start, "steps": steps})
 
 
 def _shortened(text: str, most: int = 32) -> str:
@@ -159,23 +159,23 @@ def _shortened(text: str, most: int = 32) -> str:
     return text if len(text) <= most else text[:most].rsplit(" ", 1)[0] + " …"
 
 
-def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
+def _from_word(spec: Spec) -> Result:
     from braidpy.annulus_braid import solid_word
     from braidpy.braid import Braid
     from braidpy.take_off import braid_word_trajectories, lay_yarns
 
-    layout = str(spec.get("layout", "row"))
-    if layout not in ("row", "ring"):
+    layout = Word.layout.read(spec)
+    if layout not in Word.layouts:
         raise ValueError("Strands are either in a row or round a ring.")
     ring = layout == "ring"
-    word = parse_word(str(spec.get("word", "")))
+    word = parse_word(Word.word.read(spec))
     if not word:
         raise ValueError("Give a braid word, for example 1 -2.")
-    repeat = _count(spec, "repeat", 1, 1, 50)
+    repeat = Word.repeat.read(spec)
     top = max(abs(g) for g in word)
     if ring:
         # Round a ring, the greatest move is taken for the seam's crossing.
-        n_strands = _count(spec, "n_strands", max(top, 2), 2, 32)
+        n_strands = Word.n_strands.read(spec, default=max(top, 2))
         if top > n_strands + 1:
             raise ValueError(
                 f"On a ring of {n_strands} strands, moves go up to "
@@ -187,24 +187,29 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
             raise ValueError("That ring word crosses nothing once laid flat.")
     else:
         needed = top + 1
-        n_strands = _count(spec, "n_strands", needed, 2, 32)
+        n_strands = Word.n_strands.read(spec, default=needed)
         if n_strands < needed:
             raise ValueError(f"σ{needed - 1} needs at least {needed} strands.")
         word = word * repeat
-    if len(word) > 2000:
-        raise ValueError("That is over 2000 crossings: repeat it fewer times.")
-    diameter = _number(spec, "yarn_diameter", 0.45, 0.05, 0.95)
-    # A long word is laid with fewer samples a crossing, as few as six: the
-    # work of laying grows as the square of them, and laid it is only a
-    # first sight of the braid, made then on the marudai.
-    samples = 24 if len(word) <= 100 else max(6, round(24 * 100 / len(word)))
+    if len(word) > Word.most_crossings:
+        raise ValueError(
+            f"That is over {Word.most_crossings} crossings: repeat it fewer times."
+        )
+    diameter = Word.yarn_diameter.read(spec)
+    samples = (
+        Word.samples
+        if len(word) <= Word.samples_up_to
+        else max(
+            Word.fewest_samples, round(Word.samples * Word.samples_up_to / len(word))
+        )
+    )
     # Settled by physics, the strands are laid round a ring, as from a disk:
     # in a row, they would be held at one point at the fell, and the yarns'
     # twist could come undone through it.
-    on_ring = str(spec.get("settle", "")) in ("physics", "crossing")
+    on_ring = Word.settle.read(spec) in Word.by_physics
     if on_ring:
         paths, timeline = _word_round_ring(
-            word, n_strands, diameter, _count(spec, "iterations", 200, 0, 2000)
+            word, n_strands, diameter, DISK_ITERATIONS.read(spec)
         )
     else:
         trajectories = braid_word_trajectories(
@@ -225,7 +230,7 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
         info["annular_word"] = " ".join(str(g) for g in moves)
     result = _result(
         ("Ring word " if ring else "Braid word ")
-        + _shortened(str(spec.get("word", "")))
+        + _shortened(Word.word.read(spec))
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
         diameter,
@@ -246,29 +251,14 @@ def _from_word(spec: Mapping[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def _word_entry() -> Dict[str, Any]:
+def _word_entry() -> Source:
     return {
         "title": "Braid word",
-        "defaults": {"word": "1 -2", "n_strands": 3, "repeat": 6},
-        "examples": [
-            {"word": "1 -2", "n_strands": 3, "repeat": 6, "title": "Plait"},
-            {"word": "1 2 3", "n_strands": 4, "repeat": 12, "title": "Twist"},
-            {
-                "word": "1 -2 3 -2",
-                "n_strands": 4,
-                "repeat": 4,
-                "title": "Four-strand flat",
-            },
-            {"word": "1 1 1", "n_strands": 2, "repeat": 8, "title": "Two-ply"},
-            {
-                "layout": "ring",
-                "word": "4",
-                "n_strands": 3,
-                "repeat": 36,
-                "title": "Rope, as a ring word",
-            },
-        ],
+        "defaults": dict(Word.starts),
+        "examples": list(Word.examples),
     }
 
 
-SOURCES = {"word": (_word_entry, _from_word)}
+SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
+    "word": (_word_entry, _from_word)
+}
