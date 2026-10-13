@@ -18,6 +18,8 @@ from braidpy.utils import StrictlyPositiveInt
 import braidpy.braid
 from typing import Any, Dict, List, Sequence, Tuple
 
+from braidpy.catalogue import Entry
+
 """
 In flat braid all the strands follow the same track
 In tubular braid, the strands follow two separate, though interwoven tracks
@@ -474,7 +476,7 @@ https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 # ------------------------------------------------------------ as braid words
 
 # More braids worth trying as braid words: Braid Studio offers them as
-# examples after the braids above (see :func:`word_examples`).
+# examples after the catalogue's (see :func:`word_examples`).
 WORD_EXAMPLES: List[Dict[str, Any]] = [
     {"word": "1 2 3", "n_strands": 4, "repeat": 12, "title": "Twist"},
     {"word": "1 -2 3 -2", "n_strands": 4, "repeat": 4, "title": "Four-strand flat"},
@@ -488,20 +490,59 @@ WORD_EXAMPLES: List[Dict[str, Any]] = [
     },
 ]
 
-# The braids above that are a braid word, by function, with a title.
-CRAFT_BRAIDS: Dict[str, str] = {
-    "flat3": "Plait, or flat sinnet of 3 (ABOK 2965)",
-    "inverted_flat3": "Dutch braid of 3 (ABOK 2966)",
-    "weave3": "Weave of 3 (ABOK 2973)",
-    "double_flat3": "Double flat sinnet of 3 (ABOK 2971)",
-    "square4": "Square sinnet of 4 (ABOK 2999)",
-    "asymmetric_flat4": "Asymmetric flat sinnet of 4 (ABOK 2969)",
-    "abok_2974": "Four-strand sinnet (ABOK 2974)",
-    "flat5": "Flat braid of 5",
-    "flat_sinnet5": "Flat sinnet of 5 (ABOK 2967)",
-    "flat6": "Flat braid of 6",
-    "regular_flat6": "Regular flat braid of 6",
-    "flat_sinnet7": "Flat sinnet of 7 (ABOK 2968)",
+# The braids above that are a braid word, built without drawing them, as
+# every catalogue lists its braids (:mod:`braidpy.catalogue`).
+CATALOGUE: Dict[str, Entry[Braid]] = {
+    "flat3": Entry(
+        "Plait, or flat sinnet of 3 (ABOK 2965)",
+        lambda: flat3(draw=False)[0],
+        "The Ashley Book of Knots, #2965",
+    ),
+    "inverted_flat3": Entry(
+        "Dutch braid of 3 (ABOK 2966)",
+        lambda: inverted_flat3(draw=False)[0],
+        "The Ashley Book of Knots, #2966",
+    ),
+    "weave3": Entry(
+        "Weave of 3 (ABOK 2973)",
+        lambda: weave3(draw=False)[0],
+        "The Ashley Book of Knots, #2973",
+    ),
+    "double_flat3": Entry(
+        "Double flat sinnet of 3 (ABOK 2971)",
+        lambda: double_flat3(draw=False)[0],
+        "The Ashley Book of Knots, #2971",
+    ),
+    "square4": Entry(
+        "Square sinnet of 4 (ABOK 2999)",
+        lambda: square4(draw=False)[0],
+        "The Ashley Book of Knots, #2999",
+    ),
+    "asymmetric_flat4": Entry(
+        "Asymmetric flat sinnet of 4 (ABOK 2969)",
+        lambda: asymmetric_flat4(draw=False)[0],
+        "The Ashley Book of Knots, #2969",
+    ),
+    "abok_2974": Entry(
+        "Four-strand sinnet (ABOK 2974)",
+        lambda: abok_2974(draw=False)[0],
+        "The Ashley Book of Knots, #2974",
+    ),
+    "flat5": Entry("Flat braid of 5", lambda: flat5(draw=False)[0]),
+    "flat_sinnet5": Entry(
+        "Flat sinnet of 5 (ABOK 2967)",
+        lambda: flat_sinnet5(draw=False)[0],
+        "The Ashley Book of Knots, #2967",
+    ),
+    "flat6": Entry("Flat braid of 6", lambda: flat6(draw=False)[0]),
+    "regular_flat6": Entry(
+        "Regular flat braid of 6", lambda: regular_flat6(draw=False)[0]
+    ),
+    "flat_sinnet7": Entry(
+        "Flat sinnet of 7 (ABOK 2968)",
+        lambda: flat_sinnet7(draw=False)[0],
+        "The Ashley Book of Knots, #2968",
+    ),
 }
 
 
@@ -520,10 +561,10 @@ _FEWEST_CROSSINGS = 12
 
 def word_examples() -> List[Dict[str, Any]]:
     """Braids to try as braid words, as plain data: each of
-    :data:`CRAFT_BRAIDS` as its function builds it — without drawing it —
-    reduced to the word it repeats, then :data:`WORD_EXAMPLES`.  A braid is
-    repeated as many times as brings every strand home, twice or more: at
-    least :data:`_FEWEST_CROSSINGS` crossings.
+    :data:`CATALOGUE` reduced to the word it repeats, then
+    :data:`WORD_EXAMPLES`.  A braid is repeated as many times as brings
+    every strand home, twice or more: at least :data:`_FEWEST_CROSSINGS`
+    crossings.
 
     Returns:
         Per braid, its ``word``, ``n_strands``, ``repeat`` and ``title``; a
@@ -532,8 +573,8 @@ def word_examples() -> List[Dict[str, Any]]:
     from braidpy.pure_braid import closing_repeats
 
     examples: List[Dict[str, Any]] = []
-    for name, title in CRAFT_BRAIDS.items():
-        braid, _ = globals()[name](draw=False)
+    for entry in CATALOGUE.values():
+        braid = entry.make()
         unit = _unit(braid.generators)
         n_strands = braid.n_strands
         home = closing_repeats(Braid(tuple(unit), n_strands), limit=None) or 1
@@ -543,7 +584,7 @@ def word_examples() -> List[Dict[str, Any]]:
                 "word": " ".join(str(g) for g in unit),
                 "n_strands": n_strands,
                 "repeat": home * times,
-                "title": title,
+                "title": entry.title,
             }
         )
     return examples + [dict(example) for example in WORD_EXAMPLES]
