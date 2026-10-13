@@ -25,6 +25,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.marudai
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.material_braid
    :members:
    :undoc-members:
