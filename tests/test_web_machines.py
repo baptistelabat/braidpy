@@ -117,7 +117,7 @@ def test_a_machine_is_drawn_for_the_page_to_load_by_hand():
     for gear in shape["gears"]:
         assert {"x", "y", "radius", "ride", "slots", "direction", "offset"} <= set(gear)
     assert shape["contacts"]
-    own = _machines()["tubular_8"]().default_carriers()
+    own = _machines()["tubular_8"].make().default_carriers()
     assert shape["loading"] == [list(own[k]) for k in sorted(own)]
 
 

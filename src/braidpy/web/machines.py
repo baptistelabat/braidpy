@@ -19,20 +19,10 @@ from braidpy.web._spec import defaults
 from braidpy.web._types import Info, MachineGeometry, Result, Source, Spec
 
 
-def _machines() -> Dict[str, Callable[[], Any]]:
-    from braidpy.horn_gear import examples
+def _machines():
+    from braidpy.machine_catalog import CATALOGUE
 
-    return {
-        "flat_3": examples.flat_braid_3,
-        "flat_4": examples.flat_braid_4,
-        "flat_9": examples.flat_braid_9,
-        "soutache_5": examples.soutache_braid,
-        "soutache_7": lambda: examples.soutache_braid(n_slots=7),
-        "princess": examples.princess_braid,
-        "tubular_8": examples.tubular_braid_8,
-        "tubular_12": examples.tubular_braid_12,
-        "tubular_16": examples.tubular_braid_16,
-    }
+    return CATALOGUE
 
 
 def _from_machine(spec: Spec) -> Result:
@@ -48,7 +38,7 @@ def _from_machine(spec: Spec) -> Result:
     name = Machine.name.read(spec)
     if name not in machines:
         raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
-    machine = machines[name]()
+    machine = machines[name].make()
     cycles = Machine.cycles.read(spec)
     radii = gear_radii(machine)
     default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
@@ -144,7 +134,7 @@ def _from_machine(spec: Spec) -> Result:
     colour = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(carriers)}
     colour.update({k: Machine.core_colour for k in cores})
     return _result(
-        Machine.titles[name] + f", {cycles} cycles",
+        machines[name].title + f", {cycles} cycles",
         paths,
         diameter,
         colours=[colour[k] for k in keys],
@@ -202,7 +192,7 @@ def machine_geometry(name: str) -> MachineGeometry:
     machines = _machines()
     if name not in machines:
         raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
-    machine = machines[name]()
+    machine = machines[name].make()
     layout = compute_layout(machine)
     radii = gear_radii(machine)
     offsets = slot_offsets(machine, layout)
@@ -258,7 +248,7 @@ def _machine_entry() -> Source:
         "title": "Horn gear braiding machine",
         "defaults": defaults(*Machine.shown),
         "entries": [
-            {"name": name, "title": title} for name, title in Machine.titles.items()
+            {"name": name, "title": entry.title} for name, entry in _machines().items()
         ],
     }
 
