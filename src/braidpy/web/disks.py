@@ -11,7 +11,7 @@ marudai."""
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, Dict, Hashable, List, Sequence, Tuple
+from typing import Callable, Dict, Hashable, List, Sequence, Tuple
 
 import numpy as np
 
@@ -29,26 +29,16 @@ from braidpy.web._spec import _moves_text, _numbers, defaults, parse_moves
 from braidpy.web._types import DiskProgram, Entry, Result, Source, Spec
 
 
-def _sinnets() -> Dict[str, Any]:
-    import braidpy.solid_sinnets_catalog as catalogue
-    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
+def _sinnets():
+    from braidpy.solid_sinnets_catalog import CATALOGUE
 
-    return {
-        name: value
-        for name, value in sorted(vars(catalogue).items())
-        if isinstance(value, AshleySolidSinnet)
-    }
+    return CATALOGUE
 
 
-def _mobidais() -> Dict[str, Any]:
-    import braidpy.mobidai_catalog as catalogue
-    from braidpy.mobidai_catalog import CataloguedBraid
+def _mobidais():
+    from braidpy.mobidai_catalog import CATALOGUE
 
-    return {
-        name: value
-        for name, value in vars(catalogue).items()
-        if isinstance(value, CataloguedBraid)
-    }
+    return CATALOGUE
 
 
 def _disk_program(
@@ -153,7 +143,7 @@ def _from_kumihimo(spec: Spec) -> Result:
 def _from_mobidai(spec: Spec) -> Result:
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
-    from braidpy.mobidai_catalog import CataloguedBraid
+    from braidpy.mobidai_catalog import CataloguedMobidai
 
     mobidais = _mobidais()
     name = Mobidai.name.read(spec)
@@ -167,7 +157,7 @@ def _from_mobidai(spec: Spec) -> Result:
         moves = parse_moves(str(spec.get("moves", "")))
         if not all(1 <= p <= n_slots for move in moves for p in move):
             raise ValueError(f"Moves are between slots 1 to {n_slots}.")
-        entry = CataloguedBraid(
+        entry = CataloguedMobidai(
             name="your own disk braid",
             n_slots=n_slots,
             initial_slots=tuple(zip(slots, _hues(len(slots)))),
@@ -176,7 +166,7 @@ def _from_mobidai(spec: Spec) -> Result:
             source="",
         )
     elif name in mobidais:
-        entry = mobidais[name]
+        entry = mobidais[name].make()
     else:
         raise ValueError(f"No mobidai braid {name!r}: one of {sorted(mobidais)}.")
     config = entry.to_config()
@@ -233,7 +223,7 @@ def _from_sinnet(spec: Spec) -> Result:
             raise ValueError(f"Moves are between spaces 1 to {len(counts)}.")
         sinnet = AshleySolidSinnet(counts, moves)
     elif name in sinnets:
-        sinnet = sinnets[name]
+        sinnet = sinnets[name].make()
     else:
         raise ValueError(f"No sinnet {name!r}: one of {sorted(sinnets)}.")
     cycles = Sinnet.cycles.read(spec)
@@ -326,21 +316,19 @@ def _kumihimo_entry() -> Source:
 
 
 def _mobidai_entry() -> Source:
-    mobidais = _mobidais()
     entries: List[Entry] = [
         {
             "name": key,
-            "title": entry.name[0].upper()
-            + entry.name[1:]
-            + ("" if "strand" in entry.name else f", {entry.n_strands} strands"),
+            "title": catalogued.title,
             "pattern": {
-                "n_slots": entry.n_slots,
-                "slots": " ".join(str(slot) for slot, _ in entry.initial_slots),
-                "moves": _moves_text(entry.moves),
-                "shift": entry.n_shift_after_cycle,
+                "n_slots": braid.n_slots,
+                "slots": " ".join(str(slot) for slot, _ in braid.initial_slots),
+                "moves": _moves_text(braid.moves),
+                "shift": braid.n_shift_after_cycle,
             },
         }
-        for key, entry in mobidais.items()
+        for key, catalogued in _mobidais().items()
+        for braid in [catalogued.make()]
     ]
     return {
         "title": "Kumihimo disk (mobidai)",
@@ -350,19 +338,18 @@ def _mobidai_entry() -> Source:
 
 
 def _sinnet_entry() -> Source:
-    sinnets = _sinnets()
     entries: List[Entry] = [
         {
             "name": name,
-            "title": f"ABOK #{name.split('_')[1]}, {sinnet.n_strands}-strand "
-            + (sinnet.shape or "sinnet"),
+            "title": catalogued.title,
             "shape": sinnet.shape,
             "pattern": {
                 "counts": " ".join(str(c) for c in sinnet.initial_counts_per_space),
                 "moves": _moves_text(sinnet.moves),
             },
         }
-        for name, sinnet in sinnets.items()
+        for name, catalogued in _sinnets().items()
+        for sinnet in [catalogued.make()]
     ]
     return {
         "title": "Ashley solid sinnet",

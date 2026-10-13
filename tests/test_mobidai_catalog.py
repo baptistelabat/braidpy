@@ -22,7 +22,7 @@ def test_every_catalogued_braid_can_actually_be_made(name):
     A mistyped slot shows up here as a collision or an invalid slot, which is
     the whole reason for running them rather than only storing them.
     """
-    braid = CATALOGUE[name]
+    braid = CATALOGUE[name].make()
     disk = Mobidai(braid.to_config())
     disk.all_steps()
     assert len(disk.generators) > 0, "a braid with no crossings is not a braid"
@@ -31,7 +31,7 @@ def test_every_catalogued_braid_can_actually_be_made(name):
 @pytest.mark.parametrize("name", sorted(CATALOGUE))
 def test_every_strand_keeps_its_slot_to_itself(name):
     """No two strands start in the same place."""
-    braid = CATALOGUE[name]
+    braid = CATALOGUE[name].make()
     slots = [slot for slot, _ in braid.initial_slots]
     assert len(set(slots)) == len(slots)
     assert braid.n_strands == len(braid.initial_slots)
@@ -44,12 +44,17 @@ def test_all_four_braids_from_the_book_are_reachable():
     used at all.  This is the test that would have caught it.
     """
     assert len(CATALOGUE) == 4
-    assert sorted(braid.n_strands for braid in CATALOGUE.values()) == [7, 8, 12, 16]
+    assert sorted(entry.make().n_strands for entry in CATALOGUE.values()) == [
+        7,
+        8,
+        12,
+        16,
+    ]
 
 
 def test_the_braid_that_needs_a_turn_between_cycles_records_it():
     """One braid is a cycle of moves *plus* a rotation, and says so."""
-    seven = next(b for b in CATALOGUE.values() if b.n_strands == 7)
+    seven = next(b for b in (e.make() for e in CATALOGUE.values()) if b.n_strands == 7)
     assert seven.n_slots == 8
     assert seven.n_shift_after_cycle == -3
 
@@ -58,7 +63,7 @@ def test_the_braid_that_needs_a_turn_between_cycles_records_it():
 def test_a_catalogued_braid_gives_a_word_braidpy_understands(name):
     from braidpy.braid import Braid
 
-    braid = CATALOGUE[name]
+    braid = CATALOGUE[name].make()
     disk = Mobidai(braid.to_config())
     disk.all_steps()
     word = disk.generators
@@ -75,7 +80,7 @@ def test_every_cycle_is_made_from_where_the_last_left_off(name):
     moves from the same slots instead finds them empty by the second cycle,
     and the braid stops being made.
     """
-    braid = CATALOGUE[name]
+    braid = CATALOGUE[name].make()
     disk = Mobidai(braid.to_config())
     disk.all_steps()
     per_cycle = len(disk.braid_word)
