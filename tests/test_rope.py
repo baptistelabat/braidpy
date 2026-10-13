@@ -17,6 +17,36 @@ pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node
 CASES = Path(__file__).parent / "js" / "rope_cases.js"
 
 
+def _word_yarns(word, n_strands):
+    """A braid word laid as braidpy draws it, in yarn diameters: strands
+    1.5 apart, a crossing strand riding 0.7 off the row, 3 of rise a
+    crossing."""
+    from braidpy.braid import Braid
+    from braidpy.parametric_strand import SMOOTHSTEP, sample_strands, strand_paths
+
+    paths = strand_paths(
+        Braid(tuple(word), n_strands), spacing=1.5, amplitude=0.7, profile=SMOOTHSTEP
+    )
+    return [y.ravel().tolist() for y in sample_strands(paths, per_unit=20, rise=3.0)]
+
+
+def _read_word(yarns):
+    """The braid word read back off yarns, as braidpy reads a drawn one."""
+    from braidpy.parametric_strand import SampledStrand
+    from braidpy.symmetric_braid import braid_word
+
+    return braid_word([SampledStrand(y) for y in yarns], n_samples=2000)
+
+
+def _links(yarns, turn=0.0):
+    """The closure's linking numbers, measured on the yarns."""
+    from braidpy.linking import yarn_linking
+
+    import numpy as np
+
+    return yarn_linking([np.reshape(y, (-1, 3)) for y in yarns], turn)
+
+
 def _run(case, *args):
     out = subprocess.run(
         ["node", str(CASES), case, *map(str, args)],
@@ -43,13 +73,27 @@ def test_a_two_ply_rope_pulled_taut_twists_tight():
     assert 0.95 * tight < result["height"] < tight
 
 
-def test_a_plait_pulled_taut_stays_the_same_plait():
+def test_a_two_ply_rope_free_to_turn_untwists():
+    """The same rope, its end free to turn: with nothing to hold it, it
+    untwists, as a frictionless rope must — very nearly both its turns, the
+    yarns' clamped ends keeping a little — and rises almost to their length,
+    side by side."""
+    result = _run("twoPlyFree")
+    assert result["largestForce"] < 1e-3
+    assert abs(result["turn"]) / (2 * math.pi) == pytest.approx(2, abs=0.1)
+    assert 10 + result["rise"] == pytest.approx(result["length"], rel=0.02)
+
+
+def test_a_plait_pulled_taut_stays_the_same_plait(tmp_path):
     """A three-strand plait, its end free to turn: pulled taut, its yarns
     never pass through one another, so it is the same braid at rest — and
     turning its end could not undo it, so it barely turns."""
-    result = _run("plait")
+    word = [1, -2, 1, -2]
+    laid = tmp_path / "laid.json"
+    laid.write_text(json.dumps(_word_yarns(word, 3)))
+    result = _run("word", laid)
     assert result["largestForce"] < 1e-3
-    assert result["settled"] == result["laid"]
+    assert _read_word(result["yarns"]) == word
     assert result["deepest"] < 0.01
     assert abs(result["turn"]) < 0.2 * 2 * math.pi
 
@@ -70,12 +114,12 @@ def test_a_sinnet_beaten_up_is_the_same_braid(tmp_path):
     assert result["startOverlap"] < 0.01
     assert result["deepestEver"] < 0.05
     assert result["settledHeight"] < 0.5 * result["height"]
-    assert result["after"]["components"] == result["before"]["components"]
-    before = [round(x) for x in result["before"]["links"]]
-    after = [round(x) for x in result["after"]["links"]]
-    assert after == before
+    before = _links(result["laid"])
+    after = _links(result["settled"], result["turn"])
+    assert after["components"] == before["components"]
+    assert [round(x) for x in after["links"]] == [round(x) for x in before["links"]]
     # Exact linking numbers are whole: the closures really are closed.
-    assert all(abs(x - round(x)) < 0.01 for x in result["after"]["links"])
+    assert all(abs(x - round(x)) < 0.01 for x in after["links"])
 
 
 def test_a_sinnet_made_crossing_by_crossing_is_the_same_braid(tmp_path):
@@ -91,6 +135,7 @@ def test_a_sinnet_made_crossing_by_crossing_is_the_same_braid(tmp_path):
     assert result["largestForce"] < 1e-3
     assert result["deepestEver"] < 0.05
     assert result["madeHeight"] < 0.5 * result["height"]
-    laid = [round(x) for x in result["laid"]["links"]]
-    assert [round(x) for x in result["made"]["links"]] == laid
-    assert [round(x) for x in result["settled"]["links"]] == laid
+    laid = [round(x) for x in _links(result["laid"])["links"]]
+    assert [round(x) for x in _links(result["made"])["links"]] == laid
+    settled = _links(result["settled"], result["turn"])["links"]
+    assert [round(x) for x in settled] == laid

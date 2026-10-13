@@ -1,13 +1,20 @@
 // The rope tests' cases, run by tests/test_rope.py: each settles yarns with
-// web/rope.js and prints what the test checks, as JSON.
+// web/rope.js (or makes them with web/form.js) and prints the yarns and how
+// it went, as JSON.  Only the physics is here: braidpy, in Python, lays a
+// braid word as yarns, reads the word back off them and measures their
+// closure's linking numbers (braidpy.parametric_strand, braidpy.linking).
 const path = require("path");
 const { settle } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
 const fs = require("fs");
-const { layWord, readWord } = require("./braidgeo.js");
-const { linkingMatrix } = require("./linking.js");
 const { tightenYarns } = require(path.join(__dirname, "..", "..", "web", "tighten.js"));
 const { relay } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
 const { form } = require(path.join(__dirname, "..", "..", "web", "form.js"));
+
+// Yarns laid by braidpy, as JSON: each yarn's points, x y z after x y z,
+// laid again with beads half a diameter apart.
+function laidYarns(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8")).map((y) => Array.from(relay(Float64Array.from(y), 0.5)));
+}
 
 function helices(turns, height, radius, spacing) {
   return [0, Math.PI].map((phase) => {
@@ -48,10 +55,19 @@ const cases = {
       largestForce: out.largestForce,
     };
   },
-  plait() {
-    const word = [1, -2, 1, -2];
-    const out = settle({ yarns: layWord(word, 3), spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
-    return { laid: word, settled: readWord(out.yarns), turn: out.turn, deepest: out.deepest, largestForce: out.largestForce };
+  // The same two-ply rope, its end free to turn.
+  twoPlyFree() {
+    const yarns = helices(2, 10, 1, 0.5);
+    const spacing = Math.hypot(yarns[0][3] - yarns[0][0], yarns[0][4] - yarns[0][1], yarns[0][5] - yarns[0][2]);
+    const out = settle({ yarns, spacing, force: 1, turns: true, steps: 600000, tolerance: 1e-3 });
+    return { length: length(yarns[0]), turn: out.turn, rise: out.rise, largestForce: out.largestForce };
+  },
+  // A braid word's yarns, laid by braidpy (read from a file), pulled taut,
+  // their top ends free to turn.
+  word() {
+    const yarns = laidYarns(process.argv[3]);
+    const out = settle({ yarns, spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
+    return { yarns: out.yarns, turn: out.turn, deepest: out.deepest, largestForce: out.largestForce };
   },
   // For the documentation's figures: the yarns, settled, and how the
   // settling went.
@@ -59,12 +75,12 @@ const cases = {
     const ys = helices(2, 10, 1, 0.5);
     const spacing = Math.hypot(ys[0][3] - ys[0][0], ys[0][4] - ys[0][1], ys[0][5] - ys[0][2]);
     const rope = settle({ yarns: ys, spacing, force: 1, turns: false, steps: 60000, tolerance: 1e-3 });
-    const word = [1, -2, 1, -2, 1, -2];
-    const plait = settle({ yarns: layWord(word, 3), spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
-    return { ropeLaid: ys, rope: rope.yarns, plaitLaid: layWord(word, 3), plait: plait.yarns };
+    const plaitLaid = laidYarns(process.argv[3]);
+    const plait = settle({ yarns: plaitLaid, spacing: 0.5, force: 1, turns: true, steps: 60000, tolerance: 1e-3 });
+    return { ropeLaid: ys, rope: rope.yarns, plaitLaid, plait: plait.yarns };
   },
   // A sinnet made crossing by crossing, as the page makes it, then
-  // settled: its closure's linking numbers at each stage.
+  // settled: its yarns at each stage.
   formed() {
     const job = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
     const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
@@ -93,9 +109,10 @@ const cases = {
     });
     const top = (ys) => Math.max(...ys.map((y) => y[y.length - 1]));
     return {
-      laid: linkingMatrix(yarns, 0),
-      made: linkingMatrix(made.yarns, 0),
-      settled: linkingMatrix(rest.yarns, rest.turn),
+      laid: yarns,
+      made: made.yarns,
+      settled: rest.yarns,
+      turn: rest.turn,
       height: top(yarns),
       madeHeight: top(made.yarns),
       deepestEver: Math.max(made.deepestEver, rest.deepestEver),
@@ -103,8 +120,7 @@ const cases = {
     };
   },
   // A sinnet, laid by braidpy (its tightening job read from a file), beaten
-  // up as the page beats it up: its closure's linking numbers before and
-  // after.
+  // up as the page beats it up: its yarns before and after.
   sinnet() {
     const job = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
     const clear = tightenYarns({ ...job, iterations: Math.max(job.iterations, 100) });
@@ -135,14 +151,15 @@ const cases = {
     });
     const height = ((job.n - 1) * job.spacing) / d;
     return {
-      before: linkingMatrix(yarns, 0),
-      after: linkingMatrix(out.yarns, out.turn),
+      laid: yarns,
+      settled: out.yarns,
+      turn: out.turn,
       height,
       settledHeight: height + out.rise,
       deepestEver: out.deepestEver,
       startOverlap: start.deepestEver,
       largestForce: out.largestForce,
-      ...(process.argv[4] === "shapes" ? { laid: yarns, settled: out.yarns, history } : {}),
+      ...(process.argv[4] === "shapes" ? { history } : {}),
     };
   },
 };
