@@ -42,6 +42,210 @@
 (function (root) {
   "use strict";
 
+  // ------------------------------------------------------------------
+  // What rope.js and form.js both do to yarns of beads, in flat arrays:
+  // x the beads' places, x y z after x y z; segment g joins beads g and
+  // g + 1, and its offset in x is 3 g.
+
+  // Pairs of segments near enough to touch before the beads move a quarter
+  // diameter, found on a grid of cells ``reach`` wide: of ``segs``, neither
+  // two segments of a yarn closer than ``gap`` along it, nor a pair
+  // ``accept`` turns down.  ``cells`` holds three numbers a bead.
+  function nearPairs(x, segs, yarnOf, gap, reach, cells, accept) {
+    const grid = new Map();
+    for (let e = 0; e < segs.length; e++) {
+      const g = segs[e];
+      const i = Math.floor((x[3 * g] + x[3 * g + 3]) / 2 / reach);
+      const j = Math.floor((x[3 * g + 1] + x[3 * g + 4]) / 2 / reach);
+      const k = Math.floor((x[3 * g + 2] + x[3 * g + 5]) / 2 / reach);
+      cells[3 * g] = i;
+      cells[3 * g + 1] = j;
+      cells[3 * g + 2] = k;
+      const key = (i * 73856093) ^ (j * 19349663) ^ (k * 83492791);
+      let list = grid.get(key);
+      if (!list) grid.set(key, (list = []));
+      list.push(g);
+    }
+    const found = [];
+    for (let e = 0; e < segs.length; e++) {
+      const g = segs[e];
+      const i = cells[3 * g], j = cells[3 * g + 1], k = cells[3 * g + 2];
+      for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          for (let dk = -1; dk <= 1; dk++) {
+            const list = grid.get(((i + di) * 73856093) ^ ((j + dj) * 19349663) ^ ((k + dk) * 83492791));
+            if (!list) continue;
+            for (const h of list) {
+              if (h <= g) continue;
+              if (cells[3 * h] !== i + di || cells[3 * h + 1] !== j + dj || cells[3 * h + 2] !== k + dk) continue;
+              if (yarnOf[h] === yarnOf[g] && h - g < gap) continue;
+              // Near enough to touch before the list is rebuilt.
+              const mx = x[3 * g] + x[3 * g + 3] - x[3 * h] - x[3 * h + 3];
+              const my = x[3 * g + 1] + x[3 * g + 4] - x[3 * h + 1] - x[3 * h + 4];
+              const mz = x[3 * g + 2] + x[3 * g + 5] - x[3 * h + 2] - x[3 * h + 5];
+              if (mx * mx + my * my + mz * mz > 4 * reach * reach) continue;
+              if (accept && !accept(g, h)) continue;
+              found.push(g, h);
+            }
+          }
+        }
+      }
+    }
+    return Int32Array.from(found);
+  }
+
+  // Whether a bead has moved a quarter diameter since ``built``: the pairs
+  // near enough to touch want finding again.
+  function stale(x, built) {
+    for (let k = 0; k < x.length; k += 3) {
+      const dx = x[k] - built[k], dy = x[k + 1] - built[k + 1], dz = x[k + 2] - built[k + 2];
+      if (dx * dx + dy * dy + dz * dz > 0.0625) return true;
+    }
+    return false;
+  }
+
+  // Each pair of segments, at offsets i and j of x, whose closest points
+  // are less than a diameter apart: ``touch(e, u, w, px, py, pz, r2)`` with
+  // the pair's place in ``pairs``, how far along each segment the points
+  // are, the vector between them, from the second to the first, and its
+  // length squared.
+  function touching(x, pairs, touch) {
+    for (let e = 0; e < pairs.length; e += 2) {
+      const i = 3 * pairs[e], j = 3 * pairs[e + 1];
+      const ax = x[i + 3] - x[i], ay = x[i + 4] - x[i + 1], az = x[i + 5] - x[i + 2];
+      const bx = x[j + 3] - x[j], by = x[j + 4] - x[j + 1], bz = x[j + 5] - x[j + 2];
+      const rx = x[i] - x[j], ry = x[i + 1] - x[j + 1], rz = x[i + 2] - x[j + 2];
+      const aa = ax * ax + ay * ay + az * az;
+      const bb = bx * bx + by * by + bz * bz;
+      const ab = ax * bx + ay * by + az * bz;
+      const ar = ax * rx + ay * ry + az * rz;
+      const br = bx * rx + by * ry + bz * rz;
+      const den = aa * bb - ab * ab;
+      let u = den > 1e-12 * aa * bb ? (ab * br - ar * bb) / den : 0;
+      u = u < 0 ? 0 : u > 1 ? 1 : u;
+      let w = (ab * u + br) / bb;
+      if (w < 0) {
+        w = 0;
+        u = Math.min(1, Math.max(0, -ar / aa));
+      } else if (w > 1) {
+        w = 1;
+        u = Math.min(1, Math.max(0, (ab - ar) / aa));
+      }
+      const px = rx + u * ax - w * bx, py = ry + u * ay - w * by, pz = rz + u * az - w * bz;
+      const r2 = px * px + py * py + pz * pz;
+      if (r2 < 1) touch(e, u, w, px, py, pz, r2);
+    }
+  }
+
+  // A force q between the segments at offsets i and j, at u and w along
+  // them: onto the first, and its opposite onto the second, shared between
+  // each one's two beads.
+  function spread(f, i, j, u, w, qx, qy, qz) {
+    f[i] += (1 - u) * qx;
+    f[i + 1] += (1 - u) * qy;
+    f[i + 2] += (1 - u) * qz;
+    f[i + 3] += u * qx;
+    f[i + 4] += u * qy;
+    f[i + 5] += u * qz;
+    f[j] -= (1 - w) * qx;
+    f[j + 1] -= (1 - w) * qy;
+    f[j + 2] -= (1 - w) * qz;
+    f[j + 3] -= w * qx;
+    f[j + 4] -= w * qy;
+    f[j + 5] -= w * qz;
+  }
+
+  // A yarn's beads ``from`` to ``to`` stretching, links of rest length s0,
+  // and bending, onto f: k_s (r - s0)² / 2 a link, and k_b / s0² |curve|² / 2
+  // a bead between two others.  Returns the links' stretch, all told.
+  function stretchAndBend(x, f, from, to, s0, ks, kb) {
+    let strain = 0;
+    for (let g = from; g < to; g++) {
+      const dx = x[3 * g + 3] - x[3 * g], dy = x[3 * g + 4] - x[3 * g + 1], dz = x[3 * g + 5] - x[3 * g + 2];
+      const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      strain += r - s0;
+      const t = (ks * (r - s0)) / r;
+      f[3 * g] += t * dx;
+      f[3 * g + 1] += t * dy;
+      f[3 * g + 2] += t * dz;
+      f[3 * g + 3] -= t * dx;
+      f[3 * g + 4] -= t * dy;
+      f[3 * g + 5] -= t * dz;
+    }
+    const b = kb / (s0 * s0);
+    for (let g = from + 1; g < to; g++) {
+      for (let c = 0; c < 3; c++) {
+        const curve = x[3 * g - 3 + c] - 2 * x[3 * g + c] + x[3 * g + 3 + c];
+        f[3 * g - 3 + c] -= b * curve;
+        f[3 * g + c] += 2 * b * curve;
+        f[3 * g + 3 + c] -= b * curve;
+      }
+    }
+    return strain;
+  }
+
+  // FIRE's sums, added to ``sums`` as the power f · v, |f|², |v|² and the
+  // largest force: over each yarn's rest length — f ``fs``, v ``vs``,
+  // weighed per link — then over the beads that move.
+  function fireSums(f, v, moves, fs, vs, links, sums) {
+    let power = sums[0], fNorm = sums[1], vNorm = sums[2], largest = sums[3];
+    for (let a = 0; a < fs.length; a++) {
+      // Per link, so a yarn's rest length is weighed like a bead.
+      largest = Math.max(largest, Math.abs(fs[a] / links[a]));
+      power += fs[a] * vs[a];
+      fNorm += fs[a] * fs[a];
+      vNorm += vs[a] * vs[a];
+    }
+    for (let g = 0; g < moves.length; g++) {
+      if (!moves[g]) continue;
+      for (let c = 0; c < 3; c++) {
+        const k = 3 * g + c;
+        power += f[k] * v[k];
+        fNorm += f[k] * f[k];
+        vNorm += v[k] * v[k];
+        if (Math.abs(f[k]) > largest) largest = Math.abs(f[k]);
+      }
+    }
+    sums[0] = power;
+    sums[1] = fNorm;
+    sums[2] = vNorm;
+    sums[3] = largest;
+  }
+
+  // How much of the force FIRE mixes into the velocity, from its sums.
+  function fireMix(sums, alpha) {
+    const fNorm = Math.sqrt(sums[1]);
+    const vNorm = Math.sqrt(sums[2]);
+    return fNorm > 0 ? (alpha * vNorm) / fNorm : 0;
+  }
+
+  // FIRE's turn of the velocity towards the force: the beads' that move,
+  // and the rest lengths'.
+  function steer(v, f, moves, vs, fs, alpha, mix) {
+    for (let g = 0; g < moves.length; g++) {
+      if (!moves[g]) continue;
+      for (let c = 0; c < 3; c++) v[3 * g + c] = (1 - alpha) * v[3 * g + c] + mix * f[3 * g + c];
+    }
+    for (let a = 0; a < vs.length; a++) vs[a] = (1 - alpha) * vs[a] + mix * fs[a];
+  }
+
+  // Semi-implicit Euler, no bead moving more than a tenth of a diameter in
+  // a step, so none can pass through another.
+  function moveBeads(x, v, f, dt, moves) {
+    for (let g = 0; g < moves.length; g++) {
+      if (!moves[g]) continue;
+      v[3 * g] += dt * f[3 * g];
+      v[3 * g + 1] += dt * f[3 * g + 1];
+      v[3 * g + 2] += dt * f[3 * g + 2];
+      const mx = dt * v[3 * g], my = dt * v[3 * g + 1], mz = dt * v[3 * g + 2];
+      const size = Math.sqrt(mx * mx + my * my + mz * mz);
+      const k = size > 0.1 ? 0.1 / size : 1;
+      x[3 * g] += mx * k;
+      x[3 * g + 1] += my * k;
+      x[3 * g + 2] += mz * k;
+    }
+  }
+
   // A yarn's beads again, evenly spaced about ``spacing`` apart, its two
   // ends kept.
   function relay(yarn, spacing) {
@@ -178,54 +382,10 @@
       let pairs = new Int32Array(0);
       const built = new Float64Array(3 * n);
       const cells = new Int32Array(3 * n);
+      const segs = Int32Array.from({ length: n }, (_, g) => g).filter((g) => !isTop[g]);
       function neighbours() {
-        const grid = new Map();
-        for (let g = 0; g < n; g++) {
-          if (isTop[g]) continue;
-          const i = Math.floor((x[3 * g] + x[3 * g + 3]) / 2 / reach);
-          const j = Math.floor((x[3 * g + 1] + x[3 * g + 4]) / 2 / reach);
-          const k = Math.floor((x[3 * g + 2] + x[3 * g + 5]) / 2 / reach);
-          cells[3 * g] = i;
-          cells[3 * g + 1] = j;
-          cells[3 * g + 2] = k;
-          const key = (i * 73856093) ^ (j * 19349663) ^ (k * 83492791);
-          let list = grid.get(key);
-          if (!list) grid.set(key, (list = []));
-          list.push(g);
-        }
-        const found = [];
-        for (let g = 0; g < n; g++) {
-          if (isTop[g]) continue;
-          const i = cells[3 * g], j = cells[3 * g + 1], k = cells[3 * g + 2];
-          for (let di = -1; di <= 1; di++) {
-            for (let dj = -1; dj <= 1; dj++) {
-              for (let dk = -1; dk <= 1; dk++) {
-                const list = grid.get(((i + di) * 73856093) ^ ((j + dj) * 19349663) ^ ((k + dk) * 83492791));
-                if (!list) continue;
-                for (const h of list) {
-                  if (h <= g) continue;
-                  if (cells[3 * h] !== i + di || cells[3 * h + 1] !== j + dj || cells[3 * h + 2] !== k + dk) continue;
-                  if (yarnOf[h] === yarnOf[g] && h - g < gap) continue;
-                  // Near enough to touch before the list is rebuilt.
-                  const mx = x[3 * g] + x[3 * g + 3] - x[3 * h] - x[3 * h + 3];
-                  const my = x[3 * g + 1] + x[3 * g + 4] - x[3 * h + 1] - x[3 * h + 4];
-                  const mz = x[3 * g + 2] + x[3 * g + 5] - x[3 * h + 2] - x[3 * h + 5];
-                  if (mx * mx + my * my + mz * mz > 4 * reach * reach) continue;
-                  found.push(g, h);
-                }
-              }
-            }
-          }
-        }
-        pairs = Int32Array.from(found);
+        pairs = nearPairs(x, segs, yarnOf, gap, reach, cells);
         built.set(x);
-      }
-      function stale() {
-        for (let k = 0; k < 3 * n; k += 3) {
-          const dx = x[k] - built[k], dy = x[k + 1] - built[k + 1], dz = x[k + 2] - built[k + 2];
-          if (dx * dx + dy * dy + dz * dz > 0.0625) return true;
-        }
-        return false;
       }
 
       // The energy's gradient: f holds the forces, minus the gradient, and
@@ -236,79 +396,23 @@
         f.fill(0);
         fs.fill(0);
         for (let a = 0; a < nYarns; a++) {
-          const s0 = s[a];
-          let strain = 0;
-          for (let g = first[a]; g < first[a + 1] - 1; g++) {
-            const dx = x[3 * g + 3] - x[3 * g], dy = x[3 * g + 4] - x[3 * g + 1], dz = x[3 * g + 5] - x[3 * g + 2];
-            const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            strain += r - s0;
-            const t = (ks * (r - s0)) / r;
-            f[3 * g] += t * dx;
-            f[3 * g + 1] += t * dy;
-            f[3 * g + 2] += t * dz;
-            f[3 * g + 3] -= t * dx;
-            f[3 * g + 4] -= t * dy;
-            f[3 * g + 5] -= t * dz;
-          }
+          const strain = stretchAndBend(x, f, first[a], first[a + 1] - 1, s[a], ks, kb);
           if (feed !== null) fs[a] = ks * strain - feed * links[a];
-          const b = kb / (s0 * s0);
-          for (let g = first[a] + 1; g < first[a + 1] - 1; g++) {
-            for (let c = 0; c < 3; c++) {
-              const curve = x[3 * g - 3 + c] - 2 * x[3 * g + c] + x[3 * g + 3 + c];
-              f[3 * g - 3 + c] -= b * curve;
-              f[3 * g + c] += 2 * b * curve;
-              f[3 * g + 3 + c] -= b * curve;
-            }
-          }
         }
         contacts = 0;
         deepest = 0;
-        for (let e = 0; e < pairs.length; e += 2) {
-          const i = 3 * pairs[e], j = 3 * pairs[e + 1];
-          const ax = x[i + 3] - x[i], ay = x[i + 4] - x[i + 1], az = x[i + 5] - x[i + 2];
-          const bx = x[j + 3] - x[j], by = x[j + 4] - x[j + 1], bz = x[j + 5] - x[j + 2];
-          const rx = x[i] - x[j], ry = x[i + 1] - x[j + 1], rz = x[i + 2] - x[j + 2];
-          const aa = ax * ax + ay * ay + az * az;
-          const bb = bx * bx + by * by + bz * bz;
-          const ab = ax * bx + ay * by + az * bz;
-          const ar = ax * rx + ay * ry + az * rz;
-          const br = bx * rx + by * ry + bz * rz;
-          const den = aa * bb - ab * ab;
-          let u = den > 1e-12 * aa * bb ? (ab * br - ar * bb) / den : 0;
-          u = u < 0 ? 0 : u > 1 ? 1 : u;
-          let v = (ab * u + br) / bb;
-          if (v < 0) {
-            v = 0;
-            u = Math.min(1, Math.max(0, -ar / aa));
-          } else if (v > 1) {
-            v = 1;
-            u = Math.min(1, Math.max(0, (ab - ar) / aa));
-          }
-          const px = rx + u * ax - v * bx, py = ry + u * ay - v * by, pz = rz + u * az - v * bz;
-          const r2 = px * px + py * py + pz * pz;
-          if (r2 >= 1) continue;
-          const r = Math.sqrt(r2);
-          let push = (kr * (1 - r)) / Math.max(r, 1e-9);
-          if (r < core) {
-            contacts++;
-            if (core - r > deepest) deepest = core - r;
-            if (core - r > deepestEver) deepestEver = core - r;
-            push += (kc * (core - r)) / Math.max(r, 1e-9);
-          }
-          const qx = push * px, qy = push * py, qz = push * pz;
-          f[i] += (1 - u) * qx;
-          f[i + 1] += (1 - u) * qy;
-          f[i + 2] += (1 - u) * qz;
-          f[i + 3] += u * qx;
-          f[i + 4] += u * qy;
-          f[i + 5] += u * qz;
-          f[j] -= (1 - v) * qx;
-          f[j + 1] -= (1 - v) * qy;
-          f[j + 2] -= (1 - v) * qz;
-          f[j + 3] -= v * qx;
-          f[j + 4] -= v * qy;
-          f[j + 5] -= v * qz;
+        touching(x, pairs, touch);
+      }
+      function touch(e, u, w, px, py, pz, r2) {
+        const r = Math.sqrt(r2);
+        let push = (kr * (1 - r)) / Math.max(r, 1e-9);
+        if (r < core) {
+          contacts++;
+          if (core - r > deepest) deepest = core - r;
+          if (core - r > deepestEver) deepestEver = core - r;
+          push += (kc * (core - r)) / Math.max(r, 1e-9);
         }
+        spread(f, 3 * pairs[e], 3 * pairs[e + 1], u, w, push * px, push * py, push * pz);
       }
 
       const v = new Float64Array(3 * n);
@@ -321,12 +425,13 @@
       let alpha = 0.1;
       let downhill = 0;
       let restarts = 0;
+      const sums = new Float64Array(4);
       placeTops();
       neighbours();
       for (; step < steps; step++) {
         // Every step: two beads moving a tenth of a diameter each, apart,
         // would otherwise close the list's margin unseen.
-        if (stale()) neighbours();
+        if (stale(x, built)) neighbours();
         forces();
         let up = force;
         let torque = 0;
@@ -336,28 +441,12 @@
           torque += x[3 * g] * f[3 * g + 1] - x[3 * g + 1] * f[3 * g];
         }
         if (!turns) torque = 0;
-        largest = Math.max(Math.abs(up), Math.abs(torque));
-        let power = up * vRise + torque * vTurn;
-        let fNorm = up * up + torque * torque;
-        let vNorm = vRise * vRise + vTurn * vTurn;
-        for (let a = 0; a < nYarns; a++) {
-          // Per link, so a yarn's rest length is weighed like a bead.
-          const per = fs[a] / links[a];
-          largest = Math.max(largest, Math.abs(per));
-          power += fs[a] * vs[a];
-          fNorm += fs[a] * fs[a];
-          vNorm += vs[a] * vs[a];
-        }
-        for (let g = 0; g < n; g++) {
-          if (!free[g]) continue;
-          for (let c = 0; c < 3; c++) {
-            const k = 3 * g + c;
-            power += f[k] * v[k];
-            fNorm += f[k] * f[k];
-            vNorm += v[k] * v[k];
-            if (Math.abs(f[k]) > largest) largest = Math.abs(f[k]);
-          }
-        }
+        sums[0] = up * vRise + torque * vTurn;
+        sums[1] = up * up + torque * torque;
+        sums[2] = vRise * vRise + vTurn * vTurn;
+        sums[3] = Math.max(Math.abs(up), Math.abs(torque));
+        fireSums(f, v, free, fs, vs, links, sums);
+        largest = sums[3];
         if (step % 500 === 0 && job.progress) {
           job.progress({ step, largestForce: largest, yarns: snapshot(), rise, turn, dt, restarts, spacing: Array.from(s) });
         }
@@ -365,17 +454,11 @@
           keep();
           return "settled";
         }
-        fNorm = Math.sqrt(fNorm);
-        vNorm = Math.sqrt(vNorm);
-        const mix = fNorm > 0 ? (alpha * vNorm) / fNorm : 0;
-        for (let g = 0; g < n; g++) {
-          if (!free[g]) continue;
-          for (let c = 0; c < 3; c++) v[3 * g + c] = (1 - alpha) * v[3 * g + c] + mix * f[3 * g + c];
-        }
-        for (let a = 0; a < nYarns; a++) vs[a] = (1 - alpha) * vs[a] + mix * fs[a];
+        const mix = fireMix(sums, alpha);
+        steer(v, f, free, vs, fs, alpha, mix);
         vRise = (1 - alpha) * vRise + mix * up;
         vTurn = (1 - alpha) * vTurn + mix * torque;
-        if (power > 0) {
+        if (sums[0] > 0) {
           if (++downhill > 5) {
             dt = Math.min(dt * 1.1, dtMax);
             alpha *= 0.99;
@@ -389,20 +472,7 @@
           vs.fill(0);
           vRise = vTurn = 0;
         }
-        // Semi-implicit Euler, no bead moving more than a tenth of a
-        // diameter in a step, so none can pass through another.
-        for (let g = 0; g < n; g++) {
-          if (!free[g]) continue;
-          v[3 * g] += dt * f[3 * g];
-          v[3 * g + 1] += dt * f[3 * g + 1];
-          v[3 * g + 2] += dt * f[3 * g + 2];
-          const mx = dt * v[3 * g], my = dt * v[3 * g + 1], mz = dt * v[3 * g + 2];
-          const size = Math.sqrt(mx * mx + my * my + mz * mz);
-          const k = size > 0.1 ? 0.1 / size : 1;
-          x[3 * g] += mx * k;
-          x[3 * g + 1] += my * k;
-          x[3 * g + 2] += mz * k;
-        }
+        moveBeads(x, v, f, dt, free);
         let relay = false;
         for (let a = 0; a < nYarns; a++) {
           // A yarn's rest length moves its links all together: weighed so
@@ -437,7 +507,9 @@
     }
   }
 
+  // What form.js shares.
+  const yarnMechanics = { relay, nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads };
   root.settleRope = settle;
-  root.relayYarn = relay;
-  if (typeof module !== "undefined" && module.exports) module.exports = { settle, relay };
+  root.yarnMechanics = yarnMechanics;
+  if (typeof module !== "undefined" && module.exports) module.exports = { settle, relay, yarnMechanics };
 })(typeof self !== "undefined" ? self : globalThis);
