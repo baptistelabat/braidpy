@@ -48,11 +48,17 @@ def test_a_twisted_word_settled_by_physics_keeps_or_loses_its_twist(
     }
     path = tmp_path / "result.json"
     path.write_text(json.dumps(build(spec, tighten=False)))
+    import numpy as np
+
+    from braidpy.linking import yarn_linking
+
     result = _run("paged", path, how, twist)
-    assert [abs(round(x)) for x in result["laid"]["links"]] == [8]
-    assert result["settled"]["links"] == pytest.approx(
-        result["laid"]["links"], abs=0.01
-    )
+    laid = yarn_linking([np.reshape(y, (-1, 3)) for y in result["laid"]])["links"]
+    settled = yarn_linking(
+        [np.reshape(y, (-1, 3)) for y in result["settled"]], result["turn"]
+    )["links"]
+    assert [abs(round(x)) for x in laid] == [8]
+    assert settled == pytest.approx(laid, abs=0.01)
     turns = abs(result["turn"]) / (2 * math.pi)
     if twist == "keep":
         assert turns == 0

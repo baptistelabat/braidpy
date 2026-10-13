@@ -1,15 +1,14 @@
 // The page's settle worker's cases, run by tests/test_settle_js.py.
 const path = require("path");
 const fs = require("fs");
-const { linkingMatrix } = require("./linking.js");
 
 const cases = {};
 
 // The page's own settle worker (web/settle.js), run on a braid laid by
 // braidpy (read from a file), settled as asked — "settled" beaten up,
-// "formed" crossing by crossing — with its twist kept or free: its
-// closure's linking numbers as it went into the physics and as it came
-// out, its end turned back.
+// "formed" crossing by crossing — with its twist kept or free: its yarns
+// as they went into the physics and as they came out, and how far its end
+// turned, for braidpy to measure their closure's linking numbers.
 cases.paged = () => {
   const vm = require("vm");
   const web = path.join(__dirname, "..", "..", "web");
@@ -26,9 +25,9 @@ cases.paged = () => {
   const seen = {};
   const settleRope = page.settleRope;
   page.settleRope = (asked) => {
-    seen.laid = linkingMatrix(asked.yarns, 0);
+    seen.laid = asked.yarns.map((y) => Array.from(y));
     const rest = settleRope({ ...asked, progress: null });
-    seen.settled = linkingMatrix(rest.yarns, rest.turn);
+    seen.settled = rest.yarns;
     seen.turn = rest.turn;
     seen.deepestEver = rest.deepestEver;
     return rest;
