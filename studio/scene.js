@@ -7,10 +7,10 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { describe } from "./info.js?v=5cce1842b4";
-import { drawSection, drawTop } from "./insets.js?v=5cce1842b4";
-import { $ } from "./page.js?v=5cce1842b4";
-import { pending } from "./workers.js?v=5cce1842b4";
+import { describe } from "./info.js?v=f0deb1d221";
+import { drawSection, drawTop } from "./insets.js?v=f0deb1d221";
+import { $ } from "./page.js?v=f0deb1d221";
+import { pending } from "./workers.js?v=f0deb1d221";
 
 export let lastResult = null;
 

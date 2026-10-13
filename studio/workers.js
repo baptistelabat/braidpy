@@ -8,18 +8,18 @@
 // from where it was when more of it is asked for.
 
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=5cce1842b4";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=5cce1842b4";
-import { machineShapes, machineWanted } from "./machine.js?v=5cce1842b4";
-import { $ } from "./page.js?v=5cce1842b4";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=5cce1842b4";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=5cce1842b4";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=f0deb1d221";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=f0deb1d221";
+import { machineShapes, machineWanted } from "./machine.js?v=f0deb1d221";
+import { $ } from "./page.js?v=f0deb1d221";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=f0deb1d221";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=f0deb1d221";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=5cce1842b4");
+export const worker = new Worker("worker.js?v=f0deb1d221");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -34,7 +34,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=5cce1842b4");
+  settler = new Worker("settle.js?v=f0deb1d221");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
