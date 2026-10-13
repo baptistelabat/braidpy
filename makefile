@@ -1,4 +1,4 @@
-.PHONY: help install-uv docs
+.PHONY: help install-uv docs studio studio-serve studio-test
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -55,6 +55,16 @@ test: ## Launch test
 
 typecheck: ## Check type annotations
 	uv run mypy src tests
+
+studio: ## Build Braid Studio, the web page, in web/site
+	cd web && npm install
+	uv run python web/build.py
+
+studio-serve: ## Serve Braid Studio at http://localhost:8000
+	python3 -m http.server -d web/site 8000
+
+studio-test: ## Make a braid of every kind in Braid Studio, in a browser
+	uv run --with playwright python web/smoke_test.py
 
 # Step 1: Run code with tracing
 autotype:
