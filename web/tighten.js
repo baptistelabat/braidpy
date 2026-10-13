@@ -13,8 +13,7 @@
 //
 // The Python stays the reference: tests/test_tighten_js.py tightens the same braid
 // both ways and checks they agree.  Everything here mirrors it, in the same
-// order; the one change is that (I + step/2 L) x = b is solved as the
-// tridiagonal system it is, rather than by multiplying by its inverse.
+// order, (I + step/2 L) x = b solved as the same tridiagonal system.
 //
 // Loaded as a classic script by the worker (importScripts) and required by
 // Node for the tests.

@@ -507,3 +507,38 @@ def test_kumihimo_braid():
     braid = kumihimo_braid("SR" * 4, 0.12, n_strands=8, iterations=60)
     assert len(braid.points) == 8
     assert braid.closest_approach() >= 0.12 * (1 - 2e-3)
+
+
+# Yarns of 1, 2 and 3 samples have no inner sample, or one, where the
+# Thomas algorithm's sweeps start and stop: where an off-by-one would show.
+# 50 is a yarn of any length.
+# h is half tightening's step (step/2 in its backward Euler step): 10 for
+# its default step of 20, where the tension dominates; 0.05 for a small step
+# of 0.1, where the identity does.
+@pytest.mark.parametrize("h", [0.5 * 20.0, 0.5 * 0.1])
+@pytest.mark.parametrize("hold_top", [True, False])
+@pytest.mark.parametrize("n", [1, 2, 3, 50])
+def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top, h):
+    """Tightening's backward Euler step, (I + h L) x = b, L the second
+    difference along a yarn: solved as a tridiagonal system, as the matrix
+    itself would solve it, every yarn at once."""
+    import numpy as np
+
+    from braidpy.take_off import _tension_solver
+
+    # L: each inner sample pulled towards its two neighbours, (-1, 2, -1);
+    # the last sample, and the first if held, fixed (a row of zeros); the
+    # first, if free, pulled towards its one neighbour only, (1, -1).
+    lap = np.zeros((n, n))
+    for i in range(1, n - 1):
+        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
+    if not hold_top and n > 1:
+        lap[0, :2] = (1.0, -1.0)
+    # Several right-hand sides at once, as tightening solves them: x and y
+    # of three yarns, random.
+    yarns = 3
+    b = np.random.default_rng(0).normal(size=(n, 2 * yarns))
+    expected = np.linalg.solve(np.eye(n) + h * lap, b)
+    # Both solve exactly but for rounding, a few units in the last place of
+    # numbers of order one.
+    assert np.allclose(_tension_solver(n, h, hold_top)(b), expected, atol=1e-12)

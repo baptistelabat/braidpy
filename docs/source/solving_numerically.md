@@ -125,7 +125,8 @@ From there it is the same for all of them:
   objective — and enforces non-interpenetration by pushing apart any two
   samples of different yarns closer than *d*. The tension is integrated
   implicitly (one backward-Euler step along the curve-shortening flow per
-  iteration, the matrix inverted once), which settles a yarn in tens of
+  iteration, a tridiagonal system solved in time proportional to the
+  yarn's length), which settles a yarn in tens of
   iterations rather than thousands, but no sample moves more than *d*/5 per
   iteration, so a feasible path from the start stays in the same braid
   class, as argued above. The yarn is held at the fell and at its oldest end.
