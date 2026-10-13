@@ -14,7 +14,7 @@ CATALOGUES = {
     "braidpy.braid_catalog": "braidpy.braid.Braid",
     "braidpy.mobidai_catalog": "braidpy.mobidai_catalog.CataloguedMobidai",
     "braidpy.solid_sinnets_catalog": "braidpy.ashley_solid_sinnet.AshleySolidSinnet",
-    "braidpy.horn_gear.examples": "braidpy.horn_gear.model.BraidingMachine",
+    "braidpy.machine_catalog": "braidpy.horn_gear.model.BraidingMachine",
 }
 
 
