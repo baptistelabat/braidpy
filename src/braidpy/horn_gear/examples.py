@@ -8,7 +8,9 @@ horn_gear/examples.py
 
 Classic braiding machine configurations as factory functions.
 
-Each function returns a ready-to-use BraidingMachine.
+Each function returns a ready-to-use BraidingMachine; :data:`CATALOGUE`
+lists the braids they make, as every catalogue lists its braids
+(:mod:`braidpy.catalogue`).
 
 References
 ----------
@@ -17,6 +19,10 @@ References
 """
 
 from __future__ import annotations
+
+from typing import Dict
+
+from braidpy.catalogue import Entry
 
 from .model import Axial, BraidingMachine, Connection, HornGear
 
@@ -346,3 +352,19 @@ def mixed_gear_machine() -> BraidingMachine:
         Connection("B", "C", slot_a0=0, slot_b0=3, name="B-C"),
     ]
     return BraidingMachine(gears, connections)
+
+
+# The braids these machines make, in the order to offer them; not the
+# diamond braid, which is the tubular braid of 8 again, nor the mixed gears,
+# which only show that gears may differ.
+CATALOGUE: Dict[str, Entry[BraidingMachine]] = {
+    "flat_3": Entry("Flat braid, 3 carriers", flat_braid_3),
+    "flat_4": Entry("Flat braid, 4 carriers", flat_braid_4),
+    "flat_9": Entry("Flat braid, 9 carriers on a single track", flat_braid_9),
+    "soutache_5": Entry("Soutache, 2 gears of 5", soutache_braid),
+    "soutache_7": Entry("Soutache, 2 gears of 7", lambda: soutache_braid(n_slots=7)),
+    "princess": Entry("Princess, 5/6/5 gears, 8 carriers", princess_braid),
+    "tubular_8": Entry("Tubular braid, 8 carriers", tubular_braid_8),
+    "tubular_12": Entry("Tubular braid, 12 carriers", tubular_braid_12),
+    "tubular_16": Entry("Tubular braid, 16 carriers", tubular_braid_16),
+}

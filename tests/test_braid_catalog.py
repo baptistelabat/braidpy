@@ -158,7 +158,7 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
     """Each catalogued braid, as the word it repeats, built without drawing:
     repeated as often as the example says, every strand comes home."""
     import braidpy.braid_catalog as catalog
-    from braidpy.braid_catalog import CRAFT_BRAIDS, word_examples
+    from braidpy.braid_catalog import CATALOGUE, word_examples
     from braidpy.braidword import parse_word
     from braidpy.pure_braid import is_pure
 
@@ -167,8 +167,8 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
 
     monkeypatch.setattr(Braid, "draw", no_drawing)
     examples = word_examples()
-    assert len(examples) == len(CRAFT_BRAIDS) + len(catalog.WORD_EXAMPLES)
-    for example, name in zip(examples, CRAFT_BRAIDS):
+    assert len(examples) == len(CATALOGUE) + len(catalog.WORD_EXAMPLES)
+    for example, name in zip(examples, CATALOGUE):
         braid, _ = getattr(catalog, name)(draw=False)
         unit = parse_word(example["word"])
         times, rest = divmod(len(braid.generators), len(unit))

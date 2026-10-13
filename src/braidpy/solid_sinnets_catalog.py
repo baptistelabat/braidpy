@@ -1,4 +1,12 @@
+"""Ashley's solid sinnets, from *The Ashley Book of Knots*: each its own
+:class:`~braidpy.ashley_solid_sinnet.AshleySolidSinnet`, named by its number
+in the book, and all of them in :data:`CATALOGUE`, as every catalogue lists
+its braids (:mod:`braidpy.catalogue`)."""
+
+from typing import Dict
+
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
+from braidpy.catalogue import Entry
 
 """
 ABOK #3042
@@ -275,3 +283,20 @@ https://www.youtube.com/watch?v=BPxj2Z9UYR0&t=664s
 By John Richings
 https://www.facebook.com/photo?fbid=598774186878896&set=pcb.598774553545526
 """
+
+
+def _entry(name: str, sinnet: AshleySolidSinnet) -> Entry[AshleySolidSinnet]:
+    number = name.split("_")[1]
+    return Entry(
+        title=f"ABOK #{number}, {sinnet.n_strands}-strand {sinnet.shape or 'sinnet'}",
+        make=lambda: sinnet,
+        reference=f"The Ashley Book of Knots, #{number}",
+    )
+
+
+# By their number in the book.
+CATALOGUE: Dict[str, Entry[AshleySolidSinnet]] = {
+    name: _entry(name, value)
+    for name, value in sorted(globals().items())
+    if isinstance(value, AshleySolidSinnet)
+}
