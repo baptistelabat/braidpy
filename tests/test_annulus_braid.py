@@ -10,21 +10,23 @@ import pytest
 
 from braidpy.annulus_braid import (
     TubularBraidStrand,
+    cover_factor,
+    crossing_binds_above,
     helix_clearance,
     lay_radius,
     minimum_lay,
     packing_radius,
+    radius_for_cover,
+    ring_moves,
     rope,
     rope_helices,
-    wrap_crossing,
-    cover_factor,
-    crossing_binds_above,
-    radius_for_cover,
+    solid_word,
     tubular_braid,
     tubular_braid_clearance,
     tubular_braid_radius,
     tubular_paths,
     turn,
+    wrap_crossing,
 )
 from braidpy.parametric_braid import closest_approach
 
@@ -464,3 +466,37 @@ def test_a_solid_braid_refuses_moves_the_ring_has_not():
 
     with pytest.raises(ValueError, match="No move"):
         solid_word([5], 3)
+
+
+@pytest.mark.parametrize(
+    "word, n_strands",
+    [
+        ("1 -2", 3),
+        ("1 1 1", 2),
+        ("1 2 3", 4),
+        ("3 2 1", 4),
+        ("-1 -2", 3),
+        ("1 -2 3 -2", 4),
+        ("1 2 -3 4", 5),
+    ],
+)
+def test_a_word_is_played_on_a_ring_as_the_same_braid(word, n_strands):
+    """A braid word, rolled onto a ring of carriers: a full run of crossings round the ring is a turn of the
+    bobbins, every other crossing a swap of neighbours; read back as a flat
+    word, the moves are the word — numbered round the ring one way or the
+    other, a half turn of the whole braid about its axis."""
+    flat = [int(g) for g in word.split()] * 3
+    moves, mirrored = ring_moves(flat, n_strands)
+    expected = (
+        [(n_strands - abs(g)) * (1 if g > 0 else -1) for g in flat]
+        if mirrored
+        else flat
+    )
+    assert solid_word(moves, n_strands) == solid_word(expected, n_strands)
+
+
+def test_a_rope_like_word_is_made_by_turning():
+    """σ₁σ₂σ₃ over and over is a four-strand rope: made by turning the
+    bobbins, not by carrying one strand round under all the others."""
+    moves, _ = ring_moves([1, 2, 3] * 4, 4)
+    assert moves == [5] * 4

@@ -290,6 +290,10 @@ def test_kumihimo_steps():
         kumihimo_steps("S", n_strands=6)
     with pytest.raises(ValueError, match="n_strands"):
         kumihimo_steps("S")
+    # Any other move, or none, is not a kumihimo pattern.
+    for pattern in ("SX", "sr", ""):
+        with pytest.raises(ValueError, match="S \\(swap\\)"):
+            kumihimo_steps(pattern, n_strands=8)
 
 
 def test_kumihimo_is_drawn_where_kumihimo_draws_it():
