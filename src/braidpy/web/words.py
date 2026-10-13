@@ -15,7 +15,7 @@ from braidpy.web._info import _braid_info, _unit
 from braidpy.web._result import _result, _tighten, _timeline
 from braidpy.web._settings import DISK_ITERATIONS, Word
 from braidpy.web._spec import parse_word
-from braidpy.web._types import DiskProgram, Result, Source, Spec
+from braidpy.web._types import DiskProgram, Example, Result, Source, Spec
 from braidpy.web.disks import _disk_in_step
 
 
@@ -208,10 +208,12 @@ def _from_word(spec: Spec) -> Result:
 
 
 def _word_entry() -> Source:
+    from braidpy.braid_catalog import word_examples
+
     return {
         "title": "Braid word",
         "defaults": dict(Word.starts),
-        "examples": list(Word.examples),
+        "examples": cast(List[Example], word_examples()),
     }
 
 
