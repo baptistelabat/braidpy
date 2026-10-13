@@ -37,7 +37,22 @@
 // Every force here is the gradient of the energy, so at rest they balance:
 // the tests check that they do.
 //
-// Lengths are in yarn diameters.
+// Lengths are in yarn diameters.  docs/source/rope_physics.md describes the
+// model and what it gives; tests/test_rope.py checks it against physics and
+// against braidpy (the braid laid is the braid settled: same word, same
+// linking numbers).
+//
+// References:
+// - FIRE: E. Bitzek, P. Koskinen, F. Gähler, M. Moseler, P. Gumbsch,
+//   "Structural relaxation made simple", Phys. Rev. Lett. 97, 170201 (2006).
+// - Closest points of two segments: C. Ericson, Real-Time Collision
+//   Detection (Morgan Kaufmann, 2005), §5.1.9.
+// - The grid of cells, hashed with three large primes: M. Teschner, B.
+//   Heidelberger, M. Müller, D. Pomeranets, M. Gross, "Optimized spatial
+//   hashing for collision detection of deformable objects", Vision,
+//   Modeling, and Visualization (2003).
+// - Linking numbers, how the tests know no yarn passed through another: a
+//   yarn passing through another changes them (braidpy.linking).
 
 (function (root) {
   "use strict";
@@ -51,6 +66,14 @@
   // diameter, found on a grid of cells ``reach`` wide: of ``segs``, neither
   // two segments of a yarn closer than ``gap`` along it, nor a pair
   // ``accept`` turns down.  ``cells`` holds three numbers a bead.
+  //
+  // Each segment is put in the cell of its midpoint, the cells kept in a
+  // hash table by three large primes (Teschner et al., 2003), and compared
+  // with the segments of its own and the 26 neighbouring cells.  A pair is
+  // kept if its midpoints are within 2 reach: two segments a link long whose
+  // surfaces could touch have midpoints within a diameter and a link, and
+  // the margin left is what beads may move before the list is rebuilt
+  // (``stale``).
   function nearPairs(x, segs, yarnOf, gap, reach, cells, accept) {
     const grid = new Map();
     for (let e = 0; e < segs.length; e++) {
@@ -109,6 +132,12 @@
   // the pair's place in ``pairs``, how far along each segment the points
   // are, the vector between them, from the second to the first, and its
   // length squared.
+  //
+  // The closest points (Ericson, 2005, §5.1.9): those of the two infinite
+  // lines, u along the first clamped to the segment; then w along the
+  // second, nearest that point, and if it falls off the second segment, w
+  // clamped and u found again nearest it.  Parallel segments (den near 0)
+  // take u = 0.
   function touching(x, pairs, touch) {
     for (let e = 0; e < pairs.length; e += 2) {
       const i = 3 * pairs[e], j = 3 * pairs[e + 1];
@@ -187,6 +216,12 @@
   // FIRE's sums, added to ``sums`` as the power f · v, |f|², |v|² and the
   // largest force: over each yarn's rest length — f ``fs``, v ``vs``,
   // weighed per link — then over the beads that move.
+  //
+  // FIRE (Bitzek et al., 2006) is damped dynamics: each step it turns the
+  // velocity towards the force by a fraction alpha (``steer``), and while
+  // the power f · v stays positive — going downhill — it lengthens the time
+  // step and lessens alpha; once it goes uphill it stops everything dead,
+  // halves the step and starts again.  These sums are what it decides by.
   function fireSums(f, v, moves, fs, vs, links, sums) {
     let power = sums[0], fNorm = sums[1], vNorm = sums[2], largest = sums[3];
     for (let a = 0; a < fs.length; a++) {
