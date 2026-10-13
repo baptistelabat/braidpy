@@ -31,3 +31,6 @@ jobs:
 
       - name: Check types
         run: make typecheck
+
+      - name: Check for duplicated code
+        run: make duplicates

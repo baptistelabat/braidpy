@@ -1,4 +1,4 @@
-.PHONY: help install-uv docs
+.PHONY: help install-uv docs duplicates
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -49,6 +49,14 @@ format: ## Format code consistently
 lint: ## Clean code or warn user
 	ruff format
 	ruff check . --fix
+
+duplicates: ## Fail on code copied rather than shared (Python and JavaScript)
+	uv run --with pylint==4.1.3 pylint --disable=all --enable=duplicate-code \
+		--min-similarity-lines=6 --ignore-imports=yes --ignore-docstrings=yes \
+		--ignore-comments=yes --ignore-signatures=yes src
+	cd web && npx --yes jscpd@4.3.0 --min-lines 8 --min-tokens 60 \
+		--format javascript --threshold 0 --reporters console \
+		--ignore "**/node_modules/**,**/site/**" .
 
 test: ## Launch test
 	uv run pytest tests
