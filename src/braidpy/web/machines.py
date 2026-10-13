@@ -20,7 +20,7 @@ from braidpy.web._types import Info, MachineGeometry, Result, Source, Spec
 
 
 def _machines():
-    from braidpy.horn_gear.examples import CATALOGUE
+    from braidpy.machine_catalog import CATALOGUE
 
     return CATALOGUE
 
