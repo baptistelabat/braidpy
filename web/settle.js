@@ -552,7 +552,7 @@ function onLevels(result, yarns, d) {
 
 // A yarn's points again, evenly spaced, as rope.js wants them.
 function relay(points, spacing) {
-  return Array.from(self.relayYarn(Float64Array.from(points), spacing));
+  return Array.from(self.yarnMechanics.relay(Float64Array.from(points), spacing));
 }
 
 function round(value) {
