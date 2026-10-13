@@ -857,15 +857,27 @@ def rope_results(png_dir: Path | None) -> None:
         return
     from braidpy.web import build
 
-    shapes = _node("shapes")
+    from braidpy.braid import Braid
+    from braidpy.linking import yarn_linking
+    from braidpy.parametric_strand import SMOOTHSTEP, sample_strands, strand_paths
+
+    # A plait, laid by braidpy as the rope tests lay it.
+    plait = strand_paths(
+        Braid((1, -2) * 3, 3), spacing=1.5, amplitude=0.7, profile=SMOOTHSTEP
+    )
     spec = {"source": "sinnet", "name": "abok_3044", "cycles": 4, "settle": "physics"}
     with tempfile.TemporaryDirectory() as scratch:
+        laid = Path(scratch) / "plait.json"
+        laid.write_text(
+            json.dumps([y.ravel().tolist() for y in sample_strands(plait, rise=3.0)])
+        )
+        shapes = _node("shapes", str(laid))
         job = Path(scratch) / "job.json"
         job.write_text(json.dumps(build(spec, tighten=False)["tighten"]))
         sinnet = _node("sinnet", str(job), "shapes")
-    assert [round(x) for x in sinnet["after"]["links"]] == [
-        round(x) for x in sinnet["before"]["links"]
-    ]
+    before = yarn_linking([_xyz(y) for y in sinnet["laid"]])
+    after = yarn_linking([_xyz(y) for y in sinnet["settled"]], sinnet["turn"])
+    assert [round(x) for x in after["links"]] == [round(x) for x in before["links"]]
 
     fig = plt.figure(figsize=(11, 7.4))
     grid = fig.add_gridspec(2, 6, height_ratios=[1, 1.05])

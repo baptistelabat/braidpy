@@ -30,10 +30,20 @@
 // push between them, when they slip (Coulomb's law, as the discrete element
 // method has it).  It is what keeps a beaten crossing where it was beaten.
 //
-// The working window is settled by FIRE, as rope.js is.  The friction
-// springs are kept between steps and between rows, so it remembers.
+// The working window is settled by FIRE, as rope.js is, with rope.js's own
+// mechanics (its yarnMechanics: stretching, bending, contact and FIRE's
+// steps), so the two cannot drift apart.  The friction springs are kept
+// between steps and between rows, so it remembers.
 //
-// Lengths are in yarn diameters.
+// Lengths are in yarn diameters.  docs/source/rope_physics.md describes
+// how a braid is made this way; tests/test_rope.py checks that the braid
+// made is the braid laid (the same linking numbers).
+//
+// References:
+// - Friction as a tangential spring, capped by Coulomb's law: P. A.
+//   Cundall, O. D. L. Strack, "A discrete numerical model for granular
+//   assemblies", Géotechnique 29, 47 (1979).
+// - FIRE, and the contact geometry: see rope.js.
 
 (function (root) {
   "use strict";
