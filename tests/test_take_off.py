@@ -512,9 +512,13 @@ def test_kumihimo_braid():
 # Yarns of 1, 2 and 3 samples have no inner sample, or one, where the
 # Thomas algorithm's sweeps start and stop: where an off-by-one would show.
 # 50 is a yarn of any length.
+# h is half tightening's step (step/2 in its backward Euler step): 10 for
+# its default step of 20, where the tension dominates; 0.05 for a small step
+# of 0.1, where the identity does.
+@pytest.mark.parametrize("h", [0.5 * 20.0, 0.5 * 0.1])
 @pytest.mark.parametrize("hold_top", [True, False])
 @pytest.mark.parametrize("n", [1, 2, 3, 50])
-def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top):
+def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top, h):
     """Tightening's backward Euler step, (I + h L) x = b, L the second
     difference along a yarn: solved as a tridiagonal system, as the matrix
     itself would solve it, every yarn at once."""
@@ -522,9 +526,6 @@ def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top):
 
     from braidpy.take_off import _tension_solver
 
-    # Any step will do; not a round one, so that a coefficient off by a
-    # factor of h, or of 2, does not cancel out.
-    h = 0.37
     # L: each inner sample pulled towards its two neighbours, (-1, 2, -1);
     # the last sample, and the first if held, fixed (a row of zeros); the
     # first, if free, pulled towards its one neighbour only, (1, -1).
