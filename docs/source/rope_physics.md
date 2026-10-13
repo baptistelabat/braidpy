@@ -108,17 +108,21 @@ apart could part the wrong way.
   yarns' length lets it.
 - **The same rope, free to turn**: it untwists, as a frictionless rope must.
 - **A plait, free to turn**: it stays the same plait — the braid word read
-  back off the settled yarns is the one laid — and barely turns.
-- **A sinnet beaten up**: no yarn has passed through another. That is checked
-  on the braid's closure, each yarn's top end joined round the outside to the
-  bottom end beside it: the **linking numbers** of its loops, computed exactly
-  from the yarns as polylines (Klenin and Langowski, *Biopolymers* 54, 307,
-  2000), must not change. A yarn passing through a yarn of another loop
-  changes their linking number by one, however the yarns fold — and beaten-up
-  yarns do fold, so a braid word read off them would not do.
+  back off the settled yarns is the one laid — and barely turns. braidpy lays
+  the plait (`braidpy.parametric_strand.strand_paths`) and reads the word
+  back (`braidpy.symmetric_braid.braid_word`).
+- **A sinnet beaten up, and one made crossing by crossing**: no yarn has
+  passed through another. That is checked on the braid's closure, each
+  yarn's top end joined round the outside to the bottom end beside it: the
+  **linking numbers** of its loops, computed exactly from the yarns as
+  polylines (`braidpy.linking`), must not change. A yarn passing through a
+  yarn of another loop changes their linking number by one, however the
+  yarns fold — and beaten-up yarns do fold, so a braid word read off them
+  would not do.
 
-On the page, ABOK #3044 over 4 cycles beats up from 55 to 11 diameters long in
-about 7 s.
+The tests run the physics in Node and check its results with braidpy. ABOK
+#3044 over 4 cycles beats up from 55 to 11 diameters long in about 5 s in
+Node; a browser takes about the same.
 
 ## Making it crossing by crossing, with friction
 
@@ -163,21 +167,21 @@ takes a second or two.
 
 | ABOK sinnet | laid | beaten up at once | made crossing by crossing | then settled |
 |---|---|---|---|---|
-| #3044, 8 strands, 4 cycles | 55.5 long | 11.3, in 4.5 s | 13.1, in 5 s | 11.1, in 1.3 s more |
-| #3048, 17 strands, 3 cycles | 204 long | about 10, in 2.5 to 4.5 min | 7.9, in 80 s | 6.1, in 1 s more |
+| #3044, 8 strands, 4 cycles | 55.5 long | 11.3, in 4.5 s | 13.1, in 6 s | 11.1, in 1.5 s more |
+| #3048, 17 strands, 3 cycles | 204 long | 6.2, in 1 to 1.5 min | 7.9, in 1.5 min | 6.1, in 1 s more |
 
-Lengths in yarn diameters; times in Node, a page in a browser takes about the
-same. Friction changes little here: #3044 is made 13.1 long with it, 12.6
+Lengths in yarn diameters; times in Node on one machine, measured again for
+this version; a page in a browser takes about the same. Friction changes little here: #3044 is made 13.1 long with it, 12.6
 without.
 
 ## Limits, and what is next
 
 - **Speed.** A 17-strand sinnet (ABOK #3048, 3 cycles) is laid 204 diameters
-  long, about 7000 beads, and takes minutes to beat up at once: the page's
-  progress shows little for a long while, then rises. Made crossing by
-  crossing it takes 80 s. The time step is set by the
-  stiffest springs; the length to travel, by how long the braid is laid.
-  Fewer beads (the made part frozen), a shorter start, or the GPU would help.
+  long, about 7000 beads, and takes a minute or more to beat up, at once or
+  crossing by crossing: the page's progress shows little for a long while,
+  then rises. The time step is set by the stiffest springs; the length to
+  travel, by how long the braid is laid. Fewer beads (the made part frozen),
+  a shorter start, or the GPU would help.
 - **Shapes.** Settled by physics, cross-sections start to differ — #3044's tracks lean toward a
   triangle — but the yarns are not packed tight yet: gaps remain. Made
   crossing by crossing, the braid keeps the width it was laid with: braidpy
@@ -199,3 +203,22 @@ without.
 - **Tried and dropped.** Laying rows closer, to start shorter, was tried and dropped:
   on rows a diameter apart the sideways clearing can push one yarn past
   another, which the linking numbers caught.
+
+## References
+
+- E. Bitzek, P. Koskinen, F. Gähler, M. Moseler, P. Gumbsch, "Structural
+  relaxation made simple", *Phys. Rev. Lett.* 97, 170201 (2006): FIRE, the
+  solver.
+- P. A. Cundall, O. D. L. Strack, "A discrete numerical model for granular
+  assemblies", *Géotechnique* 29, 47 (1979): friction as a tangential spring
+  capped by Coulomb's law.
+- C. Ericson, *Real-Time Collision Detection* (Morgan Kaufmann, 2005),
+  §5.1.9: the closest points of two segments, for contact.
+- M. Teschner, B. Heidelberger, M. Müller, D. Pomeranets, M. Gross,
+  "Optimized spatial hashing for collision detection of deformable objects",
+  *Vision, Modeling, and Visualization* (2003): the grid of cells that finds
+  which segments may touch.
+- K. Klenin, J. Langowski, "Computation of writhe in modeling of supercoiled
+  DNA", *Biopolymers* 54, 307 (2000): linking numbers of polygons, exactly.
+- D. Rolfsen, *Knots and Links* (Publish or Perish, 1976), §5.D: linking
+  numbers from crossings.

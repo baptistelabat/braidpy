@@ -1,9 +1,12 @@
 import math
 from dataclasses import dataclass
 import bisect
-from typing import Callable, List, Tuple
+from typing import TYPE_CHECKING, Callable, List, Tuple
 
 from braidpy.utils import StrictlyPositiveInt
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 # Type alias for an arc of a strand: a time interval and a 3D path function over that interval
@@ -275,6 +278,81 @@ def strand_paths(
             )
         )
     return paths
+
+
+def sample_strands(
+    strands, per_unit: int = 20, rise: float = 1.0
+) -> "List[np.ndarray]":
+    """Strands as points along them, for whatever takes yarns as points.
+
+    Args:
+        strands: Anything answering ``position(z)`` over a common
+            ``length``: :func:`strand_paths`, say.
+        per_unit: Points per unit of ``z``, one generator of a path.
+        rise: How far each unit of ``z`` rises: the braid stretched along
+            its axis.
+
+    Returns:
+        Per strand, ``(points, 3)``, rising from ``z = 0``.
+    """
+    import numpy as np
+
+    length = strands[0].length
+    zs = np.linspace(0.0, length, int(per_unit * length) + 1)
+    sampled = []
+    for strand in strands:
+        # A path repeats, its top the bottom again: its last point is taken
+        # a hair below it.
+        points = np.array(
+            [strand.position(min(float(z), length - 1e-9)) for z in zs], dtype=float
+        )
+        points[:, 2] = zs * rise
+        sampled.append(points)
+    return sampled
+
+
+@dataclass(frozen=True)
+class SampledStrand:
+    """A strand known by points along it, rising: a yarn laid or settled.
+
+    It answers ``position(z)`` as the other strands do, so a word can be read
+    off it (:func:`braidpy.symmetric_braid.braid_word`) and its length
+    measured (:func:`arc_length`).
+
+    Args:
+        points: ``(n, 3)``, rising strictly along z from its bottom end.
+
+    Raises:
+        ValueError: If the points do not rise all along: a strand that
+            turns back down has no single place at some heights.
+    """
+
+    points: "np.ndarray"
+
+    def __post_init__(self) -> None:
+        import numpy as np
+
+        points = np.asarray(self.points, dtype=float).reshape(-1, 3)
+        if np.any(np.diff(points[:, 2]) <= 0):
+            raise ValueError("The strand does not rise all along.")
+        object.__setattr__(self, "points", points)
+
+    @property
+    def length(self) -> float:
+        """How far it rises, bottom end to top end."""
+        return float(self.points[-1, 2] - self.points[0, 2])
+
+    def position(self, z: float) -> Tuple[float, float, float]:
+        """Where it is ``z`` above its bottom end, between its points."""
+        import numpy as np
+
+        height = self.points[0, 2] + z
+        zs = self.points[:, 2]
+        return (
+            float(np.interp(height, zs, self.points[:, 0])),
+            float(np.interp(height, zs, self.points[:, 1])),
+            float(height),
+        )
 
 
 def arc_length(strand, n_samples: int = 4000) -> float:

@@ -20,6 +20,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.linking
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.material_braid
    :members:
    :undoc-members:
