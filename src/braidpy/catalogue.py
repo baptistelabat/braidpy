@@ -7,7 +7,7 @@
 Each catalogue — :mod:`braidpy.braid_catalog` (braid words),
 :mod:`braidpy.mobidai_catalog` (kumihimo disk braids),
 :mod:`braidpy.solid_sinnets_catalog` (Ashley's solid sinnets) and
-:mod:`braidpy.horn_gear.examples` (braiding machines) — keeps its braids as
+:mod:`braidpy.machine_catalog` (braiding machines) — keeps its braids as
 it likes best, and lists them in a ``CATALOGUE``: an :class:`Entry` per
 braid, by the name it is known by, in the order to offer them.
 """
