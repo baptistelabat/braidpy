@@ -38,7 +38,8 @@
 (function (root) {
   "use strict";
 
-  const relay = root.relayYarn || (typeof require !== "undefined" && require("./rope.js").relay);
+  const { relay, nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads } =
+    root.yarnMechanics || require("./rope.js").yarnMechanics;
 
   /**
    * @param {Object} job
@@ -195,57 +196,15 @@
         const reach = 1 + 2 * spacing + 0.5;
         let pairs = new Int32Array(0);
         const built = new Float64Array(3 * n);
+        const cells = new Int32Array(3 * n);
+        // Something in a pair must be able to move: a working bead, or the
+        // block against the made braid.
+        const movable = (g, h) =>
+          kind[g] === 1 || kind[g + 1] === 1 || kind[h] === 1 || kind[h + 1] === 1 ||
+          ((kind[g] === 2 || kind[h] === 2) && kind[g] !== kind[h]);
         function neighbours() {
-          const grid = new Map();
-          const cell = new Int32Array(3 * n);
-          for (const g of segs) {
-            const i = Math.floor((x[3 * g] + x[3 * g + 3]) / 2 / reach);
-            const j = Math.floor((x[3 * g + 1] + x[3 * g + 4]) / 2 / reach);
-            const k = Math.floor((x[3 * g + 2] + x[3 * g + 5]) / 2 / reach);
-            cell[3 * g] = i;
-            cell[3 * g + 1] = j;
-            cell[3 * g + 2] = k;
-            const key = (i * 73856093) ^ (j * 19349663) ^ (k * 83492791);
-            let list = grid.get(key);
-            if (!list) grid.set(key, (list = []));
-            list.push(g);
-          }
-          const found = [];
-          for (const g of segs) {
-            const i = cell[3 * g], j = cell[3 * g + 1], k = cell[3 * g + 2];
-            for (let di = -1; di <= 1; di++) {
-              for (let dj = -1; dj <= 1; dj++) {
-                for (let dk = -1; dk <= 1; dk++) {
-                  const list = grid.get(((i + di) * 73856093) ^ ((j + dj) * 19349663) ^ ((k + dk) * 83492791));
-                  if (!list) continue;
-                  for (const h of list) {
-                    if (h <= g) continue;
-                    if (cell[3 * h] !== i + di || cell[3 * h + 1] !== j + dj || cell[3 * h + 2] !== k + dk) continue;
-                    if (yarnOf[h] === yarnOf[g] && h - g < gap) continue;
-                  // Near enough to touch before the list is rebuilt.
-                  const mx = x[3 * g] + x[3 * g + 3] - x[3 * h] - x[3 * h + 3];
-                  const my = x[3 * g + 1] + x[3 * g + 4] - x[3 * h + 1] - x[3 * h + 4];
-                  const mz = x[3 * g + 2] + x[3 * g + 5] - x[3 * h + 2] - x[3 * h + 5];
-                  if (mx * mx + my * my + mz * mz > 4 * reach * reach) continue;
-                    // Something here must be able to move.
-                    if (kind[g] !== 1 && kind[g + 1] !== 1 && kind[h] !== 1 && kind[h + 1] !== 1) {
-                      if (!(kind[g] === 2 || kind[h] === 2) || kind[g] === kind[h]) continue;
-                    }
-                    found.push(g, h);
-                  }
-                }
-              }
-            }
-          }
-          pairs = Int32Array.from(found);
+          pairs = nearPairs(x, segs, yarnOf, gap, reach, cells, movable);
           built.set(x);
-        }
-        function stale() {
-          for (let k = 0; k < 3 * n; k += 3) {
-            const dx = x[k] - built[k], dy = x[k + 1] - built[k + 1], dz = x[k + 2] - built[k + 2];
-            if (dx * dx + dy * dy + dz * dz > 0.0625) return true;
-          }
-          return false;
         }
 
         const f = new Float64Array(3 * n);
@@ -260,113 +219,13 @@
           f.fill(0);
           fs.fill(0);
           for (let a = 0; a < nYarns; a++) {
-            let strain = 0;
-            for (let g = linkFrom[a]; g < linkTo[a]; g++) {
-              const dx = x[3 * g + 3] - x[3 * g], dy = x[3 * g + 4] - x[3 * g + 1], dz = x[3 * g + 5] - x[3 * g + 2];
-              const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
-              strain += r - s[a];
-              const t = (ks * (r - s[a])) / r;
-              f[3 * g] += t * dx;
-              f[3 * g + 1] += t * dy;
-              f[3 * g + 2] += t * dz;
-              f[3 * g + 3] -= t * dx;
-              f[3 * g + 4] -= t * dy;
-              f[3 * g + 5] -= t * dz;
-            }
+            const strain = stretchAndBend(x, f, linkFrom[a], linkTo[a], s[a], ks, kb);
             fs[a] = ks * strain - feed * links[a];
-            const b = kb / (s[a] * s[a]);
-            for (let g = linkFrom[a] + 1; g < linkTo[a]; g++) {
-              for (let c = 0; c < 3; c++) {
-                const curve = x[3 * g - 3 + c] - 2 * x[3 * g + c] + x[3 * g + 3 + c];
-                f[3 * g - 3 + c] -= b * curve;
-                f[3 * g + c] += 2 * b * curve;
-                f[3 * g + 3 + c] -= b * curve;
-              }
-            }
           }
           deepest = 0;
           touched.clear();
-          for (let e = 0; e < pairs.length; e += 2) {
-            const g = pairs[e], h = pairs[e + 1];
-            const i = 3 * g, j = 3 * h;
-            const ax = x[i + 3] - x[i], ay = x[i + 4] - x[i + 1], az = x[i + 5] - x[i + 2];
-            const bx = x[j + 3] - x[j], by = x[j + 4] - x[j + 1], bz = x[j + 5] - x[j + 2];
-            const rx = x[i] - x[j], ry = x[i + 1] - x[j + 1], rz = x[i + 2] - x[j + 2];
-            const aa = ax * ax + ay * ay + az * az;
-            const bb = bx * bx + by * by + bz * bz;
-            const ab = ax * bx + ay * by + az * bz;
-            const ar = ax * rx + ay * ry + az * rz;
-            const br = bx * rx + by * ry + bz * rz;
-            const den = aa * bb - ab * ab;
-            let u = den > 1e-12 * aa * bb ? (ab * br - ar * bb) / den : 0;
-            u = u < 0 ? 0 : u > 1 ? 1 : u;
-            let w = (ab * u + br) / bb;
-            if (w < 0) {
-              w = 0;
-              u = Math.min(1, Math.max(0, -ar / aa));
-            } else if (w > 1) {
-              w = 1;
-              u = Math.min(1, Math.max(0, (ab - ar) / aa));
-            }
-            const px = rx + u * ax - w * bx, py = ry + u * ay - w * by, pz = rz + u * az - w * bz;
-            const r2 = px * px + py * py + pz * pz;
-            const key = ids[g] * 4194304 + ids[h];
-            if (r2 >= 1) continue;
-            const r = Math.sqrt(r2);
-            let push = kr * (1 - r);
-            if (r < core) {
-              deepest = Math.max(deepest, core - r);
-              push += kc * (core - r);
-            }
-            const nx = px / Math.max(r, 1e-9), ny = py / Math.max(r, 1e-9), nz = pz / Math.max(r, 1e-9);
-            let qx = push * nx, qy = push * ny, qz = push * nz;
-            if (mu > 0) {
-              // Friction: the tangential spring, stretched by how the
-              // contact points slid past each other this step.
-              touched.add(key);
-              let spring = grips.get(key);
-              if (!spring) grips.set(key, (spring = [0, 0, 0]));
-              const vx = (1 - u) * v[i] + u * v[i + 3] - (1 - w) * v[j] - w * v[j + 3];
-              const vy = (1 - u) * v[i + 1] + u * v[i + 4] - (1 - w) * v[j + 1] - w * v[j + 4];
-              const vz = (1 - u) * v[i + 2] + u * v[i + 5] - (1 - w) * v[j + 2] - w * v[j + 5];
-              spring[0] += vx * dt;
-              spring[1] += vy * dt;
-              spring[2] += vz * dt;
-              // Kept in the contact's tangent plane.
-              const along = spring[0] * nx + spring[1] * ny + spring[2] * nz;
-              spring[0] -= along * nx;
-              spring[1] -= along * ny;
-              spring[2] -= along * nz;
-              let tx = -kt * spring[0], ty = -kt * spring[1], tz = -kt * spring[2];
-              const size = Math.hypot(tx, ty, tz);
-              const most = mu * push;
-              if (size > most) {
-                // Slipping: the spring gives way to what friction holds.
-                const k = most / size;
-                tx *= k;
-                ty *= k;
-                tz *= k;
-                spring[0] *= k;
-                spring[1] *= k;
-                spring[2] *= k;
-              }
-              qx += tx;
-              qy += ty;
-              qz += tz;
-            }
-            f[i] += (1 - u) * qx;
-            f[i + 1] += (1 - u) * qy;
-            f[i + 2] += (1 - u) * qz;
-            f[i + 3] += u * qx;
-            f[i + 4] += u * qy;
-            f[i + 5] += u * qz;
-            f[j] -= (1 - w) * qx;
-            f[j + 1] -= (1 - w) * qy;
-            f[j + 2] -= (1 - w) * qz;
-            f[j + 3] -= w * qx;
-            f[j + 4] -= w * qy;
-            f[j + 5] -= w * qz;
-          }
+          stepDt = dt;
+          touching(x, pairs, touch);
           // Contacts that came apart let go of their springs.
           for (const key of keysHere) if (!touched.has(key)) grips.delete(key);
           // The block: the weight, and what the window does to its beads.
@@ -374,52 +233,85 @@
           for (let g = 0; g < n; g++) if (kind[g] === 2) blockForce += f[3 * g + 2];
           if (last) blockForce = weight + Math.min(0, blockForce - weight);
         }
+        // A contact: the cores' and soft surfaces' push along the line
+        // between the closest points, and friction across it.
+        let stepDt = 0;
+        function touch(e, u, w, px, py, pz, r2) {
+          const g = pairs[e], h = pairs[e + 1];
+          const i = 3 * g, j = 3 * h;
+          const key = ids[g] * 4194304 + ids[h];
+          const r = Math.sqrt(r2);
+          let push = kr * (1 - r);
+          if (r < core) {
+            deepest = Math.max(deepest, core - r);
+            push += kc * (core - r);
+          }
+          const nx = px / Math.max(r, 1e-9), ny = py / Math.max(r, 1e-9), nz = pz / Math.max(r, 1e-9);
+          let qx = push * nx, qy = push * ny, qz = push * nz;
+          if (mu > 0) {
+            // Friction: the tangential spring, stretched by how the
+            // contact points slid past each other this step.
+            touched.add(key);
+            let spring = grips.get(key);
+            if (!spring) grips.set(key, (spring = [0, 0, 0]));
+            const vx = (1 - u) * v[i] + u * v[i + 3] - (1 - w) * v[j] - w * v[j + 3];
+            const vy = (1 - u) * v[i + 1] + u * v[i + 4] - (1 - w) * v[j + 1] - w * v[j + 4];
+            const vz = (1 - u) * v[i + 2] + u * v[i + 5] - (1 - w) * v[j + 2] - w * v[j + 5];
+            spring[0] += vx * stepDt;
+            spring[1] += vy * stepDt;
+            spring[2] += vz * stepDt;
+            // Kept in the contact's tangent plane.
+            const along = spring[0] * nx + spring[1] * ny + spring[2] * nz;
+            spring[0] -= along * nx;
+            spring[1] -= along * ny;
+            spring[2] -= along * nz;
+            let tx = -kt * spring[0], ty = -kt * spring[1], tz = -kt * spring[2];
+            const size = Math.hypot(tx, ty, tz);
+            const most = mu * push;
+            if (size > most) {
+              // Slipping: the spring gives way to what friction holds.
+              const k = most / size;
+              tx *= k;
+              ty *= k;
+              tz *= k;
+              spring[0] *= k;
+              spring[1] *= k;
+              spring[2] *= k;
+            }
+            qx += tx;
+            qy += ty;
+            qz += tz;
+          }
+          spread(f, i, j, u, w, qx, qy, qz);
+        }
         // The pairs this window can see: springs of other pairs are kept.
         let keysHere = new Set();
 
         let dt = 0.01, alpha = 0.1, downhill = 0, step = 0, largest = Infinity;
+        const working = kind.map((k) => (k === 1 ? 1 : 0));
+        const sums = new Float64Array(4);
         neighbours();
         keysHere = new Set();
         for (let e = 0; e < pairs.length; e += 2) keysHere.add(ids[pairs[e]] * 4194304 + ids[pairs[e + 1]]);
         for (; step < maxSteps; step++) {
-          if (stale()) {
+          if (stale(x, built)) {
             neighbours();
             keysHere = new Set();
             for (let e = 0; e < pairs.length; e += 2) keysHere.add(ids[pairs[e]] * 4194304 + ids[pairs[e + 1]]);
           }
           forces(dt);
           deepestEver = Math.max(deepestEver, deepest);
-          largest = Math.abs(blockForce) / nYarns;
-          let power = blockForce * vBlock;
-          let fNorm = blockForce * blockForce;
-          let vNorm = vBlock * vBlock;
-          for (let a = 0; a < nYarns; a++) {
-            largest = Math.max(largest, Math.abs(fs[a] / links[a]));
-            power += fs[a] * vs[a];
-            fNorm += fs[a] * fs[a];
-            vNorm += vs[a] * vs[a];
-          }
-          for (let g = 0; g < n; g++) {
-            if (kind[g] !== 1) continue;
-            for (let c = 0; c < 3; c++) {
-              const k = 3 * g + c;
-              power += f[k] * v[k];
-              fNorm += f[k] * f[k];
-              vNorm += v[k] * v[k];
-              if (Math.abs(f[k]) > largest) largest = Math.abs(f[k]);
-            }
-          }
+          sums[0] = blockForce * vBlock;
+          sums[1] = blockForce * blockForce;
+          sums[2] = vBlock * vBlock;
+          sums[3] = Math.abs(blockForce) / nYarns;
+          fireSums(f, v, working, fs, vs, links, sums);
+          largest = sums[3];
           if (largest < tolerance) break;
-          fNorm = Math.sqrt(fNorm);
-          vNorm = Math.sqrt(vNorm);
-          const mix = fNorm > 0 ? (alpha * vNorm) / fNorm : 0;
-          for (let g = 0; g < n; g++) {
-            if (kind[g] !== 1) continue;
-            for (let c = 0; c < 3; c++) v[3 * g + c] = (1 - alpha) * v[3 * g + c] + mix * f[3 * g + c];
-          }
-          for (let a = 0; a < nYarns; a++) vs[a] = (1 - alpha) * vs[a] + mix * fs[a];
+          const mix = fireMix(sums, alpha);
+          steer(v, f, working, vs, fs, alpha, mix);
           vBlock = (1 - alpha) * vBlock + mix * blockForce;
-          if (power > 0) {
+          if (sums[0] > 0) {
             if (++downhill > 5) {
               dt = Math.min(dt * 1.1, 0.05);
               alpha *= 0.99;
@@ -432,18 +324,7 @@
             vs.fill(0);
             vBlock = 0;
           }
-          for (let g = 0; g < n; g++) {
-            if (kind[g] !== 1) continue;
-            v[3 * g] += dt * f[3 * g];
-            v[3 * g + 1] += dt * f[3 * g + 1];
-            v[3 * g + 2] += dt * f[3 * g + 2];
-            const mx = dt * v[3 * g], my = dt * v[3 * g + 1], mz = dt * v[3 * g + 2];
-            const size = Math.sqrt(mx * mx + my * my + mz * mz);
-            const k = size > 0.1 ? 0.1 / size : 1;
-            x[3 * g] += mx * k;
-            x[3 * g + 1] += my * k;
-            x[3 * g + 2] += mz * k;
-          }
+          moveBeads(x, v, f, dt, working);
           // The block moves as one, its beads' velocity its own, for the
           // friction they feel.
           vBlock += (dt * blockForce) / nYarns;
