@@ -179,30 +179,21 @@ without.
 ## Made on a marudai, move by move
 
 `web/marudai.js` makes a disk braid the way braid3dmin, a kumihimo
-simulation in three.js, makes it (its method is described in
-[a page of its own](braid3D.md)); the code is this project's own. braidpy's disk program —
-the slots the yarns start in, then per step which yarns move, by how much —
-is played move by move:
+simulation in three.js, makes it: yarns as chains of beads pulled by their
+bobbins, each move laid over the top and drawn tight, the braid relaxed from
+what moved and turned to balance. The method is set out in
+[a page of its own](braid3D.md) and not repeated here; the code is this
+project's own. braidpy's disk program — the slots the yarns start in, then
+per step which yarns move, by how much — is played move by move. What
+`marudai.js` does its own way:
 
-- Each yarn is a chain of beads half a diameter apart. A link pulls its two
-  beads together only when stretched, as a rope does, and two beads closer
-  than a diameter push each other apart: both by springs, stiffness 10.
-- Each yarn's end is drawn by its bobbin, a constant pull of 1.2, towards
-  its carrier: on a rim 9.5 diameters from the axis, 5 above the braid's
-  tip. The end is never drawn back in.
-- A move lays the yarn's end over the top of everything on its way — the
-  yarns' heights near the tip are kept, half a unit square at a time — and
-  out to its new carrier; then draws the new stretch tight as a string
-  would go: each bead to between its neighbours, or, where another yarn is
-  in the way, round it, either side. The beads moved are laid out again
-  evenly, and the yarn well behind them is frozen.
-- The braid then relaxes from what moved, a bead at a time: each moved a
-  step along its force, its neighbours and the beads near it then queued
-  in turn, the steps shrinking by a tenth each round until the queue dies
-  down. This does not find the braid's rest: it lets the crossing just
-  made draw in, as a braider's pull does, and leaves the braid made below.
-- Hanging free, the braid then turns about its axis until the yarns' ends
-  pull it no way round, and the ends are laid out to their carriers again.
+- **Units and frame.** Inside, lengths are half a diameter and y is up, as
+  the method is given; what comes out is in yarn diameters, z up.
+- **Speed.** The beads are kept in flat arrays rather than objects, their
+  neighbours found in a grid of cells rather than registered in every cell
+  around, and looked up once per move rather than twice.
+- **The made braid is frozen** well behind each yarn's end, so only the
+  newest rows move.
 
 Checked against braid3dmin itself, run headless on the same moves (not
 part of this project):
@@ -215,10 +206,7 @@ part of this project):
 Lengths in yarn diameters, times in Node. Seen from above, the yarns of
 #3073 halfway up run in the same square grid, the same 2.6 diameters from
 the axis on average; the order beads are moved in changes a braid's length
-by a few per cent. It is fast for three reasons: the beads in flat arrays,
-not objects; their neighbours found in a grid of cells rather than
-registered in every cell around; and each bead's neighbours looked up once
-per move rather than twice.
+by a few per cent. It is faster for the reasons above.
 
 It makes the braid as a marudai does, the made braid hanging below the
 fell, the yarns going out and up to their carriers; seen from above, the
