@@ -16,7 +16,7 @@ from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
 from braidpy.utils import StrictlyPositiveInt
 import braidpy.braid
-from typing import Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 """
 In flat braid all the strands follow the same track
@@ -71,7 +71,7 @@ def full_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     return b.full_twist()
 
 
-def flat3() -> Tuple[braidpy.braid.Braid, int]:
+def flat3(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic braid with 3 strands going above central braid
 
@@ -87,6 +87,9 @@ def flat3() -> Tuple[braidpy.braid.Braid, int]:
 
     https://www.animatedknots.com/three-strand-braid-knot
 
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -94,11 +97,12 @@ def flat3() -> Tuple[braidpy.braid.Braid, int]:
     n = 3
     step = Braid(1, n)
     b = (step * step.flip()) ** n
-    b.draw()
+    if draw:
+        b.draw()
     return b, n
 
 
-def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
+def inverted_flat3(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic braid with 3 strands going below central braid. Also known as dutch braid
 
@@ -108,6 +112,9 @@ def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
 
     https://www.animatedknots.com/three-strand-braid-knot-alt
 
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -115,12 +122,13 @@ def inverted_flat3() -> Tuple[braidpy.braid.Braid, int]:
     n = 3
     step = Braid(-1, n)
     b = step * step.flip()
-    b.draw()
-    (b**n).draw()
+    if draw:
+        b.draw()
+        (b**n).draw()
     return b, n
 
 
-def square4() -> Tuple[braidpy.braid.Braid, int]:
+def square4(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic round braid with 4 strands
 
@@ -137,6 +145,9 @@ def square4() -> Tuple[braidpy.braid.Braid, int]:
     position at the right. In this size, this sinnet, although made by the SQUARE SINNET method,
     is identical with ROUND SINNET of four strands."
 
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -144,13 +155,14 @@ def square4() -> Tuple[braidpy.braid.Braid, int]:
     n = 4
     step = Braid((-1, -2, -2), n)
     b = step * step.flip()
-    b.draw()
-    print(" ")
-    (b**n).draw()
+    if draw:
+        b.draw()
+        print(" ")
+        (b**n).draw()
     return b, n
 
 
-def asymmetric_flat4() -> Tuple[braidpy.braid.Braid, int]:
+def asymmetric_flat4(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     Basic flat braid with 4 strands
 
@@ -163,6 +175,9 @@ def asymmetric_flat4() -> Tuple[braidpy.braid.Braid, int]:
     as here pictured, used as edging on theater-seat upholstery. Of
     course it was machine-made."
 
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -170,16 +185,20 @@ def asymmetric_flat4() -> Tuple[braidpy.braid.Braid, int]:
     n = 4
     step = slide_strand(2).n(4) * a(-3)
     b = step
-    b.draw()
-    (b**n).draw()
+    if draw:
+        b.draw()
+        (b**n).draw()
     return b, n
 
 
-def flat6() -> Tuple[braidpy.braid.Braid, int]:
+def flat6(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     This one is probably not unique !
 
     https://www.youtube.com/watch?v=ZHWlYBxL-mA
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -200,15 +219,20 @@ def flat6() -> Tuple[braidpy.braid.Braid, int]:
     # step2 = slide_strand(int(n / 2), start_index=2).n(n)
 
     step = step3 * step4
-    step.draw()
+    if draw:
+        step.draw()
     b = step * step.flip()
-    (b**n).draw()
+    if draw:
+        (b**n).draw()
     return b, n
 
 
-def regular_flat6() -> Tuple[braidpy.braid.Braid, int]:
+def regular_flat6(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=J65kCzm_BtI
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -218,14 +242,16 @@ def regular_flat6() -> Tuple[braidpy.braid.Braid, int]:
     step1 = weave_strand(int(n / 2)).n(n)
     step2 = weave_strand(int(n / 2) - 1, sign=-1).n(n).flip()
 
-    step1.draw()
-    step2.draw()
+    if draw:
+        step1.draw()
+        step2.draw()
     b = step1 * step2
-    (b**n).draw()
+    if draw:
+        (b**n).draw()
     return b, n
 
 
-def double_flat3(parallel: bool = True):
+def double_flat3(parallel: bool = True, draw: bool = True):
     """
     if parallel = False
     ABOK 2971: "If the same method of turning edges is applied where units
@@ -235,6 +261,9 @@ def double_flat3(parallel: bool = True):
     if parallel = True
     ABOK 2972: "In this sinnet the strands are double and parallel. The effect
     is very different from the last, in which the edges were turned."
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -249,16 +278,20 @@ def double_flat3(parallel: bool = True):
             step = step * a(1 + n_multiple - 1 - i + j)
     step = step.n(n * n_multiple)
     b = (step * step.flip()) ** n
-    b.draw()
+    if draw:
+        b.draw()
     return b, n
 
 
-def weave3():
+def weave3(draw: bool = True):
     """
     This a 3 strands braid were 2 braids are running parallel while the third one is weaving them
 
     ABOK 2973:  "The number of sinnets that are possible with three strands
     only seem very limited. Three are given on these two facing pages."
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -268,29 +301,37 @@ def weave3():
     n = 3
     step = a(1) * a(-2).n(n)
     b = (step * step.flip()) ** n
-    b.draw()
+    if draw:
+        b.draw()
     return b, n
 
 
-def abok_2974():
+def abok_2974(draw: bool = True):
     """
     2974. With four strands the horizon is somewhat widened.
 
     https://www.animatedknots.com/four-strand-sinnet-knot-2974
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
 
     """
     n = 2
     step = Braid([-1, -3, 2, 2], 4)
-    step.draw()
-    (step**n).draw()
+    if draw:
+        step.draw()
+        (step**n).draw()
     return step, n
 
 
-def flat5() -> Tuple[braidpy.braid.Braid, int]:
+def flat5(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=uRy4wvJwSWA
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -300,12 +341,13 @@ def flat5() -> Tuple[braidpy.braid.Braid, int]:
     step1 = slide_strand(int((n - 1) / 2)).n(n) * a(2)
     step2 = slide_strand(int((n + 1) / 2)).n(n).flip()
     step = step1 * step2
-    step.draw()
-    (step**n).draw()
+    if draw:
+        step.draw()
+        (step**n).draw()
     return step, n
 
 
-def flat_sinnet5():
+def flat_sinnet5(draw: bool = True):
     """
     ABOK 2967: "With more than three strands it is well to secure the strands
     in a straight line. Two pencils and two elastic bands are sufficient
@@ -314,6 +356,9 @@ def flat_sinnet5():
     alternately, and the tension is correctly and evenly arranged as each
     strand is passed".
 
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
@@ -321,16 +366,20 @@ def flat_sinnet5():
     n = 5
     step = slide_strand(int((n - 1) / 2)).n(n)
     b = (step * step.flip()) ** n
-    b.draw()
+    if draw:
+        b.draw()
     return b, n
 
 
-def flat_sinnet7():
+def flat_sinnet7(draw: bool = True):
     """
     ABOK 2968: "Seven strands is about the practical limit of the method.
     Beyond that there is difficulty in keeping it even. Even if a degree
     of success is achieved, a very little rough treatment will cause it to
     distort."
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
@@ -339,7 +388,8 @@ def flat_sinnet7():
     n = 7
     step = slide_strand(int((n - 1) / 2)).n(n)
     b = (step * step.flip()) ** n
-    b.draw()
+    if draw:
+        b.draw()
     return b, n
 
 
@@ -419,3 +469,81 @@ https://raft.net/wp-content/uploads/2020/08/PGS-Kumihimo.pdf
 16 strands kumihimo
 https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 """
+
+
+# ------------------------------------------------------------ as braid words
+
+# More braids worth trying as braid words: Braid Studio offers them as
+# examples after the braids above (see :func:`word_examples`).
+WORD_EXAMPLES: List[Dict[str, Any]] = [
+    {"word": "1 2 3", "n_strands": 4, "repeat": 12, "title": "Twist"},
+    {"word": "1 -2 3 -2", "n_strands": 4, "repeat": 4, "title": "Four-strand flat"},
+    {"word": "1 1 1", "n_strands": 2, "repeat": 8, "title": "Two-ply"},
+    {
+        "layout": "ring",
+        "word": "4",
+        "n_strands": 3,
+        "repeat": 36,
+        "title": "Rope, as a ring word",
+    },
+]
+
+# The braids above that are a braid word, by function, with a title.
+CRAFT_BRAIDS: Dict[str, str] = {
+    "flat3": "Plait, or flat sinnet of 3 (ABOK 2965)",
+    "inverted_flat3": "Dutch braid of 3 (ABOK 2966)",
+    "weave3": "Weave of 3 (ABOK 2973)",
+    "double_flat3": "Double flat sinnet of 3 (ABOK 2971)",
+    "square4": "Square sinnet of 4 (ABOK 2999)",
+    "asymmetric_flat4": "Asymmetric flat sinnet of 4 (ABOK 2969)",
+    "abok_2974": "Four-strand sinnet (ABOK 2974)",
+    "flat5": "Flat braid of 5",
+    "flat_sinnet5": "Flat sinnet of 5 (ABOK 2967)",
+    "flat6": "Flat braid of 6",
+    "regular_flat6": "Regular flat braid of 6",
+    "flat_sinnet7": "Flat sinnet of 7 (ABOK 2968)",
+}
+
+
+def _unit(word: Sequence[int]) -> List[int]:
+    """The shortest word that, repeated, makes ``word``."""
+    word = list(word)
+    for length in range(1, len(word) + 1):
+        if len(word) % length == 0 and word[:length] * (len(word) // length) == word:
+            return word[:length]
+    return word
+
+
+# An example shows at least so many crossings.
+_FEWEST_CROSSINGS = 12
+
+
+def word_examples() -> List[Dict[str, Any]]:
+    """Braids to try as braid words, as plain data: each of
+    :data:`CRAFT_BRAIDS` as its function builds it — without drawing it —
+    reduced to the word it repeats, then :data:`WORD_EXAMPLES`.  A braid is
+    repeated as many times as brings every strand home, twice or more: at
+    least :data:`_FEWEST_CROSSINGS` crossings.
+
+    Returns:
+        Per braid, its ``word``, ``n_strands``, ``repeat`` and ``title``; a
+        ring word's ``layout`` too.
+    """
+    from braidpy.pure_braid import closing_repeats
+
+    examples: List[Dict[str, Any]] = []
+    for name, title in CRAFT_BRAIDS.items():
+        braid, _ = globals()[name](draw=False)
+        unit = _unit(braid.generators)
+        n_strands = braid.n_strands
+        home = closing_repeats(Braid(tuple(unit), n_strands), limit=None) or 1
+        times = max(2, -(-_FEWEST_CROSSINGS // (len(unit) * home)))
+        examples.append(
+            {
+                "word": " ".join(str(g) for g in unit),
+                "n_strands": n_strands,
+                "repeat": home * times,
+                "title": title,
+            }
+        )
+    return examples + [dict(example) for example in WORD_EXAMPLES]
