@@ -105,15 +105,3 @@ class Machine:
     of_gear_radius = 0.2
     core_colour = "#8a857c"
     shown = (name, cores, cycles)
-    # The machines offered, in the page's order.
-    titles = {
-        "flat_3": "Flat braid, 3 carriers",
-        "flat_4": "Flat braid, 4 carriers",
-        "flat_9": "Flat braid, 9 carriers on a single track",
-        "soutache_5": "Soutache, 2 gears of 5",
-        "soutache_7": "Soutache, 2 gears of 7",
-        "princess": "Princess, 5/6/5 gears, 8 carriers",
-        "tubular_8": "Tubular braid, 8 carriers",
-        "tubular_12": "Tubular braid, 12 carriers",
-        "tubular_16": "Tubular braid, 16 carriers",
-    }
