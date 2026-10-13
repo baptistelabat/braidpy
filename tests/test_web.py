@@ -84,6 +84,20 @@ def test_nothing_heavy_is_loaded_to_build_a_braid():
     assert out.stdout.strip() == "[]"
 
 
+def test_the_catalogue_is_listed_before_any_machine_is_loaded():
+    """The page lists the catalogue as soon as braidpy is in, and only loads
+    networkx, for the machines, once one is asked for."""
+    code = (
+        "import json, sys; from braidpy.web import catalogue\n"
+        "json.dumps(catalogue())\n"
+        "print('networkx' in sys.modules)"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    )
+    assert out.stdout.strip() == "False"
+
+
 @pytest.mark.parametrize("source", sorted(catalogue()))
 def test_what_made_the_braid_comes_with_it_in_step(source):
     about = catalogue()[source]
