@@ -62,6 +62,7 @@ import math
 from dataclasses import dataclass, replace
 from typing import (
     TYPE_CHECKING,
+    Callable,
     Collection,
     Dict,
     Hashable,
@@ -491,6 +492,53 @@ def jammed_contraction(rel: np.ndarray, spacing: float, diameter: float) -> floa
     return k
 
 
+def _tension_solver(
+    n: int, h: float, hold_top: bool
+) -> Callable[[np.ndarray], np.ndarray]:
+    """Solves (I + h L) x = b, L the second difference along a yarn of ``n``
+    samples: its last sample fixed, its first fixed too if ``hold_top``,
+    else free.
+
+    The matrix is tridiagonal, so the Thomas algorithm solves it in time
+    and memory proportional to ``n``, where inverting it costs ``n²`` memory
+    and ``n³`` time: its forward sweep depends on the matrix only, and is
+    done once.  The same solve as ``makeSettle`` in web/tighten.js.
+
+    Returns:
+        A function taking ``b``, ``(n, m)``, one column per right-hand side —
+        every yarn's x and y at once — and returning ``x``.
+    """
+    lower = np.zeros(n)
+    diagonal = np.ones(n)
+    upper = np.zeros(n)
+    lower[1 : n - 1] = -h
+    diagonal[1 : n - 1] = 1 + 2 * h
+    upper[1 : n - 1] = -h
+    if not hold_top and n > 1:
+        diagonal[0] = 1 + h
+        upper[0] = -h
+    c = np.zeros(n)
+    m = np.empty(n)
+    m[0] = diagonal[0]
+    c[0] = upper[0] / m[0] if n > 1 else 0.0
+    for i in range(1, n):
+        m[i] = diagonal[i] - lower[i] * c[i - 1]
+        c[i] = upper[i] / m[i] if i < n - 1 else 0.0
+
+    def solve(b: np.ndarray) -> np.ndarray:
+        d = np.empty_like(b)
+        d[0] = b[0] / m[0]
+        for i in range(1, n):
+            d[i] = (b[i] - lower[i] * d[i - 1]) / m[i]
+        x = np.empty_like(b)
+        x[n - 1] = d[n - 1]
+        for i in range(n - 2, -1, -1):
+            x[i] = d[i] - c[i] * x[i + 1]
+        return x
+
+    return solve
+
+
 def tighten_yarns(
     paths: YarnPaths,
     yarn_diameter: float,
@@ -558,15 +606,11 @@ def tighten_yarns(
     held = (level == n - 1) | ((level == 0) & hold_top)
     held |= np.repeat([k in set(rigid) for k in paths.points], n)
 
-    # Backward Euler on the tension: (I + step * L) x_new = x, with L the
+    # Backward Euler on the tension: (I + step/2 L) x_new = x, with L the
     # second difference along a yarn — the fell end fixed, the top end fixed
-    # or free.  Every yarn shares the matrix, so it is inverted once.
-    lap = np.zeros((n, n))
-    for i in range(1, n - 1):
-        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
-    if not hold_top and n > 1:
-        lap[0, :2] = (1.0, -1.0)
-    settle = np.linalg.inv(np.eye(n) + 0.5 * step * lap)
+    # or free — solved as the tridiagonal system it is, for every yarn at
+    # once, as web/tighten.js solves it.
+    settle = _tension_solver(n, 0.5 * step, hold_top)
 
     def clamp(move: np.ndarray) -> np.ndarray:
         size = np.linalg.norm(move, axis=-1, keepdims=True)
@@ -660,7 +704,7 @@ def tighten_yarns(
     inner = ~held
     for _ in range(iterations):
         lines = xy.reshape(n_yarns, n, 2).transpose(1, 0, 2).reshape(n, -1)
-        target = (settle @ lines).reshape(n, n_yarns, 2).transpose(1, 0, 2)
+        target = settle(lines).reshape(n, n_yarns, 2).transpose(1, 0, 2)
         move = target.reshape(-1, 2) - xy
         xy[inner] += clamp(move[inner])
         separate(p, q, need)

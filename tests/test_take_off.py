@@ -507,3 +507,24 @@ def test_kumihimo_braid():
     braid = kumihimo_braid("SR" * 4, 0.12, n_strands=8, iterations=60)
     assert len(braid.points) == 8
     assert braid.closest_approach() >= 0.12 * (1 - 2e-3)
+
+
+@pytest.mark.parametrize("hold_top", [True, False])
+@pytest.mark.parametrize("n", [1, 2, 3, 50])
+def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top):
+    """Tightening's backward Euler step, (I + h L) x = b, L the second
+    difference along a yarn: solved as a tridiagonal system, as the matrix
+    itself would solve it, every yarn at once."""
+    import numpy as np
+
+    from braidpy.take_off import _tension_solver
+
+    h = 0.37
+    lap = np.zeros((n, n))
+    for i in range(1, n - 1):
+        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
+    if not hold_top and n > 1:
+        lap[0, :2] = (1.0, -1.0)
+    b = np.random.default_rng(0).normal(size=(n, 6))
+    expected = np.linalg.solve(np.eye(n) + h * lap, b)
+    assert np.allclose(_tension_solver(n, h, hold_top)(b), expected, atol=1e-12)
