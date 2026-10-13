@@ -9,10 +9,10 @@ same defaults (``shown``): one place for each, kept in step."""
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict
 
 from braidpy.web._spec import Count, Number, Text
-from braidpy.web._types import Default, Example
+from braidpy.web._types import Default
 
 # A catalogued braid's name, for the braid typed in instead.
 OWN = "custom"
@@ -45,21 +45,9 @@ class Word:
     # How it is to be settled: by physics, it is laid round a ring.
     settle = Text("settle", "")
     by_physics = ("physics", "crossing")
-    # What the page starts from, and the words it offers.
+    # What the page starts from; the words it offers are
+    # braidpy.braid_catalog.word_examples().
     starts: Dict[str, Default] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
-    examples: List[Example] = [
-        {"word": "1 -2", "n_strands": 3, "repeat": 6, "title": "Plait"},
-        {"word": "1 2 3", "n_strands": 4, "repeat": 12, "title": "Twist"},
-        {"word": "1 -2 3 -2", "n_strands": 4, "repeat": 4, "title": "Four-strand flat"},
-        {"word": "1 1 1", "n_strands": 2, "repeat": 8, "title": "Two-ply"},
-        {
-            "layout": "ring",
-            "word": "4",
-            "n_strands": 3,
-            "repeat": 36,
-            "title": "Rope, as a ring word",
-        },
-    ]
 
 
 # ------------------------------------------------------------- disk braids
