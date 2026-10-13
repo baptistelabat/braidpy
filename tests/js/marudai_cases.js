@@ -1,73 +1,105 @@
-// The marudai tests' cases, run by tests/test_marudai.py: each makes a
-// braid move by move with web/marudai.js and prints what the test checks,
-// as JSON.
+// The marudai tests' cases, run by tests/test_marudai.py and
+// tests/test_marudai_python.py: each makes a braid move by move with
+// web/marudai.js, or measures one, and prints what the test checks, as JSON.
 const path = require("path");
 const fs = require("fs");
-const { make, begin } = require(path.join(__dirname, "..", "..", "web", "marudai.js"));
+const MARUDAI = path.join(__dirname, "..", "..", "web", "marudai.js");
+const { make, begin } = require(MARUDAI);
+
+// marudai.js again, every result of cos, sin, atan2 and asin rounded to
+// single precision: rounded so, Python's maths library and JavaScript's,
+// which may differ in the last place, give the same numbers, and braidpy's
+// port (braidpy.marudai), rounded the same way and given JavaScript's hypot,
+// makes the same braid, bead for bead.
+function rounded() {
+  const R = Object.create(Math);
+  for (const name of ["cos", "sin", "atan2", "asin"]) {
+    R[name] = (...args) => Math.fround(Math[name](...args));
+  }
+  const exported = { exports: {} };
+  new Function("module", "Math", fs.readFileSync(MARUDAI, "utf8"))(exported, R);
+  return exported.exports;
+}
+
+// How long a braid is, how close its yarns come above the start, and how
+// far from the axis they lie half way up.
+function measure(out) {
+  const yarns = out.yarns;
+  let closest = Infinity;
+  for (let a = 0; a < yarns.length; a++) {
+    for (let b = a + 1; b < yarns.length; b++) {
+      const A = yarns[a], B = yarns[b];
+      for (let i = 0; i < A.length; i += 3) {
+        if (A[i + 2] < 1) continue;
+        for (let j = 0; j < B.length; j += 3) {
+          if (B[j + 2] < 1) continue;
+          closest = Math.min(closest, Math.hypot(A[i] - B[j], A[i + 1] - B[j + 1], A[i + 2] - B[j + 2]));
+        }
+      }
+    }
+  }
+  // Where each yarn crosses half the braid's length, about their middle.
+  const half = out.tip / 2;
+  const cut = [];
+  for (const y of yarns) {
+    for (let i = 3; i < y.length; i += 3) {
+      if ((y[i - 1] - half) * (y[i + 2] - half) <= 0 && y[i - 1] !== y[i + 2]) {
+        const f = (half - y[i - 1]) / (y[i + 2] - y[i - 1]);
+        cut.push([y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])]);
+        break;
+      }
+    }
+  }
+  const mx = cut.reduce((s, p) => s + p[0], 0) / cut.length;
+  const my = cut.reduce((s, p) => s + p[1], 0) / cut.length;
+  const radius = cut.reduce((s, p) => s + Math.hypot(p[0] - mx, p[1] - my), 0) / cut.length;
+  // Each yarn's mean distance from the yarns' middle, slice by slice up
+  // the braid clear of its ends.
+  const radii = yarns.map(() => 0);
+  let slices = 0;
+  for (let z = 2; z < out.tip - 2; z += 0.5) {
+    const at = yarns.map((y) => {
+      for (let i = 3; i < y.length; i += 3) {
+        if ((y[i - 1] - z) * (y[i + 2] - z) <= 0 && y[i - 1] !== y[i + 2]) {
+          const f = (z - y[i - 1]) / (y[i + 2] - y[i - 1]);
+          return [y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])];
+        }
+      }
+      return null;
+    });
+    if (at.some((p) => !p)) continue;
+    const cx = at.reduce((s, p) => s + p[0], 0) / at.length;
+    const cy = at.reduce((s, p) => s + p[1], 0) / at.length;
+    at.forEach((p, k) => (radii[k] += Math.hypot(p[0] - cx, p[1] - cy)));
+    slices++;
+  }
+  return {
+    tip: out.tip,
+    closest,
+    radius,
+    crossings: cut.length,
+    radii: radii.map((r) => r / Math.max(slices, 1)),
+  };
+}
 
 const cases = {
   // A disk braid made move by move (marudai.js), from braidpy's disk
   // program: how long it is, how close its yarns come above the start, and
   // how far from the axis they lie half way up.
   marudai() {
-    const disk = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
-    const out = make(disk);
-    const yarns = out.yarns;
-    let closest = Infinity;
-    for (let a = 0; a < yarns.length; a++) {
-      for (let b = a + 1; b < yarns.length; b++) {
-        const A = yarns[a], B = yarns[b];
-        for (let i = 0; i < A.length; i += 3) {
-          if (A[i + 2] < 1) continue;
-          for (let j = 0; j < B.length; j += 3) {
-            if (B[j + 2] < 1) continue;
-            closest = Math.min(closest, Math.hypot(A[i] - B[j], A[i + 1] - B[j + 1], A[i + 2] - B[j + 2]));
-          }
-        }
-      }
-    }
-    // Where each yarn crosses half the braid's length, about their middle.
-    const half = out.tip / 2;
-    const cut = [];
-    for (const y of yarns) {
-      for (let i = 3; i < y.length; i += 3) {
-        if ((y[i - 1] - half) * (y[i + 2] - half) <= 0 && y[i - 1] !== y[i + 2]) {
-          const f = (half - y[i - 1]) / (y[i + 2] - y[i - 1]);
-          cut.push([y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])]);
-          break;
-        }
-      }
-    }
-    const mx = cut.reduce((s, p) => s + p[0], 0) / cut.length;
-    const my = cut.reduce((s, p) => s + p[1], 0) / cut.length;
-    const radius = cut.reduce((s, p) => s + Math.hypot(p[0] - mx, p[1] - my), 0) / cut.length;
-    // Each yarn's mean distance from the yarns' middle, slice by slice up
-    // the braid clear of its ends.
-    const radii = yarns.map(() => 0);
-    let slices = 0;
-    for (let z = 2; z < out.tip - 2; z += 0.5) {
-      const at = yarns.map((y) => {
-        for (let i = 3; i < y.length; i += 3) {
-          if ((y[i - 1] - z) * (y[i + 2] - z) <= 0 && y[i - 1] !== y[i + 2]) {
-            const f = (z - y[i - 1]) / (y[i + 2] - y[i - 1]);
-            return [y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])];
-          }
-        }
-        return null;
-      });
-      if (at.some((p) => !p)) continue;
-      const cx = at.reduce((s, p) => s + p[0], 0) / at.length;
-      const cy = at.reduce((s, p) => s + p[1], 0) / at.length;
-      at.forEach((p, k) => (radii[k] += Math.hypot(p[0] - cx, p[1] - cy)));
-      slices++;
-    }
-    return {
-      tip: out.tip,
-      closest,
-      radius,
-      crossings: cut.length,
-      radii: radii.map((r) => r / Math.max(slices, 1)),
-    };
+    return measure(make(JSON.parse(fs.readFileSync(process.argv[3], "utf8"))));
+  },
+
+  // A braid made elsewhere — by braidpy.marudai — measured the same way.
+  measure() {
+    return measure(JSON.parse(fs.readFileSync(process.argv[3], "utf8")));
+  },
+
+  // A disk braid made with every result of the maths library rounded to
+  // single precision (rounded()): every bead.
+  rounded() {
+    const out = rounded().make(JSON.parse(fs.readFileSync(process.argv[3], "utf8")));
+    return { tip: out.tip, updates: out.updates, whole: out.whole };
   },
 
   // A disk braid made on a marudai in two goes — its first moves, then on

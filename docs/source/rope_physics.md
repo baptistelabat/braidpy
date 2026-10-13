@@ -208,6 +208,21 @@ Lengths in yarn diameters, times in Node. Seen from above, the yarns of
 the axis on average; the order beads are moved in changes a braid's length
 by a few per cent. It is faster for the reasons above.
 
+**In Python.** `braidpy.marudai` is the same algorithm in Python, step
+for step, to read and to check it by; it is pure Python and tens of times
+slower. Given the same numbers from the maths library — cos, sin, atan2 and
+asin rounded to single precision on both sides, and JavaScript's
+`Math.hypot` — the two make the same braid bead for bead
+(`tests/test_marudai_python.py`). Each with its own library they differ in
+the last place (Python's `math.hypot` is correctly rounded, V8's is not, a
+third of the time), and thousands of relaxation steps make that visible, as
+they would any change: a plait of 3 strands made over 8 crossings comes out
+5.33 diameters long in JavaScript and 5.14 in Python, its yarns crossing
+half way up alike. Twisting a held braid in is the most sensitive: when the
+twist first draws a rope down to the tip changes with the last digit, so
+after 6 turns of three bobbins one rope is 0.5 diameters long and the
+other 4.7; after 18 they are alike again, 15.0 and 15.7.
+
 It makes the braid as a marudai does, the made braid hanging below the
 fell, the yarns going out and up to their carriers; seen from above, the
 disk's slots go round as braidpy numbers them. The page draws a braid's
