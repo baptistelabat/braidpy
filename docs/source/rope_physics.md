@@ -280,11 +280,17 @@ in two halves, so it goes round the side braidpy's goes.
   braid above, at the same radius. A real braid draws in to the fell, its
   yarns spreading out above it to their carriers: the block above should
   rather be yarns running out to carriers.
-- **Which braids.** Disk braids, and braid words, laid round a ring for it as
-  a disk braid is. Laid in a row, as braidpy draws a word, all its yarns would
-  meet at one point at the fell, and could untwist through it whatever holds
-  them. A machine's braid is laid with all its yarns meeting at the braiding
-  point: it still settles sideways.
+- **Which braids.** Any. A braid forms on a fell ring about its own size,
+  yarns being as thick as they are, and braidpy lays it so: a machine's
+  braid, or a braid word in a row, on a ring as tight as its yarns allow.
+  Drawn in to a single point instead, as they once were, all the yarns
+  would meet there and could untwist through it whatever holds them.
+  Laid on the ring and settled, braids keep their closures' linking
+  numbers: flat 9, princess, tubular 12 and soutache 5 made 2 cycles, the
+  plait and `1 2 -3 4` among words. A braid word to settle by physics is
+  still laid round a ring of bobbins, as a disk braid is, the moves a
+  marudai makes. Round rigid cores a machine's braid only settles sideways:
+  the physics has no rigid yarn.
 - **Pulling clear.** Sideways tightening works level by level: two yarns
   can circle each other at one level without touching, and undo a turn of
   the braid between levels. Before the physics, the yarns are pulled clear

@@ -47,6 +47,60 @@ def _links(yarns, turn=0.0):
     return yarn_linking([np.reshape(y, (-1, 3)) for y in yarns], turn)
 
 
+def _row_links(yarns, turn=0.0):
+    """The closure's linking numbers for a braid laid in a row, a flat braid:
+    each yarn's top end, turned back by ``turn``, joined to the bottom end
+    below it round the back of the braid, each yarn in a plane of its own,
+    so no two closing paths meet.  (:func:`braidpy.linking.close_yarns`
+    closes round the outside, as for a round braid: across a row, its paths
+    would cross the braid.)"""
+    import numpy as np
+
+    from braidpy.linking import gauss_linking_number
+
+    def turned(p, a):
+        c, s = math.cos(a), math.sin(a)
+        return np.array([c * p[0] - s * p[1], s * p[0] + c * p[1], p[2]])
+
+    ys = [np.reshape(y, (-1, 3)) for y in yarns]
+    tops = [turned(y[-1], -turn) for y in ys]
+    pairing = [
+        int(np.argmin([np.hypot(*(t[:2] - u[0][:2])) for u in ys])) for t in tops
+    ]
+    assert len(set(pairing)) == len(ys), "The yarns' ends do not pair up."
+    above = max(y[:, 2].max() for y in ys) + 2
+    below = min(y[:, 2].min() for y in ys) - 2
+    behind = max(np.abs(y[:, :2]).max() for y in ys) + 3
+    closed = []
+    for a, y in enumerate(ys):
+        up = [turned(y[-1], -turn * k / 30) + [0, 0, 0.05 * k] for k in range(1, 31)]
+        top, bottom = up[-1], ys[pairing[a]][0]
+        lift, sink, plane = above + a, below - a, behind + a
+        back = [
+            [top[0], top[1], lift],
+            [top[0], plane, lift],
+            [top[0], plane, sink],
+            [bottom[0], plane, sink],
+            [bottom[0], bottom[1], sink],
+        ]
+        closed.append(np.vstack([y, up, back]))
+    seen = [False] * len(ys)
+    loops = []
+    for first in range(len(ys)):
+        parts, a = [], first
+        while not seen[a]:
+            seen[a] = True
+            parts.append(closed[a])
+            a = pairing[a]
+        if parts:
+            loops.append(np.vstack(parts))
+    return [
+        gauss_linking_number(loops[i], loops[j])
+        for i in range(len(loops))
+        for j in range(i + 1, len(loops))
+    ]
+
+
 def _run(case, *args):
     out = subprocess.run(
         ["node", str(CASES), case, *map(str, args)],
@@ -139,3 +193,35 @@ def test_a_sinnet_made_crossing_by_crossing_is_the_same_braid(tmp_path):
     assert [round(x) for x in _links(result["made"])["links"]] == laid
     settled = _links(result["settled"], result["turn"])["links"]
     assert [round(x) for x in settled] == laid
+
+
+@pytest.mark.parametrize(
+    "name, flat", [("tubular_12", False), ("soutache_5", True)], ids=str
+)
+def test_a_machine_braid_on_its_fell_ring_settles_as_the_same_braid(
+    tmp_path, name, flat
+):
+    """A machine's braid is laid on a fell ring the size of the braid, not
+    drawn in to a point where every yarn would meet: beaten up by physics,
+    far shorter, no yarn has passed through another — its closure's loops
+    link each other as they did.  Soutache's cores, of yarn, settle as
+    yarns."""
+    from braidpy.web import build
+
+    spec = {"source": "machine", "name": name, "cycles": 2, "settle": "physics"}
+    job = tmp_path / "job.json"
+    job.write_text(json.dumps(build(spec, tighten=False)["tighten"]))
+    result = _run("sinnet", job)
+    assert result["largestForce"] < 1e-3
+    assert result["deepestEver"] < 0.05
+    assert result["settledHeight"] < 0.5 * result["height"]
+    if flat:
+        before = _row_links(result["laid"])
+        after = _row_links(result["settled"], result["turn"])
+    else:
+        before = _links(result["laid"])["links"]
+        after = _links(result["settled"], result["turn"])["links"]
+    # Some loops do link: the check checks something.
+    assert any(round(x) for x in before)
+    assert [round(x) for x in after] == [round(x) for x in before]
+    assert all(abs(x - round(x)) < 0.01 for x in before + after)

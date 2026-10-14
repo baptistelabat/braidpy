@@ -10,7 +10,7 @@ The braid coming off a horn gear machine.
 
 The machine says where each carrier is at every instant
 (:func:`carrier_trajectories`); from there the braid is laid, drawn in to a
-fell or braiding point and tightened exactly as any other source of strands
+fell and tightened exactly as any other source of strands
 is — see :mod:`braidpy.take_off`, which holds the model.  This module only
 adds what a machine knows: its gears to stand the braid on, the middle of
 them for an axis, the axial cores the braid is laid round, and a take-off

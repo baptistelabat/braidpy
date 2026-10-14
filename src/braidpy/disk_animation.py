@@ -345,7 +345,7 @@ def animate_disk(
             )
             under.append(Moving(**spoke))
             # A strand that is not lifted still sends its edging and its copy,
-            # shrunk to nothing at the braiding point, where every spoke meets
+            # shrunk to nothing at the middle, where every spoke meets
             # anyway.  Not as no points: Plotly leaves a trace alone when a
             # frame gives it none, so the last lift would stay on screen.  Not
             # as gaps either: a WebGL trace of nothing but gaps stops the
@@ -458,7 +458,7 @@ def animate_disk(
             y=[centre[1]],
             mode="markers",
             marker=dict(size=7, color="black"),
-            hovertext=["Braiding point"],
+            hovertext=["Where the braid forms"],
             hoverinfo="text",
             showlegend=False,
         )
