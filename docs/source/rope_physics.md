@@ -126,6 +126,18 @@ The tests run the physics in Node and check its results with braidpy. ABOK
 #3044 over 4 cycles beats up from 55 to 11 diameters long in about 5 s in
 Node; a browser takes about the same.
 
+**In Python.** `braidpy.rope` and `braidpy.form` are `rope.js` and
+`form.js` in Python, step for step, to read and to check them by; pure
+Python, they are tens of times slower. Given the same numbers from the
+maths library — cos and sin rounded to single precision on both sides, and
+JavaScript's `Math.hypot` — they settle and make the same yarns bead for
+bead, through 37 467 steps to rest and through every re-laying of the beads
+(`tests/test_rope_python.py`). Each with its own library, unlike the
+marudai's shuffled moves, the physics forgets the last digit as it comes to
+rest: a plait of six crossings beaten up ends with its beads within 0.004
+diameters of JavaScript's, and made crossing by crossing, beaten up as far,
+12 diameters, within 0.012 of each other; both read back as the plait laid.
+
 ## Making it crossing by crossing, with friction
 
 Beaten up all at once, under one weight, a long braid takes a long while: the

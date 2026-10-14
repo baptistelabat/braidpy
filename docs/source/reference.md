@@ -15,6 +15,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.form
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.handles_reduction
    :members:
    :undoc-members:
@@ -36,6 +41,11 @@
    :show-inheritance:
 
 .. automodule:: braidpy.parametric_braid
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.rope
    :members:
    :undoc-members:
    :show-inheritance:

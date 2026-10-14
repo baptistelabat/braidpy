@@ -14,6 +14,7 @@ mistake before:
 | Ring words, turns, `solid_word` / `ring_moves` | `annulus_braid` |
 | Lay a word as curves or points, read a word back | `parametric_strand` (`strand_paths`, `sample_strands`, `SampledStrand`), `symmetric_braid.braid_word` |
 | Linking numbers, from a word or from yarns | `linking` |
+| Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |
 | A catalogue of braids | `catalogue.Entry`, each catalogue's `CATALOGUE` |
 | Defaults and limits for the web page | `web/_settings.py` |
@@ -25,7 +26,10 @@ mistake before:
 - **JavaScript only where the browser needs speed.** When a Python algorithm
   must also run in the page (as `web/tighten.js` does `take_off.tighten_yarns`),
   the Python is the reference and a test runs both and compares them
-  (`tests/test_tighten_js.py`). JavaScript test cases run only what is
+  (`tests/test_tighten_js.py`). Where the JavaScript came first, a Python
+  port step for step is checked the same way, bead for bead with the maths
+  library rounded alike (`tests/js_maths.py`; `braidpy.marudai`,
+  `braidpy.rope`, `braidpy.form`): change one, change the other. JavaScript test cases run only what is
   JavaScript's: geometry going in and checks coming out are done in Python,
   with braidpy (`tests/test_rope.py`).
 - **Documentation links, it does not restate.** If a method is described on
