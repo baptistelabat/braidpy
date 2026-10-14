@@ -15,7 +15,7 @@
 //                {type: "result", id, result, seconds}
 //                {type: "error", id, message}
 
-importScripts("tighten.js?v=9577073517", "rope.js?v=f834c99b9e", "form.js?v=0857bf072b", "marudai.js?v=055b2cf1a4");
+importScripts("tighten.js?v=bdf97f8e16", "rope.js?v=bdf97f8e16", "form.js?v=bdf97f8e16", "marudai.js?v=bdf97f8e16");
 
 function status(text) {
   self.postMessage({ type: "status", text });
@@ -552,7 +552,7 @@ function onLevels(result, yarns, d) {
 
 // A yarn's points again, evenly spaced, as rope.js wants them.
 function relay(points, spacing) {
-  return Array.from(self.relayYarn(Float64Array.from(points), spacing));
+  return Array.from(self.yarnMechanics.relay(Float64Array.from(points), spacing));
 }
 
 function round(value) {
