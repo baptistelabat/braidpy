@@ -3,6 +3,12 @@
 A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
 advances in braid theory. Sources are shared on [github](https://github.com/baptistelabat/braidpy)
 
+## Support
+
+braidpy is built with [Claude Code](https://claude.com/claude-code). If it
+helps you, you can [sponsor it](https://github.com/sponsors/baptistelabat):
+sponsoring helps pay for that.
+
 ## Features
 
 - [x] Mathematical representation of braids with braid words using Artin's generators
