@@ -41,8 +41,10 @@
 //
 // References:
 // - Friction as a tangential spring, capped by Coulomb's law: P. A.
-//   Cundall, O. D. L. Strack, "A discrete numerical model for granular
-//   assemblies", Géotechnique 29, 47 (1979).
+//   Cundall and O. D. L. Strack, "A discrete numerical model for granular
+//   assemblies", Géotechnique 29, 47 (1979),
+//   https://doi.org/10.1680/geot.1979.29.1.47; a free-to-read review in
+//   docs/source/rope_physics.md.
 // - FIRE, and the contact geometry: see rope.js.
 
 (function (root) {

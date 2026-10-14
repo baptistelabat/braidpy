@@ -126,6 +126,18 @@ The tests run the physics in Node and check its results with braidpy. ABOK
 #3044 over 4 cycles beats up from 55 to 11 diameters long in about 5 s in
 Node; a browser takes about the same.
 
+**In Python.** `braidpy.rope` and `braidpy.form` are `rope.js` and
+`form.js` in Python, step for step, to read and to check them by; pure
+Python, they are tens of times slower. Given the same numbers from the
+maths library — cos and sin rounded to single precision on both sides, and
+JavaScript's `Math.hypot` — they settle and make the same yarns bead for
+bead, through 37 467 steps to rest and through every re-laying of the beads
+(`tests/test_rope_python.py`). Each with its own library, unlike the
+marudai's shuffled moves, the physics forgets the last digit as it comes to
+rest: a plait of six crossings beaten up ends with its beads within 0.004
+diameters of JavaScript's, and made crossing by crossing, beaten up as far,
+12 diameters, within 0.012 of each other; both read back as the plait laid.
+
 ## Making it crossing by crossing, with friction
 
 Beaten up all at once, under one weight, a long braid takes a long while: the
@@ -305,9 +317,13 @@ in two halves, so it goes round the side braidpy's goes.
 - E. Bitzek, P. Koskinen, F. Gähler, M. Moseler, P. Gumbsch, "Structural
   relaxation made simple", *Phys. Rev. Lett.* 97, 170201 (2006): FIRE, the
   solver.
-- P. A. Cundall, O. D. L. Strack, "A discrete numerical model for granular
-  assemblies", *Géotechnique* 29, 47 (1979): friction as a tangential spring
-  capped by Coulomb's law.
+- P. A. Cundall and O. D. L. Strack, "A discrete numerical model for
+  granular assemblies", *Géotechnique* 29, 47 (1979),
+  [doi:10.1680/geot.1979.29.1.47](https://doi.org/10.1680/geot.1979.29.1.47)
+  (not free to read): friction as a tangential spring capped by Coulomb's
+  law. Free to read, the same tangential spring among other contact models:
+  "Review of contact models used in Discrete Element Method (DEM)",
+  [arXiv:2509.07461](https://arxiv.org/abs/2509.07461).
 - C. Ericson, *Real-Time Collision Detection* (Morgan Kaufmann, 2005),
   §5.1.9: the closest points of two segments, for contact.
 - M. Teschner, B. Heidelberger, M. Müller, D. Pomeranets, M. Gross,
