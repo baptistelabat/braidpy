@@ -7,20 +7,20 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen } from "./colours.js?v=bdf97f8e16";
+import { onChosen, rebase } from "./colours.js?v=0e16307d69";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=bdf97f8e16";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=bdf97f8e16";
-import { machineShapes, machineWanted } from "./machine.js?v=bdf97f8e16";
-import { $ } from "./page.js?v=bdf97f8e16";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=bdf97f8e16";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=bdf97f8e16";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=0e16307d69";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=0e16307d69";
+import { machineShapes, machineWanted } from "./machine.js?v=0e16307d69";
+import { $ } from "./page.js?v=0e16307d69";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=0e16307d69";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=0e16307d69";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=bdf97f8e16");
+export const worker = new Worker("worker.js?v=0e16307d69");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -35,7 +35,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=bdf97f8e16");
+  settler = new Worker("settle.js?v=0e16307d69");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -98,6 +98,7 @@ function heard(data) {
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
     // Settling sends the braid as it goes: the view stays put.
+    rebase(data.result);
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
@@ -110,6 +111,7 @@ function heard(data) {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
+    rebase(data.result);
     show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
     showDefaults(data.result.used);
     document.dispatchEvent(

@@ -619,3 +619,13 @@ footer {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The strand being pointed at, shown among the others. */
+.strands li.picked label {
+  font-weight: 600;
+}
+
+.strands li.picked input[type="color"] {
+  border-color: var(--text, #222);
+  box-shadow: 0 0 0 2px var(--line, #8884);
+}
