@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { onChosen, paint } from "./colours.js";
 import { describe } from "./info.js";
 import { drawSection, drawTop } from "./insets.js";
 import { $ } from "./page.js";
@@ -150,6 +151,8 @@ function dispose(object) {
 export let shownLaid = null;
 
 export function show(result, seconds, keepView = false) {
+  // One place decides what colour a strand is.
+  paint(result);
   shownLaid = seconds === null ? pending : null;
   if (braid) {
     scene.remove(braid.turner);
@@ -472,3 +475,9 @@ export function fit() {
   controls.target.copy(centre);
   controls.update();
 }
+
+// Choosing a colour does not remake the braid: the strands are the ones that
+// were made, and only what they are painted with changes.
+onChosen(() => {
+  if (lastResult) show(lastResult, null, true);
+});

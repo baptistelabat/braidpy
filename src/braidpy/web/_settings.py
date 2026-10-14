@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from braidpy.web._spec import Count, Number, Text
+from braidpy.web._spec import Colours, Count, Number, Text
 from braidpy.web._types import Default
 
 # A catalogued braid's name, for the braid typed in instead.
@@ -20,6 +20,10 @@ OWN = "custom"
 # The steps tightening the yarns sideways takes, by default; 0 lays them
 # without tightening them.
 ITERATIONS = Count("iterations", 150, low=0, high=2000)
+
+# The colours chosen for the strands, whatever made the braid.  Every braid
+# can be recoloured, so this belongs to none of the sources in particular.
+COLOURS = Colours("colours")
 
 # ------------------------------------------------------------- braid words
 

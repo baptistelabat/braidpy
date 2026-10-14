@@ -7,6 +7,7 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
+import { onChosen } from "./colours.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
 import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
@@ -149,6 +150,13 @@ export function submit() {
   }
   worker.postMessage({ type: "build", id: pending, spec });
 }
+
+// A colour chosen by hand belongs to the braid asked for, so the link keeps
+// it — written again without making anything, since nothing has changed but
+// what the strands are painted with.
+onChosen(() => {
+  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+});
 
 // Reset: stop whatever is being made, and forget the marudai and the
 // braids made, so that the next is made from the start.
