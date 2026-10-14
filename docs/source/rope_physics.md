@@ -311,9 +311,13 @@ in two halves, so it goes round the side braidpy's goes.
 - E. Bitzek, P. Koskinen, F. Gähler, M. Moseler, P. Gumbsch, "Structural
   relaxation made simple", *Phys. Rev. Lett.* 97, 170201 (2006): FIRE, the
   solver.
-- P. A. Cundall, O. D. L. Strack, "A discrete numerical model for granular
-  assemblies", *Géotechnique* 29, 47 (1979): friction as a tangential spring
-  capped by Coulomb's law.
+- P. A. Cundall and O. D. L. Strack, "A discrete numerical model for
+  granular assemblies", *Géotechnique* 29, 47 (1979),
+  [doi:10.1680/geot.1979.29.1.47](https://doi.org/10.1680/geot.1979.29.1.47)
+  (not free to read): friction as a tangential spring capped by Coulomb's
+  law. Free to read, the same tangential spring among other contact models:
+  "Review of contact models used in Discrete Element Method (DEM)",
+  [arXiv:2509.07461](https://arxiv.org/abs/2509.07461).
 - C. Ericson, *Real-Time Collision Detection* (Morgan Kaufmann, 2005),
   §5.1.9: the closest points of two segments, for contact.
 - M. Teschner, B. Heidelberger, M. Müller, D. Pomeranets, M. Gross,

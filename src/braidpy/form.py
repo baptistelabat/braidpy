@@ -37,9 +37,13 @@ Python, and slow: for checking, not for long braids.
 
 References:
 
-- Friction as a tangential spring, capped by Coulomb's law: P. A. Cundall,
-  O. D. L. Strack, "A discrete numerical model for granular assemblies",
-  Géotechnique 29, 47 (1979).
+- Friction as a tangential spring, capped by Coulomb's law: P. A. Cundall
+  and O. D. L. Strack, "A discrete numerical model for granular
+  assemblies", Géotechnique 29, 47 (1979),
+  https://doi.org/10.1680/geot.1979.29.1.47 (not free to read).  The same
+  tangential spring, among other contact models, free to read: "Review of
+  contact models used in Discrete Element Method (DEM)",
+  https://arxiv.org/abs/2509.07461.
 - FIRE, and the contact geometry: see :mod:`braidpy.rope`.
 """
 
