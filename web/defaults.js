@@ -54,10 +54,11 @@ export const CHOICES = {
 
 // The ways of settling the yarns each source can have: a disk braid or a
 // braid word any — a word to settle by physics is laid round a ring, as
-// from a disk; a machine's braid tightened sideways.  Those it cannot have
-// are not offered.
+// from a disk; a machine's braid, laid on its fell ring, sideways or by
+// physics, but not on a marudai, which makes only disk moves.  Those it
+// cannot have are not offered.
 const SETTLES = {
-  machine: ["sideways"],
+  machine: ["sideways", "physics", "crossing"],
 };
 
 function fitSettle() {

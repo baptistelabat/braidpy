@@ -137,3 +137,29 @@ def test_a_page_can_tighten_the_yarns_itself():
     # Nothing to hand over when nothing is to be tightened.
     assert "tighten" not in build({**spec, "iterations": 0}, tighten=False)
     assert "tighten" not in build({**spec, "iterations": 30})
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "machine", "name": "flat_9", "cycles": 1},
+        {"source": "machine", "name": "tubular_8", "cycles": 1},
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 3},
+    ],
+    ids=lambda spec: spec.get("name") or spec["word"],
+)
+def test_a_braid_forms_on_a_fell_ring_not_a_point(spec):
+    """A braid forms on a ring about its own size, yarns being as thick as
+    they are: a machine's braid and a braid word in a row are laid so, every
+    two yarns a diameter apart at the fell, not drawn in to one point."""
+    import itertools
+
+    import numpy as np
+
+    result = build({**spec, "iterations": 0})
+    fell = [min(s["points"], key=lambda p: p[2]) for s in result["strands"]]
+    apart = min(
+        float(np.hypot(p[0] - q[0], p[1] - q[1]))
+        for p, q in itertools.combinations(fell, 2)
+    )
+    assert apart > 0.99 * result["yarn_diameter"]

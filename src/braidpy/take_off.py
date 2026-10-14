@@ -42,10 +42,13 @@ yarn passes which, and on which side.
 The fell
 --------
 Real yarns run straight from their carriers up to the *fell*, where the braid
-forms, at ``fell_height``.  Above it each level of the braid is the carriers'
-footprint drawn in toward the axis by a factor ``k``: the fell's own size at
-the fell (``k = 0`` is a braiding point), and away from it as tight as the
-yarn allows (:func:`jammed_contraction`).  Any positive ``k`` at each level
+forms, at ``fell_height``: a ring about the size of the braid itself, yarns
+being as thick as they are.  Above it each level of the braid is the
+carriers' footprint drawn in toward the axis by a factor ``k``: the fell's
+own size at the fell — by default the braid's own, as tight as the yarn
+allows (:func:`jammed_contraction`); ``k = 0`` is the idealised braiding
+point, every yarn meeting at one point — and away from it as tight as the
+yarn allows.  Any positive ``k`` at each level
 keeps which yarn passes over which, so the braid made is the braid kept.
 
 Tightening
