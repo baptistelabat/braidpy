@@ -19,11 +19,51 @@ import { $ } from "./page.js";
 
 // Colour chosen per strand, by its place in the braid; null where none was.
 let chosen = [];
+// The colours the braid was made with.  Kept because what is drawn is worked
+// out afresh each time rather than painted over what was painted before: a
+// strand shown among the others has to be able to come back.
+let made = [];
+// The strand being pointed at in the list.  It keeps its colour while the
+// others are muted, which is the only way to be sure which one is about to
+// change when several are the same colour.
+let picked = null;
 const listeners = [];
 
 /** Run `callback` whenever a colour is chosen, to draw the braid again. */
 export function onChosen(callback) {
   listeners.push(callback);
+}
+
+/** Remember the colours a braid was made with, before any are put on it. */
+export function rebase(result) {
+  if (result && result.strands) made = result.strands.map((strand) => strand.colour);
+}
+
+/** The colour a strand is really in, whatever is drawn while one is picked. */
+export function trueColour(i, fallback) {
+  return chosen[i] || made[i] || fallback;
+}
+
+/** Show one strand among the others; null shows them all alike. */
+export function pick(i) {
+  if (picked === i) return;
+  picked = i;
+  tell();
+}
+
+// Muting is a blend, not a fade: the three ways a strand is drawn — a
+// three.js material and two canvases — all take a solid colour, so mixing it
+// here keeps one mechanism where opacity would need three.  A quarter of the
+// strand's own colour is left in it, enough to keep the braid readable.
+function muted(colour) {
+  const hex = long(colour);
+  const mix = (at) => Math.round(parseInt(hex.slice(at, at + 2), 16) * 0.25 + 0x8c * 0.75);
+  return (
+    "#" +
+    [1, 3, 5]
+      .map((at) => mix(at).toString(16).padStart(2, "0"))
+      .join("")
+  );
 }
 
 /**
@@ -34,7 +74,8 @@ export function onChosen(callback) {
  * on rather than a braid to take colours from.
  */
 export function strandColour(i, fallback) {
-  return chosen[i] || fallback;
+  const own = chosen[i] || fallback;
+  return picked === null || picked === i ? own : muted(own);
 }
 
 /** The colours chosen, as the description writes them: `#rgb,,#rgb`. */
@@ -60,7 +101,7 @@ export function useColours(text) {
 export function paint(result) {
   if (!result || !result.strands) return result;
   result.strands.forEach((strand, i) => {
-    if (chosen[i]) strand.colour = chosen[i];
+    strand.colour = strandColour(i, trueColour(i, strand.colour));
   });
   list(result);
   return result;
@@ -93,9 +134,12 @@ function list(result) {
   }
   for (const picker of into.querySelectorAll("input[type=color]")) {
     const i = Number(picker.dataset.strand);
-    // A colour input only understands #rrggbb, and a palette may be shorter.
-    picker.value = long(strands[i].colour);
+    // The swatch shows the strand's own colour, never the muted one it is
+    // drawn in while another is picked.  A colour input only understands
+    // #rrggbb, and a palette may be shorter.
+    picker.value = long(trueColour(i, strands[i].colour));
     picker.nextElementSibling.textContent = strands[i].name;
+    picker.closest("li").classList.toggle("picked", picked === i);
   }
 }
 
@@ -121,4 +165,28 @@ document.addEventListener("input", (event) => {
   while (chosen.length <= i) chosen.push(null);
   chosen[i] = picker.value.toLowerCase();
   tell();
+});
+
+// Pointing at a strand in the list, or stepping onto it with the keyboard,
+// shows it among the others until the pointer or the focus leaves.
+function strandAt(target) {
+  const picker = target?.closest?.("#strand-list input[type=color]");
+  return picker ? Number(picker.dataset.strand) : null;
+}
+
+document.addEventListener("pointerover", (event) => {
+  const i = strandAt(event.target);
+  if (i !== null) pick(i);
+});
+document.addEventListener("pointerout", (event) => {
+  if (strandAt(event.target) !== null && strandAt(event.relatedTarget) === null) {
+    pick(null);
+  }
+});
+document.addEventListener("focusin", (event) => {
+  const i = strandAt(event.target);
+  if (i !== null) pick(i);
+});
+document.addEventListener("focusout", (event) => {
+  if (strandAt(event.target) !== null) pick(null);
 });
