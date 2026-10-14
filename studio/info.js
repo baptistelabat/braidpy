@@ -5,10 +5,10 @@
 // The card beside the braid: what is known of it, its words to copy or
 // make again, and notes.
 
-import { $, round } from "./page.js?v=f0deb1d221";
-import { lastResult } from "./scene.js?v=f0deb1d221";
-import { writeSpec } from "./spec.js?v=f0deb1d221";
-import { submit } from "./workers.js?v=f0deb1d221";
+import { $, round } from "./page.js?v=c4b2007a2d";
+import { lastResult } from "./scene.js?v=c4b2007a2d";
+import { writeSpec } from "./spec.js?v=c4b2007a2d";
+import { submit } from "./workers.js?v=c4b2007a2d";
 
 export function describe(result, seconds) {
   $("about").hidden = false;

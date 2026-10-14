@@ -5,7 +5,7 @@
 // Settings left empty, and choices not made, take the braid's own: shown
 // greyed with "default" once it is made.
 
-import { $, round } from "./page.js?v=f0deb1d221";
+import { $, round } from "./page.js?v=c4b2007a2d";
 
 // A setting left empty takes the braid's own default, shown greyed with
 // "default" once the braid is made.  Going into the field puts the default
@@ -54,10 +54,11 @@ export const CHOICES = {
 
 // The ways of settling the yarns each source can have: a disk braid or a
 // braid word any — a word to settle by physics is laid round a ring, as
-// from a disk; a machine's braid tightened sideways.  Those it cannot have
-// are not offered.
+// from a disk; a machine's braid, laid on its fell ring, sideways or by
+// physics, but not on a marudai, which makes only disk moves.  Those it
+// cannot have are not offered.
 const SETTLES = {
-  machine: ["sideways"],
+  machine: ["sideways", "physics", "crossing"],
 };
 
 function fitSettle() {
