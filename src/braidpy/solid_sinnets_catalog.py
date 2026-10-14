@@ -9,6 +9,36 @@ from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.catalogue import Entry
 
 """
+ABOK #2965
+flat 3 strands
+"""
+flat_3 = AshleySolidSinnet(
+    shape="flat",
+    initial_counts_per_space=[2, 1],
+    moves=[(1, 2), (2, 1)],
+)
+
+"""
+ABOK #2999
+Tubular/square/round 4 strands
+"""
+square_4 = AshleySolidSinnet(
+    shape="square/tubular",
+    initial_counts_per_space=[1, 1, 1, 1],
+    moves=[(1, 3), (3, 1), (2, 4), (4, 2)],
+)
+
+"""
+ABOK #3021
+Tubular/round 6 strands
+"""
+square_4 = AshleySolidSinnet(
+    shape="tubular",
+    initial_counts_per_space=[1, 1, 1, 1, 1, 1],
+    moves=[(1, 3), (3, 5), (5, 1), (2, 6), (6, 4), (4, 2)],
+)
+
+"""
 ABOK #3042
 8-strand round
 """
