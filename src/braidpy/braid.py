@@ -48,6 +48,42 @@ else:
 from collections.abc import Iterable
 
 
+def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> List[list]:
+    """The reduced Burau matrix of one generator, σ_i or its inverse, as
+    rows: the identity, but for row i (from 0),
+
+        σ_i:   ( …, t, −t, 1, … )    at columns i − 1, i, i + 1,
+        σ_i⁻¹: ( …, 1, −1/t, 1/t, … ),
+
+    the columns that fall off the matrix left out.  ``t``, ``one`` and
+    ``zero`` are of whatever ring the matrix is wanted in: a sympy symbol,
+    an element of a polynomial field, a complex number.
+
+    Args:
+        generator: ``i`` for σ_i, ``-i`` for its inverse.
+        n_strands: Number of strands; the matrix is ``n_strands − 1`` square.
+        t: The Burau variable.
+        one: The ring's one.
+        zero: The ring's zero.
+
+    Returns:
+        The rows.
+    """
+    m = n_strands - 1
+    i = abs(generator) - 1
+    rows = [[one if r == c else zero for c in range(m)] for r in range(m)]
+    if generator > 0:
+        left, middle, right = t, -t, one
+    else:
+        left, middle, right = one, -one / t, one / t
+    if i >= 1:
+        rows[i][i - 1] = left
+    rows[i][i] = middle
+    if i <= m - 2:
+        rows[i][i + 1] = right
+    return rows
+
+
 # Define a type alias for clarity
 SignedCrossingIndex = int
 BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
@@ -573,27 +609,15 @@ class Braid:
         Return the reduced Burau representation
         https://en.wikipedia.org/wiki/Burau_representation
         """
-        from sympy import eye, symbols
+        from sympy import Matrix, eye, symbols
 
         t = symbols("t")
         matrix = eye(self.n_strands - 1)
-
         for gen in self.generators:
-            if self.n_strands == 2:
-                mat = -t
-            else:
-                i = abs(gen) - 1  # zero based
-                mat = eye(self.n_strands - 1)
-                # σ_i
-                if i >= 1:
-                    mat[i, i - 1] = t
-                mat[i, i] = -t
-                if i <= self.n_strands - 3:
-                    mat[i, i + 1] = 1
-                if gen < 0:
-                    # Could be faster using directly inverse of 3x3 matrix
-                    mat = mat.inv()
-            matrix = matrix * mat  # Correct order: left-to-right
+            # Correct order: left-to-right
+            matrix = matrix * Matrix(
+                reduced_burau_generator(gen, self.n_strands, t, 1, 0)
+            )
         return matrix
 
     def is_trivial(self) -> bool:
