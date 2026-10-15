@@ -9,6 +9,9 @@ const fs = require("fs");
 const { tightenYarns } = require(path.join(__dirname, "..", "..", "web", "tighten.js"));
 const { relay } = require(path.join(__dirname, "..", "..", "web", "rope.js"));
 const { form } = require(path.join(__dirname, "..", "..", "web", "form.js"));
+const { rounded } = require("./rounded.js");
+const ROPE = path.join(__dirname, "..", "..", "web", "rope.js");
+const FORM = path.join(__dirname, "..", "..", "web", "form.js");
 
 // Yarns laid by braidpy, as JSON: each yarn's points, x y z after x y z,
 // laid again with beads half a diameter apart.
@@ -37,7 +40,27 @@ function length(yarn) {
   return total;
 }
 
+// rope.js and form.js with the maths library rounded (rounded.js), for
+// braidpy's ports, rounded the same way, to match bead for bead.  form.js
+// takes rope.js's mechanics as rope.js leaves them: rounded too.
+function roundedPhysics() {
+  const rope = rounded(ROPE);
+  return { ...rope, form: rounded(FORM).form };
+}
+
 const cases = {
+  // A job read from a file — its yarns, laid again with beads half a
+  // diameter apart, and how to settle them — settled by rope.js, rounded.
+  roundedSettle() {
+    const { yarns, ...job } = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const { settle, relay } = roundedPhysics();
+    return settle({ ...job, yarns: yarns.map((y) => Array.from(relay(Float64Array.from(y), 0.5))) });
+  },
+  // A job read from a file made crossing by crossing by form.js, rounded.
+  roundedForm() {
+    const job = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    return roundedPhysics().form(job);
+  },
   twoPly() {
     const yarns = helices(2, 10, 1, 0.5);
     const spacing = Math.hypot(yarns[0][3] - yarns[0][0], yarns[0][4] - yarns[0][1], yarns[0][5] - yarns[0][2]);

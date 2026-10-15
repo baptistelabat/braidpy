@@ -10,7 +10,7 @@ Two checks:
   port makes the very same braid, bead for bead.  Every result of cos, sin,
   atan2 and asin is rounded to single precision on both sides, so that
   Python's library and JavaScript's agree, and the port is given
-  JavaScript's ``Math.hypot`` (:func:`_js_hypot`).
+  JavaScript's ``Math.hypot`` (``tests/js_maths.py``).
 - The same braid: each with its own maths library, which differ in the last
   place (Python's ``math.hypot`` is correctly rounded, JavaScript's is not),
   the braids differ — thousands of relaxation steps make a last-place
@@ -20,14 +20,12 @@ Two checks:
 """
 
 import json
-import math
 import shutil
-import struct
 import subprocess
-import types
 from pathlib import Path
 
 import pytest
+from js_maths import rounded_math
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
 
@@ -58,40 +56,11 @@ def _disk(tmp_path, spec):
     return disk, path
 
 
-def _single(x):
-    return struct.unpack("f", struct.pack("f", x))[0]
-
-
-def _js_hypot(*values):
-    """JavaScript's ``Math.hypot`` as V8 computes it: scaled by the largest,
-    the squares summed with Kahan's compensation.  Not always correctly
-    rounded, as Python's is; here only so that the port can be given the
-    very numbers the JavaScript computes."""
-    largest = max((abs(v) for v in values), default=0.0)
-    if largest == 0:
-        return 0.0
-    total = compensation = 0.0
-    for v in values:
-        n = abs(v) / largest
-        summand = n * n - compensation
-        preliminary = total + summand
-        compensation = (preliminary - total) - summand
-        total = preliminary
-    return math.sqrt(total) * largest
-
-
 @pytest.mark.parametrize("spec", [PLAIT, ROPE], ids=["plait", "rope"])
 def test_the_port_is_the_same_algorithm_bead_for_bead(tmp_path, monkeypatch, spec):
     from braidpy import marudai
 
-    rounded = types.SimpleNamespace(
-        **{k: getattr(math, k) for k in dir(math) if not k.startswith("_")}
-    )
-    for name in ("cos", "sin", "atan2", "asin"):
-        exact = getattr(math, name)
-        setattr(rounded, name, lambda *a, f=exact: _single(f(*a)))
-    rounded.hypot = _js_hypot
-    monkeypatch.setattr(marudai, "math", rounded)
+    monkeypatch.setattr(marudai, "math", rounded_math())
 
     disk, path = _disk(tmp_path, spec)
     js = _js("rounded", path)

@@ -85,7 +85,6 @@ def _from_machine(spec: Spec) -> Result:
         carrier_positions=carriers_at,
         n_cycles=cycles,
         yarn_diameter=diameter,
-        fell_radius=0.0,
         axials=True,
     )
     paths = _place_cores(paths, cores)
@@ -228,8 +227,9 @@ def machine_geometry(name: str) -> MachineGeometry:
 
 def _place_cores(paths, cores: Collection[Hashable]):
     """The cores, each standing straight in the braid where the machine
-    lays it, all the way down to the fell: drawn in to the braiding point
-    with the yarns, the cores would meet there, and could pass each other."""
+    lays it, all the way down to the fell: drawn in to the fell with the
+    yarns, the cores would come closer there than the machine lays them,
+    and could pass each other."""
     from dataclasses import replace
 
     if not cores:

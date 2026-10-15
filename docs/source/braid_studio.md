@@ -52,15 +52,18 @@ The page has a form and a 3D view.
   cross-sections. A braid word is made there too, its strands rolled onto
   a ring of bobbins, the braid held. A machine's braid is tightened
   **sideways**, fast, keeping the pitch it was laid with. Under "Yarn and tightening", **Settle the
-  yarns** can choose otherwise: sideways for a disk braid too, or, for a
-  disk braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
+  yarns** can choose otherwise: sideways for a disk braid too, or, for any
+  braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
   chain of beads, clamped at the fell and fed from a bobbin, the braid
   beaten up until its crossings jam — or made crossing by crossing, with
   friction. The view follows each as it goes. A braid word to settle by
   physics is laid round a ring, as a disk braid is, each crossing two
-  neighbours swapping places: laid in a row, its yarns would be held at
-  one point at the fell, and could untwist through it. A machine's braid
-  is only tightened sideways.
+  neighbours swapping places, the moves the marudai makes. A machine's
+  braid and a braid word in a row are laid on a fell ring the size of the
+  braid, as a braid really forms, not drawn in to a point: settled by
+  physics, the yarns are held there apart, and keep the braid they were
+  laid as. A machine braiding round rigid cores is only tightened sideways:
+  the physics would bend them as yarns.
 - A disk's top view is turned so its seam — where its numbering closes,
   between its first slot or space and its last — is up, away from you; a
   braid made on a marudai is turned to match, each yarn going to its

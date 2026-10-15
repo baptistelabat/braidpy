@@ -360,6 +360,22 @@ footer {
   font-size: 12px;
 }
 
+/* Asking for help, not shouting for it: one quiet button. */
+.support-button {
+  display: table;
+  margin: 0 0 6px;
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.support-button:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 .stage {
   position: relative;
   background: var(--stage);

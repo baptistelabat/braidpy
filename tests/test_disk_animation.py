@@ -31,7 +31,7 @@ def _spokes(frame, n):
 
 
 def _shrunk(trace):
-    """A copy or edging with nothing to show: a point at the braiding point."""
+    """A copy or edging with nothing to show: a point at the middle of the disk."""
     return list(trace.x) == [0.0, 0.0] and list(trace.y) == [0.0, 0.0]
 
 
@@ -50,7 +50,7 @@ def test_strands_are_spokes_to_their_carriers():
     for frame, index in zip(fig.frames, range(5)):
         under, _, carriers = _spokes(frame, 2)
         for k, spoke in enumerate(under):
-            assert spoke.x[0] == spoke.y[0] == 0.0  # from the braiding point
+            assert spoke.x[0] == spoke.y[0] == 0.0  # from the middle of the disk
             assert [spoke.x[1], spoke.y[1]] == pytest.approx(
                 traj.xy[k][index], abs=1e-4
             )
