@@ -156,7 +156,8 @@ export function submit() {
 // A colour chosen by hand belongs to the braid asked for, so the link keeps
 // it — written again without making anything, since nothing has changed but
 // what the strands are painted with.
-onChosen(() => {
+onChosen((saved) => {
+  if (!saved) return;
   history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
 });
 

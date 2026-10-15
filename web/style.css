@@ -595,23 +595,36 @@ footer {
   list-style: none;
 }
 
-.strands label {
+.strands .swatch {
   display: flex;
   align-items: center;
   gap: 7px;
+  width: 100%;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
   font-size: 13px;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.strands input[type="color"] {
+/* The strand's own colour, in a box before its name. */
+.strands .swatch::before {
+  content: "";
   flex: none;
-  width: 22px;
-  height: 22px;
-  padding: 0;
+  width: 20px;
+  height: 20px;
   border: 1px solid var(--line, #8884);
   border-radius: 4px;
-  background: none;
-  cursor: pointer;
+  background: var(--swatch, #000);
+}
+
+.strands .swatch:hover,
+.strands .swatch:focus-visible {
+  border-color: var(--line, #8884);
 }
 
 .strands span {
@@ -621,11 +634,22 @@ footer {
 }
 
 /* The strand being pointed at, shown among the others. */
-.strands li.picked label {
+.strands li.picked .swatch {
   font-weight: 600;
+  border-color: var(--line, #8884);
 }
 
-.strands li.picked input[type="color"] {
-  border-color: var(--text, #222);
+.strands li.picked .swatch::before {
   box-shadow: 0 0 0 2px var(--line, #8884);
+}
+
+/* The one colour box the list shares: reachable, not in the way. */
+.offscreen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }

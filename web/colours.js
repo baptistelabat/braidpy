@@ -27,9 +27,20 @@ let made = [];
 // others are muted, which is the only way to be sure which one is about to
 // change when several are the same colour.
 let picked = null;
+// Which strand the shared colour box is changing, and the colour it is
+// showing before it is confirmed: the braid follows the box as it moves, so
+// a colour can be judged on the braid rather than in the box, and only
+// confirming it writes it down.
+let editing = null;
+let preview = null;
 const listeners = [];
 
-/** Run `callback` whenever a colour is chosen, to draw the braid again. */
+/**
+ * Run `callback` whenever a colour changes, to draw the braid again.
+ *
+ * It is told whether the colour was confirmed: a colour still being chosen
+ * is drawn, but not yet written into the braid asked for.
+ */
 export function onChosen(callback) {
   listeners.push(callback);
 }
@@ -41,6 +52,7 @@ export function rebase(result) {
 
 /** The colour a strand is really in, whatever is drawn while one is picked. */
 export function trueColour(i, fallback) {
+  if (i === editing && preview) return preview;
   return chosen[i] || made[i] || fallback;
 }
 
@@ -114,33 +126,48 @@ function list(result) {
   const strands = result.strands;
   panel.hidden = false;
 
-  // Rebuilt only when the braid has different strands: a colour picker the
-  // pointer is inside must not be taken away while it is being used.
+  // One colour box for the whole list, not one for each strand.  A colour
+  // input opens the browser's own picker, and nothing can close it again, so
+  // a box for every strand means a stack of pickers after a few clicks.
+  // Sharing one means there is only ever the one, for whichever strand was
+  // asked for last.
   if (into.childElementCount !== strands.length) {
     into.replaceChildren();
     strands.forEach((strand, i) => {
       const row = document.createElement("li");
-      const label = document.createElement("label");
-      const picker = document.createElement("input");
-      picker.type = "color";
-      picker.dataset.strand = String(i);
-      picker.title = `The colour of ${strand.name}`;
+      const swatch = document.createElement("button");
+      swatch.type = "button";
+      swatch.className = "swatch";
+      swatch.dataset.strand = String(i);
       const name = document.createElement("span");
-      name.textContent = strand.name;
-      label.append(picker, name);
-      row.append(label);
+      swatch.append(name);
+      row.append(swatch);
       into.append(row);
     });
   }
-  for (const picker of into.querySelectorAll("input[type=color]")) {
-    const i = Number(picker.dataset.strand);
+  for (const swatch of into.querySelectorAll("button[data-strand]")) {
+    const i = Number(swatch.dataset.strand);
     // The swatch shows the strand's own colour, never the muted one it is
-    // drawn in while another is picked.  A colour input only understands
-    // #rrggbb, and a palette may be shorter.
-    picker.value = long(trueColour(i, strands[i].colour));
-    picker.nextElementSibling.textContent = strands[i].name;
-    picker.closest("li").classList.toggle("picked", picked === i);
+    // drawn in while another is shown among the others.
+    const own = long(trueColour(i, strands[i].colour));
+    swatch.style.setProperty("--swatch", own);
+    swatch.firstElementChild.textContent = strands[i].name;
+    swatch.title = `${strands[i].name}: ${own}`;
+    swatch.setAttribute("aria-label", `The colour of ${strands[i].name}`);
+    swatch.closest("li").classList.toggle("picked", picked === i);
   }
+}
+
+function openBox(i) {
+  const box = $("strand-colour");
+  if (!box) return;
+  editing = i;
+  preview = null;
+  box.value = long(trueColour(i, "#000000"));
+  // showPicker is what opens it without the box having to be seen; where it
+  // is not understood, clicking the box does the same.
+  if (typeof box.showPicker === "function") box.showPicker();
+  else box.click();
 }
 
 function long(colour) {
@@ -151,27 +178,40 @@ function long(colour) {
   return /^#[0-9a-fA-F]{6}$/.test(text) ? text : "#000000";
 }
 
-function tell() {
-  for (const listener of listeners) listener();
+function tell(saved = true) {
+  for (const listener of listeners) listener(saved);
   // For the drawings that keep themselves: the word as it is typed, and the
   // carriers on the machine.
   document.dispatchEvent(new CustomEvent("strand-colours"));
 }
 
+document.addEventListener("click", (event) => {
+  const swatch = event.target.closest?.("#strand-list button[data-strand]");
+  if (swatch) openBox(Number(swatch.dataset.strand));
+});
+
+// Moving about in the colour box shows the braid in that colour at once,
+// without writing it down.
 document.addEventListener("input", (event) => {
-  const picker = event.target.closest?.("#strand-list input[type=color]");
-  if (!picker) return;
-  const i = Number(picker.dataset.strand);
-  while (chosen.length <= i) chosen.push(null);
-  chosen[i] = picker.value.toLowerCase();
-  tell();
+  if (event.target.id !== "strand-colour" || editing === null) return;
+  preview = event.target.value.toLowerCase();
+  tell(false);
+});
+
+// Confirming it writes it down, and the link follows.
+document.addEventListener("change", (event) => {
+  if (event.target.id !== "strand-colour" || editing === null) return;
+  while (chosen.length <= editing) chosen.push(null);
+  chosen[editing] = event.target.value.toLowerCase();
+  preview = null;
+  tell(true);
 });
 
 // Pointing at a strand in the list, or stepping onto it with the keyboard,
 // shows it among the others until the pointer or the focus leaves.
 function strandAt(target) {
-  const picker = target?.closest?.("#strand-list input[type=color]");
-  return picker ? Number(picker.dataset.strand) : null;
+  const swatch = target?.closest?.("#strand-list button[data-strand]");
+  return swatch ? Number(swatch.dataset.strand) : null;
 }
 
 document.addEventListener("pointerover", (event) => {
