@@ -5,9 +5,10 @@
 // The braid asked for, read from the form, written into the address, and
 // read back from it: a link makes the same braid.
 
-import { CHOICES, guessChoices } from "./defaults.js?v=2ae36a139d";
-import { catalogue, renderFields } from "./fields.js?v=2ae36a139d";
-import { $ } from "./page.js?v=2ae36a139d";
+import { chosenColours, useColours } from "./colours.js?v=613ec263e5";
+import { CHOICES, guessChoices } from "./defaults.js?v=613ec263e5";
+import { catalogue, renderFields } from "./fields.js?v=613ec263e5";
+import { $ } from "./page.js?v=613ec263e5";
 
 export function readSpec() {
   const spec = { source: $("source").value };
@@ -29,10 +30,15 @@ export function readSpec() {
     spec[element.name] =
       element.type === "number" ? Number(element.value) : element.value;
   }
+  // Colours chosen by hand are part of the braid asked for, so a link makes
+  // the same braid in the same colours.
+  const colours = chosenColours();
+  if (colours) spec.colours = colours;
   return spec;
 }
 
 export function writeSpec(spec) {
+  useColours(spec.colours);
   $("source").value = spec.source;
   renderFields(spec.source, spec);
   $("yarn_diameter").value = spec.yarn_diameter ?? "";

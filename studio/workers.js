@@ -7,19 +7,20 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
+import { onChosen, rebase } from "./colours.js?v=613ec263e5";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=2ae36a139d";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=2ae36a139d";
-import { machineShapes, machineWanted } from "./machine.js?v=2ae36a139d";
-import { $ } from "./page.js?v=2ae36a139d";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=2ae36a139d";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=2ae36a139d";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=613ec263e5";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=613ec263e5";
+import { machineShapes, machineWanted } from "./machine.js?v=613ec263e5";
+import { $ } from "./page.js?v=613ec263e5";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=613ec263e5";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=613ec263e5";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=2ae36a139d");
+export const worker = new Worker("worker.js?v=613ec263e5");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -34,7 +35,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=2ae36a139d");
+  settler = new Worker("settle.js?v=613ec263e5");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -97,6 +98,7 @@ function heard(data) {
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
     // Settling sends the braid as it goes: the view stays put.
+    rebase(data.result);
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
@@ -109,6 +111,7 @@ function heard(data) {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
+    rebase(data.result);
     show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
     showDefaults(data.result.used);
     document.dispatchEvent(
@@ -149,6 +152,14 @@ export function submit() {
   }
   worker.postMessage({ type: "build", id: pending, spec });
 }
+
+// A colour chosen by hand belongs to the braid asked for, so the link keeps
+// it — written again without making anything, since nothing has changed but
+// what the strands are painted with.
+onChosen((saved) => {
+  if (!saved) return;
+  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+});
 
 // Reset: stop whatever is being made, and forget the marudai and the
 // braids made, so that the next is made from the start.

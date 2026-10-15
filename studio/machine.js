@@ -5,8 +5,9 @@
 // A braiding machine seen from above, to load it by hand: a click puts a
 // carrier on a slot or takes it off, and carriers that met are ringed.
 
-import { PALETTE } from "./diagram.js?v=2ae36a139d";
-import { worker } from "./workers.js?v=2ae36a139d";
+import { strandColour } from "./colours.js?v=613ec263e5";
+import { PALETTE } from "./diagram.js?v=613ec263e5";
+import { worker } from "./workers.js?v=613ec263e5";
 
 // A machine seen from above as it starts, to load by hand: its gears, the
 // contacts between them, and every slot, a carrier on it or not.  Clicking a
@@ -165,7 +166,7 @@ export function attachMachine(holder) {
           ctx.strokeStyle = muted;
           ctx.stroke();
         } else {
-          ctx.fillStyle = PALETTE[i % PALETTE.length];
+          ctx.fillStyle = strandColour(i, PALETTE[i % PALETTE.length]);
           ctx.fill();
         }
       }
@@ -220,6 +221,7 @@ export function attachMachine(holder) {
   });
   const observer = new ResizeObserver(draw);
   observer.observe(canvas);
+  document.addEventListener("strand-colours", draw);
   askMachine(names.value);
   draw();
 }

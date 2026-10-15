@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import { strandColour } from "./colours.js?v=613ec263e5";
+
 // A braid word drawn as it is typed, before it is made: flat, or round a
 // ring.
 
@@ -60,6 +62,7 @@ export function attachDiagram(holder) {
     named();
     draw();
   });
+  document.addEventListener("strand-colours", () => draw());
   named();
   const figure = document.createElement("div");
   figure.className = "diagram";
@@ -163,7 +166,9 @@ function drawDiagram(canvas, caption, text, strands, ring = false) {
       ctx.beginPath();
       ctx.moveTo(a, y);
       ctx.bezierCurveTo(a, y + row / 2, b, y + row / 2, b, y + row);
-      ctx.strokeStyle = wide ? background : PALETTE[strand % PALETTE.length];
+      ctx.strokeStyle = wide
+        ? background
+        : strandColour(strand, PALETTE[strand % PALETTE.length]);
       ctx.lineWidth = wide ? lineWidth * 3.5 : lineWidth;
       ctx.stroke();
     }
