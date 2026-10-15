@@ -17,6 +17,12 @@
 
 import { $ } from "./page.js";
 
+// The colours braidpy gives a braid's strands (braidpy.utils.PALETTE).
+export const PALETTE = [
+  "#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628",
+  "#f781bf", "#999999", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3",
+];
+
 // Colour chosen per strand, by its place in the braid; null where none was.
 let chosen = [];
 // The colours the braid was made with.  Kept because what is drawn is worked
@@ -126,12 +132,9 @@ function list(result) {
   const strands = result.strands;
   panel.hidden = false;
 
-  // One colour box for the whole list, not one for each strand.  A colour
-  // input opens the browser's own picker, and nothing can close it again, so
-  // a box for every strand means a stack of pickers after a few clicks.
-  // Sharing one means there is only ever the one, for whichever strand was
-  // asked for last.
-  if (into.childElementCount !== strands.length) {
+  // Clicking a strand opens the palette below it rather than the browser's
+  // own colour box: see openPalette.
+  if (into.querySelectorAll("button[data-strand]").length !== strands.length) {
     into.replaceChildren();
     strands.forEach((strand, i) => {
       const row = document.createElement("li");
@@ -155,7 +158,71 @@ function list(result) {
     swatch.title = `${strands[i].name}: ${own}`;
     swatch.setAttribute("aria-label", `The colour of ${strands[i].name}`);
     swatch.closest("li").classList.toggle("picked", picked === i);
+    swatch.closest("li").classList.toggle("changing", openFor() === i);
   }
+}
+
+// A few neutrals past the braid's own colours, for marking a strand out.
+const NEUTRALS = ["#000000", "#555555", "#aaaaaa", "#ffffff"];
+
+// The palette, opened under the strand it is for.
+//
+// Not the browser's own colour box, for a plain reason: the box is the
+// system's, and on some of them — the GTK one Firefox opens on Linux —
+// nothing reaches the page until Select is pressed, so a colour cannot be
+// tried on the braid, only committed to.  Colours offered here are the
+// page's own, so clicking one puts it on the braid at once.  The system box
+// is still a click away for anything not offered.
+function openPalette(i, anchor) {
+  const holder = $("strand-palette");
+  if (!holder) return;
+  if (openFor() === i) {
+    closePalette();
+    return;
+  }
+  holder.dataset.strand = String(i);
+  holder.replaceChildren();
+  for (const colour of [...PALETTE, ...NEUTRALS]) {
+    const dab = document.createElement("button");
+    dab.type = "button";
+    dab.className = "dab";
+    dab.dataset.colour = colour;
+    dab.style.setProperty("--swatch", colour);
+    dab.title = colour;
+    dab.setAttribute("aria-label", colour);
+    holder.append(dab);
+  }
+  const more = document.createElement("button");
+  more.type = "button";
+  more.className = "more";
+  more.id = "strand-more";
+  more.textContent = "Another colour…";
+  holder.append(more);
+
+  // Which strand it is for, since it opens below the whole list: inside it,
+  // the list would count it among the strands and rebuild it away.
+  const whose = document.createElement("span");
+  whose.className = "whose";
+  whose.textContent = anchor.firstElementChild.textContent;
+  holder.prepend(whose);
+
+  holder.hidden = false;
+  holder.querySelector(".dab")?.focus();
+}
+
+function closePalette() {
+  const holder = $("strand-palette");
+  if (!holder || holder.hidden) return;
+  holder.hidden = true;
+  delete holder.dataset.strand;
+  tell(false);
+}
+
+/** The strand the palette is open for, or null. */
+function openFor() {
+  const holder = $("strand-palette");
+  if (!holder || holder.hidden || holder.dataset.strand === undefined) return null;
+  return Number(holder.dataset.strand);
 }
 
 function openBox(i) {
@@ -187,7 +254,31 @@ function tell(saved = true) {
 
 document.addEventListener("click", (event) => {
   const swatch = event.target.closest?.("#strand-list button[data-strand]");
-  if (swatch) openBox(Number(swatch.dataset.strand));
+  if (swatch) {
+    openPalette(Number(swatch.dataset.strand), swatch);
+    return;
+  }
+  const dab = event.target.closest?.("#strand-palette .dab");
+  if (dab) {
+    const i = Number($("strand-palette").dataset.strand);
+    while (chosen.length <= i) chosen.push(null);
+    chosen[i] = dab.dataset.colour.toLowerCase();
+    preview = null;
+    editing = null;
+    closePalette();
+    tell(true);
+    return;
+  }
+  if (event.target.closest?.("#strand-more")) {
+    openBox(Number($("strand-palette").dataset.strand));
+    return;
+  }
+  // Anywhere else puts the palette away.
+  if (!event.target.closest?.("#strand-palette")) closePalette();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closePalette();
 });
 
 // Moving about in the colour box shows the braid in that colour at once,
