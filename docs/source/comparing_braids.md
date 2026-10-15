@@ -88,6 +88,33 @@ Burau matrix at t = e^{iθ}, raised to the number of repeats
 ({func}`braidpy.properties.alexander_on_circle`): milliseconds. It matches the
 polynomial, where both can be computed, to six digits.
 
+## A catalogue by topology
+
+{mod}`braidpy.topology_catalog` lists braids by what they are rather than by
+how they are made. It makes every braid of every other catalogue — braid
+words, kumihimo, kumihimo disks, sinnets, braiding machines — and groups those
+with the same fingerprint. Each topology points to every way of making it, and
+each way back to its topology ({func}`~braidpy.topology_catalog.topology_of`):
+
+```python
+from braidpy.topology_catalog import topology_of
+
+plait = topology_of("machine", "flat_3")
+[m.key for m in plait.methods]
+# ['word:flat3', 'word:inverted_flat3', 'machine:flat_3']
+```
+
+The plait is a braid word, the Dutch braid (the plait seen from behind) and
+what a three-carrier flat braiding machine makes. For a braid of your own,
+{func}`~braidpy.topology_catalog.related` gives the topologies nearest it, and
+with each the ways to make it.
+
+A disk braid that creeps round the disk from cycle to cycle, as kongo gumi
+does, is fingerprinted over as many cycles as bring every strand home, not
+its first. A machine braiding round cores has no braid word of its strands
+alone, and is left out. Making every braid takes some ten seconds, so the
+catalogue is built once, when first asked for.
+
 ## Limits
 
 - **Equal fingerprints do not prove two braids the same.** Different ones

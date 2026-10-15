@@ -16,6 +16,7 @@ mistake before:
 | Linking numbers, from a word or from yarns | `linking` |
 | Alexander polynomial, Burau matrix | `properties`, `braid.reduced_burau_generator` |
 | Compare braids, find similar ones | `similarity` |
+| Braids by topology, and every way of making each | `topology_catalog` |
 | A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |

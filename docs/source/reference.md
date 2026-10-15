@@ -60,6 +60,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.topology_catalog
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.utils
    :members:
    :undoc-members:
