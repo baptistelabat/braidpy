@@ -14,6 +14,9 @@ mistake before:
 | Ring words, turns, `solid_word` / `ring_moves` | `annulus_braid` |
 | Lay a word as curves or points, read a word back | `parametric_strand` (`strand_paths`, `sample_strands`, `SampledStrand`), `symmetric_braid.braid_word` |
 | Linking numbers, from a word or from yarns | `linking` |
+| Alexander polynomial, Burau matrix | `properties`, `braid.reduced_burau_generator` |
+| Compare braids, find similar ones | `similarity` |
+| A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |
 | A catalogue of braids | `catalogue.Entry`, each catalogue's `CATALOGUE` |

@@ -26,7 +26,7 @@ bring it home.  :func:`closing_repeats` says how many, from the strands'
 
 from functools import reduce
 from math import lcm
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from braidpy.braid import Braid
 
@@ -115,3 +115,19 @@ def closing_repeats(braid: Braid, limit: Optional[int] = 1000) -> Optional[int]:
     """
     repeats = reduce(lcm, (len(cycle) for cycle in cycles(braid)), 1)
     return repeats if limit is None or repeats <= limit else None
+
+
+def repeating_unit(word: Sequence[int]) -> List[int]:
+    """The shortest word that, repeated, makes ``word``.
+
+    Args:
+        word: Signed Artin generators.
+
+    Returns:
+        The unit: ``word`` itself if it repeats nothing shorter.
+    """
+    word = list(word)
+    for length in range(1, len(word) + 1):
+        if len(word) % length == 0 and word[:length] * (len(word) // length) == word:
+            return word[:length]
+    return word

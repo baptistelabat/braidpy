@@ -45,7 +45,17 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.properties
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.rope
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.similarity
    :members:
    :undoc-members:
    :show-inheritance:
