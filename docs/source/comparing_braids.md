@@ -115,6 +115,13 @@ its first. A machine braiding round cores has no braid word of its strands
 alone, and is left out. Making every braid takes some ten seconds, so the
 catalogue is built once, when first asked for.
 
+Braid Studio shows it beside every braid it makes: **Also made as**, the
+other ways of making the same braid, and **Nearest braids**. The catalogue
+is made with the site, as JSON ({func}`~braidpy.topology_catalog.export`),
+and read back in the browser ({func}`~braidpy.topology_catalog.load`);
+{func}`~braidpy.topology_catalog.for_page` finds a catalogue's braid by its
+description, and any other by the fingerprint of the braid made.
+
 ## Limits
 
 - **Equal fingerprints do not prove two braids the same.** Different ones
