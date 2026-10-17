@@ -16,7 +16,7 @@ from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
 from braidpy.utils import StrictlyPositiveInt
 import braidpy.braid
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Tuple
 
 from braidpy.catalogue import Entry
 
@@ -546,15 +546,6 @@ CATALOGUE: Dict[str, Entry[Braid]] = {
 }
 
 
-def _unit(word: Sequence[int]) -> List[int]:
-    """The shortest word that, repeated, makes ``word``."""
-    word = list(word)
-    for length in range(1, len(word) + 1):
-        if len(word) % length == 0 and word[:length] * (len(word) // length) == word:
-            return word[:length]
-    return word
-
-
 # An example shows at least so many crossings.
 _FEWEST_CROSSINGS = 12
 
@@ -570,12 +561,12 @@ def word_examples() -> List[Dict[str, Any]]:
         Per braid, its ``word``, ``n_strands``, ``repeat`` and ``title``; a
         ring word's ``layout`` too.
     """
-    from braidpy.pure_braid import closing_repeats
+    from braidpy.pure_braid import closing_repeats, repeating_unit
 
     examples: List[Dict[str, Any]] = []
     for entry in CATALOGUE.values():
         braid = entry.make()
-        unit = _unit(braid.generators)
+        unit = repeating_unit(braid.generators)
         n_strands = braid.n_strands
         home = closing_repeats(Braid(tuple(unit), n_strands), limit=None) or 1
         times = max(2, -(-_FEWEST_CROSSINGS // (len(unit) * home)))

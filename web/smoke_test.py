@@ -36,6 +36,8 @@ CASES = [
     ({"source": "mobidai", "name": "KONGO_8", "cycles": 2}, 8),
     ({"source": "sinnet", "name": "abok_3042", "cycles": 1}, 8),
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
+    # Laid on its fell ring, a machine's braid can be settled by physics.
+    ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
     (
         {
             "source": "sinnet",
@@ -102,6 +104,9 @@ def main() -> int:
             status = page.text_content("#status")
             drawn = page.evaluate("window.braidStudio.drawn")
             ok = status.startswith("Made") and drawn == n_yarns and not errors
+            # Settled as asked, not fallen back to sideways.
+            if spec.get("settle") == "physics":
+                ok = ok and "Settled by physics" in page.inner_text("body")
             failures += not ok
             print(
                 f"{'ok  ' if ok else 'FAIL'} {spec['source']:9} "

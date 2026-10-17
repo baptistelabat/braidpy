@@ -5,21 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const MARUDAI = path.join(__dirname, "..", "..", "web", "marudai.js");
 const { make, begin } = require(MARUDAI);
-
-// marudai.js again, every result of cos, sin, atan2 and asin rounded to
-// single precision: rounded so, Python's maths library and JavaScript's,
-// which may differ in the last place, give the same numbers, and braidpy's
-// port (braidpy.marudai), rounded the same way and given JavaScript's hypot,
-// makes the same braid, bead for bead.
-function rounded() {
-  const R = Object.create(Math);
-  for (const name of ["cos", "sin", "atan2", "asin"]) {
-    R[name] = (...args) => Math.fround(Math[name](...args));
-  }
-  const exported = { exports: {} };
-  new Function("module", "Math", fs.readFileSync(MARUDAI, "utf8"))(exported, R);
-  return exported.exports;
-}
+const { rounded } = require("./rounded.js");
 
 // How long a braid is, how close its yarns come above the start, and how
 // far from the axis they lie half way up.
@@ -96,9 +82,9 @@ const cases = {
   },
 
   // A disk braid made with every result of the maths library rounded to
-  // single precision (rounded()): every bead.
+  // single precision (rounded.js): every bead.
   rounded() {
-    const out = rounded().make(JSON.parse(fs.readFileSync(process.argv[3], "utf8")));
+    const out = rounded(MARUDAI).make(JSON.parse(fs.readFileSync(process.argv[3], "utf8")));
     return { tip: out.tip, updates: out.updates, whole: out.whole };
   },
 

@@ -7,6 +7,7 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
+import { onChosen, rebase } from "./colours.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
 import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
@@ -97,6 +98,7 @@ function heard(data) {
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
     // Settling sends the braid as it goes: the view stays put.
+    rebase(data.result);
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
@@ -109,6 +111,7 @@ function heard(data) {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
+    rebase(data.result);
     show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
     showDefaults(data.result.used);
     document.dispatchEvent(
@@ -149,6 +152,14 @@ export function submit() {
   }
   worker.postMessage({ type: "build", id: pending, spec });
 }
+
+// A colour chosen by hand belongs to the braid asked for, so the link keeps
+// it — written again without making anything, since nothing has changed but
+// what the strands are painted with.
+onChosen((saved) => {
+  if (!saved) return;
+  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+});
 
 // Reset: stop whatever is being made, and forget the marudai and the
 // braids made, so that the next is made from the start.

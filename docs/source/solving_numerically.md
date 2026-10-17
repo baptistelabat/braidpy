@@ -108,8 +108,10 @@ From there it is the same for all of them:
   carrier traced, lifted along the axis by the braid taken off since
   (`take_off.lay_yarns`). It is in the right braid class by construction, which is
   what this page asks of a start.
-- **Drawing in.** The braid is formed on a fell — a circle, or a braiding
-  point — and is the carrier footprint scaled toward the axis by a factor *k*.
+- **Drawing in.** The braid is formed on a fell — a ring about the braid's
+  own size, yarns being as thick as they are, or, as an idealisation, a
+  braiding point — and is the carrier footprint scaled toward the axis by a
+  factor *k*.
   Scaling the plane at fixed height cannot pass one yarn through another, so
   every *k* > 0 keeps the topology. Given a yarn diameter, the smallest *k*
   with no two yarns closer than *d* has a closed form over the samples

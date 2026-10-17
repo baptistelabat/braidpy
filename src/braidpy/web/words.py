@@ -159,9 +159,10 @@ def _from_word(spec: Spec) -> Result:
             Word.fewest_samples, round(Word.samples * Word.samples_up_to / len(word))
         )
     )
-    # Settled by physics, the strands are laid round a ring, as from a disk:
-    # in a row, they would be held at one point at the fell, and the yarns'
-    # twist could come undone through it.
+    # Settled by physics, the strands are laid round a ring, as from a disk,
+    # each crossing two neighbours swapping places: the moves a marudai
+    # makes, so that the three ways of making a word make the same braid.
+    # In a row, the yarns are laid on their fell ring, the size of the braid.
     on_ring = Word.settle.read(spec) in Word.by_physics
     if on_ring:
         paths, timeline = _word_round_ring(
@@ -171,7 +172,7 @@ def _from_word(spec: Spec) -> Result:
         trajectories = braid_word_trajectories(
             Braid(word, n_strands), samples_per_crossing=samples
         )
-        paths = lay_yarns(trajectories, yarn_diameter=diameter, fell_radius=0.0)
+        paths = lay_yarns(trajectories, yarn_diameter=diameter)
         paths = _tighten(paths, spec, diameter)
         timeline = _timeline(trajectories, list(paths.points), "line")
     keys = list(paths.points)

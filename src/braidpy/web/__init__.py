@@ -43,7 +43,8 @@ from __future__ import annotations
 from typing import Dict
 
 from braidpy.web import disks, machines, words
-from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING
+from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
+from braidpy.web._settings import COLOURS
 from braidpy.web._spec import parse_moves, parse_word
 from braidpy.web._types import MachineGeometry, Result, Source, Spec
 from braidpy.web.machines import machine_geometry
@@ -109,7 +110,7 @@ def build(spec: Spec, tighten: bool = True) -> Result:
     later = _PAGE_TIGHTENS.set(not tighten)
     job = _TIGHTENING.set(None)
     try:
-        return _SOURCES[source][1](spec)
+        return recoloured(_SOURCES[source][1](spec), COLOURS.read(spec))
     finally:
         _PAGE_TIGHTENS.reset(later)
         _TIGHTENING.reset(job)

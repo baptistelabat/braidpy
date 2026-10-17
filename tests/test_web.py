@@ -11,6 +11,7 @@ import sys
 
 import pytest
 
+from braidpy.web._settings import COLOURS
 from braidpy.web import build, catalogue
 
 
@@ -137,3 +138,95 @@ def test_a_page_can_tighten_the_yarns_itself():
     # Nothing to hand over when nothing is to be tightened.
     assert "tighten" not in build({**spec, "iterations": 0}, tighten=False)
     assert "tighten" not in build({**spec, "iterations": 30})
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "machine", "name": "flat_9", "cycles": 1},
+        {"source": "machine", "name": "tubular_8", "cycles": 1},
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 3},
+    ],
+    ids=lambda spec: spec.get("name") or spec["word"],
+)
+def test_a_braid_forms_on_a_fell_ring_not_a_point(spec):
+    """A braid forms on a ring about its own size, yarns being as thick as
+    they are: a machine's braid and a braid word in a row are laid so, every
+    two yarns a diameter apart at the fell, not drawn in to one point."""
+    import itertools
+
+    import numpy as np
+
+    result = build({**spec, "iterations": 0})
+    fell = [min(s["points"], key=lambda p: p[2]) for s in result["strands"]]
+    apart = min(
+        float(np.hypot(p[0] - q[0], p[1] - q[1]))
+        for p, q in itertools.combinations(fell, 2)
+    )
+    assert apart > 0.99 * result["yarn_diameter"]
+
+
+# ── colours chosen by hand ────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "given, want",
+    [
+        (["#e41a1c", "#377EB8"], ("#e41a1c", "#377eb8")),
+        ("#e41a1c,#377eb8", ("#e41a1c", "#377eb8")),
+        ("#e41a1c, ,#4daf4a", ("#e41a1c", None, "#4daf4a")),
+        ("#f00", ("#f00",)),
+        ("", ()),
+        (None, ()),
+    ],
+)
+def test_colours_are_read_however_they_are_written(given, want):
+    """A list, or one string of them, which is what fits in a link."""
+    assert COLOURS.read({} if given is None else {"colours": given}) == want
+
+
+@pytest.mark.parametrize("given", ["red", "#12345", "#gggggg", "e41a1c"])
+def test_colours_that_cannot_be_read_say_so(given):
+    with pytest.raises(ValueError, match="not a colour"):
+        COLOURS.read({"colours": given})
+
+
+def test_a_chosen_colour_replaces_the_one_the_braid_was_made_with():
+    spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
+    made = build(dict(spec))
+    chosen = build(dict(spec, colours="#112233,,#445566"))
+    assert [s["colour"] for s in chosen["strands"]] == [
+        "#112233",
+        made["strands"][1]["colour"],
+        "#445566",
+    ]
+
+
+def test_choosing_a_colour_changes_nothing_else_about_the_braid():
+    """Only what the strands are painted with: the braid is the same braid."""
+    spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
+    made = build(dict(spec))
+    chosen = build(dict(spec, colours="#112233"))
+    for before, after in zip(made["strands"], chosen["strands"]):
+        assert before["points"] == after["points"]
+        assert before["name"] == after["name"]
+    assert made["info"] == chosen["info"]
+
+
+def test_more_colours_than_strands_are_no_trouble():
+    spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
+    chosen = build(dict(spec, colours=",".join(["#010101"] * 9)))
+    assert [s["colour"] for s in chosen["strands"]] == ["#010101"] * 3
+
+
+@pytest.mark.parametrize("source", ["word", "kumihimo", "machine"])
+def test_every_kind_of_braid_can_be_recoloured(source):
+    """Whatever chose the colours to start with, a page may choose its own."""
+    starts = {
+        "word": {"word": "1 -2", "n_strands": 3},
+        "kumihimo": {"pattern": "SR", "n_strands": 8, "repeat": 1},
+        "machine": {"name": "tubular_8", "cycles": 1},
+    }
+    spec = {"source": source, "iterations": 0, **starts[source]}
+    chosen = build(dict(spec, colours="#0a0b0c"))
+    assert chosen["strands"][0]["colour"] == "#0a0b0c"
