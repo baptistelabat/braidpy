@@ -47,6 +47,7 @@ PAGE = [
     "scene.js",
     "insets.js",
     "info.js",
+    "colours.js",
     "controls.js",
     # Its workers, and what they load.
     "worker.js",

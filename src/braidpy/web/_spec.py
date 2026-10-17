@@ -104,6 +104,54 @@ class Number:
         return float(_number(spec, self.key, own, self.low, self.high))
 
 
+_COLOUR = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+@dataclass(frozen=True)
+class Colours:
+    """Colours a description may give as ``key``, one per strand.
+
+    Given as a list, or as one string of them separated by commas, which is
+    what fits in a link.  A strand the list does not reach keeps the colour
+    whatever made the braid chose for it, so a description need only name the
+    ones that were changed -- and an empty place leaves that strand alone:
+    ``#e41a1c,,#4daf4a`` recolours the first and the third.
+    """
+
+    key: str
+
+    def read(self, spec: Mapping[str, Any]) -> Tuple[Optional[str], ...]:
+        """The colours given, checked; empty if none.
+
+        Args:
+            spec: The description.
+
+        Returns:
+            One colour per strand named, None where a place was left empty.
+
+        Raises:
+            ValueError: If a colour is not ``#rgb`` or ``#rrggbb``.
+        """
+        given = spec.get(self.key)
+        if given is None or given == "":
+            return ()
+        parts = (
+            list(given) if isinstance(given, (list, tuple)) else str(given).split(",")
+        )
+        chosen: List[Optional[str]] = []
+        for part in parts:
+            text = "" if part is None else str(part).strip()
+            if not text:
+                chosen.append(None)
+                continue
+            if not _COLOUR.match(text):
+                raise ValueError(
+                    f"{text!r} is not a colour: write it as #rgb or #rrggbb."
+                )
+            chosen.append(text.lower())
+        return tuple(chosen)
+
+
 @dataclass(frozen=True)
 class Text:
     """Text a description may give as ``key``, and its default."""

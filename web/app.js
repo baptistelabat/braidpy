@@ -32,4 +32,5 @@ import "./defaults.js";
 import "./scene.js";
 import "./insets.js";
 import "./info.js";
+import "./colours.js";
 import "./controls.js";

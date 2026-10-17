@@ -596,3 +596,76 @@ footer {
 .diagram small {
   color: var(--muted);
 }
+
+/* The strands, each with the colour it is drawn in. */
+.strands-card {
+  margin-top: 12px;
+}
+
+.strands {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 4px 10px;
+  margin: 8px 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.strands .swatch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The strand's own colour, in a box before its name. */
+.strands .swatch::before {
+  content: "";
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line, #8884);
+  border-radius: 4px;
+  background: var(--swatch, #000);
+}
+
+.strands .swatch:hover,
+.strands .swatch:focus-visible {
+  border-color: var(--line, #8884);
+}
+
+.strands span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The strand being pointed at, shown among the others. */
+.strands li.picked .swatch {
+  font-weight: 600;
+  border-color: var(--line, #8884);
+}
+
+.strands li.picked .swatch::before {
+  box-shadow: 0 0 0 2px var(--line, #8884);
+}
+
+/* The one colour box the list shares: reachable, not in the way. */
+.offscreen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}

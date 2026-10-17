@@ -90,6 +90,31 @@ def _tighten(
     return _tightened(paths, diameter, iterations.read(spec), rigid=rigid)
 
 
+def recoloured(result: Result, chosen: Sequence[Optional[str]]) -> Result:
+    """The same braid with the colours a page chose for its strands.
+
+    Whatever made the braid picks the colours to start with -- a word by the
+    palette, a machine by its carriers, a sinnet by its own scheme.  A page
+    may then choose its own, strand by strand, and this is the one place that
+    puts them on, so every way the braid is drawn gets the same ones.
+
+    A strand the list does not reach, or whose place in it is empty, keeps the
+    colour it was given.
+
+    Args:
+        result: The braid, as data for a page.
+        chosen: One colour per strand, None where none was chosen.
+
+    Returns:
+        The braid, recoloured.  The same object, which the builders have only
+        just made.
+    """
+    for strand, colour in zip(result["strands"], chosen):
+        if colour:
+            strand["colour"] = colour
+    return result
+
+
 def _result(
     title: str,
     paths,
