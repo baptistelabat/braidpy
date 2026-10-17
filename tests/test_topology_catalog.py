@@ -83,11 +83,15 @@ def test_the_catalogue_is_read_back_as_it_was_written():
 
 
 def test_a_catalogued_braid_is_also_made_as_the_others():
-    """The plait's machine, made for three cycles: also made as the two
-    braid words, not as itself; and the braids nearest it, further on."""
+    """The plait's machine, made for three cycles: also made as every other
+    way of making the plait — the braid words and Ashley's stand — not as
+    itself; and the braids nearest it, further on."""
     shown = _page({"source": "machine", "name": "flat_3", "cycles": 3})
-    assert [m["source"] for m in shown["same"]] == ["word", "word"]
-    assert all(m["spec"]["source"] == "word" for m in shown["same"])
+    plait = topology_of("machine", "flat_3")
+    assert plait is not None
+    others = [m.title for m in plait.methods if m.key != "machine:flat_3"]
+    assert [m["title"] for m in shown["same"]] == others
+    assert {m["source"] for m in shown["same"]} == {"word", "sinnet"}
     assert len(shown["near"]) == 5
     assert all(m["distance"] > 0 for m in shown["near"])
     distances = [m["distance"] for m in shown["near"]]
