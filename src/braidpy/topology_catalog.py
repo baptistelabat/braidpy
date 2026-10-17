@@ -25,19 +25,36 @@ alone, and is left out.
 
 Building the catalogue makes every braid of every catalogue — some ten
 seconds — so it is built once, when first asked for (:func:`catalogue`).
+Braid Studio has it built with the site: :func:`export` writes it as JSON,
+:func:`load` reads it back, and :func:`for_page` says, for the braid on the
+page, every other way of making it and the braids nearest it.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from braidpy.braid import Braid
 from braidpy.catalogue import Entry
 from braidpy.similarity import Fingerprint, distance, fingerprint, same_fingerprint
 
-__all__ = ["Method", "Topology", "catalogue", "methods", "related", "topology_of"]
+__all__ = [
+    "Method",
+    "Topology",
+    "braid_of",
+    "catalogue",
+    "export",
+    "for_page",
+    "load",
+    "methods",
+    "related",
+    "topology_of",
+]
+
+# What says how much of a braid is made, not which braid it is.
+_HOW_MUCH = ("cycles", "repeat")
 
 
 @dataclass(frozen=True)
@@ -65,6 +82,14 @@ class Method:
     def description(self) -> Dict[str, Any]:
         """The description :func:`braidpy.web.build` makes it from."""
         return dict(self.spec)
+
+    def describes(self, spec: Mapping[str, Any]) -> bool:
+        """Whether a description is of this method's braid, however much of
+        it is made: as a page's address has it, every value a string."""
+        return all(
+            key in _HOW_MUCH or str(spec.get(key)) == str(value)
+            for key, value in self.spec
+        )
 
 
 @dataclass(frozen=True)
@@ -140,35 +165,49 @@ def methods() -> List[Method]:
     return found
 
 
+def braid_of(info: Mapping[str, Any]) -> Optional[Braid]:
+    """The braid :func:`braidpy.web.build` made, from what it says of it:
+    its braid word, or, for a tubular machine, its word round the ring with
+    the middle filled in.
+
+    Args:
+        info: The result's ``info``.
+
+    Returns:
+        The braid; None if it has no braid word.
+    """
+    from braidpy.annulus_braid import solid_word
+
+    if info.get("word"):
+        word = tuple(int(g) for g in info["word"].split())
+        return Braid(word, info["n_strands"])
+    if info.get("annular_word"):
+        moves = [int(g) for g in info["annular_word"].split()]
+        n = max(abs(g) for g in moves)
+        return Braid(tuple(solid_word(moves, n)), n)
+    return None
+
+
 def _braid(method: Method) -> Optional[Braid]:
     """The braid a method makes, over a whole period; None if it has no
     braid word."""
-    from braidpy.annulus_braid import solid_word
     from braidpy.pure_braid import closing_repeats
     from braidpy.web import build
 
     spec: Any = {**method.description(), "iterations": 0}
     info = build(spec, tighten=False)["info"]
-    if "word" in info:
-        braid = Braid(tuple(int(g) for g in info["word"].split()), info["n_strands"])
-        # A disk braid that creeps round the disk is not its first cycle
-        # repeated: its period is as many cycles as bring every strand
-        # home.
-        period = info.get("pure_after")
-        if (
-            method.source == "mobidai"
-            and period
-            and period != closing_repeats(braid, limit=None)
-        ):
-            info = build({**spec, "cycles": period}, tighten=False)["info"]
-            braid = Braid(tuple(int(g) for g in info["word"].split()), braid.n_strands)
-        return braid
-    if "annular_word" in info:
-        # A tubular machine's braid round its ring, the middle filled in.
-        moves = [int(g) for g in info["annular_word"].split()]
-        n = max(abs(g) for g in moves)
-        return Braid(tuple(solid_word(moves, n)), n)
-    return None
+    braid = braid_of(info)
+    # A disk braid that creeps round the disk is not its first cycle
+    # repeated: its period is as many cycles as bring every strand home.
+    period = info.get("pure_after")
+    if (
+        braid is not None
+        and method.source == "mobidai"
+        and period
+        and period != closing_repeats(braid, limit=None)
+    ):
+        braid = braid_of(build({**spec, "cycles": period}, tighten=False)["info"])
+    return braid
 
 
 @lru_cache(maxsize=1)
@@ -210,37 +249,53 @@ def catalogue() -> Dict[str, Entry[Topology]]:
     return {topology.name: entry(topology) for topology in _topologies()}
 
 
-def topology_of(source: str, name: str) -> Optional[Topology]:
+def topology_of(
+    source: str, name: str, topologies: Optional[Sequence[Topology]] = None
+) -> Optional[Topology]:
     """The topology a catalogue's braid has: the way back from a method.
 
     Args:
         source: Its catalogue, as in :class:`Method`.
         name: Its name there.
+        topologies: Where to look; by default this catalogue.
 
     Returns:
         Its topology; None if it has no braid word.
     """
     key = f"{source}:{name}"
-    for topology in _topologies():
+    for topology in _topologies() if topologies is None else topologies:
         if any(m.key == key for m in topology.methods):
             return topology
     return None
 
 
-def related(braid: Braid, count: int = 5) -> List[Tuple[Topology, float]]:
+def related(
+    braid: Braid,
+    count: int = 5,
+    topologies: Optional[Sequence[Topology]] = None,
+) -> List[Tuple[Topology, float]]:
     """The topologies nearest a braid — one of your own, say — nearest
     first; distance 0 for its own, if the catalogue has it.
 
     Args:
         braid: The braid.
         count: How many to give.
+        topologies: Where to look; by default this catalogue.
 
     Returns:
         Up to ``count`` topologies, each with its
         :func:`~braidpy.similarity.distance`.
     """
-    mine = fingerprint(braid)
-    scored = [(t, distance(mine, t.fingerprint)) for t in _topologies()]
+    return _nearest(fingerprint(braid), count, topologies)
+
+
+def _nearest(
+    mine: Fingerprint, count: int, topologies: Optional[Sequence[Topology]]
+) -> List[Tuple[Topology, float]]:
+    scored = [
+        (t, distance(mine, t.fingerprint))
+        for t in (_topologies() if topologies is None else topologies)
+    ]
     scored.sort(
         key=lambda pair: (
             not same_fingerprint(mine, pair[0].fingerprint),
@@ -249,3 +304,118 @@ def related(braid: Braid, count: int = 5) -> List[Tuple[Topology, float]]:
         )
     )
     return scored[:count]
+
+
+def export() -> List[Dict[str, Any]]:
+    """The catalogue as JSON-ready data, for :func:`load` to read back
+    without making every braid again.
+
+    Returns:
+        Per topology, its name, title, fingerprint and methods.
+    """
+    return [
+        {
+            "name": t.name,
+            "title": t.title,
+            "fingerprint": asdict(t.fingerprint),
+            "methods": [
+                {
+                    "source": m.source,
+                    "name": m.name,
+                    "title": m.title,
+                    "spec": m.description(),
+                }
+                for m in t.methods
+            ],
+        }
+        for t in _topologies()
+    ]
+
+
+def load(data: Sequence[Mapping[str, Any]]) -> Tuple[Topology, ...]:
+    """The catalogue, from what :func:`export` wrote.
+
+    Args:
+        data: The exported data.
+
+    Returns:
+        The topologies.
+    """
+    found = []
+    for t in data:
+        mark = dict(t["fingerprint"])
+        found.append(
+            Topology(
+                t["name"],
+                t["title"],
+                Fingerprint(
+                    n_strands=int(mark["n_strands"]),
+                    loops=tuple(mark["loops"]),
+                    writhe=int(mark["writhe"]),
+                    linking=tuple(mark["linking"]),
+                    alexander=tuple(mark["alexander"]),
+                ),
+                tuple(
+                    Method(m["source"], m["name"], m["title"], tuple(m["spec"].items()))
+                    for m in t["methods"]
+                ),
+            )
+        )
+    return tuple(found)
+
+
+def for_page(
+    spec: Mapping[str, Any],
+    info: Mapping[str, Any],
+    topologies: Sequence[Topology],
+    count: int = 5,
+) -> Dict[str, List[Dict[str, Any]]]:
+    """What Braid Studio shows of the braid it made, beside it: the other
+    ways of making it, and the braids nearest it.
+
+    A braid of the catalogues is known by its description, and has the
+    fingerprint of its whole period; any other — your own — by the
+    fingerprint of the braid made.
+
+    Args:
+        spec: The description the braid was made from.
+        info: What :func:`braidpy.web.build` said of it.
+        topologies: The catalogue (:func:`load`).
+        count: How many nearest braids to give.
+
+    Returns:
+        ``same``: the methods making a braid with the same fingerprint,
+        but the one shown; ``near``: the nearest other topologies, each
+        with its ``distance``.  Each has a ``title`` and ``source`` to show
+        and the ``spec`` to make it from, as much of it as the page makes
+        by default.  Both are empty for a braid with
+        no braid word.
+    """
+    mine: Optional[Fingerprint] = None
+    shown: Optional[Method] = None
+    for topology in topologies:
+        for method in topology.methods:
+            if method.source == spec.get("source") and method.describes(spec):
+                mine, shown = topology.fingerprint, method
+                break
+        if shown:
+            break
+    if mine is None:
+        braid = braid_of(info)
+        if braid is None or not braid.generators:
+            return {"same": [], "near": []}
+        mine = fingerprint(braid)
+
+    def card(method: Method) -> Dict[str, Any]:
+        # Made as much as the page makes of it, not one cycle.
+        spec = {k: v for k, v in method.spec if k not in _HOW_MUCH}
+        return {"source": method.source, "title": method.title, "spec": spec}
+
+    same: List[Dict[str, Any]] = []
+    near: List[Dict[str, Any]] = []
+    for topology, apart in _nearest(mine, len(topologies), topologies):
+        if same_fingerprint(mine, topology.fingerprint):
+            same.extend(card(m) for m in topology.methods if m != shown)
+        elif len(near) < count:
+            near.append({**card(topology.methods[0]), "distance": round(apart, 2)})
+    return {"same": same, "near": near}

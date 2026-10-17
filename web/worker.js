@@ -12,6 +12,9 @@
 //                {type: "ready", catalogue, version}
 //                {type: "laid", id, result, job, settle, twist}
 //                  the braid as laid, for settle.js to settle
+//                {type: "kin", id, kin}
+//                  the braid's other ways of being made, and the braids
+//                  nearest it (braidpy.topology_catalog.for_page)
 //                {type: "geometry", name, shape}
 //                {type: "error", id?, message}
 
@@ -19,6 +22,9 @@
 
 let pyodide = null;
 let machinesReady = false;
+// The catalogue of braids by topology, made with the site: without it, no
+// kin are found.
+let topologies = false;
 
 function status(text) {
   self.postMessage({ type: "status", text });
@@ -52,6 +58,22 @@ from braidpy import web
   const catalogue = JSON.parse(
     await pyodide.runPythonAsync("json.dumps(web.catalogue())"),
   );
+  try {
+    const found = await fetch(new URL("topologies.json", self.location.href), {
+      cache: "no-cache",
+    });
+    if (found.ok) {
+      pyodide.globals.set("topologies_json", await found.text());
+      await pyodide.runPythonAsync(`
+from braidpy import topology_catalog
+topologies = topology_catalog.load(json.loads(topologies_json))
+del topologies_json
+`);
+      topologies = true;
+    }
+  } catch {
+    topologies = false;
+  }
   self.postMessage({ type: "ready", catalogue, version: manifest.version });
 }
 
@@ -94,6 +116,22 @@ async function build(id, spec) {
   }
   // Shown as laid straight away; settled in settle.js.
   self.postMessage({ type: "laid", id, result, job: job ?? null, settle, twist: spec.twist });
+  await kin(id, result.info);
+}
+
+// The braid's kin, once it is on its way: what it costs is the braid's
+// fingerprint, milliseconds.  Not finding them is no error worth showing.
+async function kin(id, info) {
+  if (!topologies || id !== latest) return;
+  pyodide.globals.set("info_json", JSON.stringify(info));
+  try {
+    const text = await pyodide.runPythonAsync(
+      "json.dumps(topology_catalog.for_page(json.loads(spec_json), json.loads(info_json), topologies))",
+    );
+    self.postMessage({ type: "kin", id, kin: JSON.parse(text) });
+  } catch {
+    // Nothing shown.
+  }
 }
 
 // The last line of a Python traceback is what went wrong.

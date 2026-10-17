@@ -6,7 +6,8 @@
 
 Serves ``web/site`` locally, opens it in headless Chromium through
 Playwright, and for each source checks that braidpy, running in the page,
-made the braid and every yarn was drawn — with nothing logged as an error.
+made the braid and every yarn was drawn — with nothing logged as an error;
+and, for the plait, that the card says what else makes it.
 
     python web/build.py
     python web/smoke_test.py                       # Pyodide from its CDN
@@ -49,6 +50,9 @@ CASES = [
         9,
     ),
 ]
+
+# The plait, as a braid word and on its machine: each also made as the other.
+ALSO_MADE = [("word", "1 -2"), ("name", "flat_3")]
 
 
 class _Quiet(http.server.SimpleHTTPRequestHandler):
@@ -107,11 +111,23 @@ def main() -> int:
             # Settled as asked, not fallen back to sideways.
             if spec.get("settle") == "physics":
                 ok = ok and "Settled by physics" in page.inner_text("body")
+            # Its kin, found in the page from the catalogue made with it.
+            kin = ""
+            if any(spec.get(key) == value for key, value in ALSO_MADE):
+                try:
+                    page.wait_for_function(
+                        "() => document.getElementById('kin')"
+                        ".textContent.includes('Also made as')",
+                        timeout=30000,
+                    )
+                    kin = "  also made as others"
+                except Exception:
+                    ok, kin = False, "  no kin shown"
             failures += not ok
             print(
                 f"{'ok  ' if ok else 'FAIL'} {spec['source']:9} "
                 f"{time.time() - started:5.1f}s  {status}  "
-                f"{drawn} of {n_yarns} yarns drawn"
+                f"{drawn} of {n_yarns} yarns drawn{kin}"
                 + (f"  errors: {errors}" if errors else "")
             )
             if args.screenshots:

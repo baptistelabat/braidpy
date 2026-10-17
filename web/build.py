@@ -7,7 +7,9 @@
 The page is plain files: the page itself, three.js, and braidpy as a wheel
 for Pyodide to install in the browser — with math_braid, which braidpy
 needs and PyPI has only as a source package.  Pyodide itself is loaded from
-its CDN, or from wherever ``?pyodide=`` says.
+its CDN, or from wherever ``?pyodide=`` says.  With them, the catalogue of
+braids by topology (:mod:`braidpy.topology_catalog`), made here once rather
+than in every browser: some ten seconds here, minutes there.
 
 Run from the repository root, after ``npm install`` in ``web/``::
 
@@ -122,6 +124,21 @@ def _copy_page(site: Path) -> None:
         (site / name).write_text(_NAMED.sub(stamp, text))
 
 
+def _topologies(site: Path) -> None:
+    """The catalogue of braids by topology, as JSON: made by braidpy with
+    all it needs, in the project's own environment."""
+    script = (
+        "import json, sys; from braidpy.topology_catalog import export; "
+        "json.dump(export(), sys.stdout)"
+    )
+    if shutil.which("uv"):
+        command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
+    else:
+        command = [sys.executable, "-c", script]
+    made = subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+    (site / "topologies.json").write_text(made.stdout)
+
+
 def build(site: Path) -> None:
     if not (THREE / "build" / "three.module.js").exists():
         raise SystemExit("three.js is missing: run `npm install` in web/ first.")
@@ -130,6 +147,7 @@ def build(site: Path) -> None:
     site.mkdir(parents=True)
 
     _copy_page(site)
+    _topologies(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")

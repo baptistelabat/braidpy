@@ -8,6 +8,7 @@
 // from where it was when more of it is asked for.
 
 import { onChosen, rebase } from "./colours.js";
+import { showKin } from "./info.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
 import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
@@ -49,6 +50,8 @@ startSettler();
 const madeBefore = new Map();
 const KEEP = 12;
 const keys = new Map(); // id -> what it was made from
+// Each braid's kin, by what it was made from, for when it is shown again.
+const kinOf = new Map();
 
 worker.onmessage = ({ data }) => {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
@@ -81,6 +84,13 @@ function heard(data) {
     $("build").disabled = false;
     $("build").textContent = "Braid";
     submit();
+  } else if (data.type === "kin") {
+    if (data.id !== pending) return;
+    if (keys.has(data.id)) {
+      kinOf.set(keys.get(data.id), data.kin);
+      if (kinOf.size > KEEP) kinOf.delete(kinOf.keys().next().value);
+    }
+    showKin(data.kin);
   } else if (data.type === "geometry") {
     machineShapes.set(data.name, data.shape);
     if (data.name === machineWanted) document.dispatchEvent(new CustomEvent("machine-shape"));
@@ -143,6 +153,7 @@ export function submit() {
   history.replaceState(null, "", "#" + new URLSearchParams(spec).toString());
   const key = JSON.stringify(spec, Object.keys(spec).sort());
   keys.set(pending, key);
+  showKin(kinOf.get(key));
   if (madeBefore.has(key)) {
     const result = madeBefore.get(key);
     madeBefore.delete(key);
