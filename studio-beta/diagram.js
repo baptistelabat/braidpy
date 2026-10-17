@@ -2,16 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import { strandColour } from "./colours.js?v=cf8bf106c6";
+import { PALETTE, strandColour } from "./colours.js?v=6acbd58c1f";
 
 // A braid word drawn as it is typed, before it is made: flat, or round a
 // ring.
 
-// The colours braidpy gives a word's strands (braidpy.web._result._PALETTE).
-export const PALETTE = [
-  "#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628",
-  "#f781bf", "#999999", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3",
-];
 
 // braidpy.web.parse_word, in JavaScript: 1 -2, s1 s2^-1 or aB.
 function parseWord(text) {

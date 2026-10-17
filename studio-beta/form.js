@@ -51,7 +51,7 @@
   "use strict";
 
   const { relay, nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads } =
-    root.yarnMechanics || require("./rope.js?v=cf8bf106c6").yarnMechanics;
+    root.yarnMechanics || require("./rope.js?v=6acbd58c1f").yarnMechanics;
 
   /**
    * @param {Object} job

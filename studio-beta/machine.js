@@ -5,9 +5,8 @@
 // A braiding machine seen from above, to load it by hand: a click puts a
 // carrier on a slot or takes it off, and carriers that met are ringed.
 
-import { strandColour } from "./colours.js?v=cf8bf106c6";
-import { PALETTE } from "./diagram.js?v=cf8bf106c6";
-import { worker } from "./workers.js?v=cf8bf106c6";
+import { PALETTE, strandColour } from "./colours.js?v=6acbd58c1f";
+import { worker } from "./workers.js?v=6acbd58c1f";
 
 // A machine seen from above as it starts, to load by hand: its gears, the
 // contacts between them, and every slot, a carrier on it or not.  Clicking a

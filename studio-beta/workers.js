@@ -7,21 +7,21 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=cf8bf106c6";
-import { showKin } from "./info.js?v=cf8bf106c6";
+import { onChosen, rebase } from "./colours.js?v=6acbd58c1f";
+import { showKin } from "./info.js?v=6acbd58c1f";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=cf8bf106c6";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=cf8bf106c6";
-import { machineShapes, machineWanted } from "./machine.js?v=cf8bf106c6";
-import { $ } from "./page.js?v=cf8bf106c6";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=cf8bf106c6";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=cf8bf106c6";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=6acbd58c1f";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=6acbd58c1f";
+import { machineShapes, machineWanted } from "./machine.js?v=6acbd58c1f";
+import { $ } from "./page.js?v=6acbd58c1f";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=6acbd58c1f";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=6acbd58c1f";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=cf8bf106c6");
+export const worker = new Worker("worker.js?v=6acbd58c1f");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -36,7 +36,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=cf8bf106c6");
+  settler = new Worker("settle.js?v=6acbd58c1f");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
