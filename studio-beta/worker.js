@@ -81,13 +81,14 @@ async function build(id, spec) {
   // rolled onto a ring — is made on a marudai, the closest to a real braid;
   // any other is tightened sideways.
   let settle = (spec.settle ?? "auto") === "auto" ? (result.disk ? "marudai" : "sideways") : spec.settle;
-  const disk = result.timeline?.kind === "disk";
-  if (job && settle !== "sideways" && !(settle === "marudai" ? result.disk : disk)) {
+  // By physics, every yarn is a yarn: a rigid core is not held rigid.
+  const rigid = job?.rigid?.some(Boolean);
+  if (job && settle !== "sideways" && (settle === "marudai" ? !result.disk : rigid)) {
     result.notes = [
       ...(result.notes || []),
       settle === "marudai"
         ? "Only disk braids and braid words are made on a marudai for now: these yarns were tightened sideways."
-        : "Settling by physics is for disk braids for now: these yarns were tightened sideways.",
+        : "Settled by physics, a rigid core would bend as a yarn does: these yarns were tightened sideways.",
     ];
     settle = "sideways";
   }

@@ -9,7 +9,7 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet or a braiding machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=0e16307d69" />
+    <link rel="stylesheet" href="style.css?v=613ec263e5" />
     <script type="importmap">
       {
         "imports": {
@@ -18,7 +18,7 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=0e16307d69"></script>
+    <script type="module" src="app.js?v=613ec263e5"></script>
   </head>
   <body>
     <aside class="panel">
@@ -73,7 +73,7 @@
               <option value="physics">Physics: beaten up until it jams (beta)</option>
               <option value="crossing">Physics: made crossing by crossing, with friction, then settled (beta)</option>
             </select>
-            <small>The marudai takes disk braids and braid words; physics, disk braids only.</small>
+            <small>The marudai takes disk braids and braid words; physics, any braid but one round rigid cores.</small>
           </label>
           <label class="field">
             <span>Twist</span>
@@ -107,9 +107,17 @@
           Give a strand its own colour and it changes everywhere it is drawn.
         </p>
         <ul id="strand-list" class="strands"></ul>
+        <!-- One colour box for the whole list: see web/colours.js. -->
+        <input id="strand-colour" type="color" class="offscreen" tabindex="-1" aria-hidden="true" />
       </section>
 
       <footer>
+        <p class="support">
+          <a class="support-button" href="https://github.com/sponsors/baptistelabat" target="_blank" rel="noopener"
+            >Sponsor braidpy</a
+          >
+          braidpy is built with Claude Code: sponsoring it helps pay for that.
+        </p>
         <p>
           Everything is computed here, in your browser: Python runs through
           <a href="https://pyodide.org">Pyodide</a>, drawing through

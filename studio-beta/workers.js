@@ -7,20 +7,20 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=0e16307d69";
+import { onChosen, rebase } from "./colours.js?v=613ec263e5";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=0e16307d69";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=0e16307d69";
-import { machineShapes, machineWanted } from "./machine.js?v=0e16307d69";
-import { $ } from "./page.js?v=0e16307d69";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=0e16307d69";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=0e16307d69";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=613ec263e5";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=613ec263e5";
+import { machineShapes, machineWanted } from "./machine.js?v=613ec263e5";
+import { $ } from "./page.js?v=613ec263e5";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=613ec263e5";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=613ec263e5";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=0e16307d69");
+export const worker = new Worker("worker.js?v=613ec263e5");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -35,7 +35,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=0e16307d69");
+  settler = new Worker("settle.js?v=613ec263e5");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -156,7 +156,8 @@ export function submit() {
 // A colour chosen by hand belongs to the braid asked for, so the link keeps
 // it — written again without making anything, since nothing has changed but
 // what the strands are painted with.
-onChosen(() => {
+onChosen((saved) => {
+  if (!saved) return;
   history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
 });
 
