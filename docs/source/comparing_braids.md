@@ -101,11 +101,12 @@ from braidpy.topology_catalog import topology_of
 
 plait = topology_of("machine", "flat_3")
 [m.key for m in plait.methods]
-# ['word:flat3', 'word:inverted_flat3', 'machine:flat_3']
+# ['word:flat3', 'word:inverted_flat3', 'sinnet:abok_2965', 'machine:flat_3']
 ```
 
-The plait is a braid word, the Dutch braid (the plait seen from behind) and
-what a three-carrier flat braiding machine makes. For a braid of your own,
+The plait is a braid word, the Dutch braid (the plait seen from behind),
+Ashley's #2965 worked on his stand, and what a three-carrier flat braiding
+machine makes. For a braid of your own,
 {func}`~braidpy.topology_catalog.related` gives the topologies nearest it, and
 with each the ways to make it.
 

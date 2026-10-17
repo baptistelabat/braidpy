@@ -9,8 +9,8 @@ Every other catalogue lists braids by how they are made: as a braid word
 (:mod:`braidpy.mobidai_catalog`), as one of Ashley's solid sinnets
 (:mod:`braidpy.solid_sinnets_catalog`), on a braiding machine
 (:mod:`braidpy.machine_catalog`).  Different ways can make the same braid:
-the plait is a braid word, and what a three-carrier flat braiding machine
-makes.  This catalogue lists braids by what they are — their
+the plait is a braid word, Ashley's #2965 on his stand, and what a
+three-carrier flat braiding machine makes.  This catalogue lists braids by what they are — their
 :func:`~braidpy.similarity.fingerprint` — each pointing to every way of
 making it, and each way pointing back (:func:`topology_of`).  For a braid
 of your own, :func:`related` gives the topologies nearest it.

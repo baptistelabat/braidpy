@@ -8,6 +8,42 @@ from typing import Dict
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.catalogue import Entry
 
+"""The simplest sinnets, worked the same way on the stand: Ashley's stand,
+like a marudai, makes the plait and the square and round sinnets as well
+as the solid sinnets it is in the book for, and seeing them made there
+helps to understand the bigger ones."""
+
+"""
+ABOK #2965
+3-strand flat
+The plait.
+"""
+abok_2965 = AshleySolidSinnet(
+    shape="flat",
+    initial_counts_per_space=[2, 1],
+    moves=[(1, 2), (2, 1)],
+)
+
+"""
+ABOK #2999
+4-strand square
+"""
+abok_2999 = AshleySolidSinnet(
+    shape="square",
+    initial_counts_per_space=[1, 1, 1, 1],
+    moves=[(1, 3), (3, 1), (2, 4), (4, 2)],
+)
+
+"""
+ABOK #3021
+6-strand round
+"""
+abok_3021 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[1, 1, 1, 1, 1, 1],
+    moves=[(1, 3), (3, 5), (5, 1), (2, 6), (6, 4), (4, 2)],
+)
+
 """
 ABOK #3042
 8-strand round
