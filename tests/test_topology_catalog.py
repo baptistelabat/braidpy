@@ -14,14 +14,15 @@ from braidpy.topology_catalog import (
 )
 
 
-def test_the_plait_is_made_three_ways():
-    """A braid word, the Dutch braid — the plait seen from behind — and a
-    three-carrier flat braiding machine all make the plait."""
+def test_the_plait_is_made_four_ways():
+    """A braid word, the Dutch braid — the plait seen from behind — Ashley's
+    stand and a three-carrier flat braiding machine all make the plait."""
     plait = topology_of("machine", "flat_3")
     assert plait is not None
     assert {m.key for m in plait.methods} == {
         "word:flat3",
         "word:inverted_flat3",
+        "sinnet:abok_2965",
         "machine:flat_3",
     }
 

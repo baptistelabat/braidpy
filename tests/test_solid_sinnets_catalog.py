@@ -23,7 +23,7 @@ def _catalogue():
 
 
 def test_the_catalogue_loads_all_its_sinnets():
-    assert len(_catalogue()) == 13
+    assert len(_catalogue()) == 16
 
 
 @pytest.mark.parametrize("name", sorted(_catalogue()))
@@ -59,3 +59,17 @@ def test_every_sinnet_has_the_shape_the_book_gives_it():
         sinnet = _catalogue()[f"abok_{number}"]
         assert sinnet.shape == shape
         assert sinnet.n_strands == int(strands)
+
+
+@pytest.mark.parametrize(
+    "sinnet, word",
+    [("abok_2965", "flat3"), ("abok_2999", "square4")],
+)
+def test_the_simplest_sinnets_are_the_braids_they_are_named_for(sinnet, word):
+    """Worked on Ashley's stand, the plait and the square sinnet are the
+    braids their braid words make: nothing measured tells them apart."""
+    from braidpy.braid_catalog import CATALOGUE as WORDS
+    from braidpy.similarity import fingerprint, same_fingerprint
+
+    made = _catalogue()[sinnet].braid(1)
+    assert same_fingerprint(fingerprint(made), fingerprint(WORDS[word].make()))
