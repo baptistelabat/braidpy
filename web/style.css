@@ -347,6 +347,38 @@ button:disabled {
   padding: 2px 8px;
 }
 
+/* The braid's kin: other ways of making it, and braids like it. */
+.kin h3 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kin ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.kin li {
+  margin: 2px 0;
+}
+
+.kin button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.kin .muted {
+  color: var(--muted);
+}
+
 .notes {
   margin: 10px 0 0;
   padding-left: 18px;

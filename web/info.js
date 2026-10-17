@@ -3,8 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // The card beside the braid: what is known of it, its words to copy or
-// make again, and notes.
+// make again, the other ways of making it and the braids nearest it, and
+// notes.
 
+import { catalogue } from "./fields.js";
 import { $, round } from "./page.js";
 import { lastResult } from "./scene.js";
 import { writeSpec } from "./spec.js";
@@ -83,6 +85,55 @@ export function describe(result, seconds) {
       return item;
     }),
   );
+}
+
+// The braid's kin (braidpy.topology_catalog.for_page): every other way of
+// making the same braid, and the braids nearest it, each a button to make
+// it.  None: nothing known yet, nothing shown.
+export function showKin(kin) {
+  const box = $("kin");
+  box.replaceChildren();
+  if (!kin) return;
+  const lists = [
+    [
+      "Also made as",
+      kin.same,
+      "The same braid, made another way: nothing braidpy measures tells them apart",
+    ],
+    [
+      "Nearest braids",
+      kin.near,
+      "Braids of the catalogues most like this one, by their topology — strands, loops, crossings, linking and Alexander polynomial — whatever way each is made",
+    ],
+  ];
+  for (const [heading, methods, about] of lists) {
+    if (!methods.length) continue;
+    const title = document.createElement("h3");
+    title.textContent = heading;
+    title.title = about;
+    const list = document.createElement("ul");
+    for (const method of methods) {
+      const item = document.createElement("li");
+      const make = document.createElement("button");
+      make.type = "button";
+      make.className = "link";
+      make.textContent = method.title;
+      make.title = `Make it: ${method.title}`;
+      make.addEventListener("click", () => {
+        writeSpec(method.spec);
+        submit();
+      });
+      const from = document.createElement("span");
+      from.className = "muted";
+      const source = catalogue[method.source]?.title ?? method.source;
+      from.textContent =
+        method.distance === undefined ? ` ${source}` : ` ${source} · ${method.distance}`;
+      if (method.distance !== undefined) from.title = "How unlike: 0 the same, up to 5";
+      item.append(make, from);
+      list.append(item);
+    }
+    box.append(title, list);
+  }
 }
 
 // A braid's own word, to make again as a braid word — the same braid — or

@@ -111,8 +111,13 @@ The page has a form and a 3D view.
   normal form and full twists, how close the yarns come.
   Long words show three lines; **Make from it** makes the braid again from
   its own word or ring word, as a braid word — the same braid, made on the
-  marudai much as the disk made it — and **Copy** copies it. The braid is
-  drawn in the middle of what the card leaves free.
+  marudai much as the disk made it — and **Copy** copies it. Under them,
+  **Also made as** lists every other way the catalogues make the same braid
+  — the plait typed as a word is also the three-carrier flat machine's — and
+  **Nearest braids** the braids of the catalogues most like it, whatever
+  makes them, each with how unlike it is; your own braid too, found by its
+  fingerprint ({doc}`comparing_braids`). Each is a link that makes it. The
+  braid is drawn in the middle of what the card leaves free.
 - A braid word or ring word is made on the marudai hanging free, as a disk
   braid is; when the bobbins turn together it is held while they turn,
   twisting the yarns in, and a word of nothing but turns — a rope — is held
@@ -199,13 +204,15 @@ static files, published with the documentation.
   info card (`info.js`) and the view's controls (`controls.js`).
 - `web/build.py` assembles the site in `web/site/`. It copies the page, each
   of its files naming the others with the page's version, so a browser never
-  mixes old files with new ones, and three.js; and builds the wheels, math_braid's from its source package,
-  since PyPI has no wheel of it.
+  mixes old files with new ones, and three.js; builds the wheels, math_braid's from its source package,
+  since PyPI has no wheel of it; and writes `topologies.json`, the catalogue
+  of braids by topology, made once here rather than in every browser.
 - `web/smoke_test.py` serves the site, opens it in a headless browser and
   makes a braid of every kind there.
 - `.github/workflows/braid_studio.yml` builds and smoke-tests the site on
   every pull request touching braidpy or the page. On `develop`, it publishes
-  the site to `gh-pages` under `studio/`, beside the documentation.
+  the site to `gh-pages` under `studio/`, beside the documentation; on the
+  branch it lists beside `develop`, under `studio-beta/`.
 
 ### Why not a JavaScript port, or a Python server?
 
