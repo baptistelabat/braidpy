@@ -15,7 +15,7 @@
 // were made; only what they are painted with changes, so it is immediate
 // however long the braid took.
 
-import { $ } from "./page.js?v=613ec263e5";
+import { $ } from "./page.js?v=cf8bf106c6";
 
 // Colour chosen per strand, by its place in the braid; null where none was.
 let chosen = [];

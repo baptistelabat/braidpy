@@ -7,20 +7,21 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=613ec263e5";
+import { onChosen, rebase } from "./colours.js?v=cf8bf106c6";
+import { showKin } from "./info.js?v=cf8bf106c6";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=613ec263e5";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=613ec263e5";
-import { machineShapes, machineWanted } from "./machine.js?v=613ec263e5";
-import { $ } from "./page.js?v=613ec263e5";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=613ec263e5";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=613ec263e5";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=cf8bf106c6";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=cf8bf106c6";
+import { machineShapes, machineWanted } from "./machine.js?v=cf8bf106c6";
+import { $ } from "./page.js?v=cf8bf106c6";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=cf8bf106c6";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=cf8bf106c6";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=613ec263e5");
+export const worker = new Worker("worker.js?v=cf8bf106c6");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -35,7 +36,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=613ec263e5");
+  settler = new Worker("settle.js?v=cf8bf106c6");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -49,6 +50,8 @@ startSettler();
 const madeBefore = new Map();
 const KEEP = 12;
 const keys = new Map(); // id -> what it was made from
+// Each braid's kin, by what it was made from, for when it is shown again.
+const kinOf = new Map();
 
 worker.onmessage = ({ data }) => {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
@@ -81,6 +84,13 @@ function heard(data) {
     $("build").disabled = false;
     $("build").textContent = "Braid";
     submit();
+  } else if (data.type === "kin") {
+    if (data.id !== pending) return;
+    if (keys.has(data.id)) {
+      kinOf.set(keys.get(data.id), data.kin);
+      if (kinOf.size > KEEP) kinOf.delete(kinOf.keys().next().value);
+    }
+    showKin(data.kin);
   } else if (data.type === "geometry") {
     machineShapes.set(data.name, data.shape);
     if (data.name === machineWanted) document.dispatchEvent(new CustomEvent("machine-shape"));
@@ -143,6 +153,7 @@ export function submit() {
   history.replaceState(null, "", "#" + new URLSearchParams(spec).toString());
   const key = JSON.stringify(spec, Object.keys(spec).sort());
   keys.set(pending, key);
+  showKin(kinOf.get(key));
   if (madeBefore.has(key)) {
     const result = madeBefore.get(key);
     madeBefore.delete(key);
