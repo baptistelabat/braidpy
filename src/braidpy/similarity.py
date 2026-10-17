@@ -45,7 +45,14 @@ from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 from braidpy.braid import Braid
 
-__all__ = ["Fingerprint", "distance", "fingerprint", "home", "similar"]
+__all__ = [
+    "Fingerprint",
+    "distance",
+    "fingerprint",
+    "home",
+    "same_fingerprint",
+    "similar",
+]
 
 # Where the Alexander polynomial is sampled: e^{iθ}, θ not a rational
 # multiple of π.
@@ -157,8 +164,17 @@ class Match:
     same_fingerprint: bool
 
 
-def _close(a: Fingerprint, b: Fingerprint) -> bool:
-    """The same fingerprint, the Alexander samples but for rounding."""
+def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
+    """Whether two fingerprints are the same, the Alexander polynomial's
+    samples but for rounding: nothing measured tells the braids apart.
+
+    Args:
+        a: A fingerprint.
+        b: Another.
+
+    Returns:
+        True if they are the same.
+    """
     if (a.n_strands, a.loops, a.writhe, a.linking) != (
         b.n_strands,
         b.loops,
@@ -203,6 +219,8 @@ def similar(
     found = []
     for name, other in candidates.items():
         theirs = fingerprint(other)
-        found.append(Match(name, distance(mine, theirs), _close(mine, theirs)))
+        found.append(
+            Match(name, distance(mine, theirs), same_fingerprint(mine, theirs))
+        )
     found.sort(key=lambda m: (not m.same_fingerprint, m.distance, m.name))
     return found[:count]
