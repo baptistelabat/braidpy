@@ -7,15 +7,15 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=5bdea3790c";
-import { showKin } from "./info.js?v=5bdea3790c";
+import { onChosen, rebase } from "./colours.js?v=fa6d1dca3a";
+import { showKin } from "./info.js?v=fa6d1dca3a";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=5bdea3790c";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=5bdea3790c";
-import { machineShapes, machineWanted } from "./machine.js?v=5bdea3790c";
-import { $ } from "./page.js?v=5bdea3790c";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=5bdea3790c";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=5bdea3790c";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=fa6d1dca3a";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=fa6d1dca3a";
+import { machineShapes, machineWanted } from "./machine.js?v=fa6d1dca3a";
+import { $ } from "./page.js?v=fa6d1dca3a";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=fa6d1dca3a";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=fa6d1dca3a";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -33,7 +33,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=5bdea3790c");
+  settler = new Worker("settle.js?v=fa6d1dca3a");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -80,6 +80,9 @@ function heard(data) {
       if (kinOf.size > KEEP) kinOf.delete(kinOf.keys().next().value);
     }
     showKin(data.kin);
+  } else if (data.type === "turned" || data.type === "origin") {
+    // The machine's handle, turned by hand: for machine.js.
+    document.dispatchEvent(new CustomEvent(`machine-${data.type}`, { detail: data }));
   } else if (data.type === "geometry") {
     machineShapes.set(data.name, data.shape);
     if (data.name === machineWanted) document.dispatchEvent(new CustomEvent("machine-shape"));
