@@ -215,8 +215,9 @@ static files, published with the documentation.
 - `web/build.py` assembles the site in `web/site/`. It copies the page, each
   of its files naming the others with the page's version, so a browser never
   mixes old files with new ones, and three.js; builds the wheels, math_braid's from its source package,
-  since PyPI has no wheel of it; and writes `topologies.json`, the catalogue
-  of braids by topology, made once here rather than in every browser.
+  since PyPI has no wheel of it; and writes `catalogue.json`, what the page
+  can make, and `topologies.json`, the catalogue of braids by topology, made
+  once here rather than in every browser.
 - `web/smoke_test.py` serves the site, opens it in a headless browser and
   makes a braid of every kind there.
 - `.github/workflows/braid_studio.yml` builds and smoke-tests the site on
@@ -249,6 +250,19 @@ therefore imports them only when something is drawn with them
 import in a browser and needed only for Burau matrices and comparing braids;
 a test checks that building any braid loads none of them. The page loads
 numpy, plus networkx for the machines when one is first chosen.
+
+A first visit still downloads some 9 MB, compressed: Python itself (3 MB),
+its standard library (2 MB), numpy (3 MB), braidpy and three.js. The
+browser keeps them — Pyodide's CDN lets it for a year — so a later visit
+starts from its cache, and shows a braid in some three seconds, most of it
+Python starting. So that the downloads overlap rather than follow one
+another, braidpy's worker is started by the page's first lines, before
+three.js and the page's own modules load, and it fetches numpy, braidpy and
+the catalogue by topology while Python starts. The form does not wait for
+Python at all: what the page can make — every source, its braids and
+defaults — is written with the site (`catalogue.json`), so the menu and
+fields are there at once, and a braid chosen before Python is ready is the
+one made when it is.
 
 ## Trying it locally
 

@@ -36,22 +36,39 @@ function status(text) {
   self.postMessage({ type: "status", text });
 }
 
+// Fetched for the browser to keep, nothing more: Pyodide, asking for it
+// later, finds it in the browser's cache, or on its way there.
+function prefetch(url) {
+  return fetch(url)
+    .then((response) => response.arrayBuffer())
+    .catch(() => {});
+}
+
 async function init(pyodideUrl) {
+  // What braidpy needs is fetched while Python starts, rather than after:
+  // numpy, braidpy's wheels and the catalogue by topology.
+  const base = new URL("wheels/", self.location.href);
+  const manifest = fetch(new URL("manifest.json", base)).then((r) => r.json());
+  manifest.then((m) => m.wheels.forEach((wheel) => prefetch(new URL(wheel, base))));
+  fetch(pyodideUrl + "pyodide-lock.json")
+    .then((r) => r.json())
+    .then((lock) => prefetch(pyodideUrl + lock.packages.numpy.file_name))
+    .catch(() => {});
+  const topologiesFound = fetch(new URL("topologies.json", self.location.href), {
+    cache: "no-cache",
+  }).catch(() => null);
+
   status("Loading Python…");
   importScripts(pyodideUrl + "pyodide.js");
   pyodide = await loadPyodide({ indexURL: pyodideUrl });
 
-  status("Loading numpy…");
-  await pyodide.loadPackage(["numpy"], { messageCallback: () => {} });
-
   status("Loading braidpy…");
-  const base = new URL("wheels/", self.location.href);
-  const manifest = await (await fetch(new URL("manifest.json", base))).json();
   // Installed as they are, without resolving what they ask for: braidpy's
   // other dependencies are for drawing, which the page does itself, or for
   // what the page does not ask of it (sympy, for Burau matrices).
+  const { wheels } = await manifest;
   await pyodide.loadPackage(
-    manifest.wheels.map((wheel) => new URL(wheel, base).href),
+    ["numpy", ...wheels.map((wheel) => new URL(wheel, base).href)],
     { messageCallback: () => {} },
   );
 
@@ -65,10 +82,8 @@ from braidpy import web
     await pyodide.runPythonAsync("json.dumps(web.catalogue())"),
   );
   try {
-    const found = await fetch(new URL("topologies.json", self.location.href), {
-      cache: "no-cache",
-    });
-    if (found.ok) {
+    const found = await topologiesFound;
+    if (found?.ok) {
       pyodide.globals.set("topologies_json", await found.text());
       await pyodide.runPythonAsync(`
 from braidpy import topology_catalog
@@ -80,7 +95,7 @@ del topologies_json
   } catch {
     topologies = false;
   }
-  self.postMessage({ type: "ready", catalogue, version: manifest.version });
+  self.postMessage({ type: "ready", catalogue, version: (await manifest).version });
 }
 
 // The newest braid asked for: one asked for before it is not laid.
