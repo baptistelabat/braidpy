@@ -7,21 +7,18 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=93b1dd9f56";
-import { showKin } from "./info.js?v=93b1dd9f56";
+import { onChosen, rebase } from "./colours.js?v=fa6d1dca3a";
+import { showKin } from "./info.js?v=fa6d1dca3a";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=93b1dd9f56";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=93b1dd9f56";
-import { machineShapes, machineWanted } from "./machine.js?v=93b1dd9f56";
-import { $ } from "./page.js?v=93b1dd9f56";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=93b1dd9f56";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=93b1dd9f56";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=fa6d1dca3a";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=fa6d1dca3a";
+import { machineShapes, machineWanted } from "./machine.js?v=fa6d1dca3a";
+import { $ } from "./page.js?v=fa6d1dca3a";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=fa6d1dca3a";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=fa6d1dca3a";
 
-const PYODIDE_URL =
-  new URLSearchParams(location.search).get("pyodide") ||
-  "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
-
-export const worker = new Worker("worker.js?v=93b1dd9f56");
+// Started by the page itself, before its modules (index.html).
+export const worker = window.braidpy.worker;
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -36,7 +33,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=93b1dd9f56");
+  settler = new Worker("settle.js?v=fa6d1dca3a");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -53,7 +50,7 @@ const keys = new Map(); // id -> what it was made from
 // Each braid's kin, by what it was made from, for when it is shown again.
 const kinOf = new Map();
 
-worker.onmessage = ({ data }) => {
+function fromBraidpy({ data }) {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
   // was being settled unless it can go on from it, on the marudai.
   if (data.type === "laid" && "settle" in data) {
@@ -66,21 +63,13 @@ worker.onmessage = ({ data }) => {
     return;
   }
   heard(data);
-};
+}
 
 function heard(data) {
   if (data.type === "status") {
     setStatus(data.text);
   } else if (data.type === "ready") {
-    setCatalogue(data.catalogue);
-    const select = $("source");
-    const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
-    for (const [source, about] of Object.entries(catalogue)) {
-      // Out of the menu for now, but still made from a link to it.
-      if (UNLISTED.has(source) && spec.source !== source) continue;
-      select.append(new Option(about.title, source));
-    }
-    writeSpec(spec);
+    offer(data.catalogue);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     submit();
@@ -136,7 +125,28 @@ function heard(data) {
   }
 }
 
-worker.postMessage({ type: "init", pyodideUrl: PYODIDE_URL });
+// The form, filled with what can be made as soon as that is known: from
+// the site (catalogue.json), long before braidpy is ready to make any of
+// it — or, without it, from braidpy when it is.
+let offered = false;
+function offer(sources) {
+  if (offered || !sources) return;
+  offered = true;
+  setCatalogue(sources);
+  const select = $("source");
+  const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
+  for (const [source, about] of Object.entries(catalogue)) {
+    // Out of the menu for now, but still made from a link to it.
+    if (UNLISTED.has(source) && spec.source !== source) continue;
+    select.append(new Option(about.title, source));
+  }
+  writeSpec(spec);
+}
+window.braidpy.catalogue.then(offer);
+
+// What braidpy said while the page loaded, then the rest as it comes.
+worker.onmessage = fromBraidpy;
+for (const data of window.braidpy.early.splice(0)) fromBraidpy({ data });
 
 // Published as a beta, it says so.
 if (location.pathname.includes("/studio-beta/")) {
