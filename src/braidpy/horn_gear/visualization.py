@@ -1039,6 +1039,37 @@ def animate(
             showlegend=False,
         )
 
+    def _met_trace(state: MachineState) -> go.BaseTraceType:
+        """The carriers that met, ringed, at the step they met; nothing at
+        any other."""
+        xs, ys = [], []
+        if collision_info is not None and state.time == collision_info.step:
+            for c in state.carriers:
+                if c.position in collision_info.collisions:
+                    x, y = carrier_xy(
+                        machine,
+                        layout_pos,
+                        offsets,
+                        carrier_radii,
+                        c.position,
+                        state.time,
+                    )
+                    xs.append(x)
+                    ys.append(y)
+        return go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers",
+            marker=dict(
+                size=[2 * max(bobbin_sizes.values())] * len(xs),
+                color="rgba(0,0,0,0)",
+                line=dict(width=3, color="#d62728"),
+            ),
+            hoverinfo="skip",
+            name="Met",
+            showlegend=False,
+        )
+
     def _build(
         state: MachineState, frac: float
     ) -> Tuple[List[go.BaseTraceType], List[bool]]:
@@ -1067,6 +1098,9 @@ def animate(
                 ),
                 card_changes,
             ),
+            # Under the carriers, wider than them: the carriers stay the last
+            # thing drawn.  Empty all the way through unless carriers met.
+            ([_met_trace(state)], collision_info is not None),
             ([_carrier_trace(state, frac)], True),
         ]
         traces: List[go.BaseTraceType] = []
@@ -1097,7 +1131,8 @@ def animate(
     # One cycle ends where it began, so its closing frame is the opening one
     # over again and is left out: the animation loops without a hiccup.  A run
     # that stops mid-cycle keeps it, so the last step is actually shown.
-    closes = (
+    # Not turned at all, there is one picture: the machine as loaded.
+    closes = n_steps > 0 and (
         carrier_places(machine, history[n_steps]) == carrier_places(machine, history[0])
         and n_steps % _phases == 0
     )

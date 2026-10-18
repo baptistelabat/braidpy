@@ -91,6 +91,9 @@ function heard(data) {
       if (kinOf.size > KEEP) kinOf.delete(kinOf.keys().next().value);
     }
     showKin(data.kin);
+  } else if (data.type === "turned" || data.type === "origin") {
+    // The machine's handle, turned by hand: for machine.js.
+    document.dispatchEvent(new CustomEvent(`machine-${data.type}`, { detail: data }));
   } else if (data.type === "geometry") {
     machineShapes.set(data.name, data.shape);
     if (data.name === machineWanted) document.dispatchEvent(new CustomEvent("machine-shape"));

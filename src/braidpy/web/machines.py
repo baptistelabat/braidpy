@@ -9,6 +9,7 @@ draws it from above, to load it by hand."""
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from typing import Any, Callable, Collection, Dict, Hashable, List, Optional, Tuple
 
 from braidpy.web._info import _braid_info
@@ -16,7 +17,14 @@ from braidpy.utils import PALETTE
 from braidpy.web._result import _result, _tighten, _timeline
 from braidpy.web._settings import Machine
 from braidpy.web._spec import defaults
-from braidpy.web._types import Info, MachineGeometry, Result, Source, Spec
+from braidpy.web._types import (
+    Info,
+    MachineGeometry,
+    MachineTurned,
+    Result,
+    Source,
+    Spec,
+)
 
 
 def _machines():
@@ -223,6 +231,77 @@ def machine_geometry(name: str) -> MachineGeometry:
         ],
         "loading": [[own[k][0], int(own[k][1])] for k in sorted(own)],
     }
+
+
+@lru_cache(maxsize=4)
+def _worked(name: str) -> Tuple[Any, Any]:
+    """A machine to turn by hand, and its drawing: made once."""
+    from braidpy.horn_gear.handle import drawing
+
+    machines = _machines()
+    if name not in machines:
+        raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
+    machine = machines[name].make()
+    return machine, drawing(machine)
+
+
+def machine_turned(
+    name: str, loading: List[List[Any]], time: int, frames: int = 8
+) -> MachineTurned:
+    """A machine's handle turned ``time`` steps by hand, as the page shows
+    it (see :mod:`braidpy.horn_gear.handle`): stopped where carriers meet,
+    and drawn through the next step, for the page to turn it smoothly.
+
+    Args:
+        name: The machine.
+        loading: The carriers at step 0, as (gear, slot).
+        time: How many steps to turn.
+        frames: Pictures of the next step.
+
+    Returns:
+        ``time``, the step reached; ``carriers`` there, in the loading's
+        order; ``met``, where carriers met, if they did; ``slots``, every
+        slot gear by gear; and ``frames``, the slots' and carriers' places
+        through the next step, the first at the step reached.
+    """
+    from braidpy.horn_gear.handle import sweep, turn
+
+    machine, drawn = _worked(name)
+    turned = turn(machine, [(str(g), int(s)) for g, s in loading], int(time))
+    slots, slot_xy, carrier_xy = sweep(machine, turned.state, frames, drawn)
+
+    def rounded(points: List[List[float]]) -> List[List[float]]:
+        return [[round(x, 4), round(y, 4)] for x, y in points]
+
+    return {
+        "time": turned.time,
+        "carriers": [[g, int(s)] for g, s in turned.positions],
+        "met": [[g, int(s)] for g, s in turned.met],
+        "slots": [[g, int(s)] for g, s in slots],
+        "frames": [
+            {"slots": rounded(slot_xy[k]), "carriers": rounded(carrier_xy[k])}
+            for k in range(frames)
+        ],
+    }
+
+
+def machine_origin(name: str, place: List[Any], time: int) -> Optional[List[Any]]:
+    """The slot at step 0 whose carrier is at ``place`` at step ``time``:
+    where a carrier put on the machine there goes in its loading.
+
+    Args:
+        name: The machine.
+        place: As (gear, slot), at step ``time``.
+        time: The step.
+
+    Returns:
+        (gear, slot) at step 0; None if no slot leads there.
+    """
+    from braidpy.horn_gear.handle import origin
+
+    machine, _ = _worked(name)
+    found = origin(machine, (str(place[0]), int(place[1])), int(time))
+    return None if found is None else [found[0], int(found[1])]
 
 
 def _place_cores(paths, cores: Collection[Hashable]):
