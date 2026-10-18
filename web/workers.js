@@ -17,11 +17,8 @@ import { $ } from "./page.js";
 import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js";
 import { readSpec, specFromHash, writeSpec } from "./spec.js";
 
-const PYODIDE_URL =
-  new URLSearchParams(location.search).get("pyodide") ||
-  "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
-
-export const worker = new Worker("worker.js");
+// Started by the page itself, before its modules (index.html).
+export const worker = window.braidpy.worker;
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -53,7 +50,7 @@ const keys = new Map(); // id -> what it was made from
 // Each braid's kin, by what it was made from, for when it is shown again.
 const kinOf = new Map();
 
-worker.onmessage = ({ data }) => {
+function fromBraidpy({ data }) {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
   // was being settled unless it can go on from it, on the marudai.
   if (data.type === "laid" && "settle" in data) {
@@ -66,7 +63,7 @@ worker.onmessage = ({ data }) => {
     return;
   }
   heard(data);
-};
+}
 
 function heard(data) {
   if (data.type === "status") {
@@ -133,7 +130,9 @@ function heard(data) {
   }
 }
 
-worker.postMessage({ type: "init", pyodideUrl: PYODIDE_URL });
+// What braidpy said while the page loaded, then the rest as it comes.
+worker.onmessage = fromBraidpy;
+for (const data of window.braidpy.early.splice(0)) fromBraidpy({ data });
 
 // Published as a beta, it says so.
 if (location.pathname.includes("/studio-beta/")) {

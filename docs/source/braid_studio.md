@@ -240,6 +240,15 @@ import in a browser and needed only for Burau matrices and comparing braids;
 a test checks that building any braid loads none of them. The page loads
 numpy, plus networkx for the machines when one is first chosen.
 
+A first visit still downloads some 9 MB, compressed: Python itself (3 MB),
+its standard library (2 MB), numpy (3 MB), braidpy and three.js. The
+browser keeps them — Pyodide's CDN lets it for a year — so a later visit
+starts from its cache, and shows a braid in some three seconds, most of it
+Python starting. So that the downloads overlap rather than follow one
+another, braidpy's worker is started by the page's first lines, before
+three.js and the page's own modules load, and it fetches numpy, braidpy and
+the catalogue by topology while Python starts.
+
 ## Trying it locally
 
 ```sh

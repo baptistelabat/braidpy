@@ -10,6 +10,21 @@
     />
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="style.css" />
+    <script>
+      // braidpy's worker starts first, while three.js and the page's
+      // modules load: Python is the slowest to start.  What it says before
+      // the page is ready to hear it is kept for workers.js to read.
+      window.braidpy = (() => {
+        const worker = new Worker("worker.js");
+        const early = [];
+        worker.onmessage = ({ data }) => early.push(data);
+        const pyodideUrl =
+          new URLSearchParams(location.search).get("pyodide") ||
+          "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
+        worker.postMessage({ type: "init", pyodideUrl });
+        return { worker, early };
+      })();
+    </script>
     <script type="importmap">
       {
         "imports": {
