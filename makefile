@@ -1,4 +1,4 @@
-.PHONY: help install-uv docs
+.PHONY: help install-uv docs studio studio-serve studio-test duplicates
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -50,11 +50,29 @@ lint: ## Clean code or warn user
 	ruff format
 	ruff check . --fix
 
+duplicates: ## Fail on code copied rather than shared (Python and JavaScript)
+	uv run --with pylint==4.1.3 pylint --disable=all --enable=duplicate-code \
+		--min-similarity-lines=6 --ignore-imports=yes --ignore-docstrings=yes \
+		--ignore-comments=yes --ignore-signatures=yes src
+	cd web && npx --yes jscpd@4.3.0 --min-lines 8 --min-tokens 60 \
+		--format javascript --threshold 0 --reporters console \
+		--ignore "**/node_modules/**,**/site/**" .
+
 test: ## Launch test
 	uv run pytest tests
 
 typecheck: ## Check type annotations
 	uv run mypy src tests
+
+studio: ## Build Braid Studio, the web page, in web/site
+	cd web && npm install
+	uv run python web/build.py
+
+studio-serve: ## Serve Braid Studio at http://localhost:8000
+	python3 -m http.server -d web/site 8000
+
+studio-test: ## Make a braid of every kind in Braid Studio, in a browser
+	uv run --with playwright python web/smoke_test.py
 
 # Step 1: Run code with tracing
 autotype:

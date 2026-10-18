@@ -25,10 +25,15 @@ disk and animate it; :func:`animate_disk` does the drawing for any disk.
 
 from __future__ import annotations
 
-from typing import Dict, Hashable, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Hashable, List, Mapping, Optional, Sequence
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module, play_controls
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 from braidpy.take_off import (
     StrandTrajectories,
@@ -284,9 +289,9 @@ def animate_disk(
         The figure, with one frame per sample kept.
     """
     if colors is None:
-        from braidpy.horn_gear.visualization import _PALETTE
+        from braidpy.utils import PALETTE
 
-        colors = _PALETTE
+        colors = PALETTE
     keys: List[Hashable] = list(trajectories.xy)
     colour: Dict[Hashable, str] = {
         k: colors[i % len(colors)] for i, k in enumerate(keys)
@@ -340,7 +345,7 @@ def animate_disk(
             )
             under.append(Moving(**spoke))
             # A strand that is not lifted still sends its edging and its copy,
-            # shrunk to nothing at the braiding point, where every spoke meets
+            # shrunk to nothing at the middle, where every spoke meets
             # anyway.  Not as no points: Plotly leaves a trace alone when a
             # frame gives it none, so the last lift would stay on screen.  Not
             # as gaps either: a WebGL trace of nothing but gaps stops the
@@ -453,7 +458,7 @@ def animate_disk(
             y=[centre[1]],
             mode="markers",
             marker=dict(size=7, color="black"),
-            hovertext=["Braiding point"],
+            hovertext=["Where the braid forms"],
             hoverinfo="text",
             showlegend=False,
         )
@@ -513,67 +518,7 @@ def animate_disk(
         yaxis=dict(range=[centre[1] - reach, centre[1] + reach], visible=False),
         plot_bgcolor="white",
         margin=dict(l=20, r=20, t=80, b=20),
-        updatemenus=[
-            dict(
-                type="buttons",
-                showactive=False,
-                y=1.08,
-                x=0.5,
-                xanchor="center",
-                buttons=[
-                    dict(
-                        label="▶ Play",
-                        method="animate",
-                        args=[
-                            None,
-                            {
-                                "frame": {
-                                    "duration": frame_duration_ms,
-                                    "redraw": True,
-                                },
-                                "fromcurrent": True,
-                                "transition": {"duration": 0},
-                            },
-                        ],
-                    ),
-                    dict(
-                        label="⏸ Pause",
-                        method="animate",
-                        args=[
-                            [None],
-                            {
-                                "frame": {"duration": 0, "redraw": False},
-                                "mode": "immediate",
-                            },
-                        ],
-                    ),
-                ],
-            )
-        ],
-        sliders=[
-            dict(
-                steps=[
-                    dict(
-                        args=[
-                            [str(i)],
-                            {
-                                "frame": {"duration": 0, "redraw": True},
-                                "mode": "immediate",
-                            },
-                        ],
-                        label=label(i),
-                        method="animate",
-                    )
-                    for i in samples
-                ],
-                active=0,
-                x=0,
-                y=0,
-                len=1.0,
-                currentvalue=dict(visible=False),
-                transition=dict(duration=0),
-            )
-        ],
+        **play_controls(frame_duration_ms, [(str(i), label(i)) for i in samples]),
     )
     if braid is not None:
         fig.update_layout(scene=braid.scene())

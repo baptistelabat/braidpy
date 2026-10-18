@@ -109,3 +109,46 @@ def test_arc_length_is_right_where_it_can_be_checked():
     assert arc_length(helix, 20_000) == pytest.approx(
         math.hypot(1.0, 2 * math.pi * 0.3), rel=1e-6
     )
+
+
+def test_a_strand_finds_its_arc_as_looking_through_them_all_would():
+    """Arcs are found by halving, not one by one: the same arc, the first
+    that holds t, at every time — on a boundary, in a gap, at the ends."""
+    from braidpy.parametric_strand import combine_arcs
+
+    def arc(k):
+        return lambda t: (float(k), t, 0.0)
+
+    # Touching arcs, a gap between the third and the fourth, and one instant.
+    spans = [(0.0, 0.25), (0.25, 0.5), (0.5, 0.6), (0.7, 0.7), (0.7, 1.0)]
+    arcs = [(t0, t1, arc(k)) for k, (t0, t1) in enumerate(spans)]
+    strand = combine_arcs(arcs)
+
+    def by_looking(t):
+        for t0, t1, f in arcs:
+            if t0 <= t <= t1:
+                return f(t)
+        raise ValueError
+
+    for t in [0.0, 0.1, 0.25, 0.4, 0.5, 0.55, 0.6, 0.7, 0.8, 1.0]:
+        assert strand(t) == by_looking(t)
+    for t in [-0.1, 0.65, 1.1]:
+        with pytest.raises(ValueError):
+            strand(t)
+
+
+def test_a_long_word_is_laid_in_a_moment():
+    """A word of a thousand crossings: its strands are laid in well under a
+    second (a fiftieth, here), where they took two — each was worked out from every
+    crossing again, and its arcs looked through one by one."""
+    import time
+
+    word = [1, 2, -3, 4, -5, 6, 7] * 143
+    braid = Braid(word, 8)
+    start = time.perf_counter()
+    strands = braid.to_parametric_strands()
+    for strand in strands:
+        for k in range(0, 2001):
+            strand.func(k / 2000)
+    assert time.perf_counter() - start < 0.5
+    assert len(strands) == 8

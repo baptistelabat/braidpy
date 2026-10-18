@@ -42,10 +42,13 @@ yarn passes which, and on which side.
 The fell
 --------
 Real yarns run straight from their carriers up to the *fell*, where the braid
-forms, at ``fell_height``.  Above it each level of the braid is the carriers'
-footprint drawn in toward the axis by a factor ``k``: the fell's own size at
-the fell (``k = 0`` is a braiding point), and away from it as tight as the
-yarn allows (:func:`jammed_contraction`).  Any positive ``k`` at each level
+forms, at ``fell_height``: a ring about the size of the braid itself, yarns
+being as thick as they are.  Above it each level of the braid is the
+carriers' footprint drawn in toward the axis by a factor ``k``: the fell's
+own size at the fell — by default the braid's own, as tight as the yarn
+allows (:func:`jammed_contraction`); ``k = 0`` is the idealised braiding
+point, every yarn meeting at one point — and away from it as tight as the
+yarn allows.  Any positive ``k`` at each level
 keeps which yarn passes over which, so the braid made is the braid kept.
 
 Tightening
@@ -61,6 +64,9 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Collection,
     Dict,
     Hashable,
     List,
@@ -71,7 +77,12 @@ from typing import (
 )
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 
 @dataclass(frozen=True)
@@ -268,7 +279,9 @@ def lay_yarns(
     Args:
         trajectories: Where the strands went.
         take_off: Length of braid drawn off per unit of time.  Defaults to
-            :func:`default_take_off`.
+            :func:`default_take_off` — or, with ``yarn_diameter``, faster if
+            need be, so that two yarns passing the same point are a diameter
+            apart in height there; see :func:`least_take_off`.
         fell_radius: Radius of the fell circle the braid is formed on; 0 for
             a braiding point.
         yarn_diameter: Draw the braid in as far as yarns this thick allow —
@@ -289,14 +302,16 @@ def lay_yarns(
         The yarns, one per strand.
     """
     traj = trajectories
-    if take_off is None:
-        take_off = default_take_off(traj)
-    if take_off <= 0:
-        raise ValueError("take_off must be positive.")
     if axis is None:
         axis = traj.centre()
     centre = np.asarray(axis, dtype=float)
     rel = np.stack([xy - centre for xy in traj.xy.values()])
+    if take_off is None:
+        take_off = default_take_off(traj)
+        if yarn_diameter is not None:
+            take_off = max(take_off, least_take_off(traj, yarn_diameter, take_off))
+    if take_off <= 0:
+        raise ValueError("take_off must be positive.")
     deck_radius = float(np.max(np.linalg.norm(rel, axis=2)))
     if yarn_diameter is not None:
         spacing = take_off * float(traj.times[1] - traj.times[0])
@@ -398,6 +413,43 @@ def _closest_approach(formed: np.ndarray, spacing: float) -> float:
     return best
 
 
+def least_take_off(
+    trajectories: StrandTrajectories, yarn_diameter: float, take_off: float
+) -> float:
+    """The slowest take-off that lifts yarns passing the same point a diameter
+    apart, at least ``take_off``.
+
+    Where one strand leaves a place and another comes to the very same point
+    later — as each crossing of a braid word does, one strand arriving where
+    the other left — no drawing-in can separate them
+    (:func:`jammed_contraction`): only the height the take-off puts between
+    them can.  The fewer strands move at a time, the slower the default
+    take-off, and the closer in height they come.
+
+    Args:
+        trajectories: Where the strands went, sampled evenly in time.
+        yarn_diameter: Yarn diameter.
+        take_off: The take-off to start from.
+
+    Returns:
+        ``take_off``, or a little faster than the least take-off that keeps
+        the closest such pair a diameter apart.
+    """
+    centre = np.asarray(trajectories.centre(), dtype=float)
+    rel = np.stack([xy - centre for xy in trajectories.xy.values()])
+    n_yarns, n, _ = rel.shape
+    dt = float(trajectories.times[1] - trajectories.times[0])
+    scale = float(np.max(np.abs(rel))) or 1.0
+    for offset in _offsets(take_off * dt, yarn_diameter, n):
+        if offset == 0:
+            continue  # at the same time: no take-off can part them
+        a, b = _level_pairs(n_yarns, offset)
+        sideways = np.linalg.norm(rel[a, : n - offset] - rel[b, offset:], axis=-1)
+        if np.any(sideways <= 1e-12 * scale):
+            return max(take_off, 1.01 * yarn_diameter / (offset * dt))
+    return take_off
+
+
 def jammed_contraction(rel: np.ndarray, spacing: float, diameter: float) -> float:
     """How far a braid can be drawn in before two yarns touch.
 
@@ -443,6 +495,53 @@ def jammed_contraction(rel: np.ndarray, spacing: float, diameter: float) -> floa
     return k
 
 
+def _tension_solver(
+    n: int, h: float, hold_top: bool
+) -> Callable[[np.ndarray], np.ndarray]:
+    """Solves (I + h L) x = b, L the second difference along a yarn of ``n``
+    samples: its last sample fixed, its first fixed too if ``hold_top``,
+    else free.
+
+    The matrix is tridiagonal, so the Thomas algorithm solves it in time
+    and memory proportional to ``n``, where inverting it costs ``n²`` memory
+    and ``n³`` time: its forward sweep depends on the matrix only, and is
+    done once.  The same solve as ``makeSettle`` in web/tighten.js.
+
+    Returns:
+        A function taking ``b``, ``(n, m)``, one column per right-hand side —
+        every yarn's x and y at once — and returning ``x``.
+    """
+    lower = np.zeros(n)
+    diagonal = np.ones(n)
+    upper = np.zeros(n)
+    lower[1 : n - 1] = -h
+    diagonal[1 : n - 1] = 1 + 2 * h
+    upper[1 : n - 1] = -h
+    if not hold_top and n > 1:
+        diagonal[0] = 1 + h
+        upper[0] = -h
+    c = np.zeros(n)
+    m = np.empty(n)
+    m[0] = diagonal[0]
+    c[0] = upper[0] / m[0] if n > 1 else 0.0
+    for i in range(1, n):
+        m[i] = diagonal[i] - lower[i] * c[i - 1]
+        c[i] = upper[i] / m[i] if i < n - 1 else 0.0
+
+    def solve(b: np.ndarray) -> np.ndarray:
+        d = np.empty_like(b)
+        d[0] = b[0] / m[0]
+        for i in range(1, n):
+            d[i] = (b[i] - lower[i] * d[i - 1]) / m[i]
+        x = np.empty_like(b)
+        x[n - 1] = d[n - 1]
+        for i in range(n - 2, -1, -1):
+            x[i] = d[i] - c[i] * x[i + 1]
+        return x
+
+    return solve
+
+
 def tighten_yarns(
     paths: YarnPaths,
     yarn_diameter: float,
@@ -451,6 +550,7 @@ def tighten_yarns(
     core_radius: Optional[float] = None,
     tolerance: float = 1e-3,
     hold_top: bool = True,
+    rigid: Collection[Hashable] = (),
 ) -> Tuple[YarnPaths, Dict[str, List[float]]]:
     """Pull the yarns taut above the fell, without letting them overlap.
 
@@ -483,6 +583,8 @@ def tighten_yarns(
             push accepts.
         hold_top: Hold the oldest end where it is, as the take-off does.  Left
             free, the end can turn about the axis and untwist the braid.
+        rigid: Yarns held where they are all along, as stiff cores: the
+            others are pushed off them, and they never move.
 
     Returns:
         The tightened braid, and its history: ``"length"``, the total yarn
@@ -505,16 +607,13 @@ def tighten_yarns(
     xy = formed[:, :, :2].reshape(-1, 2)
     level = np.tile(np.arange(n), n_yarns)
     held = (level == n - 1) | ((level == 0) & hold_top)
+    held |= np.repeat([k in set(rigid) for k in paths.points], n)
 
-    # Backward Euler on the tension: (I + step * L) x_new = x, with L the
+    # Backward Euler on the tension: (I + step/2 L) x_new = x, with L the
     # second difference along a yarn — the fell end fixed, the top end fixed
-    # or free.  Every yarn shares the matrix, so it is inverted once.
-    lap = np.zeros((n, n))
-    for i in range(1, n - 1):
-        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
-    if not hold_top and n > 1:
-        lap[0, :2] = (1.0, -1.0)
-    settle = np.linalg.inv(np.eye(n) + 0.5 * step * lap)
+    # or free — solved as the tridiagonal system it is, for every yarn at
+    # once, as web/tighten.js solves it.
+    settle = _tension_solver(n, 0.5 * step, hold_top)
 
     def clamp(move: np.ndarray) -> np.ndarray:
         size = np.linalg.norm(move, axis=-1, keepdims=True)
@@ -608,7 +707,7 @@ def tighten_yarns(
     inner = ~held
     for _ in range(iterations):
         lines = xy.reshape(n_yarns, n, 2).transpose(1, 0, 2).reshape(n, -1)
-        target = (settle @ lines).reshape(n, n_yarns, 2).transpose(1, 0, 2)
+        target = settle(lines).reshape(n, n_yarns, 2).transpose(1, 0, 2)
         move = target.reshape(-1, 2) - xy
         xy[inner] += clamp(move[inner])
         separate(p, q, need)
@@ -684,9 +783,9 @@ def visualize_yarns(
         The figure.
     """
     if colors is None:
-        from braidpy.horn_gear.visualization import _PALETTE
+        from braidpy.utils import PALETTE
 
-        colors = _PALETTE
+        colors = PALETTE
 
     if title is None:
         if paths.fell_radius is None:
@@ -1107,10 +1206,16 @@ def kumihimo_steps(
 
     Returns:
         The number of slots, each strand's starting slot, and the steps.
+
+    Raises:
+        ValueError: If the pattern is empty or has other moves, or the
+            strands are not a multiple of four.
     """
     if isinstance(kumihimo, str):
         if n_strands is None:
             raise ValueError("A pattern needs n_strands.")
+        if not kumihimo or set(kumihimo) - {"S", "R"}:
+            raise ValueError("A kumihimo pattern is made of S (swap) and R (rotate).")
         n = n_strands
         moves = [m if m == "S" else "R**1" for m in kumihimo]
         start_order = list(range(n))

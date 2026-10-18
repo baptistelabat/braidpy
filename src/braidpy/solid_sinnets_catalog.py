@@ -1,10 +1,55 @@
+"""Ashley's solid sinnets, from *The Ashley Book of Knots*: each its own
+:class:`~braidpy.ashley_solid_sinnet.AshleySolidSinnet`, named by its number
+in the book, and all of them in :data:`CATALOGUE`, as every catalogue lists
+its braids (:mod:`braidpy.catalogue`)."""
+
+from typing import Dict
+
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
+from braidpy.catalogue import Entry
+
+"""The simplest sinnets, worked the same way on the stand: Ashley's stand,
+like a marudai, makes the plait and the square and round sinnets as well
+as the solid sinnets it is in the book for, and seeing them made there
+helps to understand the bigger ones."""
+
+"""
+ABOK #2965
+3-strand flat
+The plait.
+"""
+abok_2965 = AshleySolidSinnet(
+    shape="flat",
+    initial_counts_per_space=[2, 1],
+    moves=[(1, 2), (2, 1)],
+)
+
+"""
+ABOK #2999
+4-strand square
+"""
+abok_2999 = AshleySolidSinnet(
+    shape="square",
+    initial_counts_per_space=[1, 1, 1, 1],
+    moves=[(1, 3), (3, 1), (2, 4), (4, 2)],
+)
+
+"""
+ABOK #3021
+6-strand round
+"""
+abok_3021 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[1, 1, 1, 1, 1, 1],
+    moves=[(1, 3), (3, 5), (5, 1), (2, 6), (6, 4), (4, 2)],
+)
 
 """
 ABOK #3042
 8-strand round
 """
 abok_3042 = AshleySolidSinnet(
+    shape="round",
     initial_counts_per_space=[2, 1, 1, 2, 1, 1],
     moves=[(1, 5), (4, 2), (5, 3), (2, 6), (3, 1), (6, 4)],
 )
@@ -14,6 +59,7 @@ ABOK #3043
 11-strand triangle
 """
 abok_3043 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[3, 1, 2, 2, 2, 1],
     moves=[(1, 5), (4, 2), (5, 3), (2, 6), (3, 1), (6, 4)],
 )
@@ -23,6 +69,7 @@ ABOK #3044
 8-strand triangle
 """
 abok_3044 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[2, 1, 1, 1, 1, 2],
     moves=[(1, 5), (6, 4), (5, 3), (4, 2), (3, 1), (2, 6)],
 )
@@ -33,6 +80,7 @@ ABOK #3045
 https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3045 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[2, 1, 2, 2, 1, 2],
     moves=[(1, 5), (4, 2), (3, 1), (6, 4), (5, 3), (2, 6)],
 )
@@ -48,6 +96,7 @@ rotate in the same direction."
 https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3046 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[3, 2, 3, 2, 2, 1],
     moves=[(1, 5), (2, 6), (3, 1), (4, 2), (5, 3), (6, 4)],
 )
@@ -57,6 +106,7 @@ ABOK #3047
 19-strand triangle
 """
 abok_3047 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2],
     moves=[
         (1, 9),
@@ -80,6 +130,7 @@ ABOK #3048
 https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3048 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1],
     moves=[
         (1, 9),
@@ -103,6 +154,7 @@ ABOK #3049
 https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
 abok_3049 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[3, 1, 2, 1, 3, 2, 1, 2, 2, 2, 1, 2],
     moves=[
         (1, 9),
@@ -124,6 +176,7 @@ ABOK #3050
 29-strand triangle
 """
 abok_3050 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2],
     moves=abok_3048.moves,
 )
@@ -136,6 +189,7 @@ https://www.youtube.com/watch?v=2eV8z6674xM
 https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
 abok_3051 = AshleySolidSinnet(
+    shape="triangle",
     initial_counts_per_space=[2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2],
     moves=[
         (11, 13),
@@ -163,6 +217,7 @@ ABOK #3052
 20-strand hexagon
 """
 abok_3052 = AshleySolidSinnet(
+    shape="hexagon",
     initial_counts_per_space=[2, 1, 2, 1, 2, 2, 2, 1, 2, 1, 2, 2],
     moves=[
         (12, 8),
@@ -188,6 +243,7 @@ ABOK #3053
 19-strand half hexagon
 """
 abok_3053 = AshleySolidSinnet(
+    shape="half hexagon",
     initial_counts_per_space=[3, 1, 2, 1, 2, 2, 3, 1, 3, 1],
     moves=[
         (6, 4),
@@ -209,7 +265,9 @@ ABOK #3054
 https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3054 = AshleySolidSinnet(
-    initial_counts_per_space=[3, 1, 2, 1, 2, 2, 2, 1, 2, 1], moves=abok_3053.moves
+    shape="half round",
+    initial_counts_per_space=[3, 1, 2, 1, 2, 2, 2, 1, 2, 1],
+    moves=abok_3053.moves,
 )
 
 """
@@ -261,3 +319,20 @@ https://www.youtube.com/watch?v=BPxj2Z9UYR0&t=664s
 By John Richings
 https://www.facebook.com/photo?fbid=598774186878896&set=pcb.598774553545526
 """
+
+
+def _entry(name: str, sinnet: AshleySolidSinnet) -> Entry[AshleySolidSinnet]:
+    number = name.split("_")[1]
+    return Entry(
+        title=f"ABOK #{number}, {sinnet.n_strands}-strand {sinnet.shape or 'sinnet'}",
+        make=lambda: sinnet,
+        reference=f"The Ashley Book of Knots, #{number}",
+    )
+
+
+# By their number in the book.
+CATALOGUE: Dict[str, Entry[AshleySolidSinnet]] = {
+    name: _entry(name, value)
+    for name, value in sorted(globals().items())
+    if isinstance(value, AshleySolidSinnet)
+}

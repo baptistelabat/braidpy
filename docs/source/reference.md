@@ -15,7 +15,27 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.form
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.handles_reduction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.horn_gear.handle
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.linking
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.marudai
    :members:
    :undoc-members:
    :show-inheritance:
@@ -26,6 +46,26 @@
    :show-inheritance:
 
 .. automodule:: braidpy.parametric_braid
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.properties
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.rope
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.similarity
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.topology_catalog
    :members:
    :undoc-members:
    :show-inheritance:

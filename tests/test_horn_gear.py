@@ -1975,3 +1975,33 @@ def test_visualize_converging_yarns():
     assert any(t.type == "surface" for t in visualize_yarns(m, made).data)
     lines = visualize_yarns(m, made, tube_diameter=0)
     assert not any(t.type == "surface" for t in lines.data)
+
+
+def test_a_machine_lays_its_cores_only_when_asked():
+    """Asked for, each axial core is laid as a yarn of its own, named after
+    it, drawn in to the fell with the others."""
+    from braidpy.horn_gear.take_off import yarn_paths
+
+    machine = soutache_braid()
+    plain = yarn_paths(machine, n_cycles=1, yarn_diameter=0.2).points
+    cored = yarn_paths(machine, n_cycles=1, yarn_diameter=0.2, axials=True).points
+    assert set(cored) - set(plain) == {"cord_A", "cord_B"}
+
+
+def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
+    """Tightened, a core held rigid does not move, and the yarns are pushed
+    off it; tightened as a yarn, it gives way to them."""
+    from braidpy.horn_gear.take_off import yarn_paths
+    from braidpy.take_off import tighten_yarns
+
+    machine = soutache_braid()
+    paths = yarn_paths(
+        machine, n_cycles=2, yarn_diameter=0.2, fell_radius=0.0, axials=True
+    )
+    cores = ["cord_A", "cord_B"]
+    rigid, _ = tighten_yarns(paths, 0.2, iterations=60, rigid=cores)
+    free, _ = tighten_yarns(paths, 0.2, iterations=60)
+    for name in cores:
+        laid = np.asarray(paths.points[name])
+        assert np.allclose(np.asarray(rigid.points[name]), laid)
+        assert not np.allclose(np.asarray(free.points[name]), laid)

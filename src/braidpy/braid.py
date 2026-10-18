@@ -12,10 +12,14 @@ License: Mozilla Public License 2.0
 """
 
 import enum
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
-from sympy import Matrix, eye, symbols
+
+if TYPE_CHECKING:
+    # sympy is only needed for the Burau matrices, and is slow to import —
+    # seconds, in a browser: imported there, when they are asked for.
+    from sympy import Matrix
 from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
@@ -30,15 +34,55 @@ from braidpy.utils import (
     int_to_superscript,
     int_to_subscript,
     colorize,
+    lazy_module,
     StrictlyPositiveInt,
     PositiveInt,
 )
 
 
-import math_braid
+if TYPE_CHECKING:
+    import math_braid
+else:
+    # It imports sympy, slow to import: only when braids are compared.
+    math_braid = lazy_module("math_braid")
 from collections.abc import Iterable
 
-t = symbols("t")
+
+def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> List[list]:
+    """The reduced Burau matrix of one generator, σ_i or its inverse, as
+    rows: the identity, but for row i (from 0),
+
+        σ_i:   ( …, t, −t, 1, … )    at columns i − 1, i, i + 1,
+        σ_i⁻¹: ( …, 1, −1/t, 1/t, … ),
+
+    the columns that fall off the matrix left out.  ``t``, ``one`` and
+    ``zero`` are of whatever ring the matrix is wanted in: a sympy symbol,
+    an element of a polynomial field, a complex number.
+
+    Args:
+        generator: ``i`` for σ_i, ``-i`` for its inverse.
+        n_strands: Number of strands; the matrix is ``n_strands − 1`` square.
+        t: The Burau variable.
+        one: The ring's one.
+        zero: The ring's zero.
+
+    Returns:
+        The rows.
+    """
+    m = n_strands - 1
+    i = abs(generator) - 1
+    rows = [[one if r == c else zero for c in range(m)] for r in range(m)]
+    if generator > 0:
+        left, middle, right = t, -t, one
+    else:
+        left, middle, right = one, -one / t, one / t
+    if i >= 1:
+        rows[i][i - 1] = left
+    rows[i][i] = middle
+    if i <= m - 2:
+        rows[i][i + 1] = right
+    return rows
+
 
 # Define a type alias for clarity
 SignedCrossingIndex = int
@@ -532,11 +576,14 @@ class Braid:
                 n_half_twist=0, n_strands=StrictlyPositiveInt(br.n_strands), Ai=()
             )
 
-    def to_matrix(self) -> Matrix:
+    def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
         Burau matrix representation if faithful for n_strands=3 or n_strands=4, but not faithful for n_strand>=5
         https://arxiv.org/abs/2607.05283
         """
+        from sympy import eye, symbols
+
+        t = symbols("t")
         matrix = eye(self.n_strands)
 
         for gen in self.generators:
@@ -562,25 +609,15 @@ class Braid:
         Return the reduced Burau representation
         https://en.wikipedia.org/wiki/Burau_representation
         """
+        from sympy import Matrix, eye, symbols
 
+        t = symbols("t")
         matrix = eye(self.n_strands - 1)
-
         for gen in self.generators:
-            if self.n_strands == 2:
-                mat = -t
-            else:
-                i = abs(gen) - 1  # zero based
-                mat = eye(self.n_strands - 1)
-                # σ_i
-                if i >= 1:
-                    mat[i, i - 1] = t
-                mat[i, i] = -t
-                if i <= self.n_strands - 3:
-                    mat[i, i + 1] = 1
-                if gen < 0:
-                    # Could be faster using directly inverse of 3x3 matrix
-                    mat = mat.inv()
-            matrix = matrix * mat  # Correct order: left-to-right
+            # Correct order: left-to-right
+            matrix = matrix * Matrix(
+                reduced_burau_generator(gen, self.n_strands, t, 1, 0)
+            )
         return matrix
 
     def is_trivial(self) -> bool:
@@ -732,13 +769,13 @@ class Braid:
         Returns:
             A list of ParametricStrand objects representing the strands.
         """
-        n_strands = self.n_strands or max(abs(g) for g in self.generators) + 1
-        n_segments = len(self.generators) + 1
-        duration_per_gen = 1 / n_segments
+        # Read once: both are worked out afresh each time they are asked for.
+        generators = self.generators
+        history = self.slot_history()
+        n_strands = self.n_strands or max(abs(g) for g in generators) + 1
+        n_segments = len(generators) + 1
 
-        strand_paths = [
-            [row[strand] for row in self.slot_history()] for strand in range(n_strands)
-        ]
+        strand_paths = [[row[strand] for row in history] for strand in range(n_strands)]
 
         # Generate arc sequences for each strand
         strand_arc_sequences: List[List[Arc]] = []
@@ -751,9 +788,11 @@ class Braid:
                 i1 = path[k + 1]
                 x0 = i0 * amplitude
                 x1 = i1 * amplitude
-                t_start = k * duration_per_gen
-                t_end = (k + 1) * duration_per_gen
-                gen = self.generators[k]
+                # As fractions of the whole, not sums of steps: summed, the
+                # last segment can stop short of 1 by a rounding error.
+                t_start = k / n_segments
+                t_end = (k + 1) / n_segments
+                gen = generators[k]
                 if i0 == i1 or gen == 0:
                     arc_func = make_idle_arc(x0, t_start, t_end)
                 else:
@@ -766,8 +805,8 @@ class Braid:
                 arcs.append((t_start, t_end, arc_func))
 
             # Final segment (idle)
-            t_final_start = (n_segments - 1) * duration_per_gen
-            t_final_end = t_final_start + duration_per_gen
+            t_final_start = (n_segments - 1) / n_segments
+            t_final_end = 1.0
             x_final = path[-1] * amplitude
             arcs.append(
                 (

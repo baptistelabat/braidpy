@@ -11,7 +11,26 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+import importlib
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+
+# Colours to tell strands apart, one after the other: the carriers of a
+# braiding machine's animation, and the yarns drawn from them.
+PALETTE = [
+    "#e41a1c",
+    "#377eb8",
+    "#4daf4a",
+    "#984ea3",
+    "#ff7f00",
+    "#a65628",
+    "#f781bf",
+    "#999999",
+    "#66c2a5",
+    "#fc8d62",
+    "#8da0cb",
+    "#e78ac3",
+]
 
 # ANSI color codes (foreground)
 ANSI_COLORS = [
@@ -123,5 +142,111 @@ else:
             return super().__new__(cls, val)
 
 
+class _LazyModule(ModuleType):
+    """A module imported the first time something is asked of it."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self._lazy_name = name
+        self._lazy_module: Optional[ModuleType] = None
+
+    def __getattr__(self, attr: str) -> Any:
+        if attr.startswith("_lazy_"):
+            raise AttributeError(attr)
+        if self._lazy_module is None:
+            self._lazy_module = importlib.import_module(self._lazy_name)
+        return getattr(self._lazy_module, attr)
+
+
+def lazy_module(name: str) -> Any:
+    """A module that is only imported when first used.
+
+    Drawing libraries — plotly, matplotlib — are heavy, and most of braidpy
+    computes without them: in a browser, through Pyodide, not loading them
+    is the difference between a page that opens and one that downloads tens
+    of megabytes first.  Modules that draw import them this way, and keep
+    the real import under ``TYPE_CHECKING`` for the type checker.
+
+    Args:
+        name: The module's dotted name.
+
+    Returns:
+        A stand-in that imports the module on first attribute access.
+    """
+    return _LazyModule(name)
+
+
 class FunctionalException(Exception):
     pass
+
+
+def play_controls(
+    frame_duration_ms: float, marks: Sequence[Tuple[str, str]]
+) -> Dict[str, List[Dict[str, Any]]]:
+    """Play and pause buttons, and a slider, for a Plotly animation.
+
+    Args:
+        frame_duration_ms: How long each frame is shown while playing.
+        marks: The slider's notches, as (frame name, label).
+
+    Returns:
+        ``updatemenus`` and ``sliders``, for ``Figure.update_layout``.  The
+        slider's read-out is hidden: Plotly's repeats the active notch's
+        label, and notches between two labelled ones have none to repeat,
+        so it would blank out while the animation ran.
+    """
+    still = {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}
+    return {
+        "updatemenus": [
+            dict(
+                type="buttons",
+                showactive=False,
+                y=1.08,
+                x=0.5,
+                xanchor="center",
+                buttons=[
+                    dict(
+                        label="▶ Play",
+                        method="animate",
+                        args=[
+                            None,
+                            {
+                                "frame": {
+                                    "duration": frame_duration_ms,
+                                    "redraw": True,
+                                },
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                            },
+                        ],
+                    ),
+                    dict(
+                        label="⏸ Pause",
+                        method="animate",
+                        args=[
+                            [None],
+                            {
+                                "frame": {"duration": 0, "redraw": False},
+                                "mode": "immediate",
+                            },
+                        ],
+                    ),
+                ],
+            )
+        ],
+        "sliders": [
+            dict(
+                steps=[
+                    dict(args=[[name], still], label=label, method="animate")
+                    for name, label in marks
+                ],
+                active=0,
+                x=0,
+                y=0,
+                xanchor="left",
+                len=1.0,
+                currentvalue=dict(visible=False),
+                transition=dict(duration=0),
+            )
+        ],
+    }

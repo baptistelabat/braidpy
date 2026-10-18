@@ -41,10 +41,15 @@ without it knowing the difference.
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import numpy as np
-import plotly.graph_objects as go
+from braidpy.utils import PALETTE, lazy_module, play_controls
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
+else:
+    go = lazy_module("plotly.graph_objects")
 
 from .layout import (
     axial_clearance,
@@ -127,21 +132,6 @@ _GEAR_COLOURS = {
     "trigonometric": ("rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"),
     "held": ("rgba(140,140,140,0.14)", "rgba(110,110,110,0.65)"),
 }
-
-_PALETTE = [
-    "#e41a1c",
-    "#377eb8",
-    "#4daf4a",
-    "#984ea3",
-    "#ff7f00",
-    "#a65628",
-    "#f781bf",
-    "#999999",
-    "#66c2a5",
-    "#fc8d62",
-    "#8da0cb",
-    "#e78ac3",
-]
 
 
 def _rounded(trace: go.BaseTraceType) -> go.BaseTraceType:
@@ -390,7 +380,7 @@ def _track_traces(
                 x=xs_all,
                 y=ys_all,
                 mode="lines",
-                line=dict(color=_PALETTE[index % len(_PALETTE)], width=width),
+                line=dict(color=PALETTE[index % len(PALETTE)], width=width),
                 opacity=opacity,
                 name=label,
                 hoverinfo="skip",
@@ -987,7 +977,7 @@ def animate(
         )
 
     carrier_colors = {
-        c.carrier_id: _PALETTE[i % len(_PALETTE)]
+        c.carrier_id: PALETTE[i % len(PALETTE)]
         for i, c in enumerate(history[0].carriers)
     }
 
@@ -1049,6 +1039,37 @@ def animate(
             showlegend=False,
         )
 
+    def _met_trace(state: MachineState) -> go.BaseTraceType:
+        """The carriers that met, ringed, at the step they met; nothing at
+        any other."""
+        xs, ys = [], []
+        if collision_info is not None and state.time == collision_info.step:
+            for c in state.carriers:
+                if c.position in collision_info.collisions:
+                    x, y = carrier_xy(
+                        machine,
+                        layout_pos,
+                        offsets,
+                        carrier_radii,
+                        c.position,
+                        state.time,
+                    )
+                    xs.append(x)
+                    ys.append(y)
+        return go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers",
+            marker=dict(
+                size=[2 * max(bobbin_sizes.values())] * len(xs),
+                color="rgba(0,0,0,0)",
+                line=dict(width=3, color="#d62728"),
+            ),
+            hoverinfo="skip",
+            name="Met",
+            showlegend=False,
+        )
+
     def _build(
         state: MachineState, frac: float
     ) -> Tuple[List[go.BaseTraceType], List[bool]]:
@@ -1077,6 +1098,9 @@ def animate(
                 ),
                 card_changes,
             ),
+            # Under the carriers, wider than them: the carriers stay the last
+            # thing drawn.  Empty all the way through unless carriers met.
+            ([_met_trace(state)], collision_info is not None),
             ([_carrier_trace(state, frac)], True),
         ]
         traces: List[go.BaseTraceType] = []
@@ -1107,7 +1131,8 @@ def animate(
     # One cycle ends where it began, so its closing frame is the opening one
     # over again and is left out: the animation loops without a hiccup.  A run
     # that stops mid-cycle keeps it, so the last step is actually shown.
-    closes = (
+    # Not turned at all, there is one picture: the machine as loaded.
+    closes = n_steps > 0 and (
         carrier_places(machine, history[n_steps]) == carrier_places(machine, history[0])
         and n_steps % _phases == 0
     )
@@ -1138,72 +1163,7 @@ def animate(
         yaxis=dict(showgrid=False, zeroline=False, visible=False),
         plot_bgcolor="white",
         margin=dict(l=20, r=20, t=80, b=20),
-        updatemenus=[
-            dict(
-                type="buttons",
-                showactive=False,
-                y=1.08,
-                x=0.5,
-                xanchor="center",
-                buttons=[
-                    dict(
-                        label="▶ Play",
-                        method="animate",
-                        args=[
-                            None,
-                            {
-                                "frame": {
-                                    "duration": frame_duration_ms,
-                                    "redraw": True,
-                                },
-                                "fromcurrent": True,
-                                "transition": {"duration": 0},
-                            },
-                        ],
-                    ),
-                    dict(
-                        label="⏸ Pause",
-                        method="animate",
-                        args=[
-                            [None],
-                            {
-                                "frame": {"duration": 0, "redraw": False},
-                                "mode": "immediate",
-                            },
-                        ],
-                    ),
-                ],
-            )
-        ],
-        sliders=[
-            dict(
-                steps=[
-                    dict(
-                        args=[
-                            [fn],
-                            {
-                                "frame": {"duration": 0, "redraw": True},
-                                "mode": "immediate",
-                            },
-                        ],
-                        label=label,
-                        method="animate",
-                    )
-                    for fn, label in slider_marks
-                ],
-                active=0,
-                y=0,
-                x=0,
-                xanchor="left",
-                len=1.0,
-                # Plotly's read-out repeats the active notch's label, and the
-                # notches between two steps have none to repeat: it would blank
-                # out eight frames in nine while the animation ran.  The
-                # numbered ticks say where the machine is instead.
-                currentvalue=dict(prefix="Step: ", visible=False),
-                transition=dict(duration=0),
-            )
-        ],
+        **play_controls(frame_duration_ms, slider_marks),
     )
 
     if output_html:

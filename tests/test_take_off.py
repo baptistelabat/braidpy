@@ -135,6 +135,25 @@ def test_braid_word_survives_laying_drawing_in_and_tightening(word):
     assert _free_reduce(_word_of_yarns(tight)) == _free_reduce(word)
 
 
+@pytest.mark.parametrize(
+    "word, n_strands",
+    [((1, -3, 5, 2, -4), 6), ((1, 3, 5, 7, -2, -4, -6) * 4, 8)],
+)
+def test_a_word_with_many_idle_strands_can_be_laid(word, n_strands):
+    """Each crossing moves two strands; the others stand still.  When one
+    strand leaves its place another arrives there, at the very same point,
+    a crossing's time later.  The default take-off is the strands' mean
+    speed, slow when most of them stand still, and lifted them less than a
+    diameter apart there: no drawing-in can separate two yarns at one point,
+    and laying failed.  Laid now, the yarns clear each other, and it is
+    still the braid the word names."""
+    traj = braid_word_trajectories(Braid(word, n_strands))
+    lay_yarns(traj, yarn_diameter=0.45, fell_radius=0.0)  # as Braid Studio does
+    jammed = lay_yarns(traj, yarn_diameter=0.45)
+    assert jammed.closest_approach() == pytest.approx(0.45)
+    assert _word_of_yarns(jammed) == list(word)
+
+
 def test_braid_word_layout():
     traj = braid_word_trajectories(Braid([1]), spacing=2.0, lift=0.25)
     xs = sorted(xy[0, 0] for xy in traj.xy.values())
@@ -271,6 +290,10 @@ def test_kumihimo_steps():
         kumihimo_steps("S", n_strands=6)
     with pytest.raises(ValueError, match="n_strands"):
         kumihimo_steps("S")
+    # Any other move, or none, is not a kumihimo pattern.
+    for pattern in ("SX", "sr", ""):
+        with pytest.raises(ValueError, match="S \\(swap\\)"):
+            kumihimo_steps(pattern, n_strands=8)
 
 
 def test_kumihimo_is_drawn_where_kumihimo_draws_it():
@@ -484,3 +507,38 @@ def test_kumihimo_braid():
     braid = kumihimo_braid("SR" * 4, 0.12, n_strands=8, iterations=60)
     assert len(braid.points) == 8
     assert braid.closest_approach() >= 0.12 * (1 - 2e-3)
+
+
+# Yarns of 1, 2 and 3 samples have no inner sample, or one, where the
+# Thomas algorithm's sweeps start and stop: where an off-by-one would show.
+# 50 is a yarn of any length.
+# h is half tightening's step (step/2 in its backward Euler step): 10 for
+# its default step of 20, where the tension dominates; 0.05 for a small step
+# of 0.1, where the identity does.
+@pytest.mark.parametrize("h", [0.5 * 20.0, 0.5 * 0.1])
+@pytest.mark.parametrize("hold_top", [True, False])
+@pytest.mark.parametrize("n", [1, 2, 3, 50])
+def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top, h):
+    """Tightening's backward Euler step, (I + h L) x = b, L the second
+    difference along a yarn: solved as a tridiagonal system, as the matrix
+    itself would solve it, every yarn at once."""
+    import numpy as np
+
+    from braidpy.take_off import _tension_solver
+
+    # L: each inner sample pulled towards its two neighbours, (-1, 2, -1);
+    # the last sample, and the first if held, fixed (a row of zeros); the
+    # first, if free, pulled towards its one neighbour only, (1, -1).
+    lap = np.zeros((n, n))
+    for i in range(1, n - 1):
+        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
+    if not hold_top and n > 1:
+        lap[0, :2] = (1.0, -1.0)
+    # Several right-hand sides at once, as tightening solves them: x and y
+    # of three yarns, random.
+    yarns = 3
+    b = np.random.default_rng(0).normal(size=(n, 2 * yarns))
+    expected = np.linalg.solve(np.eye(n) + h * lap, b)
+    # Both solve exactly but for rounding, a few units in the last place of
+    # numbers of order one.
+    assert np.allclose(_tension_solver(n, h, hold_top)(b), expected, atol=1e-12)
