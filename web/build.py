@@ -7,9 +7,11 @@
 The page is plain files: the page itself, three.js, and braidpy as a wheel
 for Pyodide to install in the browser — with math_braid, which braidpy
 needs and PyPI has only as a source package.  Pyodide itself is loaded from
-its CDN, or from wherever ``?pyodide=`` says.  With them, the catalogue of
-braids by topology (:mod:`braidpy.topology_catalog`), made here once rather
-than in every browser: some ten seconds here, minutes there.
+its CDN, or from wherever ``?pyodide=`` says.  With them, what braidpy
+would otherwise say in every browser, said here once: what the page can
+make, so that its form is filled before Python has started, and the
+catalogue of braids by topology (:mod:`braidpy.topology_catalog`), some ten
+seconds here, minutes there.
 
 Run from the repository root, after ``npm install`` in ``web/``::
 
@@ -124,19 +126,24 @@ def _copy_page(site: Path) -> None:
         (site / name).write_text(_NAMED.sub(stamp, text))
 
 
-def _topologies(site: Path) -> None:
-    """The catalogue of braids by topology, as JSON: made by braidpy with
-    all it needs, in the project's own environment."""
+def _data(site: Path) -> None:
+    """What braidpy says once, for every visit, as JSON: the page's
+    catalogue — what it can make, offered before Python has started — and
+    the catalogue of braids by topology.  Made by braidpy with all it
+    needs, in the project's own environment."""
     script = (
-        "import json, sys; from braidpy.topology_catalog import export; "
-        "json.dump(export(), sys.stdout)"
+        "import json, sys; from braidpy import web; "
+        "from braidpy.topology_catalog import export; "
+        "json.dump({'catalogue': web.catalogue(), 'topologies': export()}, sys.stdout)"
     )
     if shutil.which("uv"):
         command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
     else:
         command = [sys.executable, "-c", script]
     made = subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
-    (site / "topologies.json").write_text(made.stdout)
+    data = json.loads(made.stdout)
+    for name, value in data.items():
+        (site / f"{name}.json").write_text(json.dumps(value))
 
 
 def build(site: Path) -> None:
@@ -147,7 +154,7 @@ def build(site: Path) -> None:
     site.mkdir(parents=True)
 
     _copy_page(site)
-    _topologies(site)
+    _data(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")

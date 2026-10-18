@@ -69,15 +69,7 @@ function heard(data) {
   if (data.type === "status") {
     setStatus(data.text);
   } else if (data.type === "ready") {
-    setCatalogue(data.catalogue);
-    const select = $("source");
-    const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
-    for (const [source, about] of Object.entries(catalogue)) {
-      // Out of the menu for now, but still made from a link to it.
-      if (UNLISTED.has(source) && spec.source !== source) continue;
-      select.append(new Option(about.title, source));
-    }
-    writeSpec(spec);
+    offer(data.catalogue);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     submit();
@@ -129,6 +121,25 @@ function heard(data) {
     setStatus(data.message, true);
   }
 }
+
+// The form, filled with what can be made as soon as that is known: from
+// the site (catalogue.json), long before braidpy is ready to make any of
+// it — or, without it, from braidpy when it is.
+let offered = false;
+function offer(sources) {
+  if (offered || !sources) return;
+  offered = true;
+  setCatalogue(sources);
+  const select = $("source");
+  const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
+  for (const [source, about] of Object.entries(catalogue)) {
+    // Out of the menu for now, but still made from a link to it.
+    if (UNLISTED.has(source) && spec.source !== source) continue;
+    select.append(new Option(about.title, source));
+  }
+  writeSpec(spec);
+}
+window.braidpy.catalogue.then(offer);
 
 // What braidpy said while the page loaded, then the rest as it comes.
 worker.onmessage = fromBraidpy;

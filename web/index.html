@@ -22,7 +22,12 @@
           new URLSearchParams(location.search).get("pyodide") ||
           "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
         worker.postMessage({ type: "init", pyodideUrl });
-        return { worker, early };
+        // What can be made, made with the site: the form is filled from it
+        // at once, not when Python is ready.
+        const catalogue = fetch("catalogue.json", { cache: "no-cache" })
+          .then((response) => (response.ok ? response.json() : null))
+          .catch(() => null);
+        return { worker, early, catalogue };
       })();
     </script>
     <script type="importmap">
