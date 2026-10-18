@@ -46,17 +46,20 @@ from braidpy.web import disks, machines, words
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
 from braidpy.web._settings import COLOURS
 from braidpy.web._spec import parse_moves, parse_word
-from braidpy.web._types import MachineGeometry, Result, Source, Spec
-from braidpy.web.machines import machine_geometry
+from braidpy.web._types import MachineGeometry, MachineTurned, Result, Source, Spec
+from braidpy.web.machines import machine_geometry, machine_origin, machine_turned
 
 __all__ = [
     "MachineGeometry",
+    "MachineTurned",
     "Result",
     "Source",
     "Spec",
     "build",
     "catalogue",
     "machine_geometry",
+    "machine_origin",
+    "machine_turned",
     "parse_moves",
     "parse_word",
 ]

@@ -7,7 +7,8 @@
 Serves ``web/site`` locally, opens it in headless Chromium through
 Playwright, and for each source checks that braidpy, running in the page,
 made the braid and every yarn was drawn — with nothing logged as an error;
-and, for the plait, that the card says what else makes it.
+for the plait, that the card says what else makes it; and for a machine,
+that its handle turns it a step.
 
     python web/build.py
     python web/smoke_test.py                       # Pyodide from its CDN
@@ -111,6 +112,20 @@ def main() -> int:
             # Settled as asked, not fallen back to sideways.
             if spec.get("settle") == "physics":
                 ok = ok and "Settled by physics" in page.inner_text("body")
+            # A machine's handle turns it a step.
+            if spec["source"] == "machine":
+                try:
+                    forward = ".handle button[title='Turn the handle a step']"
+                    page.wait_for_selector(forward + ":not([disabled])", timeout=30000)
+                    page.click(forward)
+                    page.wait_for_function(
+                        "() => document.querySelector('.handle .step')"
+                        ".textContent === 'Step 1'",
+                        timeout=30000,
+                    )
+                except Exception:
+                    ok = False
+                    errors.append("the machine's handle did not turn")
             # Its kin, found in the page from the catalogue made with it.
             kin = ""
             if any(spec.get(key) == value for key, value in ALSO_MADE):
