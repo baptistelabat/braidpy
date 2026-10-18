@@ -7,21 +7,21 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=6acbd58c1f";
-import { showKin } from "./info.js?v=6acbd58c1f";
+import { onChosen, rebase } from "./colours.js?v=93b1dd9f56";
+import { showKin } from "./info.js?v=93b1dd9f56";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=6acbd58c1f";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=6acbd58c1f";
-import { machineShapes, machineWanted } from "./machine.js?v=6acbd58c1f";
-import { $ } from "./page.js?v=6acbd58c1f";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=6acbd58c1f";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=6acbd58c1f";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=93b1dd9f56";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=93b1dd9f56";
+import { machineShapes, machineWanted } from "./machine.js?v=93b1dd9f56";
+import { $ } from "./page.js?v=93b1dd9f56";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=93b1dd9f56";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=93b1dd9f56";
 
 const PYODIDE_URL =
   new URLSearchParams(location.search).get("pyodide") ||
   "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
 
-export const worker = new Worker("worker.js?v=6acbd58c1f");
+export const worker = new Worker("worker.js?v=93b1dd9f56");
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -36,7 +36,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=6acbd58c1f");
+  settler = new Worker("settle.js?v=93b1dd9f56");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -91,6 +91,9 @@ function heard(data) {
       if (kinOf.size > KEEP) kinOf.delete(kinOf.keys().next().value);
     }
     showKin(data.kin);
+  } else if (data.type === "turned" || data.type === "origin") {
+    // The machine's handle, turned by hand: for machine.js.
+    document.dispatchEvent(new CustomEvent(`machine-${data.type}`, { detail: data }));
   } else if (data.type === "geometry") {
     machineShapes.set(data.name, data.shape);
     if (data.name === machineWanted) document.dispatchEvent(new CustomEvent("machine-shape"));

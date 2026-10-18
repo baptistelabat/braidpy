@@ -8,6 +8,8 @@
 // Messages in:   {type: "init", pyodideUrl}
 //                {type: "build", id, spec}
 //                {type: "geometry", name}
+//                {type: "turn", id, name, loading, time}
+//                {type: "origin", name, place, time}
 // Messages out:  {type: "status", text}
 //                {type: "ready", catalogue, version}
 //                {type: "laid", id, result, job, settle, twist}
@@ -16,6 +18,10 @@
 //                  the braid's other ways of being made, and the braids
 //                  nearest it (braidpy.topology_catalog.for_page)
 //                {type: "geometry", name, shape}
+//                {type: "turned", id, turned}
+//                  a machine's handle turned by hand (web.machine_turned)
+//                {type: "origin", origin}
+//                  where a carrier put on it then goes in its loading
 //                {type: "error", id?, message}
 
 // The yarns are settled in a worker of their own: see settle.js.
@@ -151,6 +157,44 @@ async function geometry(name) {
   self.postMessage({ type: "geometry", name, shape: JSON.parse(text) });
 }
 
+// A machine's handle turned by hand, and where a carrier put on it at a
+// later step goes in its loading: see braidpy.horn_gear.handle.
+async function turn(message) {
+  await machinery();
+  pyodide.globals.set("turn_job", JSON.stringify(message));
+  // Not turned — a loading braidpy cannot read — is no error worth
+  // showing: the machine is drawn as loaded.
+  let turned = null;
+  try {
+    turned = JSON.parse(
+      await pyodide.runPythonAsync(`
+job = json.loads(turn_job)
+json.dumps(web.machine_turned(job["name"], job["loading"], job["time"]))
+`),
+    );
+  } catch {
+    turned = null;
+  }
+  self.postMessage({ type: "turned", id: message.id, turned });
+}
+
+async function origin(message) {
+  await machinery();
+  pyodide.globals.set("origin_job", JSON.stringify(message));
+  let found = null;
+  try {
+    found = JSON.parse(
+      await pyodide.runPythonAsync(`
+job = json.loads(origin_job)
+json.dumps(web.machine_origin(job["name"], job["place"], job["time"]))
+`),
+    );
+  } catch {
+    found = null;
+  }
+  self.postMessage({ type: "origin", origin: found });
+}
+
 async function machinery() {
   if (machinesReady) return;
   status("Loading networkx, for the machines…");
@@ -166,6 +210,8 @@ self.onmessage = (event) => {
       if (message.type === "init") await init(message.pyodideUrl);
       else if (message.type === "build") await build(message.id, message.spec);
       else if (message.type === "geometry") await geometry(message.name);
+      else if (message.type === "turn") await turn(message);
+      else if (message.type === "origin") await origin(message);
     } catch (error) {
       self.postMessage({
         type: "error",

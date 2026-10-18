@@ -197,6 +197,21 @@ button:focus-visible {
   font-size: 12px;
 }
 
+/* The machine's handle: step 0, back, a step, run; and the step reached. */
+.examples.handle {
+  align-items: center;
+}
+
+.examples.handle .step {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.examples.handle[hidden] {
+  display: none;
+}
+
 .examples {
   display: flex;
   flex-wrap: wrap;
