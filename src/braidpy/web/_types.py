@@ -245,6 +245,23 @@ class Contact(TypedDict):
     y: float
 
 
+class TurnedFrame(TypedDict):
+    """One picture of a machine turning: every slot's and carrier's place."""
+
+    slots: List[List[float]]
+    carriers: List[List[float]]
+
+
+class MachineTurned(TypedDict):
+    """A machine's handle turned by hand, as the page shows it."""
+
+    time: int
+    carriers: List[List[Union[str, int]]]
+    met: List[List[Union[str, int]]]
+    slots: List[List[Union[str, int]]]
+    frames: List[TurnedFrame]
+
+
 class MachineGeometry(TypedDict):
     """A machine as the page draws it from above, to load it by hand."""
 

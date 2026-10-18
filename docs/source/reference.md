@@ -25,6 +25,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.horn_gear.handle
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.linking
    :members:
    :undoc-members:

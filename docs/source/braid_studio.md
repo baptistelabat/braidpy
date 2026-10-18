@@ -41,6 +41,16 @@ The page has a form and a 3D view.
   says at which step and where, and the carriers that met are ringed where
   they started. Left as the machine loads itself, the loading is not
   written into the link.
+- Its **handle** turns it, a step at a time: ▶ turns a step, smoothly, ◀
+  turns it back, ⏮ goes back to step 0, and **Run** turns it until carriers
+  meet, or until stopped. Carriers that meet stop the handle, ringed, at the
+  step they met. What is turned is always the loading at step 0 — what the
+  machine braids with — so a carrier put on a slot at a later step is loaded
+  on the slot at step 0 that brings it there; taken off, the same.
+  braidpy does the turning (`braidpy.horn_gear.handle`) and says where every
+  slot and carrier is through each step: the same places as its plotly
+  animation, so the page and Python agree. In Python,
+  `Handle(machine).turn(5).figure()` is the same handle, drawn with plotly.
 - A machine that braids round **cores** braids them in either as yarn, held
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the
