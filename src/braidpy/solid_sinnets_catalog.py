@@ -271,30 +271,714 @@ abok_3054 = AshleySolidSinnet(
 )
 
 """
+ABOK #3054
+17-strand half round
+"""
+abok_3054 = AshleySolidSinnet(
+    shape="half round",
+    initial_counts_per_space=[3, 1, 2, 1, 2, 2, 2, 1, 2, 1],
+    moves=[
+        (6, 4),
+        (3, 7),
+        (7, 2),
+        (1, 8),
+        (8, 5),
+        (4, 9),
+        (9, 3),
+        (2, 10),
+        (10, 6),
+        (5, 1),
+    ],
+)
+
+"""
+ABOK #3055
+26-strand fanbelt shape
+"""
+abok_3055 = AshleySolidSinnet(
+    shape="fanbelt",
+    initial_counts_per_space=[
+        2, 2, 1, 2, 1, 2, 1, 2,
+        1, 2, 2, 2, 2, 1, 2, 1,
+    ],
+    moves=[
+        (12, 7),
+        (6, 13),
+        (13, 5),
+        (4, 14),
+        (15, 3),
+        (2, 16),
+        (1, 12),
+        (11, 2),
+        (3, 11),
+        (10, 4),
+        (5, 9),
+        (8, 6),
+        (7, 1),
+        (16, 8),
+        (9, 15),
+        (14, 10),
+    ],
+)
+
+"""
+ABOK #3056
+26-strand diamond
 ABOK #3056 https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
+abok_3056 = AshleySolidSinnet(
+    shape="diamond",
+    initial_counts_per_space=[
+        2, 1, 2, 1, 2, 2, 1, 2,
+        2, 1, 2, 1, 2, 2, 1, 2,
+    ],
+    moves=[
+        (1, 12),
+        (11, 2),
+        (3, 10),
+        (9, 4),
+        (6, 1),
+        (16, 7),
+        (8, 15),
+        (14, 9),
+        (2, 16),
+        (15, 3),
+        (4, 14),
+        (13, 5),
+        (5, 13),
+        (12, 6),
+        (7, 11),
+        (10, 8),
+    ],
+)
 
 """
-ABOK #3074 https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
+ABOK #3057
+9-strand triangle
+"""
+abok_3057 = AshleySolidSinnet(
+    shape="triangle",
+    initial_counts_per_space=[2, 2, 2, 1, 1, 1],
+    moves=[
+        (1, 5),
+        (2, 4),
+        (3, 1),
+        (4, 6),
+        (5, 3),
+        (6, 2),
+    ],
+)
+
+"""
+ABOK #3058
+9-strand triangle
+All strands move to the right.
+"""
+abok_3058 = AshleySolidSinnet(
+    shape="triangle",
+    initial_counts_per_space=[2, 2, 2, 1, 1, 1],
+    moves=[
+        (1, 5),
+        (2, 4),
+        (3, 1),
+        (4, 6),
+        (5, 3),
+        (6, 2),
+    ],
+)
+
+"""
+ABOK #3059
+13-strand triangle
+All strands move to the right.
+"""
+abok_3059 = AshleySolidSinnet(
+    shape="triangle",
+    initial_counts_per_space=[2, 2, 2, 2, 1, 1, 1, 1, 1],
+    moves=[
+        (1, 7),
+        (2, 6),
+        (3, 5),
+        (4, 1),
+        (5, 9),
+        (6, 8),
+        (7, 4),
+        (8, 3),
+        (9, 2),
+    ],
+)
+
+"""
+ABOK #3060
+9-strand triangle
+Strands move right and left.
+"""
+abok_3060 = AshleySolidSinnet(
+    shape="triangle",
+    initial_counts_per_space=[2, 1, 1, 1, 2, 2],
+    moves=[
+        (1, 3),
+        (6, 4),
+        (5, 1),
+        (4, 2),
+        (3, 5),
+        (2, 6),
+    ],
+)
+
+"""
+ABOK #3061
+12-strand square, with core
+"""
+abok_3061 = AshleySolidSinnet(
+    shape="square",
+    initial_counts_per_space=[2, 2, 1, 1, 2, 1, 2, 1],
+    moves=[
+        (2, 8),
+        (1, 3),
+        (8, 6),
+        (7, 1),
+        (6, 4),
+        (5, 7),
+        (4, 2),
+        (3, 5),
+    ],
+)
+
+"""
+ABOK #3062
+26-strand round
+"""
+abok_3062 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3],
+    moves=[
+        (12, 8),
+        (7, 1),
+        (1, 7),
+        (6, 2),
+        (2, 10),
+        (9, 3),
+        (3, 9),
+        (8, 4),
+        (4, 12),
+        (11, 5),
+        (5, 11),
+        (10, 6),
+    ],
+)
+
+"""
+ABOK #3063
+45-strand round
+"""
+abok_3063 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[
+        3, 2, 3, 3, 2, 3, 2, 3, 2,
+        2, 3, 2, 2, 3, 2, 3, 2, 3,
+    ],
+    moves=[
+        (16, 12),
+        (11, 17),
+        (18, 10),
+        (1, 9),
+        (8, 2),
+        (3, 7),
+        (4, 18),
+        (17, 5),
+        (6, 16),
+        (7, 15),
+        (14, 8),
+        (9, 13),
+        (10, 6),
+        (5, 11),
+        (12, 4),
+        (13, 3),
+        (2, 14),
+        (15, 1),
+    ],
+)
+
+"""
+ABOK #3064
+19-strand round
+"""
+abok_3064 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[
+        1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1,
+    ],
+    moves=[
+        (7, 11),
+        (6, 12),
+        (5, 1),
+        (4, 2),
+        (11, 3),
+        (10, 4),
+        (9, 5),
+        (8, 6),
+        (3, 7),
+        (2, 8),
+        (1, 9),
+        (12, 10),
+    ],
+)
+
+"""
+ABOK #3065
+9-strand round
+"""
+abok_3065 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[2, 1, 2, 1, 2, 1],
+    moves=[
+        (5, 2),
+        (1, 4),
+        (3, 6),
+        (2, 5),
+        (4, 1),
+        (6, 3),
+    ],
+)
+
+"""
+ABOK #3066
+10-strand round
+All strands move to the right.
+"""
+abok_3066 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[2, 1, 1, 1, 2, 1, 1, 1],
+    moves=[
+        (1, 2),
+        (5, 6),
+        (2, 3),
+        (6, 7),
+        (3, 4),
+        (7, 8),
+        (4, 5),
+        (8, 1),
+    ],
+)
+"""
+ABOK #3068
+12-strand round
+All strands move to the right.
+"""
+abok_3068 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[2, 2, 2, 2, 2, 2],
+    moves=[
+        (1, 4),
+        (4, 1),
+        (2, 5),
+        (5, 2),
+        (3, 6),
+        (6, 3),
+    ],
+)
+
+"""
+ABOK #3069
+6-strand round
+All strands move to the right.
+"""
+abok_3069 = AshleySolidSinnet(
+    shape="round",
+    initial_counts_per_space=[2, 2, 1, 1],
+    moves=[
+        (1, 3),
+        (2, 4),
+        (3, 1),
+        (4, 2),
+    ],
+)
+
+"""
+ABOK #3070
+8-strand square
+Odd strands move right; even strands move left.
+"""
+abok_3070 = AshleySolidSinnet(
+    shape="square",
+    initial_counts_per_space=[2, 2, 2, 2],
+    moves=[
+        (1, 3),
+        (3, 1),
+        (2, 4),
+        (4, 2),
+    ],
+)
+
+"""
+ABOK #3071
+14-strand chisel-edge
+Odd strands move right; even strands move left.
+"""
+abok_3071 = AshleySolidSinnet(
+    shape="chisel-edge",
+    initial_counts_per_space=[2, 1, 2, 1, 3, 2, 1, 2],
+    moves=[
+        (5, 1),
+        (8, 2),
+        (3, 7),
+        (6, 4),
+        (1, 5),
+        (4, 6),
+        (7, 3),
+        (2, 8),
+    ],
+)
+
+"""
+ABOK #3072
+20-strand chisel-edge
+Odd strands move right; even strands move left.
+"""
+abok_3072 = AshleySolidSinnet(
+    shape="chisel-edge",
+    initial_counts_per_space=[
+        2, 1, 2, 1, 2, 1, 3, 2, 1, 2, 1, 2,
+    ],
+    moves=[
+        (7, 1),
+        (12, 2),
+        (3, 11),
+        (10, 4),
+        (5, 9),
+        (8, 6),
+        (1, 7),
+        (6, 8),
+        (9, 5),
+        (4, 10),
+        (11, 3),
+        (2, 12),
+    ],
+)
+
+"""
+ABOK #3073
+20-strand square
+"""
+abok_3073 = AshleySolidSinnet(
+    shape="square",
+    initial_counts_per_space=[2, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 1],
+    moves=[
+        (2, 12),
+        (11, 3),
+        (4, 10),    # explicitly marked Left in the table
+        (10, 4),    # explicitly marked Left in the table
+        (5, 9),
+        (8, 6),
+        (3, 5),
+        (6, 2),
+        (1, 7),
+        (7, 1),
+        (12, 8),
+        (9, 11),
+    ],
+)
+
+"""
+ABOK #3074
+26-strand square
+https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
 
+abok_3074 = AshleySolidSinnet(
+    shape="square",
+    initial_counts_per_space=[
+        2, 2, 1, 2, 2, 1, 2, 1,
+        2, 2, 1, 2, 2, 1, 2, 1,
+    ],
+    moves=[
+        (2, 16),
+        (15, 3),
+        (4, 14),
+        (13, 5),
+        (5, 13),
+        (12, 6),
+        (7, 11),
+        (10, 8),
+        (6, 4),
+        (3, 7),
+        (8, 2),
+        (1, 9),
+        (9, 1),
+        (16, 10),
+        (11, 15),
+        (14, 12),
+    ],
+)
 
 """
-16 Strand Pentagon
+ABOK #3075
+20-strand oblong
+"""
+abok_3075 = AshleySolidSinnet(
+    shape="oblong",
+    initial_counts_per_space=[
+        2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 1, 2,
+    ],
+    moves=[
+        (2, 12),
+        (12, 3),
+        (4, 11),
+        (10, 5),
+        (6, 9),
+        (8, 6),
+        (5, 7),
+        (7, 4),
+        (3, 8),
+        (9, 2),
+        (1, 10),
+        (11, 1),
+    ],
+)
+
+"""
+ABOK #3076
+20-strand oblong
+"""
+abok_3076 = AshleySolidSinnet(
+    shape="oblong",
+    initial_counts_per_space=[
+        2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 1, 2,
+    ],
+    moves=[
+        (4, 2),
+        (1, 5),
+        (6, 1),
+        (12, 7),
+        (7, 11),
+        (10, 8),
+        (2, 12),
+        (11, 3),
+        (3, 10),
+        (9, 4),
+        (5, 9),
+        (8, 6),
+    ],
+)
+
+"""
+ABOK #3077
+32-strand oblong
+"""
+abok_3077 = AshleySolidSinnet(
+    shape="oblong",
+    initial_counts_per_space=[
+        2, 2, 1, 2, 1, 2, 1, 2, 2, 1,
+        2, 2, 1, 2, 1, 2, 1, 2, 2, 1,
+    ],
+    moves=[
+        (2, 20),
+        (19, 3),
+        (4, 19),
+        (18, 5),
+        (6, 17),
+        (16, 7),
+        (8, 15),
+        (14, 9),
+        (9, 13),
+        (12, 10),
+        (10, 8),
+        (7, 11),
+        (11, 6),
+        (5, 12),
+        (13, 4),
+        (3, 14),
+        (15, 2),
+        (1, 16),
+        (17, 1),
+        (20, 18),
+    ],
+)
+
+"""
+ABOK #3078
+20-strand ellipse
+"""
+abok_3078 = AshleySolidSinnet(
+    shape="ellipse",
+    initial_counts_per_space=[
+        2, 1, 1, 2, 1, 1, 2, 1, 1, 2,
+        1, 2, 2, 1,
+    ],
+    moves=[
+        (1, 3),
+        (4, 14),
+        (13, 5),
+        (11, 6),
+        (7, 11),
+        (10, 8),
+        (8, 13),
+        (14, 7),
+        (6, 1),
+        (5, 9),
+        (9, 4),
+        (3, 10),
+        (11, 2),
+        (2, 12),
+    ],
+)
+
+"""
+ABOK #3079
+36-strand pentagon
+"""
+abok_3079 = AshleySolidSinnet(
+    shape="pentagon",
+    initial_counts_per_space=[
+        3, 1, 2, 1, 3, 1, 2, 1, 3, 2,
+        1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 2,
+    ],
+    moves=[
+        (1, 13),
+        (12, 2),
+        (3, 11),
+        (10, 4),
+        (5, 17),
+        (16, 6),
+        (7, 15),
+        (14, 8),
+        (9, 1),
+        (20, 10),
+        (11, 19),
+        (18, 12),
+        (13, 5),
+        (4, 14),
+        (15, 3),
+        (2, 16),
+        (17, 9),
+        (8, 18),
+        (19, 7),
+        (6, 20),
+    ],
+)
+
+"""
 ABOK #3080
+16-strand pentagon
 https://www.facebook.com/photo/?fbid=499834040106245&set=a.134484456641207
-"""
 
 """
-ABOK #3081 https://www.youtube.com/watch?v=FDMqYdqFHtU
-"""
+abok_3080 = AshleySolidSinnet(
+    shape="pentagon",
+    initial_counts_per_space=[
+        2, 1, 2, 1, 2, 2, 1, 2, 1, 2,
+    ],
+    moves=[
+        (1, 7),
+        (6, 2),
+        (3, 9),
+        (8, 4),
+        (5, 1),
+        (10, 6),
+        (7, 3),
+        (2, 8),
+        (9, 5),
+        (4, 10),
+    ],
+)
 
 """
-61-strand
+ABOK #3081
+31-strand pentalpha
+https://www.youtube.com/watch?v=FDMqYdqFHtU
+"""
+abok_3081 = AshleySolidSinnet(
+    shape="pentalpha",
+    initial_counts_per_space=[
+        3, 1, 1, 1, 3,
+        1, 1, 1, 3, 1,
+        1, 2, 2, 1, 2,
+        1, 2, 2, 1, 1,
+    ],
+    moves=[
+        (18, 16),
+        (15, 9),
+        (1, 13),
+        (12, 2),
+        (2, 10),
+        (19, 3),
+        (5, 17),
+        (16, 6),
+        (6, 4),
+        (3, 7),
+        (9, 1),
+        (20, 10),
+        (10, 8),
+        (7, 11),
+        (13, 5),
+        (4, 14),
+        (14, 12),
+        (11, 15),
+        (17, 9),
+        (8, 18),
+    ],
+)
+
+"""
 ABOK #3082
+61-strand pentalpha
 https://www.youtube.com/watch?v=_Ydpx9smLAk
 https://www.youtube.com/watch?v=w1PJb4Bxb2c
 """
+abok_3082 = AshleySolidSinnet(
+    shape="pentalpha",
+    initial_counts_per_space=[
+        3, 1, 2, 1, 1, 1, 2, 1, 3, 1,
+        2, 1, 1, 1, 2, 1, 3, 1, 2, 1,
+        1, 2, 1, 2, 2, 1, 2, 1, 2, 1,
+        2, 1, 2, 2, 1, 2, 1, 1, 2, 1,
+    ],
+    moves=[
+        (34, 32),
+        (31, 35),
+        (36, 30),
+        (29, 37),
+        (1, 25),
+        (24, 2),
+        (3, 23),
+        (22, 4),
+        (2, 40),
+        (39, 3),
+        (4, 38),
+        (37, 5),
+        (9, 33),
+        (32, 10),
+        (11, 31),
+        (30, 12),
+        (10, 8),
+        (7, 11),
+        (12, 6),
+        (5, 13),
+        (17, 1),
+        (40, 18),
+        (19, 39),
+        (38, 20),
+        (18, 16),
+        (15, 19),
+        (20, 14),
+        (13, 21),
+        (25, 9),
+        (8, 26),
+        (27, 7),
+        (6, 28),
+        (26, 24),
+        (23, 27),
+        (28, 22),
+        (21, 29),
+        (33, 17),
+        (16, 34),
+        (35, 15),
+        (14, 36),
+    ],
+)
+
+
 
 """
 82-strand pentagonal sinnet
