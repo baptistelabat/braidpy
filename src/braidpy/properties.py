@@ -4,14 +4,14 @@
 
 """
 Filename: properties.py
-Description: Properties of braid
+Description: Properties and invariants of braids
 Authors: Baptiste Labat
 Created: 2025-05-24
 Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import List
+from typing import List, Optional
 from sympy import Poly, symbols, simplify
 from .braid import Braid
 
@@ -19,7 +19,14 @@ t = symbols("t")
 
 
 def alexander_polynomial(braid: Braid) -> Poly:
-    """Compute the Alexander polynomial of a braid."""
+    """Compute the Alexander polynomial of a braid.
+
+    Args:
+        braid: The Braid object to compute the polynomial for.
+
+    Returns:
+        Poly: The Alexander polynomial of the braid.
+    """
     matrix = braid.to_matrix()
 
     # Reduced Burau: delete last row and column
@@ -33,16 +40,16 @@ def alexander_polynomial(braid: Braid) -> Poly:
     return poly
 
 
-def conjugacy_class(braid: Braid, conjugators: List[Braid] = None) -> List[Braid]:
-    """
-    Generate conjugates of a braid by a list of other braids.
+def conjugacy_class(braid: Braid, conjugators: Optional[List[Braid]] = None) -> List[Braid]:
+    """Generate conjugates of a braid by a list of other braids.
 
     Args:
-        braid: The Braid object to conjugate
-        conjugators: A list of Braid objects to use as conjugators
+        braid: The Braid object to conjugate.
+        conjugators: A list of Braid objects to use as conjugators.
+            Defaults to generators and their inverses.
 
     Returns:
-        List of unique conjugates a * braid * a⁻¹
+        List[Braid]: List of unique conjugates a * braid * a⁻¹.
     """
     conjugates = set()
     if conjugators is None:
