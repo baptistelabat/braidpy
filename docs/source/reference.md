@@ -60,6 +60,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.ring_program
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.similarity
    :members:
    :undoc-members:
