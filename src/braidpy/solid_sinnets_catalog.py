@@ -13,6 +13,8 @@ like a marudai, makes the plait and the square and round sinnets as well
 as the solid sinnets it is in the book for, and seeing them made there
 helps to understand the bigger ones."""
 
+# Laid out as the book is, rows of counts and all: not reflowed.
+# fmt: off
 """
 ABOK #2965
 3-strand flat
@@ -137,7 +139,10 @@ abok_3048 = AshleySolidSinnet(
         (8, 2),
         (3, 7),
         (6, 4),
-        (9, 1),
+        # (9, 1) as transcribed, which gives space 1 two strands a cycle and
+        # space 5 none: #3047's moves on the same twelve spaces are these
+        # very moves with (9, 5), the cycle 1 > 9 > 5 > 1.
+        (9, 5),
         (4, 10),
         (11, 3),
         (2, 12),
@@ -262,17 +267,8 @@ abok_3053 = AshleySolidSinnet(
 """
 ABOK #3054
 17-strand half round
+The same moves as #3053.
 https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
-"""
-abok_3054 = AshleySolidSinnet(
-    shape="half round",
-    initial_counts_per_space=[3, 1, 2, 1, 2, 2, 2, 1, 2, 1],
-    moves=abok_3053.moves,
-)
-
-"""
-ABOK #3054
-17-strand half round
 """
 abok_3054 = AshleySolidSinnet(
     shape="half round",
@@ -293,7 +289,7 @@ abok_3054 = AshleySolidSinnet(
 
 """
 ABOK #3055
-26-strand fanbelt shape
+26-strand fanbelt
 """
 abok_3055 = AshleySolidSinnet(
     shape="fanbelt",
@@ -428,7 +424,8 @@ abok_3060 = AshleySolidSinnet(
 
 """
 ABOK #3061
-12-strand square, with core
+12-strand square
+With a core.
 """
 abok_3061 = AshleySolidSinnet(
     shape="square",
@@ -830,9 +827,11 @@ ABOK #3079
 """
 abok_3079 = AshleySolidSinnet(
     shape="pentagon",
+    # Transcribed with two more spaces, 21 and 22, holding 1 and 2: no move
+    # uses them, and without them the strands are the 36 of the note.
     initial_counts_per_space=[
         3, 1, 2, 1, 3, 1, 2, 1, 3, 2,
-        1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 2,
+        1, 2, 1, 2, 2, 2, 1, 2, 2, 2,
     ],
     moves=[
         (1, 13),
@@ -901,7 +900,12 @@ abok_3081 = AshleySolidSinnet(
         (15, 9),
         (1, 13),
         (12, 2),
-        (2, 10),
+        # (2, 10) and, below, (17, 9) as transcribed — 19 and 20 read as 9
+        # and 10 — give spaces 9 and 10 two strands a cycle and 19 and 20
+        # none.  As corrected, the even spaces are one cycle,
+        # 18 > 16 > 6 > 4 > 14 > 12 > 2 > 20 > 10 > 8 > 18, and the odd
+        # ones another, 1 > 13 > 5 > 17 > 19 > 3 > 7 > 11 > 15 > 9 > 1.
+        (2, 20),
         (19, 3),
         (5, 17),
         (16, 6),
@@ -915,7 +919,7 @@ abok_3081 = AshleySolidSinnet(
         (4, 14),
         (14, 12),
         (11, 15),
-        (17, 9),
+        (17, 19),
         (8, 18),
     ],
 )
@@ -1003,6 +1007,9 @@ https://www.youtube.com/watch?v=BPxj2Z9UYR0&t=664s
 By John Richings
 https://www.facebook.com/photo?fbid=598774186878896&set=pcb.598774553545526
 """
+
+
+# fmt: on
 
 
 def _entry(name: str, sinnet: AshleySolidSinnet) -> Entry[AshleySolidSinnet]:
