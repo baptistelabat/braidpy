@@ -292,6 +292,18 @@ defaults — is written with the site (`catalogue.json`), so the menu and
 fields are there at once, and a braid chosen before Python is ready is the
 one made when it is.
 
+
+Every braid the page offers as it comes — each catalogued braid, each braid
+word example — is also made once, when the site is built
+({func}`~braidpy.web.premade`), and kept with it, laid as braidpy lays it for
+the page to tighten. Chosen as it comes, such a braid is shown at once, before
+Python has started, and its kin and other ways follow when Python is ready;
+changed in any way, it is made in the page. That spares a visitor what the
+biggest braids cost to lay — a sinnet of 36 strands took a minute natively,
+many in the browser — though not their tightening, done in the page either
+way. `python web/build.py --no-premade` leaves them out, to try the page
+sooner.
+
 ## Trying it locally
 
 ```sh

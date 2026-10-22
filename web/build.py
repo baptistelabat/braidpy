@@ -126,6 +126,24 @@ def _copy_page(site: Path) -> None:
         (site / name).write_text(_NAMED.sub(stamp, text))
 
 
+def _braidpy(script: str) -> subprocess.CompletedProcess:
+    """A Python script run with braidpy and all it needs: the project's own
+    environment."""
+    if shutil.which("uv"):
+        command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
+    else:
+        command = [sys.executable, "-c", script]
+    return subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+
+
+def _premade(site: Path) -> None:
+    """Every braid the page offers as it comes, made once here
+    (``braidpy.web.premade``): a visitor choosing one sees it at once,
+    without waiting for Python — the biggest sinnets took minutes."""
+    script = f"from braidpy import web; web.premade({str(site / 'made')!r})"
+    _braidpy(script)
+
+
 def _data(site: Path) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
     catalogue — what it can make, offered before Python has started — and
@@ -136,17 +154,12 @@ def _data(site: Path) -> None:
         "from braidpy.topology_catalog import export; "
         "json.dump({'catalogue': web.catalogue(), 'topologies': export()}, sys.stdout)"
     )
-    if shutil.which("uv"):
-        command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
-    else:
-        command = [sys.executable, "-c", script]
-    made = subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
-    data = json.loads(made.stdout)
+    data = json.loads(_braidpy(script).stdout)
     for name, value in data.items():
         (site / f"{name}.json").write_text(json.dumps(value))
 
 
-def build(site: Path) -> None:
+def build(site: Path, premade: bool = True) -> None:
     if not (THREE / "build" / "three.module.js").exists():
         raise SystemExit("three.js is missing: run `npm install` in web/ first.")
     if site.exists():
@@ -155,6 +168,8 @@ def build(site: Path) -> None:
 
     _copy_page(site)
     _data(site)
+    if premade:
+        _premade(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")
@@ -194,7 +209,13 @@ def main() -> None:
     parser.add_argument(
         "--out", type=Path, default=WEB / "site", help="Where to write the site."
     )
-    build(parser.parse_args().out)
+    parser.add_argument(
+        "--no-premade",
+        action="store_true",
+        help="Leave out the braids made with the site: quicker, for trying the page.",
+    )
+    args = parser.parse_args()
+    build(args.out, premade=not args.no_premade)
 
 
 if __name__ == "__main__":

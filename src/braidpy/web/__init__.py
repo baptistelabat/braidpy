@@ -40,11 +40,13 @@ tightening steps; 0 lays the yarns without tightening them.
 
 from __future__ import annotations
 
-from typing import Dict
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional, cast
 
 from braidpy.web import disks, machines, words
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
-from braidpy.web._settings import COLOURS
+from braidpy.web._settings import COLOURS, OWN
 from braidpy.web._spec import parse_moves, parse_word
 from braidpy.web._types import MachineGeometry, MachineTurned, Result, Source, Spec
 from braidpy.web.machines import machine_geometry, machine_origin, machine_turned
@@ -62,6 +64,8 @@ __all__ = [
     "machine_turned",
     "parse_moves",
     "parse_word",
+    "premade",
+    "premade_specs",
 ]
 
 # What can be made, in the order the page offers it: each source's
@@ -117,3 +121,66 @@ def build(spec: Spec, tighten: bool = True) -> Result:
     finally:
         _PAGE_TIGHTENS.reset(later)
         _TIGHTENING.reset(job)
+
+
+def premade_specs() -> List[Spec]:
+    """The braids a page offers as they come — each catalogued braid and
+    each braid word example, with the source's defaults — to be made once,
+    with the site, rather than by every visitor (:func:`premade`).
+
+    Returns:
+        Their descriptions, as short as they can be: what differs from the
+        source's defaults is left to them.
+    """
+    specs: List[Spec] = []
+    for source, about in catalogue().items():
+        for entry in about.get("entries", []):
+            if entry["name"] != OWN:
+                specs.append(cast(Spec, {"source": source, "name": entry["name"]}))
+        for example in about.get("examples", []):
+            made = {k: v for k, v in example.items() if k != "title"}
+            specs.append(cast(Spec, {"source": source, **made}))
+    return specs
+
+
+def _premade_one(spec: Spec) -> Optional[str]:
+    """One braid, laid for a page to tighten, as JSON; None if it cannot be
+    made."""
+    try:
+        return json.dumps(build(spec, tighten=False), separators=(",", ":"))
+    except ValueError:
+        return None
+
+
+def premade(directory: str, workers: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Make every braid of :func:`premade_specs`, laid as
+    :func:`build` lays it for a page to tighten (``tighten=False``), and
+    write each as JSON in ``directory``, with ``index.json`` saying which
+    is which.  A page finding the braid asked for there shows it at once,
+    without Python.  The same braid every time: unchanged, a file is
+    written the same.
+
+    Args:
+        directory: Where to write them; made if missing.
+        workers: Processes to make them with; one per processor if None.
+
+    Returns:
+        The index: per braid, its ``spec`` and its ``file``.
+    """
+    from concurrent.futures import ProcessPoolExecutor
+
+    out = Path(directory)
+    out.mkdir(parents=True, exist_ok=True)
+    specs = premade_specs()
+    index: List[Dict[str, Any]] = []
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        for number, (spec, text) in enumerate(
+            zip(specs, pool.map(_premade_one, specs))
+        ):
+            if text is None:
+                continue
+            file = f"{number}.json"
+            (out / file).write_text(text)
+            index.append({"spec": spec, "file": file})
+    (out / "index.json").write_text(json.dumps(index))
+    return index
