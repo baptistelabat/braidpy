@@ -8,7 +8,7 @@ run-name: Braid Studio — build, test${{ github.event_name == 'push' && ' and p
 
 on:
   push:
-    branches: [develop, claude/lace-source]
+    branches: [develop, claude/colour-groups]
     paths:
       - "src/**"
       - "web/**"

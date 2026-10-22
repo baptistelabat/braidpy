@@ -140,6 +140,27 @@ def main() -> int:
                 except Exception:
                     ok = False
                     errors.append("the machine's handle did not turn")
+            # Two strands coloured at once are a group, recoloured together.
+            if spec["source"] == "word":
+                try:
+                    page.click("#strand-list button[data-strand='0']")
+                    page.click(
+                        "#strand-list button[data-strand='1']", modifiers=["Shift"]
+                    )
+                    page.click("#strand-palette .dab[data-colour='#000000']")
+                    group = "#strand-groups button[data-strands='0,1']"
+                    page.wait_for_selector(group, timeout=10000)
+                    page.click(group)
+                    page.click("#strand-palette .dab[data-colour='#ffffff']")
+                    page.wait_for_function(
+                        "() => ['0', '1'].every((i) => document.querySelector("
+                        "`#strand-list button[data-strand='${i}']`)"
+                        ".style.getPropertyValue('--swatch') === '#ffffff')",
+                        timeout=10000,
+                    )
+                except Exception:
+                    ok = False
+                    errors.append("a group of strands was not recoloured together")
             # Its kin, found in the page from the catalogue made with it.
             kin = ""
             if any(spec.get(key) == value for key, value in ALSO_MADE):
