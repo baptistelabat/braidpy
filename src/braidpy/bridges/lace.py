@@ -19,9 +19,9 @@ come with any signs, anywhere.  So the strands are kept side by side with
 a notch to spare, and when a crossing's sign is not its gear's, they all
 move along one notch, into the spare one, crossing nobody: every gear
 under them is then of the other way.  They only ever move between two
-neighbouring positions, so they never reach the ring's seam, which would
-twist the braid; and they end where they began, since a punchcard is run
-round and round.
+neighbouring positions, so they keep off the ring's seam, as the strands
+of a word do (:mod:`braidpy.ring_program`); and they end where they began,
+since a punchcard is run round and round.
 
 A step of the card is two lines over the gears, as the machine reads it:
 the gears to turn anticlockwise, then those to turn clockwise.  The swaps
