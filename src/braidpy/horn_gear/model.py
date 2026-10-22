@@ -291,6 +291,28 @@ class BraidingMachine:
         """
         return None
 
+    def contact_exchanges(self, conn: "Connection", time: int) -> bool:
+        """Whether this contact is handing a carrier over at ``time``.
+
+        On an ordinary machine every contact always exchanges, so the two
+        slots meeting there are the same point in space and only one of them
+        may hold a carrier -- which is what
+        :func:`~braidpy.horn_gear.simulation.simulate` checks for.
+
+        A machine with switched contacts overrides this.  Where a switch
+        declines the slots presented to it, the deflector stands between the
+        two gears and holds their paths apart, so a carrier may ride past on
+        either side without meeting the other.
+
+        Args:
+            conn: The contact in question.
+            time: Step being taken.
+
+        Returns:
+            True if the two slots at this contact share a point this step.
+        """
+        return True
+
     def riding_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
         """Which (gear, slot) sweeps a carrier through the step at ``time``.
 

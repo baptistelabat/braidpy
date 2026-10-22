@@ -342,9 +342,16 @@ def _check_connection_point_collision(
     When both gear_a[sa(t)] and gear_b[sb(t)] hold carriers they are at the
     same physical tangent point, causing a visual collision at frac=0 of the
     next animation step.
+
+    Contacts the machine says are not exchanging this step are skipped: see
+    :meth:`~braidpy.horn_gear.model.BraidingMachine.contact_exchanges`.
     """
     pos_map = {c.position: c.carrier_id for c in state.carriers}
     for conn in machine.connections:
+        # A contact that is not exchanging this step holds the two gears'
+        # paths apart, so both of its slots may be occupied at once.
+        if not machine.contact_exchanges(conn, state.time):
+            continue
         sa = machine.slot_at_connection(conn.gear_a, conn.slot_a0, state.time)
         sb = machine.slot_at_connection(conn.gear_b, conn.slot_b0, state.time)
         if (conn.gear_a, sa) in pos_map and (conn.gear_b, sb) in pos_map:

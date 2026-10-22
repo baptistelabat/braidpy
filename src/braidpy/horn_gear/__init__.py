@@ -30,6 +30,17 @@ from .jacquard import (
     notch_positions,
 )
 from .loading import load_carriers
+from .switch import (
+    MULTIBAND_10_15_10_BANDS,
+    MULTIBAND_10_15_10_CARRIERS,
+    MULTIBAND_10_15_10_SLOTS,
+    Switch,
+    SwitchedMachine,
+    SwitchError,
+    band_of,
+    multiband_10_15_10,
+    multiband_band,
+)
 from .layout import (
     axial_clearance,
     axial_position,
@@ -119,6 +130,15 @@ __all__ = [
     "carrier_places",
     "initial_state",
     "load_carriers",
+    "MULTIBAND_10_15_10_BANDS",
+    "MULTIBAND_10_15_10_CARRIERS",
+    "MULTIBAND_10_15_10_SLOTS",
+    "Switch",
+    "SwitchedMachine",
+    "SwitchError",
+    "band_of",
+    "multiband_10_15_10",
+    "multiband_band",
     "step",
     "simulate",
     "state_period",
