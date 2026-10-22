@@ -12,7 +12,7 @@ License: Mozilla Public License 2.0
 """
 
 import enum
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union, cast
 import numpy as np
 
 
@@ -36,7 +36,6 @@ from braidpy.utils import (
     colorize,
     lazy_module,
     StrictlyPositiveInt,
-    PositiveInt,
 )
 
 
@@ -157,14 +156,16 @@ class Braid:
             object.__setattr__(self, "n_strands", actual_n)
 
     @property
-    def generators(self):
-        return single_crossing_braiding_process(self.process)
+    def generators(self) -> list[int]:
+        """List of Artin's generators in the braid word."""
+        # Checked to be a braiding process when the braid was made.
+        return single_crossing_braiding_process(cast(BraidingProcess, self.process))
 
     @property
-    def main_generator(self):
-        """A main generator of a braid word w is the generator with the lowest index
-        https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
+    def main_generator(self) -> Optional[int]:
+        """A main generator of a braid word w is the generator with the lowest index.
 
+        https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
         """
         if not self.no_zero().generators:
             return None
@@ -173,7 +174,7 @@ class Braid:
     def __repr__(self) -> str:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
 
-    def format_to_notation(self, target: str = ""):
+    def format_to_notation(self, target: str = "") -> str:
         """
         Inspired from https://github.com/abhikpal/dehornoy/blob/master/braid.py
 
@@ -265,44 +266,57 @@ class Braid:
                 word += separator
         return f"{word}"
 
-    def no_zero(self):
-        """
-        Suppress all the zero steps (multiplication by neutral element)
+    def no_zero(self) -> "Braid":
+        """Suppress all the zero steps (multiplication by neutral element).
 
         Returns:
-            Braid
+            Braid: A new braid with zero generators removed.
         """
         return Braid([g for g in self.generators if g != 0], self.n_strands)
 
-    def word_length(self):
-        """
-        Length of the word including neutral element
+    def word_length(self) -> int:
+        """Length of the word including neutral element.
 
         Returns:
-            int: the length of the braid word
+            int: The length of the braid word.
         """
-
         return len(self.generators)
 
-    def __len__(self):
-        """
-        Define the length of the braid as the length of its word
+    def __len__(self) -> int:
+        """Define the length of the braid as the length of its word.
 
         Returns:
-            int: the length of the braid word
+            int: The length of the braid word.
         """
         return self.word_length()
 
     def __mul__(self, other: "Braid") -> "Braid":
-        """Compose two braids (concatenate operation of other after self
+        """Compose two braids (concatenate operation of other after self).
 
-        This corresponds to multiplication of two braids in braid theory"""
+        This corresponds to multiplication of two braids in braid theory.
+
+        Args:
+            other: The braid to compose with self.
+
+        Returns:
+            Braid: The composed braid.
+
+        Raises:
+            ValueError: If braids have different number of strands.
+        """
         if self.n_strands != other.n_strands:
             raise ValueError("Braids must have the same number of strands")
         return Braid(self.generators + other.generators, self.n_strands)
 
-    def __pow__(self, n) -> "Braid":
-        """Raise bread to power two braids (concatenate them)"""
+    def __pow__(self, n: int) -> "Braid":
+        """Raise braid to a power by concatenating it n times.
+
+        Args:
+            n: The exponent.
+
+        Returns:
+            Braid: The braid raised to power n.
+        """
         if n == 0:
             return Braid([], self.n_strands)
         elif n > 0:
@@ -313,44 +327,58 @@ class Braid:
         else:
             return (self ** (-n)).inverse()
 
-    def __key(self):
-        """
-        Enables to get a key on the braid (used by hash function)
+    def __key(self) -> tuple:
+        """Get a key on the braid (used by hash function).
 
         Returns:
-            Tuple: key constructed with the Artin's generators and the number of strands
+            tuple: Key constructed with the Artin's generators and the number of strands.
         """
         return tuple(self.generators + [self.n_strands])
 
-    def word_eq(self, other):
+    def word_eq(self, other: "Braid") -> bool:
+        """Check if two braids have identical word representations.
+
+        Args:
+            other: The braid to compare with.
+
+        Returns:
+            bool: True if the braid words are identical.
+        """
         return self.__key() == other.__key()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """Hash the braid based on its word representation.
+
+        Returns:
+            int: Hash value for the braid.
+        """
         return hash(self.__key())
 
-    def __eq__(self, other) -> bool:
-        """
-        Check if two braids are equivalent
-        We ask to get the same number of strands
+    def __eq__(self, other: object) -> bool:
+        """Check if two braids are topologically equivalent.
 
-        Relies on math_braid implementation from J. Cha et al, "An Efficient Implementation of Braid Groups",
-        Advances in Cryptology: Proceedings of ASIACRYPT 2001,
-        Lecture Notes in Computer Science (2001), 144--156.
-        https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
+        Relies on math_braid implementation from J. Cha et al,
+        "An Efficient Implementation of Braid Groups", Advances in Cryptology:
+        Proceedings of ASIACRYPT 2001, Lecture Notes in Computer Science (2001),
+        144--156. https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
 
-        Complexity is in O(l²n.log n) where n is the word size and l correspond roughly to the number of strands.
+        Complexity is in O(l²n.log n) where n is the word size and l corresponds
+        roughly to the number of strands.
 
-        Might not be the best algorithm compared to handle reduction which is efficient in practice and
-        whose complexity is assumed to be linear in O(n), but without proof and an exponential majorant.
+        Might not be the best algorithm compared to handle reduction which is
+        efficient in practice and whose complexity is assumed to be linear in O(n),
+        but without proof and an exponential majorant.
         ON WORD REVERSING IN BRAID GROUPS PATRICK DEHORNOY AND BERT WIEST
         https://dehornoy.lmno.cnrs.fr/Papers/Dhg.pdf
 
         Args:
-            other(Braid): the braid to compare with
+            other: The braid to compare with.
 
         Returns:
-            bool: True if the braid are topologically equivalent
+            bool: True if the braids are topologically equivalent.
         """
+        if not isinstance(other, Braid):
+            return NotImplemented
         if self.n_strands != other.n_strands:
             return False
         if not self.no_zero().generators and not other.no_zero().generators:
@@ -360,40 +388,40 @@ class Braid:
         ) == math_braid.Braid(list(other.generators), other.n_strands)
 
     def inverse(self) -> "Braid":
-        """
-        Return the inverse of the braid
+        """Return the inverse of the braid.
+
         This corresponds to the image of the braid in a mirror.
-        Both order and signs are reversed
+        Both order and signs are reversed.
 
         Returns:
-            Braid: the inverse braid
+            Braid: The inverse braid.
         """
         return Braid([-g for g in reversed(self.generators)], self.n_strands)
 
     def __invert__(self) -> "Braid":
-        """
-        Inverse of the braid with symbole ~
-        This corresponds to the image of the braid in a mirror orthogonal to the braid direction
-        The last operation becomes the firt one
-        Both order of operation and signs are reversed, but not order of strands
+        """Inverse of the braid with symbol ~.
 
-        >>> x = Braid([1, -2], 3)
-        >>> ~x
+        This corresponds to the image of the braid in a mirror orthogonal to
+        the braid direction. The last operation becomes the first one.
+        Both order of operation and signs are reversed, but not order of strands.
+
+        Example:
+            >>> x = Braid([1, -2], 3)
+            >>> ~x
 
         Returns:
-            Braid
+            Braid: The inverse braid.
         """
         return self.inverse()
 
-    def n(self, n_strands) -> "Braid":
-        """
-        Compact notation to allow to change the number of strands
+    def n(self, n_strands: int) -> "Braid":
+        """Compact notation to allow changing the number of strands.
 
         Args:
-            n_strands:
+            n_strands: The new number of strands.
 
         Returns:
-
+            Braid: A new braid with updated number of strands.
         """
         return Braid(self.process, n_strands)
 
@@ -405,27 +433,27 @@ class Braid:
         Sign is also changed.
         This step is often used when braiding
 
-        >>> b = Braid([1], 3)
-        >>> basic_3_braid = (b*(b.flip()))**3
+        Example:
+            >>> b = Braid([1], 3)
+            >>> basic_3_braid = (b * (b.flip())) ** 3
 
         Returns:
-            Braid: the reversed braid
+            Braid: The reversed braid.
         """
         gen = [-np.sign(g) * (self.n_strands - abs(g)) for g in self.generators]
         return Braid(gen, self.n_strands)
 
     def half_twist(self, sign: int = +1) -> "Braid":
-        """
-        Twist the braid with half a turn
+        """Twist the braid with half a turn.
 
         https://en.wikipedia.org/wiki/Twist_(differential_geometry)
 
-
         Args:
-            sign(Optional[int]): sign of the twist. IF positive the first strand is going over. Default to +1
+            sign: Sign of the twist. If positive the first strand is going over.
+                Defaults to +1.
 
         Returns:
-            Braid: the twisted braid
+            Braid: The twisted braid.
         """
         b = self
         for i in range(abs(self.n_strands)):
@@ -434,20 +462,19 @@ class Braid:
                     start_index=1, n_slide=self.n_strands - i - 1, sign=np.sign(sign)
                 ).n(self.n_strands)
             )
-
         return b
 
     def full_twist(self, sign: int = +1) -> "Braid":
-        """
-        Twist the braid with a complete turn
+        """Twist the braid with a complete turn.
 
         https://en.wikipedia.org/wiki/Twist_(differential_geometry)
 
         Args:
-            sign(Optional[int]): sign of the twist. IF positive the first strand is going over. Default to +1
+            sign: Sign of the twist. If positive the first strand is going over.
+                Defaults to +1.
 
         Returns:
-            Braid: the twisted braid
+            Braid: The twisted braid.
         """
         return self.half_twist(sign=sign).half_twist(sign=sign)
 
@@ -495,41 +522,49 @@ class Braid:
         return b
 
     def up_side_down(self) -> "Braid":
-        """
-        Invert up and down crossing operations
+        """Invert up and down crossing operations.
 
-        For hair braiding this is called "inversé"
+        For hair braiding this is called "inversé".
 
         Returns:
-            Braid: the mirrored braid
+            Braid: The mirrored braid.
         """
         gen = [-g for g in self.generators]
         return Braid(gen, self.n_strands)
 
     def __neg__(self) -> "Braid":
-        """
-        Invert up and down crossing operations
+        """Invert up and down crossing operations.
 
         Returns:
-            Braid: the mirrored braid
+            Braid: The mirrored braid.
         """
         return self.up_side_down()
 
     def is_reduced(self) -> bool:
-        """A braid word w is reduced either if it is the null string, or the empty braid, or if the main
-        generator of w occurs only positively or only negatively.
+        """Check if a braid word is reduced.
+
+        A braid word w is reduced either if it is the null string, or the empty
+        braid, or if the main generator of w occurs only positively or only
+        negatively.
+
         https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
+
+        Returns:
+            bool: True if the braid word is reduced.
         """
         if not self.generators:
             return True
         mg = self.main_generator
-
         signs = [g > 0 for g in self.generators if abs(g) == mg]
         return all(signs) or not any(signs)
 
     def writhe(self) -> int:
-        """Calculate the writhe of the braid (sum of generator powers)"""
-        return sum(np.sign(self.generators))
+        """Calculate the writhe of the braid (sum of generator powers).
+
+        Returns:
+            int: The writhe value.
+        """
+        return int(sum(np.sign(self.generators)))
 
     def get_canonical_factors(self) -> GarsideCanonicalFactors:
         """
@@ -578,14 +613,18 @@ class Braid:
 
     def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
-        Burau matrix representation if faithful for n_strands=3 or n_strands=4, but not faithful for n_strand>=5
+
+        Burau matrix representation is faithful for n_strands=3 or n_strands=4,
+        but not faithful for n_strand>=5.
         https://arxiv.org/abs/2607.05283
+
+        Returns:
+            Matrix: The Burau matrix representation of the braid.
         """
         from sympy import eye, symbols
 
         t = symbols("t")
         matrix = eye(self.n_strands)
-
         for gen in self.generators:
             i = abs(gen) - 1
             mat = eye(self.n_strands)
@@ -604,10 +643,13 @@ class Braid:
             matrix = matrix * mat  # Correct order: left-to-right
         return matrix
 
-    def to_reduced_matrix(self):
-        """
-        Return the reduced Burau representation
+    def to_reduced_matrix(self) -> "Matrix":
+        """Return the reduced Burau representation.
+
         https://en.wikipedia.org/wiki/Burau_representation
+
+        Returns:
+            Matrix: The reduced Burau matrix representation.
         """
         from sympy import Matrix, eye, symbols
 
@@ -621,10 +663,14 @@ class Braid:
         return matrix
 
     def is_trivial(self) -> bool:
-        """Check if the braid is trivial (identity braid)"""
+        """Check if the braid is trivial (identity braid).
+
+        Returns:
+            bool: True if the braid is trivial.
+        """
         return not self.generators or all(g == 0 for g in self.generators)
 
-    def permutations(self, plot=False) -> List[List[int]]:
+    def permutations(self, plot: bool = False) -> List[List[int]]:
         """Return the permutations induced by the braid"""
         perms = []
         strands = list(range(1, self.n_strands + 1))
@@ -661,44 +707,56 @@ class Braid:
             print(" ".join(colorize(item) for item in strands))
         return perms
 
-    def perm(self) -> list[PositiveInt]:
-        """
-        Compute the permutation corresponding to the braid
+    def perm(self) -> list[int]:
+        """Compute the permutation corresponding to the braid.
 
         This is a braid invariant.
 
         Returns:
-            list: return the final permutation due to braid
+            list[int]: The final permutation due to the braid.
         """
         return self.permutations()[-1]
 
     def is_pure(self) -> bool:
-        """Check if a braid is pure (permutation is identity)"""
+        """Check if a braid is pure (permutation is identity).
+
+        Returns:
+            bool: True if the braid is pure.
+        """
         return self.perm() == list(range(1, self.n_strands + 1))
 
-    def is_palindromic(self):
+    def is_palindromic(self) -> bool:
+        """Check if the braid word is palindromic.
+
+        Returns:
+            bool: True if the braid word reads the same forwards and backwards.
+        """
         return self.generators == self.generators[::-1]
 
     def is_involutive(self) -> bool:
-        """
-        Returns true if inverse of braid word ie the same as braid word
-        This probably works only for the neutral element
+        """Check if braid word is involutive.
+
+        Returns true if inverse of braid word is the same as braid word.
+        This probably works only for the neutral element.
 
         Returns:
-            bool: True if braid word is involutive
+            bool: True if braid word is involutive.
         """
         return self.inverse().generators == self.generators
 
     def is_periodic(self) -> bool:
-        """
-        braid x is periodic if and only if its nth power or its (n − 1)st power is a power of the half-twist ∆
+        """Check if braid is periodic.
+
+        A braid x is periodic if and only if its nth power or its (n − 1)st power
+        is a power of the half-twist ∆.
 
         https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf
-
         Periodic braid are roots of ∆**m
         https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf
-        """
 
+        Returns:
+            bool: True if the braid is periodic.
+        """
         return (self ** (2 * self.n_strands)).perm() == list(
             range(1, self.n_strands + 1)
         ) or (self ** (2 * (self.n_strands - 1))).perm() == list(
@@ -706,28 +764,31 @@ class Braid:
         )
 
     def is_brunnian(self) -> bool:
-        """
-        A Brunnian braid is a braid that becomes trivial upon removal of any one of its strings.
-        Brunnian braids form a subgroup of the braid group
+        """Check if the braid is Brunnian.
+
+        A Brunnian braid is a braid that becomes trivial upon removal of any
+        one of its strings. Brunnian braids form a subgroup of the braid group.
 
         https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids
 
         Returns:
-            bool: True if Brunnian
+            bool: True if Brunnian.
         """
         raise NotImplementedError()
 
     def is_reducible(self) -> bool:
-        """
-        If a braid is reducible, it means that the strands can be separated into groups of strands
-         (less groups than number of strands), such that each group is running inside one tube. The tubes themselves can form a braid
+        """Check if the braid is reducible.
+
+        If a braid is reducible, it means that the strands can be separated
+        into groups of strands (less groups than number of strands), such that
+        each group is running inside one tube. The tubes themselves can form a braid.
 
         Returns:
-            bool
+            bool: True if reducible.
         """
         raise NotImplementedError()
 
-    def slot_history(self) -> List[List[int]]:
+    def slot_history(self) -> list[list[int]]:
         """Which slot every strand occupies, before and after each generator.
 
         Slots are the positions across the braid, numbered from zero.  A
@@ -758,16 +819,15 @@ class Braid:
 
         return history
 
-    def to_parametric_strands(self, amplitude: float = 0.2) -> List[ParametricStrand]:
-        """
-        Converts a braid into a list of 3D parametric strand paths.
+    def to_parametric_strands(self, amplitude: float = 0.2) -> list[ParametricStrand]:
+        """Convert a braid into a list of 3D parametric strand paths.
 
         Args:
-            braid: The Braid object containing crossing generators.
             amplitude: Height of the sine wave for over/under crossings.
+                Defaults to 0.2.
 
         Returns:
-            A list of ParametricStrand objects representing the strands.
+            list[ParametricStrand]: List of ParametricStrand objects representing the strands.
         """
         # Read once: both are worked out afresh each time they are asked for.
         generators = self.generators
@@ -778,9 +838,9 @@ class Braid:
         strand_paths = [[row[strand] for row in history] for strand in range(n_strands)]
 
         # Generate arc sequences for each strand
-        strand_arc_sequences: List[List[Arc]] = []
+        strand_arc_sequences: list[list[Arc]] = []
         for strand_id in range(n_strands):
-            arcs: List[Arc] = []
+            arcs: list[Arc] = []
             path = strand_paths[strand_id]
 
             for k in range(n_segments - 1):
@@ -821,17 +881,16 @@ class Braid:
             ParametricStrand(combine_arcs(strand)) for strand in strand_arc_sequences
         ]
 
-    def draw(self):
-        """
-        Draw the braid in the terminal with arrows allowing
-        to better check the differnet operations (with colors !)
+    def draw(self) -> "Braid":
+        """Draw the braid in the terminal with arrows.
+
+        Allows to better check the different operations (with colors!).
 
         Returns:
-            Braid: return the braid itself to allow to debug in a chain
+            Braid: Returns self to allow chaining the different steps.
         """
         self.permutations(plot=True)
-
-        # Return self to enable to chain the different steps
+        # Return self to enable chaining the different steps
         return self
 
     def plot(
@@ -895,43 +954,37 @@ class Braid:
         return self
 
 
-def slide_strand(n_slide, start_index=1, sign: int = +1):
-    """
-    Combine Artin Generator to move one braid over or under several braids
+def slide_strand(n_slide: int, start_index: int = 1, sign: int = +1) -> Braid:
+    """Combine Artin Generator to move one braid over or under several braids.
 
-    This is noted as (ai...as) by Garside where i=start_index and s= i+n_slide
-
-    Πs corresponds to start_index=1 (default) and n_slide=s-1
-
+    This is noted as (ai...as) by Garside where i=start_index and s= i+n_slide.
+    Πs corresponds to start_index=1 (default) and n_slide=s-1.
 
     Args:
-        n_slide (int): number of crossings
-        start_index(Optional(int)): index of the strand to move. Default to 1
-        sign(Optional[int]): positive if the start strand is going over. Default to +1
+        n_slide: Number of crossings.
+        start_index: Index of the strand to move. Defaults to 1.
+        sign: Positive if the start strand is going over. Defaults to +1.
 
     Returns:
-        Braid: the corresponding braid
+        Braid: The corresponding braid.
     """
-
     b = Braid(0, n_strands=n_slide + start_index)
     for i in range(0, n_slide):
         b = b * Braid(sign * (start_index + i), n_strands=n_slide + start_index)
     return b.no_zero()
 
 
-def weave_strand(n_slide, start_index=1, sign: int = +1):
-    """
-    Combine Artin Generator to move one braid over/under/over... or under/over/under... several braids
+def weave_strand(n_slide: int, start_index: int = 1, sign: int = +1) -> Braid:
+    """Combine Artin Generator to move one braid over/under/over... or under/over/under... several braids.
 
     Args:
-        n_slide (int): number of crossings
-        start_index(Optional(int)): index of the strand to move. Default to 1
-        sign(Optional[int]): positive if the start strand is first going over. Default to +1
+        n_slide: Number of crossings.
+        start_index: Index of the strand to move. Defaults to 1.
+        sign: Positive if the start strand is first going over. Defaults to +1.
 
     Returns:
-        Braid: the corresponding braid
+        Braid: The corresponding braid.
     """
-
     b = Braid(0, n_strands=n_slide + start_index)
     for i in range(0, n_slide):
         b = b * Braid(
