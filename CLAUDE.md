@@ -18,6 +18,7 @@ mistake before:
 | Compare braids, find similar ones | `similarity` |
 | Braids by topology, and every way of making each | `topology_catalog` |
 | A braid as neighbours swapping places round a ring: the step to other ways of making it | `ring_program` |
+| A braid as a punchcard for the Jacquard lace machine | `bridges.lace` |
 | A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |

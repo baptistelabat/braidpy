@@ -10,6 +10,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.bridges.lace
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.braid_catalog
    :members:
    :undoc-members:
