@@ -1,7 +1,5 @@
-"""
-mobidai.py
+"""Simulator for the traditional Japanese braiding stand (Marudai / Mobidai).
 
-A simulator for the traditional Japanese braiding stand (Marudai / Mobidai).
 Sometimes known as friendship disk and used for kumihimo braiding.
 
 This module provides classes to model, simulate, and visualize the braiding
@@ -38,11 +36,11 @@ class SlotAlreadyInUseError(Exception):
 class Strand:
     """Represents a strand placed on a mobidai slot.
 
-    Attributes:
-        color (str): The color of the strand (format as supported by matplotlib).
-        position (int): The slot number (1-indexed) where the strand currently sits.
-        id (int): A unique identifier for the strand to track it topologically.
-                  Defaults to -1 (assigned during initialization).
+    Args:
+        color: The color of the strand (format as supported by matplotlib).
+        position: The slot number (1-indexed) where the strand currently sits.
+        id: A unique identifier for the strand to track it topologically.
+            Defaults to -1 (assigned during initialization).
     """
 
     color: str
@@ -54,9 +52,12 @@ class Strand:
 class Move:
     """Represents one strand move from one slot to another.
 
-    Attributes:
-        from_slot (int): The slot number where the strand starts.
-        to_slot (int): The slot number where the strand will be placed.
+    Args:
+        from_slot: The slot number where the strand starts.
+        to_slot: The slot number where the strand will be placed.
+        force_direction: Optional: Force a direction if you want a "long way
+            round" move. 1 = CW, -1 = CCW, 0 = Auto (Shortest Path).
+            Defaults to 0.
     """
 
     from_slot: int
@@ -70,13 +71,13 @@ class Move:
 class MobidaiConfig:
     """Configuration of a mobidai setup.
 
-    Attributes:
-        strands (List[Strand]): Initial list of strands on slots.
-        moves (List[Move]): Sequence of moves performed in one braiding cycle.
-        n_shift_after_cycle (int): Number of slots to rotate between cycles to
+    Args:
+        strands: Initial list of strands on slots.
+        moves: Sequence of moves performed in one braiding cycle.
+        n_shift_after_cycle: Number of slots to rotate between cycles to
             come back to strands positions similar to initial positions.
-        n_slots (int): Total number of slots on the mobidai disk. Defaults to 32.
-        is_clockwise (bool): Direction of rotation for numbering (True = clockwise).
+        n_slots: Total number of slots on the mobidai disk. Defaults to 32.
+        is_clockwise: Direction of rotation for numbering (True = clockwise).
             Defaults to True.
     """
 
@@ -125,7 +126,16 @@ def cycle_drift(
 
 
 def drifted(move: "Move", offset: int, n_slots: int) -> "Move":
-    """The same move, made ``offset`` slots round."""
+    """Returns the same move, made ``offset`` slots round.
+
+    Args:
+        move: The original move to be shifted.
+        offset: Number of slots to shift the move.
+        n_slots: Total number of slots on the disk.
+
+    Returns:
+        The shifted move.
+    """
     return Move(
         (move.from_slot - 1 + offset) % n_slots + 1,
         (move.to_slot - 1 + offset) % n_slots + 1,
@@ -145,18 +155,19 @@ class BraidTracker:
     on the disk, this tracker determines which strands it crosses over and generates
     the corresponding Artin generators (σ_i or σ_i^-1).
 
-    Attributes:
-        linear_order (List[int]): A list of Strand IDs representing their current
+    Args:
+        strands: The list of Strand IDs representing their current
             order from 'left' to 'right' (or counter-clockwise to clockwise).
-        strand_map (Dict[int, Strand]): Reference to the actual strand objects.
+        strand_map: Reference to the actual strand objects.
     """
 
     def __init__(self, strands: List[Strand], n_slots: int, is_disk_clockwise: bool):
         """Initializes the BraidTracker.
 
         Args:
-            strands (List[Strand]): The list of strands involved in the braid.
-            n_slots (int): Total slots on the disk (used for sorting).
+            strands: The list of strands involved in the braid.
+            n_slots: Total slots on the disk (used for sorting).
+            is_disk_clockwise: Direction of rotation for numbering.
         """
         self.strand_map = {s.id: s for s in strands}
         self.n_slots = n_slots
@@ -258,6 +269,16 @@ class BraidTracker:
 
 
 class Mobidai:
+    """Simulator for a traditional Japanese braiding stand (Marudai/Mobidai).
+
+    This class simulates the braiding process based on configurations of slots,
+    strands, and moves. It includes topological tracking to extract the Artin
+    Braid Group word associated with the braiding moves.
+
+    Args:
+        config: The configuration for the mobidai setup.
+    """
+
     def __init__(self, config: MobidaiConfig):
         self.n_total_shift = 0
         self.config = config
@@ -315,6 +336,18 @@ class Mobidai:
     def single_step(
         self, move: Move, slots: Dict[int, Optional[Strand]]
     ) -> Dict[int, Optional[Strand]]:
+        """Performs a single move of a strand from one slot to another.
+
+        Args:
+            move: The move to perform.
+            slots: The current state of slots and strands.
+
+        Returns:
+            The updated slots dictionary after the move.
+
+        Raises:
+            SlotAlreadyInUseError: If the target slot is already occupied.
+        """
         strand = slots.get(move.from_slot)
         if strand:
             if slots.get(move.to_slot) is not None:
@@ -332,8 +365,13 @@ class Mobidai:
 
         return slots
 
-    # ... rotate, all_steps, visualize, simulate remain the same ...
     def rotate(self, steps: int):
+        """Rotates the entire disk by a given number of steps.
+
+        Args:
+            steps: Number of slots to rotate. Positive for clockwise, negative
+                for counter-clockwise.
+        """
         n = self.config.n_slots
         new_slots: Dict[int, Optional[Strand]] = {i: None for i in range(1, n + 1)}
         for slot, strand in self.slots.items():
