@@ -92,15 +92,24 @@ class TwoStrandCrossingModel:
         h0 = self.h0
         Phi = np.radians(self.spiral_angle_deg)
 
-        # Independent tensions and equilibrium fractions
+        # Tension balance fractions
         t1 = self.tension1
         t2 = self.tension2
         tot_tension = t1 + t2
         alpha1 = t2 / tot_tension  # displacement weight for strand 1 (scales with T2)
         alpha2 = t1 / tot_tension  # displacement weight for strand 2 (scales with T1)
 
+        # 3D Helical Pitch Geometry:
+        # For touching cylinders in 3D, normal contact requires transverse separation
+        # Rh = Rs * sqrt(1 + gamma^2) where gamma = k * Rs is the helix pitch tangent
+        k = Phi / Lz if Lz > 1e-6 else 0.0
+        Rs = 0.5 * h0
+        gamma = k * Rs
+        Rh = Rs * np.sqrt(1.0 + gamma**2)
+        h_eff = 2.0 * Rh
+
         # Critical contact angle Phi_c where unconstrained straight lines touch at center z = 0
-        cos_half_phic = min(1.0, max(0.0, h0 / (2.0 * R_disk)))
+        cos_half_phic = min(1.0, max(0.0, Rh / R_disk))
         Phic = 2.0 * np.arccos(cos_half_phic)
 
         z = t * (0.5 * Lz)
@@ -125,23 +134,20 @@ class TwoStrandCrossingModel:
             # REGIME 1: Non-contact straight skew lines
             return L1 if strand_idx == 1 else L2
 
-        # REGIME 2: Straight Lines & Central Double Helix
-        if Phi <= 2.0 * np.pi:
-            delta_theta_helix = (Phi - Phic) * np.pi / (2.0 * np.pi - Phic or 1.0)
-        else:
-            delta_theta_helix = np.pi + (Phi - 2.0 * np.pi)
-
+        # REGIME 2: Rotating Disks Straight Lines & Tangent Central Helix
+        delta_helix = Phi - Phic
         tan_half = np.tan(0.5 * Phic)
-        tc = delta_theta_helix / (delta_theta_helix + 2.0 * tan_half or 1.0)
-        tc = max(0.01, min(0.85, tc))
+        tc = delta_helix / (delta_helix + 2.0 * tan_half or 1.0)
+        tc = max(0.001, min(0.95, tc))
         zc = tc * (0.5 * Lz)
 
-        theta_entry = 0.5 * Phi - 0.5 * delta_theta_helix
-        theta_exit = 0.5 * Phi + 0.5 * delta_theta_helix
+        # Exact C1 tangency lift-off angles:
+        theta_entry = 0.5 * Phic
+        theta_exit = Phi - 0.5 * Phic
 
         # Contact separation vector d12 from Strand 2 to Strand 1
-        d12_entry = np.array([h0 * np.cos(theta_entry), h0 * np.sin(theta_entry), 0.0], dtype=float)
-        d12_exit = np.array([h0 * np.cos(theta_exit), h0 * np.sin(theta_exit), 0.0], dtype=float)
+        d12_entry = np.array([h_eff * np.cos(theta_entry), h_eff * np.sin(theta_entry), 0.0], dtype=float)
+        d12_exit = np.array([h_eff * np.cos(theta_exit), h_eff * np.sin(theta_exit), 0.0], dtype=float)
 
         # Center of tension at helix entry and exit
         u_entry = (-tc + 1.0) / 2.0
@@ -175,9 +181,9 @@ class TwoStrandCrossingModel:
         else:
             # Segment 2: Central contact double helix with tension equilibrium
             frac = (t + tc) / (2.0 * tc) if tc > 1e-6 else 0.5
-            theta = theta_entry + frac * delta_theta_helix
-            d12 = np.array([h0 * np.cos(theta), h0 * np.sin(theta), 0.0], dtype=float)
-            
+            theta = theta_entry + frac * (theta_exit - theta_entry)
+            d12 = np.array([h_eff * np.cos(theta), h_eff * np.sin(theta), 0.0], dtype=float)
+
             C_helix = np.array([C[0], C[1], z], dtype=float)
             if strand_idx == 1:
                 return C_helix + alpha1 * d12
@@ -275,7 +281,7 @@ class TwoStrandCrossingModel:
 # Verification Example
 if __name__ == '__main__':
     print("=== Testing Rotating Disks Straight-Helix Decomposition ===")
-    
+
     # 1. Simplified Case: Circular Strands (without flattening, flattening_ratio=1.0)
     # High T1 (5.0 N), low T2 (0.1 N) -> Strand 1 should be nearly straight, Strand 2 circling around it
     model_circ = TwoStrandCrossingModel(
