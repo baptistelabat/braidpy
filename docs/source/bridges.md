@@ -75,9 +75,10 @@ crossings come with any signs, anywhere, so the strands are kept side by
 side with a notch to spare; when a crossing's sign is not its gear's, they
 all move along one notch, into the spare one, crossing nobody, and every
 gear under them is then of the other way. They only ever move between two
-neighbouring positions, never across the ring's seam. The Dutch braid,
-whose signs alternate as the gears do, needs no moving; the plait moves
-once, at the start.
+neighbouring positions, never across the ring's seam, and end where they
+began, as a punchcard is run round and round. The Dutch braid, whose signs
+alternate as the gears do, needs no moving; the plait moves along at the
+start and back at the end.
 
 The card is checked on the machine itself
 ({func}`~braidpy.bridges.lace.lace_braid`): it is run, after each step every
