@@ -7,15 +7,15 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=dfbc233bbc";
-import { showBridges, showKin } from "./info.js?v=dfbc233bbc";
+import { onChosen, rebase } from "./colours.js?v=2d6d1b8e75";
+import { showBridges, showKin } from "./info.js?v=2d6d1b8e75";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=dfbc233bbc";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=dfbc233bbc";
-import { machineShapes, machineWanted } from "./machine.js?v=dfbc233bbc";
-import { $ } from "./page.js?v=dfbc233bbc";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=dfbc233bbc";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=dfbc233bbc";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=2d6d1b8e75";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=2d6d1b8e75";
+import { machineShapes, machineWanted } from "./machine.js?v=2d6d1b8e75";
+import { $ } from "./page.js?v=2d6d1b8e75";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=2d6d1b8e75";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=2d6d1b8e75";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -33,7 +33,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=dfbc233bbc");
+  settler = new Worker("settle.js?v=2d6d1b8e75");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;

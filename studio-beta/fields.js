@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=dfbc233bbc";
-import { attachEditor } from "./editor.js?v=dfbc233bbc";
-import { attachMachine } from "./machine.js?v=dfbc233bbc";
-import { $ } from "./page.js?v=dfbc233bbc";
-import { submit } from "./workers.js?v=dfbc233bbc";
+import { attachDiagram } from "./diagram.js?v=2d6d1b8e75";
+import { attachEditor } from "./editor.js?v=2d6d1b8e75";
+import { attachMachine } from "./machine.js?v=2d6d1b8e75";
+import { $ } from "./page.js?v=2d6d1b8e75";
+import { submit } from "./workers.js?v=2d6d1b8e75";
 
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
@@ -108,24 +108,6 @@ const FIELDS = {
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
   ],
-  lace: [
-    { name: "name", label: "Lace machine", kind: "entries" },
-    { name: "n_gears", label: "Gears", kind: "number", min: 4, max: 32, step: 2, custom: true },
-    {
-      name: "card",
-      label: "Punchcard",
-      kind: "textarea",
-      custom: true,
-      hint: "A step a line: the gears turning anticlockwise, then those turning clockwise, a 0 or 1 for each gear from A, for example 1000 0100. A, C, E… turn anticlockwise, B, D, F… clockwise, and two neighbours never turn on the same line. Change it to make your own: the one chosen stays as it is.",
-    },
-    {
-      name: "carriers",
-      label: "Bobbins",
-      kind: "text",
-      hint: "Each as gear:slot. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
-    },
-    { name: "cycles", label: "Passes of the card", kind: "number", min: 1, max: 24 },
-  ],
 };
 
 export let catalogue = null;
@@ -137,7 +119,7 @@ export function setCatalogue(value) {
 // Sources left out of the "Made by" menu for now.
 export const UNLISTED = new Set(["kumihimo"]);
 // Sources whose catalogued braids always show what they are made of.
-const ALWAYS_SHOWN = new Set(["mobidai", "sinnet", "lace"]);
+const ALWAYS_SHOWN = new Set(["mobidai", "sinnet"]);
 
 export function renderFields(source, values = {}) {
   const about = catalogue[source];
@@ -242,7 +224,7 @@ export function renderFields(source, values = {}) {
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
   if (source === "word") attachDiagram(holder);
-  if (source === "machine" || source === "lace") attachMachine(holder);
+  if (source === "machine") attachMachine(holder);
   if (about.examples) attachExamples(source, about.examples, holder);
 }
 
