@@ -22,7 +22,11 @@ if TYPE_CHECKING:
 def _burau_product(braid: Braid, t, one, zero, product, identity):
     """The braid's reduced Burau matrix, a generator at a time, in whatever
     ring ``t``, ``one`` and ``zero`` are of: ``product(a, rows)`` multiplies
-    a matrix by a generator's rows, ``identity`` is where it starts."""
+    a matrix by a generator's rows, ``identity`` is where it starts.
+
+    Returns:
+        The reduced Burau matrix of the braid.
+    """
     matrix = identity
     for generator in braid.generators:
         matrix = product(

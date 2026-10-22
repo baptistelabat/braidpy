@@ -121,11 +121,15 @@ BraidProcess = Union[int, Sequence["BraidProcess"]]
 
 @dataclass(frozen=True)
 class Braid:
-    """
-    Sometimes referred as algebraic braids
+    """A braid represented by Artin's generators.
+
+    Sometimes referred to as algebraic braids.
+
     Args:
-        process (BraidProcess): list of Artin's generator, which may group or not by parenthesis (tuples)
-        n_strands (Optional[int]): number of strands. Default to the minimum number needed for process
+        process: List of Artin's generators, which may be grouped or not by
+            parenthesis (tuples).
+        n_strands: Number of strands. Defaults to the minimum number needed
+            for the process.
     """
 
     process: BraidProcess
@@ -175,23 +179,21 @@ class Braid:
         return f"Braid({self.generators}, n_strands={self.n_strands})"
 
     def format_to_notation(self, target: str = "") -> str:
-        """
-        Inspired from https://github.com/abhikpal/dehornoy/blob/master/braid.py
+        """Format the braid word using classical notations.
 
-        Allow to format the braidword using several classical notations.:
+        Inspired from https://github.com/abhikpal/dehornoy/blob/master/braid.py.
 
-        The Artin representation can also be used in a latex file.
-
+        The Artin representation can also be used in a LaTeX file.
         The neutral element is 'e' for the Artin representation and '#' for alpha.
 
         Args:
-            target(str): Among
+            target: The target notation. Among:
                 'alpha': for example 'aBa'
-                'artin'  for example 's_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}'
-                'default' syntax used by other tools such as math-braid and braidlab
+                'artin': for example 's_{1}^{1.0} s_{2}^{1.0} s_{1}^{-1.0} s_{2}^{-1.0}'
+                'default': syntax used by other tools such as math-braid and braidlab
 
         Returns:
-            str: the formated braid word
+            str: The formatted braid word.
         """
         match target.upper():
             case BraidWordNotation.ARTIN.value:
@@ -228,21 +230,21 @@ class Braid:
         zero_symbol: str = "e",
         separator: str = "",
     ) -> str:
-        """
-        Allow to format the braid word following different formats.
+        """Format the braid word following different formats.
 
-        Note that the power are limited to -1/1 due to the actual braid word definition (not possible to display σ₁² for example)
+        Note that the power is limited to -1/1 due to the actual braid word
+        definition (not possible to display σ₁² for example).
 
-        See also format_to_notation for simpler predefined format
+        See also format_to_notation for simpler predefined formats.
 
         Args:
-            generator_symbols (Optional(list[str])): Default to ["σ₁", "σ₂", ...]
-            inverse_generator_symbols(Optional(list[str])): Default to ["σ₁⁻¹", ...]
-            zero_symbol (Optional(str)): Default to "e
-            separator(Optional(str)): Default to ""
+            generator_symbols: Defaults to ["σ₁", "σ₂", ...].
+            inverse_generator_symbols: Defaults to ["σ₁⁻¹", ...].
+            zero_symbol: Defaults to "e".
+            separator: Defaults to "".
 
         Returns:
-            str: the formated braid word
+            str: The formatted braid word.
         """
         if generator_symbols is None:
             generator_symbols = [
