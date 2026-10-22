@@ -147,8 +147,11 @@ class JacquardLaceMachine(BraidingMachine):
         connections: List[Connection],
         program: Sequence[ProgramStep],
         axials: Iterable[Axial] = (),
+        threaded: Optional[Sequence[int]] = None,
     ) -> None:
         super().__init__(gears, connections, axials)
+        #: The notches threaded, by contact; every one if None.
+        self.threaded = None if threaded is None else tuple(threaded)
 
         if not program:
             raise JacquardProgramError("A Jacquard machine needs a programme.")
@@ -287,8 +290,11 @@ class JacquardLaceMachine(BraidingMachine):
         return self.next_position(pos, time)
 
     def default_carriers(self) -> Dict[int, Tuple[str, int]]:
-        """Thread one bobbin into every notch."""
-        return notch_positions(self)
+        """Thread one bobbin into every notch, or into those threaded."""
+        notches = notch_positions(self)
+        if self.threaded is None:
+            return notches
+        return {k: notches[place] for k, place in enumerate(self.threaded)}
 
     def next_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
         """Where a carrier goes during the step from ``time`` to ``time + 1``.
@@ -365,6 +371,7 @@ def jacquard_lace_ring(
     n_gears: int = 6,
     program: Sequence[ProgramStep] | None = None,
     n_slots: int = 2,
+    threaded: Optional[Sequence[int]] = None,
 ) -> JacquardLaceMachine:
     """A tubular Jacquard lace machine: 2-slot gears in a ring.
 
@@ -385,6 +392,8 @@ def jacquard_lace_ring(
         n_gears: Number of gears in the ring; must be even and at least 4.
         program: Punched steps; defaults to one step with everything enabled.
         n_slots: Slots per gear.  Lace machines use 2.
+        threaded: The notches a bobbin is put in, notch ``k`` between gears
+            ``k`` and ``k + 1``; every notch if None.
 
     Returns:
         JacquardLaceMachine for a ring of gears.
@@ -423,4 +432,4 @@ def jacquard_lace_ring(
         cw = "".join("0" if i % 2 == 0 else "1" for i in range(n_gears))
         program = [(ccw, cw)]
 
-    return JacquardLaceMachine(gears, connections, program)
+    return JacquardLaceMachine(gears, connections, program, threaded=threaded)

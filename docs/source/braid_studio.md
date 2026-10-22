@@ -12,7 +12,8 @@ why, and what comes next.
 The page has a form and a 3D view.
 
 - **Made by** picks the source: a braid word; a braid from the mobidai
-  catalogue; an Ashley solid sinnet; or a braiding machine. Kumihimo's
+  catalogue; an Ashley solid sinnet; a braiding machine; or a Jacquard lace
+  machine. Kumihimo's
   `S`/`R` moves are out of the menu for now, but a link to one still makes
   it.
 - A braid word starts from a list of examples — a plait, a twist, a flat
@@ -51,6 +52,22 @@ The page has a form and a 3D view.
   slot and carrier is through each step: the same places as its plotly
   animation, so the page and Python agree. In Python,
   `Handle(machine).turn(5).figure()` is the same handle, drawn with plotly.
+- A **Jacquard lace machine** (`braidpy.horn_gear.jacquard`) is a ring of
+  gears driven by a punchcard rather than geared together: a bobbin sits in
+  a notch, where two gears overlap, and the card says which gears turn at
+  each step, the anticlockwise ones and then the clockwise ones. It is drawn,
+  threaded by hand and turned by its handle as a braiding machine is. Its
+  examples are a ring with every gear turning, as a tubular braider, and
+  cards punched for braids of the catalogue — the Dutch braid, the plait,
+  the weave of 3, two four-strand sinnets, a flat braid of 6
+  ({func}`~braidpy.bridges.lace.lace_card`). Its word is read off the
+  machine itself, a pass of the card a repeat
+  ({func}`~braidpy.bridges.lace.ring_braid`), and the card is in the notes,
+  as punched. The gears and the card of the machine chosen are shown, ready
+  to change, as a sinnet's moves are: **Your own card…** takes an even
+  number of gears and a card typed a step a line, the gears turning
+  anticlockwise then those turning clockwise, a 0 or 1 a gear —
+  `1000 0100`. A card that cannot drive the machine says why, in the panel.
 - A machine that braids round **cores** braids them in either as yarn, held
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the

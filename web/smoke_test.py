@@ -41,6 +41,19 @@ CASES = [
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
     # Laid on its fell ring, a machine's braid can be settled by physics.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
+    # A lace machine, its card turning the gears; its handle too.
+    ({"source": "lace", "name": "lace_plait", "cycles": 2}, 3),
+    # And a card of your own: every gear turning on a ring of 6.
+    (
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 6,
+            "card": "101010 010101",
+            "cycles": 1,
+        },
+        6,
+    ),
     (
         {
             "source": "sinnet",
@@ -114,7 +127,7 @@ def main() -> int:
             if spec.get("settle") == "physics":
                 ok = ok and "Settled by physics" in page.inner_text("body")
             # A machine's handle turns it a step.
-            if spec["source"] == "machine":
+            if spec["source"] in ("machine", "lace"):
                 try:
                     forward = ".handle button[title='Turn the handle a step']"
                     page.wait_for_selector(forward + ":not([disabled])", timeout=30000)
