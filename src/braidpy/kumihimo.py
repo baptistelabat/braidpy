@@ -1,8 +1,7 @@
-"""
-kumihimo.py
-============
+"""Kumihimo simulator and visualizer.
 
-Kumihimo simulator and visualizer.
+This module provides tools to simulate and visualize Kumihimo braiding sequences
+with annotations.
 
 Features:
 - Simulates formal S/R sequences (swap, rotate)
@@ -28,16 +27,16 @@ else:
 class Kumihimo:
     """Simulate and visualize Kumihimo braiding sequences with annotations.
 
-    Attributes:
-        n_strands (int): Number of strands (divisible by 4).
-        k (int): Number of positions per quarter turn.
-        state (List[int]): Current strand order around the disk.
-        braid_word (List[int]): Sequence of Artin generators, signed.
-        history (List[str]): Record of performed S/R moves.
-        frames (List[List[int]]): Strand configurations per step.
-        angles (np.ndarray): Angular positions of strand slots.
-        colors (np.ndarray): Color assigned to each strand.
-        pattern (str): Original S/R pattern executed.
+    Args:
+        n_strands: Number of strands (divisible by 4).
+        k: Number of positions per quarter turn.
+        state: Current strand order around the disk.
+        braid_word: Sequence of Artin generators, signed.
+        history: Record of performed S/R moves.
+        frames: Strand configurations per step.
+        angles: Angular positions of strand slots.
+        colors: Color assigned to each strand.
+        pattern: Original S/R pattern executed.
     """
 
     def __init__(self, n_strands: int = 8) -> None:

@@ -151,6 +151,11 @@ class Machine:
 
     # ------------------------------------------------------------ helpers
     def hold(self, held: bool) -> None:
+        """Sets whether the braid is held (not turning) or free to turn.
+
+        Args:
+            held: If True, the braid is held and won't turn to balance.
+        """
         self.turning = False if held else self._balancing
         self.twisted = held
 
@@ -734,6 +739,11 @@ class Machine:
 
     # ------------------------------------------------------------ start
     def start(self, angles: Sequence[float]) -> None:
+        """Starts the braid with initial positions for each yarn.
+
+        Args:
+            angles: The initial angles for each yarn in radians.
+        """
         for t, a in enumerate(angles):
             # As the method has it, a third of a unit per yarn; but with six
             # yarns or fewer, their start beads would touch or overlap: far
@@ -745,6 +755,14 @@ class Machine:
             self.lay(t, a)
 
     def positions(self, t: int) -> List[List[float]]:
+        """Gets the positions of all beads for a given yarn.
+
+        Args:
+            t: The yarn/thread index.
+
+        Returns:
+            List of [x, y, z] positions for each bead in the yarn.
+        """
         return [[self.X[b], self.Y[b], self.Z[b]] for b in self.threads[t].beads]
 
 
