@@ -39,6 +39,7 @@ from .switch import (
     SwitchError,
     band_of,
     multiband_10_15_10,
+    multiband_band,
 )
 from .layout import (
     axial_clearance,
@@ -137,6 +138,7 @@ __all__ = [
     "SwitchError",
     "band_of",
     "multiband_10_15_10",
+    "multiband_band",
     "step",
     "simulate",
     "state_period",

@@ -22,6 +22,17 @@ if TYPE_CHECKING:
 __all__ = ["CATALOGUE"]
 
 
+def _switched(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
+    """Makes the machine :mod:`braidpy.horn_gear.switch` names."""
+
+    def make() -> BraidingMachine:
+        from braidpy.horn_gear import switch
+
+        return getattr(switch, name)(**settings)
+
+    return make
+
+
 def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
     """Makes the machine :mod:`braidpy.horn_gear.examples` names."""
 
@@ -50,4 +61,23 @@ CATALOGUE: Dict[str, Entry[BraidingMachine]] = {
     "tubular_8": Entry("Tubular braid, 8 carriers", _example("tubular_braid_8")),
     "tubular_12": Entry("Tubular braid, 12 carriers", _example("tubular_braid_12")),
     "tubular_16": Entry("Tubular braid, 16 carriers", _example("tubular_braid_16")),
+    "multiband_10_15_10": Entry(
+        "Three bands, 10/15/10, on one line of 16 gears",
+        _switched("multiband_10_15_10"),
+    ),
+    # The same machine's bands on their own, to load and turn one at a time.
+    # A band's gears keep their names and slot numbering, so a loading reads
+    # the same here as on the whole line.
+    "multiband_band_0": Entry(
+        "Three-band machine: left band alone, gears G0-G4",
+        _switched("multiband_band", band=0),
+    ),
+    "multiband_band_1": Entry(
+        "Three-band machine: middle band alone, gears G4-G11",
+        _switched("multiband_band", band=1),
+    ),
+    "multiband_band_2": Entry(
+        "Three-band machine: right band alone, gears G11-G15",
+        _switched("multiband_band", band=2),
+    ),
 }

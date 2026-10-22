@@ -208,6 +208,40 @@ class MultibandLine(SwitchedMachine):
     #: How much of a full turn the folded line spans, leaving the ends apart.
     SPAN = math.radians(330.0)
 
+    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+        """A loading to start from, found quickly enough to draw a page with.
+
+        The general search in :mod:`~braidpy.horn_gear.loading` validates each
+        candidate over the machine's whole state period, which here is 15120
+        steps, and tries one candidate per slot: minutes, for a page that has
+        to answer at once.
+
+        The switches keep each band's carriers to its own gears, so a loading
+        can be built straight from the tracks -- every other slot along each,
+        as a machine is threaded -- keeping whichever carriers do not meet.
+        The check runs over the contact period, the point at which every
+        contact shows the same slots again, rather than the state period.
+        That is a bound, not a proof: carriers meeting later stop the handle,
+        which is what the machine drawn by hand is there to show.
+        """
+        from .loading import _is_collision_free
+        from .tracks import compute_tracks, contact_period
+
+        horizon = 4 * contact_period(self)
+        # Along each track in turn, so the carriers that do fit are spread
+        # over the whole machine rather than crowded into the first band.
+        order: List[Tuple[str, int]] = []
+        for track in compute_tracks(self):
+            for pos in track:
+                if pos not in order:
+                    order.append(pos)
+        chosen: Dict[int, Tuple[str, int]] = {}
+        for pos in order:
+            trial = {**chosen, len(chosen): pos}
+            if _is_collision_free(self, trial, horizon):
+                chosen = trial
+        return chosen
+
     def preferred_layout(
         self, scale: float = 1.0
     ) -> Optional[Dict[str, Tuple[float, float]]]:
@@ -242,6 +276,51 @@ class MultibandLine(SwitchedMachine):
             if i < len(chords):
                 angle += 2 * math.asin(min(1.0, chords[i] / (2 * radius)))
         return layout
+
+
+def multiband_band(band: int) -> BraidingMachine:
+    """One band of :func:`multiband_10_15_10`, on its own.
+
+    The switches cut the line of sixteen into three, so each band is its own
+    run of gears: 0-4, 4-11 and 11-15, sharing the two six-slot gears with
+    their neighbours.  Taken alone, a shared gear has one contact instead of
+    two, which is exactly what its switches do to the carriers of this band --
+    they reach the far contact, are not taken, ride round and go back the way
+    they came.  So a band on its own needs no switches to behave as it does in
+    the whole machine.
+
+    Gear names, slot counts, turning directions and contact phases are all the
+    whole machine's, so a slot means the same thing here as there and a
+    loading can be carried between them.
+
+    Args:
+        band: 0, 1 or 2, left to right along the line.
+
+    Returns:
+        BraidingMachine: that band's gears, wired as a line.
+
+    Raises:
+        ValueError: If ``band`` is not 0, 1 or 2.
+    """
+    if band not in (0, 1, 2):
+        raise ValueError(f"The machine has bands 0, 1 and 2, not {band!r}.")
+    slots = MULTIBAND_10_15_10_SLOTS
+    lo, hi = MULTIBAND_10_15_10_BANDS[band]
+    gears = [
+        HornGear(f"G{i}", slots[i], direction=+1 if i % 2 == 0 else -1)
+        for i in range(lo, hi + 1)
+    ]
+    connections = [
+        Connection(
+            f"G{i}",
+            f"G{i + 1}",
+            slot_a0=0 if i == 0 else slots[i] // 2,
+            slot_b0=0,
+            name=f"G{i}-G{i + 1}",
+        )
+        for i in range(lo, hi)
+    ]
+    return BraidingMachine(gears, connections)
 
 
 def multiband_10_15_10() -> SwitchedMachine:
