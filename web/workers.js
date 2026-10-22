@@ -8,7 +8,7 @@
 // from where it was when more of it is asked for.
 
 import { onChosen, rebase } from "./colours.js";
-import { showKin } from "./info.js";
+import { showBridges, showKin } from "./info.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
 import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
@@ -49,6 +49,8 @@ const KEEP = 12;
 const keys = new Map(); // id -> what it was made from
 // Each braid's kin, by what it was made from, for when it is shown again.
 const kinOf = new Map();
+// And the braid made other ways.
+const bridgesOf = new Map();
 
 function fromBraidpy({ data }) {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
@@ -73,6 +75,15 @@ function heard(data) {
     $("build").disabled = false;
     $("build").textContent = "Braid";
     submit();
+  } else if (data.type === "bridges") {
+    if (data.id !== pending) return;
+    if (keys.has(data.id)) {
+      bridgesOf.set(keys.get(data.id), data.bridges);
+      if (bridgesOf.size > KEEP) bridgesOf.delete(bridgesOf.keys().next().value);
+    }
+    showBridges(data.bridges);
+  } else if (data.type === "sinnet") {
+    document.dispatchEvent(new CustomEvent("braid-sinnet", { detail: data }));
   } else if (data.type === "kin") {
     if (data.id !== pending) return;
     if (keys.has(data.id)) {
@@ -167,6 +178,7 @@ export function submit() {
   const key = JSON.stringify(spec, Object.keys(spec).sort());
   keys.set(pending, key);
   showKin(kinOf.get(key));
+  showBridges(bridgesOf.get(key));
   if (madeBefore.has(key)) {
     const result = madeBefore.get(key);
     madeBefore.delete(key);
