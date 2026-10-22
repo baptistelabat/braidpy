@@ -10,6 +10,26 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.bridges
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.bridges.ashley
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.bridges.disk
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.bridges.lace
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.braid_catalog
    :members:
    :undoc-members:
@@ -56,6 +76,11 @@
    :show-inheritance:
 
 .. automodule:: braidpy.rope
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.ring_program
    :members:
    :undoc-members:
    :show-inheritance:

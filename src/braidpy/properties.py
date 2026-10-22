@@ -4,7 +4,7 @@
 
 """
 Filename: properties.py
-Description: Properties of braid
+Description: Properties and invariants of braids
 Authors: Baptiste Labat
 Created: 2025-05-24
 Repository: https://github.com/baptistelabat/braidpy
@@ -147,15 +147,15 @@ def alexander_on_circle(
 def conjugacy_class(
     braid: Braid, conjugators: Optional[List[Braid]] = None
 ) -> List[Braid]:
-    """
-    Generate conjugates of a braid by a list of other braids.
+    """Generate conjugates of a braid by a list of other braids.
 
     Args:
-        braid: The Braid object to conjugate
-        conjugators: A list of Braid objects to use as conjugators
+        braid: The Braid object to conjugate.
+        conjugators: A list of Braid objects to use as conjugators.
+            Defaults to generators and their inverses.
 
     Returns:
-        List of unique conjugates a * braid * a⁻¹
+        List[Braid]: List of unique conjugates a * braid * a⁻¹.
     """
     conjugates = set()
     if conjugators is None:

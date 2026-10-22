@@ -8,7 +8,7 @@
 // from where it was when more of it is asked for.
 
 import { onChosen, rebase } from "./colours.js";
-import { showKin } from "./info.js";
+import { showBridges, showKin } from "./info.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
 import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
@@ -17,11 +17,8 @@ import { $ } from "./page.js";
 import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js";
 import { readSpec, specFromHash, writeSpec } from "./spec.js";
 
-const PYODIDE_URL =
-  new URLSearchParams(location.search).get("pyodide") ||
-  "https://cdn.jsdelivr.net/pyodide/v0.27.8/full/";
-
-export const worker = new Worker("worker.js");
+// Started by the page itself, before its modules (index.html).
+export const worker = window.braidpy.worker;
 export let pending = 0;
 
 function setStatus(text, error = false) {
@@ -52,8 +49,10 @@ const KEEP = 12;
 const keys = new Map(); // id -> what it was made from
 // Each braid's kin, by what it was made from, for when it is shown again.
 const kinOf = new Map();
+// And the braid made other ways.
+const bridgesOf = new Map();
 
-worker.onmessage = ({ data }) => {
+function fromBraidpy({ data }) {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
   // was being settled unless it can go on from it, on the marudai.
   if (data.type === "laid" && "settle" in data) {
@@ -66,24 +65,25 @@ worker.onmessage = ({ data }) => {
     return;
   }
   heard(data);
-};
+}
 
 function heard(data) {
   if (data.type === "status") {
     setStatus(data.text);
   } else if (data.type === "ready") {
-    setCatalogue(data.catalogue);
-    const select = $("source");
-    const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
-    for (const [source, about] of Object.entries(catalogue)) {
-      // Out of the menu for now, but still made from a link to it.
-      if (UNLISTED.has(source) && spec.source !== source) continue;
-      select.append(new Option(about.title, source));
-    }
-    writeSpec(spec);
+    offer(data.catalogue);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     submit();
+  } else if (data.type === "bridges") {
+    if (data.id !== pending) return;
+    if (keys.has(data.id)) {
+      bridgesOf.set(keys.get(data.id), data.bridges);
+      if (bridgesOf.size > KEEP) bridgesOf.delete(bridgesOf.keys().next().value);
+    }
+    showBridges(data.bridges);
+  } else if (data.type === "sinnet") {
+    document.dispatchEvent(new CustomEvent("braid-sinnet", { detail: data }));
   } else if (data.type === "kin") {
     if (data.id !== pending) return;
     if (keys.has(data.id)) {
@@ -136,7 +136,28 @@ function heard(data) {
   }
 }
 
-worker.postMessage({ type: "init", pyodideUrl: PYODIDE_URL });
+// The form, filled with what can be made as soon as that is known: from
+// the site (catalogue.json), long before braidpy is ready to make any of
+// it — or, without it, from braidpy when it is.
+let offered = false;
+function offer(sources) {
+  if (offered || !sources) return;
+  offered = true;
+  setCatalogue(sources);
+  const select = $("source");
+  const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
+  for (const [source, about] of Object.entries(catalogue)) {
+    // Out of the menu for now, but still made from a link to it.
+    if (UNLISTED.has(source) && spec.source !== source) continue;
+    select.append(new Option(about.title, source));
+  }
+  writeSpec(spec);
+}
+window.braidpy.catalogue.then(offer);
+
+// What braidpy said while the page loaded, then the rest as it comes.
+worker.onmessage = fromBraidpy;
+for (const data of window.braidpy.early.splice(0)) fromBraidpy({ data });
 
 // Published as a beta, it says so.
 if (location.pathname.includes("/studio-beta/")) {
@@ -157,6 +178,7 @@ export function submit() {
   const key = JSON.stringify(spec, Object.keys(spec).sort());
   keys.set(pending, key);
   showKin(kinOf.get(key));
+  showBridges(bridgesOf.get(key));
   if (madeBefore.has(key)) {
     const result = madeBefore.get(key);
     madeBefore.delete(key);

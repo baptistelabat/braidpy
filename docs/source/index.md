@@ -18,6 +18,7 @@ braid_studio.md
 rope_physics.md
 braid_algebra.md
 comparing_braids.md
+bridges.md
 usage.md
 references.md
 reference.md

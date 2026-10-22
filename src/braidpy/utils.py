@@ -58,19 +58,44 @@ terminal_colors = {
 
 
 def colorize_by_index(text: str, index: int) -> str:
-    """Colorize a string using a repeating color based on index (starting at 0)."""
+    """Colorize a string using a repeating color based on index (starting at 0).
+
+    Args:
+        text: The string to colorize.
+        index: The index used to determine the color.
+
+    Returns:
+        str: The colorized string.
+    """
     color = ANSI_COLORS[index % len(ANSI_COLORS)]
     return f"{color}{text}{RESET}"
 
 
 def colorize(item: Union[str, int], index: Optional[int] = None) -> str:
-    """Colorize item based on index (or its value if it's an int)."""
+    """Colorize item based on index (or its value if it's an int).
+
+    Args:
+        item: The item to colorize (string or integer).
+        index: Optional index to use for color selection. If None, uses the
+            item's value (if int) or 0.
+
+    Returns:
+        str: The colorized string representation of the item.
+    """
     if index is None:
         index = item - 1 if isinstance(item, int) else 0
     return colorize_by_index(str(item), index)
 
 
 def int_to_superscript(n: int) -> str:
+    """Convert an integer to its superscript representation.
+
+    Args:
+        n: The integer to convert.
+
+    Returns:
+        str: The superscript representation of the integer.
+    """
     superscript_map = {
         "-": "\u207b",  # superscript minus
         "0": "\u2070",
@@ -88,6 +113,14 @@ def int_to_superscript(n: int) -> str:
 
 
 def int_to_subscript(n: int) -> str:
+    """Convert an integer to its subscript representation.
+
+    Args:
+        n: The integer to convert.
+
+    Returns:
+        str: The subscript representation of the integer.
+    """
     subscript_map = {
         "-": "\u208b",  # subscript minus
         "0": "\u2080",
