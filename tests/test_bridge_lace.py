@@ -39,10 +39,10 @@ def test_each_crossing_is_made_by_a_gear_turning_its_way():
 def test_a_step_turns_no_two_touching_gears_each_its_own_way():
     card = lace_card(Braid((1, 2, -3, 1, 2) * 3, 4))
     for ccw, cw in card.steps:
-        on = [g for g in range(card.n_gears) if "1" in (ccw[g], cw[g])]
+        on = [g for g in range(card.n_gears) if ccw[g] or cw[g]]
         assert all((b - a) % card.n_gears > 1 for a, b in zip(on, on[1:]))
-        assert all(g % 2 == 0 for g in range(card.n_gears) if ccw[g] == "1")
-        assert all(g % 2 == 1 for g in range(card.n_gears) if cw[g] == "1")
+        assert all(g % 2 == 0 for g in range(card.n_gears) if ccw[g])
+        assert all(g % 2 == 1 for g in range(card.n_gears) if cw[g])
     card.machine()  # the machine itself refuses a card that breaks these
 
 
@@ -74,7 +74,17 @@ def test_a_card_run_round_again_makes_the_braid_again():
 
 def test_the_card_as_punched():
     card = lace_card(Braid((-1, 2), 3))
-    assert card.text().splitlines() == ["0000 0100", "0010 0000"]
+    assert card.steps == (
+        ((False,) * 4, (False, True, False, False)),
+        ((False, False, True, False), (False,) * 4),
+    )
+    assert card.text().splitlines() == [
+        "     A B C D",
+        "0 ↺  ○ ○ ○ ○",
+        "  ↻   ○ ● ○ ○",
+        "1 ↺  ○ ○ ● ○",
+        "  ↻   ○ ○ ○ ○",
+    ]
     assert card.threading() == {
         0: ("A", 0),
         1: ("B", 0),
