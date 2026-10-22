@@ -86,6 +86,21 @@ class LaceCard:
             k: notches[place] for place, k in enumerate(self.bobbins) if k is not None
         }
 
+    def notches(self) -> List[str]:
+        """The notches to put a bobbin in, named by the two gears that cut
+        each — "A-B" — as the lace ring names its contacts; worked out
+        without building the machine, which needs networkx.
+
+        Returns:
+            The notches threaded, strand after strand.
+        """
+        names = [chr(ord("A") + g) for g in range(self.n_gears)]
+        where = {k: place for place, k in enumerate(self.bobbins) if k is not None}
+        return [
+            f"{names[where[k]]}-{names[(where[k] + 1) % self.n_gears]}"
+            for k in sorted(where)
+        ]
+
     def text(self) -> str:
         """The card as it is punched, a line per step: the anticlockwise
         line, a space, the clockwise line."""
