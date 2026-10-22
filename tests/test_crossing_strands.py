@@ -1,17 +1,15 @@
-"""
-test_crossing_strands.py
-========================
-Pytest unit test suite for TwoStrandCrossingModel in braidpy.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-Run via:
-    pytest test_crossing_strands.py
-    # or
-    python -m pytest test_crossing_strands.py -v
-"""
+"""Two strands crossing between two rotating disks:
+braidpy.crossing_strands."""
 
 import numpy as np
 import pytest
-from braidpy_crossing_strands import TwoStrandCrossingModel
+
+from braidpy.crossing_strands import TwoStrandCrossingModel
+from braidpy.parametric_strand import ParametricStrand
 
 
 def test_simplified_circular_non_penetration():
@@ -85,7 +83,9 @@ def test_tension_asymmetry_high_t1_straight_strand():
     deviation = float(np.linalg.norm(p_mid - chord_mid))
 
     # Taut strand 1 should have minimal deviation (< 0.05 mm) from chord
-    assert deviation < 0.05, f"Strand 1 is not straight under high tension: dev={deviation:.4f} mm"
+    assert deviation < 0.05, (
+        f"Strand 1 is not straight under high tension: dev={deviation:.4f} mm"
+    )
 
 
 def test_tension_asymmetry_high_t2_straight_strand():
@@ -111,7 +111,9 @@ def test_tension_asymmetry_high_t2_straight_strand():
     chord_mid = 0.5 * (p_bot + p_top)
     deviation = float(np.linalg.norm(p_mid - chord_mid))
 
-    assert deviation < 0.05, f"Strand 2 is not straight under high tension: dev={deviation:.4f} mm"
+    assert deviation < 0.05, (
+        f"Strand 2 is not straight under high tension: dev={deviation:.4f} mm"
+    )
 
 
 def test_regime1_straight_parallel_lines():
@@ -133,15 +135,47 @@ def test_regime1_straight_parallel_lines():
         )
 
 
-def test_braidpy_callables():
-    """Verify to_braidpy_strands() returns two callables evaluating in 3D for braidpy."""
-    model = TwoStrandCrossingModel(disk_radius=1.8)
-    s1_fn, s2_fn = model.to_braidpy_strands()
+def test_braidpy_parametric_strands():
+    """The strands as braidpy's ParametricStrand, over [0, 1] from bottom pin
+    to top pin."""
+    model = TwoStrandCrossingModel(disk_radius=1.8, spiral_angle_deg=360.0)
+    strands = model.to_parametric_strands()
+    assert len(strands) == 2
+    for k, strand in enumerate(strands, start=1):
+        assert isinstance(strand, ParametricStrand)
+        for s, t in [(0.0, -1.0), (0.5, 0.0), (1.0, 1.0)]:
+            assert np.allclose(strand.evaluate(s), model.eval_disk_helix_position(k, t))
 
-    assert callable(s1_fn), "s1_fn must be callable"
-    assert callable(s2_fn), "s2_fn must be callable"
 
-    p1 = s1_fn(0.0)
-    p2 = s2_fn(0.0)
-    assert len(p1) == 3, "s1_fn must return 3D vector [x, y, z]"
-    assert len(p2) == 3, "s2_fn must return 3D vector [x, y, z]"
+@pytest.mark.parametrize("tensions", [(1.0, 1.0), (10.0, 0.1), (0.1, 10.0), (3.0, 1.0)])
+@pytest.mark.parametrize("flattening", [1.0, 0.75])
+def test_no_penetration_whatever_the_tensions(tensions, flattening):
+    """Strands that wind round each other pass closest at different heights:
+    unequal tensions used to bring them up to 0.03 closer than they touch, at
+    every pair of heights sampled finer than the model settles with."""
+    for phi in range(0, 1081, 90):
+        model = TwoStrandCrossingModel(
+            flattening_ratio=flattening,
+            spiral_angle_deg=phi,
+            tension1=tensions[0],
+            tension2=tensions[1],
+        )
+        res = model.compute_contact_clearance(n_samples=601)
+        assert res["surface_gap"] >= -2e-3, (phi, res["surface_gap"])
+
+
+def test_the_strands_touch_once_wound():
+    """Widened no more than it must be: past the critical angle the strands
+    touch, within sampling."""
+    model = TwoStrandCrossingModel(flattening_ratio=1.0, spiral_angle_deg=360.0)
+    assert model.compute_contact_clearance(n_samples=401)["surface_gap"] < 0.02
+
+
+def test_the_frame_is_orthonormal_and_faces_the_other_strand():
+    model = TwoStrandCrossingModel(spiral_angle_deg=360.0)
+    for t in (-0.9, -0.2, 0.0, 0.5):
+        f = model.eval_strand(1, t)
+        frame = np.array([f["tangent"], f["normal"], f["binormal"]])
+        assert np.allclose(frame @ frame.T, np.eye(3), atol=1e-6)
+        towards = model.eval_disk_helix_position(2, t) - f["pos"]
+        assert np.dot(towards, f["normal"]) > 0
