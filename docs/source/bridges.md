@@ -104,15 +104,33 @@ The card is checked on the machine itself
 bobbin is found in its notch, and each gear that turned must have swapped
 its two. Every catalogue braid comes back exactly.
 
+## A kumihimo disk
+
+On a kumihimo disk (a mobidai, {mod}`braidpy.mobidai`) a move takes one
+strand from a slot to another, the short way round, lifted over every
+strand it passes. Each crossing becomes three moves, the strands kept two
+slots apart — strand `k` from slot `2k + 3` — so every strand has an empty
+slot either side of it: the strand lifted goes over its neighbour into the
+empty slot beyond it, which is the crossing; the neighbour moves into the
+place it left, and the lifted strand settles into the neighbour's old place,
+neither crossing anything. A 32-slot disk takes up to 15 strands.
+
+```python
+from braidpy.bridges.disk import disk_braid, disk_moves
+
+moves = disk_moves(plait)
+moves.text()                # "5>2, 3>5, 2>3, 5>8, 7>5, 8>7, …"
+disk_braid(moves) == plait  # True: read as braidpy reads any mobidai
+moves.spec()                # the disk braid as Braid Studio makes it
+```
+
 ## What comes next
 
 Each way of making braids is a step of its own, built on the ring program:
 
-1. **A kumihimo disk** (mobidai): each swap as moves through the disk's
-   empty slots, made and read back by the disk's own code.
-2. **Ashley's stand** (the marudai of {doc}`braid_studio`'s sinnets): a move
+1. **Ashley's stand** (the marudai of {doc}`braid_studio`'s sinnets): a move
    carries a strand across several spaces, so this bridge searches for a
    sinnet — its spaces, the strands in each, its moves — with the braid's
    topology.
-3. **Braid Studio**: "Make it as…" beside the braid, each way's moves or
+2. **Braid Studio**: "Make it as…" beside the braid, each way's moves or
    punchcard to read, download, and make.

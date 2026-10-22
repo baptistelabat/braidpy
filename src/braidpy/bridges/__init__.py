@@ -6,5 +6,6 @@
 :class:`~braidpy.ring_program.RingProgram`, and each checked by reading the
 braid back off what it made.  See ``docs/source/bridges.md``.
 
-- :mod:`braidpy.bridges.lace`: the Jacquard lace machine's punchcard.
+- :mod:`braidpy.bridges.lace`: the Jacquard lace machine's punchcard;
+- :mod:`braidpy.bridges.disk`: moves on a kumihimo disk.
 """
