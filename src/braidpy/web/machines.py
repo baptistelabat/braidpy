@@ -10,14 +10,29 @@ from __future__ import annotations
 
 import re
 from functools import lru_cache
-from typing import Any, Callable, Collection, Dict, Hashable, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    Hashable,
+    List,
+    Optional,
+    Tuple,
+    cast,
+)
 
 from braidpy.web._info import _braid_info
+
+if TYPE_CHECKING:
+    from braidpy.horn_gear.jacquard import JacquardLaceMachine
 from braidpy.utils import PALETTE
 from braidpy.web._result import _result, _tighten, _timeline
-from braidpy.web._settings import Machine
+from braidpy.web._settings import Lace, Machine
 from braidpy.web._spec import defaults
 from braidpy.web._types import (
+    Collision,
     Info,
     MachineGeometry,
     MachineTurned,
@@ -28,21 +43,19 @@ from braidpy.web._types import (
 
 
 def _machines():
-    from braidpy.machine_catalog import CATALOGUE
+    """Every machine the page can draw and turn by hand, by name: the horn
+    gear machines and the lace machines."""
+    from braidpy.machine_catalog import CATALOGUE, LACE
 
-    return CATALOGUE
+    return {**CATALOGUE, **LACE}
 
 
 def _from_machine(spec: Spec) -> Result:
-    from braidpy.horn_gear import (
-        axial_positions,
-        compute_layout,
-        gear_radii,
-        yarn_paths,
-    )
+    from braidpy.horn_gear import axial_positions, compute_layout, gear_radii
     from braidpy.horn_gear.word import annular_word, flat_word
 
-    machines = _machines()
+    from braidpy.machine_catalog import CATALOGUE as machines
+
     name = Machine.name.read(spec)
     if name not in machines:
         raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
@@ -65,36 +78,12 @@ def _from_machine(spec: Spec) -> Result:
     # stop the machine: the braid is what it made until then.
     loading = _loading(spec.get("carriers"), machine)
     carriers_at = None if loading is None else dict(enumerate(loading))
-    stopped = None
-    n_steps = None
+    period = None
     if carriers_at is not None:
-        from braidpy.horn_gear.simulation import (
-            CollisionError,
-            simulate,
-            state_period,
-        )
+        from braidpy.horn_gear.simulation import state_period
 
         period = state_period(machine, carriers_at) or machine.contact_period()
-        n_steps = cycles * period
-        try:
-            simulate(machine, n_steps, carriers_at)
-        except CollisionError as error:
-            stopped = error
-            n_steps = error.step - 1
-            if n_steps < 1:
-                raise ValueError(
-                    "Those carriers meet as soon as the machine turns: "
-                    + _met(error)
-                    + "."
-                ) from None
-    paths = yarn_paths(
-        machine,
-        n_steps=n_steps,
-        carrier_positions=carriers_at,
-        n_cycles=cycles,
-        yarn_diameter=diameter,
-        axials=True,
-    )
+    paths, stopped, n_steps = _braided(machine, carriers_at, cycles, period, diameter)
     paths = _place_cores(paths, cores)
     paths = _tighten(
         paths, spec, diameter, rigid=list(cores) if stiff == "rigid" else []
@@ -102,22 +91,9 @@ def _from_machine(spec: Spec) -> Result:
     info: Info = {}
     notes = ["Words are read over one cycle of the machine."]
     if stopped is not None:
-        # The carriers that met, where they started: as the page draws
-        # the machine, before it turns.
         assert loading is not None
-        info["collision"] = {
-            "step": int(stopped.step),
-            "at": [
-                [loading[k][0], int(loading[k][1])]
-                for ids in stopped.collisions.values()
-                for k in ids
-            ],
-        }
-        notes = [
-            f"Carriers met at step {stopped.step}, on {_met(stopped)}: the "
-            f"braiding stopped there, after {n_steps} steps. The carriers that "
-            "met are ringed where they started. No word is read."
-        ]
+        info["collision"] = _collision(stopped, loading)
+        notes = [_stopped_note(stopped, n_steps)]
     elif cores:
         notes = [
             "It braids round a core, drawn here in grey as the yarn it is; its "
@@ -146,6 +122,129 @@ def _from_machine(spec: Spec) -> Result:
         diameter,
         colours=[colour[k] for k in keys],
         names=[f"Core {k}" if k in cores else f"Yarn {k}" for k in keys],
+        info=info,
+        notes=notes,
+        timeline=_timeline(paths.trajectories, keys, "machine"),
+    )
+
+
+def _braided(
+    machine: Any,
+    carriers_at: Optional[Dict[int, Tuple[str, int]]],
+    cycles: int,
+    period: Optional[int],
+    diameter: float,
+) -> Tuple[Any, Any, Optional[int]]:
+    """The yarns a machine lays, ``cycles`` times ``period`` steps — or its
+    own cycles, if no period is given — stopped where carriers meet.
+
+    Returns:
+        The yarn paths, the collision that stopped the machine if one did,
+        and the steps turned (None for the machine's own cycles).
+
+    Raises:
+        ValueError: If carriers meet as soon as the machine turns.
+    """
+    from braidpy.horn_gear import yarn_paths
+
+    stopped = None
+    n_steps = None
+    if period is not None:
+        from braidpy.horn_gear.simulation import CollisionError, simulate
+
+        n_steps = cycles * period
+        try:
+            simulate(machine, n_steps, carriers_at)
+        except CollisionError as error:
+            stopped = error
+            n_steps = error.step - 1
+            if n_steps < 1:
+                raise ValueError(
+                    "Those carriers meet as soon as the machine turns: "
+                    + _met(error)
+                    + "."
+                ) from None
+    paths = yarn_paths(
+        machine,
+        n_steps=n_steps,
+        carrier_positions=carriers_at,
+        n_cycles=cycles,
+        yarn_diameter=diameter,
+        axials=True,
+    )
+    return paths, stopped, n_steps
+
+
+def _collision(stopped: Any, loading: List[Tuple[str, int]]) -> Collision:
+    """The carriers that met, where they started: as the page draws the
+    machine, before it turns."""
+    return {
+        "step": int(stopped.step),
+        "at": [
+            [loading[k][0], int(loading[k][1])]
+            for ids in stopped.collisions.values()
+            for k in ids
+        ],
+    }
+
+
+def _stopped_note(stopped: Any, n_steps: Optional[int]) -> str:
+    return (
+        f"Carriers met at step {stopped.step}, on {_met(stopped)}: the "
+        f"braiding stopped there, after {n_steps} steps. The carriers that "
+        "met are ringed where they started. No word is read."
+    )
+
+
+def _from_lace(spec: Spec) -> Result:
+    """A Jacquard lace machine's braid: its card run so many passes, read
+    off the machine itself (:func:`~braidpy.bridges.lace.ring_braid`)."""
+    from braidpy.bridges.lace import punchcard_text, ring_braid
+    from braidpy.horn_gear import gear_radii
+    from braidpy.machine_catalog import LACE
+
+    name = Lace.name.read(spec)
+    if name not in LACE:
+        raise ValueError(f"No lace machine {name!r}: one of {sorted(LACE)}.")
+    machine = cast("JacquardLaceMachine", LACE[name].make())
+    cycles = Lace.cycles.read(spec)
+    radii = gear_radii(machine)
+    default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
+    diameter = Machine.yarn_diameter.read(spec, default=default)
+    # Threaded by hand, or as the card says; a pass of the card is two of
+    # the machine's steps a punched step.
+    loading = _loading(spec.get("carriers"), machine)
+    own = machine.default_carriers()
+    carriers_at = dict(enumerate(loading)) if loading else own
+    paths, stopped, n_steps = _braided(
+        machine, carriers_at, cycles, machine.steps_per_pass, diameter
+    )
+    paths = _tighten(paths, spec, diameter, rigid=[])
+    info: Info = {}
+    card = punchcard_text(machine.program)
+    notes = [
+        "Words are read over one pass of the card. The card, a column a gear, "
+        "two lines a step — the gears turning anticlockwise ↺, then "
+        "clockwise ↻ — ● punched:\n" + card
+    ]
+    if stopped is not None:
+        info["collision"] = _collision(
+            stopped, loading or [own[k] for k in sorted(own)]
+        )
+        notes = [_stopped_note(stopped, n_steps)]
+    else:
+        word = ring_braid(machine, carriers_at).generators
+        info.update(_braid_info([int(g) for g in word], len(paths.points)))
+        info["repeated"] = "cycle"
+        info["made"] = cycles
+        info["pure"] = cycles % (info.get("pure_after") or 1) == 0
+    keys = list(paths.points)
+    return _result(
+        LACE[name].title + f", {cycles} passes",
+        paths,
+        diameter,
+        colours=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
+        names=[f"Bobbin {k}" for k in keys],
         info=info,
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
@@ -323,15 +422,30 @@ def _place_cores(paths, cores: Collection[Hashable]):
 
 
 def _machine_entry() -> Source:
+    from braidpy.machine_catalog import CATALOGUE
+
     return {
         "title": "Horn gear braiding machine",
         "defaults": defaults(*Machine.shown),
         "entries": [
-            {"name": name, "title": entry.title} for name, entry in _machines().items()
+            {"name": name, "title": entry.title} for name, entry in CATALOGUE.items()
+        ],
+    }
+
+
+def _lace_entry() -> Source:
+    from braidpy.machine_catalog import LACE
+
+    return {
+        "title": "Jacquard lace machine",
+        "defaults": defaults(*Lace.shown),
+        "entries": [
+            {"name": name, "title": entry.title} for name, entry in LACE.items()
         ],
     }
 
 
 SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
-    "machine": (_machine_entry, _from_machine)
+    "machine": (_machine_entry, _from_machine),
+    "lace": (_lace_entry, _from_lace),
 }

@@ -108,6 +108,16 @@ const FIELDS = {
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
   ],
+  lace: [
+    { name: "name", label: "Lace machine", kind: "entries" },
+    {
+      name: "carriers",
+      label: "Bobbins",
+      kind: "text",
+      hint: "Each as gear:slot. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
+    },
+    { name: "cycles", label: "Passes of the card", kind: "number", min: 1, max: 24 },
+  ],
 };
 
 export let catalogue = null;
@@ -224,7 +234,7 @@ export function renderFields(source, values = {}) {
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
   if (source === "word") attachDiagram(holder);
-  if (source === "machine") attachMachine(holder);
+  if (source === "machine" || source === "lace") attachMachine(holder);
   if (about.examples) attachExamples(source, about.examples, holder);
 }
 

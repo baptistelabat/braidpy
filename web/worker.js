@@ -103,7 +103,7 @@ let latest = 0;
 
 async function build(id, spec) {
   if (id !== latest) return;
-  if (spec.source === "machine") await machinery();
+  if (spec.source === "machine" || spec.source === "lace") await machinery();
   status("Laying the yarns…");
   pyodide.globals.set("spec_json", JSON.stringify(spec));
   let result;

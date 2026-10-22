@@ -109,3 +109,13 @@ class Machine:
     of_gear_radius = 0.2
     core_colour = "#8a857c"
     shown = (name, cores, cycles)
+
+
+class Lace:
+    """A Jacquard lace machine, its card run so many passes; threaded as it
+    is, unless ``carriers`` says otherwise.  Yarns are a fifth of a gear
+    radius, as on a horn gear machine (:class:`Machine`)."""
+
+    name = Text("name", "lace_dutch")
+    cycles = Count("cycles", 6, low=1, high=24)
+    shown = (name, cycles)
