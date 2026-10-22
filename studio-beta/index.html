@@ -9,13 +9,13 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet or a braiding machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=fa6d1dca3a" />
+    <link rel="stylesheet" href="style.css?v=50fb1afccf" />
     <script>
       // braidpy's worker starts first, while three.js and the page's
       // modules load: Python is the slowest to start.  What it says before
       // the page is ready to hear it is kept for workers.js to read.
       window.braidpy = (() => {
-        const worker = new Worker("worker.js?v=fa6d1dca3a");
+        const worker = new Worker("worker.js?v=50fb1afccf");
         const early = [];
         worker.onmessage = ({ data }) => early.push(data);
         const pyodideUrl =
@@ -38,7 +38,7 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=fa6d1dca3a"></script>
+    <script type="module" src="app.js?v=50fb1afccf"></script>
   </head>
   <body>
     <aside class="panel">
@@ -166,6 +166,7 @@
         <summary><h2 id="title"></h2></summary>
         <dl id="info"></dl>
         <div id="kin" class="kin"></div>
+        <div id="bridges" class="kin bridges"></div>
         <ul id="notes" class="notes"></ul>
       </details>
       <div class="toolbar" role="toolbar" aria-label="View">

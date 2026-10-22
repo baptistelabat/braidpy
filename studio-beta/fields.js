@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=fa6d1dca3a";
-import { attachEditor } from "./editor.js?v=fa6d1dca3a";
-import { attachMachine } from "./machine.js?v=fa6d1dca3a";
-import { $ } from "./page.js?v=fa6d1dca3a";
-import { submit } from "./workers.js?v=fa6d1dca3a";
+import { attachDiagram } from "./diagram.js?v=50fb1afccf";
+import { attachEditor } from "./editor.js?v=50fb1afccf";
+import { attachMachine } from "./machine.js?v=50fb1afccf";
+import { $ } from "./page.js?v=50fb1afccf";
+import { submit } from "./workers.js?v=50fb1afccf";
 
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
