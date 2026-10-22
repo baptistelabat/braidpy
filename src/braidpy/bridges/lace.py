@@ -73,10 +73,14 @@ class LaceCard:
         """
         from braidpy.horn_gear.jacquard import jacquard_lace_ring
 
-        where = {k: place for place, k in enumerate(self.bobbins) if k is not None}
         return jacquard_lace_ring(
-            self.n_gears, list(self.steps), threaded=[where[k] for k in sorted(where)]
+            self.n_gears, list(self.steps), threaded=self.threaded()
         )
+
+    def threaded(self) -> List[int]:
+        """The notches threaded, strand after strand."""
+        where = {k: place for place, k in enumerate(self.bobbins) if k is not None}
+        return [where[k] for k in sorted(where)]
 
     def threading(self) -> Dict[int, Tuple[str, int]]:
         """Where each strand's bobbin goes, as the machine numbers its slots.

@@ -118,4 +118,8 @@ class Lace:
 
     name = Text("name", "lace_dutch")
     cycles = Count("cycles", 6, low=1, high=24)
+    # Your own card: the gears round the ring, an even number, and per step
+    # the gears turning anticlockwise, then clockwise, as 0 and 1.
+    n_gears = Count("n_gears", 6, low=4, high=32)
+    card = Text("card", "")
     shown = (name, cycles)

@@ -43,6 +43,17 @@ CASES = [
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
     # A lace machine, its card turning the gears; its handle too.
     ({"source": "lace", "name": "lace_plait", "cycles": 2}, 3),
+    # And a card of your own: every gear turning on a ring of 6.
+    (
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 6,
+            "card": "101010 010101",
+            "cycles": 1,
+        },
+        6,
+    ),
     (
         {
             "source": "sinnet",

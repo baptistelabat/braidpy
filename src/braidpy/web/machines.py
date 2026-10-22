@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from braidpy.horn_gear.jacquard import JacquardLaceMachine
 from braidpy.utils import PALETTE
 from braidpy.web._result import _result, _tighten, _timeline
-from braidpy.web._settings import Lace, Machine
+from braidpy.web._settings import OWN, Lace, Machine
 from braidpy.web._spec import defaults
 from braidpy.web._types import (
     Collision,
@@ -43,11 +43,80 @@ from braidpy.web._types import (
 
 
 def _machines():
-    """Every machine the page can draw and turn by hand, by name: the horn
-    gear machines and the lace machines."""
+    """Every catalogued machine the page can draw and turn by hand, by
+    name: the horn gear machines and the lace machines."""
     from braidpy.machine_catalog import CATALOGUE, LACE
 
     return {**CATALOGUE, **LACE}
+
+
+# A lace machine with a card of your own goes by its gears and card, for
+# the page to draw it and turn it by hand as a catalogued one:
+# "lace:6:100000 010000 ...".
+OWN_LACE = "lace:"
+
+
+def _machine(name: str) -> Any:
+    """A machine by name: catalogued, or a lace machine of your own."""
+    if name.startswith(OWN_LACE):
+        n_gears, _, card = name[len(OWN_LACE) :].partition(":")
+        return _own_lace({"n_gears": n_gears, "card": card})
+    from braidpy.machine_catalog import LaceRing
+
+    machines = _machines()
+    if name not in machines:
+        raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
+    made = machines[name].make()
+    return made.machine() if isinstance(made, LaceRing) else made
+
+
+def _card_text(program: Any) -> str:
+    """A lace machine's card as typed: a step a line, the gears turning
+    anticlockwise, then those turning clockwise, a 0 or 1 a gear."""
+    return "\n".join(
+        " ".join("".join("1" if on else "0" for on in line) for line in step)
+        for step in program
+    )
+
+
+def _read_card(text: str, n_gears: int) -> List[Tuple[str, str]]:
+    """A card as typed: groups of 0 and 1, a digit a gear, taken two by two
+    — the gears turning anticlockwise, then clockwise — however the steps
+    are laid out on lines."""
+    groups = re.findall(r"\S+", text)
+    for group in groups:
+        if not re.fullmatch(r"[01]+", group):
+            raise ValueError(
+                f"Cannot read {group!r}: a card is 0 and 1, a digit a gear."
+            )
+        if len(group) != n_gears:
+            raise ValueError(
+                f"{group!r} has {len(group)} digits: give one for each of the "
+                f"{n_gears} gears."
+            )
+    if not groups:
+        raise ValueError(
+            "Give the card: per step, the gears turning anticlockwise, then clockwise."
+        )
+    if len(groups) % 2:
+        raise ValueError(
+            "A step is two groups: the gears turning anticlockwise, then those "
+            "turning clockwise."
+        )
+    return [(groups[k], groups[k + 1]) for k in range(0, len(groups), 2)]
+
+
+def _own_lace(spec: Spec) -> Any:
+    """A lace machine of your own: its gears, an even number, and its card."""
+    from braidpy.horn_gear.jacquard import jacquard_lace_ring
+
+    n_gears = Lace.n_gears.read(spec)
+    if n_gears % 2:
+        raise ValueError(
+            f"{n_gears} gears cannot mesh in a ring: neighbours turn opposite "
+            "ways, so give an even number."
+        )
+    return jacquard_lace_ring(n_gears, _read_card(Lace.card.read(spec), n_gears))
 
 
 def _from_machine(spec: Spec) -> Result:
@@ -204,9 +273,14 @@ def _from_lace(spec: Spec) -> Result:
     from braidpy.machine_catalog import LACE
 
     name = Lace.name.read(spec)
-    if name not in LACE:
+    if name == OWN:
+        machine = cast("JacquardLaceMachine", _own_lace(spec))
+        title = f"Your own card, {len(machine.gears)} gears"
+    elif name in LACE:
+        machine = cast("JacquardLaceMachine", LACE[name].make().machine())
+        title = LACE[name].title
+    else:
         raise ValueError(f"No lace machine {name!r}: one of {sorted(LACE)}.")
-    machine = cast("JacquardLaceMachine", LACE[name].make())
     cycles = Lace.cycles.read(spec)
     radii = gear_radii(machine)
     default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
@@ -240,7 +314,7 @@ def _from_lace(spec: Spec) -> Result:
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
     return _result(
-        LACE[name].title + f", {cycles} passes",
+        title + f", {cycles} passes",
         paths,
         diameter,
         colours=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
@@ -295,10 +369,7 @@ def machine_geometry(name: str) -> MachineGeometry:
         slot_offsets,
     )
 
-    machines = _machines()
-    if name not in machines:
-        raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
-    machine = machines[name].make()
+    machine = _machine(name)
     layout = compute_layout(machine)
     radii = gear_radii(machine)
     offsets = slot_offsets(machine, layout)
@@ -337,10 +408,7 @@ def _worked(name: str) -> Tuple[Any, Any]:
     """A machine to turn by hand, and its drawing: made once."""
     from braidpy.horn_gear.handle import drawing
 
-    machines = _machines()
-    if name not in machines:
-        raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
-    machine = machines[name].make()
+    machine = _machine(name)
     return machine, drawing(machine)
 
 
@@ -436,12 +504,20 @@ def _machine_entry() -> Source:
 def _lace_entry() -> Source:
     from braidpy.machine_catalog import LACE
 
+    entries: List[Any] = []
+    for name, entry in LACE.items():
+        ring = entry.make()
+        entries.append(
+            {
+                "name": name,
+                "title": entry.title,
+                "pattern": {"n_gears": ring.n_gears, "card": _card_text(ring.steps)},
+            }
+        )
     return {
         "title": "Jacquard lace machine",
         "defaults": defaults(*Lace.shown),
-        "entries": [
-            {"name": name, "title": entry.title} for name, entry in LACE.items()
-        ],
+        "entries": entries + [{"name": OWN, "title": "Your own card…"}],
     }
 
 

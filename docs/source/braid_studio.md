@@ -63,7 +63,11 @@ The page has a form and a 3D view.
   ({func}`~braidpy.bridges.lace.lace_card`). Its word is read off the
   machine itself, a pass of the card a repeat
   ({func}`~braidpy.bridges.lace.ring_braid`), and the card is in the notes,
-  as punched.
+  as punched. The gears and the card of the machine chosen are shown, ready
+  to change, as a sinnet's moves are: **Your own card…** takes an even
+  number of gears and a card typed a step a line, the gears turning
+  anticlockwise then those turning clockwise, a 0 or 1 a gear —
+  `1000 0100`. A card that cannot drive the machine says why, in the panel.
 - A machine that braids round **cores** braids them in either as yarn, held
   at both ends and giving way between to the yarns pressing on it, or as
   rigid cores, straight; either way each core keeps its own place, where the
