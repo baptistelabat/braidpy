@@ -15,7 +15,7 @@
 //                {type: "result", id, result, seconds}
 //                {type: "error", id, message}
 
-importScripts("tighten.js?v=4d41d01a98", "rope.js?v=4d41d01a98", "form.js?v=4d41d01a98", "marudai.js?v=4d41d01a98");
+importScripts("tighten.js?v=dfbc233bbc", "rope.js?v=dfbc233bbc", "form.js?v=dfbc233bbc", "marudai.js?v=dfbc233bbc");
 
 function status(text) {
   self.postMessage({ type: "status", text });

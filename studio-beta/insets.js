@@ -5,8 +5,8 @@
 // The insets over the 3D view: the braid's cross-section, and what made it
 // seen from above.
 
-import { $ } from "./page.js?v=4d41d01a98";
-import { braid } from "./scene.js?v=4d41d01a98";
+import { $ } from "./page.js?v=dfbc233bbc";
+import { braid } from "./scene.js?v=dfbc233bbc";
 
 // The braid seen along its axis, once made: each strand's track over the
 // middle of the braid — far from the fell and the held top — and a slice

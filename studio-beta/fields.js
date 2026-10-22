@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=4d41d01a98";
-import { attachEditor } from "./editor.js?v=4d41d01a98";
-import { attachMachine } from "./machine.js?v=4d41d01a98";
-import { $ } from "./page.js?v=4d41d01a98";
-import { submit } from "./workers.js?v=4d41d01a98";
+import { attachDiagram } from "./diagram.js?v=dfbc233bbc";
+import { attachEditor } from "./editor.js?v=dfbc233bbc";
+import { attachMachine } from "./machine.js?v=dfbc233bbc";
+import { $ } from "./page.js?v=dfbc233bbc";
+import { submit } from "./workers.js?v=dfbc233bbc";
 
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
@@ -110,6 +110,14 @@ const FIELDS = {
   ],
   lace: [
     { name: "name", label: "Lace machine", kind: "entries" },
+    { name: "n_gears", label: "Gears", kind: "number", min: 4, max: 32, step: 2, custom: true },
+    {
+      name: "card",
+      label: "Punchcard",
+      kind: "textarea",
+      custom: true,
+      hint: "A step a line: the gears turning anticlockwise, then those turning clockwise, a 0 or 1 for each gear from A, for example 1000 0100. A, C, E… turn anticlockwise, B, D, F… clockwise, and two neighbours never turn on the same line. Change it to make your own: the one chosen stays as it is.",
+    },
     {
       name: "carriers",
       label: "Bobbins",
@@ -129,7 +137,7 @@ export function setCatalogue(value) {
 // Sources left out of the "Made by" menu for now.
 export const UNLISTED = new Set(["kumihimo"]);
 // Sources whose catalogued braids always show what they are made of.
-const ALWAYS_SHOWN = new Set(["mobidai", "sinnet"]);
+const ALWAYS_SHOWN = new Set(["mobidai", "sinnet", "lace"]);
 
 export function renderFields(source, values = {}) {
   const about = catalogue[source];
