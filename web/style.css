@@ -394,6 +394,13 @@ button:disabled {
   color: var(--muted);
 }
 
+/* The braid made other ways: small buttons beside each. */
+.kin button.small {
+  font-size: 11px;
+  padding: 1px 6px;
+  margin-left: 2px;
+}
+
 .notes {
   margin: 10px 0 0;
   padding-left: 18px;

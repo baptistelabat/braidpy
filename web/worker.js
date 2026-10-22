@@ -8,6 +8,7 @@
 // Messages in:   {type: "init", pyodideUrl}
 //                {type: "build", id, spec}
 //                {type: "geometry", name}
+//                {type: "sinnet", id}
 //                {type: "turn", id, name, loading, time}
 //                {type: "origin", name, place, time}
 // Messages out:  {type: "status", text}
@@ -15,6 +16,11 @@
 //                {type: "laid", id, result, job, settle, twist}
 //                  the braid as laid, for settle.js to settle
 //                {type: "kin", id, kin}
+//                {type: "bridges", id, bridges}
+//                  the braid made other ways: a kumihimo disk's moves and a
+//                  lace machine's punchcard (braidpy.bridges.for_page)
+//                {type: "sinnet", id, sinnet}
+//                  a sinnet on Ashley's stand, searched for when asked
 //                  the braid's other ways of being made, and the braids
 //                  nearest it (braidpy.topology_catalog.for_page)
 //                {type: "geometry", name, shape}
@@ -138,6 +144,42 @@ async function build(id, spec) {
   // Shown as laid straight away; settled in settle.js.
   self.postMessage({ type: "laid", id, result, job: job ?? null, settle, twist: spec.twist });
   await kin(id, result.info);
+  await bridges(id, result.info);
+}
+
+// The braid made other ways (braidpy.bridges): cheap, worked out for every
+// braid; a sinnet on Ashley's stand is searched for only when asked.
+let lastInfo = null;
+async function bridges(id, info) {
+  if (id !== latest) return;
+  lastInfo = info;
+  pyodide.globals.set("info_json", JSON.stringify(info));
+  try {
+    const text = await pyodide.runPythonAsync(`
+from braidpy import bridges as _bridges
+json.dumps(_bridges.for_page(json.loads(info_json)))
+`);
+    self.postMessage({ type: "bridges", id, bridges: JSON.parse(text) });
+  } catch {
+    // Nothing shown.
+  }
+}
+
+async function sinnet(id) {
+  if (!lastInfo) return;
+  pyodide.globals.set("info_json", JSON.stringify(lastInfo));
+  let found = null;
+  try {
+    found = JSON.parse(
+      await pyodide.runPythonAsync(`
+from braidpy import bridges as _bridges
+json.dumps(_bridges.sinnet_for_page(json.loads(info_json)))
+`),
+    );
+  } catch {
+    found = null;
+  }
+  self.postMessage({ type: "sinnet", id, sinnet: found });
 }
 
 // The braid's kin, once it is on its way: what it costs is the braid's
@@ -226,6 +268,7 @@ self.onmessage = (event) => {
       else if (message.type === "build") await build(message.id, message.spec);
       else if (message.type === "geometry") await geometry(message.name);
       else if (message.type === "turn") await turn(message);
+      else if (message.type === "sinnet") await sinnet(message.id);
       else if (message.type === "origin") await origin(message);
     } catch (error) {
       self.postMessage({

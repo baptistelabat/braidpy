@@ -139,7 +139,10 @@ The page has a form and a 3D view.
   — the plait typed as a word is also the three-carrier flat machine's — and
   **Nearest braids** the braids of the catalogues most like it, whatever
   makes them, each with how unlike it is; your own braid too, found by its
-  fingerprint ({doc}`comparing_braids`). Each is a link that makes it. The
+  fingerprint ({doc}`comparing_braids`). Each is a link that makes it. And
+  **Make it as…** gives the braid made other ways ({doc}`bridges`): its
+  moves on a kumihimo disk, to make; a lace machine's punchcard, to copy or
+  download; and, when asked, a sinnet on Ashley's stand, to make. The
   braid is drawn in the middle of what the card leaves free.
 - A braid word or ring word is made on the marudai hanging free, as a disk
   braid is; when the bobbins turn together it is held while they turn,

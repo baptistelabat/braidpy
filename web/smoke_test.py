@@ -7,7 +7,8 @@
 Serves ``web/site`` locally, opens it in headless Chromium through
 Playwright, and for each source checks that braidpy, running in the page,
 made the braid and every yarn was drawn — with nothing logged as an error;
-for the plait, that the card says what else makes it; and for a machine,
+for the plait, that the card says what else makes it, and how to make it
+on a disk or a lace machine; and for a machine,
 that its handle turns it a step.
 
     python web/build.py
@@ -140,6 +141,15 @@ def main() -> int:
                     kin = "  also made as others"
                 except Exception:
                     ok, kin = False, "  no kin shown"
+                # And the braid made other ways: a disk, a lace card.
+                try:
+                    page.wait_for_function(
+                        "() => document.getElementById('bridges')"
+                        ".textContent.includes('Lace machine')",
+                        timeout=30000,
+                    )
+                except Exception:
+                    ok, kin = False, kin + ", no other ways to make it shown"
             failures += not ok
             print(
                 f"{'ok  ' if ok else 'FAIL'} {spec['source']:9} "
