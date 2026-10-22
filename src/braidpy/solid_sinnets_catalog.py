@@ -898,15 +898,14 @@ abok_3081 = AshleySolidSinnet(
     ],
     moves=[
         (18, 16),
-        (15, 9),
+        (15, 19),
         (1, 13),
         (12, 2),
-        # (2, 10) as transcribed, and (17, 9) as the book prints it, give
-        # spaces 9 and 10 two strands a cycle and 19 and 20 none: the book
-        # is wrong here.  (15, 19) for (15, 9) would do as well as (17, 19)
-        # for (17, 9); as corrected, the even spaces are one cycle,
+        # (2, 10) as transcribed, and (15, 9) as the book prints it beside
+        # (17, 9), give spaces 9 and 10 two strands a cycle and 19 and 20
+        # none.  As corrected, the even spaces are one cycle,
         # 18 > 16 > 6 > 4 > 14 > 12 > 2 > 20 > 10 > 8 > 18, and the odd
-        # ones another, 1 > 13 > 5 > 17 > 19 > 3 > 7 > 11 > 15 > 9 > 1.
+        # ones two, 1 > 13 > 5 > 17 > 9 > 1 and 19 > 3 > 7 > 11 > 15 > 19.
         (2, 20),
         (19, 3),
         (5, 17),
@@ -921,7 +920,7 @@ abok_3081 = AshleySolidSinnet(
         (4, 14),
         (14, 12),
         (11, 15),
-        (17, 19),
+        (17, 9),
         (8, 18),
     ],
 )
