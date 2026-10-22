@@ -901,9 +901,9 @@ abok_3081 = AshleySolidSinnet(
         (15, 19),
         (1, 13),
         (12, 2),
-        # (2, 10) as transcribed, and (15, 9) as the book prints it beside
-        # (17, 9), give spaces 9 and 10 two strands a cycle and 19 and 20
-        # none.  As corrected, the even spaces are one cycle,
+        # (2, 10) and (15, 9), as first transcribed for the book's (2, 20)
+        # and (15, 19), gave spaces 9 and 10 two strands a cycle and 19 and
+        # 20 none.  The even spaces are one cycle,
         # 18 > 16 > 6 > 4 > 14 > 12 > 2 > 20 > 10 > 8 > 18, and the odd
         # ones two, 1 > 13 > 5 > 17 > 9 > 1 and 19 > 3 > 7 > 11 > 15 > 19.
         (2, 20),
