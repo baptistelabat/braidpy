@@ -170,3 +170,6 @@ output.json
 tests/3strands_*.b3d
 tests/3strands_*.json
 tests/abok3054*.json
+
+# pytest-testmon's record of which tests touch which code (make test-changed)
+.testmondata*

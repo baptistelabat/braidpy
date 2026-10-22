@@ -35,8 +35,14 @@ def test_moves_that_cannot_be_read_say_so(text, message):
         parse_moves(text)
 
 
+# Every sinnet, the biggest of 36 strands, takes minutes: run daily.
 @pytest.mark.parametrize(
-    "source", [s for s, about in catalogue().items() if "entries" in about]
+    "source",
+    [
+        pytest.param(s, marks=pytest.mark.slow) if s == "sinnet" else s
+        for s, about in catalogue().items()
+        if "entries" in about
+    ],
 )
 def test_every_catalogue_entry_is_made(source):
     for entry in catalogue()[source]["entries"]:

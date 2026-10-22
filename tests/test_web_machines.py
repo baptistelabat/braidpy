@@ -32,6 +32,7 @@ def test_a_machine_braids_its_cores_in_as_yarns():
 
 
 @pytest.mark.parametrize("cores", ["yarn", "rigid"])
+@pytest.mark.slow
 def test_a_machines_cores_never_cross_or_touch_a_yarn(cores):
     """Each core keeps its own place, down to the fell: the yarns are pushed
     off it, and the two cores never come together, let alone pass."""

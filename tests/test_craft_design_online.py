@@ -39,7 +39,7 @@ def test_step():
     assert main_step.moves == []
 
 
-def test_braid_model():
+def test_braid_model(tmp_path):
     # Generate mock states first to determine thread count
     initial_states = create_initial_braid_data(n_strands=3)
 
@@ -47,8 +47,10 @@ def test_braid_model():
         n_strands=len(initial_states),  # MUST provide n_threads during initialization
         thread_states=initial_states,
     )
-    new_braid.save_to_file(filepath="tests/3strands_no_step.json", encode=False)
-    new_braid.save_to_file(filepath="tests/3strands_no_step.b3d", encode=True)
+    new_braid.save_to_file(
+        filepath=str(tmp_path / "3strands_no_step.json"), encode=False
+    )
+    new_braid.save_to_file(filepath=str(tmp_path / "3strands_no_step.b3d"), encode=True)
 
     # Create the single Step object containing configuration and moves
     move_step = Step(
@@ -60,8 +62,12 @@ def test_braid_model():
         ],
     )
     new_braid.add_step(move_step)
-    new_braid.save_to_file(filepath="tests/3strands_moves_step.json", encode=False)
-    new_braid.save_to_file(filepath="tests/3strands_moves_step.b3d", encode=True)
+    new_braid.save_to_file(
+        filepath=str(tmp_path / "3strands_moves_step.json"), encode=False
+    )
+    new_braid.save_to_file(
+        filepath=str(tmp_path / "3strands_moves_step.b3d"), encode=True
+    )
     repeat_step = Step(
         type="repeat",  # Example usage of the new Literal type
         repeat_from=1,
@@ -71,20 +77,27 @@ def test_braid_model():
     )
 
     new_braid.add_step(repeat_step)
-    new_braid.save_to_file(filepath="tests/3strands_repeat_step.json", encode=False)
-    new_braid.save_to_file(filepath="tests/3strands_repeat_step.b3d", encode=True)
+    new_braid.save_to_file(
+        filepath=str(tmp_path / "3strands_repeat_step.json"), encode=False
+    )
+    new_braid.save_to_file(
+        filepath=str(tmp_path / "3strands_repeat_step.b3d"), encode=True
+    )
 
     assert len(new_braid.steps) == 3
 
 
-def test_save_to_file():
+def test_save_to_file(tmp_path):
+    """Saved, as JSON or as a .b3d, a braid loads back the same — written
+    apart, so the file the other tests read is never changed under them."""
     loaded_braid = BraidModel.load_from_file("tests/abok3054.b3d")
-
-    # Test saving to json
-    loaded_braid.save_to_file(filepath="tests/abok3054_out.json", encode=False)
-
-    # Check initial file is not modified when saving back
-    loaded_braid.save_to_file(filepath="tests/abok3054.b3d", encode=True)
+    loaded_braid.save_to_file(
+        filepath=str(tmp_path / "abok3054_out.json"), encode=False
+    )
+    loaded_braid.save_to_file(filepath=str(tmp_path / "abok3054.b3d"), encode=True)
+    again = BraidModel.load_from_file(str(tmp_path / "abok3054.b3d"))
+    assert again is not None and loaded_braid is not None
+    assert again.get_programmatic_code() == loaded_braid.get_programmatic_code()
 
 
 def test_get_main_config():

@@ -60,6 +60,7 @@ def _node_tighten(job):
         },
     ],
 )
+@pytest.mark.slow
 def test_the_page_tightens_as_braidpy_does(spec):
     """web/tighten.js is tighten_yarns, step for step.
 

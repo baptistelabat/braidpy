@@ -50,6 +50,13 @@ dev = [
     "myst>=1.0.4",
     "monkeytype>=23.3.0",
     "mypy>=1.16.0",
+    "pytest-xdist>=3.6",
+    "pytest-testmon>=2.1",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: takes seconds or minutes; left out of the quick run (make test), run daily and by make test-all",
 ]
 
 [tool.setuptools.package-data]

@@ -1,4 +1,4 @@
-.PHONY: help install-uv docs studio studio-serve studio-test duplicates
+.PHONY: help install-uv docs studio studio-serve studio-test duplicates test test-all test-changed
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -58,8 +58,14 @@ duplicates: ## Fail on code copied rather than shared (Python and JavaScript)
 		--format javascript --threshold 0 --reporters console \
 		--ignore "**/node_modules/**,**/site/**" .
 
-test: ## Launch test
-	uv run pytest tests
+test: ## The quick tests, in parallel: all but those marked slow (about 2 minutes)
+	uv run pytest tests -n auto --dist loadfile -m "not slow"
+
+test-all: ## Every test, the slow ones too (as CI runs them daily)
+	uv run pytest tests -n auto --dist loadfile
+
+test-changed: ## Only the tests touching code changed since they last ran (pytest-testmon)
+	uv run pytest tests --testmon
 
 typecheck: ## Check type annotations
 	uv run mypy src tests

@@ -57,6 +57,7 @@ def _disk(tmp_path, spec):
 
 
 @pytest.mark.parametrize("spec", [PLAIT, ROPE], ids=["plait", "rope"])
+@pytest.mark.slow
 def test_the_port_is_the_same_algorithm_bead_for_bead(tmp_path, monkeypatch, spec):
     from braidpy import marudai
 
@@ -71,6 +72,7 @@ def test_the_port_is_the_same_algorithm_bead_for_bead(tmp_path, monkeypatch, spe
 
 
 @pytest.mark.parametrize("spec", [{**PLAIT, "repeat": 4}, ROPE], ids=["plait", "rope"])
+@pytest.mark.slow
 def test_the_port_makes_the_same_braid(tmp_path, spec):
     from braidpy.marudai import make
 

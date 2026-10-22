@@ -47,11 +47,16 @@ jobs:
       - name: Build the site
         run: uv run --no-project python web/build.py
 
-      - name: Install a browser
-        run: uv run --no-project --with playwright python -m playwright install --with-deps chromium
-
+      # The runner's own Chrome, rather than minutes installing Chromium and
+      # its libraries; installed only where there is none.
       - name: Make a braid of every kind, in the browser
-        run: uv run --no-project --with playwright python web/smoke_test.py --screenshots web/screenshots
+        run: |
+          chrome="$(command -v google-chrome || true)"
+          if [ -z "$chrome" ]; then
+            uv run --no-project --with playwright python -m playwright install --with-deps chromium
+          fi
+          uv run --no-project --with playwright python web/smoke_test.py \
+            --screenshots web/screenshots ${chrome:+--chromium "$chrome"}
 
       - name: Keep the screenshots
         if: always()
