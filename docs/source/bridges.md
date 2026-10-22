@@ -21,10 +21,25 @@ moving strands round a ring of places, two neighbours at a time. A
 - the places round the ring, and which strand starts where — a place may be
   empty;
 - rows of **swaps**: two neighbouring places exchanging what they hold, the
-  swaps of a row sharing no place, so made at once. A swap's sign is the
-  crossing's, as a braid word writes it: positive when the strand on the
-  right is lifted over the one on its left. A swap with an empty place moves
-  a strand on by a place and crosses nothing.
+  swaps of a row sharing no place, so made at once. Two strands swapping
+  make a crossing; a strand and an empty place make none, the strand only
+  moving on by a place.
+
+The ring is seen from above, from the side the braider works from on a
+kumihimo disk, and the braid is made downwards, away from the eye, as it
+hangs below a disk. Places are numbered clockwise from 0, the ring's seam
+between the last and place 0, and the swap of place `p` exchanges places
+`p` and `p + 1`. Its sign is the crossing's, as a braid word writes it:
+
+- **+1**: the strand at `p + 1` goes first, anticlockwise, lifted over the
+  one at `p` — over seen from above, so passing inside it, nearer the
+  braid's axis — and the strand at `p` moves clockwise into the place it
+  left. With the strands at places 1 to n counted from the seam, the
+  positive swap of place `i - 1` is σᵢ.
+- **−1**: the strand at `p` goes first, clockwise, over the one at `p + 1`:
+  σᵢ⁻¹.
+
+A swap with an empty place crosses nothing, and its sign changes nothing.
 
 ```python
 from braidpy import Braid
