@@ -2,58 +2,35 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: annulus_braid.py
-Description: Braids on a ring of slots, and the shape a laid rope takes
-Authors: Baptiste Labat
-Created: 2025-05-26
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""Braids on a ring of slots, and the shape a laid rope takes.
 
-References on the annular braid group:
-
-- https://people.math.wisc.edu/~aekent2/annular.pdf
-- https://www.researchgate.net/publication/228456153_Cohomology_of_Artin_groups_of_type_zAn_Bn_and_applications
-- https://math.stackexchange.com/questions/4504420/braid-groups-for-ropes
+This module implements braids on annular (ring) topology, where slots are arranged
+in a circle rather than a line. This changes the braiding operations and
+allows for additional moves like turns.
 
 A flat braid lays its slots out on a line, so a strand that wants to get from
-one end to the other has to climb over everyone in between.  An annulus lays
-them round a circle, and that changes what a word can ask for:
+one end to the other has to climb over everyone in between. An annulus lays
+them round a circle, and that changes what a word can ask for.
 
-**A crossing** puts two neighbouring strands past each other.  On a line one
+**A crossing** puts two neighbouring strands past each other. On a line one
 of them goes over; on a ring the depth direction is radial, so one of them
-goes *outside* — further from the axis — and the other inside.  A positive
-move sends the strand in the lower-numbered slot of the pair outside, which
-is the same rule as the flat braid's positive generator sending the lower
-strand over.
+goes *outside* — further from the axis — and the other inside.
 
-Slot numbers run ``0`` to ``N-1``, so the pairs run ``(0,1)`` up to
-``(N-2,N-1)`` — indices 1 to ``N-1`` — and then ``(N-1,0)``, index ``N``,
-which is the pair a flat braid has no room for.  Nothing distinguishes that
-pair on the ring: it is the pair whose slot numbers *wrap*, and the wrap
-exists only because the numbering has to start somewhere.  Rotate the labels
-and a different pair becomes index ``N``.  The annular braid literature
-writes this generator as :math:`\\sigma_0` or :math:`\\sigma_N` and says the
-indices are read modulo ``N``; :func:`wrap_crossing` is just a name for
-``crossing(N)`` so a word reads without the reader counting slots.
-
-**A turn** carries every strand round one slot together.  Nobody passes
+**A turn** carries every strand round one slot together. Nobody passes
 anybody and nobody goes outside anybody; the cross-section simply rotates.
-On a line there is no such move.  On a ring it is what a rope is.  Index
-``N + 1`` names it.
 
 Everything up to :func:`tubular_paths` is bookkeeping — which strand is
 where, and which passed outside which — and is exact combinatorics,
 checkable against a drawing of the braid.
 
 :func:`rope_helices` is the one piece of *geometry* in braidpy that is both
-closed-form and physical, and it is worth being clear about why it can be.
-Laying up a rope asks nothing of the strands beyond winding on together, so
-their shape is a one-parameter family — helices of radius R — and symmetry
-says where they touch without anyone having to search for it.  Minimising
-length then drives R down until they do, at :func:`lay_radius`.  Take
-away either the symmetry or the absence of crossings and neither step
-survives; see ``docs/source/why_no_closed_form.md``.
+closed-form and physical.
+
+References on the annular braid group:
+
+- https://people.math.wisc.edu/~aekent2/annular.pdf
+- https://www.researchgate.net/publication/228456153_Cohomology_of_Artin_groups_of_type_zAn_Bn_and_applications
+- https://math.stackexchange.com/questions/4504420/braid-groups-for-ropes
 """
 
 from __future__ import annotations
@@ -134,8 +111,19 @@ def rope(n_strands: int) -> List[int]:
 
 
 def _turn_word(n_strands: int, sign: int = 1) -> List[int]:
-    """A turn of the ring as a solid braid makes it: ``σₙ₋₁…σ₂σ₁``, or
-    undone, ``σ₁⁻¹σ₂⁻¹…σₙ₋₁⁻¹``."""
+    """The flat braid word for a turn of the ring.
+
+    A turn of the ring as a solid braid makes it: ``σₙ₋₁…σ₂σ₁``, or
+    undone, ``σ₁⁻¹σ₂⁻¹…σₙ₋₁⁻¹``.
+
+    Args:
+        n_strands: How many strands the ring has.
+        sign: Direction of the turn. Positive for the turning sequence,
+            negative for the inverse. Defaults to 1.
+
+    Returns:
+        The word as signed generator indices.
+    """
     turning = list(range(n_strands - 1, 0, -1))
     return turning if sign > 0 else [-g for g in reversed(turning)]
 
@@ -223,6 +211,7 @@ def ring_moves(word: Sequence[int], n_strands: int) -> Tuple[List[int], bool]:
     up, down = _turn_word(n), _turn_word(n, -1)
 
     def rolled(letters: List[int]) -> List[int]:
+        """Converts a sequence of letters to moves, recognizing turn patterns."""
         moves: List[int] = []
         k = 0
         while k < len(letters):
@@ -301,6 +290,14 @@ def tubular_paths(moves: Sequence[int], n_strands: int) -> List[TubularStrandPat
     signs: List[List[int]] = [[] for _ in range(n_strands)]
 
     def place(strand: int) -> int:
+        """Calculates the unwrapped position of a strand.
+
+        Args:
+            strand: The strand index.
+
+        Returns:
+            The unwrapped slot number for the strand.
+        """
         return ring.index(strand) + n_slots * winding[strand]
 
     for move in moves:
@@ -449,6 +446,15 @@ def helix_clearance(
     """
 
     def gap(step: int, w: float) -> float:
+        """Calculates the distance between strand centres at a given position.
+
+        Args:
+            step: The step index.
+            w: The position along the axis.
+
+        Returns:
+            The distance between centres.
+        """
         slide = step * lay / n_strands
         return math.hypot(2.0 * radius * math.sin(math.pi * w / lay), slide - w)
 
@@ -554,7 +560,14 @@ class Helix:
     phase: float = 0.0
 
     def position(self, z: float) -> Tuple[float, float, float]:
-        """Where the strand is at ``z`` along the axis."""
+        """Calculates the 3D position of the strand at a given axial coordinate.
+
+        Args:
+            z: The position along the axis.
+
+        Returns:
+            A tuple (x, y, z) representing the 3D position.
+        """
         angle = self.phase + 2.0 * math.pi * self.turns * z / self.length
         return self.radius * math.cos(angle), self.radius * math.sin(angle), z
 
@@ -643,7 +656,14 @@ class TubularBraidStrand:
         return 2.0 * math.pi * self.radius / math.tan(self.braid_angle)
 
     def position(self, z: float) -> Tuple[float, float, float]:
-        """Where the strand is at ``z`` along the axis."""
+        """Calculates the 3D position of the strand at a given axial coordinate.
+
+        Args:
+            z: The position along the axis.
+
+        Returns:
+            A tuple (x, y, z) representing the 3D position.
+        """
         # z = R * u * cot(q), so the angle travelled follows from the height.
         travelled = z * math.tan(self.braid_angle) / self.radius
         angle = self.direction * travelled + self.phase
