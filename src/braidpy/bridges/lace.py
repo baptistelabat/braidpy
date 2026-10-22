@@ -52,14 +52,14 @@ class LaceCard:
 
     Args:
         n_gears: Gears round the ring.
-        steps: Per step, the two lines of the card: which gears turn
-            anticlockwise, then which clockwise, as "0" and "1" per gear.
+        steps: Per step, the two lines of the card: per gear, whether it
+            turns anticlockwise, then whether it turns clockwise.
         bobbins: The strand in each notch to begin with, or None.
         program: The same as a ring program, places being notches.
     """
 
     n_gears: int
-    steps: Tuple[Tuple[str, str], ...]
+    steps: Tuple[Tuple[Tuple[bool, ...], Tuple[bool, ...]], ...]
     bobbins: Tuple[Optional[int], ...]
     program: RingProgram
 
@@ -102,9 +102,22 @@ class LaceCard:
         ]
 
     def text(self) -> str:
-        """The card as it is punched, a line per step: the anticlockwise
-        line, a space, the clockwise line."""
-        return "\n".join(f"{ccw} {cw}" for ccw, cw in self.steps)
+        """The card as it is punched and as the machine's animation draws it
+        (:func:`~braidpy.horn_gear.visualization.animate`): a column per
+        gear, ● punched and ○ not, two lines per step read downwards — the
+        anticlockwise line ↺, then the clockwise line ↻, half a punch to its
+        right, as it is driven half a step later."""
+        names = " ".join(chr(ord("A") + g) for g in range(self.n_gears))
+        width = len(str(len(self.steps) - 1))
+        lines = [f"{'':>{width}}    {names}"]
+
+        def punched(line: Tuple[bool, ...]) -> str:
+            return " ".join("●" if on else "○" for on in line)
+
+        for number, (ccw, cw) in enumerate(self.steps):
+            lines.append(f"{number:>{width}} ↺  {punched(ccw)}")
+            lines.append(f"{'':>{width}} ↻   {punched(cw)}")
+        return "\n".join(lines)
 
 
 def _gear_sign(gear: int) -> int:
@@ -166,8 +179,8 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     steps = []
     for row in program.rows:
         turning = {(swap.place + 1) % gears for swap in row}
-        ccw = "".join("1" if g in turning and g % 2 == 0 else "0" for g in range(gears))
-        cw = "".join("1" if g in turning and g % 2 == 1 else "0" for g in range(gears))
+        ccw = tuple(g in turning and g % 2 == 0 for g in range(gears))
+        cw = tuple(g in turning and g % 2 == 1 for g in range(gears))
         steps.append((ccw, cw))
     return LaceCard(gears, tuple(steps), tuple(start), program)
 
@@ -226,7 +239,7 @@ def lace_braid(card: LaceCard) -> Braid:
     before = held(history[0])
     for number, (ccw, cw) in enumerate(card.steps):
         after = held(history[2 * (number + 1)])
-        turned = [g for g in range(gears) if ccw[g] == "1" or cw[g] == "1"]
+        turned = [g for g in range(gears) if ccw[g] or cw[g]]
         row = tuple(Swap((g - 1) % gears, _gear_sign(g)) for g in turned)
         expected = list(before)
         for g in turned:
