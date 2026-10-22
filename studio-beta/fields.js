@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=2d6d1b8e75";
-import { attachEditor } from "./editor.js?v=2d6d1b8e75";
-import { attachMachine } from "./machine.js?v=2d6d1b8e75";
-import { $ } from "./page.js?v=2d6d1b8e75";
-import { submit } from "./workers.js?v=2d6d1b8e75";
+import { attachDiagram } from "./diagram.js?v=4d41d01a98";
+import { attachEditor } from "./editor.js?v=4d41d01a98";
+import { attachMachine } from "./machine.js?v=4d41d01a98";
+import { $ } from "./page.js?v=4d41d01a98";
+import { submit } from "./workers.js?v=4d41d01a98";
 
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
@@ -107,6 +107,16 @@ const FIELDS = {
       hint: "For a machine that braids round cores.",
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
+  ],
+  lace: [
+    { name: "name", label: "Lace machine", kind: "entries" },
+    {
+      name: "carriers",
+      label: "Bobbins",
+      kind: "text",
+      hint: "Each as gear:slot. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
+    },
+    { name: "cycles", label: "Passes of the card", kind: "number", min: 1, max: 24 },
   ],
 };
 
@@ -224,7 +234,7 @@ export function renderFields(source, values = {}) {
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
   if (source === "word") attachDiagram(holder);
-  if (source === "machine") attachMachine(holder);
+  if (source === "machine" || source === "lace") attachMachine(holder);
   if (about.examples) attachExamples(source, about.examples, holder);
 }
 
