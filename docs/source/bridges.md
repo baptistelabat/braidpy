@@ -124,13 +124,53 @@ disk_braid(moves) == plait  # True: read as braidpy reads any mobidai
 moves.spec()                # the disk braid as Braid Studio makes it
 ```
 
+## Ashley's stand
+
+On Ashley's stand ({mod}`braidpy.ashley_solid_sinnet`) the strands lie in
+spaces round the rim, and a move carries a strand from one space to another,
+over every strand it passes: not a swap of neighbours. So the bridge
+searches for a sinnet that makes the braid
+({func}`~braidpy.bridges.ashley.ashley_sinnet`): the strands shared out
+among the spaces, and a cycle of moves in which every space gives a strand
+and receives one, as the book's sinnets do. Fewer spaces are tried first;
+a sinnet is found when its braid has the topology wanted.
+
+```python
+from braidpy.bridges.ashley import ashley_sinnet, sinnet_spec
+
+search = ashley_sinnet(plait)
+search.sinnet.initial_counts_per_space, search.sinnet.moves
+# ([2, 1], [(1, 2), (2, 1)]): Ashley's #2965
+sinnet_spec(search.sinnet)   # the sinnet as Braid Studio makes it
+```
+
+Of the fifteen braid words Braid Studio offers, twelve are made by a sinnet
+of this kind, found in under a second; among them the plait and the square
+sinnet are found as Ashley's own #2965 and #2999. The other three, the weave
+of 3 (#2973), the four-strand sinnet (#2974) and the four-strand flat, are
+not: every sinnet of up to as many spaces as strands was tried — one strand
+per space among them — and the nearest is given, with how far it is. What
+rules them out is the sinnet's own rule, every space giving one strand and
+taking one in a cycle, with no space empty.
+
+Without that rule, any braid can be made on the stand
+({func}`~braidpy.bridges.ashley.ashley_moves`): one strand per space with an
+empty space after each, and each crossing made in three or four moves
+through the empty spaces, every space then holding what it held before. It
+is the braid itself, exactly, though not a sinnet of the book's kind.
+
+```python
+from braidpy.bridges.ashley import ashley_moves
+
+weave = Braid((1, -2, -2, 1), 3)    # the weave of 3, #2973
+made = ashley_moves(weave)
+made.initial_counts_per_space   # [1, 0, 1, 0, 1, 0]
+made.braid(1) == weave          # True
+```
+
 ## What comes next
 
 Each way of making braids is a step of its own, built on the ring program:
 
-1. **Ashley's stand** (the marudai of {doc}`braid_studio`'s sinnets): a move
-   carries a strand across several spaces, so this bridge searches for a
-   sinnet — its spaces, the strands in each, its moves — with the braid's
-   topology.
-2. **Braid Studio**: "Make it as…" beside the braid, each way's moves or
+1. **Braid Studio**: "Make it as…" beside the braid, each way's moves or
    punchcard to read, download, and make.
