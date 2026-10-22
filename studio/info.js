@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=fa6d1dca3a";
-import { $, round } from "./page.js?v=fa6d1dca3a";
-import { lastResult } from "./scene.js?v=fa6d1dca3a";
-import { writeSpec } from "./spec.js?v=fa6d1dca3a";
-import { submit } from "./workers.js?v=fa6d1dca3a";
+import { catalogue } from "./fields.js?v=2d6d1b8e75";
+import { $, round } from "./page.js?v=2d6d1b8e75";
+import { lastResult } from "./scene.js?v=2d6d1b8e75";
+import { writeSpec } from "./spec.js?v=2d6d1b8e75";
+import { pending, submit, worker } from "./workers.js?v=2d6d1b8e75";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -134,6 +134,113 @@ export function showKin(kin) {
     }
     box.append(title, list);
   }
+}
+
+// The braid made other ways (braidpy.bridges): its repeating unit as a
+// kumihimo disk's moves, to make here; as a lace machine's punchcard, to
+// copy or download; and, when asked, as a sinnet on Ashley's stand, which
+// is searched for.  None: nothing shown.
+export function showBridges(bridges) {
+  const box = $("bridges");
+  box.replaceChildren();
+  if (!bridges || !bridges.lace) return;
+  const title = document.createElement("h3");
+  title.textContent = "Make it as…";
+  title.title = "The same braid, made another way: each checked by reading the braid back off what makes it";
+  const list = document.createElement("ul");
+  const item = (...parts) => {
+    const li = document.createElement("li");
+    li.append(...parts);
+    list.append(li);
+    return li;
+  };
+  const muted = (text) => {
+    const span = document.createElement("span");
+    span.className = "muted";
+    span.textContent = text;
+    return span;
+  };
+  const link = (text, spec) => {
+    const make = document.createElement("button");
+    make.type = "button";
+    make.className = "link";
+    make.textContent = text;
+    make.addEventListener("click", () => {
+      writeSpec(spec);
+      submit();
+    });
+    return make;
+  };
+  const small = (text, act) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "small";
+    button.textContent = text;
+    button.addEventListener("click", () => act(button));
+    return button;
+  };
+
+  if (bridges.disk) {
+    const moves = bridges.disk.moves.split(", ").length;
+    item(
+      link("Kumihimo disk", bridges.disk.spec),
+      muted(` ${moves} moves a repeat `),
+      small("Copy moves", (button) => copyText(bridges.disk.moves, button)),
+    );
+  }
+
+  const sinnet = item(
+    document.createTextNode("Ashley's stand "),
+    small("Find a sinnet", (button) => {
+      button.disabled = true;
+      button.textContent = "Searching…";
+      const asked = pending;
+      const heard = ({ detail }) => {
+        if (detail.id !== asked) return;
+        document.removeEventListener("braid-sinnet", heard);
+        const found = detail.sinnet;
+        sinnet.replaceChildren();
+        if (found?.spec) {
+          sinnet.append(
+            link("Ashley's stand", found.spec),
+            muted(` a sinnet: spaces of ${found.spec.counts}, moves ${found.spec.moves}`),
+          );
+        } else if (found?.exact) {
+          // No sinnet of the book's kind: the braid itself, one strand a space.
+          const moves = found.exact.moves.split(", ").length;
+          sinnet.append(
+            link("Ashley's stand", found.exact),
+            muted(` one strand a space, ${moves} moves a repeat: no sinnet of the book's kind makes it`),
+          );
+        } else {
+          sinnet.append(muted("Ashley's stand: no sinnet found"));
+        }
+      };
+      document.addEventListener("braid-sinnet", heard);
+      worker.postMessage({ type: "sinnet", id: asked });
+    }),
+  );
+
+  const lace = bridges.lace;
+  const card =
+    `Lace machine of ${lace.gears} gears; bobbins in notches ${lace.threading}.\n` +
+    "Two lines a step, ● punched: the gears turning anticlockwise ↺, then clockwise ↻.\n" +
+    lace.card +
+    "\n";
+  item(
+    document.createTextNode("Lace machine"),
+    muted(` ${lace.gears} gears, ${lace.steps} steps a repeat `),
+    small("Copy card", (button) => copyText(card, button)),
+    small("Download", () => {
+      const file = new Blob([card], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(file);
+      a.download = "lace-card.txt";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }),
+  );
+  box.append(title, list);
 }
 
 // A braid's own word, to make again as a braid word — the same braid — or

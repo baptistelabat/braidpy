@@ -15,7 +15,7 @@
 // were made; only what they are painted with changes, so it is immediate
 // however long the braid took.
 
-import { $ } from "./page.js?v=fa6d1dca3a";
+import { $ } from "./page.js?v=2d6d1b8e75";
 
 // The colours braidpy gives a braid's strands (braidpy.utils.PALETTE).
 export const PALETTE = [
