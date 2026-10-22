@@ -80,6 +80,10 @@ def test_the_card_as_punched():
         1: ("B", 0),
         2: ("C", 0),
     }
+    # Named as the machine names its contacts, without building it.
+    contacts = {conn.name for conn in card.machine().connections}
+    assert card.notches() == ["A-B", "B-C", "C-D"]
+    assert set(card.notches()) <= contacts
 
 
 @pytest.mark.parametrize("gears", [3, 5, 6])
