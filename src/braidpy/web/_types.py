@@ -50,6 +50,9 @@ class Spec(TypedDict, total=False):
     # A machine.
     carriers: str
     cores: str
+    # Your own lace machine.
+    n_gears: Value
+    card: str
 
 
 # ------------------------------------------------------------------ result
