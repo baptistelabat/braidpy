@@ -109,7 +109,7 @@ let latest = 0;
 
 async function build(id, spec) {
   if (id !== latest) return;
-  if (spec.source === "machine") await machinery();
+  if (spec.source === "machine" || spec.source === "lace") await machinery();
   status("Laying the yarns…");
   pyodide.globals.set("spec_json", JSON.stringify(spec));
   let result;
@@ -202,7 +202,7 @@ function pythonMessage(error) {
   const text = String(error && error.message ? error.message : error);
   const lines = text.trim().split("\n").filter((line) => line.trim());
   const last = lines[lines.length - 1] || text;
-  return last.replace(/^\w*(Error|Exception):\s*/, "");
+  return last.replace(/^[\w.]*(Error|Exception):\s*/, "");
 }
 
 let queue = Promise.resolve();
@@ -210,8 +210,14 @@ let queue = Promise.resolve();
 async function geometry(name) {
   await machinery();
   pyodide.globals.set("machine_name", name);
-  const text = await pyodide.runPythonAsync("json.dumps(web.machine_geometry(machine_name))");
-  self.postMessage({ type: "geometry", name, shape: JSON.parse(text) });
+  // A card of your own that cannot drive the machine says why, in the panel.
+  let shape;
+  try {
+    shape = JSON.parse(await pyodide.runPythonAsync("json.dumps(web.machine_geometry(machine_name))"));
+  } catch (error) {
+    shape = { error: pythonMessage(error) };
+  }
+  self.postMessage({ type: "geometry", name, shape });
 }
 
 // A machine's handle turned by hand, and where a carrier put on it at a
