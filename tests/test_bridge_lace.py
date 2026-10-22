@@ -52,11 +52,24 @@ def test_crossings_already_signed_as_their_gears_need_no_moving():
     assert len(lace_card(dutch).steps) == 12
 
 
-def test_the_plait_moves_its_strands_along_once():
+def test_the_plait_moves_its_strands_along_and_back():
     """σ₁ is positive but gear 1 turns clockwise: the strands move along a
-    notch, three half turns, and then every crossing is its gear's."""
+    notch, three half turns, then every crossing is its gear's; and they
+    move back at the end, three more — one beside the last crossing — so
+    the card can run again."""
     plait = Braid((1, -2) * 6, 3)
-    assert len(lace_card(plait).steps) == 12 + 3
+    assert len(lace_card(plait).steps) == 12 + 3 + 3 - 1
+
+
+def test_a_card_run_round_again_makes_the_braid_again():
+    """The strands end in the notches they began in — each in another's,
+    as the braid takes them — so the card can run round again."""
+    for braid in (Braid((1, -2), 3), Braid((1, 2, -3), 4), Braid((-1, 3, 2), 4)):
+        card = lace_card(braid)
+        filled = [k is not None for k in card.bobbins]
+        assert [k is not None for k in card.program.ends()] == filled
+        twice = lace_card(Braid(tuple(braid.generators) * 2, braid.n_strands))
+        assert lace_braid(twice) == Braid(tuple(braid.generators) * 2, braid.n_strands)
 
 
 def test_the_card_as_punched():

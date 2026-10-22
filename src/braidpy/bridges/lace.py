@@ -20,7 +20,8 @@ a notch to spare, and when a crossing's sign is not its gear's, they all
 move along one notch, into the spare one, crossing nobody: every gear
 under them is then of the other way.  They only ever move between two
 neighbouring positions, so they never reach the ring's seam, which would
-twist the braid.
+twist the braid; and they end where they began, since a punchcard is run
+round and round.
 
 A step of the card is two lines over the gears, as the machine reads it:
 the gears to turn anticlockwise, then those to turn clockwise.  The swaps
@@ -138,6 +139,10 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
         if _gear_sign(offset + i) != sign:
             shift(1 - offset)
         swaps.append(Swap(offset + i - 1, sign))
+    # A card is run round and round: it ends with the strands back in the
+    # notches they began in, so the next time round is the same braid.
+    if offset:
+        shift(0)
 
     start: List[Optional[int]] = [None] * gears
     for k in range(n):
