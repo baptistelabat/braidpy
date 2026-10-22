@@ -34,6 +34,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     Hashable,
     List,
@@ -83,11 +84,11 @@ class AshleySolidSinnet:
     an even one, so the earliest strand in a space is always the next to
     leave it.
 
-    Attributes:
-        initial_counts_per_space (List[int]): Number of strands per sector. 1-based sectors.
-        moves (List[Tuple[int, int]]): Sequence of (from_sector, to_sector) moves, each 1-based.
-        shape (Optional[str]): The cross-section the sinnet takes when made, as
-            the book names it: "round", "triangle", "hexagon"…
+    Args:
+        initial_counts_per_space: Number of strands per sector. 1-based sectors.
+        moves: Sequence of (from_sector, to_sector) moves, each 1-based.
+        shape: The cross-section the sinnet takes when made, as the book names
+            it: "round", "triangle", "hexagon"… Defaults to None.
     """
 
     initial_counts_per_space: List[int]
@@ -125,14 +126,14 @@ class AshleySolidSinnet:
         :func:`sinnet_to_mobidai`."""
         return sinnet_to_mobidai(self)
 
-    def animate(self, n_cycles: int = 1, **kwargs):
+    def animate(self, n_cycles: int = 1, **kwargs) -> Any:
         """Animate it on its disk, seen from above — see
         :func:`~braidpy.disk_animation.animate_sinnet`."""
         from braidpy.disk_animation import animate_sinnet
 
         return animate_sinnet(self, n_cycles=n_cycles, **kwargs)
 
-    def braid_3d(self, yarn_diameter: float = 0.12, n_cycles: int = 4, **kwargs):
+    def braid_3d(self, yarn_diameter: float = 0.12, n_cycles: int = 4, **kwargs) -> Any:
         """The braid it makes, laid and tightened — see
         :func:`~braidpy.take_off.disk_braid`."""
         disk = self.disk(n_cycles)

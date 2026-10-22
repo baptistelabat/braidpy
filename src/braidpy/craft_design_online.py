@@ -1,14 +1,22 @@
 import json
 import math
 from pathlib import Path
-from typing import List, Optional, Literal
+from typing import Any, List, Optional, Literal
 import urllib.parse
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json, DataClassJsonMixin, config
 
 
 # --- Dataclass Definitions for the Braid Structure ---
-def modulo_minus_pi_pi(angle: float):
+def modulo_minus_pi_pi(angle: float) -> float:
+    """Normalizes an angle to the range [-π, π].
+
+    Args:
+        angle: The angle in radians to normalize.
+
+    Returns:
+        The normalized angle.
+    """
     return (angle + math.pi) % (2 * math.pi) - math.pi
 
 
@@ -212,15 +220,20 @@ class BraidModel(DataClassJsonMixin):
             f")"
         )
 
-    def save_to_file(self, filepath: str, encode=True):
-        """
-        Saves the BraidModel configuration to a URL-encoded JSON file using dataclasses-json.
+    def save_to_file(self, filepath: str, encode: bool = True) -> None:
+        """Saves the BraidModel configuration to a URL-encoded JSON file.
+
+        Uses dataclasses-json to serialize the configuration.
+
+        Args:
+            filepath: Path to the file where the configuration will be saved.
+            encode: Whether to URL-encode the output. Defaults to True.
         """
         # Use dataclasses_json to get the JSON string, ensuring field names are correct
         json_data = self.to_json(indent=4)
 
         # Recursive function to convert 0.0 → 0
-        def convert_floats(obj):
+        def convert_floats(obj: Any) -> Any:
             if isinstance(obj, float) and obj == 0.0:
                 return 0
             elif isinstance(obj, list):
