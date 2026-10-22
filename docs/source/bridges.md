@@ -76,13 +76,15 @@ from braidpy.bridges.lace import lace_braid, lace_card
 
 plait = Braid((1, -2) * 6, 3)
 card = lace_card(plait)
-print(card.text())        # the punchcard, a step per line
+print(card.text())        # the punchcard, two lines a step, as animated
 card.threading()          # where each strand's bobbin goes
 lace_braid(card) == plait # True: the card run on the machine
 ```
 
 A step of the card is two lines over the gears, as the machine reads it:
-those to turn anticlockwise, then those to turn clockwise. A gear always
+those to turn anticlockwise, then those to turn clockwise, the second half
+a punch to the right of the first, as it is driven half a step later and as
+the machine's animation draws it. A gear always
 turns the same way, and neighbours turn opposite ways, so which bobbin
 passes over is fixed by where the crossing is made: an anticlockwise gear
 makes a positive crossing, a clockwise one a negative one. A braid word's
