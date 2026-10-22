@@ -7,5 +7,6 @@
 braid back off what it made.  See ``docs/source/bridges.md``.
 
 - :mod:`braidpy.bridges.lace`: the Jacquard lace machine's punchcard;
-- :mod:`braidpy.bridges.disk`: moves on a kumihimo disk.
+- :mod:`braidpy.bridges.disk`: moves on a kumihimo disk;
+- :mod:`braidpy.bridges.ashley`: a sinnet on Ashley's stand, by searching.
 """

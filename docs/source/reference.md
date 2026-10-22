@@ -10,6 +10,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.bridges.ashley
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.bridges.disk
    :members:
    :undoc-members:
