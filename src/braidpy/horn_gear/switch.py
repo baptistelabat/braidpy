@@ -211,36 +211,10 @@ class MultibandLine(SwitchedMachine):
     def default_carriers(self) -> Dict[int, Tuple[str, int]]:
         """A loading to start from, found quickly enough to draw a page with.
 
-        The general search in :mod:`~braidpy.horn_gear.loading` validates each
-        candidate over the machine's whole state period, which here is 15120
-        steps, and tries one candidate per slot: minutes, for a page that has
-        to answer at once.
-
-        The switches keep each band's carriers to its own gears, so a loading
-        can be built straight from the tracks -- every other slot along each,
-        as a machine is threaded -- keeping whichever carriers do not meet.
-        The check runs over the contact period, the point at which every
-        contact shows the same slots again, rather than the state period.
-        That is a bound, not a proof: carriers meeting later stop the handle,
-        which is what the machine drawn by hand is there to show.
+        See :func:`threaded_loading`, which is why this machine does not use
+        the general search.
         """
-        from .loading import _is_collision_free
-        from .tracks import compute_tracks, contact_period
-
-        horizon = 4 * contact_period(self)
-        # Along each track in turn, so the carriers that do fit are spread
-        # over the whole machine rather than crowded into the first band.
-        order: List[Tuple[str, int]] = []
-        for track in compute_tracks(self):
-            for pos in track:
-                if pos not in order:
-                    order.append(pos)
-        chosen: Dict[int, Tuple[str, int]] = {}
-        for pos in order:
-            trial = {**chosen, len(chosen): pos}
-            if _is_collision_free(self, trial, horizon):
-                chosen = trial
-        return chosen
+        return threaded_loading(self)
 
     def preferred_layout(
         self, scale: float = 1.0
@@ -276,6 +250,85 @@ class MultibandLine(SwitchedMachine):
             if i < len(chords):
                 angle += 2 * math.asin(min(1.0, chords[i] / (2 * radius)))
         return layout
+
+
+def threaded_loading(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
+    """Carriers along the tracks, kept if they do not meet: a loading at once.
+
+    The general search in :mod:`~braidpy.horn_gear.loading` validates every
+    candidate over the machine's whole state period -- 15120 steps for the
+    three-band line's 86 slots -- and tries one candidate per slot.  That is
+    minutes for a page that has to answer while someone waits.
+
+    This threads the machine as a braider does instead: along each track in
+    turn, keeping every carrier that does not meet one already placed, so the
+    carriers spread over the whole machine rather than crowding the first
+    band.  The check runs over the contact period, the point at which every
+    contact shows the same slots again, rather than the state period.
+
+    That is a bound, not a proof: a loading it returns may still bring two
+    carriers together later in the run.  They stop the handle where they
+    meet, which is what a machine turned by hand is there to show.
+
+    Args:
+        machine: The machine to thread.
+
+    Returns:
+        Carrier number -> (gear, slot).
+    """
+    from .loading import _is_collision_free
+    from .tracks import compute_tracks, contact_period
+
+    horizon = 4 * contact_period(machine)
+    tracks = compute_tracks(machine)
+
+    def thread(order: List[Tuple[str, int]]) -> Dict[int, Tuple[str, int]]:
+        chosen: Dict[int, Tuple[str, int]] = {}
+        for pos in order:
+            trial = {**chosen, len(chosen): pos}
+            if _is_collision_free(machine, trial, horizon):
+                chosen = trial
+        return chosen
+
+    # Which track is threaded first decides how many fit after it, so try
+    # starting from each in turn, and each the other way round, and keep the
+    # fullest.  Each threading costs a collision check per slot, so a big
+    # machine gets fewer tries: the whole three-band line would take half a
+    # minute to try them all, and a page is waiting.
+    budget = max(2, 200 // max(1, machine.total_slots()))
+    best: Dict[int, Tuple[str, int]] = {}
+    tried = 0
+    for first in range(len(tracks)):
+        for backwards in (False, True):
+            if tried >= budget:
+                break
+            tried += 1
+            order: List[Tuple[str, int]] = []
+            for k in range(len(tracks)):
+                track = tracks[(first + k) % len(tracks)]
+                for pos in reversed(track) if backwards else track:
+                    if pos not in order:
+                        order.append(pos)
+            found = thread(order)
+            if len(found) > len(best):
+                best = found
+        if tried >= budget:
+            break
+    return best
+
+
+class BandLine(BraidingMachine):
+    """One band of a switched line, lifted out to run on its own.
+
+    It is an ordinary machine -- a band needs no switches once its
+    neighbours are gone -- and differs only in finding its loading the way
+    :func:`threaded_loading` does, so a page drawing it need not wait.
+    """
+
+    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+        """A loading to start from, found at once.  See
+        :func:`threaded_loading`."""
+        return threaded_loading(self)
 
 
 def multiband_band(band: int) -> BraidingMachine:
@@ -320,7 +373,7 @@ def multiband_band(band: int) -> BraidingMachine:
         )
         for i in range(lo, hi)
     ]
-    return BraidingMachine(gears, connections)
+    return BandLine(gears, connections)
 
 
 def multiband_10_15_10() -> SwitchedMachine:
