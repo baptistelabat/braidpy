@@ -46,10 +46,29 @@ def test_ashley_s_stand_is_searched_for_when_asked():
     found = sinnet_for_page(_info(PLAIT))
     assert found["spec"]["counts"] == "2 1"
     assert found["spec"]["moves"] == "1>2, 2>1"
+    assert found["spec"]["cycles"] == 6  # as many as the braid shown repeats
+    assert found["alike"] == "same"
+
+
+def test_a_sinnet_making_the_braid_backwards_says_so():
+    """Ashley's flat sinnet of 7 (#2968) makes the catalogue's word read
+    from its other end: the same braid, but it looks otherwise."""
+    found = sinnet_for_page(
+        _info(
+            {"source": "word", "word": "1 2 3 -6 -5 -4", "n_strands": 7, "repeat": 14}
+        )
+    )
+    assert found["spec"]["counts"] == "4 3"
+    assert found["spec"]["cycles"] == 14
+    assert found["alike"] == "reversed"
     weave = sinnet_for_page(
         _info({"source": "word", "word": "1 -2 -2 1", "n_strands": 3, "repeat": 3})
     )
     assert weave["spec"] is None and weave["distance"] > 0
+    # No sinnet of the book's kind, but the braid itself, one strand a space.
+    exact = build({**weave["exact"], "iterations": 0})
+    word = tuple(int(g) for g in exact["info"]["word"].split())
+    assert same_braid(Braid(word, 3), Braid((1, -2, -2, 1) * 3, 3))
 
 
 def test_a_braid_with_no_word_has_nothing_shown():

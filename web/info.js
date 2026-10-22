@@ -201,16 +201,33 @@ export function showBridges(bridges) {
         const found = detail.sinnet;
         sinnet.replaceChildren();
         if (found?.spec) {
+          const alike = {
+            same: "",
+            reversed: " It makes the braid read from its other end.",
+            topology: " Its braid has the same topology, but another word.",
+          }[found.alike];
           sinnet.append(
             link("Ashley's stand", found.spec),
-            muted(` spaces of ${found.spec.counts}, moves ${found.spec.moves}`),
+            muted(` a sinnet: spaces of ${found.spec.counts}, moves ${found.spec.moves}.${alike}`),
           );
-        } else if (found?.nearest) {
+        } else if (found?.exact) {
+          // No sinnet of the book's kind: the braid itself, one strand a
+          // space, and the nearest sinnet, said plainly to be another braid.
+          const moves = found.exact.moves.split(", ").length;
+          const searched = found.complete
+            ? `none of ${found.tried} makes it`
+            : `none of the ${found.tried} tried in time makes it`;
           sinnet.append(
-            document.createTextNode("Ashley's stand: no sinnet makes it; nearest "),
-            link(`${found.nearest.counts}`, found.nearest),
-            muted(` · ${found.distance}${found.complete ? "" : ", search stopped early"}`),
+            link("Ashley's stand", found.exact),
+            muted(` one strand a space, ${moves} moves a repeat. No sinnet: ${searched}`),
           );
+          if (found.nearest) {
+            sinnet.append(
+              muted("; the nearest, another braid, "),
+              link(`spaces of ${found.nearest.counts}`, found.nearest),
+              muted(` (${found.distance} away)`),
+            );
+          }
         } else {
           sinnet.append(muted("Ashley's stand: no sinnet found"));
         }
