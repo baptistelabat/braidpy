@@ -11,10 +11,7 @@ braid back off what it made.  See ``docs/source/bridges.md``.
 - :mod:`braidpy.bridges.ashley`: a sinnet on Ashley's stand, by searching.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, Mapping
-
-if TYPE_CHECKING:
-    from braidpy.braid import Braid
+from typing import Any, Dict, Mapping
 
 # Longest repeating unit the page is given bridges for: a card or a list of
 # moves longer than this is no help to a braider, and slow in a browser.
@@ -78,22 +75,6 @@ def for_page(info: Mapping[str, Any]) -> Dict[str, Any]:
     return shown
 
 
-def _alike(made: "Braid", wanted: "Braid") -> str:
-    """How a sinnet's braid compares with the braid wanted, both one
-    repeat: ``"same"``, the word itself from some crossing on;
-    ``"reversed"``, the word read from its other end; ``"topology"``, only
-    the topology the search matched.  Words are compared as written — the
-    page has no sympy for braidpy's group equality."""
-    got = [int(g) for g in made.generators if g]
-    word = [int(g) for g in wanted.generators if g]
-    for read, said in ((word, "same"), (word[::-1], "reversed")):
-        if len(got) == len(read) and any(
-            got == read[k:] + read[:k] for k in range(len(read))
-        ):
-            return said
-    return "topology"
-
-
 def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> Dict[str, Any]:
     """A sinnet on Ashley's stand making the braid Braid Studio made, as
     the page shows it: searched for, for at most ``time_limit`` seconds.
@@ -104,12 +85,9 @@ def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> Dict[st
 
     Returns:
         ``spec``: the sinnet, as Braid Studio makes it, or None if none was
-        found, and ``alike``, how its braid compares
-        (``"same"``, ``"reversed"`` or ``"topology"``); if none was found,
-        ``exact``, the braid made one strand per space
-        (:func:`~braidpy.bridges.ashley.ashley_moves`), and ``nearest`` and
-        ``distance``, the nearest sinnet — another braid — and how far;
-        ``complete``, whether every sinnet of up to as many spaces as
+        found, ``exact`` then being the braid made one strand per space
+        (:func:`~braidpy.bridges.ashley.ashley_moves`), which always makes
+        it; ``complete``, whether every sinnet of up to as many spaces as
         strands was tried; ``tried``, how many were.
     """
     from braidpy.bridges.ashley import ashley_moves, ashley_sinnet, sinnet_spec
@@ -125,13 +103,8 @@ def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> Dict[st
         "complete": search.complete,
         "tried": search.tried,
     }
-    if search.sinnet is not None:
-        shown["alike"] = _alike(search.sinnet.braid(1), unit)
     if search.sinnet is None:
         shown["exact"] = sinnet_spec(ashley_moves(unit), cycles=repeats)
-        if search.nearest is not None:
-            shown["nearest"] = sinnet_spec(search.nearest)
-            shown["distance"] = round(search.distance, 2)
     return shown
 
 
