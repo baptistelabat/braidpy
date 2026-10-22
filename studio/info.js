@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=ec78c0c204";
-import { $, round } from "./page.js?v=ec78c0c204";
-import { lastResult } from "./scene.js?v=ec78c0c204";
-import { writeSpec } from "./spec.js?v=ec78c0c204";
-import { pending, submit, worker } from "./workers.js?v=ec78c0c204";
+import { catalogue } from "./fields.js?v=bccf4f55b3";
+import { $, round } from "./page.js?v=bccf4f55b3";
+import { lastResult } from "./scene.js?v=bccf4f55b3";
+import { writeSpec } from "./spec.js?v=bccf4f55b3";
+import { pending, submit, worker } from "./workers.js?v=bccf4f55b3";
 
 export function describe(result, seconds) {
   $("about").hidden = false;

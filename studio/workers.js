@@ -7,15 +7,15 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=ec78c0c204";
-import { showBridges, showKin } from "./info.js?v=ec78c0c204";
+import { onChosen, rebase } from "./colours.js?v=bccf4f55b3";
+import { showBridges, showKin } from "./info.js?v=bccf4f55b3";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=ec78c0c204";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=ec78c0c204";
-import { machineShapes, machineWanted } from "./machine.js?v=ec78c0c204";
-import { $ } from "./page.js?v=ec78c0c204";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=ec78c0c204";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=ec78c0c204";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=bccf4f55b3";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=bccf4f55b3";
+import { machineShapes, machineWanted } from "./machine.js?v=bccf4f55b3";
+import { $ } from "./page.js?v=bccf4f55b3";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=bccf4f55b3";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=bccf4f55b3";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -33,7 +33,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=ec78c0c204");
+  settler = new Worker("settle.js?v=bccf4f55b3");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -74,7 +74,8 @@ function heard(data) {
     offer(data.catalogue);
     $("build").disabled = false;
     $("build").textContent = "Braid";
-    submit();
+    // Unless a braid made with the site is already being shown.
+    if (!pending) submit();
   } else if (data.type === "bridges") {
     if (data.id !== pending) return;
     if (keys.has(data.id)) {
@@ -152,6 +153,51 @@ function offer(sources) {
     select.append(new Option(about.title, source));
   }
   writeSpec(spec);
+  // A braid made with the site is shown at once, before Python is ready.
+  premadeFor(readSpec()).then((found) => {
+    if (found && !pending) submit();
+  });
+}
+
+// The braids made with the site (web/build.py, braidpy.web.premade): each
+// catalogued braid and braid word example as it comes, laid as braidpy lays
+// it.  One asked for is shown from there at once, Python or not.
+const premadeIndex = fetch("made/index.json")
+  .then((response) => (response.ok ? response.json() : []))
+  .catch(() => []);
+// What only the page does with a braid — how it is settled, its colours —
+// and not what braidpy makes.
+const PAGE_ONLY = new Set(["settle", "twist", "colours"]);
+
+function same(a, b) {
+  if (a === undefined || b === undefined) return a === b;
+  const x = Number(a), y = Number(b);
+  return String(a).trim() !== "" && Number.isFinite(x) && Number.isFinite(y) ? x === y : String(a) === String(b);
+}
+
+// The braid made with the site that is the one asked for: each setting as
+// asked, or the source's default where it was not.
+async function premadeFor(spec) {
+  const defaults = catalogue?.[spec.source]?.defaults;
+  if (!defaults) return null;
+  for (const { spec: made, file } of await premadeIndex) {
+    if (made.source !== spec.source) continue;
+    const settings = new Set([...Object.keys(made), ...Object.keys(spec)].filter((k) => !PAGE_ONLY.has(k)));
+    const as = (from, k) => (k in from ? from[k] : defaults[k]);
+    if ([...settings].every((k) => same(as(spec, k), as(made, k)))) return file;
+  }
+  return null;
+}
+
+async function premade(spec) {
+  const file = await premadeFor(spec);
+  if (!file) return null;
+  try {
+    const response = await fetch(`made/${file}`);
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
 }
 window.braidpy.catalogue.then(offer);
 
@@ -186,7 +232,11 @@ export function submit() {
     heard({ type: "result", id: pending, result, seconds: 0 });
     return;
   }
-  worker.postMessage({ type: "build", id: pending, spec });
+  const id = pending;
+  premade(spec).then((made) => {
+    if (id !== pending) return;
+    worker.postMessage(made ? { type: "build", id, spec, premade: made } : { type: "build", id, spec });
+  });
 }
 
 // A colour chosen by hand belongs to the braid asked for, so the link keeps

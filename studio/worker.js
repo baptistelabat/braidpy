@@ -6,7 +6,10 @@
 // the page stays responsive while a braid is laid and tightened.
 //
 // Messages in:   {type: "init", pyodideUrl}
-//                {type: "build", id, spec}
+//                {type: "build", id, spec, premade?}
+//                  premade: the braid as the site was built with it, for a
+//                  catalogue braid as it comes (web/build.py): laid at
+//                  once, without waiting for Python
 //                {type: "geometry", name}
 //                {type: "sinnet", id}
 //                {type: "turn", id, name, loading, time}
@@ -124,6 +127,14 @@ async function build(id, spec) {
     self.postMessage({ type: "error", id, message: pythonMessage(error) });
     return;
   }
+  laid(id, spec, result);
+  await kin(id, result.info);
+  await bridges(id, result.info);
+}
+
+// The braid as braidpy laid it — here, or when the site was built — handed
+// on to be settled.
+function laid(id, spec, result) {
   const job = result.tighten;
   delete result.tighten;
   // Automatic: a braid whose moves are known — a disk braid, or a word
@@ -143,8 +154,6 @@ async function build(id, spec) {
   }
   // Shown as laid straight away; settled in settle.js.
   self.postMessage({ type: "laid", id, result, job: job ?? null, settle, twist: spec.twist });
-  await kin(id, result.info);
-  await bridges(id, result.info);
 }
 
 // The braid made other ways (braidpy.bridges): cheap, worked out for every
@@ -268,6 +277,18 @@ async function machinery() {
 self.onmessage = (event) => {
   const message = event.data;
   if (message.type === "build") latest = message.id;
+  // A catalogue braid made with the site is laid at once, Python or not:
+  // only what is found from it — its kin, its other ways — waits for Python.
+  if (message.type === "build" && message.premade) {
+    const { id, spec, premade } = message;
+    laid(id, spec, premade);
+    queue = queue.then(async () => {
+      if (id !== latest) return;
+      await kin(id, premade.info);
+      await bridges(id, premade.info);
+    });
+    return;
+  }
   queue = queue.then(async () => {
     try {
       if (message.type === "init") await init(message.pyodideUrl);
