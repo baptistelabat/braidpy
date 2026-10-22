@@ -131,9 +131,12 @@ Ashley's own #2965 and #2999. The weave of 3, the four-strand sinnet and the
 four-strand flat are not sinnets of up to as many spaces as strands: every
 one was tried, and the nearest is given, with how far it is.
 
-## What comes next
+## In Braid Studio
 
-Each way of making braids is a step of its own, built on the ring program:
-
-1. **Braid Studio**: "Make it as…" beside the braid, each way's moves or
-   punchcard to read, download, and make.
+Beside every braid it makes, Braid Studio's card offers **Make it as…**:
+its repeating unit as moves on a kumihimo disk, a link that makes them;
+as a lace machine's punchcard, to copy or download, with the notches to
+thread; and, when asked, a sinnet on Ashley's stand, searched for in the
+browser for a few seconds, a link that makes it — or the nearest, if no
+sinnet makes the braid ({func}`~braidpy.bridges.for_page`,
+{func}`~braidpy.bridges.sinnet_for_page`).
