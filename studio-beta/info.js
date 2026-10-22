@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=50fb1afccf";
-import { $, round } from "./page.js?v=50fb1afccf";
-import { lastResult } from "./scene.js?v=50fb1afccf";
-import { writeSpec } from "./spec.js?v=50fb1afccf";
-import { pending, submit, worker } from "./workers.js?v=50fb1afccf";
+import { catalogue } from "./fields.js?v=118df43990";
+import { $, round } from "./page.js?v=118df43990";
+import { lastResult } from "./scene.js?v=118df43990";
+import { writeSpec } from "./spec.js?v=118df43990";
+import { pending, submit, worker } from "./workers.js?v=118df43990";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -223,7 +223,7 @@ export function showBridges(bridges) {
   const lace = bridges.lace;
   const card =
     `Lace machine of ${lace.gears} gears; bobbins in notches ${lace.threading}.\n` +
-    "Each line a step: the gears turning anticlockwise, then clockwise.\n" +
+    "Two lines a step, ● punched: the gears turning anticlockwise ↺, then clockwise ↻.\n" +
     lace.card +
     "\n";
   item(
