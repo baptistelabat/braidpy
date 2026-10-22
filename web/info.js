@@ -223,7 +223,7 @@ export function showBridges(bridges) {
   const lace = bridges.lace;
   const card =
     `Lace machine of ${lace.gears} gears; bobbins in notches ${lace.threading}.\n` +
-    "Each line a step: the gears turning anticlockwise, then clockwise.\n" +
+    "Two lines a step, ● punched: the gears turning anticlockwise ↺, then clockwise ↻.\n" +
     lace.card +
     "\n";
   item(

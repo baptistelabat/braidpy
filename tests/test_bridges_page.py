@@ -32,7 +32,8 @@ def test_the_plait_shown_as_a_disk_and_a_lace_card():
     assert same_braid(disk_braid(moves), Braid((1, -2), 3))
     lace = shown["lace"]
     assert lace["gears"] == 4 and lace["threading"] == "A-B B-C C-D"
-    assert len(lace["card"].splitlines()) == lace["steps"]
+    # The gears named, then two lines a step: anticlockwise, then clockwise.
+    assert len(lace["card"].splitlines()) == 1 + 2 * lace["steps"]
 
 
 def test_braid_studio_makes_what_it_shows():
