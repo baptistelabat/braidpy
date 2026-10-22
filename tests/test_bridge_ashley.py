@@ -5,8 +5,11 @@
 """A braid as a sinnet on Ashley's stand, found by searching:
 braidpy.bridges.ashley."""
 
+import pytest
+
 from braidpy import Braid
-from braidpy.bridges.ashley import ashley_sinnet, sinnet_spec
+from braidpy.braid_catalog import word_examples
+from braidpy.bridges.ashley import ashley_moves, ashley_sinnet, sinnet_spec
 from braidpy.ring_program import same_braid
 from braidpy.solid_sinnets_catalog import abok_2965, abok_2999
 
@@ -54,3 +57,30 @@ def test_braid_studio_makes_the_sinnet_found():
     made = build({**sinnet_spec(sinnet), "iterations": 0}, tighten=False)
     word = tuple(int(g) for g in made["info"]["word"].split())
     assert same_braid(Braid(word, 4), square)
+
+
+@pytest.mark.parametrize(
+    "example",
+    [e for e in word_examples() if e.get("layout") != "ring"],
+    ids=lambda e: e["title"],
+)
+def test_any_braid_is_made_one_strand_per_space(example):
+    """Exactly the braid, the weave of 3 and the four-strand flat with the
+    rest, though no sinnet of the book's kind makes them."""
+    n = example["n_strands"]
+    braid = Braid(tuple(int(g) for g in example["word"].split()), n)
+    made = ashley_moves(braid)
+    assert made.initial_counts_per_space == [1, 0] * n
+    assert made.braid(1) == braid
+
+
+def test_each_crossing_puts_every_strand_back_in_its_space():
+    for g in (1, -1, 2, -2, 3, -3):
+        made = ashley_moves(Braid((g,), 4))
+        counts = list(made.initial_counts_per_space)
+        for a, b in made.moves:
+            assert counts[a - 1], (g, a, b)
+            counts[a - 1] -= 1
+            counts[b - 1] += 1
+        assert counts == made.initial_counts_per_space
+        assert len(made.moves) == (4 if g > 0 else 3)

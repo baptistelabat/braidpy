@@ -25,6 +25,13 @@ sinnet is found first; the search stops at a time limit, and says whether
 it tried everything it could.  Not every braid is a sinnet: when none is
 found, the nearest is given, and how far it is
 (:func:`~braidpy.similarity.distance`).
+
+Every braid can be made on the stand, though, once its moves need not be a
+sinnet's (:func:`ashley_moves`): one strand per space, with an empty space
+after each, and each crossing made in three or four moves through the
+empty spaces, every space holding what it held before.  It is the braid
+itself, exactly, but no longer a sinnet of the book's kind: spaces give and
+take strands unevenly, and a space can sit empty.
 """
 
 from __future__ import annotations
@@ -37,7 +44,7 @@ from typing import Iterator, List, Optional, Sequence, Tuple
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.braid import Braid
 
-__all__ = ["AshleySearch", "ashley_sinnet", "sinnet_spec"]
+__all__ = ["AshleySearch", "ashley_moves", "ashley_sinnet", "sinnet_spec"]
 
 
 @dataclass(frozen=True)
@@ -130,6 +137,40 @@ def ashley_sinnet(
                 if apart < nearest_distance:
                     nearest, nearest_distance = sinnet, apart
     return AshleySearch(None, nearest, nearest_distance, tried, True)
+
+
+def ashley_moves(braid: Braid) -> AshleySolidSinnet:
+    """Any braid on Ashley's stand, crossing by crossing; see the module.
+
+    The strands lie one per odd space, from space 1, each followed by an
+    empty even space: ``2n`` spaces for ``n`` strands.  A strand moved from
+    an odd space goes anticlockwise, from an even one clockwise, over every
+    strand it passes.  The two strands of ``σᵢ`` are in spaces ``a = 2(n -
+    i) - 1`` and ``b = a + 2``, as the stand reads its strands the other way
+    round, and the crossing is made through the empty spaces after them:
+
+    - ``σᵢ``: ``b`` to ``b + 1``, ``b + 1`` to ``a + 1``, over the strand in
+      ``a``; then ``a`` to ``b`` and ``a + 1`` back to ``a``;
+    - ``σᵢ⁻¹``: ``a`` to ``b``, over the strand there; then ``b`` (its
+      earlier strand) to ``b + 1``, and on to ``a``.
+
+    Args:
+        braid: The braid.
+
+    Returns:
+        The strands and moves, as a sinnet whose one cycle is the braid,
+        exactly.
+    """
+    n = braid.n_strands
+    moves: List[Tuple[int, int]] = []
+    for g in braid.generators:
+        a = 2 * (n - abs(int(g))) - 1
+        b = a + 2
+        if g > 0:
+            moves += [(b, b + 1), (b + 1, a + 1), (a, b), (a + 1, a)]
+        elif g < 0:
+            moves += [(a, b), (b, b + 1), (b + 1, a)]
+    return AshleySolidSinnet([1, 0] * n, moves)
 
 
 def sinnet_spec(sinnet: AshleySolidSinnet, cycles: int = 4):
