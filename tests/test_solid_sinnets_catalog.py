@@ -79,7 +79,7 @@ def test_the_simplest_sinnets_are_the_braids_they_are_named_for(sinnet, word):
 # Sinnets whose moves, as transcribed, do not give every space its strands
 # back after a cycle, and for which no one correction is clearly the right
 # one: to be checked against the book.
-UNCHECKED = {"abok_3051", "abok_3078"}
+UNCHECKED = {"abok_3051"}
 
 
 def test_every_cycle_gives_every_space_its_strands_back():

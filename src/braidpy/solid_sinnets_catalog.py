@@ -206,7 +206,7 @@ abok_3051 = AshleySolidSinnet(
         (7, 1),
         (18, 8),
         (9, 17),
-        (1, 10),
+        (16, 10),  # (1, 10) as transcribed: 16 gave nothing, 1 twice.
         (11, 15),
         (14, 12),
         (13, 7),
@@ -807,7 +807,7 @@ abok_3078 = AshleySolidSinnet(
         (1, 3),
         (4, 14),
         (13, 5),
-        (11, 6),
+        (12, 6),  # (11, 6) as transcribed: 12 gave nothing, 11 twice.
         (7, 11),
         (10, 8),
         (8, 13),
@@ -900,9 +900,10 @@ abok_3081 = AshleySolidSinnet(
         (15, 9),
         (1, 13),
         (12, 2),
-        # (2, 10) and, below, (17, 9) as transcribed — 19 and 20 read as 9
-        # and 10 — give spaces 9 and 10 two strands a cycle and 19 and 20
-        # none.  As corrected, the even spaces are one cycle,
+        # (2, 10) as transcribed, and (17, 9) as the book prints it, give
+        # spaces 9 and 10 two strands a cycle and 19 and 20 none: the book
+        # is wrong here.  (15, 19) for (15, 9) would do as well as (17, 19)
+        # for (17, 9); as corrected, the even spaces are one cycle,
         # 18 > 16 > 6 > 4 > 14 > 12 > 2 > 20 > 10 > 8 > 18, and the odd
         # ones another, 1 > 13 > 5 > 17 > 19 > 3 > 7 > 11 > 15 > 9 > 1.
         (2, 20),
