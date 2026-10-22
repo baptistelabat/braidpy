@@ -57,12 +57,13 @@ where they commute. It is read back as a disk braid is
 ({func}`~braidpy.take_off.disk_annular_word`): a swap is the lifted strand
 moved over its neighbour, then the neighbour into the place it left.
 
-Moving strands round the ring is not free. The ring has a seam, between its
-last place and its first, and strands carried across it twist the braid
-below them, as carriers going round a tubular braiding machine do: every
-strand once round the ring is a full twist. A program that moves strands to
-other places through empty ones keeps them off the seam, or brings them
-back.
+The ring has a seam, between its last place and its first. Strands carried
+across it twist the braid below them, as carriers going round a tubular
+braiding machine do: every strand once round the ring is a full twist. That
+is still a braid, and often a shorter way to make one; but a braid word has
+its strands in a row from the seam, so the bridges from a word keep them off
+it for now, and make that very word. Shorter programs, going over the seam,
+are for later.
 
 ## The Jacquard lace machine
 
@@ -92,8 +93,9 @@ crossings come with any signs, anywhere, so the strands are kept side by
 side with a notch to spare; when a crossing's sign is not its gear's, they
 all move along one notch, into the spare one, crossing nobody, and every
 gear under them is then of the other way. They only ever move between two
-neighbouring positions, never across the ring's seam, and end where they
-began, as a punchcard is run round and round. The Dutch braid, whose signs
+neighbouring positions, keeping off the ring's seam as a word's strands do
+(see above), and end where they began, as a punchcard is run round and
+round. The Dutch braid, whose signs
 alternate as the gears do, needs no moving; the plait moves along at the
 start and back at the end.
 

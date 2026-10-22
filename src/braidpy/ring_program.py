@@ -35,12 +35,13 @@ exchanges what places ``p`` and ``p + 1`` hold:
   place, to the empty one, and the swap's sign changes nothing;
 - two empty places: nothing moves.
 
-Moving strands round the ring is not free.  The ring has a seam, between
-its last place and its first, and strands carried across it — every strand
-once round the ring — twist the braid below them, as carriers going round
-a tubular braiding machine do: once round is a full twist.  A program that
-moves strands to other places through empty ones, to make a crossing
-where a machine can, keeps them off the seam or brings them back.
+The ring has a seam, between its last place and its first.  Strands carried
+across it twist the braid below them, as carriers going round a tubular
+braiding machine do: every strand once round the ring is a full twist.
+That is still a braid, and often a shorter way to make one; but a braid
+word has its strands in a row from the seam, so the bridges from a word
+keep them off it for now, and make that very word.  Shorter programs, going
+over the seam, are for later.
 """
 
 from __future__ import annotations
