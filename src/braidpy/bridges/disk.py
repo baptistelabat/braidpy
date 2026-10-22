@@ -17,8 +17,10 @@ three moves, the strands kept two slots apart — strand ``k`` from slot
 
 Every strand is then back two slots from the next, and the disk ready for
 the next crossing.  A 32-slot disk takes up to 15 strands this way.  None
-ever passes the seam between the last slot and the first, which would twist
-the braid.
+passes the seam between the last slot and the first: that would twist the
+braid, which is still a braid and can be shorter to make, but from a braid
+word the strands are in a row, and keeping them so makes the word itself
+(:mod:`braidpy.ring_program`).  Shorter moves, over the seam, are for later.
 
 :func:`disk_braid` reads the braid back as braidpy reads any mobidai's
 (:func:`~braidpy.take_off.mobidai_steps`).
