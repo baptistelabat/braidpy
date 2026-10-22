@@ -104,3 +104,17 @@ def test_the_same_braid_is_the_same_topology():
     plait = Braid((1, -2) * 3, 3)
     assert same_braid(plait, Braid((-2, 1) * 3, 3))
     assert not same_braid(plait, Braid((1, 2) * 3, 3))
+
+
+def test_a_swap_with_an_empty_place_crosses_nothing_whatever_its_sign():
+    """Strand 2 to the empty place and back: no crossing, either sign."""
+    for there, back in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:
+        program = RingProgram(4, (0, 1, 2, None), ((Swap(2, there),), (Swap(2, back),)))
+        assert program.braid() == Braid((), 3)
+
+
+def test_the_positive_swap_of_place_i_minus_1_is_sigma_i():
+    for i in (1, 2):
+        for sign in (1, -1):
+            program = RingProgram(3, (0, 1, 2), ((Swap(i - 1, sign),),))
+            assert program.braid() == Braid((sign * i,), 3)

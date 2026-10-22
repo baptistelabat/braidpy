@@ -16,11 +16,24 @@ read back as a braid (:meth:`RingProgram.braid`), each must be the braid
 it was made from, as braidpy compares braids: by their topology
 (:func:`same_braid`).
 
-A swap's sign is the sign of the crossing it makes, as a braid word has
-it: positive when the strand on the right, read round the ring, is lifted
-over the one on its left — the convention of the disk's own reading
-(:func:`~braidpy.take_off.disk_annular_word`), which reads it back.  A swap
-with an empty place moves a strand on by one place and crosses nothing.
+Conventions.  The ring is seen from above, from the side the braider
+works from on a kumihimo disk, and the braid is made downwards, away from
+the eye, as it hangs below a disk.  Places are numbered 0 to ``n - 1``
+clockwise, the seam between the last and place 0.  A swap of place ``p``
+exchanges what places ``p`` and ``p + 1`` hold:
+
+- two strands make a crossing.  At a positive swap, ``+1``, the strand at
+  ``p + 1`` goes first, anticlockwise, lifted over the one at ``p`` — over
+  as seen from above, so passing inside it, nearer the braid's axis — and
+  the strand at ``p`` then moves clockwise into the place it left.  At a
+  negative swap, ``-1``, the strand at ``p`` goes first, clockwise, over the
+  one at ``p + 1``.  With the strands at places 1 to ``n``, counted from
+  the seam, the positive swap of place ``i - 1`` is ``σᵢ``, the negative
+  one ``σᵢ⁻¹``: the disk's own reading
+  (:func:`~braidpy.take_off.disk_annular_word`) reads them back so;
+- a strand and an empty place make no crossing: the strand moves on by one
+  place, to the empty one, and the swap's sign changes nothing;
+- two empty places: nothing moves.
 
 Moving strands round the ring is not free.  The ring has a seam, between
 its last place and its first, and strands carried across it — every strand
@@ -42,13 +55,17 @@ __all__ = ["RingProgram", "Swap", "from_braid", "same_braid"]
 
 @dataclass(frozen=True)
 class Swap:
-    """Two neighbouring places exchanging what they hold.
+    """Two neighbouring places exchanging what they hold: a crossing if both
+    hold a strand, a strand moved on by one place if one is empty.  See the
+    module for which way round.
 
     Args:
-        place: The place on the left, 0-based; it swaps with the next one
-            round the ring, the last place with the first.
-        sign: The sign of the crossing made, +1 when the strand on the
-            right is lifted over the one on the left, -1 the other way.
+        place: The place ``p``, 0-based; it swaps with place ``p + 1``,
+            clockwise from it seen from above, the last place with place 0.
+        sign: The crossing's sign, if two strands cross: +1 when the strand
+            at ``p + 1`` is lifted over the one at ``p``, -1 when the one at
+            ``p`` is lifted over the one at ``p + 1``.  It changes nothing
+            when a place is empty.
     """
 
     place: int
