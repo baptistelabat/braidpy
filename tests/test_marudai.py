@@ -26,6 +26,7 @@ def _run(case, *args):
     return json.loads(out.stdout)
 
 
+@pytest.mark.slow
 def test_a_sinnet_made_on_a_marudai_matches_braid3dmin(tmp_path):
     """ABOK #3044 over 4 cycles, made move by move by marudai.js from
     braidpy's own disk program.  braid3dmin, made to do the same moves,
@@ -65,6 +66,7 @@ def test_a_plait_is_made_on_a_marudai_from_its_word(tmp_path):
 
 @pytest.mark.parametrize("name", ["abok_3042", "abok_3044"])
 @pytest.mark.parametrize("key, layout", [("word", "row"), ("annular_word", "ring")])
+@pytest.mark.slow
 def test_a_braids_own_word_typed_in_makes_the_same_braid(tmp_path, name, key, layout):
     """The word braidpy gives a sinnet — its braid word, or its ring word —
     typed in as a braid word and made on a marudai is the sinnet again: as
@@ -93,6 +95,7 @@ def test_a_braids_own_word_typed_in_makes_the_same_braid(tmp_path, name, key, la
     assert typed["closest"] > 0.75
 
 
+@pytest.mark.slow
 def test_a_braid_made_on_from_where_it_was_left_is_the_same_braid(tmp_path):
     """Braid Studio makes more of a braid from where it left it: made in two
     goes, it is the braid made at once."""
@@ -108,6 +111,7 @@ def test_a_braid_made_on_from_where_it_was_left_is_the_same_braid(tmp_path):
     assert result["same"]
 
 
+@pytest.mark.slow
 def test_a_braid_held_is_as_tight_as_one_hanging_free(tmp_path):
     """Held, so that it never turns to balance, a sinnet is drawn as tight as
     hanging free: no slack.  (Braid Studio's "kept".)"""
@@ -140,6 +144,7 @@ def test_a_rope_hanging_free_untwists(tmp_path):
     assert _run("marudai", program)["tip"] < 1
 
 
+@pytest.mark.slow
 def test_a_rope_is_made_on_a_marudai_with_no_core(tmp_path):
     """Three bobbins turned round the held braid, a place at a time: a
     three-strand rope, each yarn as far from its axis as the others — not

@@ -198,6 +198,7 @@ def test_a_sinnet_made_crossing_by_crossing_is_the_same_braid(tmp_path):
 @pytest.mark.parametrize(
     "name, flat", [("tubular_12", False), ("soutache_5", True)], ids=str
 )
+@pytest.mark.slow
 def test_a_machine_braid_on_its_fell_ring_settles_as_the_same_braid(
     tmp_path, name, flat
 ):

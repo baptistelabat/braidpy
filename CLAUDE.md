@@ -55,3 +55,10 @@ mistake before:
 ```sh
 make lint && make typecheck && make test && make duplicates
 ```
+
+`make test` is the quick run CI makes on every push: every test but those
+marked `slow`, in parallel. `make test-all` runs the slow ones too, as CI
+does daily; run it when a change touches what they test. `make
+test-changed` runs only the tests touching code changed since they last ran
+(pytest-testmon). A test that takes seconds is marked
+`@pytest.mark.slow`.

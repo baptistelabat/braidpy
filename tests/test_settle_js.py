@@ -30,6 +30,7 @@ def _run(case, *args):
 @pytest.mark.parametrize(
     "how, twist", [("settled", "keep"), ("settled", "free"), ("formed", "keep")]
 )
+@pytest.mark.slow
 def test_a_twisted_word_settled_by_physics_keeps_or_loses_its_twist(
     tmp_path, how, twist
 ):

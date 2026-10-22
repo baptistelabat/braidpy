@@ -4,6 +4,7 @@
 
 """Braids by their topology, each pointing to every way of making it."""
 
+import pytest
 import json
 
 from braidpy import Braid
@@ -21,6 +22,7 @@ from braidpy.topology_catalog import (
 from braidpy.web import build
 
 
+@pytest.mark.slow
 def test_the_plait_is_made_four_ways():
     """A braid word, the Dutch braid — the plait seen from behind — Ashley's
     stand and a three-carrier flat braiding machine all make the plait."""

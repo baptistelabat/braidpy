@@ -110,6 +110,7 @@ def test_the_tightest_shape_just_touches():
     assert clearance < diameter * 1.05, "it should be resting on its neighbours"
 
 
+@pytest.mark.slow
 def test_a_period_too_short_for_the_family_gets_no_shape():
     """And well before the n-diameters bound: crowding bites first."""
     diameter = 0.4
@@ -119,6 +120,7 @@ def test_a_period_too_short_for_the_family_gets_no_shape():
     assert tightest_figure_eight(diameter, 3.2) is not None
 
 
+@pytest.mark.slow
 def test_stretching_the_braid_out_buys_shorter_strands():
     """The longer the period, the less yarn a unit of braid costs."""
     diameter = 0.4
@@ -158,6 +160,7 @@ def test_the_family_braids_at_any_odd_strand_count(n_strands):
     assert any(g > 0 for g in word) and any(g < 0 for g in word)
 
 
+@pytest.mark.slow
 def test_a_five_strand_plait_can_be_drawn_tight():
     diameter = 0.4
     period = 12 * diameter
@@ -197,6 +200,7 @@ def test_the_clearance_does_not_depend_on_how_finely_it_is_swept():
     assert max(values) - min(values) < 1e-6, values
 
 
+@pytest.mark.slow
 def test_the_crossing_is_the_tightest_spot_only_when_the_swing_is_wide():
     """Why the flat braid has no formula and the braided tube does.
 

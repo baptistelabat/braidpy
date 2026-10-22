@@ -1,9 +1,47 @@
 name: Continuous integration
 run-name: ${{ github.actor }} is using out GitHub Actions 🚀
-on: [push]
+
+# On every push, the quick tests: all but those marked slow, in parallel, on
+# one Python — a couple of minutes.  Every day, and on demand, everything:
+# the slow tests too, on every Python supported.
+on:
+  push:
+  schedule:
+    # Daily, on the default branch (develop).
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
 jobs:
-  build:
+  quick:
+    name: continuous-integration (quick, 3.11)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Qt dependencies
+        run: sudo apt-get update && sudo apt-get install -y libegl1
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Run the quick tests
+        run: make test
+
+      - name: Check types
+        run: make typecheck
+
+      - name: Check for duplicated code
+        run: make duplicates
+
+  full:
     name: continuous-integration
+    if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -25,9 +63,8 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
-      - name: Run tests
-        # For example, using `pytest`
-        run: make test
+      - name: Run every test
+        run: make test-all
 
       - name: Check types
         run: make typecheck
