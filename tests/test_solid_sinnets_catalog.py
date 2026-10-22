@@ -23,7 +23,7 @@ def _catalogue():
 
 
 def test_the_catalogue_loads_all_its_sinnets():
-    assert len(_catalogue()) == 16
+    assert len(_catalogue()) == 43
 
 
 @pytest.mark.parametrize("name", sorted(_catalogue()))
@@ -52,7 +52,8 @@ def test_every_sinnet_has_the_shape_the_book_gives_it():
     import braidpy.solid_sinnets_catalog as catalogue
 
     notes = re.findall(
-        r"ABOK #(\d+)\s*\n\s*(\d+)-strand ([a-z ]+?)\s*\n", inspect.getsource(catalogue)
+        r"ABOK #(\d+)\s*\n\s*(\d+)-strand ([a-z -]+?)\s*\n",
+        inspect.getsource(catalogue),
     )
     assert len(notes) == len(_catalogue())
     for number, strands, shape in notes:
@@ -73,3 +74,17 @@ def test_the_simplest_sinnets_are_the_braids_they_are_named_for(sinnet, word):
 
     made = _catalogue()[sinnet].braid(1)
     assert same_fingerprint(fingerprint(made), fingerprint(WORDS[word].make()))
+
+
+def test_every_cycle_gives_every_space_its_strands_back():
+    """In a solid sinnet each space gives a strand and receives one in every
+    cycle, so the strands of each space are the same after a cycle — what a
+    mistranscribed move breaks."""
+    unbalanced = set()
+    for name, sinnet in _catalogue().items():
+        sources = sorted(a for a, _ in sinnet.moves)
+        targets = sorted(b for _, b in sinnet.moves)
+        spaces = list(range(1, len(sinnet.initial_counts_per_space) + 1))
+        if sources != spaces or targets != spaces:
+            unbalanced.add(name)
+    assert not unbalanced
