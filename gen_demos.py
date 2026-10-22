@@ -26,11 +26,17 @@ from braidpy.horn_gear import (  # noqa: E402
 )
 from braidpy.take_off import (  # noqa: E402
     braid_word_trajectories,
-    kumihimo_trajectories,
     lay_yarns,
-    mobidai_trajectories,
+    mobidai_braid,
 )
-from braidpy.mobidai import MobidaiConfig, Move, Strand  # noqa: E402
+from braidpy.disk_animation import (  # noqa: E402
+    animate_kumihimo,
+    animate_mobidai,
+    animate_sinnet,
+)
+from braidpy.ashley_solid_sinnet import strand_colours  # noqa: E402
+from braidpy.solid_sinnets_catalog import abok_3042  # noqa: E402
+from braidpy.mobidai_catalog import KONGO_8  # noqa: E402
 from braidpy.take_off import visualize_yarns as visualize_yarns_from  # noqa: E402
 from braidpy.horn_gear.examples import (  # noqa: E402
     flat_braid_3,
@@ -127,7 +133,7 @@ MACHINES = [
 
 
 def other_sources() -> int:
-    """Braids laid from something other than a machine: a word and two disks."""
+    """Braids laid from something other than a machine: a word and a disk."""
     # A three-strand plait, from nothing but its braid word.
     word = braid_word_trajectories([1, -2] * 6)
     plait, _ = tighten_yarns(
@@ -140,36 +146,53 @@ def other_sources() -> int:
     )
     print("demo_word_plait_braid.html")
 
-    # Eight strands worked on a 32-slot mobidai.
-    config = MobidaiConfig(
-        strands=[Strand("red", p) for p in (32, 1, 17, 16, 25, 24, 8, 9)],
-        moves=[Move(a, b) for a, b in [(1, 15), (17, 31), (25, 7), (9, 23)]],
-        n_shift_after_cycle=1,
-        n_slots=32,
+    # Kongo gumi on eight strands, from the catalogue: two strands at the
+    # top, two at the bottom and two each side, as a disk is threaded.  Each
+    # cycle leaves the pairs a slot back, and the next is made from there.
+    kongo = KONGO_8.to_config()
+    animate_mobidai(
+        kongo,
+        n_cycles=8,
+        slot_offset=0.5,
+        side_view=True,
+        title="Kumihimo, kongo gumi on 8 strands — the disk, and the braid below",
+        output_html="demo_kumihimo_8.html",
     )
-    disk = mobidai_trajectories(config, n_cycles=8)
-    round_braid, _ = tighten_yarns(
-        lay_yarns(disk, yarn_diameter=0.12, fell_radius=0.0), 0.12, iterations=150
-    )
+    print("demo_kumihimo_8.html")
+    # The braid itself: its crossings, laid round a ring and tightened.
+    braid = mobidai_braid(kongo, 0.12, n_cycles=8)
     visualize_yarns_from(
-        round_braid,
-        title="Mobidai, 8 strands on 32 slots — tightened from a braiding point",
-        output_html="demo_mobidai_8_braid.html",
-    )
-    print("demo_mobidai_8_braid.html")
-
-    # Eight strands on a kumihimo disk: swap top and bottom, turn a quarter.
-    disk = kumihimo_trajectories("SR" * 12, n_strands=8)
-    kumihimo, _ = tighten_yarns(
-        lay_yarns(disk, yarn_diameter=0.12, fell_radius=0.0), 0.12, iterations=150
-    )
-    visualize_yarns_from(
-        kumihimo,
-        title="Kumihimo, 8 strands, SR repeated — tightened from a braiding point",
+        braid,
+        title="Kumihimo, kongo gumi on 8 strands — tightened",
+        colors=[colour for _, colour in KONGO_8.initial_slots],
         output_html="demo_kumihimo_8_braid.html",
     )
     print("demo_kumihimo_8_braid.html")
-    return 3
+
+    # Kumihimo's own model: swap top and bottom, turn a quarter.
+    animate_kumihimo(
+        "SR" * 8, n_strands=8, side_view=True, output_html="demo_kumihimo_sr_8.html"
+    )
+    print("demo_kumihimo_sr_8.html")
+
+    # An Ashley solid sinnet, ABOK #3042: eight strands in six spaces, each
+    # moved over all it passes, followed strand by strand on its disk.
+    animate_sinnet(
+        abok_3042,
+        n_cycles=3,
+        side_view=True,
+        title="ABOK #3042, 8-strand round sinnet — the disk, and the braid below",
+        output_html="demo_sinnet_3042.html",
+    )
+    print("demo_sinnet_3042.html")
+    visualize_yarns_from(
+        abok_3042.braid_3d(0.12, n_cycles=4),
+        title="ABOK #3042, 8-strand round sinnet — tightened",
+        colors=strand_colours(abok_3042.n_strands),
+        output_html="demo_sinnet_3042_braid.html",
+    )
+    print("demo_sinnet_3042_braid.html")
+    return 6
 
 
 def main() -> None:

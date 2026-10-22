@@ -12,7 +12,8 @@ japonais* by Agnès Delage-Calvet.
 Each entry carries everything a :class:`~braidpy.mobidai.Mobidai` needs: how
 many slots the disk has, which colour starts in which slot, the moves of one
 cycle, and how far the disk is turned before the cycle repeats.  Call
-:meth:`CataloguedBraid.to_config` to run one.
+:meth:`CataloguedMobidai.to_config` to run one.  :data:`CATALOGUE` lists
+them, as every catalogue does (:mod:`braidpy.catalogue`).
 """
 
 from __future__ import annotations
@@ -20,12 +21,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Tuple
 
-__all__ = ["CATALOGUE", "CataloguedBraid"]
+from braidpy.catalogue import Entry
+
+__all__ = ["CATALOGUE", "CataloguedMobidai", "CataloguedBraid"]
 
 
 @dataclass(frozen=True)
-class CataloguedBraid:
-    """One braid from the book, ready to run.
+class CataloguedMobidai:
+    """One disk braid from the book, ready to run on a mobidai.
 
     Args:
         name: How the braid is referred to here.
@@ -72,7 +75,7 @@ class CataloguedBraid:
         return MobidaiConfig(**settings)
 
 
-KONGO_8 = CataloguedBraid(
+KONGO_8 = CataloguedMobidai(
     name="kongo gumi, 8 strands",
     n_slots=32,
     initial_slots=(
@@ -85,10 +88,13 @@ KONGO_8 = CataloguedBraid(
         (8, "green"),
         (9, "green"),
     ),
-    moves=((1, 15), (17, 31), (25, 7), (9, 23), (16, 30), (32, 14)),
+    # One cycle.  It brings every pair back one slot round — 32/1 to 31/32 —
+    # and the next is the same four moves from there: the book's next two,
+    # (16, 30) and (32, 14), are this cycle's first two made a slot back.
+    moves=((1, 15), (17, 31), (25, 7), (9, 23)),
 )
 
-SEVEN_ON_EIGHT = CataloguedBraid(
+SEVEN_ON_EIGHT = CataloguedMobidai(
     name="7 strands on a small disk",
     n_slots=8,
     initial_slots=(
@@ -104,7 +110,7 @@ SEVEN_ON_EIGHT = CataloguedBraid(
     n_shift_after_cycle=-3,
 )
 
-TWELVE_STRANDS = CataloguedBraid(
+TWELVE_STRANDS = CataloguedMobidai(
     name="12 strands",
     n_slots=32,
     initial_slots=(
@@ -124,7 +130,7 @@ TWELVE_STRANDS = CataloguedBraid(
     moves=((1, 15), (17, 31), (28, 10), (12, 26), (22, 4), (6, 20)),
 )
 
-SIXTEEN_STRANDS = CataloguedBraid(
+SIXTEEN_STRANDS = CataloguedMobidai(
     name="16 strands",
     n_slots=32,
     initial_slots=(
@@ -148,7 +154,21 @@ SIXTEEN_STRANDS = CataloguedBraid(
     moves=((1, 15), (17, 31), (29, 11), (13, 27), (25, 7), (9, 23), (21, 3), (5, 19)),
 )
 
-CATALOGUE: Dict[str, CataloguedBraid] = {
-    braid.name: braid
-    for braid in (KONGO_8, SEVEN_ON_EIGHT, TWELVE_STRANDS, SIXTEEN_STRANDS)
+# Its name until it said what kind of braid it is.
+CataloguedBraid = CataloguedMobidai
+
+
+def _entry(braid: CataloguedMobidai) -> Entry[CataloguedMobidai]:
+    return Entry(
+        title=braid.name[0].upper() + braid.name[1:],
+        make=lambda: braid,
+        reference=braid.source,
+    )
+
+
+CATALOGUE: Dict[str, Entry[CataloguedMobidai]] = {
+    "KONGO_8": _entry(KONGO_8),
+    "SEVEN_ON_EIGHT": _entry(SEVEN_ON_EIGHT),
+    "TWELVE_STRANDS": _entry(TWELVE_STRANDS),
+    "SIXTEEN_STRANDS": _entry(SIXTEEN_STRANDS),
 }

@@ -108,8 +108,10 @@ From there it is the same for all of them:
   carrier traced, lifted along the axis by the braid taken off since
   (`take_off.lay_yarns`). It is in the right braid class by construction, which is
   what this page asks of a start.
-- **Drawing in.** The braid is formed on a fell — a circle, or a braiding
-  point — and is the carrier footprint scaled toward the axis by a factor *k*.
+- **Drawing in.** The braid is formed on a fell — a ring about the braid's
+  own size, yarns being as thick as they are, or, as an idealisation, a
+  braiding point — and is the carrier footprint scaled toward the axis by a
+  factor *k*.
   Scaling the plane at fixed height cannot pass one yarn through another, so
   every *k* > 0 keeps the topology. Given a yarn diameter, the smallest *k*
   with no two yarns closer than *d* has a closed form over the samples
@@ -125,7 +127,8 @@ From there it is the same for all of them:
   objective — and enforces non-interpenetration by pushing apart any two
   samples of different yarns closer than *d*. The tension is integrated
   implicitly (one backward-Euler step along the curve-shortening flow per
-  iteration, the matrix inverted once), which settles a yarn in tens of
+  iteration, a tridiagonal system solved in time proportional to the
+  yarn's length), which settles a yarn in tens of
   iterations rather than thousands, but no sample moves more than *d*/5 per
   iteration, so a feasible path from the start stays in the same braid
   class, as argued above. The yarn is held at the fell and at its oldest end.

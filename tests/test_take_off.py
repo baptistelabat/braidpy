@@ -135,6 +135,25 @@ def test_braid_word_survives_laying_drawing_in_and_tightening(word):
     assert _free_reduce(_word_of_yarns(tight)) == _free_reduce(word)
 
 
+@pytest.mark.parametrize(
+    "word, n_strands",
+    [((1, -3, 5, 2, -4), 6), ((1, 3, 5, 7, -2, -4, -6) * 4, 8)],
+)
+def test_a_word_with_many_idle_strands_can_be_laid(word, n_strands):
+    """Each crossing moves two strands; the others stand still.  When one
+    strand leaves its place another arrives there, at the very same point,
+    a crossing's time later.  The default take-off is the strands' mean
+    speed, slow when most of them stand still, and lifted them less than a
+    diameter apart there: no drawing-in can separate two yarns at one point,
+    and laying failed.  Laid now, the yarns clear each other, and it is
+    still the braid the word names."""
+    traj = braid_word_trajectories(Braid(word, n_strands))
+    lay_yarns(traj, yarn_diameter=0.45, fell_radius=0.0)  # as Braid Studio does
+    jammed = lay_yarns(traj, yarn_diameter=0.45)
+    assert jammed.closest_approach() == pytest.approx(0.45)
+    assert _word_of_yarns(jammed) == list(word)
+
+
 def test_braid_word_layout():
     traj = braid_word_trajectories(Braid([1]), spacing=2.0, lift=0.25)
     xs = sorted(xy[0, 0] for xy in traj.xy.values())
@@ -271,6 +290,10 @@ def test_kumihimo_steps():
         kumihimo_steps("S", n_strands=6)
     with pytest.raises(ValueError, match="n_strands"):
         kumihimo_steps("S")
+    # Any other move, or none, is not a kumihimo pattern.
+    for pattern in ("SX", "sr", ""):
+        with pytest.raises(ValueError, match="S \\(swap\\)"):
+            kumihimo_steps(pattern, n_strands=8)
 
 
 def test_kumihimo_is_drawn_where_kumihimo_draws_it():
@@ -307,3 +330,215 @@ def test_mobidai_is_laid_and_tightened():
     assert "Disk" in names and "Braiding point" in names
     assert sum(1 for n in names if n.startswith("Strand ")) == 6
     assert any(t.type == "surface" for t in fig.data)
+
+
+def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
+    from braidpy.mobidai_catalog import KONGO_8
+
+    # The drift is read off the cycle: no one has to say it.
+    start, steps = mobidai_steps(KONGO_8.to_config(), n_cycles=32)
+    assert len(steps) == 4 * 32  # no move ever finds its slot empty
+    where = dict(start)
+    for step in steps:
+        for strand, delta in step.items():
+            where[strand] = (where[strand] - 1 + delta) % 32 + 1
+    assert where == start  # round the whole disk, back where it began
+    # The second cycle opens with the book's next two moves, (32, 14) and
+    # (16, 30): the strands that started there, sent fourteen slots round.
+    second = [list(step.items())[0] for step in steps[4:6]]
+    made = [(start[k], (start[k] - 1 + d) % 32 + 1) for k, d in second]
+    assert made == [(32, 14), (16, 30)]
+    # Said outright, no drift sends the second cycle's moves to empty slots.
+    assert len(mobidai_steps(KONGO_8.to_config(), n_cycles=2, drift=0)[1]) == 4
+
+
+def test_every_slot_is_named_where_it_is():
+    traj = disk_trajectories({0: 1}, [{}], n_slots=8)
+    assert [name for _, _, name in traj.slots] == [str(s) for s in range(1, 9)]
+    assert traj.slots[0][:2] == pytest.approx((0.0, 1.0))  # slot 1 at the top
+    assert traj.slots[2][:2] == pytest.approx((1.0, 0.0))  # clockwise
+    # Kumihimo names its own positions, not the slots a swap passes through.
+    kumi = kumihimo_trajectories("R", n_strands=8)
+    assert [name for _, _, name in kumi.slots] == [str(p) for p in range(8)]
+
+
+def test_slot_offset_turns_the_numbering():
+    traj = disk_trajectories({0: 32, 1: 1}, [{}], n_slots=32, slot_offset=0.5)
+    left, right = traj.xy[0][0], traj.xy[1][0]
+    # The top mark between slot 32 and slot 1: the pair straddles it.
+    assert left[0] == pytest.approx(-right[0])
+    assert left[1] == pytest.approx(right[1])
+    assert right[0] > 0
+
+
+# ── A disk's braid, laid on a ring ────────────────────────────────────────────
+
+
+def test_crossings_are_read_off_the_moves():
+    from braidpy.take_off import disk_crossings
+
+    # a moves from 1 to 5 over b and c; the disk turns, leaving a at 6, b at
+    # 3 and c at 5; then c moves on to 7, over a.
+    order, crossings = disk_crossings(
+        {"a": 1, "b": 2, "c": 4}, [{"a": 4}, {"a": 1, "b": 1, "c": 1}, {"c": 2}], 8
+    )
+    assert order == ["a", "b", "c"]
+    assert crossings == [("a", "b"), ("a", "c"), ("c", "a")]
+    with pytest.raises(ValueError, match="several strands"):
+        disk_crossings({"a": 1, "b": 3}, [{"a": 1, "b": -1}], 8)
+
+
+@pytest.mark.parametrize(
+    "positions, moves",
+    [
+        ([1, 2, 5, 6], [(1, 3), (6, 4)]),
+        ([3, 4, 5, 9, 10], [(3, 7), (10, 8), (4, 2), (9, 11), (7, 6)]),
+    ],
+)
+def test_the_ring_keeps_the_mobidai_word(positions, moves):
+    """Read round the ring, inside as over, the strands make the mobidai's braid.
+
+    The same braid, not necessarily the same spelling: crossings of
+    different strands are made side by side on the ring, and two of them in
+    one row may be read in either order.
+    """
+    from braidpy.take_off import disk_crossings, ring_trajectories
+
+    moves = [(a, b, 0) for a, b in moves]
+    mobidai = Mobidai(_mobidai_config(moves, positions, n_slots=24))
+    mobidai.all_steps()
+    start, steps = mobidai_steps(_mobidai_config(moves, positions, 24))
+    order, crossings = disk_crossings(start, steps, 24)
+    ring = ring_trajectories(order, crossings, diameter=0.2)
+    n = len(order)
+    assert Braid(tuple(_word_of_disk(ring, n)), n_strands=n) == Braid(
+        tuple(_signed(mobidai.braid_word)), n_strands=n
+    )
+
+
+def test_crossings_are_timed_and_made_in_rows():
+    from braidpy.take_off import crossing_rows, disk_crossing_steps, disk_crossings
+
+    start = {"a": 1, "b": 2, "c": 4}
+    steps = [{"a": 4}, {"a": 1, "b": 1, "c": 1}, {"c": 2}]
+    order, crossings, made_at = disk_crossing_steps(start, steps, 8)
+    assert (order, crossings) == disk_crossings(start, steps, 8)
+    # a passes b a quarter of the way to slot 5, c three quarters; the turn
+    # crosses nothing; c passes a half way to slot 7.
+    assert made_at == [0.25, 0.75, 2.5]
+    # Each crossing waits for its strands' previous one.
+    assert crossing_rows(order, crossings) == [0, 1, 2]
+    # Crossings of different strands share a row, even an earlier one...
+    later = [("a", "b"), ("b", "a"), ("c", "d")]
+    assert crossing_rows(list("abcd"), later) == [0, 1, 0]
+    # ...unless the rows must come in the order the crossings are made.
+    assert crossing_rows(list("abcd"), later, in_turn=True) == [0, 1, 1]
+
+
+def test_strands_sliding_together_cross_nobody():
+    from braidpy.take_off import disk_crossing_steps
+
+    # b and c slide on a slot together; a moving alone crosses who it passes.
+    _, crossings, _ = disk_crossing_steps(
+        {"a": 1, "b": 3, "c": 4}, [{"b": 1, "c": 1}, {"a": 5}], 8
+    )
+    assert crossings == [("a", "b"), ("a", "c")]
+    with pytest.raises(ValueError, match="several strands"):
+        # Not together: b would pass c.
+        disk_crossing_steps({"a": 1, "b": 3, "c": 4}, [{"b": 2, "c": 1}], 8)
+    with pytest.raises(ValueError, match="several strands"):
+        # c is in the way.
+        disk_crossing_steps({"a": 1, "b": 2, "c": 4}, [{"a": 3, "b": 3}], 8)
+
+
+def test_the_annular_word_of_a_disk():
+    from braidpy.take_off import disk_annular_word
+
+    # Clockwise over b then c: the mover is first of each pair, and inside.
+    assert disk_annular_word({"a": 1, "b": 2, "c": 4}, [{"a": 4}], 8) == (
+        [-1, -2],
+        3,
+    )
+    # Anticlockwise over c: c is first, and outside.
+    assert disk_annular_word({"a": 1, "b": 3, "c": 4}, [{"c": -2}], 8) == ([2], 3)
+    # Across the seam: the numbering turns on by one, then a is crossed.
+    assert disk_annular_word({"a": 1, "b": 3, "c": 7}, [{"c": 3}], 8) == (
+        [4, -1],
+        3,
+    )
+    # An anticlockwise disk is read the other way round, from its last slot:
+    # the same moves, mirrored, read the same.
+    mirrored = disk_annular_word({"a": 8, "b": 7, "c": 5}, [{"a": -4}], 8, False)
+    assert mirrored == disk_annular_word({"a": 1, "b": 2, "c": 4}, [{"a": 4}], 8)
+    # A turn of the disk passes nobody; whoever crosses the seam turns the
+    # numbering.
+    assert disk_annular_word({"a": 1, "b": 3, "c": 7}, [{"a": 2, "b": 2, "c": 2}], 8)[
+        0
+    ] == [4]
+
+
+def test_ring_refuses_crossings_of_strangers():
+    from braidpy.take_off import ring_trajectories
+
+    with pytest.raises(ValueError, match="not neighbours"):
+        ring_trajectories(["a", "b", "c", "d"], [("a", "c")])
+
+
+def test_kongo_comes_out_round():
+    from braidpy.mobidai_catalog import KONGO_8
+    from braidpy.take_off import mobidai_braid
+
+    d = 0.12
+    braid = mobidai_braid(KONGO_8.to_config(), d, n_cycles=4, iterations=150)
+    assert braid.closest_approach() >= d * (1 - 2e-3)
+    formed = braid.formed()
+    middle = formed[:, formed.shape[1] // 2, :2]
+    middle = middle - middle.mean(axis=0)
+    width, thickness = np.ptp(middle @ np.linalg.svd(middle)[2].T, axis=0)
+    # Eight strands round a small core: a round cord about three yarns across,
+    # not the flat two rows the disk's waiting places lay.
+    assert width < 1.6 * thickness
+    assert 2 * d < width < 5 * d
+
+
+def test_kumihimo_braid():
+    from braidpy.take_off import kumihimo_braid
+
+    braid = kumihimo_braid("SR" * 4, 0.12, n_strands=8, iterations=60)
+    assert len(braid.points) == 8
+    assert braid.closest_approach() >= 0.12 * (1 - 2e-3)
+
+
+# Yarns of 1, 2 and 3 samples have no inner sample, or one, where the
+# Thomas algorithm's sweeps start and stop: where an off-by-one would show.
+# 50 is a yarn of any length.
+# h is half tightening's step (step/2 in its backward Euler step): 10 for
+# its default step of 20, where the tension dominates; 0.05 for a small step
+# of 0.1, where the identity does.
+@pytest.mark.parametrize("h", [0.5 * 20.0, 0.5 * 0.1])
+@pytest.mark.parametrize("hold_top", [True, False])
+@pytest.mark.parametrize("n", [1, 2, 3, 50])
+def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top, h):
+    """Tightening's backward Euler step, (I + h L) x = b, L the second
+    difference along a yarn: solved as a tridiagonal system, as the matrix
+    itself would solve it, every yarn at once."""
+    import numpy as np
+
+    from braidpy.take_off import _tension_solver
+
+    # L: each inner sample pulled towards its two neighbours, (-1, 2, -1);
+    # the last sample, and the first if held, fixed (a row of zeros); the
+    # first, if free, pulled towards its one neighbour only, (1, -1).
+    lap = np.zeros((n, n))
+    for i in range(1, n - 1):
+        lap[i, i - 1 : i + 2] = (-1.0, 2.0, -1.0)
+    if not hold_top and n > 1:
+        lap[0, :2] = (1.0, -1.0)
+    # Several right-hand sides at once, as tightening solves them: x and y
+    # of three yarns, random.
+    yarns = 3
+    b = np.random.default_rng(0).normal(size=(n, 2 * yarns))
+    expected = np.linalg.solve(np.eye(n) + h * lap, b)
+    # Both solve exactly but for rounding, a few units in the last place of
+    # numbers of order one.
+    assert np.allclose(_tension_solver(n, h, hold_top)(b), expected, atol=1e-12)

@@ -8,7 +8,8 @@ horn_gear/examples.py
 
 Classic braiding machine configurations as factory functions.
 
-Each function returns a ready-to-use BraidingMachine.
+Each function returns a ready-to-use BraidingMachine;
+:mod:`braidpy.machine_catalog` lists the braids they make.
 
 References
 ----------

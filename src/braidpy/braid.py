@@ -12,10 +12,14 @@ License: Mozilla Public License 2.0
 """
 
 import enum
-from typing import List, Tuple, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union, cast
 import numpy as np
 
-from sympy import Matrix, eye, symbols
+
+if TYPE_CHECKING:
+    # sympy is only needed for the Burau matrices, and is slow to import —
+    # seconds, in a browser: imported there, when they are asked for.
+    from sympy import Matrix
 from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
@@ -30,16 +34,54 @@ from braidpy.utils import (
     int_to_superscript,
     int_to_subscript,
     colorize,
+    lazy_module,
     StrictlyPositiveInt,
-    PositiveInt,
 )
 
-import braidvisualiser as bv
 
-import math_braid
+if TYPE_CHECKING:
+    import math_braid
+else:
+    # It imports sympy, slow to import: only when braids are compared.
+    math_braid = lazy_module("math_braid")
 from collections.abc import Iterable
 
-t = symbols("t")
+
+def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> List[list]:
+    """The reduced Burau matrix of one generator, σ_i or its inverse, as
+    rows: the identity, but for row i (from 0),
+
+        σ_i:   ( …, t, −t, 1, … )    at columns i − 1, i, i + 1,
+        σ_i⁻¹: ( …, 1, −1/t, 1/t, … ),
+
+    the columns that fall off the matrix left out.  ``t``, ``one`` and
+    ``zero`` are of whatever ring the matrix is wanted in: a sympy symbol,
+    an element of a polynomial field, a complex number.
+
+    Args:
+        generator: ``i`` for σ_i, ``-i`` for its inverse.
+        n_strands: Number of strands; the matrix is ``n_strands − 1`` square.
+        t: The Burau variable.
+        one: The ring's one.
+        zero: The ring's zero.
+
+    Returns:
+        The rows.
+    """
+    m = n_strands - 1
+    i = abs(generator) - 1
+    rows = [[one if r == c else zero for c in range(m)] for r in range(m)]
+    if generator > 0:
+        left, middle, right = t, -t, one
+    else:
+        left, middle, right = one, -one / t, one / t
+    if i >= 1:
+        rows[i][i - 1] = left
+    rows[i][i] = middle
+    if i <= m - 2:
+        rows[i][i + 1] = right
+    return rows
+
 
 # Define a type alias for clarity
 SignedCrossingIndex = int
@@ -73,8 +115,8 @@ def single_crossing_braiding_process(
     return sequential_single_crossings_index
 
 
-# Recursive type for nested tuples of integers
-BraidProcess = Union[int, Tuple["BraidProcess", ...]]
+# Recursive type for nested sequences of integers
+BraidProcess = Union[int, Sequence["BraidProcess"]]
 
 
 @dataclass(frozen=True)
@@ -87,7 +129,8 @@ class Braid:
     """
 
     process: BraidProcess
-    n_strands: Optional[int] = field(default=None)
+    # None until __post_init__ infers it; an int on every braid made.
+    n_strands: int = field(default=None)  # type: ignore[assignment]
 
     def __post_init__(self):
         # Hack to allow to code single generator without parenthesis
@@ -115,7 +158,8 @@ class Braid:
     @property
     def generators(self) -> list[int]:
         """List of Artin's generators in the braid word."""
-        return single_crossing_braiding_process(self.process)
+        # Checked to be a braiding process when the braid was made.
+        return single_crossing_braiding_process(cast(BraidingProcess, self.process))
 
     @property
     def main_generator(self) -> Optional[int]:
@@ -179,8 +223,8 @@ class Braid:
 
     def format(
         self,
-        generator_symbols: list[str] = None,
-        inverse_generator_symbols: list[str] = None,
+        generator_symbols: Optional[list[str]] = None,
+        inverse_generator_symbols: Optional[list[str]] = None,
         zero_symbol: str = "e",
         separator: str = "",
     ) -> str:
@@ -434,6 +478,49 @@ class Braid:
         """
         return self.half_twist(sign=sign).half_twist(sign=sign)
 
+    def full_twists(self) -> int:
+        """How many whole turns of every strand together the braid contains.
+
+        The full twist Δ² commutes with every braid, so it can always be
+        moved to the front: β = Δ^{2m} · β′.  Which ``m`` is a choice, made
+        here so that what is left sits evenly about no twist at all: the
+        canonical factors give the least and the most twist the braid lies
+        between (its infimum and supremum, in half twists), and ``m`` is
+        their middle in whole turns, rounded to the nearest.  Adding ``k``
+        full twists to any braid adds exactly ``k`` to it.
+
+        A real braid hanging free, as from a kumihimo disk, does not keep
+        these: turning every strand together only turns the cord, which
+        turns back.  See :meth:`without_full_twists`.
+
+        Returns:
+            int: ``m``, negative for turns the other way.
+        """
+        if not self.n_strands or not self.no_zero().generators:
+            return 0
+        factors = self.get_canonical_factors()
+        least = factors.n_half_twist
+        most = least + len(factors.Ai)
+        # Half twists, two to a turn.
+        return int(np.floor((least + most) / 4 + 0.5))
+
+    def without_full_twists(self) -> "Braid":
+        """The braid with its whole turns taken out: β · Δ^{-2m}.
+
+        What is left is the braid's real crossings, and at most a fraction of
+        a turn.  Two braids that differ only by full twists — a word read
+        off a kumihimo disk that was turned round, and the cord it makes —
+        are then equal.
+
+        Returns:
+            Braid: the same crossings, without the full twists.
+        """
+        m = self.full_twists()
+        b = self
+        for _ in range(abs(m)):
+            b = b.full_twist(sign=-1 if m > 0 else 1)
+        return b
+
     def up_side_down(self) -> "Braid":
         """Invert up and down crossing operations.
 
@@ -481,15 +568,38 @@ class Braid:
 
     def get_canonical_factors(self) -> GarsideCanonicalFactors:
         """
-        Get decomposition in left normal form
+        Get decomposition in Artin's left normal form, Δ^k · A_1 ⋯ A_r
+
+        ``n_half_twist`` is ``k``, the number of half twists Δ in front, and
+        each ``A_i`` is a permutation braid — a positive braid in which any
+        two strands cross at most once — given as the permutation it makes.
+        See :func:`~braidpy.garside_canonical_form.artin_left_normal_form`.
+
+        Returns:
+            GarsideCanonicalFactors: the unique decomposition of the braid according to left convention
+        """
+        from braidpy.garside_canonical_form import artin_left_normal_form
+
+        n = StrictlyPositiveInt(self.n_strands)
+        k, factors = artin_left_normal_form(self.generators, n)
+        return GarsideCanonicalFactors(n_half_twist=k, n_strands=n, Ai=factors)
+
+    def get_band_canonical_factors(self) -> GarsideCanonicalFactors:
+        """
+        Get decomposition in the Birman–Ko–Lee (band generator) left normal form
 
         Relies on math_braid implementation from J. Cha et al, "An Efficient Implementation of Braid Groups",
         Advances in Cryptology: Proceedings of ASIACRYPT 2001,
         Lecture Notes in Computer Science (2001), 144--156.
         https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
 
+        Not Artin's form: the twist in front is the band generators' δ, a
+        ``1/n_strands`` turn of every strand together, so ``n_half_twist``
+        here counts those rather than half twists — a full twist is
+        ``n_strands`` of them — and the factors are math_braid's.
+
         Returns:
-            GarsideCanonicalFactors: the unique decomposition of the braid according to left convention
+            GarsideCanonicalFactors: the band generator decomposition
         """
         br = self.no_zero()
         if br.generators:
@@ -501,7 +611,7 @@ class Braid:
                 n_half_twist=0, n_strands=StrictlyPositiveInt(br.n_strands), Ai=()
             )
 
-    def to_matrix(self) -> Matrix:
+    def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
 
         Burau matrix representation is faithful for n_strands=3 or n_strands=4,
@@ -511,6 +621,9 @@ class Braid:
         Returns:
             Matrix: The Burau matrix representation of the braid.
         """
+        from sympy import eye, symbols
+
+        t = symbols("t")
         matrix = eye(self.n_strands)
         for gen in self.generators:
             i = abs(gen) - 1
@@ -530,7 +643,7 @@ class Braid:
             matrix = matrix * mat  # Correct order: left-to-right
         return matrix
 
-    def to_reduced_matrix(self) -> Matrix:
+    def to_reduced_matrix(self) -> "Matrix":
         """Return the reduced Burau representation.
 
         https://en.wikipedia.org/wiki/Burau_representation
@@ -538,23 +651,15 @@ class Braid:
         Returns:
             Matrix: The reduced Burau matrix representation.
         """
+        from sympy import Matrix, eye, symbols
+
+        t = symbols("t")
         matrix = eye(self.n_strands - 1)
         for gen in self.generators:
-            if self.n_strands == 2:
-                mat = -t
-            else:
-                i = abs(gen) - 1  # zero based
-                mat = eye(self.n_strands - 1)
-                # σ_i
-                if i >= 1:
-                    mat[i, i - 1] = t
-                mat[i, i] = -t
-                if i <= self.n_strands - 3:
-                    mat[i, i + 1] = 1
-                if gen < 0:
-                    # Could be faster using directly inverse of 3x3 matrix
-                    mat = mat.inv()
-            matrix = matrix * mat  # Correct order: left-to-right
+            # Correct order: left-to-right
+            matrix = matrix * Matrix(
+                reduced_burau_generator(gen, self.n_strands, t, 1, 0)
+            )
         return matrix
 
     def is_trivial(self) -> bool:
@@ -565,7 +670,7 @@ class Braid:
         """
         return not self.generators or all(g == 0 for g in self.generators)
 
-    def permutations(self, plot: bool = False) -> list[list[int]]:
+    def permutations(self, plot: bool = False) -> List[List[int]]:
         """Return the permutations induced by the braid"""
         perms = []
         strands = list(range(1, self.n_strands + 1))
@@ -724,13 +829,13 @@ class Braid:
         Returns:
             list[ParametricStrand]: List of ParametricStrand objects representing the strands.
         """
-        n_strands = self.n_strands or max(abs(g) for g in self.generators) + 1
-        n_segments = len(self.generators) + 1
-        duration_per_gen = 1 / n_segments
+        # Read once: both are worked out afresh each time they are asked for.
+        generators = self.generators
+        history = self.slot_history()
+        n_strands = self.n_strands or max(abs(g) for g in generators) + 1
+        n_segments = len(generators) + 1
 
-        strand_paths = [
-            [row[strand] for row in self.slot_history()] for strand in range(n_strands)
-        ]
+        strand_paths = [[row[strand] for row in history] for strand in range(n_strands)]
 
         # Generate arc sequences for each strand
         strand_arc_sequences: list[list[Arc]] = []
@@ -743,9 +848,11 @@ class Braid:
                 i1 = path[k + 1]
                 x0 = i0 * amplitude
                 x1 = i1 * amplitude
-                t_start = k * duration_per_gen
-                t_end = (k + 1) * duration_per_gen
-                gen = self.generators[k]
+                # As fractions of the whole, not sums of steps: summed, the
+                # last segment can stop short of 1 by a rounding error.
+                t_start = k / n_segments
+                t_end = (k + 1) / n_segments
+                gen = generators[k]
                 if i0 == i1 or gen == 0:
                     arc_func = make_idle_arc(x0, t_start, t_end)
                 else:
@@ -758,8 +865,8 @@ class Braid:
                 arcs.append((t_start, t_end, arc_func))
 
             # Final segment (idle)
-            t_final_start = (n_segments - 1) * duration_per_gen
-            t_final_end = t_final_start + duration_per_gen
+            t_final_start = (n_segments - 1) / n_segments
+            t_final_end = 1.0
             x_final = path[-1] * amplitude
             arcs.append(
                 (
@@ -788,43 +895,63 @@ class Braid:
 
     def plot(
         self,
-        style: str = "ext",
-        line_width: int = 3,
-        gap_size: int = 3,
-        color: str = "rainbow",
-        save: bool = False,
+        n_samples: int = 400,
+        line_width: float = 3.0,
+        gap: float = 0.45,
+        amplitude: float = 0.28,
+        profile=None,
+        color: Optional[str] = None,
+        title: Optional[str] = None,
+        save: Optional[str] = None,
+        ax=None,
     ) -> "Braid":
-        """Plot the braid using library braid-visualiser.
+        """Draw the braid as a 2D diagram, running down the page.
 
-        https://github.com/rexgreenway/braid-visualiser
+        The braid hangs downward, the way it is worked, with its word written
+        above it.  Each strand is drawn in the colour :meth:`draw` gives it,
+        and the one passing behind is interrupted where they meet.  The
+        over-and-under is not re-derived: it is read from the curve
+        :func:`~braidpy.parametric_strand.strand_paths` computes.
+
+        This used to be drawn by braid-visualiser, which used its own
+        colours, so a strand was one colour in the console and another in the
+        plot.  The arguments changed with it: "style" is gone, "gap_size"
+        became "gap" as a fraction of the strand spacing, and "save" takes a
+        path rather than a flag.
 
         Args:
-            style: "comp" or "ext" (default). "comp" renders the image of the braid
-                in a compact style with crossings parallel to one another if possible.
-                "ext", for extended, shows the crossings in series.
-            line_width: Thickness of the strands in the figure. Defaults to 3.
-            gap_size: Amount of space shown at crossings for undercrossing strands.
-                Defaults to 3.
-            color: Multicolor strands defined by "rainbow". Single fixed colour for
-                all strands can be chosen from: {'b': blue, 'g': green, 'r': red,
-                'c': cyan, 'm': magenta, 'y': yellow, 'k': black, 'w': white}.
-            save: If True save to file "test.svg".
+            n_samples: Points along each strand.
+            line_width: Thickness of a strand.
+            gap: Width of the break where a strand passes behind, as a
+                fraction of the distance between neighbouring strands.
+            amplitude: How far a strand swings out of line as it crosses.
+            profile: How a strand travels sideways; smoothstep by default,
+                :data:`~braidpy.parametric_strand.LINEAR` for straight
+                segments.
+            color: One colour for every strand; each takes its own by default.
+            title: Heading; the braid's word by default, and "" for none.
+            save: Path to write the figure to, if wanted.
+            ax: Axes to draw on; a new figure otherwise.
 
         Returns:
-            Braid: Returns the slightly modified braid to allow debugging in a chain.
+            Braid: self, so the call can be chained.
         """
-        # Neutral elements are not supported by library used
-        compact = self.no_zero()
-        b = bv.Braid(compact.n_strands, *compact.generators)
+        from braidpy.braid_diagram import draw_diagram
+        from braidpy.parametric_strand import SMOOTHSTEP
 
-        b.draw(
-            save=save,
-            style=style,
+        draw_diagram(
+            self,
+            n_samples=n_samples,
             line_width=line_width,
-            gap_size=gap_size,
+            gap=gap,
+            amplitude=amplitude,
+            profile=SMOOTHSTEP if profile is None else profile,
             color=color,
+            title=title,
+            save=save,
+            ax=ax,
         )
-        return b
+        return self
 
 
 def slide_strand(n_slide: int, start_index: int = 1, sign: int = +1) -> Braid:

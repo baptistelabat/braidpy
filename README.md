@@ -3,6 +3,12 @@
 A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
 advances in braid theory. Sources are shared on [github](https://github.com/baptistelabat/braidpy)
 
+## Support
+
+braidpy is built with [Claude Code](https://claude.com/claude-code). If it
+helps you, you can [sponsor it](https://github.com/sponsors/baptistelabat):
+sponsoring helps pay for that.
+
 ## Features
 
 - [x] Mathematical representation of braids with braid words using Artin's generators
@@ -21,10 +27,17 @@ advances in braid theory. Sources are shared on [github](https://github.com/bapt
       computed shape can be checked against the braid it claims to be
 - [ ] Conversion from material braid to parametric braid
 - [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
+- [x] Kumihimo and mobidai disks animated from above, strands as spokes to
+      the middle of the disk, moving continuously from step to step
 - [ ] Kumihimo braid with Marudai diagram
+- [x] Braid Studio: a web page that makes any of these braids and shows it in
+      3D, with braidpy running in the browser
+- [x] Ashley solid sinnets (ABOK #3042–3054): each strand followed round its
+      disk, animated with the braid growing below it, laid in 3D, and
+      converted to a braid word or to a kumihimo disk (mobidai) pattern
 - [x] A braid as it comes off whatever made it, in 3D — a horn gear machine,
       a braid word, a mobidai or a kumihimo disk: laid with no tension,
-      converging on a braiding point or fell circle, and tightened
+      converging on a fell ring about the braid's size, and tightened
 - [ ] Finger loop braids (Kute-Uchi), a technic used and improved by nuns for centuries
 - [ ] Track plan
 - [ ] Simulation of 3D rotary (hexagonal) braiding machines
@@ -64,7 +77,10 @@ p = ParametricBraid(strands)  # .plot()
 p.plot()
 ```
 
-The plot should give the following:
+`result.plot()` gives the 2D diagram below — the braid runs down the page with its
+word above it, each strand in the same colour the console draws it in, and the strand
+passing behind interrupted where the two meet. `p.plot()` opens the 3D view.
+
 ![Plot braid example](braid_plot.png)
 
 ## Braiding machines
@@ -92,6 +108,33 @@ runs each one, and keeps the fullest that never collides. `visualize_machine`
 and `animate` draw the result, and `gen_demos.py` writes a page per machine —
 flat, tubular, soutache, diamond, and a Jacquard lace machine whose gears
 interpenetrate and whose switches are driven by a punched programme.
+
+## Braid Studio, in the browser
+
+[Braid Studio](https://baptistelabat.github.io/braidpy/studio/) is braidpy on
+a web page. Describe a braid as a braid word, a kumihimo pattern, a disk
+braid, an Ashley sinnet or a braiding machine, and it is laid and tightened in
+3D. braidpy itself runs in your browser through Pyodide, and three.js draws
+the result. See [its plan](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braid_studio.md),
+or run it locally:
+
+```sh
+make studio && make studio-serve   # then open http://localhost:8000
+```
+
+## Ashley solid sinnets
+
+The solid sinnets of the Ashley Book of Knots are worked on a disk: each move
+takes the earliest strand of a space over every strand it passes to another
+space.
+
+```python
+from braidpy.solid_sinnets_catalog import abok_3042
+
+abok_3042.braid()        # the braid word one cycle makes
+abok_3042.to_mobidai()   # the same, as a kumihimo disk pattern
+abok_3042.animate(n_cycles=3, side_view=True, output_html="3042.html")
+```
 
 ## The shape a braid takes
 
@@ -207,6 +250,6 @@ Please have a look to makefile to find helpful commands.
 ## 📜 License
 ![License](https://img.shields.io/badge/license-MPL%202.0-brightgreen)
 
-This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](https://github.com/baptistelabat/braidpy/blob/HEAD/LICENSE) file for details.
 
 ---

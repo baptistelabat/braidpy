@@ -33,11 +33,11 @@ class MaterialStrand(ParametricStrand):
 
 
 class MaterialBraid:
-    def __init__(self, strands: tuple[ParametricStrand]) -> None:
+    def __init__(self, strands: tuple[MaterialStrand, ...]) -> None:
         """
 
         Args:
-            strands(tuple[ParametricStrand]): list of MaterialStrand objects
+            strands(tuple[MaterialStrand, ...]): the strands
         """
         self.strands = strands
         self.n_strands = len(strands)
@@ -64,16 +64,16 @@ class MaterialBraid:
 
     @staticmethod
     def _are_too_close(
-        s1: ParametricStrand,
-        s2: ParametricStrand,
+        s1: MaterialStrand,
+        s2: MaterialStrand,
         clearance: StrictlyPositiveFloat = 1e-3,
         samples: StrictlyPositiveInt = 100,
     ) -> bool:
         """
-        Checks if two ParametricStrand objects are too close at any point in time.
+        Checks if two strands are too close at any point in time.
 
         Args:
-            s1, s2: ParametricStrand objects with .evaluate(t) and .radius
+            s1, s2: the strands
             clearance: minimum allowed distance between surfaces
             samples: number of time steps to check (default: 100)
 

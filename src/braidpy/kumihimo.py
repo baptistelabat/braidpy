@@ -11,9 +11,18 @@ Features:
 - Displays step labels, strand IDs, and pattern info
 """
 
-from typing import List
-import matplotlib.pyplot as plt
+from typing import TYPE_CHECKING, List, Optional
+
 import numpy as np
+
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import matplotlib
+    import matplotlib.pyplot as plt
+else:
+    matplotlib = lazy_module("matplotlib")
+    plt = lazy_module("matplotlib.pyplot")
 
 
 class Kumihimo:
@@ -23,7 +32,7 @@ class Kumihimo:
         n_strands (int): Number of strands (divisible by 4).
         k (int): Number of positions per quarter turn.
         state (List[int]): Current strand order around the disk.
-        braid_word (List[str]): Sequence of Artin generators.
+        braid_word (List[int]): Sequence of Artin generators, signed.
         history (List[str]): Record of performed S/R moves.
         frames (List[List[int]]): Strand configurations per step.
         angles (np.ndarray): Angular positions of strand slots.
@@ -47,18 +56,20 @@ class Kumihimo:
         self.n: int = n_strands
         self.k: int = n_strands // 4
         self.state: List[int] = list(range(n_strands))
-        self.braid_word: List[str] = []
+        self.braid_word: List[int] = []
         self.history: List[str] = []
         self.frames: List[List[int]] = [self.state.copy()]
         self.angles: np.ndarray = np.linspace(0, 2 * np.pi, n_strands, endpoint=False)
-        self.colors: np.ndarray = plt.cm.hsv(np.linspace(0, 1, n_strands))
+        self.colors: np.ndarray = matplotlib.colormaps["hsv"](
+            np.linspace(0, 1, n_strands)
+        )
         self.pattern: str = ""
 
     # ----------------------------------------------------------------------
     # Core Operations
     # ----------------------------------------------------------------------
 
-    def _swap_path(self, i: int, j: int) -> List[str]:
+    def _swap_path(self, i: int, j: int) -> List[int]:
         """Compute Artin word for swapping two distant strands.
 
         Args:
@@ -66,11 +77,11 @@ class Kumihimo:
             j (int): Index of the second strand.
 
         Returns:
-            List[str]: List of σ generators representing the swap.
+            List[int]: σ generators representing the swap, signed.
         """
         if i > j:
             i, j = j, i
-        path: List[str] = [k + 1 for k in range(i, j)]
+        path: List[int] = [k + 1 for k in range(i, j)]
         path.extend(-(k + 1) for k in reversed(range(i, j - 1)))
         return path
 
@@ -211,6 +222,24 @@ class Kumihimo:
 
         plt.tight_layout()
         plt.show()
+
+    def animate(self, output_html: Optional[str] = None, **kwargs):
+        """Animate the moves made so far on the disk, seen from above.
+
+        A Plotly animation in which each strand runs from its slot to the
+        middle and moves continuously from step to step — see
+        :func:`~braidpy.disk_animation.animate_kumihimo`, which ``kwargs``
+        are passed to.
+
+        Args:
+            output_html: If given, write the animation to this HTML file.
+
+        Returns:
+            plotly.graph_objects.Figure: The animation.
+        """
+        from braidpy.disk_animation import animate_kumihimo
+
+        return animate_kumihimo(self, output_html=output_html, **kwargs)
 
     # ----------------------------------------------------------------------
     # Utilities

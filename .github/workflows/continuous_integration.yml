@@ -28,3 +28,9 @@ jobs:
       - name: Run tests
         # For example, using `pytest`
         run: make test
+
+      - name: Check types
+        run: make typecheck
+
+      - name: Check for duplicated code
+        run: make duplicates

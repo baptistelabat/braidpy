@@ -11,11 +11,16 @@ associated with the braiding moves.
 """
 
 from __future__ import annotations
-import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional
-import matplotlib.pyplot as plt
+from typing import TYPE_CHECKING, Dict, List, Optional
 import numpy as np
+
+from braidpy.utils import lazy_module
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+else:
+    plt = lazy_module("matplotlib.pyplot")
 
 
 # ---------------------------------------------------------------------------
@@ -80,6 +85,52 @@ class MobidaiConfig:
     n_shift_after_cycle: int
     n_slots: int = 32
     is_clockwise: bool = True
+
+
+def cycle_drift(
+    start_slots: List[int],
+    moves: List["Move"],
+    n_slots: int,
+    n_shift_after_cycle: int = 0,
+) -> int:
+    """How many slots round a cycle leaves the strands from where they began.
+
+    Many braids do not bring their strands back to the slots they started in,
+    but to the same arrangement one or more slots round — kongo gumi creeps
+    one slot back each cycle — and the braider simply makes the same moves
+    again from where the strands now are.  That shift is a property of the
+    cycle, so it is read off it rather than written down: one cycle is made,
+    and the occupied slots compared with the starting ones turned round.
+
+    Args:
+        start_slots: The slots holding a strand at the start.
+        moves: One cycle's moves.
+        n_slots: Slots round the disk.
+        n_shift_after_cycle: How far the disk is turned after the moves.
+
+    Returns:
+        The drift, the smallest turn that matches; 0 if the cycle does not
+        bring the strands back to their arrangement at all.
+    """
+    occupied = set(start_slots)
+    for move in moves:
+        if move.from_slot in occupied:
+            occupied.discard(move.from_slot)
+            occupied.add(move.to_slot)
+    occupied = {(s - 1 + n_shift_after_cycle) % n_slots + 1 for s in occupied}
+    for drift in sorted(range(-(n_slots // 2), n_slots // 2 + 1), key=abs):
+        if {(s - 1 + drift) % n_slots + 1 for s in start_slots} == occupied:
+            return drift
+    return 0
+
+
+def drifted(move: "Move", offset: int, n_slots: int) -> "Move":
+    """The same move, made ``offset`` slots round."""
+    return Move(
+        (move.from_slot - 1 + offset) % n_slots + 1,
+        (move.to_slot - 1 + offset) % n_slots + 1,
+        move.force_direction,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +281,14 @@ class Mobidai:
             self.config.strands, self.config.n_slots, self.config.is_clockwise
         )
         self.braid_word: List[str] = []
+        # Each cycle is made from wherever the last one left the strands.
+        self.drift = cycle_drift(
+            [s.position for s in self.config.strands],
+            self.config.moves,
+            self.config.n_slots,
+            self.config.n_shift_after_cycle,
+        )
+        self.n_cycles = 0
 
     @property
     def generators(self) -> List[int]:
@@ -249,15 +308,9 @@ class Mobidai:
             ValueError: If a generator cannot be read, which would mean the
                 tracker had written something this cannot parse.
         """
-        out: List[int] = []
-        for move_word in self.braid_word:
-            for token in move_word.split():
-                match = re.fullmatch(r"s(\d+)(\^-1)?", token)
-                if match is None:
-                    raise ValueError(f"Cannot read generator {token!r}.")
-                index = int(match.group(1))
-                out.append(-index if match.group(2) else index)
-        return out
+        from braidpy.braidword import parse_word
+
+        return parse_word(" ".join(self.braid_word))
 
     def single_step(
         self, move: Move, slots: Dict[int, Optional[Strand]]
@@ -282,7 +335,7 @@ class Mobidai:
     # ... rotate, all_steps, visualize, simulate remain the same ...
     def rotate(self, steps: int):
         n = self.config.n_slots
-        new_slots = {i: None for i in range(1, n + 1)}
+        new_slots: Dict[int, Optional[Strand]] = {i: None for i in range(1, n + 1)}
         for slot, strand in self.slots.items():
             if strand:
                 new_pos = ((slot - 1 + steps) % n) + 1
@@ -292,9 +345,17 @@ class Mobidai:
         self.n_total_shift += steps
 
     def all_steps(self):
+        """Make one cycle of moves, then turn the disk.
+
+        Each cycle is made :attr:`drift` slots round from the one before, so
+        a braid that creeps round the disk is worked as it is by hand.
+        """
+        offset = self.n_cycles * self.drift
         for move in self.config.moves:
+            move = drifted(move, offset, self.config.n_slots)
             self.slots = self.single_step(move, self.slots)
         self.rotate(self.config.n_shift_after_cycle)
+        self.n_cycles += 1
 
     # ---------------------------------------------------------------------
 

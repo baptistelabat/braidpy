@@ -18,7 +18,6 @@ from typing import List
 
 import numpy as np
 
-from braidpy import Braid
 from braidpy.braid import SignedCrossingIndex
 from braidpy.utils import FunctionalException, PositiveInt
 
@@ -44,7 +43,7 @@ class HandleReductionMode(str, Enum):
 
 @dataclasses.dataclass
 class HandleReductionResults:
-    generators: tuple[SignedCrossingIndex]
+    generators: List[SignedCrossingIndex]
     sign: int
     handle_reduction_mode: HandleReductionMode
 
@@ -144,7 +143,7 @@ def dehornoy_reduce_core(
     gens: List[SignedCrossingIndex],
     mode: HandleReductionMode | str = HandleReductionMode.FULL,
     time_out_s: float = 1,
-) -> tuple[List[SignedCrossingIndex], int | None]:
+) -> HandleReductionResults:
     """
     Unified Dehornoy reduction engine.
 
@@ -157,7 +156,8 @@ def dehornoy_reduce_core(
 
 
     Returns:
-         tuple[List[SignedCrossingIndex], int|None]: (reduced_gens, sign) where sign is:
+         HandleReductionResults: ``generators``, the reduced word, ``sign`` and the
+         ``handle_reduction_mode`` used, where sign is:
         - 1 if Dehornoy positive
         - -1 if Dehornoy negative
         - 0 if neutral element
@@ -193,18 +193,12 @@ def dehornoy_reduce_core(
         # Apply Dehornoy handle reduction (this part was wrong before)
         reduced_segment = reduce_handle(gens[i : j + 1])
         gens = gens[:i] + reduced_segment + gens[j + 1 :]
-        print(gens)
-        print(Braid(gens).format_to_notation(target="alpha"))
-        # Braid(gens).draw()
-        print("")
 
     sign = dehornoy_sign(gens)
     if sign is None:
         raise HandleReducedButUnexpectedResult(
             f"Braid word reduced to {gens}, but sign can not be determined which is unexpected. Consider increasing timeout if necessary"
         )
-    # Braid(gens).draw()
-    print("")
     return HandleReductionResults(
         generators=gens, sign=sign, handle_reduction_mode=mode
     )

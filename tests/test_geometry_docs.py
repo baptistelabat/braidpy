@@ -51,10 +51,12 @@ def defined_names() -> set:
                 )
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 names.add(node.target.id)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
+        for found in ast.walk(tree):
+            if isinstance(found, ast.ClassDef):
                 names.update(
-                    item.name for item in node.body if isinstance(item, ast.FunctionDef)
+                    item.name
+                    for item in found.body
+                    if isinstance(item, ast.FunctionDef)
                 )
     return names
 
