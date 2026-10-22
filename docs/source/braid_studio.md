@@ -106,6 +106,14 @@ The page has a form and a 3D view.
   own defaults, shown greyed with "default" once it is made; going into the
   field puts the default in, so that its arrows step from there. The
   marudai draws its yarns tight itself, without tightening steps.
+- **Strands**, under the form, gives each strand its own colour, changed
+  everywhere the braid is drawn. Strands of one colour are a **group**,
+  listed above the strands with how many there are: pointing at a group
+  shows its strands among the others, and changing its colour changes them
+  all. A strand joins a group by taking its colour — the braid's own colours
+  come first in the palette — and Ctrl-, Cmd- or Shift-clicking strands
+  colours several at once. Groups are only colours, so the link says them as
+  it says the colours.
 - The braid is drawn as tubes, one colour per yarn, and can be turned, zoomed
   and spun. **Grow** replays it being made, by the clock of whatever made
   it: the oldest rows first, carried up as the newest form at the fell. An
