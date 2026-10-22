@@ -197,7 +197,8 @@ abok_3051 = AshleySolidSinnet(
     shape="triangle",
     initial_counts_per_space=[2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2],
     moves=[
-        (11, 13),
+        # (11, 13) in the book: 1 gave nothing, 11 twice.
+        (1, 13),
         (12, 2),
         (3, 11),
         (10, 4),
@@ -206,7 +207,7 @@ abok_3051 = AshleySolidSinnet(
         (7, 1),
         (18, 8),
         (9, 17),
-        (16, 10),  # (1, 10) as transcribed: 16 gave nothing, 1 twice.
+        (16, 10),  # (1, 10) in the book: 16 gave nothing, 1 twice.
         (11, 15),
         (14, 12),
         (13, 7),

@@ -76,12 +76,6 @@ def test_the_simplest_sinnets_are_the_braids_they_are_named_for(sinnet, word):
     assert same_fingerprint(fingerprint(made), fingerprint(WORDS[word].make()))
 
 
-# Sinnets whose moves, as transcribed, do not give every space its strands
-# back after a cycle, and for which no one correction is clearly the right
-# one: to be checked against the book.
-UNCHECKED = {"abok_3051"}
-
-
 def test_every_cycle_gives_every_space_its_strands_back():
     """In a solid sinnet each space gives a strand and receives one in every
     cycle, so the strands of each space are the same after a cycle — what a
@@ -93,4 +87,4 @@ def test_every_cycle_gives_every_space_its_strands_back():
         spaces = list(range(1, len(sinnet.initial_counts_per_space) + 1))
         if sources != spaces or targets != spaces:
             unbalanced.add(name)
-    assert unbalanced == UNCHECKED
+    assert not unbalanced
