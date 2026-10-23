@@ -1,6 +1,6 @@
 # Visualizing braids
 
-The followign code presents the different visualizations integrated in braidpy:
+The following code presents the different visualizations integrated in braidpy:
 
 ```python
 from braidpy import Braid
@@ -17,12 +17,12 @@ b.draw()
 b.plot()
 
 # 3D braid plot
-strands = b.to_parametric_strands(b ** 12)
+strands = (b ** 12).to_parametric_strands()
 p = ParametricBraid(strands)
 p.plot()
 ```
 ## Draw colored braid diagram in terminal
-The tirst basic visualization enables to draw a braid diagram directly in the console, with some colors !
+The first basic visualization enables to draw a braid diagram directly in the console, with some colors !
 
 ![colored ASCII braid example](draw_colored_ASCII_braid.png)
 

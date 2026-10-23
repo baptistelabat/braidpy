@@ -1,7 +1,21 @@
 # BraidPy
 
-A Python library for working with braids, with the goal to help design real world complex 3D braids, using recent
-advances in braid theory. Sources are shared on [github](https://github.com/baptistelabat/braidpy)
+A Python library for working with braids, from braid theory to the braids
+people make: by hand on a kumihimo disk, a marudai or Ashley's stand, or on a
+braiding or lace machine. It aims to help design real 3D braids using recent
+advances in braid theory, and to say how to make them.
+
+- **[Braid Studio](https://baptistelabat.github.io/braidpy/studio/)**: braidpy
+  in your browser. Describe a braid and see it laid, tightened and made in 3D,
+  with nothing to install.
+- **[Documentation](https://baptistelabat.github.io/braidpy)**: guides, the
+  mathematics, and the API reference.
+- **Sources** on [GitHub](https://github.com/baptistelabat/braidpy).
+
+braidpy is in **alpha**: its features work and are tested, but its API may
+still change between versions. The release on PyPI (0.2.2) is much older than
+the development version, which is what the documentation and Braid Studio
+describe; to use it, install it from GitHub (see Installation below).
 
 ## Support
 
@@ -11,36 +25,57 @@ sponsoring helps pay for that.
 
 ## Features
 
-- [x] Mathematical representation of braids with braid words using Artin's generators
-- [x] Conversion between different braid word formats
-- [x] Braid operations and manipulations (inversion, handles reduction, ...)
-- [x] Generation of parametric braid from braid word
-- [x] Visualization capabilities (ASCI, 2D and 3D) 
-- [x] Computations of mathematical properties of braid word or invariants of braid
-- [x] Annulus braids: crossings, the wrapping crossing and turns on a ring of slots
-- [x] Closed-form geometry for the shapes that admit one — a laid rope, a
-      braided tube, the figure-eight flat braid — with their clearances measured
-      rather than assumed
-- [x] Simulation of horn gear (maypole) braiding machines: flat, tubular,
-      soutache and Jacquard lace, with tracks, collisions and animation
-- [x] Conversion from parametric braid to braid word, for flat braids — so a
-      computed shape can be checked against the braid it claims to be
-- [ ] Conversion from material braid to parametric braid
-- [ ] Kumihimo braid with Mobidai (Kumihimo disk or Friendship Wheel)
-- [x] Kumihimo and mobidai disks animated from above, strands as spokes to
-      the middle of the disk, moving continuously from step to step
-- [ ] Kumihimo braid with Marudai diagram
-- [x] Braid Studio: a web page that makes any of these braids and shows it in
-      3D, with braidpy running in the browser
-- [x] Ashley solid sinnets (ABOK #3042–3054): each strand followed round its
-      disk, animated with the braid growing below it, laid in 3D, and
-      converted to a braid word or to a kumihimo disk (mobidai) pattern
-- [x] A braid as it comes off whatever made it, in 3D — a horn gear machine,
-      a braid word, a mobidai or a kumihimo disk: laid with no tension,
+Braids in theory:
+
+- [x] Braids as braid words in Artin's generators, read and written in the
+      common notations (`σ₁σ₂⁻¹`, `1 -2`, `aB`, …)
+- [x] Operations: product, inverse, powers, handle reduction, normal forms
+- [x] Properties and invariants: permutation, purity, closure, linking
+      numbers, Alexander polynomial, conjugacy
+- [x] Whether two braids are the same braid however written, and the braids
+      most like one, by a topological fingerprint
+- [x] Drawn in the console, in 2D and in 3D
+- [x] Annulus braids: crossings on a ring of slots, the wrapping crossing,
+      turns
+
+Braids people make:
+
+- [x] Horn gear (maypole) braiding machines: flat, tubular, soutache and
+      Jacquard lace, with tracks, collisions, threading and animation
+- [x] Kumihimo and mobidai disks, animated from above, strands as spokes to
+      the middle of the disk
+- [x] Ashley's solid sinnets (ABOK #2965–#3082, 43 of them), worked on his
+      stand, animated with the braid growing below
+- [x] A braid made move by move on a marudai, each yarn carried over the
+      others and drawn tight
+- [x] Bridges: from a braid word to how to make it on a kumihimo disk, on a
+      Jacquard lace machine's punchcard, or on Ashley's stand, each checked by
+      reading the braid back off what it makes
+
+The shape a braid takes:
+
+- [x] A braid as it comes off whatever made it, in 3D: laid with no tension,
       converging on a fell ring about the braid's size, and tightened
-- [ ] Finger loop braids (Kute-Uchi), a technic used and improved by nuns for centuries
-- [ ] Track plan
-- [ ] Simulation of 3D rotary (hexagonal) braiding machines
+- [x] Closed-form geometry for the shapes that admit one (a laid rope, a
+      braided tube, the figure-eight flat braid), their clearances measured
+      rather than assumed
+- [x] From a 3D braid back to its braid word, for flat braids, so a computed
+      shape can be checked against the braid it claims to be
+
+Using it:
+
+- [x] Braid Studio: all of the above on a web page, braidpy running in the
+      browser
+- [x] For AI assistants: a short front door (`braidpy.tools`) and an MCP
+      server
+
+Not yet:
+
+- [ ] From a real, material braid to its 3D shape
+- [ ] Finger loop braids (Kute-Uchi), a technique used and improved by nuns
+      for centuries
+- [ ] Track plans
+- [ ] 3D rotary (hexagonal) braiding machines
 
 ## Basic example
 
@@ -159,66 +194,88 @@ same functions:
 - [Why a braid's shape has no closed form](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/why_no_closed_form.md)
 - [Solving a braid's shape numerically](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/solving_numerically.md)
 
+## Is it the same braid, and how is it made?
+
+The same braid can be written many ways, and made many ways. braidpy
+compares braids by their topology, and says how to make one by hand or on a
+machine:
+
+```python
+from braidpy import tools
+
+tools.compare_braids("1 -2", "-2 1")  # {'same_braid': True, 'distance': 0.0}
+ways = tools.ways_to_make("1 -2")     # a kumihimo disk's moves, a lace punchcard,
+ways["disk"]["moves"]                 # a sinnet on Ashley's stand
+```
+
+[Comparing braids](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/comparing_braids.md)
+and [Bridges between ways of braiding](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/bridges.md)
+explain how.
+
+## For AI assistants
+
+`braidpy.tools` answers the common questions in plain data, and
+`braidpy-mcp` offers it to an assistant such as Claude as an MCP server:
+
+```sh
+pip install "braidpy[mcp]"
+claude mcp add braidpy -- braidpy-mcp
+```
+
+See [braidpy for AI assistants](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/ai_assistants.md).
+
 ## 🛠️ Installation
-Release versions are available on Pypi and it should be very easy to install braidpy in your python environment.
+Releases are on PyPI:
 
-Using pip
 ```bash
-pip install braidpy
+pip install braidpy        # or: uv add braidpy, poetry add braidpy
 ```
 
-Or using poetry
+The release there (0.2.2) lacks most of what this page describes. Until the
+next one, install the development version from GitHub:
+
 ```bash
-poetry add braidpy
+pip install "braidpy @ git+https://github.com/baptistelabat/braidpy@develop"
 ```
 
-Or using uv (recommended package manager used on the project)
-```bash
-uv add braidpy
-```
+braidpy needs Python 3.10 or later.
+
 ## 🛠️ Installation from source
-The version in pypi might lack features or bug corrections compared to the development versions.
-
-You can download the code directly from GitHub or using git:
+To work on braidpy itself, clone it (you are then on the `develop` branch)
+and install it with [uv](https://docs.astral.sh/uv/), the project's package
+manager. On Linux, from the root of the repository:
 
 ```bash
 git clone git@github.com:baptistelabat/braidpy.git
+cd braidpy
+sudo apt-get install build-essential
+make install-uv
 ```
-By default, you should be on the 'develop' branch.
 
-To install the required dependencies, follow the steps below:
-
-2. On linux, run the commands from root of repository to install uv. Use the official [installation guide](https://docs.astral.sh/uv/getting-started/installation) otherwise.
-   ```bash
-   sudo apt-get install build-essential
-   cd braidpy
-   make install-uv
-   ```
 ---
 
 ## Test
-To launch the complete suite of tests, launch the following command:
-```bash
-uv run pytest tests
-```
-Alternatively, if you have make install, just run:
-   ```bash
-   make test
-   ```
+The quick tests, in parallel, as every push runs them (a couple of minutes):
 
+```bash
+make test
+```
+
+Every test, the slow ones too, as CI runs them daily: `make test-all`. Only
+the tests touching what you changed: `make test-changed`.
 
 ---
 
 ## 📜 Documentation
-Documentation of released versions is hosted by [readthedocs](https://braidpy.readthedocs.io/en/latest/)
+The documentation of the development version is on
+[GitHub Pages](https://baptistelabat.github.io/braidpy), with Braid Studio
+beside it; that of released versions is on
+[Read the Docs](https://braidpy.readthedocs.io/en/latest/). To build it for
+the version you have from source:
 
-Documentation of development version can be found on [github pages](https://baptistelabat.github.io/braidpy)
-You should be able to select among several versions. Note that the process of generation is manual, so documentation
-might not be up to date
-You can also generate the documentation for your version installed from sources
-   ```bash
-   make docs
-   ```
+```bash
+make docs
+```
 
 ### Project Team:
 This is a single person project for now, but I would be happy to make the team grow.
@@ -229,6 +286,7 @@ Human:
 [![GitHub](https://img.shields.io/badge/-GitHub-black?logo=github&logoWidth=20&style=flat-square)](https://github.com/baptistelabat)
 
 Bots:
+- Claude Code
 - chatgpt
 - windsurf
 ---
