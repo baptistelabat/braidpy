@@ -37,6 +37,7 @@
   const STIFF = 10; // links and contacts
   const TAIL = Math.round(Math.sqrt(REACH * REACH * (1 + 1 / (WEIGHT * WEIGHT)))); // beads from tip to rim
   const KEEP = 40; // beads behind what moved left free
+  const RING = 30; // the most yarns the method was made for: tied round one ring
   const CHUNK = 20000;
 
   // Spatial grid: cells of CELL units, so the 27 round a point hold all
@@ -479,7 +480,12 @@
       const lean = threads.map((thread) => {
         const list = thread.beads;
         if (list.length < 20) return 0;
-        const e = list[list.length - 1], b = list[list.length - 2];
+        // Its last link's pull, as the method has it; with more yarns than
+        // it was made for, its pull along its way from the braid's tip to
+        // its end: the last link, just laid, may point any way, and the
+        // braid, turned on so many of them, swung back and forth further
+        // each time.
+        const e = list[list.length - 1], b = list[Math.max(0, list.length - 1 - (nThreads > RING ? TAIL : 1))];
         const cxv = ax - X[e], czv = az - Z[e];
         const out = Math.atan2(czv, cxv), back = Math.atan2(Z[b] - Z[e], X[b] - X[e]);
         const arm = Math.max(-span, Math.min(span, Math.sin(wrap(back - out)) * Math.hypot(cxv, czv)));
@@ -558,15 +564,27 @@
     }
 
     // ------------------------------------------------------------ start
+    // The yarns tied together where the braid begins: round a ring, as the
+    // method has it, for as many as it was made for; more, and the ring
+    // would be so wide the yarns rose from it as a tube, never drawn in to
+    // a braid.  So then rings of at most RING, one under the other, the
+    // yarns taken in turn round the disk.
     function start(angles) {
+      const rings = Math.ceil(nThreads / RING);
+      const each = Math.ceil(nThreads / rings);
+      const ring = new Array(nThreads);
+      [...angles.keys()]
+        .sort((p, q) => wrap(angles[p]) - wrap(angles[q]))
+        .forEach((t, k) => { ring[t] = k % rings; });
       angles.forEach((a, t) => {
         // As the method has it, a third of a unit per yarn; but with six
         // yarns or fewer, their start beads would touch or overlap: far
         // enough apart, then, for them to clear each other.
-        const touching = 1 / Math.sin(Math.PI / Math.max(2, nThreads));
-        const r = nThreads / 3 > touching ? nThreads / 3 : 1.1 * touching;
-        fixed[addBead(t, Math.cos(a) * r, 0, Math.sin(a) * r)] = 1;
-        fixed[addBead(t, Math.cos(a) * r, 1, Math.sin(a) * r)] = 1;
+        const touching = 1 / Math.sin(Math.PI / Math.max(2, each));
+        const r = each / 3 > touching ? each / 3 : 1.1 * touching;
+        const y = -2 * ring[t];
+        fixed[addBead(t, Math.cos(a) * r, y, Math.sin(a) * r)] = 1;
+        fixed[addBead(t, Math.cos(a) * r, y + 1, Math.sin(a) * r)] = 1;
         lay(t, a);
       });
     }

@@ -55,6 +55,7 @@ WEIGHT = 2  # the carriers stand REACH / WEIGHT above the braid's tip
 PULL = 1.2  # the bobbins' pull
 STIFF = 10  # links and contacts
 KEEP = 40  # beads behind what moved left free
+RING = 30  # the most yarns the method was made for: tied round one ring
 CHUNK = 20000
 
 # Spatial grid: cells of CELL units, so the 27 round a point hold all beads
@@ -642,7 +643,13 @@ class Machine:
             if len(beads) < 20:
                 lean.append(0.0)
                 continue
-            e, b = beads[-1], beads[-2]
+            # Its last link's pull, as the method has it; with more yarns than
+            # it was made for, its pull along its way from the braid's tip to
+            # its end: the last link, just laid, may point any way, and the
+            # braid, turned on so many of them, swung back and forth further
+            # each time.
+            back_by = TAIL if self.n > RING else 1
+            e, b = beads[-1], beads[max(0, len(beads) - 1 - back_by)]
             cxv, czv = ax - X[e], az - Z[e]
             out = math.atan2(czv, cxv)
             back = math.atan2(Z[b] - Z[e], X[b] - X[e])
@@ -734,14 +741,25 @@ class Machine:
 
     # ------------------------------------------------------------ start
     def start(self, angles: Sequence[float]) -> None:
+        """The yarns tied together where the braid begins: round a ring, as
+        the method has it, for as many as it was made for; more, and the ring
+        would be so wide the yarns rose from it as a tube, never drawn in to
+        a braid.  So then rings of at most ``RING``, one under the other, the
+        yarns taken in turn round the disk."""
+        rings = math.ceil(self.n / RING)
+        each = math.ceil(self.n / rings)
+        ring = [0] * self.n
+        for k, t in enumerate(sorted(range(self.n), key=lambda t: _wrap(angles[t]))):
+            ring[t] = k % rings
         for t, a in enumerate(angles):
             # As the method has it, a third of a unit per yarn; but with six
             # yarns or fewer, their start beads would touch or overlap: far
             # enough apart, then, for them to clear each other.
-            touching = 1 / math.sin(math.pi / max(2, self.n))
-            r = self.n / 3 if self.n / 3 > touching else 1.1 * touching
-            self.fixed[self._add_bead(t, math.cos(a) * r, 0, math.sin(a) * r)] = 1
-            self.fixed[self._add_bead(t, math.cos(a) * r, 1, math.sin(a) * r)] = 1
+            touching = 1 / math.sin(math.pi / max(2, each))
+            r = each / 3 if each / 3 > touching else 1.1 * touching
+            y = -2 * ring[t]
+            self.fixed[self._add_bead(t, math.cos(a) * r, y, math.sin(a) * r)] = 1
+            self.fixed[self._add_bead(t, math.cos(a) * r, y + 1, math.sin(a) * r)] = 1
             self.lay(t, a)
 
     def positions(self, t: int) -> List[List[float]]:

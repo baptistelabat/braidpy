@@ -47,6 +47,27 @@ def test_a_sinnet_made_on_a_marudai_matches_braid3dmin(tmp_path):
     assert result["closest"] > 0.85
 
 
+def test_a_sinnet_of_more_yarns_than_the_method_was_made_for_is_made_tight(tmp_path):
+    """ABOK #3081, 31 strands, one cycle: more yarns than braid3dmin's method
+    was made for.  Tied round one ring, as it has them, its yarns rose from
+    it as a tube, and the braid, turned to balance on its yarns' last links,
+    swung further each move: it grew some 90 diameters long, its yarns
+    through each other.  Tied round two rings, one under the other, and
+    turned on each yarn's whole way out to its carrier, it is a few
+    diameters long, its yarns clear of each other."""
+    from braidpy.web import build
+
+    disk = build({"source": "sinnet", "name": "abok_3081", "cycles": 1}, tighten=False)[
+        "disk"
+    ]
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    result = _run("marudai", program)
+    assert result["tip"] < 6
+    assert result["crossings"] == 31
+    assert result["closest"] > 0.85
+
+
 def test_a_plait_is_made_on_a_marudai_from_its_word(tmp_path):
     """The plait, its word rolled onto a ring of three bobbins and made move
     by move, each crossing a swap of neighbours: a braid forms, a few

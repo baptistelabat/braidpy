@@ -35,6 +35,14 @@ CASES = Path(__file__).parent / "js" / "marudai_cases.js"
 PLAIT = {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 2}
 # The bobbins turned round the held braid: twisted in, shuffled.
 ROPE = {"source": "word", "word": "1 2 3", "n_strands": 4, "repeat": 4}
+# More yarns than the method was made for: tied round two rings, the braid
+# turned on each yarn's whole way out.
+MANY = {
+    "source": "word",
+    "word": "1 4 7 -10 13 16 -19 22 25 28",
+    "n_strands": 31,
+    "repeat": 1,
+}
 
 
 def _js(case, path):
@@ -56,7 +64,7 @@ def _disk(tmp_path, spec):
     return disk, path
 
 
-@pytest.mark.parametrize("spec", [PLAIT, ROPE], ids=["plait", "rope"])
+@pytest.mark.parametrize("spec", [PLAIT, ROPE, MANY], ids=["plait", "rope", "many"])
 @pytest.mark.slow
 def test_the_port_is_the_same_algorithm_bead_for_bead(tmp_path, monkeypatch, spec):
     from braidpy import marudai
