@@ -55,6 +55,8 @@ These may need changes to code using 0.2.2.
 - `GarsideCanonicalFactors.n_half_twist` counts half twists (it counted full
   ones).
 - Handle reduction (`braidpy.handles_reduction`) has a new interface.
+- `Braid ==` and `is_trivial()` are decided by handle reduction, math-braid's
+  normal form only when it is slow: faster on most braids.
 - Drawing libraries, sympy and math-braid are imported only when used.
 
 ### Fixed
