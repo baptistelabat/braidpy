@@ -15,7 +15,8 @@ browser.
   braid — a word, a kumihimo or mobidai pattern, an Ashley sinnet, a braiding
   or lace machine — and see it laid, tightened and made in 3D, with nothing
   installed. The braids it offers are made and settled with the site, and
-  shown at once.
+  shown at once. A braid made on a disk can be saved for braid3dmin (B3D),
+  bead for bead, its moves as braid3dmin lists them.
 - **Braiding machines** (`braidpy.horn_gear`): horn gear (maypole) machines,
   flat, tubular and soutache, and the Jacquard lace machine driven by its
   punchcard; their tracks, collisions, threading and animation, and their
@@ -41,6 +42,7 @@ browser.
   "braidpy[mcp]"`).
 - Linking numbers, pure braids and their closures, full twists, the braid
   word read in any of its notations (`braidword.parse_word`).
+- `braidpy.__version__`.
 
 ### Changed
 
@@ -58,6 +60,9 @@ These may need changes to code using 0.2.2.
 - `Braid ==` and `is_trivial()` are decided by handle reduction, math-braid's
   normal form only when it is slow: faster on most braids.
 - Drawing libraries, sympy and math-braid are imported only when used.
+- `braidpy.ordered_strands`, a stub nothing used, is removed.
+- `double_flat3` makes ABOK 2971 by default; `parallel=True`, asking for
+  ABOK 2972, raises `NotImplementedError`, as 2972 is not made yet.
 
 ### Fixed
 
@@ -66,6 +71,11 @@ These may need changes to code using 0.2.2.
 - Parametric strands stopped short of their end.
 - The documentation's 3D example passed a braid where an amplitude was
   expected (issue #8).
+- Sinnets of more than 30 strands, made on a marudai, grew hundreds of yarn
+  diameters long instead of a few.
+- `double_flat3(parallel=True)` gave ABOK 2971, not the 2972 it asked for.
+- `braidpy-mcp` without the `mcp` extra ended in a traceback; it now says
+  what to install.
 
 ### Documentation
 
