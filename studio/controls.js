@@ -8,10 +8,10 @@
 import * as THREE from "three";
 import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import { copyText } from "./info.js?v=bccf4f55b3";
-import { drawSection, section, top } from "./insets.js?v=bccf4f55b3";
-import { $ } from "./page.js?v=bccf4f55b3";
-import { braid, camera, controls, fit, hangs, lastResult, made, renderer, scene, showTubes } from "./scene.js?v=bccf4f55b3";
+import { copyText } from "./info.js?v=3405c70a71";
+import { drawSection, section, top } from "./insets.js?v=3405c70a71";
+import { $ } from "./page.js?v=3405c70a71";
+import { braid, camera, controls, fit, hangs, lastResult, made, renderer, scene, showTubes } from "./scene.js?v=3405c70a71";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {
