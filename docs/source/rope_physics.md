@@ -193,9 +193,9 @@ without.
 `web/marudai.js` makes a disk braid the way braid3dmin, a kumihimo
 simulation in three.js, makes it: yarns as chains of beads pulled by their
 bobbins, each move laid over the top and drawn tight, the braid relaxed from
-what moved and turned to balance. The method is set out in
-[a page of its own](braid3D.md) and not repeated here; the code is this
-project's own. braidpy's disk program — the slots the yarns start in, then
+what moved and turned to balance. The method, as braidpy implements it, is
+set out in [a page of its own](marudai.md) and not repeated here; the code is
+this project's own. braidpy's disk program — the slots the yarns start in, then
 per step which yarns move, by how much — is played move by move. What
 `marudai.js` does its own way:
 

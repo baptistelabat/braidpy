@@ -27,7 +27,7 @@ visualization.md
 :caption: Making braids
 
 bridges.md
-braid3D.md
+marudai.md
 rope_physics.md
 ```
 

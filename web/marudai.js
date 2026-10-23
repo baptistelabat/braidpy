@@ -5,8 +5,9 @@
 // A disk braid made as on a marudai: move by move, each moved yarn laid
 // over the others and drawn tight, the braid turning to balance.
 //
-// The method is that of braid3dmin, a kumihimo simulation in three.js, as
-// docs/source/braid3D.md describes it; the code is this project's own.
+// The method is that of braid3dmin, a kumihimo simulation in three.js;
+// docs/source/marudai.md describes it as done here.  The code is this
+// project's own.
 //
 // - Each yarn is a chain of beads a unit apart, two units thick.  A link
 //   pulls its beads together only when stretched, as a rope does; two beads
