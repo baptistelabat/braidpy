@@ -7,15 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=3405c70a71";
-import { showBridges, showKin } from "./info.js?v=3405c70a71";
+import { onChosen, rebase } from "./colours.js?v=3ba6923467";
+import { showBridges, showKin } from "./info.js?v=3ba6923467";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=3405c70a71";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=3405c70a71";
-import { machineShapes, machineWanted } from "./machine.js?v=3405c70a71";
-import { $ } from "./page.js?v=3405c70a71";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=3405c70a71";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=3405c70a71";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=3ba6923467";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=3ba6923467";
+import { unpack } from "./frames.js?v=3ba6923467";
+import { machineShapes, machineWanted } from "./machine.js?v=3ba6923467";
+import { $ } from "./page.js?v=3ba6923467";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=3ba6923467";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=3ba6923467";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -33,7 +34,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=3405c70a71");
+  settler = new Worker("settle.js?v=3ba6923467");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -218,7 +219,7 @@ async function premade(spec) {
   if (!entry) return null;
   if (entry.settled && !("settle" in spec) && !("twist" in spec)) {
     const settled = await fetched(entry.settled);
-    if (settled) return { settled };
+    if (settled) return { settled: { ...settled, marudai: unpack(settled.marudai) } };
   }
   const laid = await fetched(entry.file);
   return laid ? { laid } : null;

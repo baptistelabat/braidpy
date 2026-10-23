@@ -15,6 +15,7 @@
 //   workers.js   braidpy and the settling, each in a worker of its own
 //   defaults.js  settings left empty and choices not made: the braid's own
 //   scene.js     the 3D view: the braid, as laid, as settled, as made
+//   frames.js    a marudai's moments, kept short for Grow and put back
 //   insets.js    the cross-section and the view from above
 //   info.js      the card: what is known of the braid
 //   controls.js  the view's controls, sharing and saving
@@ -22,15 +23,15 @@
 //
 // Each sets itself up as it loads, in this order.
 
-import "./fields.js?v=3405c70a71";
-import "./diagram.js?v=3405c70a71";
-import "./machine.js?v=3405c70a71";
-import "./editor.js?v=3405c70a71";
-import "./spec.js?v=3405c70a71";
-import "./workers.js?v=3405c70a71";
-import "./defaults.js?v=3405c70a71";
-import "./scene.js?v=3405c70a71";
-import "./insets.js?v=3405c70a71";
-import "./info.js?v=3405c70a71";
-import "./colours.js?v=3405c70a71";
-import "./controls.js?v=3405c70a71";
+import "./fields.js?v=3ba6923467";
+import "./diagram.js?v=3ba6923467";
+import "./machine.js?v=3ba6923467";
+import "./editor.js?v=3ba6923467";
+import "./spec.js?v=3ba6923467";
+import "./workers.js?v=3ba6923467";
+import "./defaults.js?v=3ba6923467";
+import "./scene.js?v=3ba6923467";
+import "./insets.js?v=3ba6923467";
+import "./info.js?v=3ba6923467";
+import "./colours.js?v=3ba6923467";
+import "./controls.js?v=3ba6923467";
