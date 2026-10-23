@@ -31,15 +31,18 @@ Braid([1, 2, 1], n_strands=3) == Braid([2, 1, 2], n_strands=3)  # True
 
 ## Deciding whether two words are the same braid
 
-This is the **word problem**, and braidpy answers it two ways:
+This is the **word problem**. `a == b` asks whether `a·b⁻¹` is the trivial
+braid (`is_trivial()`), and braidpy answers that two ways:
 
-- `==` compares the braids' Garside normal forms ({doc}`braid_representations`),
-  through math-braid (Cha et al., 2001).
 - **Handle reduction** (Dehornoy) removes *handles* — a `σᵢ` and a `σᵢ⁻¹`
   (or the other way round) with neither `σᵢ` nor `σᵢ₋₁` between them — until
   none is left; a word is the trivial braid exactly when it reduces to
-  nothing ({mod}`braidpy.handles_reduction`). It is fast in practice, though
-  no good bound on it is proven.
+  nothing ({mod}`braidpy.handles_reduction`). It is the faster on most
+  braids, but no good bound on it is proven, and on long words of many
+  strands it can blow up.
+- So it is given a few seconds, and if it has not decided, the braids'
+  **Garside normal forms** do ({doc}`braid_representations`), through
+  math-braid (Cha et al., 2001).
 
 ## Twists and conjugates
 
