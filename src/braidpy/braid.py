@@ -670,11 +670,24 @@ class Braid:
         """Check if the braid is trivial (identity braid): no crossing at
         all, however its word is written (``σ₁σ₁⁻¹`` is trivial).
 
+        By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`): a
+        braid is trivial exactly when its Dehornoy sign is 0.  Faster than
+        math_braid's normal form even for words of a thousand crossings and
+        more, which can take it some seconds: hence the long timeout.
+
         Returns:
             bool: True if the braid is trivial.
         """
+        # Here: handles_reduction itself imports this module.
+        from braidpy.handles_reduction import HandleReductionMode, dehornoy_reduce_core
+
         crossings = self.no_zero().generators
-        return not crossings or not math_braid.Braid(crossings, self.n_strands)
+        if not crossings:
+            return True
+        reduced = dehornoy_reduce_core(
+            crossings, HandleReductionMode.COMPARE, time_out_s=60
+        )
+        return reduced.sign == 0
 
     def permutations(self, plot: bool = False) -> List[List[int]]:
         """Return the permutations induced by the braid"""
