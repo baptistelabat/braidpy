@@ -154,6 +154,10 @@ SIXTEEN_STRANDS = CataloguedMobidai(
     moves=((1, 15), (17, 31), (29, 11), (13, 27), (25, 7), (9, 23), (21, 3), (5, 19)),
 )
 
+# Other braid from the internet
+# https://i.pinimg.com/736x/56/49/d5/5649d5a7781677b7fb61538bc0a7ccb5.jpg
+# https://i.pinimg.com/736x/2c/16/ba/2c16bacb81b1b4a7bdda9e2f24e5b6eb.jpg
+
 # Its name until it said what kind of braid it is.
 CataloguedBraid = CataloguedMobidai
 
