@@ -61,13 +61,15 @@ CATALOGUE: Dict[str, Entry[BraidingMachine]] = {
     "tubular_8": Entry("Tubular braid, 8 carriers", _example("tubular_braid_8")),
     "tubular_12": Entry("Tubular braid, 12 carriers", _example("tubular_braid_12")),
     "tubular_16": Entry("Tubular braid, 16 carriers", _example("tubular_braid_16")),
-    "multiband_10_15_10": Entry(
-        "Three bands, 10/15/10, on one line of 16 gears",
-        _switched("multiband_10_15_10"),
-    ),
-    # The same machine's bands on their own, to load and turn one at a time.
-    # A band's gears keep their names and slot numbering, so a loading reads
-    # the same here as on the whole line.
+    # The three-band line's bands, one at a time.  A band keeps the whole
+    # machine's gear names and slot numbering, so a loading reads the same
+    # here as there.
+    #
+    # The whole line is not offered: its carriers only come back to where
+    # they started after 15120 steps, sixty times the next machine here, and
+    # the braid made over that is a word of some 120000 crossings -- minutes
+    # to work out before the page can draw anything.  It is still
+    # braidpy.horn_gear.switch.multiband_10_15_10 for Python to make.
     "multiband_band_0": Entry(
         "Three-band machine: left band alone, gears G0-G4",
         _switched("multiband_band", band=0),

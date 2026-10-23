@@ -212,9 +212,10 @@ class MultibandLine(SwitchedMachine):
         """A loading to start from, found quickly enough to draw a page with.
 
         See :func:`threaded_loading`, which is why this machine does not use
-        the general search.
+        the general search, and :func:`_threaded_once`, which is why it is
+        only looked for once.
         """
-        return threaded_loading(self)
+        return _threaded_once(self)
 
     def preferred_layout(
         self, scale: float = 1.0
@@ -317,6 +318,21 @@ def threaded_loading(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
     return best
 
 
+def _threaded_once(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
+    """:func:`threaded_loading`, kept on the machine after the first time.
+
+    Making a braid asks a machine for its loading more than once -- once to
+    follow the carriers, once to write the braid word -- and the threading is
+    the slowest thing either does.  The machine does not change, so neither
+    does the answer.
+    """
+    found = getattr(machine, "_threaded", None)
+    if found is None:
+        found = threaded_loading(machine)
+        machine._threaded = found  # type: ignore[attr-defined]
+    return dict(found)
+
+
 class BandLine(BraidingMachine):
     """One band of a switched line, lifted out to run on its own.
 
@@ -328,7 +344,7 @@ class BandLine(BraidingMachine):
     def default_carriers(self) -> Dict[int, Tuple[str, int]]:
         """A loading to start from, found at once.  See
         :func:`threaded_loading`."""
-        return threaded_loading(self)
+        return _threaded_once(self)
 
 
 def multiband_band(band: int) -> BraidingMachine:
