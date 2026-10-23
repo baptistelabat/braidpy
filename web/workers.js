@@ -12,6 +12,7 @@ import { showBridges, showKin } from "./info.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
 import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
+import { unpack } from "./frames.js";
 import { machineShapes, machineWanted } from "./machine.js";
 import { $ } from "./page.js";
 import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js";
@@ -218,7 +219,7 @@ async function premade(spec) {
   if (!entry) return null;
   if (entry.settled && !("settle" in spec) && !("twist" in spec)) {
     const settled = await fetched(entry.settled);
-    if (settled) return { settled };
+    if (settled) return { settled: { ...settled, marudai: unpack(settled.marudai) } };
   }
   const laid = await fetched(entry.file);
   return laid ? { laid } : null;
