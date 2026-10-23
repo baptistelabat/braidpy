@@ -45,6 +45,11 @@
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.crossing_strands
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.form
    :members:
    :undoc-members:
