@@ -79,7 +79,15 @@ def server() -> Any:
 
 def main() -> None:
     """Run the server over stdio: ``braidpy-mcp``."""
-    server().run()
+    try:
+        made = server()
+    except ModuleNotFoundError as missing:
+        if (missing.name or "").split(".")[0] != "mcp":
+            raise
+        raise SystemExit(
+            "braidpy-mcp needs the mcp extra: pip install 'braidpy[mcp]'"
+        ) from None
+    made.run()
 
 
 if __name__ == "__main__":

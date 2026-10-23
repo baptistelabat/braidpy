@@ -126,7 +126,7 @@ BraidProcess = int | Sequence["BraidProcess"]
 @dataclass(frozen=True)
 class Braid:
     """
-    Sometimes referred as algebraic braids
+    Sometimes referred to as algebraic braids
     Args:
         process (BraidProcess): list of Artin's generator, which may group or not by parenthesis (tuples)
         n_strands (Optional[int]): number of strands. Default to the minimum number needed for process
@@ -195,7 +195,7 @@ class Braid:
                 'default' syntax used by other tools such as math-braid and braidlab
 
         Returns:
-            str: the formated braid word
+            str: the formatted braid word
         """
         match target.upper():
             case BraidWordNotation.ARTIN.value:
@@ -246,7 +246,7 @@ class Braid:
             separator(Optional(str)): Default to ""
 
         Returns:
-            str: the formated braid word
+            str: the formatted braid word
         """
         if generator_symbols is None:
             generator_symbols = [

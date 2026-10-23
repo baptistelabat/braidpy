@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 """Ashley's solid sinnets, from *The Ashley Book of Knots*: each its own
 :class:`~braidpy.ashley_solid_sinnet.AshleySolidSinnet`, named by its number
 in the book, and all of them in :data:`CATALOGUE`, as every catalogue lists

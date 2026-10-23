@@ -1,3 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+import pytest
+
 from braidpy.artin_generators import a
 from braidpy.braid import Braid, slide_strand
 from braidpy.braid_catalog import (
@@ -81,7 +87,7 @@ def test_half_twist_braid():
 
 def test_full_twist_braid():
     """
-    Chech that full twist (one turn) is commutting with all braid
+    Check that full twist (one turn) is commutting with all braid
     σi∆n² = ∆n.σn−i.∆n = ∆nσn−(n−i) = ∆n²σi.
     https://perso.eleves.ens-rennes.fr/people/baptiste.dugue/M%C3%A9moire_Stage_Tresses.pdf
     page 9
@@ -160,6 +166,13 @@ def test_regular_flat_braid_6():
 
 def test_double_flat3():
     _drawn(double_flat3)
+
+
+def test_double_flat3_does_not_pass_off_2971_as_its_parallel_twin():
+    """ABOK 2972, the parallel double flat sinnet, is not made yet: asked
+    for, it says so, rather than give 2971 again."""
+    with pytest.raises(NotImplementedError):
+        double_flat3(parallel=True, draw=False)
 
 
 def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):

@@ -39,7 +39,7 @@ relationships between algebraic and geometric braid
 - https://github.com/byorgey/braids
 - https://github.com/lightningund/braid
 - https://github.com/christian-oudard/logo -> interesting
-- https://github.com/the-bakery/braided > protoype to edit graphically a braid diagram in web browser
+- https://github.com/the-bakery/braided > prototype to edit graphically a braid diagram in web browser
 - https://github.com/WhimsicalDragon/BraidMaker (weird)
 - https://github.com/Sonicpineapple/Braids another online braid editor
 - https://github.com/textiles-lab/show-braid javascript/html 2D braid diagram visualization

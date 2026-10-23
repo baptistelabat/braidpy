@@ -158,7 +158,9 @@ class BraidGrowth:
         """How many rows the braid has, ``time`` disk steps in."""
         return float(np.interp(time, self.knot_times, self.knot_rows))
 
-    def turn_at(self, rows: float, carriers: Mapping[Hashable, Sequence[float]]):
+    def turn_at(
+        self, rows: float, carriers: Mapping[Hashable, Sequence[float]]
+    ) -> float:
         """How far round the braid hangs, its strands nearest their carriers.
 
         Args:
