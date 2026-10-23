@@ -12,7 +12,7 @@ Two kinds of page, and the difference between them matters:
 
 See docs/source/why_no_closed_form.md for why there is no third kind.
 
-Run from the repository root: ``python gen_braid_geometry_demo.py``
+Run from the repository root: ``python scripts/gen_braid_geometry_demo.py``
 """
 
 import math
