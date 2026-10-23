@@ -67,15 +67,21 @@ function fromBraidpy({ data }) {
   heard(data);
 }
 
+// A braid made with the site, shown at once: what Python says as it starts
+// follows that, rather than replacing it.
+const AT_ONCE = "Made with the site: shown at once.";
+let shownAtOnce = 0;
+
 function heard(data) {
   if (data.type === "status") {
-    setStatus(data.text);
+    setStatus(shownAtOnce && shownAtOnce === pending ? `${AT_ONCE} ${data.text}` : data.text);
   } else if (data.type === "ready") {
     offer(data.catalogue);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     // Unless a braid made with the site is already being shown.
     if (!pending) submit();
+    else if (shownAtOnce === pending) setStatus(AT_ONCE);
   } else if (data.type === "bridges") {
     if (data.id !== pending) return;
     if (keys.has(data.id)) {
@@ -116,12 +122,17 @@ function heard(data) {
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
-    if (keys.has(data.id) && data.seconds) {
+    if (keys.has(data.id) && (data.seconds || data.premade)) {
       madeBefore.set(keys.get(data.id), data.result);
       if (madeBefore.size > KEEP) madeBefore.delete(madeBefore.keys().next().value);
     }
+    shownAtOnce = data.premade ? data.id : 0;
     setStatus(
-      data.seconds ? `Made in ${data.seconds.toFixed(1)} s.` : "Made before: shown again.",
+      data.premade
+        ? AT_ONCE
+        : data.seconds
+          ? `Made in ${data.seconds.toFixed(1)} s.`
+          : "Made before: shown again.",
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
@@ -176,28 +187,41 @@ function same(a, b) {
 }
 
 // The braid made with the site that is the one asked for: each setting as
-// asked, or the source's default where it was not.
+// asked, or the source's default where it was not.  Its index entry: the
+// file it was laid in, and the one it was settled in, if it was.
 async function premadeFor(spec) {
   const defaults = catalogue?.[spec.source]?.defaults;
   if (!defaults) return null;
-  for (const { spec: made, file } of await premadeIndex) {
+  for (const entry of await premadeIndex) {
+    const made = entry.spec;
     if (made.source !== spec.source) continue;
     const settings = new Set([...Object.keys(made), ...Object.keys(spec)].filter((k) => !PAGE_ONLY.has(k)));
     const as = (from, k) => (k in from ? from[k] : defaults[k]);
-    if ([...settings].every((k) => same(as(spec, k), as(made, k)))) return file;
+    if ([...settings].every((k) => same(as(spec, k), as(made, k)))) return entry;
   }
   return null;
 }
 
-async function premade(spec) {
-  const file = await premadeFor(spec);
-  if (!file) return null;
+async function fetched(file) {
   try {
     const response = await fetch(`made/${file}`);
     return response.ok ? await response.json() : null;
   } catch {
     return null;
   }
+}
+
+// The braid asked for, made with the site: settled, if it was and is to be
+// settled as it comes; laid, for the page to settle, if not.
+async function premade(spec) {
+  const entry = await premadeFor(spec);
+  if (!entry) return null;
+  if (entry.settled && !("settle" in spec) && !("twist" in spec)) {
+    const settled = await fetched(entry.settled);
+    if (settled) return { settled };
+  }
+  const laid = await fetched(entry.file);
+  return laid ? { laid } : null;
 }
 window.braidpy.catalogue.then(offer);
 
@@ -235,7 +259,16 @@ export function submit() {
   const id = pending;
   premade(spec).then((made) => {
     if (id !== pending) return;
-    worker.postMessage(made ? { type: "build", id, spec, premade: made } : { type: "build", id, spec });
+    if (made?.settled) {
+      // Shown settled at once; braidpy, when it is ready, finds its kin
+      // and other ways from what is known of it.
+      heard({ type: "result", id, result: made.settled, seconds: 0, premade: true });
+      worker.postMessage({ type: "build", id, spec, info: made.settled.info });
+    } else if (made?.laid) {
+      worker.postMessage({ type: "build", id, spec, premade: made.laid });
+    } else {
+      worker.postMessage({ type: "build", id, spec });
+    }
   });
 }
 

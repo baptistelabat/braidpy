@@ -6,10 +6,11 @@
 // the page stays responsive while a braid is laid and tightened.
 //
 // Messages in:   {type: "init", pyodideUrl}
-//                {type: "build", id, spec, premade?}
+//                {type: "build", id, spec, premade?, info?}
 //                  premade: the braid as the site was built with it, for a
 //                  catalogue braid as it comes (web/build.py): laid at
-//                  once, without waiting for Python
+//                  once, without waiting for Python; info: what is known
+//                  of one the page already shows settled, for its kin
 //                {type: "geometry", name}
 //                {type: "sinnet", id}
 //                {type: "turn", id, name, loading, time}
@@ -279,13 +280,15 @@ self.onmessage = (event) => {
   if (message.type === "build") latest = message.id;
   // A catalogue braid made with the site is laid at once, Python or not:
   // only what is found from it — its kin, its other ways — waits for Python.
-  if (message.type === "build" && message.premade) {
+  if (message.type === "build" && (message.premade || message.info)) {
     const { id, spec, premade } = message;
-    laid(id, spec, premade);
+    // Laid at once for the page to settle — or already shown settled.
+    if (premade) laid(id, spec, premade);
+    const info = premade ? premade.info : message.info;
     queue = queue.then(async () => {
       if (id !== latest) return;
-      await kin(id, premade.info);
-      await bridges(id, premade.info);
+      await kin(id, info);
+      await bridges(id, info);
     });
     return;
   }
