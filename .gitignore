@@ -173,3 +173,6 @@ tests/abok3054*.json
 
 # pytest-testmon's record of which tests touch which code (make test-changed)
 .testmondata*
+
+# Braid Studio's braids settled with the site, kept between builds (web/build.py)
+web/.settled/

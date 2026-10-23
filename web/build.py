@@ -23,7 +23,9 @@ Run from the repository root, after ``npm install`` in ``web/``::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -35,6 +37,18 @@ from pathlib import Path
 
 WEB = Path(__file__).resolve().parent
 ROOT = WEB.parent
+# The page's settling, run by Node on the braids made with the site
+# (settle_node.js): what it runs, and where what it made is kept between
+# builds, by what went in.
+SETTLING = [
+    "settle_node.js",
+    "settle.js",
+    "tighten.js",
+    "rope.js",
+    "form.js",
+    "marudai.js",
+]
+SETTLED_CACHE = Path(os.environ.get("BRAID_STUDIO_SETTLED", WEB / ".settled"))
 PAGE = [
     "index.html",
     "style.css",
@@ -144,6 +158,55 @@ def _premade(site: Path) -> None:
     _braidpy(script)
 
 
+def _settled(site: Path, cache: Path = SETTLED_CACHE) -> None:
+    """Every braid made with the site, settled as the page would settle it
+    as it comes (settle_node.js runs the page's own settle.js): a visitor
+    choosing one is shown it settled at once, rather than after a minute
+    or more on the marudai.
+
+    Settling them all takes some twenty minutes of a processor, so each is
+    kept in ``cache`` by what went into it — the braid as laid, and the
+    settling's code — and settled again only when either changes.  What is
+    no longer asked for is cleared from the cache.  Without Node, the page
+    settles them itself, as before.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    if not shutil.which("node"):
+        print("No Node: the braids made with the site are left for the page to settle.")
+        return
+    made = site / "made"
+    code = hashlib.sha256(b"".join((WEB / name).read_bytes() for name in SETTLING))
+    index = json.loads((made / "index.json").read_text())
+    cache.mkdir(parents=True, exist_ok=True)
+
+    def settle(entry: dict) -> None:
+        laid = made / entry["file"]
+        key = code.copy()
+        key.update(laid.read_bytes())
+        kept = cache / f"{key.hexdigest()}.json"
+        if not kept.exists():
+            fresh = kept.with_suffix(".part")
+            done = subprocess.run(
+                ["node", str(WEB / "settle_node.js"), str(laid), str(fresh)]
+            )
+            if done.returncode:
+                # Left for the page to settle, as it would without Node.
+                print(f"Not settled: {entry['spec']}")
+                return
+            fresh.replace(kept)
+        entry["settled"] = laid.stem + ".settled.json"
+        shutil.copyfile(kept, made / entry["settled"])
+        entry["key"] = kept.name
+
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        list(pool.map(settle, index))
+    kept = {cache / e.pop("key") for e in index if "key" in e}
+    for stale in set(cache.glob("*.json")) - kept:
+        stale.unlink()
+    (made / "index.json").write_text(json.dumps(index))
+
+
 def _data(site: Path) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
     catalogue — what it can make, offered before Python has started — and
@@ -170,6 +233,7 @@ def build(site: Path, premade: bool = True) -> None:
     _data(site)
     if premade:
         _premade(site)
+        _settled(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")
