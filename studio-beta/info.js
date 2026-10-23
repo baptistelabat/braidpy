@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=8707f5b5db";
-import { $, round } from "./page.js?v=8707f5b5db";
-import { lastResult } from "./scene.js?v=8707f5b5db";
-import { writeSpec } from "./spec.js?v=8707f5b5db";
-import { pending, submit, worker } from "./workers.js?v=8707f5b5db";
+import { catalogue } from "./fields.js?v=216ba49a90";
+import { $, round } from "./page.js?v=216ba49a90";
+import { lastResult } from "./scene.js?v=216ba49a90";
+import { writeSpec } from "./spec.js?v=216ba49a90";
+import { pending, submit, worker } from "./workers.js?v=216ba49a90";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -136,14 +136,14 @@ export function showKin(kin) {
   }
 }
 
-// The braid made other ways (braidpy.bridges): its repeating unit as a
+// The braid made other ways (braidpy.making): its repeating unit as a
 // kumihimo disk's moves, to make here; as a lace machine's punchcard, to
 // copy or download; and, when asked, as a sinnet on Ashley's stand, which
 // is searched for.  None: nothing shown.
-export function showBridges(bridges) {
-  const box = $("bridges");
+export function showMaking(making) {
+  const box = $("making");
   box.replaceChildren();
-  if (!bridges || !bridges.lace) return;
+  if (!making || !making.lace) return;
   const title = document.createElement("h3");
   title.textContent = "Make it as…";
   title.title = "The same braid, made another way: each checked by reading the braid back off what makes it";
@@ -180,12 +180,12 @@ export function showBridges(bridges) {
     return button;
   };
 
-  if (bridges.disk) {
-    const moves = bridges.disk.moves.split(", ").length;
+  if (making.disk) {
+    const moves = making.disk.moves.split(", ").length;
     item(
-      link("Kumihimo disk", bridges.disk.spec),
+      link("Kumihimo disk", making.disk.spec),
       muted(` ${moves} moves a repeat `),
-      small("Copy moves", (button) => copyText(bridges.disk.moves, button)),
+      small("Copy moves", (button) => copyText(making.disk.moves, button)),
     );
   }
 
@@ -221,7 +221,7 @@ export function showBridges(bridges) {
     }),
   );
 
-  const lace = bridges.lace;
+  const lace = making.lace;
   const card =
     `Lace machine of ${lace.gears} gears; bobbins in notches ${lace.threading}.\n` +
     "Two lines a step, ● punched: the gears turning anticlockwise ↺, then clockwise ↻.\n" +

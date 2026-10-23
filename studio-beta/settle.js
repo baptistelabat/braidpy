@@ -14,8 +14,11 @@
 //                {type: "frame", id, frame, disk, colours}
 //                {type: "result", id, result, seconds}
 //                {type: "error", id, message}
+//
+// And asked {type: "b3d", id, result, twist, d}, the braid made on the
+// marudai as braid3dmin saves it (b3d.js): {type: "b3d", id, text}.
 
-importScripts("tighten.js?v=8707f5b5db", "rope.js?v=8707f5b5db", "form.js?v=8707f5b5db", "marudai.js?v=8707f5b5db");
+importScripts("tighten.js?v=216ba49a90", "rope.js?v=216ba49a90", "form.js?v=216ba49a90", "marudai.js?v=216ba49a90", "b3d.js?v=216ba49a90");
 
 function status(text) {
   self.postMessage({ type: "status", text });
@@ -28,6 +31,10 @@ let asked = null;
 let busy = false;
 
 self.onmessage = ({ data }) => {
+  if (data.type === "b3d") {
+    asB3d(data);
+    return;
+  }
   if (data.type !== "settle") return;
   asked = data;
   if (!busy) run();
@@ -319,19 +326,44 @@ function formed(id, result, job) {
 // it is asked for another braid: if so, it leaves this one where it is,
 // to go on with should the other begin as this one does.  Returns null
 // when left so.
-async function onMarudai(id, result, job) {
-  const d = job.yarn_diameter;
-  const started = performance.now();
-  let shown = started;
-  // Kept, the braid is held throughout, its twist kept; untwisted, it
-  // hangs free throughout, and turning the bobbins together turns it along.
-  const twist = job.twist ?? "auto";
+// The braid's disk program, held or hanging free as asked.  Kept, the
+// braid is held throughout, its twist kept; untwisted, it hangs free
+// throughout, and turning the bobbins together turns it along.
+function programOf(result, twist) {
   const holding = {
     keep: { held: true, twists: true },
     turns: { held: false, twists: true },
     free: { held: false, twists: false },
-  }[twist] ?? {};
-  const program = { ...result.disk, ...holding };
+  }[twist ?? "auto"] ?? {};
+  return { ...result.disk, ...holding };
+}
+
+// The braid made on the marudai, as braid3dmin saves it: the braid on the
+// marudai if it is this one made through, else this one made afresh.
+function asB3d({ id, result, twist, d }) {
+  try {
+    const program = programOf(result, twist);
+    const same = JSON.stringify({ ...program, steps: undefined, d });
+    let making =
+      onDisk && onDisk.same === same && onDisk.made === JSON.stringify(program.steps) ? onDisk.making : null;
+    if (!making) {
+      status("Making it on the marudai, for braid3dmin…");
+      making = beginOnMarudai(program);
+      program.steps.forEach((moves, k) => making.step(moves, k));
+    }
+    const text = b3dText(program, making, result.strands.map((strand) => strand.colour));
+    self.postMessage({ type: "b3d", id, text });
+  } catch (error) {
+    self.postMessage({ type: "b3d", id, error: String(error?.message ?? error) });
+  }
+}
+
+async function onMarudai(id, result, job) {
+  const d = job.yarn_diameter;
+  const started = performance.now();
+  let shown = started;
+  const twist = job.twist ?? "auto";
+  const program = programOf(result, twist);
   const same = JSON.stringify({ ...program, steps: undefined, d });
   const goesOn =
     onDisk &&
@@ -341,7 +373,7 @@ async function onMarudai(id, result, job) {
   if (!goesOn) {
     const making = beginOnMarudai(program);
     // Grow starts from the yarns as they are laid out, before any move.
-    onDisk = { same, done: 0, made: "[]", frames: [making.look()], mirror: null, making };
+    onDisk = { same, done: 0, made: "[]", frames: [kept(making.look())], mirror: null, making };
   }
   const from = onDisk.done;
   const making = onDisk.making;
@@ -355,7 +387,7 @@ async function onMarudai(id, result, job) {
     const moving = onDisk.moving;
     if (frame.what === "carried" && !moving.threads.includes(frame.thread)) moving.threads.push(frame.thread);
     frame.moved = frame.what === "settled" || frame.what === "turned" ? null : [...moving.threads];
-    onDisk.frames.push(frame);
+    onDisk.frames.push(kept(frame));
     if (performance.now() - shown < 80) return;
     shown = performance.now();
     if (!onDisk.mirror) {
@@ -418,8 +450,8 @@ async function onMarudai(id, result, job) {
   // Kept to a few hundred moments: Grow replays them in twelve seconds.
   const frames = onDisk.frames;
   const every = Math.max(1, Math.ceil(frames.length / 600));
-  const kept = frames.filter((_, i) => i % every === 0 || i === frames.length - 1);
-  out.marudai = onMarudaiFrame(made, d, kept);
+  const shownFrames = frames.filter((_, i) => i % every === 0 || i === frames.length - 1);
+  out.marudai = onMarudaiFrame(made, d, shownFrames, making.look());
   out.notes = [
     ...(out.notes || []),
     `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
@@ -481,15 +513,51 @@ function onMirror(yarn, tip, d, mirror) {
   return out;
 }
 
-function onMarudaiFrame(made, d, frames) {
+// The moments of the making kept for Grow (kept, onMarudaiFrame), in the
+// page's frame, each only as much as it needs: the beads still free, the
+// frozen ones being as the braid ends them (base), turned back to where
+// they were and raised with the fell.  Grow puts each moment back together
+// as it shows it (frames.js).
+function onMarudaiFrame(made, d, frames, end) {
   let top = -Infinity;
   for (const y of made.yarns) for (let i = 2; i < y.length; i += 3) top = Math.max(top, y[i]);
   const mirror = mirrorOf(made, d);
+  // Frozen in no moment, a bead is not needed as the braid ends it.
+  const needed = end.yarns.map((_, t) => Math.max(0, ...frames.map((f) => f.frozen[t])));
+  const [endAngle, endX, endY] = end.placed;
   return {
     tails: made.tails.map((tail) => onMirror(tail, top, d, mirror).map((p) => p.map(round))),
     disk: { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) },
-    frames: frames.map((frame) => pageFrame(frame, d, mirror)),
+    base: end.yarns.map((yarn, t) => {
+      const out = new Float32Array(3 * needed[t]);
+      for (let i = 0; i < out.length; i += 3) {
+        out[i] = yarn[i] * d;
+        out[i + 1] = -yarn[i + 1] * d;
+        out[i + 2] = (end.tip - yarn[i + 2]) * d;
+      }
+      return out;
+    }),
+    frames: frames.map((frame) => {
+      // The braid's turn from its end back to this moment: placed, undone
+      // to the end's and done again to this one's (marudai.js's turn).
+      const angle = frame.placed[0] - endAngle;
+      const c = Math.cos(angle), s = Math.sin(angle);
+      const [ex, ey] = [endX * d, -endY * d];
+      const [fx, fy] = [frame.placed[1] * d, -frame.placed[2] * d];
+      return {
+        ...pageFrame(frame, d, mirror),
+        frozen: frame.frozen,
+        turn: [c, s, fx - (c * ex + s * ey), fy - (-s * ex + c * ey)],
+        lift: (frame.tip - end.tip) * d,
+      };
+    }),
   };
+}
+
+// A moment of the making as kept for Grow: of each yarn, only its beads
+// not yet frozen — the frozen ones are put back from the braid as it ends.
+function kept(frame) {
+  return { ...frame, yarns: frame.yarns.map((yarn, t) => yarn.slice(3 * frame.frozen[t])) };
 }
 
 // A moment in the making, for the page to draw: every yarn whole, in the

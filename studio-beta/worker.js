@@ -6,7 +6,11 @@
 // the page stays responsive while a braid is laid and tightened.
 //
 // Messages in:   {type: "init", pyodideUrl}
-//                {type: "build", id, spec}
+//                {type: "build", id, spec, premade?, info?}
+//                  premade: the braid as the site was built with it, for a
+//                  catalogue braid as it comes (web/build.py): laid at
+//                  once, without waiting for Python; info: what is known
+//                  of one the page already shows settled, for its kin
 //                {type: "geometry", name}
 //                {type: "sinnet", id}
 //                {type: "turn", id, name, loading, time}
@@ -16,9 +20,9 @@
 //                {type: "laid", id, result, job, settle, twist}
 //                  the braid as laid, for settle.js to settle
 //                {type: "kin", id, kin}
-//                {type: "bridges", id, bridges}
+//                {type: "making", id, making}
 //                  the braid made other ways: a kumihimo disk's moves and a
-//                  lace machine's punchcard (braidpy.bridges.for_page)
+//                  lace machine's punchcard (braidpy.making.for_page)
 //                {type: "sinnet", id, sinnet}
 //                  a sinnet on Ashley's stand, searched for when asked
 //                  the braid's other ways of being made, and the braids
@@ -109,7 +113,7 @@ let latest = 0;
 
 async function build(id, spec) {
   if (id !== latest) return;
-  if (spec.source === "machine") await machinery();
+  if (spec.source === "machine" || spec.source === "lace") await machinery();
   status("Laying the yarns…");
   pyodide.globals.set("spec_json", JSON.stringify(spec));
   let result;
@@ -124,6 +128,14 @@ async function build(id, spec) {
     self.postMessage({ type: "error", id, message: pythonMessage(error) });
     return;
   }
+  laid(id, spec, result);
+  await kin(id, result.info);
+  await making(id, result.info);
+}
+
+// The braid as braidpy laid it — here, or when the site was built — handed
+// on to be settled.
+function laid(id, spec, result) {
   const job = result.tighten;
   delete result.tighten;
   // Automatic: a braid whose moves are known — a disk braid, or a word
@@ -143,23 +155,21 @@ async function build(id, spec) {
   }
   // Shown as laid straight away; settled in settle.js.
   self.postMessage({ type: "laid", id, result, job: job ?? null, settle, twist: spec.twist });
-  await kin(id, result.info);
-  await bridges(id, result.info);
 }
 
-// The braid made other ways (braidpy.bridges): cheap, worked out for every
+// The braid made other ways (braidpy.making): cheap, worked out for every
 // braid; a sinnet on Ashley's stand is searched for only when asked.
 let lastInfo = null;
-async function bridges(id, info) {
+async function making(id, info) {
   if (id !== latest) return;
   lastInfo = info;
   pyodide.globals.set("info_json", JSON.stringify(info));
   try {
     const text = await pyodide.runPythonAsync(`
-from braidpy import bridges as _bridges
-json.dumps(_bridges.for_page(json.loads(info_json)))
+from braidpy import making as _making
+json.dumps(_making.for_page(json.loads(info_json)))
 `);
-    self.postMessage({ type: "bridges", id, bridges: JSON.parse(text) });
+    self.postMessage({ type: "making", id, making: JSON.parse(text) });
   } catch {
     // Nothing shown.
   }
@@ -172,8 +182,8 @@ async function sinnet(id) {
   try {
     found = JSON.parse(
       await pyodide.runPythonAsync(`
-from braidpy import bridges as _bridges
-json.dumps(_bridges.sinnet_for_page(json.loads(info_json)))
+from braidpy import making as _making
+json.dumps(_making.sinnet_for_page(json.loads(info_json)))
 `),
     );
   } catch {
@@ -202,7 +212,7 @@ function pythonMessage(error) {
   const text = String(error && error.message ? error.message : error);
   const lines = text.trim().split("\n").filter((line) => line.trim());
   const last = lines[lines.length - 1] || text;
-  return last.replace(/^\w*(Error|Exception):\s*/, "");
+  return last.replace(/^[\w.]*(Error|Exception):\s*/, "");
 }
 
 let queue = Promise.resolve();
@@ -210,8 +220,14 @@ let queue = Promise.resolve();
 async function geometry(name) {
   await machinery();
   pyodide.globals.set("machine_name", name);
-  const text = await pyodide.runPythonAsync("json.dumps(web.machine_geometry(machine_name))");
-  self.postMessage({ type: "geometry", name, shape: JSON.parse(text) });
+  // A card of your own that cannot drive the machine says why, in the panel.
+  let shape;
+  try {
+    shape = JSON.parse(await pyodide.runPythonAsync("json.dumps(web.machine_geometry(machine_name))"));
+  } catch (error) {
+    shape = { error: pythonMessage(error) };
+  }
+  self.postMessage({ type: "geometry", name, shape });
 }
 
 // A machine's handle turned by hand, and where a carrier put on it at a
@@ -262,6 +278,20 @@ async function machinery() {
 self.onmessage = (event) => {
   const message = event.data;
   if (message.type === "build") latest = message.id;
+  // A catalogue braid made with the site is laid at once, Python or not:
+  // only what is found from it — its kin, its other ways — waits for Python.
+  if (message.type === "build" && (message.premade || message.info)) {
+    const { id, spec, premade } = message;
+    // Laid at once for the page to settle — or already shown settled.
+    if (premade) laid(id, spec, premade);
+    const info = premade ? premade.info : message.info;
+    queue = queue.then(async () => {
+      if (id !== latest) return;
+      await kin(id, info);
+      await making(id, info);
+    });
+    return;
+  }
   queue = queue.then(async () => {
     try {
       if (message.type === "init") await init(message.pyodideUrl);

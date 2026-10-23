@@ -7,11 +7,12 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onChosen, paint } from "./colours.js?v=8707f5b5db";
-import { describe } from "./info.js?v=8707f5b5db";
-import { drawSection, drawTop } from "./insets.js?v=8707f5b5db";
-import { $ } from "./page.js?v=8707f5b5db";
-import { pending } from "./workers.js?v=8707f5b5db";
+import { onChosen, paint } from "./colours.js?v=216ba49a90";
+import { wholeFrame } from "./frames.js?v=216ba49a90";
+import { describe } from "./info.js?v=216ba49a90";
+import { drawSection, drawTop } from "./insets.js?v=216ba49a90";
+import { $ } from "./page.js?v=216ba49a90";
+import { pending } from "./workers.js?v=216ba49a90";
 
 export let lastResult = null;
 
@@ -250,6 +251,7 @@ export function show(result, seconds, keepView = false) {
     tails,
     radius,
     frames: result.marudai?.frames,
+    base: result.marudai?.base,
     source: $("source").value,
     disk: result.marudai?.disk,
     steps: result.disk?.steps.length || 1,
@@ -362,7 +364,7 @@ export function made(value) {
   const frames = braid.frames;
   if (frames?.length && fraction < 0.999) {
     const frame = frames[Math.min(frames.length - 1, Math.floor(fraction * frames.length))];
-    showFrame(frame, braid.disk, braid.colours);
+    showFrame(wholeFrame(frame, braid.base), braid.disk, braid.colours);
     topAtFrame(frame);
     return;
   }

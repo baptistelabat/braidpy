@@ -5,8 +5,9 @@
 // A disk braid made as on a marudai: move by move, each moved yarn laid
 // over the others and drawn tight, the braid turning to balance.
 //
-// The method is that of braid3dmin, a kumihimo simulation in three.js, as
-// docs/source/braid3D.md describes it; the code is this project's own.
+// The method is that of braid3dmin, a kumihimo simulation in three.js;
+// docs/source/marudai.md describes it as done here.  The code is this
+// project's own.
 //
 // - Each yarn is a chain of beads a unit apart, two units thick.  A link
 //   pulls its beads together only when stretched, as a rope does; two beads
@@ -36,6 +37,7 @@
   const STIFF = 10; // links and contacts
   const TAIL = Math.round(Math.sqrt(REACH * REACH * (1 + 1 / (WEIGHT * WEIGHT)))); // beads from tip to rim
   const KEEP = 40; // beads behind what moved left free
+  const RING = 30; // the most yarns the method was made for: tied round one ring
   const CHUNK = 20000;
 
   // Spatial grid: cells of CELL units, so the 27 round a point hold all
@@ -478,7 +480,12 @@
       const lean = threads.map((thread) => {
         const list = thread.beads;
         if (list.length < 20) return 0;
-        const e = list[list.length - 1], b = list[list.length - 2];
+        // Its last link's pull, as the method has it; with more yarns than
+        // it was made for, its pull along its way from the braid's tip to
+        // its end: the last link, just laid, may point any way, and the
+        // braid, turned on so many of them, swung back and forth further
+        // each time.
+        const e = list[list.length - 1], b = list[Math.max(0, list.length - 1 - (nThreads > RING ? TAIL : 1))];
         const cxv = ax - X[e], czv = az - Z[e];
         const out = Math.atan2(czv, cxv), back = Math.atan2(Z[b] - Z[e], X[b] - X[e]);
         const arm = Math.max(-span, Math.min(span, Math.sin(wrap(back - out)) * Math.hypot(cxv, czv)));
@@ -502,9 +509,18 @@
       for (const t of order) lay(t, threads[t].dir, false, !twisted);
     }
 
+    // How the braid has turned since it was begun, as a whole: by angle,
+    // then shifted by (x, z).  A frozen bead moves no other way, so where it
+    // is at one moment follows from where it is at another (placed).
+    const placement = { angle: 0, x: 0, z: 0 };
+
     // The whole braid turned by f about the vertical through (ax, az).
     function turn(ax, az, f) {
       const c = Math.cos(f), s = Math.sin(f);
+      const px = placement.x - ax, pz = placement.z - az;
+      placement.angle += f;
+      placement.x = ax + px * c + pz * s;
+      placement.z = az - px * s + pz * c;
       for (const thread of threads) {
         for (const b of thread.beads) {
           const x = X[b] - ax, z = Z[b] - az;
@@ -548,15 +564,27 @@
     }
 
     // ------------------------------------------------------------ start
+    // The yarns tied together where the braid begins: round a ring, as the
+    // method has it, for as many as it was made for; more, and the ring
+    // would be so wide the yarns rose from it as a tube, never drawn in to
+    // a braid.  So then rings of at most RING, one under the other, the
+    // yarns taken in turn round the disk.
     function start(angles) {
+      const rings = Math.ceil(nThreads / RING);
+      const each = Math.ceil(nThreads / rings);
+      const ring = new Array(nThreads);
+      [...angles.keys()]
+        .sort((p, q) => wrap(angles[p]) - wrap(angles[q]))
+        .forEach((t, k) => { ring[t] = k % rings; });
       angles.forEach((a, t) => {
         // As the method has it, a third of a unit per yarn; but with six
         // yarns or fewer, their start beads would touch or overlap: far
         // enough apart, then, for them to clear each other.
-        const touching = 1 / Math.sin(Math.PI / Math.max(2, nThreads));
-        const r = nThreads / 3 > touching ? nThreads / 3 : 1.1 * touching;
-        fixed[addBead(t, Math.cos(a) * r, 0, Math.sin(a) * r)] = 1;
-        fixed[addBead(t, Math.cos(a) * r, 1, Math.sin(a) * r)] = 1;
+        const touching = 1 / Math.sin(Math.PI / Math.max(2, each));
+        const r = each / 3 > touching ? each / 3 : 1.1 * touching;
+        const y = -2 * ring[t];
+        fixed[addBead(t, Math.cos(a) * r, y, Math.sin(a) * r)] = 1;
+        fixed[addBead(t, Math.cos(a) * r, y + 1, Math.sin(a) * r)] = 1;
         lay(t, a);
       });
     }
@@ -572,6 +600,16 @@
       get tip() { return tip; },
       get updates() { return updates; },
       positions: (t) => threads[t].beads.map((b) => [X[b], Y[b], Z[b]]),
+      // Each yarn's beads frozen so far: always its first ones.
+      frozen: () =>
+        threads.map(({ beads }) => {
+          let i = beads.length;
+          while (i > 0 && !fixed[beads[i - 1]]) i--;
+          return i;
+        }),
+      // The braid's turn so far, in yarn diameters, z up, as snapshot gives
+      // it: [angle, x, y].
+      placed: () => [placement.angle, placement.x / 2, -placement.z / 2],
       // Every yarn's beads, flat, in yarn diameters, z up, as make returns them.
       snapshot() {
         return threads.map(({ beads }) => {
@@ -613,7 +651,9 @@
    *     step.
    * @param {function(Object):void} [job.watch]  Told of each yarn carried
    *     over the others, drawn tight, and of the braid settled after each
-   *     step: {what, thread, step, tip, yarns}, the yarns whole as returned.
+   *     step: {what, thread, step, tip, yarns, frozen, placed}, the yarns
+   *     whole as returned, the number of each one's first beads frozen, and
+   *     the braid's turn so far, [angle, x, y], as Machine's placed.
    * @param {function(Object):void} [job.progress]
    * @returns {{yarns: number[][], whole: number[][], tails: number[][],
    *     rim: {radius: number, height: number}, tip: number, updates: number}}
@@ -641,9 +681,20 @@
     const machine = Machine(n, job.turning ?? !job.held);
     const hooks = { watch: job.watch, progress: job.progress, total: job.steps.length };
     let current = -1;
+    // A moment of the making: every yarn whole, how many of each one's
+    // beads are frozen, and how the braid has turned (Machine's placed).
+    const moment = (what, thread, step) => ({
+      what,
+      thread,
+      step,
+      tip: machine.tip / 2,
+      yarns: machine.snapshot(),
+      frozen: machine.frozen(),
+      placed: machine.placed(),
+    });
     machine.watch((what, thread) => {
       if (hooks.watch) {
-        hooks.watch({ what, thread, step: current, tip: machine.tip / 2, yarns: machine.snapshot() });
+        hooks.watch(moment(what, thread, current));
       }
     });
     // Nothing but the bobbins turning together, a rope: carried round with
@@ -660,8 +711,8 @@
     machine.relax();
     // The marudai as it stands, for whoever watches: before the first move,
     // its yarns laid from the start.
-    const look = () => ({ what: "start", thread: -1, step: current, moved: [], tip: machine.tip / 2, yarns: machine.snapshot() });
-    return { step, look, hooks, result: () => ({ ...shape(), updates: machine.updates }) };
+    const look = () => ({ ...moment("start", -1, current), moved: [] });
+    return { step, look, hooks, machine, result: () => ({ ...shape(), updates: machine.updates }) };
 
     function step(moves, number) {
       current = number;
@@ -684,7 +735,7 @@
         }
         machine.turn(0, 0, by);
         for (const thread of machine.threads) thread.dir -= by;
-        if (hooks.watch) hooks.watch({ what: "turned", thread: -1, step: number, tip: machine.tip / 2, yarns: machine.snapshot() });
+        if (hooks.watch) hooks.watch(moment("turned", -1, number));
         return;
       }
       for (const [a, d] of moving) {

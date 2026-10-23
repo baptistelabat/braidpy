@@ -779,3 +779,26 @@ footer {
 .strands li.changing .swatch {
   border-color: var(--text, #222);
 }
+
+/* `display` here would beat the browser's own rule for [hidden], so say it. */
+.strands.groups[hidden],
+.groups-caption[hidden] {
+  display: none;
+}
+
+.groups-caption {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* The groups apart from the strands below them. */
+.strands.groups {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line, #8884);
+}
+
+.strands.groups li.picked .swatch {
+  font-weight: 600;
+  border-color: var(--line, #8884);
+}
