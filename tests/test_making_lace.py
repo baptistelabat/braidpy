@@ -7,6 +7,8 @@ braidpy.making.lace, checked by running the machine."""
 
 import itertools
 
+import itertools
+
 import pytest
 
 from braidpy import Braid
