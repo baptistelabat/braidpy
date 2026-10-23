@@ -9,6 +9,7 @@ const path = require("path");
 const fs = require("fs");
 const MARUDAI = path.join(__dirname, "..", "..", "web", "marudai.js");
 const { make, begin } = require(MARUDAI);
+const { b3dText } = require(path.join(__dirname, "..", "..", "web", "b3d.js"));
 const { rounded } = require("./rounded.js");
 
 // How long a braid is, how close its yarns come above the start, and how
@@ -121,6 +122,19 @@ const cases = {
     const top = Math.max(...yarns.flat().map((p) => p[2]));
     const shown = yarns.map((y) => y.map(([x, yy, z]) => [x, -yy, top - z]));
     return { braidpy: gauss(strands), made: gauss(shown), tip: made.tip };
+  },
+
+  // A braid made on a marudai, as braid3dmin saves it (web/b3d.js); and
+  // the yarns made, in braid3dmin's units, for the test to compare.
+  b3d() {
+    const { disk, strands } = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const making = begin(disk);
+    disk.steps.forEach((step, k) => making.step(step, k));
+    const machine = making.machine;
+    return {
+      text: b3dText(disk, making, strands.map((s) => s.colour)),
+      beads: machine.threads.map((_, t) => machine.positions(t).length),
+    };
   },
 };
 

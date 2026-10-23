@@ -712,7 +712,7 @@
     // The marudai as it stands, for whoever watches: before the first move,
     // its yarns laid from the start.
     const look = () => ({ ...moment("start", -1, current), moved: [] });
-    return { step, look, hooks, result: () => ({ ...shape(), updates: machine.updates }) };
+    return { step, look, hooks, machine, result: () => ({ ...shape(), updates: machine.updates }) };
 
     function step(moves, number) {
       current = number;
