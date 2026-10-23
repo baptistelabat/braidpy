@@ -1,10 +1,22 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""
+Filename: braidword.py
+Description: Functions for parsing and converting braid words
+Authors: Baptiste Labat
+Created: 2025-05-24
+Repository: https://github.com/baptistelabat/braidpy
+License: Mozilla Public License 2.0
+"""
+
 import re
 from typing import List
 
 
 def braidword_alpha_to_numeric(braidword: str) -> List[int]:
-    """
-    Convert an alphabetical braid word to its numerical representation.
+    """Convert an alphabetical braid word to its numerical representation.
 
     Each lowercase letter represents a braid generator σ_i, where:
         - 'a' → σ₁ → 1
@@ -15,11 +27,12 @@ def braidword_alpha_to_numeric(braidword: str) -> List[int]:
         - 'A' → σ₁⁻¹ → -1
         - 'B' → σ₂⁻¹ → -2
         - ...
-    Special character # can be used for neutral element
+
+    Special character # can be used for neutral element.
 
     Args:
-        braidword (str): A string of alphabetical characters representing the braid word.
-                         Must contain only letters a–z and A–Z or character #
+        braidword: A string of alphabetical characters representing the braid
+            word. Must contain only letters a-z and A-Z or character #.
 
     Returns:
         List[int]: The numerical representation of the braid word.

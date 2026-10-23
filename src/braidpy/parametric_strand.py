@@ -380,7 +380,7 @@ def arc_length(strand, n_samples: int = 4000) -> float:
     return total
 
 
-def transported_frame(points):
+def transported_frame(points) -> Tuple["np.ndarray", "np.ndarray", "np.ndarray"]:
     """A frame carried along a centreline without spinning about it.
 
     Two vectors square to the curve and to each other at every point, got by
@@ -404,7 +404,7 @@ def transported_frame(points):
         points: The centreline, as a sequence of (x, y, z).
 
     Returns:
-        (centre, normal, binormal) as arrays of one row per point.
+        Tuple of (centre, normal, binormal) as arrays of one row per point.
     """
     import numpy as np
 
@@ -447,7 +447,7 @@ def transported_frame(points):
     return centre, normals, np.cross(tangents, normals)
 
 
-def tube_rings(points, radius: float, n_around: int = 16):
+def tube_rings(points, radius: float, n_around: int = 16) -> "np.ndarray":
     """A ring of points round the centreline at every sample.
 
     The shared half of drawing a strand as yarn: :func:`tube_mesh` reshapes
@@ -460,8 +460,8 @@ def tube_rings(points, radius: float, n_around: int = 16):
         n_around: Points round the circle.
 
     Returns:
-        An ``(len(points), n_around + 1, 3)`` array.  The ring is closed: its
-        first point is repeated at the end.
+        np.ndarray: An ``(len(points), n_around + 1, 3)`` array. The ring is
+            closed: its first point is repeated at the end.
     """
     import numpy as np
 
@@ -474,7 +474,7 @@ def tube_rings(points, radius: float, n_around: int = 16):
     return centre[:, None, :] + ring
 
 
-def tube_mesh(points, radius: float, n_around: int = 16):
+def tube_mesh(points, radius: float, n_around: int = 16) -> Tuple["np.ndarray", "np.ndarray", "np.ndarray"]:
     """A strand drawn as what it is: a tube of yarn, not a line.
 
     Sweeps a circle of ``radius`` along a sampled centreline, so a picture of
@@ -492,14 +492,14 @@ def tube_mesh(points, radius: float, n_around: int = 16):
         n_around: Points round the circle.
 
     Returns:
-        (x, y, z), each a ``(len(points), n_around + 1)`` array, ready for a
-        surface plot.
+        Tuple of (x, y, z), each a ``(len(points), n_around + 1)`` array,
+            ready for a surface plot.
     """
     surface = tube_rings(points, radius, n_around)
     return surface[:, :, 0], surface[:, :, 1], surface[:, :, 2]
 
 
-def tube_faces(points, radius: float, n_around: int = 16, stride: int = 1):
+def tube_faces(points, radius: float, n_around: int = 16, stride: int = 1) -> List[List[Tuple[float, float, float]]]:
     """The same tube as quads, for a renderer that wants polygons.
 
     Matplotlib's ``Poly3DCollection`` takes faces rather than a surface, so
@@ -515,7 +515,7 @@ def tube_faces(points, radius: float, n_around: int = 16, stride: int = 1):
             that has to redraw quickly.
 
     Returns:
-        A list of four-cornered faces, each a list of (x, y, z).
+        List of four-cornered faces, each a list of (x, y, z) tuples.
     """
     rings = tube_rings(points, radius, n_around)[::stride]
     return [

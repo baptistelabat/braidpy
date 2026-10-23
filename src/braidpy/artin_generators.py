@@ -4,7 +4,7 @@
 
 """
 Filename: artin_generators.py
-Description: Artin's generators enables to describe a braid by successive crossing operations
+Description: Artin's generators to describe a braid by successive crossing operations
 Authors: Baptiste Labat
 Created: 2025-05-30
 Repository: https://github.com/baptistelabat/braidpy
@@ -15,13 +15,16 @@ from braidpy import Braid
 
 
 class a(Braid):
-    """
-    This class is a shortcut to be able to use a compact notation with Artin's generators
+    """A shortcut class for compact notation with Artin's generators.
+
+    This class is a subclass of Braid that enforces having only a single crossing.
     """
 
     def __post_init__(self) -> None:
-        """
-        Ensures we have only one crossing
+        """Ensure we have only one crossing.
+
+        Raises:
+            ValueError: If the process contains more than one crossing.
         """
         super().__post_init__()
         if len(self.generators) > 1:

@@ -253,23 +253,26 @@ def regular_flat6(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def double_flat3(parallel: bool = True, draw: bool = True):
-    """
-    if parallel = False
-    ABOK 2971: "If the same method of turning edges is applied where units
-    of two or three parallel round cords are used, instead of single
-    strands, a distinctive sinnet results"
+def double_flat3(parallel: bool = True, draw: bool = True) -> Tuple[Braid, int]:
+    """Double flat braid with parallel strands.
 
-    if parallel = True
-    ABOK 2972: "In this sinnet the strands are double and parallel. The effect
-    is very different from the last, in which the edges were turned."
+    if parallel = False:
+        ABOK 2971: "If the same method of turning edges is applied where units
+        of two or three parallel round cords are used, instead of single
+        strands, a distinctive sinnet results".
+
+    if parallel = True:
+        ABOK 2972: "In this sinnet the strands are double and parallel. The effect
+        is very different from the last, in which the edges were turned."
 
     Args:
+        parallel: If True, strands are parallel.
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
-        Braid: the braid object describing the single step to realize the braid
-        n: the number of iterations to get back to initial order of strands
+        Tuple of (Braid, int):
+            Braid: the braid object describing the single step to realize the braid.
+            int: the number of iterations to get back to initial order of strands.
     """
     parallel = False
     n = 3
@@ -285,19 +288,22 @@ def double_flat3(parallel: bool = True, draw: bool = True):
     return b, n
 
 
-def weave3(draw: bool = True):
-    """
-    This a 3 strands braid were 2 braids are running parallel while the third one is weaving them
+def weave3(draw: bool = True) -> Tuple[Braid, int]:
+    """Weave braid with 3 strands.
 
-    ABOK 2973:  "The number of sinnets that are possible with three strands
+    This is a 3 strands braid where 2 braids are running parallel while the
+    third one is weaving them.
+
+    ABOK 2973: "The number of sinnets that are possible with three strands
     only seem very limited. Three are given on these two facing pages."
 
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
-        Braid: the braid object describing the single step to realize the braid
-        n: the number of iterations to get back to initial order of strands
+        Tuple of (Braid, int):
+            Braid: the braid object describing the single step to realize the braid.
+            int: the number of iterations to get back to initial order of strands.
     """
 
     n = 3
@@ -308,9 +314,10 @@ def weave3(draw: bool = True):
     return b, n
 
 
-def abok_2974(draw: bool = True):
-    """
-    2974. With four strands the horizon is somewhat widened.
+def abok_2974(draw: bool = True) -> Tuple[Braid, int]:
+    """Four strand sinnet (ABOK 2974).
+
+    With four strands the horizon is somewhat widened.
 
     https://www.animatedknots.com/four-strand-sinnet-knot-2974
 
@@ -318,7 +325,9 @@ def abok_2974(draw: bool = True):
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
-
+        Tuple of (Braid, int):
+            Braid: the braid object describing the single step to realize the braid.
+            int: the number of iterations to get back to initial order of strands.
     """
     n = 2
     step = Braid([-1, -3, 2, 2], 4)
@@ -349,21 +358,22 @@ def flat5(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return step, n
 
 
-def flat_sinnet5(draw: bool = True):
-    """
-    ABOK 2967: "With more than three strands it is well to secure the strands
-    in a straight line. Two pencils and two elastic bands are sufficient
-    apparatus. FLAT SI~NET may be made with any odd number of
-    strands in the way already described. The outer strands are moved
-    alternately, and the tension is correctly and evenly arranged as each
-    strand is passed".
+def flat_sinnet5(draw: bool = True) -> Tuple[Braid, int]:
+    """Flat sinnet with 5 strands (ABOK 2967).
+
+    With more than three strands it is well to secure the strands in a straight
+    line. Two pencils and two elastic bands are sufficient apparatus. FLAT
+    SINNET may be made with any odd number of strands in the way already
+    described. The outer strands are moved alternately, and the tension is
+    correctly and evenly arranged as each strand is passed.
 
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
-        Braid: the braid object describing the single step to realize the braid
-        n: the number of iterations to get back to initial order of strands
+        Tuple of (Braid, int):
+            Braid: the braid object describing the single step to realize the braid.
+            int: the number of iterations to get back to initial order of strands.
     """
     n = 5
     step = slide_strand(int((n - 1) / 2)).n(n)
@@ -373,19 +383,21 @@ def flat_sinnet5(draw: bool = True):
     return b, n
 
 
-def flat_sinnet7(draw: bool = True):
-    """
-    ABOK 2968: "Seven strands is about the practical limit of the method.
+def flat_sinnet7(draw: bool = True) -> Tuple[Braid, int]:
+    """Flat sinnet with 7 strands (ABOK 2968).
+
+    Seven strands is about the practical limit of the method.
     Beyond that there is difficulty in keeping it even. Even if a degree
     of success is achieved, a very little rough treatment will cause it to
-    distort."
+    distort.
 
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
-        Braid: the braid object describing the single step to realize the braid
-        n: the number of iterations to get back to initial order of strands
+        Tuple of (Braid, int):
+            Braid: the braid object describing the single step to realize the braid.
+            int: the number of iterations to get back to initial order of strands.
     """
     n = 7
     step = slide_strand(int((n - 1) / 2)).n(n)
