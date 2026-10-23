@@ -1,7 +1,7 @@
 {
-  "version": "0.2.2",
+  "version": "0.3.0",
   "wheels": [
     "math_braid-0.8-py3-none-any.whl",
-    "braidpy-0.2.2-py3-none-any.whl"
+    "braidpy-0.3.0-py3-none-any.whl"
   ]
 }
