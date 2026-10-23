@@ -253,28 +253,31 @@ def regular_flat6(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def double_flat3(parallel: bool = True, draw: bool = True):
+def double_flat3(
+    parallel: bool = False, draw: bool = True
+) -> tuple[braidpy.braid.Braid, int]:
     """
-    if parallel = False
     ABOK 2971: "If the same method of turning edges is applied where units
     of two or three parallel round cords are used, instead of single
     strands, a distinctive sinnet results"
 
-    if parallel = True
-    ABOK 2972: "In this sinnet the strands are double and parallel. The effect
-    is very different from the last, in which the edges were turned."
+    ABOK 2972, its parallel twin, is not made yet: "In this sinnet the
+    strands are double and parallel. The effect is very different from the
+    last, in which the edges were turned."
 
     Args:
+        parallel: ABOK 2972 rather than 2971: not made yet.
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
         Braid: the braid object describing the single step to realize the braid
         n: the number of iterations to get back to initial order of strands
     """
-    parallel = False
+    if parallel:
+        raise NotImplementedError("ABOK 2972, the parallel double flat sinnet")
     n = 3
     n_multiple = 2
-    step: Braid = a(0) if parallel else a(1)
+    step: Braid = a(1)
     for i in range(n_multiple):
         for j in range(n_multiple):
             step = step * a(1 + n_multiple - 1 - i + j)
@@ -285,9 +288,10 @@ def double_flat3(parallel: bool = True, draw: bool = True):
     return b, n
 
 
-def weave3(draw: bool = True):
+def weave3(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
-    This a 3 strands braid were 2 braids are running parallel while the third one is weaving them
+    A braid of 3 strands where 2 strands run parallel while the third one
+    weaves through them.
 
     ABOK 2973:  "The number of sinnets that are possible with three strands
     only seem very limited. Three are given on these two facing pages."
@@ -308,7 +312,7 @@ def weave3(draw: bool = True):
     return b, n
 
 
-def abok_2974(draw: bool = True):
+def abok_2974(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     2974. With four strands the horizon is somewhat widened.
 
@@ -318,7 +322,8 @@ def abok_2974(draw: bool = True):
         draw: Draw the braid as it is made (the default); False only builds it.
 
     Returns:
-
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
     """
     n = 2
     step = Braid([-1, -3, 2, 2], 4)
@@ -349,11 +354,11 @@ def flat5(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     return step, n
 
 
-def flat_sinnet5(draw: bool = True):
+def flat_sinnet5(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     ABOK 2967: "With more than three strands it is well to secure the strands
     in a straight line. Two pencils and two elastic bands are sufficient
-    apparatus. FLAT SI~NET may be made with any odd number of
+    apparatus. FLAT SINNET may be made with any odd number of
     strands in the way already described. The outer strands are moved
     alternately, and the tension is correctly and evenly arranged as each
     strand is passed".
@@ -373,7 +378,7 @@ def flat_sinnet5(draw: bool = True):
     return b, n
 
 
-def flat_sinnet7(draw: bool = True):
+def flat_sinnet7(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     ABOK 2968: "Seven strands is about the practical limit of the method.
     Beyond that there is difficulty in keeping it even. Even if a degree

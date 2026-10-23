@@ -13,7 +13,7 @@ from dataclasses_json import DataClassJsonMixin, config, dataclass_json
 
 
 # --- Dataclass Definitions for the Braid Structure ---
-def modulo_minus_pi_pi(angle: float):
+def modulo_minus_pi_pi(angle: float) -> float:
     return (angle + math.pi) % (2 * math.pi) - math.pi
 
 
@@ -215,7 +215,7 @@ class BraidModel(DataClassJsonMixin):
             f")"
         )
 
-    def save_to_file(self, filepath: str, encode=True):
+    def save_to_file(self, filepath: str, encode: bool = True) -> None:
         """
         Saves the BraidModel configuration to a URL-encoded JSON file using dataclasses-json.
         """

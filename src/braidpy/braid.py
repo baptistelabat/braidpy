@@ -126,7 +126,7 @@ BraidProcess = int | Sequence["BraidProcess"]
 @dataclass(frozen=True)
 class Braid:
     """
-    Sometimes referred as algebraic braids
+    Sometimes referred to as algebraic braids
     Args:
         process (BraidProcess): list of Artin's generator, which may group or not by parenthesis (tuples)
         n_strands (Optional[int]): number of strands. Default to the minimum number needed for process
