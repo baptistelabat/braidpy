@@ -2,7 +2,7 @@
 
 What changed in each release of braidpy.
 
-## 0.3.0 — unreleased
+## 0.3.0 — 2026-10-24
 
 braidpy grows from braid words to the braids people make: on braiding and
 lace machines, kumihimo disks, a marudai and Ashley's stand, laid and
