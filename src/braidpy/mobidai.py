@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 """
 mobidai.py
 
@@ -57,12 +61,12 @@ class Move:
     Attributes:
         from_slot (int): The slot number where the strand starts.
         to_slot (int): The slot number where the strand will be placed.
+        force_direction (int): The way round it goes: 1 clockwise, -1
+            anticlockwise, 0 (the default) the shorter way.
     """
 
     from_slot: int
     to_slot: int
-    # Optional: Force a direction if you want a "long way round" move
-    # 1 = CW, -1 = CCW, 0 = Auto (Shortest Path)
     force_direction: int = 0
 
 
@@ -332,7 +336,6 @@ class Mobidai:
 
         return slots
 
-    # ... rotate, all_steps, visualize, simulate remain the same ...
     def rotate(self, steps: int):
         n = self.config.n_slots
         new_slots: dict[int, Strand | None] = {i: None for i in range(1, n + 1)}

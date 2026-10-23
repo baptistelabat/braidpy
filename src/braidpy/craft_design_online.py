@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import json
 import math
 import urllib.parse
@@ -9,7 +13,7 @@ from dataclasses_json import DataClassJsonMixin, config, dataclass_json
 
 
 # --- Dataclass Definitions for the Braid Structure ---
-def modulo_minus_pi_pi(angle: float):
+def modulo_minus_pi_pi(angle: float) -> float:
     return (angle + math.pi) % (2 * math.pi) - math.pi
 
 
@@ -211,7 +215,7 @@ class BraidModel(DataClassJsonMixin):
             f")"
         )
 
-    def save_to_file(self, filepath: str, encode=True):
+    def save_to_file(self, filepath: str, encode: bool = True) -> None:
         """
         Saves the BraidModel configuration to a URL-encoded JSON file using dataclasses-json.
         """

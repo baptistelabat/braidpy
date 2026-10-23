@@ -25,7 +25,7 @@ The first basic visualization enables to draw a braid diagram directly in the co
 
 ![colored ASCII braid example](draw_colored_ASCII_braid.png)
 
-The direction of the arrow indicates the braid of the corresponding color is moving above its neighboor.
+The direction of the arrow indicates the braid of the corresponding color is moving above its neighbour.
 
 ## Plot colored braid diagram
 The second type of visualization enables to plot a 2D braid diagram using matplotlib:

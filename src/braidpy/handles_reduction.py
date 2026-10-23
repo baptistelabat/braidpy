@@ -28,10 +28,11 @@ class HandleReducedButUnexpectedResult(FunctionalException):
 
 
 class HandleReductionMode(str, Enum):
-    """
-    Define the possible options for handle reduction
-        -full: reduce all handles
-        -compare: partical short circuit reductio which is exiting as long as we can determine if braid is positive, or negative
+    """How far handle reduction goes.
+
+    - ``FULL``: every handle is reduced.
+    - ``COMPARE``: a partial reduction, stopped as soon as the braid is known
+      to be positive, negative or trivial.
     """
 
     FULL = "FULL"

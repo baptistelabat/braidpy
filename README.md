@@ -102,7 +102,7 @@ result.draw()
 # Plot the resulting braid.
 result.plot()
 
-# Convert to parametric braid before ploting in 3D.
+# Convert to parametric braid before plotting in 3D.
 strands = result.to_parametric_strands()
 from braidpy.parametric_braid import (
     ParametricBraid,
