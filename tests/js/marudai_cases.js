@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 // The marudai tests' cases, run by tests/test_marudai.py and
 // tests/test_marudai_python.py: each makes a braid move by move with
 // web/marudai.js, or measures one, and prints what the test checks, as JSON.

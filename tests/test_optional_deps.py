@@ -58,3 +58,17 @@ except ModuleNotFoundError as missing:
 """
     )
     assert "pip install 'braidpy[viz]'" in out
+
+
+def test_the_mcp_server_without_the_mcp_extra_says_what_to_install():
+    out = _run(
+        """
+sys.modules["mcp"] = None
+from braidpy import mcp_server
+try:
+    mcp_server.main()
+except SystemExit as stopped:
+    print(stopped)
+"""
+    )
+    assert "pip install 'braidpy[mcp]'" in out

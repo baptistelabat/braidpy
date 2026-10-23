@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 from braidpy import Braid
 from braidpy.parametric_braid import (
     ParametricBraid,
@@ -24,7 +28,7 @@ result.draw()
 # Plot the resulting braid.
 result.plot()
 
-# Convert to parametric braid before ploting in 3D.
+# Convert to parametric braid before plotting in 3D.
 strands = result.to_parametric_strands()
 
 

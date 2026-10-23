@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 // A script of web/ loaded again with every result of cos, sin, atan2 and
 // asin rounded to single precision.  Python's maths library and
 // JavaScript's may differ in the last place; rounded so, they give the same

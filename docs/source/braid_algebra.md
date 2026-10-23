@@ -60,5 +60,5 @@ braid (`is_trivial()`), and braidpy answers that two ways:
 - {doc}`comparing_braids`: whether two braids are alike however written,
   up to conjugacy, repeats and the order of their strands.
 - Patrick Dehornoy, *Braids and Self-Distributivity* (Birkhäuser, 2000), and
-  his [TressApp](https://dehornoy.lmno.cnrs.fr/Softwares/TressApp/AppletInfo.html),
+  his [TressApp](https://dehornoy.lmno.cnrs.fr/Software/TressApp/AppletInfo.html),
   which draws the relations.

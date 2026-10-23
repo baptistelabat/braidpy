@@ -72,11 +72,6 @@ Braid words, their notations, operations and properties.
    :members:
    :undoc-members:
    :show-inheritance:
-
-.. automodule:: braidpy.ordered_strands
-   :members:
-   :undoc-members:
-   :show-inheritance:
 ```
 
 ## Comparing and cataloguing braids
