@@ -381,11 +381,15 @@ class Braid:
             return NotImplemented
         if self.n_strands != other.n_strands:
             return False
-        if not self.no_zero().generators and not other.no_zero().generators:
-            return True
-        return math_braid.Braid(
-            list(self.generators), self.n_strands
-        ) == math_braid.Braid(list(other.generators), other.n_strands)
+        mine, theirs = self.no_zero().generators, other.no_zero().generators
+        if not mine or not theirs:
+            # math_braid cannot compare with a braid of no crossings (it is
+            # left half made): the other is then the same braid only if it
+            # too is trivial.
+            return Braid(mine or theirs, self.n_strands).is_trivial()
+        return math_braid.Braid(mine, self.n_strands) == math_braid.Braid(
+            theirs, other.n_strands
+        )
 
     def inverse(self) -> "Braid":
         """Return the inverse of the braid.
@@ -663,12 +667,27 @@ class Braid:
         return matrix
 
     def is_trivial(self) -> bool:
-        """Check if the braid is trivial (identity braid).
+        """Check if the braid is trivial (identity braid): no crossing at
+        all, however its word is written (``σ₁σ₁⁻¹`` is trivial).
+
+        By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`): a
+        braid is trivial exactly when its Dehornoy sign is 0.  Faster than
+        math_braid's normal form even for words of a thousand crossings and
+        more, which can take it some seconds: hence the long timeout.
 
         Returns:
             bool: True if the braid is trivial.
         """
-        return not self.generators or all(g == 0 for g in self.generators)
+        # Here: handles_reduction itself imports this module.
+        from braidpy.handles_reduction import HandleReductionMode, dehornoy_reduce_core
+
+        crossings = self.no_zero().generators
+        if not crossings:
+            return True
+        reduced = dehornoy_reduce_core(
+            crossings, HandleReductionMode.COMPARE, time_out_s=60
+        )
+        return reduced.sign == 0
 
     def permutations(self, plot: bool = False) -> List[List[int]]:
         """Return the permutations induced by the braid"""

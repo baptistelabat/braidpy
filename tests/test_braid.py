@@ -292,6 +292,33 @@ class TestBraid:
         assert trivial_braid.is_trivial()
         assert trivial_braid.perm() == [1, 2, 3]
 
+    def test_a_braid_is_trivial_however_written(self):
+        """A word whose crossings undo each other is the trivial braid; one
+        that leaves the strands crossed is not, even if they come home."""
+        assert Braid([1, -1], n_strands=3).is_trivial()
+        assert Braid([1, 2, -1, -2, 1, -1, 2, 1, -2, -1], n_strands=3).is_trivial()
+        assert not Braid([1, 1], n_strands=3).is_trivial()
+        # Long words too, as math_braid's normal form says.
+        import random
+
+        import math_braid
+
+        random.seed(1)
+        word = [random.choice([1, -1]) * random.randint(1, 7) for _ in range(60)]
+        b = Braid(word, n_strands=8)
+        assert ((b * b.inverse()) ** 5).is_trivial()
+        assert b.is_trivial() == (not math_braid.Braid(word, 8))
+
+    def test_a_braid_compares_with_the_trivial_braid(self):
+        """Compared with a braid of no crossings, either way round, a braid
+        is equal to it exactly when it is trivial."""
+        b = Braid([1, -2], n_strands=3)
+        trivial = Braid([], n_strands=3)
+        assert b * b.inverse() == trivial
+        assert trivial == b * b.inverse()
+        assert b != trivial and trivial != b
+        assert Braid([0], n_strands=3) == trivial
+
     def test_to_matrix(self, simple_braid):
         """Test unreduced Burau matrix representation"""
         t = symbols("t")
