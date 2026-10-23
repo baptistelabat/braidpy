@@ -1,3 +1,13 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+from braidpy import Braid
+
+# This is just a line to avoid cleaning the import which is used only at runtime
+Braid(1)
+
+
 def step(description, code, var_name=None):
     print("\n" + description)
     if var_name:
@@ -13,7 +23,7 @@ def step(description, code, var_name=None):
         if var_name:
             globals()[var_name] = result
         return result
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — whatever the step's code raised
         print("Error during execution:", e)
         return None
 

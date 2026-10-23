@@ -1,11 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import pytest
 from math_braid.canonical_factor import CanonicalFactor
+from sympy import Matrix, symbols
 
 from braidpy import Braid
-from sympy import symbols, Matrix
-
+from braidpy.garside_canonical_form import permutation_word
 from braidpy.operations import conjugate
-
 
 # Run tests with: uv run pytest /tests
 
@@ -186,7 +189,15 @@ class TestBraid:
         assert f.n_half_twist == 0
         assert f.n_strands == 1
 
+        # σ2 σ1⁻¹ = Δ⁻¹ · σ1 · σ1σ2 in Artin's left normal form.
         f = Braid([2, -1]).get_canonical_factors()
+        assert f.n_half_twist == -1
+        assert f.n_strands == 3
+        assert [permutation_word(a) for a in f.Ai] == [[1], [1, 2]]
+
+    def test_band_canonical_form(self):
+        """math_braid's own form: band generators, whose twist is δ."""
+        f = Braid([2, -1]).get_band_canonical_factors()
         assert isinstance(f.Ai[0], CanonicalFactor)
         assert f.Ai[0].array_form == [
             1,
@@ -199,7 +210,51 @@ class TestBraid:
             1,
         ]  # This describes the permutation of second and third strands
         assert f.n_half_twist == -1
-        assert f.n_strands == 3
+        # A full twist on three strands is three of its δ.
+        full = Braid([1, -1], n_strands=3).full_twist()
+        assert full.get_band_canonical_factors().n_half_twist == 3
+
+    def test_canonical_form_is_the_braid_and_only_it(self):
+        """Δ^k · A_1 ⋯ A_r spells the braid, and equal braids spell it alike."""
+        import random
+
+        random.seed(1)
+        for _ in range(100):
+            n = random.choice([3, 4, 5])
+            word = [
+                random.choice([1, -1]) * random.randint(1, n - 1)
+                for _ in range(random.randint(1, 12))
+            ]
+            f = Braid(word, n_strands=n).get_canonical_factors()
+            delta = permutation_word(tuple(range(n - 1, -1, -1)))
+            k = f.n_half_twist
+            rebuilt = delta * k if k >= 0 else [-g for g in reversed(delta)] * -k
+            for a in f.Ai:
+                rebuilt += permutation_word(a)
+            assert Braid(rebuilt or [1, -1], n_strands=n) == Braid(word, n_strands=n)
+            # The same braid spelt otherwise: σ_i σ_i⁻¹ put in, and a braid
+            # relation used.
+            i = random.randint(1, n - 1)
+            padded = Braid(word[:1] + [i, -i] + word[1:], n_strands=n)
+            assert padded.get_canonical_factors() == f
+            assert (
+                Braid(word + [1, 2, 1], n_strands=n).get_canonical_factors()
+                == Braid(word + [2, 1, 2], n_strands=n).get_canonical_factors()
+            )
+
+    def test_canonical_form_counts_half_twists(self):
+        """n_half_twist is the number of half twists Δ in front, as documented.
+
+        It used to be the exponent of math_braid's band generator twist δ, a
+        1/n turn: a full twist read as n_strands rather than 2, and a single
+        half twist as 1 with factors still after it.
+        """
+        for n in (2, 3, 4, 5):
+            half = Braid([1, -1], n_strands=n).half_twist()
+            f = half.get_canonical_factors()
+            assert (n, f.n_half_twist, len(f.Ai)) == (n, 1, 0)
+            f = half.half_twist().get_canonical_factors()
+            assert (n, f.n_half_twist, len(f.Ai)) == (n, 2, 0)
 
     def test_main_generator(self):
         b = Braid([])
@@ -228,7 +283,7 @@ class TestBraid:
         ]
         assert Braid([1, 2, -3, 0]).permutations(plot=True) == permutations
 
-        (Braid([1, -2]) ** 3).permutations(plot=True) == [1, 2, 3]
+        assert (Braid([1, -2]) ** 3).permutations(plot=True)[-1] == [1, 2, 3]
 
     def test_permutation(self):
         """Test permutation calculation"""
@@ -238,6 +293,69 @@ class TestBraid:
         """Test trivial braid properties"""
         assert trivial_braid.is_trivial()
         assert trivial_braid.perm() == [1, 2, 3]
+
+    def test_a_braid_is_trivial_however_written(self):
+        """A word whose crossings undo each other is the trivial braid; one
+        that leaves the strands crossed is not, even if they come home."""
+        assert Braid([1, -1], n_strands=3).is_trivial()
+        assert Braid([1, 2, -1, -2, 1, -1, 2, 1, -2, -1], n_strands=3).is_trivial()
+        assert not Braid([1, 1], n_strands=3).is_trivial()
+        # Long words too, as math_braid's normal form says.
+        import random
+
+        import math_braid
+
+        random.seed(1)
+        word = [random.choice([1, -1]) * random.randint(1, 7) for _ in range(60)]
+        b = Braid(word, n_strands=8)
+        assert ((b * b.inverse()) ** 5).is_trivial()
+        assert b.is_trivial() == (not math_braid.Braid(word, 8))
+
+    def test_braids_compare_as_math_braid_compares_them(self):
+        """Equal braids, written differently, and braids that differ only a
+        little: each pair compared by handle reduction as math_braid's
+        normal forms compare it."""
+        import random
+
+        import math_braid
+
+        random.seed(2)
+        for n in (3, 5, 8):
+            for _ in range(20):
+                word = [
+                    random.choice([1, -1]) * random.randint(1, n - 1) for _ in range(30)
+                ]
+                b = Braid(word, n)
+                # The same braid with σᵢσᵢ⁻¹ inserted; another with its last
+                # crossing turned the other way.
+                g = random.randint(1, n - 1)
+                same = Braid(word[:10] + [g, -g] + word[10:], n)
+                changed = Braid(word[:-1] + [-word[-1]], n)
+                for other in (same, changed):
+                    expected = math_braid.Braid(word, n) == math_braid.Braid(
+                        other.generators, n
+                    )
+                    assert (b == other) == expected
+
+    def test_math_braid_decides_when_handle_reduction_takes_too_long(self, monkeypatch):
+        """Given no time at all, handle reduction gives up on a long word:
+        math_braid's normal form then says whether it is trivial."""
+        import braidpy.braid
+
+        monkeypatch.setattr(braidpy.braid, "HANDLE_REDUCTION_S", 0.0)
+        b = Braid([1, 2, -1, 3, -2, 1, 2, 3, -1, 2] * 3, n_strands=4)
+        assert (b * b.inverse()).is_trivial()
+        assert not b.is_trivial()
+
+    def test_a_braid_compares_with_the_trivial_braid(self):
+        """Compared with a braid of no crossings, either way round, a braid
+        is equal to it exactly when it is trivial."""
+        b = Braid([1, -2], n_strands=3)
+        trivial = Braid([], n_strands=3)
+        assert b * b.inverse() == trivial
+        assert trivial == b * b.inverse()
+        assert b != trivial and trivial != b
+        assert Braid([0], n_strands=3) == trivial
 
     def test_to_matrix(self, simple_braid):
         """Test unreduced Burau matrix representation"""
@@ -260,21 +378,36 @@ class TestBraid:
         M = Matrix([[1 - t, 0, t], [1, 0, 0], [0, 1 / t, 1 - 1 / t]])
         assert Braid([1, -2]).to_matrix() == M
 
+    def test_basic_to_reduced_matrix(self, simple_braid):
+        """Test reduced Burau matrix representation"""
+        t = symbols("t")
+        assert Braid([1], n_strands=2).to_reduced_matrix() == Matrix([-t])
+        M = Matrix([[-t, 1], [0, 1]])
+        assert Braid([1], n_strands=3).to_reduced_matrix() == M
+        M = Matrix([[-1 / t, 1 / t], [0, 1]])
+        assert Braid([-1], n_strands=3).to_reduced_matrix() == M
+        M = Matrix([[1, 0], [t, -t]])
+        assert Braid([2], n_strands=3).to_reduced_matrix() == M
+        M = Matrix([[1, 0], [1, -1 / t]])
+        assert Braid([-2], n_strands=3).to_reduced_matrix() == M
+
+        M = Matrix([[-t, 1, 0], [0, 1, 0], [0, 0, 1]])
+        assert Braid([1], n_strands=4).to_reduced_matrix() == M
+        M = Matrix([[1, 0, 0], [t, -t, 1], [0, 0, 1]])
+        assert Braid([2], n_strands=4).to_reduced_matrix() == M
+        M = Matrix([[1, 0, 0], [0, 1, 0], [0, t, -t]])
+        assert Braid([3], n_strands=4).to_reduced_matrix() == M
+
     @pytest.mark.skip(
         "reduced Burau matrix definition is ambiguous, skipping for now https://github.com/sagemath/sagetrac-mirror/commit/cf4f6407517615ad3bb95bf8bf752e01949b783a"
     )
     def test_to_reduced_matrix(self, simple_braid):
-        """Test unreduced Burau matrix representation
+        """Test reduced Burau matrix representation
         According to https://arxiv.org/pdf/1410.0849
         """
         t = symbols("t")
         M = Matrix([[-t, t], [-1, 1 - 1 / t]])
-        assert Braid([1, -2]).to_reduced_matrix() == M
-
-    def test_to_reduced_matrix_not_implemented(self, simple_braid):
-        """Test unreduced Burau matrix representation not implemented error"""
-        with pytest.raises(NotImplementedError):
-            Braid([1, -2]).to_reduced_matrix()
+        assert Braid([1, -2], n_strands=3).to_reduced_matrix() == M
 
     def test_conjugate(self):
         """Test conjugacy class generation"""
@@ -310,7 +443,7 @@ class TestBraid:
         assert Braid([10]) == Braid([10])
 
         # Check not equal with different number of strands
-        assert not Braid([1], 2) == Braid([1], 3)
+        assert Braid([1], 2) != Braid([1], 3)
 
         # Check with zero
         assert Braid([1, 0, 3], 4) == Braid([1, 3], 4)
@@ -329,3 +462,32 @@ class TestBraid:
     def test_brunnian_not_implemented(self):
         with pytest.raises(NotImplementedError):
             Braid([]).is_brunnian()
+
+
+def test_full_twists_are_counted_and_taken_out():
+    """Whole turns of every strand together, as a hanging braid sheds them."""
+    b = Braid((1, -2, 3), n_strands=4)
+    assert b.full_twists() == 0
+    for turns in (1, 2):
+        twisted = b
+        for _ in range(turns):
+            twisted = twisted.full_twist()
+        assert twisted.full_twists() == turns
+        assert twisted.without_full_twists() == b
+    untwisted = b.full_twist(sign=-1)
+    assert untwisted.full_twists() == -1
+    assert untwisted.without_full_twists() == b
+    assert Braid((), n_strands=3).full_twists() == 0
+    assert Braid((1,), n_strands=3).without_full_twists() == Braid((1,), n_strands=3)
+
+
+def test_turning_a_kumihimo_disk_round_is_a_full_twist():
+    """Four quarter turns of the disk: the cord turns once, nothing crosses."""
+    import matplotlib
+
+    from braidpy.kumihimo import Kumihimo
+
+    matplotlib.use("Agg")
+    turned = Braid(tuple(Kumihimo(8).move("RRRR").braid_word), n_strands=8)
+    assert turned.full_twists() == 1
+    assert turned.without_full_twists() == Braid((1, -1), n_strands=8)

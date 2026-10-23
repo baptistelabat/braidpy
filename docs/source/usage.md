@@ -1,76 +1,32 @@
-# 🛠️ Usage Guide
+# Getting started
 
-(Installation)=
-## Installation
+Install braidpy as the [home page](index.md) says, with its `viz` extra to
+draw braids. Then a braid is a few lines away.
 
-To use **braidpy**, first clone the repository:
+## A braid, crossing by crossing
 
-```bash
-git clone git@github.com:baptistelabat/braidpy.git
-```
-
-Then install the required dependencies:
-
-1. Install [`uv`](https://docs.astral.sh/uv/getting-started/installation).
-2. Or simply run:
-
-   ```bash
-   cd braidpy
-   make install-uv
-   ```
-
----
-
-## 🚀 Launching the demo *(In Progress)*
-
-If you have `make` installed, you can launch the demo using:
-
-```bash
-make demo
-```
-
----
-
-## 🔁 Creating braids (Artin Generators)
-
-To create a braid, you need to define operations called **Artin generators**, representing crossings of two strands.
-
-Imagine a 3-strand braid:
-
-- Strand 1: Left
-- Strand 2: Middle
-- Strand 3: Right
-
-### ➕ Positive crossing (Above)
-
-Move strand 1 **over** strand 2:
+A braid is written as a **braid word**: its crossings in order, each an
+**Artin generator**. `σᵢ` crosses the strand in place `i` over the strand
+in place `i + 1`; `σᵢ⁻¹` crosses it under. braidpy writes `σᵢ` as `i` and
+`σᵢ⁻¹` as `-i`. On three strands, left to right:
 
 ```python
-first_upcrossing = Braid([+1], n_strands=3)
+from braidpy import Braid
+
+over = Braid([1], n_strands=3)  # σ₁: the left strand crosses over the middle one
+under = Braid([-1], n_strands=3)  # σ₁⁻¹: under, the inverse of σ₁
+under == over.inverse()  # True
 ```
 
-### ➖ Negative crossing (Below)
+The inverse of a braid is its image in a mirror: its crossings in the other
+order, each the other way.
 
-Move strand 1 **under** strand 2:
+`draw()` draws a braid in the console, a line per crossing, the arrow
+pointing from the strand passing over:
 
 ```python
-first_downcrossing = Braid([-1], n_strands=3)
+over.draw()
 ```
-
-This is the inverse of the first:
-
-```python
-first_downcrossing = first_upcrossing.inverse()
-```
-The inverse can be seen as the image of the braid in a mirror. We will see that this holds for any braid.
-
-### 🖼️ Visualizing
-
-```python
-first_crossing.draw()
-```
-
-This shows strand 1 going over strand 2. Intermediate steps are shown with an arrow from the braid moving abobe the other one:
 
 ```
 1 2 3
@@ -78,86 +34,80 @@ This shows strand 1 going over strand 2. Intermediate steps are shown with an ar
 2 1 3
 ```
 
----
+## Words, notations, products
 
-## 🔄 Next crossing
-
-Move the new middle strand (strand 2) below strand 3:
-
-```python
-second_crossing = Braid([-2], n_strands=3)
-```
-
----
-
-## 🔗 Combining braid operation
-
-Using a list:
+A braid can be given as a list or read from text, in any of the usual
+notations, and written back in another:
 
 ```python
+from braidpy.braidword import parse_word
+
 b = Braid([1, -2], n_strands=3)
+Braid(parse_word("s1 s2^-1"), n_strands=3) == b  # True: σ₁σ₂⁻¹
+Braid(parse_word("aB"), n_strands=3) == b  # True: a is σ₁, B is σ₂⁻¹
+b.format()  # 'σ₁σ₂⁻¹'
+b.format_to_notation("alpha")  # 'aB'
 ```
 
-Or by multiplying:
+Braids multiply by following one with the other, and a power repeats one:
 
 ```python
-basic_step = first_upcrossing * second_crossing
+step = over * Braid([-2], n_strands=3)  # the same braid as b
+plait = step**3  # three steps of the plait
 ```
 
-The resulting braid is:
+## Pure braids
 
-```
-1 2 3
-1>2 3
-2 1<3
-2 3 1
-```
-
----
-
-## 🔁 Creating a Pure Braid
-
-As you may, with this typical braid, if we reepeat the `basic_step` three times we return to original order of strands:
+Three steps of the plait bring every strand back to where it started:
 
 ```python
-braid = basic_step * basic_step * basic_step
+plait.draw()
+plait.is_pure()  # True
+plait.perm()  # [1, 2, 3]: where each strand ends
 ```
 
-Or simply:
+A braid that brings every strand home is **pure**. A pure braid closes into
+as many loops as it has strands; any braid closes into a knot or a link
+whose loops are its permutation's cycles.
+
+## Same braid, different words
+
+Two words can make the same braid: `σ₁σ₂σ₁` and `σ₂σ₁σ₂` do, by Artin's
+relations ({doc}`braid_algebra`). `==` compares braids, not words;
+`word_eq` compares words:
 
 ```python
-braid = basic_step ** 3
-braid.draw()
+a = Braid([1, 2, 1], n_strands=3)
+c = Braid([2, 1, 2], n_strands=3)
+a == c  # True: the same braid
+a.word_eq(c)  # False: not the same word
 ```
 
-Visual:
+To compare braids however they are written — another starting point, more
+repeats, the strands numbered from the other side — see {doc}`comparing_braids`.
 
-```
-1 2 3
-1>2 3
-2 1<3
-2>3 1
-3 2<1
-3>1 2
-1 3<2
-1 2 3
-```
+## Drawing
 
-This is called a pure braid. A **pure braid** restores the original strand order.
-
-You can check this with:
-```python
-braid.is_pure()
-```
-
----
-
-## ✂️ Handle Reduction
-
-Now consider applying handle reduction on a series of braids:
+`plot()` draws a braid's diagram with matplotlib; a 3D view needs its
+strands as curves:
 
 ```python
-for n in range(2):
-    b1 = Braid([+n+1], n_strands=3)
-    b2 = Braid([-n], n_strands=3)
+from braidpy.parametric_braid import ParametricBraid
+
+plait.plot()
+ParametricBraid(plait.to_parametric_strands()).plot()
 ```
+
+{doc}`visualization` shows each view.
+
+## An interactive tour
+
+`make demo`, from a clone of the repository, runs a short tour in the
+console: each step shows a line of code and runs it when you press Enter.
+
+## Next
+
+- [Braid Studio](braid_studio.md): any braid in 3D, in the browser.
+- {doc}`making`: how to make a braid on a kumihimo disk, a lace machine or
+  Ashley's stand.
+- {doc}`reference`: every module and function.

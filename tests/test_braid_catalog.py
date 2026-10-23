@@ -1,15 +1,24 @@
-from braidpy.braid import Braid, slide_strand
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+import pytest
+
 from braidpy.artin_generators import a
+from braidpy.braid import Braid, slide_strand
 from braidpy.braid_catalog import (
-    full_twist_braid,
+    abok_2974,
+    asymmetric_flat4,
+    double_flat3,
     flat3,
-    inverted_flat3,
-    round4,
-    flat4,
-    flat6,
     flat5,
-    regular_flat6,
+    flat6,
+    full_twist_braid,
     garside_half_twist_braid,
+    inverted_flat3,
+    regular_flat6,
+    square4,
+    weave3,
 )
 
 
@@ -78,7 +87,7 @@ def test_half_twist_braid():
 
 def test_full_twist_braid():
     """
-    Chech that full twist (one turn) is commutting with all braid
+    Check that full twist (one turn) is commutting with all braid
     σi∆n² = ∆n.σn−i.∆n = ∆nσn−(n−i) = ∆n²σi.
     https://perso.eleves.ens-rennes.fr/people/baptiste.dugue/M%C3%A9moire_Stage_Tresses.pdf
     page 9
@@ -89,22 +98,34 @@ def test_full_twist_braid():
     assert b * full_twist_braid(5) == full_twist_braid(5) * b
 
 
+def _drawn(make):
+    """A catalogued braid, drawn as it is made: a braid, and how many times
+    to repeat it."""
+    braid, repeat = make()
+    assert isinstance(braid, Braid) and braid.generators
+    assert isinstance(repeat, int) and repeat > 0
+
+
 def test_flat3():
-    b, n = flat3()
+    _drawn(flat3)
 
 
 def test_inverted_flat3():
-    b, n = inverted_flat3()
+    _drawn(inverted_flat3)
 
 
-def test_round4():
+def test_weave3():
+    _drawn(weave3)
+
+
+def test_square4():
     """
 
 
     Returns:
 
     """
-    b, n = round4()
+    _drawn(square4)
 
 
 def test_flat4():
@@ -113,12 +134,16 @@ def test_flat4():
     Returns:
 
     """
-    b, n = flat4()
+    b, _ = asymmetric_flat4()
     assert b.is_periodic()
 
 
+def test_abok_2934():
+    _drawn(abok_2974)
+
+
 def test_flat5():
-    b, n = flat5()
+    _drawn(flat5)
 
 
 def test_flat6():
@@ -127,7 +152,7 @@ def test_flat6():
     Returns:
 
     """
-    b, n = flat6()
+    _drawn(flat6)
 
 
 def test_regular_flat_braid_6():
@@ -136,4 +161,39 @@ def test_regular_flat_braid_6():
     Returns:
 
     """
-    b, n = regular_flat6()
+    _drawn(regular_flat6)
+
+
+def test_double_flat3():
+    _drawn(double_flat3)
+
+
+def test_double_flat3_does_not_pass_off_2971_as_its_parallel_twin():
+    """ABOK 2972, the parallel double flat sinnet, is not made yet: asked
+    for, it says so, rather than give 2971 again."""
+    with pytest.raises(NotImplementedError):
+        double_flat3(parallel=True, draw=False)
+
+
+def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
+    """Each catalogued braid, as the word it repeats, built without drawing:
+    repeated as often as the example says, every strand comes home."""
+    import braidpy.braid_catalog as catalog
+    from braidpy.braid_catalog import CATALOGUE, word_examples
+    from braidpy.braidword import parse_word
+    from braidpy.pure_braid import is_pure
+
+    def no_drawing(*args, **kwargs):
+        raise AssertionError("drawn")
+
+    monkeypatch.setattr(Braid, "draw", no_drawing)
+    examples = word_examples()
+    assert len(examples) == len(CATALOGUE) + len(catalog.WORD_EXAMPLES)
+    for example, name in zip(examples, CATALOGUE):
+        braid, _ = getattr(catalog, name)(draw=False)
+        unit = parse_word(example["word"])
+        times, rest = divmod(len(braid.generators), len(unit))
+        assert rest == 0 and tuple(unit * times) == tuple(braid.generators), name
+        repeated = Braid(tuple(unit * example["repeat"]), example["n_strands"])
+        assert is_pure(repeated), name
+        assert len(repeated.generators) >= 12, name

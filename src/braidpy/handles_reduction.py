@@ -11,13 +11,12 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+import dataclasses
 import time
 from enum import Enum
-from typing import List
 
 import numpy as np
 
-from braidpy import Braid
 from braidpy.braid import SignedCrossingIndex
 from braidpy.utils import FunctionalException, PositiveInt
 
@@ -27,18 +26,24 @@ class HandleReducedButUnexpectedResult(FunctionalException):
     Exception to be raised if handle reduction is not finishing as expected
     """
 
-    pass
-
 
 class HandleReductionMode(str, Enum):
-    """
-    Define the possible options for handle reduction
-        -full: reduce all handles
-        -compare: partical short circuit reductio which is exiting as long as we can determine if braid is positive, or negative
+    """How far handle reduction goes.
+
+    - ``FULL``: every handle is reduced.
+    - ``COMPARE``: a partial reduction, stopped as soon as the braid is known
+      to be positive, negative or trivial.
     """
 
     FULL = "FULL"
     COMPARE = "COMPARE"
+
+
+@dataclasses.dataclass
+class HandleReductionResults:
+    generators: list[SignedCrossingIndex]
+    sign: int
+    handle_reduction_mode: HandleReductionMode
 
 
 def dehornoy_handle_indices(
@@ -59,10 +64,9 @@ def dehornoy_handle_indices(
     for j in range(1, n):
         g = -gens[j]  # we're looking for a gens[i] == -gens[j]
         for i in range(j):
-            if gens[i] == g:
-                # Check all between gens[i+1 : j] are strictly larger in absolute value
-                if all(abs(h) > abs(g) for h in gens[i + 1 : j]):
-                    return i, j  # first such closing handle found
+            # All between gens[i+1 : j] strictly larger in absolute value
+            if gens[i] == g and all(abs(h) > abs(g) for h in gens[i + 1 : j]):
+                return i, j  # first such closing handle found
     return None
 
 
@@ -107,7 +111,7 @@ def reduce_handle(segment: list[SignedCrossingIndex]) -> list[SignedCrossingInde
     return result
 
 
-def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
+def dehornoy_sign(gens: list[SignedCrossingIndex]) -> int | None:
     """
     Check  if braid is Dehornoy positive, negative, neutral or if this can not be directly said from braid word
 
@@ -120,11 +124,11 @@ def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
     if gens:
         mg = min(abs(g) for g in gens)
         signs = [np.sign(g) for g in gens if abs(g) == mg]
-        if all([s >= 0 for s in signs]):
+        if all(s >= 0 for s in signs):
             return 1
-        elif all([s <= 0 for s in signs]):  # all negative
+        elif all(s <= 0 for s in signs):  # all negative
             return -1
-        elif all([s == 0 for s in signs]):
+        elif all(s == 0 for s in signs):
             return 0
         else:
             return None
@@ -133,10 +137,10 @@ def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
 
 
 def dehornoy_reduce_core(
-    gens: List[SignedCrossingIndex],
+    gens: list[SignedCrossingIndex],
     mode: HandleReductionMode | str = HandleReductionMode.FULL,
     time_out_s: float = 1,
-) -> tuple[List[SignedCrossingIndex], int | None]:
+) -> HandleReductionResults:
     """
     Unified Dehornoy reduction engine.
 
@@ -149,7 +153,8 @@ def dehornoy_reduce_core(
 
 
     Returns:
-         tuple[List[SignedCrossingIndex], int|None]: (reduced_gens, sign) where sign is:
+         HandleReductionResults: ``generators``, the reduced word, ``sign`` and the
+         ``handle_reduction_mode`` used, where sign is:
         - 1 if Dehornoy positive
         - -1 if Dehornoy negative
         - 0 if neutral element
@@ -173,7 +178,9 @@ def dehornoy_reduce_core(
         if mode == HandleReductionMode.COMPARE:
             sign = dehornoy_sign(gens)
             if sign in [-1, 0, +1]:
-                return gens, sign
+                return HandleReductionResults(
+                    generators=gens, sign=sign, handle_reduction_mode=mode
+                )
 
         handle = dehornoy_handle_indices(gens)
         if not handle:
@@ -183,11 +190,12 @@ def dehornoy_reduce_core(
         # Apply Dehornoy handle reduction (this part was wrong before)
         reduced_segment = reduce_handle(gens[i : j + 1])
         gens = gens[:i] + reduced_segment + gens[j + 1 :]
-        print(Braid(gens).format_to_notation(target="alpha"))
 
     sign = dehornoy_sign(gens)
     if sign is None:
         raise HandleReducedButUnexpectedResult(
             f"Braid word reduced to {gens}, but sign can not be determined which is unexpected. Consider increasing timeout if necessary"
         )
-    return gens, sign
+    return HandleReductionResults(
+        generators=gens, sign=sign, handle_reduction_mode=mode
+    )

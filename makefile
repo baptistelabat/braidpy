@@ -1,4 +1,4 @@
-.PHONY: help install-uv docs
+.PHONY: help install-uv docs studio studio-serve studio-test duplicates test test-all test-changed
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -50,8 +50,35 @@ lint: ## Clean code or warn user
 	ruff format
 	ruff check . --fix
 
-test: ## Launch test
-	uv run pytest tests
+duplicates: ## Fail on code copied rather than shared (Python and JavaScript)
+	uv run --with pylint==4.1.3 pylint --disable=all --enable=duplicate-code \
+		--min-similarity-lines=6 --ignore-imports=yes --ignore-docstrings=yes \
+		--ignore-comments=yes --ignore-signatures=yes src
+	cd web && npx --yes jscpd@4.3.0 --min-lines 8 --min-tokens 60 \
+		--format javascript --threshold 0 --reporters console \
+		--ignore "**/node_modules/**,**/site/**" .
+
+test: ## The quick tests, in parallel: all but those marked slow (about 2 minutes)
+	uv run pytest tests -n auto --dist loadfile -m "not slow"
+
+test-all: ## Every test, the slow ones too (as CI runs them daily)
+	uv run pytest tests -n auto --dist loadfile
+
+test-changed: ## Only the tests touching code changed since they last ran (pytest-testmon)
+	uv run pytest tests --testmon
+
+typecheck: ## Check type annotations
+	uv run mypy src tests
+
+studio: ## Build Braid Studio, the web page, in web/site
+	cd web && npm install
+	uv run python web/build.py
+
+studio-serve: ## Serve Braid Studio at http://localhost:8000
+	python3 -m http.server -d web/site 8000
+
+studio-test: ## Make a braid of every kind in Braid Studio, in a browser
+	uv run --with playwright python web/smoke_test.py
 
 # Step 1: Run code with tracing
 autotype:
@@ -78,7 +105,7 @@ doc-deploy: docs ## Deploy docs to gh-pages under versioned path
 	gh-pages-multi deploy -s docs/build/html -t "$$safe_tag"
 
 demo: ## Launch an interactive demo
-	uv run src/interactive_demo.py
+	uv run examples/interactive_demo.py
 
 
 
