@@ -40,6 +40,11 @@ function fewer(frames) {
   return Array.from({ length: room }, (_, k) => frames[Math.round((k * (frames.length - 1)) / (room - 1))]);
 }
 
+const result = JSON.parse(fs.readFileSync(from, "utf8"));
+const job = result.tighten;
+delete result.tighten;
+// As the page settles a braid left to its own choices (worker.js).
+const settle = result.disk ? "marudai" : "sideways";
 globalThis.settle({ id: 1, result, job: job ?? null, settle, twist: undefined }).then((settled) => {
   if (settled.marudai) settled.marudai.frames = fewer(settled.marudai.frames);
   fs.writeFileSync(to, JSON.stringify(settled));
