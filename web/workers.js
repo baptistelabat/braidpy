@@ -67,15 +67,21 @@ function fromBraidpy({ data }) {
   heard(data);
 }
 
+// A braid made with the site, shown at once: what Python says as it starts
+// follows that, rather than replacing it.
+const AT_ONCE = "Made with the site: shown at once.";
+let shownAtOnce = 0;
+
 function heard(data) {
   if (data.type === "status") {
-    setStatus(data.text);
+    setStatus(shownAtOnce && shownAtOnce === pending ? `${AT_ONCE} ${data.text}` : data.text);
   } else if (data.type === "ready") {
     offer(data.catalogue);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     // Unless a braid made with the site is already being shown.
     if (!pending) submit();
+    else if (shownAtOnce === pending) setStatus(AT_ONCE);
   } else if (data.type === "bridges") {
     if (data.id !== pending) return;
     if (keys.has(data.id)) {
@@ -120,9 +126,10 @@ function heard(data) {
       madeBefore.set(keys.get(data.id), data.result);
       if (madeBefore.size > KEEP) madeBefore.delete(madeBefore.keys().next().value);
     }
+    shownAtOnce = data.premade ? data.id : 0;
     setStatus(
       data.premade
-        ? "Made with the site: shown at once."
+        ? AT_ONCE
         : data.seconds
           ? `Made in ${data.seconds.toFixed(1)} s.`
           : "Made before: shown again.",

@@ -300,9 +300,15 @@ the page to tighten. Chosen as it comes, such a braid is shown at once, before
 Python has started, and its kin and other ways follow when Python is ready;
 changed in any way, it is made in the page. That spares a visitor what the
 biggest braids cost to lay — a sinnet of 36 strands took a minute natively,
-many in the browser — though not their tightening, done in the page either
-way. `python web/build.py --no-premade` leaves them out, to try the page
-sooner.
+many in the browser. Each is settled with the site too, by the page's own
+settling run in Node (`web/settle_node.js`): on a marudai if it is made move
+by move, sideways if not, as the page would settle it. Chosen as it comes, it
+is shown settled at once, rather than after the minutes its tightening takes
+in the browser; a twist or another settling asked for is done in the page.
+Settled braids are kept in `web/.settled`, filed under a hash of the settling
+code and of the braid laid, so a build settles only what changed; without
+Node, braids are kept laid only. `python web/build.py --no-premade` leaves
+them all out, to try the page sooner.
 
 ## Trying it locally
 

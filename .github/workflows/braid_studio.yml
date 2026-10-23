@@ -44,6 +44,17 @@ jobs:
         working-directory: web
         run: npm ci
 
+      # The braids made with the site, settled: minutes of tightening in all,
+      # kept from one build to the next.  Each is filed under a hash of the
+      # settling code and of the braid laid, so the cache is only added to,
+      # and build.py drops what it no longer uses.
+      - name: Keep the braids settled before
+        uses: actions/cache@v4
+        with:
+          path: web/.settled
+          key: braid-studio-settled-${{ github.run_id }}
+          restore-keys: braid-studio-settled-
+
       - name: Build the site
         run: uv run --no-project python web/build.py
 
