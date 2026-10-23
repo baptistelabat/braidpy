@@ -8,6 +8,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { onChosen, paint } from "./colours.js";
+import { wholeFrame } from "./frames.js";
 import { describe } from "./info.js";
 import { drawSection, drawTop } from "./insets.js";
 import { $ } from "./page.js";
@@ -250,6 +251,7 @@ export function show(result, seconds, keepView = false) {
     tails,
     radius,
     frames: result.marudai?.frames,
+    base: result.marudai?.base,
     source: $("source").value,
     disk: result.marudai?.disk,
     steps: result.disk?.steps.length || 1,
@@ -362,7 +364,7 @@ export function made(value) {
   const frames = braid.frames;
   if (frames?.length && fraction < 0.999) {
     const frame = frames[Math.min(frames.length - 1, Math.floor(fraction * frames.length))];
-    showFrame(frame, braid.disk, braid.colours);
+    showFrame(wholeFrame(frame, braid.base), braid.disk, braid.colours);
     topAtFrame(frame);
     return;
   }
