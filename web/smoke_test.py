@@ -178,7 +178,7 @@ def main() -> int:
                 # And the braid made other ways: a disk, a lace card.
                 try:
                     page.wait_for_function(
-                        "() => document.getElementById('bridges')"
+                        "() => document.getElementById('making')"
                         ".textContent.includes('Lace machine')",
                         timeout=30000,
                     )

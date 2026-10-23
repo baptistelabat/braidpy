@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""A braid as moves on a kumihimo disk: braidpy.bridges.disk, read back as
+"""A braid as moves on a kumihimo disk: braidpy.making.disk, read back as
 braidpy reads any mobidai."""
 
 import pytest
 
 from braidpy import Braid
 from braidpy.braid_catalog import word_examples
-from braidpy.bridges.disk import disk_braid, disk_moves
+from braidpy.making.disk import disk_braid, disk_moves
 
 
 def _words():

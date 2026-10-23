@@ -262,10 +262,10 @@ def _stopped_note(stopped: Any, n_steps: int | None) -> str:
 
 def _from_lace(spec: Spec) -> Result:
     """A Jacquard lace machine's braid: its card run so many passes, read
-    off the machine itself (:func:`~braidpy.bridges.lace.ring_braid`)."""
-    from braidpy.bridges.lace import punchcard_text, ring_braid
+    off the machine itself (:func:`~braidpy.making.lace.ring_braid`)."""
     from braidpy.horn_gear import gear_radii
     from braidpy.machine_catalog import LACE
+    from braidpy.making.lace import punchcard_text, ring_braid
 
     name = Lace.name.read(spec)
     if name == OWN:

@@ -107,7 +107,7 @@ Whether braids are alike, and the braids braidpy knows.
 
 ## Making braids
 
-Kumihimo, Ashley's sinnets, braiding and lace machines, and the bridges between them.
+Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given braid on each.
 
 ```{eval-rst}
 .. automodule:: braidpy.kumihimo
@@ -214,22 +214,22 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and the bridges between 
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.bridges
+.. automodule:: braidpy.making
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.bridges.disk
+.. automodule:: braidpy.making.disk
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.bridges.lace
+.. automodule:: braidpy.making.lace
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.bridges.ashley
+.. automodule:: braidpy.making.ashley
    :members:
    :undoc-members:
    :show-inheritance:

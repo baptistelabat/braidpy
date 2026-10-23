@@ -65,4 +65,4 @@ braid's yarns settle into their real shape is the subject of
 A braid is also what a kumihimo disk's moves, a braiding machine's carriers,
 a lace machine's punchcard or a sinnet on Ashley's stand make. braidpy reads
 the braid word off each, and goes back from a braid to each
-({doc}`bridges`).
+({doc}`making`).

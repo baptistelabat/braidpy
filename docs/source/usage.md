@@ -108,6 +108,6 @@ console: each step shows a line of code and runs it when you press Enter.
 ## Next
 
 - [Braid Studio](braid_studio.md): any braid in 3D, in the browser.
-- {doc}`bridges`: how to make a braid on a kumihimo disk, a lace machine or
+- {doc}`making`: how to make a braid on a kumihimo disk, a lace machine or
   Ashley's stand.
 - {doc}`reference`: every module and function.

@@ -60,9 +60,9 @@ The page has a form and a 3D view.
   examples are a ring with every gear turning, as a tubular braider, and
   cards punched for braids of the catalogue — the Dutch braid, the plait,
   the weave of 3, two four-strand sinnets, a flat braid of 6
-  ({func}`~braidpy.bridges.lace.lace_card`). Its word is read off the
+  ({func}`~braidpy.making.lace.lace_card`). Its word is read off the
   machine itself, a pass of the card a repeat
-  ({func}`~braidpy.bridges.lace.ring_braid`), and the card is in the notes,
+  ({func}`~braidpy.making.lace.ring_braid`), and the card is in the notes,
   as punched. The gears and the card of the machine chosen are shown, ready
   to change, as a sinnet's moves are: **Your own card…** takes an even
   number of gears and a card typed a step a line, the gears turning
@@ -156,7 +156,7 @@ The page has a form and a 3D view.
   **Nearest braids** the braids of the catalogues most like it, whatever
   makes them, each with how unlike it is; your own braid too, found by its
   fingerprint ({doc}`comparing_braids`). Each is a link that makes it. And
-  **Make it as…** gives the braid made other ways ({doc}`bridges`): its
+  **Make it as…** gives the braid made other ways ({doc}`making`): its
   moves on a kumihimo disk, to make; a lace machine's punchcard, to copy or
   download; and, when asked, a sinnet on Ashley's stand, to make. The
   braid is drawn in the middle of what the card leaves free.

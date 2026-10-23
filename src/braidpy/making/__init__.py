@@ -2,19 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Bridges from a braid to the ways of making it: each through a
+"""How to make a braid, by hand or on a machine: each through a
 :class:`~braidpy.ring_program.RingProgram`, and each checked by reading the
-braid back off what it made.  See ``docs/source/bridges.md``.
+braid back off what it made.  See ``docs/source/making.md``.
 
-- :mod:`braidpy.bridges.lace`: the Jacquard lace machine's punchcard;
-- :mod:`braidpy.bridges.disk`: moves on a kumihimo disk;
-- :mod:`braidpy.bridges.ashley`: a sinnet on Ashley's stand, by searching.
+- :mod:`braidpy.making.lace`: the Jacquard lace machine's punchcard;
+- :mod:`braidpy.making.disk`: moves on a kumihimo disk;
+- :mod:`braidpy.making.ashley`: a sinnet on Ashley's stand, by searching.
 """
 
 from collections.abc import Mapping
 from typing import Any
 
-# Longest repeating unit the page is given bridges for: a card or a list of
+# Longest repeating unit the page is shown how to make: a card or a list of
 # moves longer than this is no help to a braider, and slow in a browser.
 _MOST_CROSSINGS = 400
 
@@ -50,8 +50,8 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
         moves; ``lace``: the card, the gears and how the bobbins are
         threaded.  Empty for a braid with no braid word, or too long.
     """
-    from braidpy.bridges.disk import disk_moves
-    from braidpy.bridges.lace import lace_card
+    from braidpy.making.disk import disk_moves
+    from braidpy.making.lace import lace_card
 
     found = _unit(info)
     if found is None:
@@ -87,11 +87,11 @@ def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> dict[st
     Returns:
         ``spec``: the sinnet, as Braid Studio makes it, or None if none was
         found, ``exact`` then being the braid made one strand per space
-        (:func:`~braidpy.bridges.ashley.ashley_moves`), which always makes
+        (:func:`~braidpy.making.ashley.ashley_moves`), which always makes
         it; ``complete``, whether every sinnet of up to as many spaces as
         strands was tried; ``tried``, how many were.
     """
-    from braidpy.bridges.ashley import ashley_moves, ashley_sinnet, sinnet_spec
+    from braidpy.making.ashley import ashley_moves, ashley_sinnet, sinnet_spec
 
     found = _unit(info)
     if found is None:

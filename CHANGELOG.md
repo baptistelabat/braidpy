@@ -25,7 +25,7 @@ browser.
   braid word and its mobidai pattern.
 - **A braid made move by move on a marudai** (`braidpy.marudai`), each yarn
   carried over the others and drawn tight.
-- **Bridges** (`braidpy.bridges`): from a braid word to how to make it — moves
+- **Ways of making a braid** (`braidpy.making`): from a braid word to how to make it — moves
   on a kumihimo disk, a Jacquard lace punchcard, a sinnet on Ashley's stand —
   each checked by reading the braid back off what it makes.
 - **Comparing braids** (`braidpy.similarity`, `braidpy.topology_catalog`): a

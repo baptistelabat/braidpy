@@ -20,9 +20,9 @@
 //                {type: "laid", id, result, job, settle, twist}
 //                  the braid as laid, for settle.js to settle
 //                {type: "kin", id, kin}
-//                {type: "bridges", id, bridges}
+//                {type: "making", id, making}
 //                  the braid made other ways: a kumihimo disk's moves and a
-//                  lace machine's punchcard (braidpy.bridges.for_page)
+//                  lace machine's punchcard (braidpy.making.for_page)
 //                {type: "sinnet", id, sinnet}
 //                  a sinnet on Ashley's stand, searched for when asked
 //                  the braid's other ways of being made, and the braids
@@ -130,7 +130,7 @@ async function build(id, spec) {
   }
   laid(id, spec, result);
   await kin(id, result.info);
-  await bridges(id, result.info);
+  await making(id, result.info);
 }
 
 // The braid as braidpy laid it — here, or when the site was built — handed
@@ -157,19 +157,19 @@ function laid(id, spec, result) {
   self.postMessage({ type: "laid", id, result, job: job ?? null, settle, twist: spec.twist });
 }
 
-// The braid made other ways (braidpy.bridges): cheap, worked out for every
+// The braid made other ways (braidpy.making): cheap, worked out for every
 // braid; a sinnet on Ashley's stand is searched for only when asked.
 let lastInfo = null;
-async function bridges(id, info) {
+async function making(id, info) {
   if (id !== latest) return;
   lastInfo = info;
   pyodide.globals.set("info_json", JSON.stringify(info));
   try {
     const text = await pyodide.runPythonAsync(`
-from braidpy import bridges as _bridges
-json.dumps(_bridges.for_page(json.loads(info_json)))
+from braidpy import making as _making
+json.dumps(_making.for_page(json.loads(info_json)))
 `);
-    self.postMessage({ type: "bridges", id, bridges: JSON.parse(text) });
+    self.postMessage({ type: "making", id, making: JSON.parse(text) });
   } catch {
     // Nothing shown.
   }
@@ -182,8 +182,8 @@ async function sinnet(id) {
   try {
     found = JSON.parse(
       await pyodide.runPythonAsync(`
-from braidpy import bridges as _bridges
-json.dumps(_bridges.sinnet_for_page(json.loads(info_json)))
+from braidpy import making as _making
+json.dumps(_making.sinnet_for_page(json.loads(info_json)))
 `),
     );
   } catch {
@@ -288,7 +288,7 @@ self.onmessage = (event) => {
     queue = queue.then(async () => {
       if (id !== latest) return;
       await kin(id, info);
-      await bridges(id, info);
+      await making(id, info);
     });
     return;
   }

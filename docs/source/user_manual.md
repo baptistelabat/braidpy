@@ -10,7 +10,7 @@ it. For why it works as it does, see the {doc}`theory_manual`.
 usage.md
 visualization.md
 braid_studio.md
-bridges.md
+making.md
 ai_assistants.md
 reference.md
 glossary.md
