@@ -83,6 +83,10 @@ def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> lis
     return rows
 
 
+# How long handle reduction is given to say whether a braid is trivial,
+# before math_braid's normal form decides instead (Braid.is_trivial).
+HANDLE_REDUCTION_S = 5.0
+
 # Define a type alias for clarity
 SignedCrossingIndex = int
 BraidingStep = SignedCrossingIndex | tuple[SignedCrossingIndex, ...]
@@ -355,20 +359,14 @@ class Braid:
         return hash(self.__key())
 
     def __eq__(self, other: object) -> bool:
-        """Check if two braids are topologically equivalent.
+        """Check if two braids are topologically equivalent: the same braid,
+        however their words are written.
 
-        Relies on math_braid implementation from J. Cha et al,
-        "An Efficient Implementation of Braid Groups", Advances in Cryptology:
-        Proceedings of ASIACRYPT 2001, Lecture Notes in Computer Science (2001),
-        144--156. https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
-
-        Complexity is in O(l²n.log n) where n is the word size and l corresponds
-        roughly to the number of strands.
-
-        Might not be the best algorithm compared to handle reduction which is
-        efficient in practice and whose complexity is assumed to be linear in O(n),
-        but without proof and an exponential majorant.
-        ON WORD REVERSING IN BRAID GROUPS PATRICK DEHORNOY AND BERT WIEST
+        By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`):
+        two braids are the same exactly when one followed by the other's
+        inverse is trivial (:meth:`is_trivial`, which falls back on
+        math_braid's normal form for the rare braids handle reduction is slow
+        on).  PATRICK DEHORNOY AND BERT WIEST, "On word reversing in braid groups",
         https://dehornoy.lmno.cnrs.fr/Papers/Dhg.pdf
 
         Args:
@@ -381,15 +379,7 @@ class Braid:
             return NotImplemented
         if self.n_strands != other.n_strands:
             return False
-        mine, theirs = self.no_zero().generators, other.no_zero().generators
-        if not mine or not theirs:
-            # math_braid cannot compare with a braid of no crossings (it is
-            # left half made): the other is then the same braid only if it
-            # too is trivial.
-            return Braid(mine or theirs, self.n_strands).is_trivial()
-        return math_braid.Braid(mine, self.n_strands) == math_braid.Braid(
-            theirs, other.n_strands
-        )
+        return (self * other.inverse()).is_trivial()
 
     def inverse(self) -> "Braid":
         """Return the inverse of the braid.
@@ -671,22 +661,32 @@ class Braid:
         all, however its word is written (``σ₁σ₁⁻¹`` is trivial).
 
         By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`): a
-        braid is trivial exactly when its Dehornoy sign is 0.  Faster than
-        math_braid's normal form even for words of a thousand crossings and
-        more, which can take it some seconds: hence the long timeout.
+        braid is trivial exactly when its Dehornoy sign is 0.  It is the
+        faster on most braids, several times faster than math_braid's normal
+        form; but it can blow up on long words of many strands (ABOK #3082's,
+        61 strands and 2400 crossings: five minutes, where math_braid takes
+        half a minute).  So it is given ``HANDLE_REDUCTION_S`` seconds, and
+        math_braid's normal form decides if it has not.
 
         Returns:
             bool: True if the braid is trivial.
         """
         # Here: handles_reduction itself imports this module.
-        from braidpy.handles_reduction import HandleReductionMode, dehornoy_reduce_core
+        from braidpy.handles_reduction import (
+            HandleReducedButUnexpectedResult,
+            HandleReductionMode,
+            dehornoy_reduce_core,
+        )
 
         crossings = self.no_zero().generators
         if not crossings:
             return True
-        reduced = dehornoy_reduce_core(
-            crossings, HandleReductionMode.COMPARE, time_out_s=60
-        )
+        try:
+            reduced = dehornoy_reduce_core(
+                crossings, HandleReductionMode.COMPARE, time_out_s=HANDLE_REDUCTION_S
+            )
+        except HandleReducedButUnexpectedResult:
+            return not math_braid.Braid(list(crossings), self.n_strands)
         return reduced.sign == 0
 
     def permutations(self, plot: bool = False) -> list[list[int]]:
