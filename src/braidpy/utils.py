@@ -11,12 +11,17 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+from __future__ import annotations
+
 import importlib
 from collections.abc import Sequence
 from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    # typing.Self is 3.11's; braidpy does not depend on typing_extensions,
+    # nor does a browser load it (Pyodide).
+    from typing_extensions import Self
 
 # Colours to tell strands apart, one after the other: the carriers of a
 # braiding machine's animation, and the yarns drawn from them.
