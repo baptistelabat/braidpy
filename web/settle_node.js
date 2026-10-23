@@ -25,20 +25,21 @@ globalThis.importScripts = (...names) =>
   names.forEach((name) => vm.runInThisContext(fs.readFileSync(path.join(__dirname, name), "utf8"), { filename: name }));
 vm.runInThisContext(fs.readFileSync(path.join(__dirname, "settle.js"), "utf8"), { filename: "settle.js" });
 
-// Grow replays a braid made on a marudai frame by frame; kept, every frame
-// of a big sinnet is hundreds of megabytes.  So many, evenly spaced, the
-// first and the last among them, replay it as well.
-const FRAMES = 200;
+// Grow replays a braid made on a marudai frame by frame, each frame every
+// yarn whole: a big sinnet's frames are hundreds of megabytes, even thinned.
+// So many, evenly spaced, the first and the last among them, as fit in a
+// few megabytes, replay a small braid's making; a big one keeps none, and
+// Grow replays it growing, as it does any braid not made on a marudai.
+const BUDGET = 3e6;
 function fewer(frames) {
-  if (!frames || frames.length <= FRAMES) return frames;
-  return Array.from({ length: FRAMES }, (_, k) => frames[Math.round((k * (frames.length - 1)) / (FRAMES - 1))]);
+  if (!frames?.length) return frames;
+  const each = JSON.stringify(frames[frames.length - 1]).length;
+  const room = Math.floor(BUDGET / each);
+  if (room >= frames.length) return frames;
+  if (room < 2) return [];
+  return Array.from({ length: room }, (_, k) => frames[Math.round((k * (frames.length - 1)) / (room - 1))]);
 }
 
-const result = JSON.parse(fs.readFileSync(from, "utf8"));
-const job = result.tighten;
-delete result.tighten;
-// As the page settles a braid left to its own choices (worker.js).
-const settle = result.disk ? "marudai" : "sideways";
 globalThis.settle({ id: 1, result, job: job ?? null, settle, twist: undefined }).then((settled) => {
   if (settled.marudai) settled.marudai.frames = fewer(settled.marudai.frames);
   fs.writeFileSync(to, JSON.stringify(settled));
