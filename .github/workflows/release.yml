@@ -4,7 +4,7 @@ run-name: Release ${{ github.ref_name }} to PyPI
 # A version tag pushed (0.3.0, 1.2.10…) builds braidpy and publishes it on
 # PyPI, by PyPI's trusted publishing: no token is kept anywhere.  On PyPI,
 # braidpy's trusted publisher names this repository, this workflow
-# (release.yml) and the environment "pypi".
+# (release.yml) and the environment "production".
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     environment:
-      name: pypi
+      name: production
       url: https://pypi.org/project/braidpy/${{ github.ref_name }}/
     permissions:
       # For PyPI's trusted publishing.
