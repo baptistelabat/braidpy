@@ -309,6 +309,42 @@ class TestBraid:
         assert ((b * b.inverse()) ** 5).is_trivial()
         assert b.is_trivial() == (not math_braid.Braid(word, 8))
 
+    def test_braids_compare_as_math_braid_compares_them(self):
+        """Equal braids, written differently, and braids that differ only a
+        little: each pair compared by handle reduction as math_braid's
+        normal forms compare it."""
+        import random
+
+        import math_braid
+
+        random.seed(2)
+        for n in (3, 5, 8):
+            for _ in range(20):
+                word = [
+                    random.choice([1, -1]) * random.randint(1, n - 1) for _ in range(30)
+                ]
+                b = Braid(word, n)
+                # The same braid with σᵢσᵢ⁻¹ inserted; another with its last
+                # crossing turned the other way.
+                g = random.randint(1, n - 1)
+                same = Braid(word[:10] + [g, -g] + word[10:], n)
+                changed = Braid(word[:-1] + [-word[-1]], n)
+                for other in (same, changed):
+                    expected = math_braid.Braid(word, n) == math_braid.Braid(
+                        other.generators, n
+                    )
+                    assert (b == other) == expected
+
+    def test_math_braid_decides_when_handle_reduction_takes_too_long(self, monkeypatch):
+        """Given no time at all, handle reduction gives up on a long word:
+        math_braid's normal form then says whether it is trivial."""
+        import braidpy.braid
+
+        monkeypatch.setattr(braidpy.braid, "HANDLE_REDUCTION_S", 0.0)
+        b = Braid([1, 2, -1, 3, -2, 1, 2, 3, -1, 2] * 3, n_strands=4)
+        assert (b * b.inverse()).is_trivial()
+        assert not b.is_trivial()
+
     def test_a_braid_compares_with_the_trivial_braid(self):
         """Compared with a braid of no crossings, either way round, a braid
         is equal to it exactly when it is trivial."""
