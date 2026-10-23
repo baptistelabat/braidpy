@@ -52,6 +52,21 @@ turn round it and twist the yarns in.
 - **Turning to balance.** Hanging free, after each move the braid turns
   about its axis until its yarns' ends pull it no way round: the angle is
   found by a search up to an eighth of a turn either way.
+- **More than 30 yarns.** The method was made for marudai braids of a few
+  dozen yarns at most. Beyond 30, two things change, and braids of 30 yarns
+  or fewer are made exactly as before:
+  - The yarns are tied round rings of at most 30, one ring 2 units under the
+    next, the yarns taken in turn round the disk. A single ring, a third of
+    a unit across per yarn, would be so wide that the yarns rose from it as
+    a hollow tube and were never drawn into a braid.
+  - Each yarn's pull on the braid is taken along its whole way, from the
+    braid's tip out to its end, instead of along its last link alone. A
+    link just laid can point any way, and with so many yarns the braid
+    swung back and forth by more each move, then grew without end.
+
+  ABOK #3063, #3077, #3079 and #3081 (31 to 45 strands) are then made a few
+  diameters long. #3082 (61 strands) still is not: 61 yarns side by side do
+  not fit round the carriers' circle.
 - **Made, frozen.** Well behind each yarn's end — 40 beads behind the last
   that moved — the braid is made: its beads are frozen, and only the newest
   rows move. A frozen bead moves only as the whole braid turns.
