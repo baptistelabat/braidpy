@@ -32,14 +32,18 @@ front, with the strand passing behind interrupted where the two meet.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, cast
 
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import numpy as np
 
 from .parametric_strand import LINEAR, SMOOTHSTEP, Profile, strand_paths
-from .utils import terminal_colors
+from .utils import lazy_module, terminal_colors
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+else:
+    plt = lazy_module("matplotlib.pyplot")
 
 __all__ = [
     "DIAGRAM_COLORS",
@@ -219,6 +223,6 @@ def draw_diagram(
     ax.axis("off")
     if save:
         # The figure itself, even when the axes are in a subfigure of it.
-        figure = cast(Figure, ax.figure.figure)
+        figure = cast("Figure", ax.figure.figure)
         figure.savefig(save, bbox_inches="tight", dpi=150)
     return ax

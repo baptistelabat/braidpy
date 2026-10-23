@@ -26,20 +26,24 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 
+# What braids are made of and how they are worked out.  Drawing them is an
+# extra (viz), so that braidpy alone installs small.
 dependencies = [
-    "matplotlib>=3.7.5",
     "numpy>=1.21.0",
-    "pyqt6>=6.9.0",
     "sympy>=1.14.0",
-    "tornado>=6.4.2",
     "math-braid (>=0.8,<0.9)",
-    "plotly>=6.1.2",
-    "imageio>=2.37.2",
     "dataclasses-json>=0.6.7",
     "networkx>=3.4.2",
 ]
 
 [project.optional-dependencies]
+# Drawing braids: diagrams, 3D plots, animations (braid.plot,
+# ParametricBraid.plot, the machines' and disks' animations).
+viz = [
+    "matplotlib>=3.7.5",
+    "plotly>=6.1.2",
+    "imageio>=2.37.2",
+]
 # braidpy as an MCP server, for AI assistants (braidpy.mcp_server).
 mcp = ["mcp>=2"]
 
@@ -48,6 +52,8 @@ braidpy-mcp = "braidpy.mcp_server:main"
 
 [dependency-groups]
 dev = [
+    # Working on braidpy, its drawings are tested too.
+    "braidpy[viz]",
     "ruff>=0.11.11",
     "pytest>=8.3.5",
     "coverage>=7.8.2",

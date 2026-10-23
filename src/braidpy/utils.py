@@ -175,6 +175,11 @@ else:
             return super().__new__(cls, val)
 
 
+# What braidpy draws with, from its viz extra: not installed with braidpy
+# alone.
+_DRAWING = {"matplotlib", "mpl_toolkits", "plotly", "imageio"}
+
+
 class _LazyModule(ModuleType):
     """A module imported the first time something is asked of it."""
 
@@ -187,7 +192,16 @@ class _LazyModule(ModuleType):
         if attr.startswith("_lazy_"):
             raise AttributeError(attr)
         if self._lazy_module is None:
-            self._lazy_module = importlib.import_module(self._lazy_name)
+            try:
+                self._lazy_module = importlib.import_module(self._lazy_name)
+            except ModuleNotFoundError as missing:
+                if (missing.name or "").split(".")[0] not in _DRAWING:
+                    raise
+                raise ModuleNotFoundError(
+                    f"{missing.name} is needed to draw braids, and is not "
+                    "installed: pip install 'braidpy[viz]'",
+                    name=missing.name,
+                ) from missing
         return getattr(self._lazy_module, attr)
 
 

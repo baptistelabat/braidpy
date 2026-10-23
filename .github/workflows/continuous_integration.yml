@@ -24,9 +24,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Qt dependencies
-        run: sudo apt-get update && sudo apt-get install -y libegl1
-
       - name: Install the project
         run: uv sync --all-extras --dev
 
@@ -56,9 +53,6 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Install Qt dependencies
-        run: sudo apt-get update && sudo apt-get install -y libegl1
 
       - name: Install the project
         run: uv sync --all-extras --dev

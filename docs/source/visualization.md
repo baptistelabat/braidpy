@@ -1,13 +1,12 @@
 # Visualizing braids
 
-The following code presents the different visualizations integrated in braidpy:
+The following code presents the different visualizations integrated in
+braidpy. They need its `viz` extra: `pip install "braidpy[viz]"`.
 
 ```python
 from braidpy import Braid
 from braidpy.parametric_braid import ParametricBraid
-import matplotlib
 
-matplotlib.use("QtAgg")
 b = Braid((1, -2), n_strands=3)
 
 # Draw in console

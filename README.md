@@ -229,13 +229,17 @@ Releases are on PyPI:
 
 ```bash
 pip install braidpy        # or: uv add braidpy, poetry add braidpy
+pip install "braidpy[viz]" # with what it draws with: matplotlib, plotly
 ```
+
+braidpy alone computes everything; drawing braids (diagrams, 3D plots,
+animations) needs the `viz` extra.
 
 The release there (0.2.2) lacks most of what this page describes. Until the
 next one, install the development version from GitHub:
 
 ```bash
-pip install "braidpy @ git+https://github.com/baptistelabat/braidpy@develop"
+pip install "braidpy[viz] @ git+https://github.com/baptistelabat/braidpy@develop"
 ```
 
 braidpy needs Python 3.10 or later.
