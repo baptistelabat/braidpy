@@ -6,8 +6,8 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour } from "./colours.js?v=2d6d1b8e75";
-import { worker } from "./workers.js?v=2d6d1b8e75";
+import { PALETTE, strandColour } from "./colours.js?v=8707f5b5db";
+import { worker } from "./workers.js?v=8707f5b5db";
 
 // A machine seen from above, to load by hand: its gears, the contacts
 // between them, and every slot, a carrier on it or not.  Clicking a slot
@@ -71,12 +71,13 @@ export function attachMachine(holder) {
   const start = button("⏮", "Back to step 0");
   const back = button("◀", "Turn the handle back a step");
   const forward = button("▶", "Turn the handle a step");
+  const nudge = button("▸", "Hold the handle part way through a step, so the two slots meeting at a contact come apart");
   const run = button("Run", "Turn the handle until carriers meet");
   const reading = document.createElement("span");
   reading.className = "step";
   const handle = document.createElement("div");
   handle.className = "examples handle";
-  handle.append(start, back, forward, run, reading);
+  handle.append(start, back, forward, nudge, run, reading);
   box.append(canvas, help, handle, buttons);
   label.after(box);
 
@@ -86,6 +87,11 @@ export function attachMachine(holder) {
   let turned = null; // braidpy's answer for this machine, loading and step
   let asked = 0; // the newest question to braidpy
   let sweeping = null; // {from, started}: a step being turned
+  // Held part way through the step, so that the two slots at a contact --
+  // which sit on the same point when the step is whole -- come apart and a
+  // click can tell them from one another.  0 is the step itself.
+  let part = 0;
+  let standing = null; // {name, slots}: where the slots were last drawn
   let running = false;
   const shape = () => machineShapes.get(names.value);
   const slotAt = (gear, slot) => {
@@ -119,6 +125,9 @@ export function attachMachine(holder) {
     }
   });
   const answer = (id) => new Promise((resolve) => waiting.set(id, resolve));
+  // Asked again, the loading having changed.  Where the handle is held --
+  // the step, and how far through it -- is about where the gears stand, not
+  // which slots have carriers on them, so putting one on leaves it alone.
   const fresh = () => {
     turned = null;
     ask(time);
@@ -153,6 +162,8 @@ export function attachMachine(holder) {
     field.value = "";
     met = [];
     time = 0;
+    part = 0;
+    standing = null;
     running = false;
     turned = null;
     askMachine(names.value);
@@ -191,11 +202,13 @@ export function attachMachine(holder) {
     }
     turned = reached;
     time = reached.time;
+    part = 0;
     draw();
     return reached.time > from.time && !reached.met.length;
   }
   async function goTo(at) {
     running = false;
+    part = 0;
     const reached = await answer(ask(Math.max(0, at)));
     if (reached) {
       turned = reached;
@@ -205,7 +218,24 @@ export function attachMachine(holder) {
   }
   forward.addEventListener("click", () => {
     running = false;
+    part = 0;
     step();
+  });
+  // Each press holds the handle a quarter of a step further on; past the
+  // last, the step itself is taken and the handle sits on a whole step
+  // again.  A quarter, because the two slots at a contact are furthest
+  // apart half way through -- so the second press is the one to click on.
+  nudge.addEventListener("click", () => {
+    running = false;
+    if (!turned || turned.met.length || sweeping) return;
+    const by = Math.max(1, Math.round(turned.frames.length / 4));
+    if (part + by < turned.frames.length) {
+      part += by;
+      draw();
+    } else {
+      part = 0;
+      step();
+    }
   });
   back.addEventListener("click", () => goTo(time - 1));
   start.addEventListener("click", () => goTo(0));
@@ -230,19 +260,23 @@ export function attachMachine(holder) {
   function places(known) {
     const loading = readLoading(field.value);
     if (turned && turned.carriers.length === loading.length) {
-      let picture = turned.frames[0];
+      let picture = turned.frames[Math.min(part, turned.frames.length - 1)];
       if (sweeping && sweeping.from === turned) {
         const done = Math.min(1, (performance.now() - sweeping.started) / SWEEP_MS);
         const last = turned.frames.length - 1;
         picture = turned.frames[Math.min(last, Math.floor(done * turned.frames.length))];
       }
-      return {
+      standing = {
+        name: names.value,
         slots: turned.slots.map(([gear, slot], i) => ({
           gear,
           slot,
           x: picture.slots[i][0],
           y: picture.slots[i][1],
         })),
+      };
+      return {
+        slots: standing.slots,
         carriers: turned.carriers.map(([gear, slot], i) => ({
           gear,
           slot,
@@ -253,13 +287,18 @@ export function attachMachine(holder) {
         met: turned.met,
       };
     }
-    const slots = [];
-    for (const g of known.gears) {
-      for (let slot = 0; slot < g.slots; slot++) {
-        const [x, y] = slotAt(g, slot);
-        slots.push({ gear: g.name, slot, x, y });
-      }
-    }
+    // Where the slots stand does not depend on which of them carry, so
+    // while braidpy answers about a loading just changed, the ones already
+    // drawn still hold -- and the handle does not appear to let go.
+    const slots =
+      standing && standing.name === names.value
+        ? standing.slots
+        : known.gears.flatMap((g) =>
+            Array.from({ length: g.slots }, (_, slot) => {
+              const [x, y] = slotAt(g, slot);
+              return { gear: g.name, slot, x, y };
+            }),
+          );
     const carriers = loading
       .map(([gear, slot], i) => {
         const at = slots.find((p) => p.gear === gear && p.slot === slot);
@@ -372,7 +411,13 @@ export function attachMachine(holder) {
     start.disabled = !ready || time === 0 || running;
     run.disabled = !ready || (stopped && !running);
     run.textContent = running ? "Stop" : "Run";
-    reading.textContent = ready ? `Step ${time}` : "";
+    nudge.disabled = forward.disabled;
+    const parts = turned ? turned.frames.length : 1;
+    reading.textContent = ready
+      ? part
+        ? `Step ${time} and ${part}/${parts}`
+        : `Step ${time}`
+      : "";
     const carried = `${count} carrier${count === 1 ? "" : "s"}`;
     help.textContent = stopped
       ? `Carriers met at step ${time}, ringed: take one off, or turn back.`
