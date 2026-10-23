@@ -21,7 +21,6 @@ from braidpy.symmetric_braid import (
     tightest_figure_eight,
 )
 
-
 # ── It really is the braid it claims to be ────────────────────────────────────
 
 

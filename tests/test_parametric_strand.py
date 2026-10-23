@@ -148,7 +148,7 @@ def test_a_long_word_is_laid_in_a_moment():
     start = time.perf_counter()
     strands = braid.to_parametric_strands()
     for strand in strands:
-        for k in range(0, 2001):
+        for k in range(2001):
             strand.func(k / 2000)
     assert time.perf_counter() - start < 0.5
     assert len(strands) == 8

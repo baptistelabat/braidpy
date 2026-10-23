@@ -46,9 +46,9 @@ from braidpy import Braid
 from braidpy.ring_program import from_braid
 
 plait = Braid((1, -2) * 3, 3)
-program = from_braid(plait, n_places=6)   # three strands, three empty places
-program.braid() == plait                  # True: read back off its disk moves
-program.disk()                            # the same, as a disk's moves
+program = from_braid(plait, n_places=6)  # three strands, three empty places
+program.braid() == plait  # True: read back off its disk moves
+program.disk()  # the same, as a disk's moves
 ```
 
 A braid word becomes a ring program crossing by crossing
@@ -77,9 +77,9 @@ from braidpy.bridges.lace import lace_braid, lace_card
 
 plait = Braid((1, -2) * 6, 3)
 card = lace_card(plait)
-print(card.text())        # the punchcard, two lines a step, as animated
-card.threading()          # where each strand's bobbin goes
-lace_braid(card) == plait # True: the card run on the machine
+print(card.text())  # the punchcard, two lines a step, as animated
+card.threading()  # where each strand's bobbin goes
+lace_braid(card) == plait  # True: the card run on the machine
 ```
 
 A step of the card is two lines over the gears, as the machine reads it:
@@ -119,9 +119,9 @@ neither crossing anything. A 32-slot disk takes up to 15 strands.
 from braidpy.bridges.disk import disk_braid, disk_moves
 
 moves = disk_moves(plait)
-moves.text()                # "5>2, 3>5, 2>3, 5>8, 7>5, 8>7, …"
+moves.text()  # "5>2, 3>5, 2>3, 5>8, 7>5, 8>7, …"
 disk_braid(moves) == plait  # True: read as braidpy reads any mobidai
-moves.spec()                # the disk braid as Braid Studio makes it
+moves.spec()  # the disk braid as Braid Studio makes it
 ```
 
 ## Ashley's stand
@@ -141,7 +141,7 @@ from braidpy.bridges.ashley import ashley_sinnet, sinnet_spec
 search = ashley_sinnet(plait)
 search.sinnet.initial_counts_per_space, search.sinnet.moves
 # ([2, 1], [(1, 2), (2, 1)]): Ashley's #2965
-sinnet_spec(search.sinnet)   # the sinnet as Braid Studio makes it
+sinnet_spec(search.sinnet)  # the sinnet as Braid Studio makes it
 ```
 
 Of the fifteen braid words Braid Studio offers, twelve are made by a sinnet
@@ -162,10 +162,10 @@ is the braid itself, exactly, though not a sinnet of the book's kind.
 ```python
 from braidpy.bridges.ashley import ashley_moves
 
-weave = Braid((1, -2, -2, 1), 3)    # the weave of 3, #2973
+weave = Braid((1, -2, -2, 1), 3)  # the weave of 3, #2973
 made = ashley_moves(weave)
-made.initial_counts_per_space   # [1, 0, 1, 0, 1, 0]
-made.braid(1) == weave          # True
+made.initial_counts_per_space  # [1, 0, 1, 0, 1, 0]
+made.braid(1) == weave  # True
 ```
 
 ## In Braid Studio

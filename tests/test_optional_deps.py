@@ -8,10 +8,11 @@ asked to draw, it says what to install."""
 import subprocess
 import sys
 
-# Run with the drawing libraries made unimportable, as if not installed.
+# Run with the drawing libraries made unimportable, as if not installed,
+# and typing_extensions, which braidpy does not depend on either.
 WITHOUT_DRAWING = """
 import sys
-for name in ("matplotlib", "mpl_toolkits", "plotly", "imageio"):
+for name in ("matplotlib", "mpl_toolkits", "plotly", "imageio", "typing_extensions"):
     sys.modules[name] = None
 """
 

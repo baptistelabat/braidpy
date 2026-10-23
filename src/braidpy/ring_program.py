@@ -46,8 +46,8 @@ over the seam, are for later.
 
 from __future__ import annotations
 
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
-from typing import Dict, Hashable, List, Optional, Sequence, Tuple
 
 from braidpy.braid import Braid
 
@@ -89,8 +89,8 @@ class RingProgram:
     """
 
     n_places: int
-    start: Tuple[Optional[int], ...]
-    rows: Tuple[Tuple[Swap, ...], ...]
+    start: tuple[int | None, ...]
+    rows: tuple[tuple[Swap, ...], ...]
 
     def __post_init__(self) -> None:
         if len(self.start) != self.n_places:
@@ -118,11 +118,11 @@ class RingProgram:
         """How many strands the ring holds."""
         return sum(k is not None for k in self.start)
 
-    def swaps(self) -> List[Swap]:
+    def swaps(self) -> list[Swap]:
         """Every swap, row after row."""
         return [swap for row in self.rows for swap in row]
 
-    def disk(self) -> Tuple[Dict[Hashable, int], List[Dict[Hashable, int]]]:
+    def disk(self) -> tuple[dict[Hashable, int], list[dict[Hashable, int]]]:
         """The program as a disk's moves: each strand's slot, 1-based, and
         per step, the one strand that moves and by how much — as
         :func:`~braidpy.take_off.disk_annular_word` and Braid Studio take
@@ -132,11 +132,11 @@ class RingProgram:
         Returns:
             The start and the steps.
         """
-        start: Dict[Hashable, int] = {
+        start: dict[Hashable, int] = {
             k: place + 1 for place, k in enumerate(self.start) if k is not None
         }
         held = dict(enumerate(self.start))
-        steps: List[Dict[Hashable, int]] = []
+        steps: list[dict[Hashable, int]] = []
         for swap in self.swaps():
             left, right = swap.place, (swap.place + 1) % self.n_places
             a, b = held[left], held[right]
@@ -160,7 +160,7 @@ class RingProgram:
         annular, n = disk_annular_word(start, steps, self.n_places, clockwise=True)
         return Braid(tuple(solid_word(annular, n)), n)
 
-    def ends(self) -> Tuple[Optional[int], ...]:
+    def ends(self) -> tuple[int | None, ...]:
         """The strand at each place once the program is done."""
         held = list(self.start)
         for swap in self.swaps():
@@ -169,12 +169,12 @@ class RingProgram:
         return tuple(held)
 
 
-def _packed(n_places: int, swaps: Sequence[Swap]) -> Tuple[Tuple[Swap, ...], ...]:
+def _packed(n_places: int, swaps: Sequence[Swap]) -> tuple[tuple[Swap, ...], ...]:
     """Swaps in rows: each in the first row after the last that used either
     of its places.  Swaps of no place in common commute, so the braid is
     unchanged."""
     free_from = [0] * n_places
-    rows: List[List[Swap]] = []
+    rows: list[list[Swap]] = []
     for swap in swaps:
         right = (swap.place + 1) % n_places
         row = max(free_from[swap.place], free_from[right])
@@ -186,7 +186,7 @@ def _packed(n_places: int, swaps: Sequence[Swap]) -> Tuple[Tuple[Swap, ...], ...
 
 
 def from_braid(
-    braid: Braid, n_places: Optional[int] = None, offset: int = 0
+    braid: Braid, n_places: int | None = None, offset: int = 0
 ) -> RingProgram:
     """A braid as a ring program: its strands side by side from place
     ``offset``, each crossing ``σᵢ^±1`` the strands at places
@@ -212,7 +212,7 @@ def from_braid(
             f"{n} strands from place {offset} do not fit a ring of {places} "
             "without crossing its seam."
         )
-    start: List[Optional[int]] = [None] * places
+    start: list[int | None] = [None] * places
     for k in range(n):
         start[offset + k] = k
     swaps = [

@@ -11,7 +11,8 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from .braid import Braid, reduced_burau_generator
 
@@ -64,7 +65,7 @@ def alexander_polynomial(braid: Braid) -> "Poly":
         Verkettungen", Abh. Math. Sem. Hamburg 11, 179 (1935).
         D. Rolfsen, *Knots and Links* (1976), chapter 8.
     """
-    from sympy import Integer, Poly, QQ, fraction, symbols
+    from sympy import QQ, Integer, Poly, fraction, symbols
     from sympy.polys.matrices import DomainMatrix
 
     t = symbols("t")
@@ -100,7 +101,7 @@ _ZERO = 1e-8
 
 def alexander_on_circle(
     braid: Braid, angles: Sequence[float], repeats: int = 1
-) -> Tuple[Optional[float], ...]:
+) -> tuple[float | None, ...]:
     """``log₁₀ |Δ(e^{iθ})|``: the Alexander polynomial of the closure of the
     braid repeated ``repeats`` times, sampled on the unit circle.
 
@@ -124,7 +125,7 @@ def alexander_on_circle(
     n = braid.n_strands
     if n == 1:
         return tuple(0.0 for _ in angles)
-    values: List[Optional[float]] = []
+    values: list[float | None] = []
     for theta in angles:
         t = complex(np.exp(1j * theta))
         burau = _burau_product(
@@ -145,8 +146,8 @@ def alexander_on_circle(
 
 
 def conjugacy_class(
-    braid: Braid, conjugators: Optional[List[Braid]] = None
-) -> List[Braid]:
+    braid: Braid, conjugators: list[Braid] | None = None
+) -> list[Braid]:
     """Generate conjugates of a braid by a list of other braids.
 
     Args:

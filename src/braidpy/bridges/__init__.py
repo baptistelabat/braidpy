@@ -11,7 +11,8 @@ braid back off what it made.  See ``docs/source/bridges.md``.
 - :mod:`braidpy.bridges.ashley`: a sinnet on Ashley's stand, by searching.
 """
 
-from typing import Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 # Longest repeating unit the page is given bridges for: a card or a list of
 # moves longer than this is no help to a braider, and slow in a browser.
@@ -35,7 +36,7 @@ def _unit(info: Mapping[str, Any]):
     return Braid(unit, braid.n_strands), len(braid.generators) // len(unit)
 
 
-def for_page(info: Mapping[str, Any]) -> Dict[str, Any]:
+def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
     """What Braid Studio shows of the other ways of making the braid it
     made: its repeating unit as moves on a kumihimo disk, and as a lace
     machine's punchcard.  Ashley's stand is searched for only when asked
@@ -56,7 +57,7 @@ def for_page(info: Mapping[str, Any]) -> Dict[str, Any]:
     if found is None:
         return {}
     unit, repeats = found
-    shown: Dict[str, Any] = {"crossings": len(unit.generators)}
+    shown: dict[str, Any] = {"crossings": len(unit.generators)}
     if 2 * unit.n_strands + 2 <= 32:
         moves = disk_moves(unit)
         # Made as many times as the braid shown repeats its unit.
@@ -75,7 +76,7 @@ def for_page(info: Mapping[str, Any]) -> Dict[str, Any]:
     return shown
 
 
-def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> Dict[str, Any]:
+def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> dict[str, Any]:
     """A sinnet on Ashley's stand making the braid Braid Studio made, as
     the page shows it: searched for, for at most ``time_limit`` seconds.
 
@@ -98,7 +99,7 @@ def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> Dict[st
     unit, repeats = found
     search = ashley_sinnet(unit, time_limit=time_limit)
     # Made as many times as the braid shown repeats its unit.
-    shown: Dict[str, Any] = {
+    shown: dict[str, Any] = {
         "spec": sinnet_spec(search.sinnet, cycles=repeats) if search.sinnet else None,
         "complete": search.complete,
         "tried": search.tried,

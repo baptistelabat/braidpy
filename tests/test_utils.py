@@ -1,12 +1,12 @@
 import pytest
 
 from braidpy.utils import (
-    int_to_superscript,
-    int_to_subscript,
     PositiveFloat,
     PositiveInt,
     StrictlyPositiveFloat,
     StrictlyPositiveInt,
+    int_to_subscript,
+    int_to_superscript,
 )
 
 

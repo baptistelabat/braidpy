@@ -4,8 +4,9 @@
 
 """Braids by their topology, each pointing to every way of making it."""
 
-import pytest
 import json
+
+import pytest
 
 from braidpy import Braid
 from braidpy.topology_catalog import (

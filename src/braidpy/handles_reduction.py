@@ -14,7 +14,6 @@ License: Mozilla Public License 2.0
 import dataclasses
 import time
 from enum import Enum
-from typing import List
 
 import numpy as np
 
@@ -26,8 +25,6 @@ class HandleReducedButUnexpectedResult(FunctionalException):
     """
     Exception to be raised if handle reduction is not finishing as expected
     """
-
-    pass
 
 
 class HandleReductionMode(str, Enum):
@@ -43,7 +40,7 @@ class HandleReductionMode(str, Enum):
 
 @dataclasses.dataclass
 class HandleReductionResults:
-    generators: List[SignedCrossingIndex]
+    generators: list[SignedCrossingIndex]
     sign: int
     handle_reduction_mode: HandleReductionMode
 
@@ -66,10 +63,9 @@ def dehornoy_handle_indices(
     for j in range(1, n):
         g = -gens[j]  # we're looking for a gens[i] == -gens[j]
         for i in range(j):
-            if gens[i] == g:
-                # Check all between gens[i+1 : j] are strictly larger in absolute value
-                if all(abs(h) > abs(g) for h in gens[i + 1 : j]):
-                    return i, j  # first such closing handle found
+            # All between gens[i+1 : j] strictly larger in absolute value
+            if gens[i] == g and all(abs(h) > abs(g) for h in gens[i + 1 : j]):
+                return i, j  # first such closing handle found
     return None
 
 
@@ -114,7 +110,7 @@ def reduce_handle(segment: list[SignedCrossingIndex]) -> list[SignedCrossingInde
     return result
 
 
-def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
+def dehornoy_sign(gens: list[SignedCrossingIndex]) -> int | None:
     """
     Check  if braid is Dehornoy positive, negative, neutral or if this can not be directly said from braid word
 
@@ -127,11 +123,11 @@ def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
     if gens:
         mg = min(abs(g) for g in gens)
         signs = [np.sign(g) for g in gens if abs(g) == mg]
-        if all([s >= 0 for s in signs]):
+        if all(s >= 0 for s in signs):
             return 1
-        elif all([s <= 0 for s in signs]):  # all negative
+        elif all(s <= 0 for s in signs):  # all negative
             return -1
-        elif all([s == 0 for s in signs]):
+        elif all(s == 0 for s in signs):
             return 0
         else:
             return None
@@ -140,7 +136,7 @@ def dehornoy_sign(gens: List[SignedCrossingIndex]) -> int | None:
 
 
 def dehornoy_reduce_core(
-    gens: List[SignedCrossingIndex],
+    gens: list[SignedCrossingIndex],
     mode: HandleReductionMode | str = HandleReductionMode.FULL,
     time_out_s: float = 1,
 ) -> HandleReductionResults:

@@ -40,8 +40,8 @@ can — but different ones prove them different.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 from braidpy.braid import Braid
 
@@ -64,13 +64,13 @@ class Fingerprint:
     """What a braid's topology is, in a few numbers; see the module."""
 
     n_strands: int
-    loops: Tuple[int, ...]
+    loops: tuple[int, ...]
     writhe: int
-    linking: Tuple[int, ...]
-    alexander: Tuple[Optional[float], ...]
+    linking: tuple[int, ...]
+    alexander: tuple[float | None, ...]
 
 
-def home(braid: Braid) -> Tuple[Braid, Braid]:
+def home(braid: Braid) -> tuple[Braid, Braid]:
     """A braid's pattern: its repeating unit, and the unit repeated until
     every strand is back where it started.
 
@@ -189,7 +189,7 @@ def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
     )
 
 
-def catalogue_braids() -> Dict[str, Braid]:
+def catalogue_braids() -> dict[str, Braid]:
     """The braids of :mod:`braidpy.braid_catalog`, by name."""
     from braidpy.braid_catalog import CATALOGUE
 
@@ -198,9 +198,9 @@ def catalogue_braids() -> Dict[str, Braid]:
 
 def similar(
     braid: Braid,
-    candidates: Optional[Mapping[str, Braid]] = None,
+    candidates: Mapping[str, Braid] | None = None,
     count: int = 5,
-) -> List[Match]:
+) -> list[Match]:
     """The braids most like this one, nearest first.
 
     Args:

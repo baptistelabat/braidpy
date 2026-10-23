@@ -125,9 +125,9 @@ to infinity. A tighter rope is a fatter one.
 ```python
 from braidpy.annulus_braid import lay_radius, packing_radius
 
-packing_radius(3, 0.4)         # 0.231 — the zero-lay limit
-lay_radius(3, 0.4, lay=2.0)    # 0.259 — where it actually settles
-lay_radius(3, 0.4, lay=1.34)   # 0.432 — a tight lay, much fatter
+packing_radius(3, 0.4)  # 0.231 — the zero-lay limit
+lay_radius(3, 0.4, lay=2.0)  # 0.259 — where it actually settles
+lay_radius(3, 0.4, lay=1.34)  # 0.432 — a tight lay, much fatter
 ```
 
 ## Why this one is a search

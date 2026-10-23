@@ -136,9 +136,9 @@ directly:
 from braidpy.annulus_braid import crossing_binds_above, tubular_braid_radius
 import math
 
-crossing_binds_above(8, math.radians(40))   # False — swing-bound
-crossing_binds_above(8, math.radians(50))   # True  — climb-bound
-tubular_braid_radius(8, 0.4, math.radians(45))   # 0.825
+crossing_binds_above(8, math.radians(40))  # False — swing-bound
+crossing_binds_above(8, math.radians(50))  # True  — climb-bound
+tubular_braid_radius(8, 0.4, math.radians(45))  # 0.825
 ```
 
 ## Why this one has a formula and the rope does not

@@ -38,8 +38,8 @@ from __future__ import annotations
 
 import itertools
 import time
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from typing import Iterator, List, Optional, Sequence, Tuple
 
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.braid import Braid
@@ -60,29 +60,29 @@ class AshleySearch:
             tried, rather than the time running out.
     """
 
-    sinnet: Optional[AshleySolidSinnet]
-    nearest: Optional[AshleySolidSinnet]
+    sinnet: AshleySolidSinnet | None
+    nearest: AshleySolidSinnet | None
     distance: float
     tried: int
     complete: bool
 
 
-def _compositions(total: int, parts: int) -> Iterator[Tuple[int, ...]]:
+def _compositions(total: int, parts: int) -> Iterator[tuple[int, ...]]:
     """Every way of sharing ``total`` strands among ``parts`` spaces, each
     holding at least one."""
     for cuts in itertools.combinations(range(1, total), parts - 1):
         bounds = (0,) + cuts + (total,)
-        yield tuple(b - a for a, b in zip(bounds, bounds[1:]))
+        yield tuple(b - a for a, b in itertools.pairwise(bounds))
 
 
-def _derangements(n: int) -> Iterator[Tuple[int, ...]]:
+def _derangements(n: int) -> Iterator[tuple[int, ...]]:
     """Every permutation of ``range(n)`` moving every element."""
     for permutation in itertools.permutations(range(n)):
         if all(i != p for i, p in enumerate(permutation)):
             yield permutation
 
 
-def _cycles(spaces: int) -> Iterator[List[Tuple[int, int]]]:
+def _cycles(spaces: int) -> Iterator[list[tuple[int, int]]]:
     """Every cycle of moves, each space moved from once and to once, its
     first move from space 1; spaces numbered from 1, as the book does."""
     for target in _derangements(spaces):
@@ -94,7 +94,7 @@ def ashley_sinnet(
     braid: Braid,
     max_spaces: int = 6,
     time_limit: float = 20.0,
-    spaces: Optional[Sequence[int]] = None,
+    spaces: Sequence[int] | None = None,
 ) -> AshleySearch:
     """A sinnet on Ashley's stand that makes a braid; see the module.
 
@@ -114,7 +114,7 @@ def ashley_sinnet(
     n = braid.n_strands
     started = time.monotonic()
     tried = 0
-    nearest: Optional[AshleySolidSinnet] = None
+    nearest: AshleySolidSinnet | None = None
     nearest_distance = float("inf")
     counts_of = range(2, min(max_spaces, n) + 1) if spaces is None else spaces
     for count in counts_of:
@@ -162,7 +162,7 @@ def ashley_moves(braid: Braid) -> AshleySolidSinnet:
         exactly.
     """
     n = braid.n_strands
-    moves: List[Tuple[int, int]] = []
+    moves: list[tuple[int, int]] = []
     for g in braid.generators:
         a = 2 * (n - abs(int(g))) - 1
         b = a + 2

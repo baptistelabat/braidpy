@@ -91,6 +91,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=300, help="Seconds per page.")
     args = parser.parse_args()
 
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
     from playwright.sync_api import sync_playwright
 
     server = _serve(SITE)
@@ -105,12 +106,13 @@ def main() -> int:
         for spec, n_yarns in CASES:
             page = browser.new_page(viewport={"width": 1200, "height": 800})
             errors: list[str] = []
-            page.on("pageerror", lambda error: errors.append(str(error)))
+            # Each page's errors to its own list.
+            page.on("pageerror", lambda error, errors=errors: errors.append(str(error)))
             page.on(
                 "console",
-                lambda message: errors.append(message.text)
-                if message.type == "error"
-                else None,
+                lambda message, errors=errors: (
+                    errors.append(message.text) if message.type == "error" else None
+                ),
             )
             started = time.time()
             page.goto(base + query + "#" + urlencode(spec))
@@ -137,7 +139,7 @@ def main() -> int:
                         ".textContent === 'Step 1'",
                         timeout=30000,
                     )
-                except Exception:
+                except PlaywrightTimeout:
                     ok = False
                     errors.append("the machine's handle did not turn")
             # Two strands coloured at once are a group, recoloured together.
@@ -158,7 +160,7 @@ def main() -> int:
                         ".style.getPropertyValue('--swatch') === '#ffffff')",
                         timeout=10000,
                     )
-                except Exception:
+                except PlaywrightTimeout:
                     ok = False
                     errors.append("a group of strands was not recoloured together")
             # Its kin, found in the page from the catalogue made with it.
@@ -171,7 +173,7 @@ def main() -> int:
                         timeout=30000,
                     )
                     kin = "  also made as others"
-                except Exception:
+                except PlaywrightTimeout:
                     ok, kin = False, "  no kin shown"
                 # And the braid made other ways: a disk, a lace card.
                 try:
@@ -180,7 +182,7 @@ def main() -> int:
                         ".textContent.includes('Lace machine')",
                         timeout=30000,
                     )
-                except Exception:
+                except PlaywrightTimeout:
                     ok, kin = False, kin + ", no other ways to make it shown"
             failures += not ok
             print(

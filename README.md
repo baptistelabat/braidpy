@@ -13,9 +13,8 @@ advances in braid theory, and to say how to make them.
 - **Sources** on [GitHub](https://github.com/baptistelabat/braidpy).
 
 braidpy is in **alpha**: its features work and are tested, but its API may
-still change between versions. The release on PyPI (0.2.2) is much older than
-the development version, which is what the documentation and Braid Studio
-describe; to use it, install it from GitHub (see Installation below).
+still change between versions. What changed in each is in the
+[changelog](https://github.com/baptistelabat/braidpy/blob/develop/CHANGELOG.md).
 
 ## Support
 
@@ -89,7 +88,7 @@ b = Braid([1, 2, -1])
 b.format()
 
 # Display using other common notation. You should get 'abA'.
-b.format_to_notation(target='alpha')
+b.format_to_notation(target="alpha")
 
 # Draw the braid in console. Alternatively use result.plot() for more advanced 2D plot.
 b.draw()
@@ -108,6 +107,7 @@ strands = result.to_parametric_strands()
 from braidpy.parametric_braid import (
     ParametricBraid,
 )
+
 p = ParametricBraid(strands)  # .plot()
 p.plot()
 ```
@@ -116,7 +116,7 @@ p.plot()
 word above it, each strand in the same colour the console draws it in, and the strand
 passing behind interrupted where the two meet. `p.plot()` opens the 3D view.
 
-![Plot braid example](braid_plot.png)
+![Plot braid example](https://raw.githubusercontent.com/baptistelabat/braidpy/develop/braid_plot.png)
 
 ## Braiding machines
 
@@ -132,8 +132,8 @@ from braidpy.horn_gear.loading import load_carriers
 from braidpy.horn_gear.simulation import simulate
 
 machine = tubular_braid_8()
-len(compute_tracks(machine))      # 4 closed tracks
-simulation_period(machine)        # 8 steps to come home
+len(compute_tracks(machine))  # 4 closed tracks
+simulation_period(machine)  # 8 steps to come home
 
 history = simulate(machine, simulation_period(machine), load_carriers(machine))
 ```
@@ -166,8 +166,8 @@ space.
 ```python
 from braidpy.solid_sinnets_catalog import abok_3042
 
-abok_3042.braid()        # the braid word one cycle makes
-abok_3042.to_mobidai()   # the same, as a kumihimo disk pattern
+abok_3042.braid()  # the braid word one cycle makes
+abok_3042.to_mobidai()  # the same, as a kumihimo disk pattern
 abok_3042.animate(n_cycles=3, side_view=True, output_html="3042.html")
 ```
 
@@ -181,8 +181,8 @@ reason is not want of effort.
 import math
 from braidpy.annulus_braid import lay_radius, packing_radius, tubular_braid_radius
 
-packing_radius(3, 0.4)                          # 0.231 — the zero-lay limit
-lay_radius(3, 0.4, lay=2.0)                     # 0.259 — where it really settles
+packing_radius(3, 0.4)  # 0.231 — the zero-lay limit
+lay_radius(3, 0.4, lay=2.0)  # 0.259 — where it really settles
 tubular_braid_radius(8, 0.4, math.radians(45))  # 0.825 — in closed form
 ```
 
@@ -204,8 +204,8 @@ machine:
 from braidpy import tools
 
 tools.compare_braids("1 -2", "-2 1")  # {'same_braid': True, 'distance': 0.0}
-ways = tools.ways_to_make("1 -2")     # a kumihimo disk's moves, a lace punchcard,
-ways["disk"]["moves"]                 # a sinnet on Ashley's stand
+ways = tools.ways_to_make("1 -2")  # a kumihimo disk's moves, a lace punchcard,
+ways["disk"]["moves"]  # a sinnet on Ashley's stand
 ```
 
 [Comparing braids](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/comparing_braids.md)
@@ -235,8 +235,8 @@ pip install "braidpy[viz]" # with what it draws with: matplotlib, plotly
 braidpy alone computes everything; drawing braids (diagrams, 3D plots,
 animations) needs the `viz` extra.
 
-The release there (0.2.2) lacks most of what this page describes. Until the
-next one, install the development version from GitHub:
+The development version, with what is not released yet, installs from
+GitHub:
 
 ```bash
 pip install "braidpy[viz] @ git+https://github.com/baptistelabat/braidpy@develop"

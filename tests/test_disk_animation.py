@@ -4,6 +4,8 @@
 
 """The braiding disk, animated from above."""
 
+import itertools
+
 import matplotlib
 import numpy as np
 import pytest
@@ -87,7 +89,7 @@ def test_a_moving_strand_keeps_its_look_and_its_edging_swells_smoothly():
     middle = widths.index(max(widths))
     assert widths[: middle + 1] == sorted(widths[: middle + 1])
     assert widths[middle:] == sorted(widths[middle:], reverse=True)
-    assert max(abs(a - b) for a, b in zip(widths, widths[1:])) < 3
+    assert max(abs(a - b) for a, b in itertools.pairwise(widths)) < 3
     assert widths[0] == widths[-1] == 3
 
 

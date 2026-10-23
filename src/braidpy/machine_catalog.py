@@ -13,8 +13,9 @@ networkx with it, when it is asked for.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 from braidpy.catalogue import Entry
 
@@ -38,7 +39,7 @@ def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
 # In the order to offer them; not the diamond braid, which is the tubular
 # braid of 8 again, nor the mixed gears, which only show that gears may
 # differ.
-CATALOGUE: Dict[str, Entry[BraidingMachine]] = {
+CATALOGUE: dict[str, Entry[BraidingMachine]] = {
     "flat_3": Entry("Flat braid, 3 carriers", _example("flat_braid_3")),
     "flat_4": Entry("Flat braid, 4 carriers", _example("flat_braid_4")),
     "flat_9": Entry(
@@ -63,8 +64,8 @@ class LaceRing:
     networkx."""
 
     n_gears: int
-    steps: Tuple[Tuple[Tuple[bool, ...], Tuple[bool, ...]], ...]
-    threaded: Optional[Tuple[int, ...]] = None
+    steps: tuple[tuple[tuple[bool, ...], tuple[bool, ...]], ...]
+    threaded: tuple[int, ...] | None = None
 
     def machine(self) -> BraidingMachine:
         """The machine, its gears driven by the card."""
@@ -108,7 +109,7 @@ def _card(braid: str) -> Callable[[], LaceRing]:
 # Jacquard lace machines, in the order to offer them: punchcards for braids
 # of the braid catalogue, each a pass of the card a repeat of the braid,
 # then a ring turning every gear, as a tubular braider does.
-LACE: Dict[str, Entry[LaceRing]] = {
+LACE: dict[str, Entry[LaceRing]] = {
     "lace_dutch": Entry(
         "Dutch braid of 3 (ABOK 2966), 4 gears", _card("inverted_flat3")
     ),

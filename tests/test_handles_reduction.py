@@ -1,6 +1,6 @@
 import pytest
 
-from braidpy.handles_reduction import dehornoy_reduce_core, HandleReductionMode
+from braidpy.handles_reduction import HandleReductionMode, dehornoy_reduce_core
 
 
 def test_dehornoy_reduce_core():

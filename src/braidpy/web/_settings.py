@@ -9,7 +9,7 @@ same defaults (``shown``): one place for each, kept in step."""
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import ClassVar
 
 from braidpy.web._spec import Colours, Count, Number, Text
 from braidpy.web._types import Default
@@ -51,7 +51,7 @@ class Word:
     by_physics = ("physics", "crossing")
     # What the page starts from; the words it offers are
     # braidpy.braid_catalog.word_examples().
-    starts: Dict[str, Default] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
+    starts: ClassVar[dict[str, Default]] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
 
 
 # ------------------------------------------------------------- disk braids

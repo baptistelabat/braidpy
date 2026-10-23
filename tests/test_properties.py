@@ -26,9 +26,9 @@ t = symbols("t")
 #         assert neg == [-1]
 
 
-import pytest  # noqa: E402
+import pytest
 
-from braidpy import Braid, alexander_polynomial  # noqa: E402
+from braidpy import Braid, alexander_polynomial
 
 
 @pytest.mark.parametrize(
