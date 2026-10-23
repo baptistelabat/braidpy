@@ -62,21 +62,14 @@ the shape its yarns pull it into, whatever the fell started it as.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import (
     TYPE_CHECKING,
-    Callable,
-    Collection,
-    Dict,
-    Hashable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
 )
 
 import numpy as np
+
 from braidpy.utils import lazy_module
 
 if TYPE_CHECKING:
@@ -109,12 +102,12 @@ class StrandTrajectories:
     """
 
     times: np.ndarray
-    xy: Dict[Hashable, np.ndarray]
-    outlines: Tuple[np.ndarray, ...] = ()
-    axis: Optional[Tuple[float, float]] = None
+    xy: dict[Hashable, np.ndarray]
+    outlines: tuple[np.ndarray, ...] = ()
+    axis: tuple[float, float] | None = None
     label: str = "Yarn "
     outline_name: str = "Deck"
-    slots: Tuple[Tuple[float, float, str], ...] = ()
+    slots: tuple[tuple[float, float, str], ...] = ()
 
     def __post_init__(self) -> None:
         if len(self.times) < 2:
@@ -126,7 +119,7 @@ class StrandTrajectories:
             if np.shape(xy) != (len(self.times), 2):
                 raise ValueError(f"Strand {key!r}: expected {len(self.times)} (x, y).")
 
-    def centre(self) -> Tuple[float, float]:
+    def centre(self) -> tuple[float, float]:
         """The braid's axis: the source's, or the middle of every sample."""
         if self.axis is not None:
             return self.axis
@@ -156,15 +149,15 @@ class YarnPaths:
     """
 
     times: np.ndarray
-    points: Dict[Hashable, np.ndarray]
+    points: dict[Hashable, np.ndarray]
     take_off: float
-    trajectories: "StrandTrajectories"
+    trajectories: StrandTrajectories
     fell_height: float = 0.0
-    fell_radius: Optional[float] = None
-    axis: Tuple[float, float] = (0.0, 0.0)
+    fell_radius: float | None = None
+    axis: tuple[float, float] = (0.0, 0.0)
     contraction: float = 1.0
-    n_formed: Optional[int] = None
-    yarn_diameter: Optional[float] = None
+    n_formed: int | None = None
+    yarn_diameter: float | None = None
 
     @property
     def length(self) -> float:
@@ -226,7 +219,7 @@ class YarnPaths:
             path = points[::-1]
             s = np.linspace(0.0, 1.0, len(path))
 
-            def func(u: float) -> Tuple[float, float, float]:
+            def func(u: float) -> tuple[float, float, float]:
                 x, y, z = (float(np.interp(u, s, path[:, i])) for i in range(3))
                 return x, y, z
 
@@ -258,13 +251,13 @@ def default_take_off(trajectories: StrandTrajectories) -> float:
 
 def lay_yarns(
     trajectories: StrandTrajectories,
-    take_off: Optional[float] = None,
-    fell_radius: Optional[float] = None,
-    yarn_diameter: Optional[float] = None,
-    fell_height: Optional[float] = None,
-    axis: Optional[Tuple[float, float]] = None,
+    take_off: float | None = None,
+    fell_radius: float | None = None,
+    yarn_diameter: float | None = None,
+    fell_height: float | None = None,
+    axis: tuple[float, float] | None = None,
     n_converge: int = 16,
-    settle_length: Optional[float] = None,
+    settle_length: float | None = None,
 ) -> YarnPaths:
     """The braid laid from these trajectories, as it stands at their last sample.
 
@@ -344,7 +337,7 @@ def lay_yarns(
         else np.ones_like(above)
     )
     level_k = k_fell + (k - k_fell) * (3 * u**2 - 2 * u**3)
-    points: Dict[Hashable, np.ndarray] = {}
+    points: dict[Hashable, np.ndarray] = {}
     for cid, r in zip(traj.xy, rel):
         formed = np.column_stack([centre + level_k[:, None] * r, heights])
         if fell_height > 0:
@@ -384,7 +377,7 @@ def lay_yarns(
 # close pair without a spatial index.
 
 
-def _level_pairs(n_yarns: int, offset: int) -> Tuple[np.ndarray, np.ndarray]:
+def _level_pairs(n_yarns: int, offset: int) -> tuple[np.ndarray, np.ndarray]:
     """Yarn index pairs to compare at a level offset, each unordered pair once."""
     a, b = np.meshgrid(np.arange(n_yarns), np.arange(n_yarns), indexing="ij")
     keep = a < b if offset == 0 else a != b
@@ -395,7 +388,7 @@ def _offsets(spacing: float, diameter: float, n: int) -> range:
     """Level offsets at which two samples can still be within a diameter."""
     if spacing <= 0:
         return range(1)
-    return range(min(n, int(math.ceil(diameter / spacing))))
+    return range(min(n, math.ceil(diameter / spacing)))
 
 
 def _closest_approach(formed: np.ndarray, spacing: float) -> float:
@@ -547,11 +540,11 @@ def tighten_yarns(
     yarn_diameter: float,
     iterations: int = 400,
     step: float = 20.0,
-    core_radius: Optional[float] = None,
+    core_radius: float | None = None,
     tolerance: float = 1e-3,
     hold_top: bool = True,
     rigid: Collection[Hashable] = (),
-) -> Tuple[YarnPaths, Dict[str, List[float]]]:
+) -> tuple[YarnPaths, dict[str, list[float]]]:
     """Pull the yarns taut above the fell, without letting them overlap.
 
     Each iteration shortens every yarn, sideways only, so every sample keeps
@@ -619,7 +612,7 @@ def tighten_yarns(
         size = np.linalg.norm(move, axis=-1, keepdims=True)
         return move * np.minimum(1.0, max_move / np.maximum(size, 1e-300))
 
-    def neighbours() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def neighbours() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Pairs of samples that could touch before the list is rebuilt.
 
         Every pair within a diameter of touching.  The list is rebuilt once
@@ -700,7 +693,7 @@ def tighten_yarns(
     def total_length() -> float:
         return float(np.sum(np.linalg.norm(np.diff(formed, axis=1), axis=-1)))
 
-    history: Dict[str, List[float]] = {"length": [], "closest": []}
+    history: dict[str, list[float]] = {"length": [], "closest": []}
     p, q, need, rise = movable(neighbours())
     built = xy.copy()
     separate(p, q, need)
@@ -729,12 +722,12 @@ def tighten_yarns(
 # ── Drawing ───────────────────────────────────────────────────────────────────
 
 
-def _outline_traces(trajectories: StrandTrajectories) -> List[go.Scatter3d]:
+def _outline_traces(trajectories: StrandTrajectories) -> list[go.Scatter3d]:
     """The source's outlines on the plane at z = 0, so the yarns have a footing."""
     if not trajectories.outlines:
         return []
-    xs: List[Optional[float]] = []
-    ys: List[Optional[float]] = []
+    xs: list[float | None] = []
+    ys: list[float | None] = []
     for outline in trajectories.outlines:
         xs.extend(outline[:, 0].tolist() + [None])
         ys.extend(outline[:, 1].tolist() + [None])
@@ -753,12 +746,12 @@ def _outline_traces(trajectories: StrandTrajectories) -> List[go.Scatter3d]:
 
 def visualize_yarns(
     paths: YarnPaths,
-    output_html: Optional[str] = None,
-    title: Optional[str] = None,
-    tube_diameter: Optional[float] = None,
+    output_html: str | None = None,
+    title: str | None = None,
+    tube_diameter: float | None = None,
     n_around: int = 12,
     show_deck: bool = True,
-    colors: Optional[Sequence[str]] = None,
+    colors: Sequence[str] | None = None,
     extra_traces: Sequence[go.BaseTraceType] = (),
 ) -> go.Figure:
     """The yarns in 3D, standing on whatever laid them.
@@ -817,7 +810,7 @@ def visualize_yarns(
         flip_z=False,
     )
 
-    traces: List[go.BaseTraceType] = []
+    traces: list[go.BaseTraceType] = []
     if show_deck:
         traces.extend(_outline_traces(paths.trajectories))
 
@@ -898,7 +891,7 @@ def parametric_trajectories(
     if n_samples < 2:
         raise ValueError("n_samples must be at least 2.")
     times = np.linspace(0.0, 1.0, n_samples)
-    xy: Dict[Hashable, np.ndarray] = {
+    xy: dict[Hashable, np.ndarray] = {
         index: np.array([strand.evaluate(float(t))[:2] for t in times])
         for index, strand in enumerate(strands)
     }
@@ -971,7 +964,7 @@ def disk_trajectories(
     clockwise: bool = True,
     label: str = "Strand ",
     slot_offset: float = 0.0,
-    slot_names: Optional[Mapping[int, str]] = None,
+    slot_names: Mapping[int, str] | None = None,
 ) -> StrandTrajectories:
     """Strands moved between the slots round a disk, as trajectories to lay.
 
@@ -1024,8 +1017,8 @@ def disk_trajectories(
     if len(set(where.values())) < len(where):
         raise ValueError("Two strands start in the same slot.")
 
-    slots: Dict[Hashable, List[float]] = {k: [] for k in keys}
-    rims: Dict[Hashable, List[float]] = {k: [] for k in keys}
+    slots: dict[Hashable, list[float]] = {k: [] for k in keys}
+    rims: dict[Hashable, list[float]] = {k: [] for k in keys}
     fractions = np.arange(samples_per_step) / samples_per_step
     for number, step in enumerate(steps):
         unknown = set(step) - set(keys)
@@ -1083,8 +1076,8 @@ def disk_trajectories(
 
 
 def mobidai_steps(
-    mobidai, n_cycles: int = 1, drift: Optional[int] = None
-) -> Tuple[Dict[Hashable, int], List[Dict[Hashable, int]]]:
+    mobidai, n_cycles: int = 1, drift: int | None = None
+) -> tuple[dict[Hashable, int], list[dict[Hashable, int]]]:
     """A mobidai's cycles, as the start and steps :func:`disk_trajectories` takes.
 
     Reads either a ``Mobidai`` or its ``MobidaiConfig`` (see
@@ -1111,7 +1104,7 @@ def mobidai_steps(
     """
     config = getattr(mobidai, "config", mobidai)
     n = config.n_slots
-    where: Dict[Hashable, int] = {}
+    where: dict[Hashable, int] = {}
     for index, strand in enumerate(config.strands):
         key = strand.id if getattr(strand, "id", -1) >= 0 else index
         where[key] = strand.position
@@ -1123,7 +1116,7 @@ def mobidai_steps(
             list(start.values()), config.moves, n, config.n_shift_after_cycle
         )
 
-    steps: List[Dict[Hashable, int]] = []
+    steps: list[dict[Hashable, int]] = []
     for cycle in range(n_cycles):
         for move in config.moves:
             source = (move.from_slot - 1 + cycle * drift) % n + 1
@@ -1146,7 +1139,7 @@ def mobidai_steps(
 def mobidai_trajectories(
     mobidai,
     n_cycles: int = 3,
-    drift: Optional[int] = None,
+    drift: int | None = None,
     radius: float = 1.0,
     lift: float = 0.15,
     samples_per_step: int = 12,
@@ -1183,8 +1176,8 @@ def mobidai_trajectories(
 
 
 def kumihimo_steps(
-    kumihimo, n_strands: Optional[int] = None
-) -> Tuple[int, Dict[Hashable, int], List[Dict[Hashable, int]]]:
+    kumihimo, n_strands: int | None = None
+) -> tuple[int, dict[Hashable, int], list[dict[Hashable, int]]]:
     """A kumihimo sequence, as the disk and steps :func:`disk_trajectories` takes.
 
     Reads a :class:`~braidpy.kumihimo.Kumihimo` — its strand count and the
@@ -1226,9 +1219,9 @@ def kumihimo_steps(
     if n % 4:
         raise ValueError("A kumihimo disk takes a multiple of four strands.")
 
-    position: Dict[Hashable, int] = {s: p for p, s in enumerate(start_order)}
-    start: Dict[Hashable, int] = {s: 2 * p + 1 for s, p in position.items()}
-    steps: List[Dict[Hashable, int]] = []
+    position: dict[Hashable, int] = {s: p for p, s in enumerate(start_order)}
+    start: dict[Hashable, int] = {s: 2 * p + 1 for s, p in position.items()}
+    steps: list[dict[Hashable, int]] = []
     for move in moves:
         if move == "S":
             at = {p: strand for strand, p in position.items()}
@@ -1247,7 +1240,7 @@ def kumihimo_steps(
 
 def kumihimo_trajectories(
     kumihimo,
-    n_strands: Optional[int] = None,
+    n_strands: int | None = None,
     radius: float = 1.0,
     lift: float = 0.15,
     samples_per_step: int = 12,
@@ -1297,7 +1290,7 @@ def disk_crossings(
     start: Mapping[Hashable, int],
     steps: Sequence[Mapping[Hashable, int]],
     n_slots: int,
-) -> Tuple[List[Hashable], List[Tuple[Hashable, Hashable]]]:
+) -> tuple[list[Hashable], list[tuple[Hashable, Hashable]]]:
     """The crossings a disk's moves make, in the order they are made.
 
     See :func:`disk_crossing_steps`, which also says which step made each.
@@ -1314,7 +1307,7 @@ def disk_crossing_steps(
     start: Mapping[Hashable, int],
     steps: Sequence[Mapping[Hashable, int]],
     n_slots: int,
-) -> Tuple[List[Hashable], List[Tuple[Hashable, Hashable]], List[float]]:
+) -> tuple[list[Hashable], list[tuple[Hashable, Hashable]], list[float]]:
     """The crossings a disk's moves make, and when each is made.
 
     A strand that moves while the others stay passes over each strand
@@ -1343,8 +1336,8 @@ def disk_crossing_steps(
     """
     where = dict(start)
     order = sorted(where, key=lambda k: where[k])
-    crossings: List[Tuple[Hashable, Hashable]] = []
-    made_at: List[float] = []
+    crossings: list[tuple[Hashable, Hashable]] = []
+    made_at: list[float] = []
     for number, step in enumerate(steps):
         moving = {k: d for k, d in step.items() if d}
         if not moving:
@@ -1401,7 +1394,7 @@ def disk_annular_word(
     steps: Sequence[Mapping[Hashable, int]],
     n_slots: int,
     clockwise: bool = True,
-) -> Tuple[List[int], int]:
+) -> tuple[list[int], int]:
     """The annular braid a disk's moves make — see :mod:`braidpy.annulus_braid`.
 
     The strands are numbered in order round the disk, seen from above and
@@ -1442,7 +1435,7 @@ def disk_annular_word(
     n = len(where)
     # The strands in order round the ring, from slot 1.
     ring = sorted(where, key=lambda k: where[k])
-    word: List[int] = []
+    word: list[int] = []
     for number, step in enumerate(steps):
         moving = {k: (d if clockwise else -d) for k, d in step.items() if d}
         if not moving:
@@ -1484,9 +1477,9 @@ def disk_annular_word(
 
 def crossing_rows(
     order: Sequence[Hashable],
-    crossings: Sequence[Tuple[Hashable, Hashable]],
+    crossings: Sequence[tuple[Hashable, Hashable]],
     in_turn: bool = False,
-) -> List[int]:
+) -> list[int]:
     """The row of the ring each crossing is made in — see :func:`ring_trajectories`.
 
     Each crossing goes in the first row after both its strands' last ones,
@@ -1504,7 +1497,7 @@ def crossing_rows(
         One row index per crossing.
     """
     free_from = {k: 0 for k in order}
-    rows: List[int] = []
+    rows: list[int] = []
     for over, under in crossings:
         row = max(free_from[over], free_from[under])
         if in_turn and rows:
@@ -1516,12 +1509,12 @@ def crossing_rows(
 
 def ring_trajectories(
     order: Sequence[Hashable],
-    crossings: Sequence[Tuple[Hashable, Hashable]],
+    crossings: Sequence[tuple[Hashable, Hashable]],
     diameter: float = 1.0,
     samples_per_row: int = 12,
     clockwise: bool = True,
     label: str = "Strand ",
-    rows: Optional[Sequence[int]] = None,
+    rows: Sequence[int] | None = None,
 ) -> StrandTrajectories:
     """Strands standing evenly round a ring, swapping neighbours as they cross.
 
@@ -1559,7 +1552,7 @@ def ring_trajectories(
     rank = {k: i for i, k in enumerate(order)}
     if rows is None:
         rows = crossing_rows(order, crossings)
-    by_row: List[List[Tuple[Hashable, Hashable]]] = []
+    by_row: list[list[tuple[Hashable, Hashable]]] = []
     for crossing, index in zip(crossings, rows):
         while len(by_row) <= index:
             by_row.append([])
@@ -1574,8 +1567,8 @@ def ring_trajectories(
     slot = dict(rank)
     fractions = np.arange(samples_per_row) / samples_per_row
     ease = 0.5 - 0.5 * np.cos(np.pi * fractions)
-    xs: Dict[Hashable, List[float]] = {k: [] for k in order}
-    ys: Dict[Hashable, List[float]] = {k: [] for k in order}
+    xs: dict[Hashable, list[float]] = {k: [] for k in order}
+    ys: dict[Hashable, list[float]] = {k: [] for k in order}
 
     def place(k: Hashable, a: np.ndarray, r: np.ndarray) -> None:
         theta = 2 * np.pi * a / n * turn
@@ -1583,7 +1576,7 @@ def ring_trajectories(
         ys[k].extend(r * np.cos(theta))
 
     for number, row in enumerate(by_row):
-        moving: Dict[Hashable, Tuple[int, float]] = {}
+        moving: dict[Hashable, tuple[int, float]] = {}
         for over, under in row:
             gap = (slot[under] - slot[over]) % n
             if gap not in (1, n - 1):
@@ -1682,7 +1675,7 @@ def mobidai_braid(
 
 
 def kumihimo_braid(
-    kumihimo, yarn_diameter: float, n_strands: Optional[int] = None, **kwargs
+    kumihimo, yarn_diameter: float, n_strands: int | None = None, **kwargs
 ) -> YarnPaths:
     """The braid a kumihimo sequence makes — see :func:`disk_braid`.
 

@@ -1,7 +1,8 @@
-import math
-from dataclasses import dataclass
 import bisect
-from typing import TYPE_CHECKING, Callable, List, Tuple
+import math
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from braidpy.utils import StrictlyPositiveInt
 
@@ -10,12 +11,12 @@ if TYPE_CHECKING:
 
 
 # Type alias for an arc of a strand: a time interval and a 3D path function over that interval
-Arc = Tuple[float, float, Callable[[float], Tuple[float, float, float]]]
+Arc = tuple[float, float, Callable[[float], tuple[float, float, float]]]
 
 
 def make_arc(
     x_start: float, x_end: float, t_start: float, t_end: float, amplitude: float
-) -> Callable[[float], Tuple[float, float, float]]:
+) -> Callable[[float], tuple[float, float, float]]:
     """
     Creates a sine-arc parametric function between two x-positions.
 
@@ -30,7 +31,7 @@ def make_arc(
         A function that maps time t to a 3D point (x, y, z).
     """
 
-    def arc(t: float) -> Tuple[float, float, float]:
+    def arc(t: float) -> tuple[float, float, float]:
         progress = (t - t_start) / (t_end - t_start)
         x = x_start + (x_end - x_start) * progress
         y = amplitude * math.sin(math.pi * progress)
@@ -41,7 +42,7 @@ def make_arc(
 
 def make_idle_arc(
     x: float, t_start: float, t_end: float
-) -> Callable[[float], Tuple[float, float, float]]:
+) -> Callable[[float], tuple[float, float, float]]:
     """
     Creates a straight-line parametric function for idle strands.
 
@@ -54,13 +55,13 @@ def make_idle_arc(
         A function that maps time t to a 3D point (x, 0.0, z).
     """
 
-    def arc(t: float) -> Tuple[float, float, float]:
+    def arc(t: float) -> tuple[float, float, float]:
         return x, 0.0, t
 
     return arc
 
 
-def combine_arcs(arcs: List[Arc]) -> Callable[[float], Tuple[float, float, float]]:
+def combine_arcs(arcs: list[Arc]) -> Callable[[float], tuple[float, float, float]]:
     """
     Combines a list of arcs into a single time-dependent function.
 
@@ -75,7 +76,7 @@ def combine_arcs(arcs: List[Arc]) -> Callable[[float], Tuple[float, float, float
     # looking through them all: a long word has hundreds of arcs a strand.
     ends = [t1 for _, t1, _ in arcs]
 
-    def strand_func(t: float) -> Tuple[float, float, float]:
+    def strand_func(t: float) -> tuple[float, float, float]:
         k = bisect.bisect_left(ends, t)
         while k < len(arcs):
             t0, t1, arc = arcs[k]
@@ -111,7 +112,7 @@ class ParametricStrand:
             raise ValueError("t must be in [0, 1]")
         return self.func(t)
 
-    def sample(self, n: StrictlyPositiveInt = 100) -> List[tuple]:
+    def sample(self, n: StrictlyPositiveInt = 100) -> list[tuple]:
         """
         Return a list of sampled points for plotting
 
@@ -138,7 +139,7 @@ class ParametricStrand:
 
 # A transition profile as polynomial coefficients in the segment parameter
 # tau, lowest power first: P(tau) = c0 + c1 tau + c2 tau^2 + ...
-Profile = Tuple[float, ...]
+Profile = tuple[float, ...]
 
 #: Straight from slot to slot, which is what `make_arc` does.
 LINEAR: Profile = (0.0, 1.0)
@@ -184,8 +185,8 @@ class StrandPath:
             :data:`SMOOTHSTEP`.
     """
 
-    slots: Tuple[int, ...]
-    signs: Tuple[int, ...]
+    slots: tuple[int, ...]
+    signs: tuple[int, ...]
     spacing: float = 1.0
     amplitude: float = 0.2
     profile: Profile = LINEAR
@@ -195,7 +196,7 @@ class StrandPath:
         """The braid's period along its axis, one unit per generator."""
         return len(self.signs)
 
-    def position(self, z: float) -> Tuple[float, float, float]:
+    def position(self, z: float) -> tuple[float, float, float]:
         """Where the strand is at ``z`` along the axis.
 
         ``z`` is taken modulo the period, so a closed braid can be followed
@@ -207,7 +208,7 @@ class StrandPath:
         Returns:
             (x, y, z) — sideways, off-axis, and along.
         """
-        segment = int(math.floor(z)) % self.length
+        segment = math.floor(z) % self.length
         tau = z - math.floor(z)
 
         start = self.slots[segment] * self.spacing
@@ -231,7 +232,7 @@ def strand_paths(
     spacing: float = 1.0,
     amplitude: float = 0.2,
     profile: Profile = LINEAR,
-) -> List[StrandPath]:
+) -> list[StrandPath]:
     """The path of every strand of a braid.
 
     Which strand of a crossing goes over is read from the generator's sign,
@@ -282,7 +283,7 @@ def strand_paths(
 
 def sample_strands(
     strands, per_unit: int = 20, rise: float = 1.0
-) -> "List[np.ndarray]":
+) -> "list[np.ndarray]":
     """Strands as points along them, for whatever takes yarns as points.
 
     Args:
@@ -342,7 +343,7 @@ class SampledStrand:
         """How far it rises, bottom end to top end."""
         return float(self.points[-1, 2] - self.points[0, 2])
 
-    def position(self, z: float) -> Tuple[float, float, float]:
+    def position(self, z: float) -> tuple[float, float, float]:
         """Where it is ``z`` above its bottom end, between its points."""
         import numpy as np
 

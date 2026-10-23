@@ -3,8 +3,6 @@
 in the book, and all of them in :data:`CATALOGUE`, as every catalogue lists
 its braids (:mod:`braidpy.catalogue`)."""
 
-from typing import Dict
-
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.catalogue import Entry
 
@@ -1023,7 +1021,7 @@ def _entry(name: str, sinnet: AshleySolidSinnet) -> Entry[AshleySolidSinnet]:
 
 
 # By their number in the book.
-CATALOGUE: Dict[str, Entry[AshleySolidSinnet]] = {
+CATALOGUE: dict[str, Entry[AshleySolidSinnet]] = {
     name: _entry(name, value)
     for name, value in sorted(globals().items())
     if isinstance(value, AshleySolidSinnet)

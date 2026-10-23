@@ -27,10 +27,10 @@ the package needs no special case.  See
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import reduce
 from math import lcm
-from typing import Dict, FrozenSet, Iterable, List, Optional, Tuple
 
 import networkx as nx
 
@@ -94,9 +94,9 @@ class Connection:
     gear_b: str
     slot_a0: int
     slot_b0: int
-    name: Optional[str] = None
+    name: str | None = None
 
-    def slots_at(self, machine: "BraidingMachine", time: int) -> Tuple[int, int]:
+    def slots_at(self, machine: BraidingMachine, time: int) -> tuple[int, int]:
         """Return the (slot_of_a, slot_of_b) currently at this connection.
 
         Args:
@@ -136,7 +136,7 @@ class Axial:
     """
 
     name: str
-    anchor: Tuple[str, ...]
+    anchor: tuple[str, ...]
 
 
 class BraidingMachine:
@@ -165,13 +165,13 @@ class BraidingMachine:
 
     def __init__(
         self,
-        gears: List[HornGear],
-        connections: List[Connection],
+        gears: list[HornGear],
+        connections: list[Connection],
         axials: Iterable[Axial] = (),
     ) -> None:
-        self.gears: Dict[str, HornGear] = {g.name: g for g in gears}
-        self.connections: List[Connection] = connections
-        self.axials: List[Axial] = list(axials)
+        self.gears: dict[str, HornGear] = {g.name: g for g in gears}
+        self.connections: list[Connection] = connections
+        self.axials: list[Axial] = list(axials)
         self.graph: nx.Graph = self._build_graph()
         self._validate()
 
@@ -228,7 +228,7 @@ class BraidingMachine:
     # separately — a Jacquard lace machine reading a mask — overrides these
     # three methods, and nothing else in the package needs to know.
 
-    def turning_gears(self, step: int) -> FrozenSet[str]:
+    def turning_gears(self, step: int) -> frozenset[str]:
         """Gears that turn during the transition from ``step`` to ``step + 1``.
 
         Args:
@@ -261,7 +261,7 @@ class BraidingMachine:
 
     # ── Derived from the above ────────────────────────────────────────────
 
-    def program_rows(self) -> Optional[List[Tuple[str, Tuple[bool, ...]]]]:
+    def program_rows(self) -> list[tuple[str, tuple[bool, ...]]] | None:
         """The machine's programme as punchcard rows, or None if it has none.
 
         One row per phase, in the order they are driven, each a label and a
@@ -275,7 +275,7 @@ class BraidingMachine:
 
     def preferred_layout(
         self, scale: float = 1.0
-    ) -> Optional[Dict[str, Tuple[float, float]]]:
+    ) -> dict[str, tuple[float, float]] | None:
         """A layout the machine knows to be right for itself, or None.
 
         Returning None lets :func:`~braidpy.horn_gear.layout.compute_layout`
@@ -291,7 +291,7 @@ class BraidingMachine:
         """
         return None
 
-    def riding_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+    def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Which (gear, slot) sweeps a carrier through the step at ``time``.
 
         This is what an animation must draw it on, and it is not always where
@@ -313,7 +313,7 @@ class BraidingMachine:
         """
         return pos
 
-    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+    def default_carriers(self) -> dict[int, tuple[str, int]]:
         """How to thread this machine when the caller does not say.
 
         A wired machine is loaded along its tracks, as far as it will go.  A
@@ -327,7 +327,7 @@ class BraidingMachine:
 
         return load_carriers(self)
 
-    def next_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+    def next_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Where a carrier goes during the step from ``time`` to ``time + 1``.
 
         On an ordinary machine the gears are **tangent** and every slot belongs
@@ -395,7 +395,7 @@ class BraidingMachine:
         """Total number of carrier slots across all gears."""
         return sum(g.n_slots for g in self.gears.values())
 
-    def connections_of(self, gear_name: str) -> List[Connection]:
+    def connections_of(self, gear_name: str) -> list[Connection]:
         """Return all connections involving a given gear.
 
         Args:
@@ -412,7 +412,7 @@ class BraidingMachine:
 
     def neighbor_at_slot(
         self, gear_name: str, slot: int, time: int
-    ) -> Optional[Tuple[str, int]]:
+    ) -> tuple[str, int] | None:
         """If slot ``slot`` of gear ``gear_name`` is at a connection at step
         ``time``, return (neighbor_gear_name, neighbor_slot).  Otherwise None.
 

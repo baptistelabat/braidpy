@@ -29,7 +29,7 @@ word the strands are in a row, and keeping them so makes the word itself
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from braidpy.braid import Braid
 from braidpy.ring_program import from_braid
@@ -48,8 +48,8 @@ class DiskMoves:
     """
 
     n_slots: int
-    slots: Tuple[int, ...]
-    moves: Tuple[Tuple[int, int], ...]
+    slots: tuple[int, ...]
+    moves: tuple[tuple[int, int], ...]
 
     def config(self):
         """The disk as braidpy's mobidai describes it.
@@ -75,7 +75,7 @@ class DiskMoves:
         """The moves as a braider writes them: ``from>to``, in order."""
         return ", ".join(f"{a}>{b}" for a, b in self.moves)
 
-    def spec(self) -> Dict[str, Any]:
+    def spec(self) -> dict[str, Any]:
         """The disk as Braid Studio makes your own disk braid
         (:func:`braidpy.web.build`), once through."""
         return {
@@ -112,7 +112,7 @@ def disk_moves(braid: Braid, n_slots: int = 32) -> DiskMoves:
     def slot(place: int) -> int:
         return 2 * place + 3
 
-    moves: List[Tuple[int, int]] = []
+    moves: list[tuple[int, int]] = []
     for swap in from_braid(braid).swaps():
         left, right = slot(swap.place), slot(swap.place + 1)
         if swap.sign > 0:

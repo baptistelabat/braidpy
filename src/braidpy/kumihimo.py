@@ -11,7 +11,7 @@ Features:
 - Displays step labels, strand IDs, and pattern info
 """
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -55,10 +55,10 @@ class Kumihimo:
 
         self.n: int = n_strands
         self.k: int = n_strands // 4
-        self.state: List[int] = list(range(n_strands))
-        self.braid_word: List[int] = []
-        self.history: List[str] = []
-        self.frames: List[List[int]] = [self.state.copy()]
+        self.state: list[int] = list(range(n_strands))
+        self.braid_word: list[int] = []
+        self.history: list[str] = []
+        self.frames: list[list[int]] = [self.state.copy()]
         self.angles: np.ndarray = np.linspace(0, 2 * np.pi, n_strands, endpoint=False)
         self.colors: np.ndarray = matplotlib.colormaps["hsv"](
             np.linspace(0, 1, n_strands)
@@ -69,7 +69,7 @@ class Kumihimo:
     # Core Operations
     # ----------------------------------------------------------------------
 
-    def _swap_path(self, i: int, j: int) -> List[int]:
+    def _swap_path(self, i: int, j: int) -> list[int]:
         """Compute Artin word for swapping two distant strands.
 
         Args:
@@ -81,7 +81,7 @@ class Kumihimo:
         """
         if i > j:
             i, j = j, i
-        path: List[int] = [k + 1 for k in range(i, j)]
+        path: list[int] = [k + 1 for k in range(i, j)]
         path.extend(-(k + 1) for k in reversed(range(i, j - 1)))
         return path
 
@@ -152,7 +152,7 @@ class Kumihimo:
         """
         n_steps = len(self.frames)
         # Swap figsize dimensions for horizontal plot
-        fig, ax = plt.subplots(figsize=(n_steps * step_width, 5))
+        _fig, ax = plt.subplots(figsize=(n_steps * step_width, 5))
         ax.set_aspect("equal")
         ax.axis("off")
 
@@ -223,7 +223,7 @@ class Kumihimo:
         plt.tight_layout()
         plt.show()
 
-    def animate(self, output_html: Optional[str] = None, **kwargs):
+    def animate(self, output_html: str | None = None, **kwargs):
         """Animate the moves made so far on the disk, seen from above.
 
         A Plotly animation in which each strand runs from its slot to the

@@ -9,7 +9,8 @@ Garside normal form."""
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Optional, Sequence, Tuple
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -43,7 +44,7 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
                 "half_twists": least,
                 "factors": len(factors.Ai),
                 # As Braid.full_twists has it, without computing it twice.
-                "full_twists": int(math.floor((least + most) / 4 + 0.5)),
+                "full_twists": math.floor((least + most) / 4 + 0.5),
             }
     return info
 
@@ -64,7 +65,7 @@ def _unit(info: Info, word: Sequence[int], n_strands: int, repeated: str) -> Inf
 
 def _disk_unit(
     info: Info,
-    cycles: Callable[[int], Tuple[Any, Any, int]],
+    cycles: Callable[[int], tuple[Any, Any, int]],
     clockwise: bool,
     repeated: str = "cycle",
 ) -> Info:
@@ -76,17 +77,16 @@ def _disk_unit(
     from braidpy.annulus_braid import solid_word
     from braidpy.braid import Braid
     from braidpy.pure_braid import closing_repeats
-
     from braidpy.take_off import disk_annular_word
 
-    def repeats(k: int) -> Optional[int]:
+    def repeats(k: int) -> int | None:
         """How many of ``k`` cycles make a pure braid."""
         start, steps, n_slots = cycles(k)
         annular, n = disk_annular_word(start, steps, n_slots, clockwise=clockwise)
         word = solid_word(annular, n)
         return closing_repeats(Braid(word, n), limit=None) if word else 1
 
-    k: Optional[int] = repeats(1)
+    k: int | None = repeats(1)
     if k and k > 1 and repeats(k) != 1:
         k = next((k for k in range(2, _MOST_CYCLES + 1) if repeats(k) == 1), None)
     info["pure_after"] = k

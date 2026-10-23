@@ -31,7 +31,6 @@ from __future__ import annotations
 
 from functools import reduce
 from math import lcm
-from typing import Dict, List, Optional, Tuple
 
 from .model import BraidingMachine
 
@@ -53,11 +52,11 @@ def _require_fixed_tracks(machine: BraidingMachine, what: str) -> None:
 
 
 # A position is (gear_name, slot_index)
-Position = Tuple[str, int]
+Position = tuple[str, int]
 
 # A track is an ordered list of positions visited, ending just before
 # returning to the start (i.e. the start is NOT repeated at the end).
-Track = List[Position]
+Track = list[Position]
 
 
 def _next_position(machine: BraidingMachine, pos: Position, time: int) -> Position:
@@ -79,7 +78,7 @@ def _next_position(machine: BraidingMachine, pos: Position, time: int) -> Positi
     return machine.next_position(pos, time)
 
 
-def ring_order(machine: BraidingMachine) -> Optional[List[str]]:
+def ring_order(machine: BraidingMachine) -> list[str] | None:
     """The gears in the order they circle the machine, or None if it has no ring.
 
     A flat braid is a chain with no way round, so there is no circulation to
@@ -98,7 +97,7 @@ def ring_order(machine: BraidingMachine) -> Optional[List[str]]:
 def circulation(
     machine: BraidingMachine,
     start: Position,
-    period: Optional[int] = None,
+    period: int | None = None,
 ) -> int:
     """Which way round the machine a carrier started at ``start`` travels.
 
@@ -147,8 +146,8 @@ def circulation(
 def walk(
     machine: BraidingMachine,
     start: Position,
-    period: Optional[int] = None,
-) -> List[Position]:
+    period: int | None = None,
+) -> list[Position]:
     """Every position a carrier passes through, in order, repeats included.
 
     A :data:`Track` lists the *distinct* positions on a loop, which is what you
@@ -190,7 +189,7 @@ def _follow(
     machine: BraidingMachine,
     start: Position,
     max_steps: int = 100_000,
-) -> Tuple[Track, int]:
+) -> tuple[Track, int]:
     """Follow one carrier from ``start`` until its path closes.
 
     Returns:
@@ -269,7 +268,7 @@ def simulation_period(machine: BraidingMachine, max_steps: int = 100_000) -> int
     return reduce(lcm, (_follow(machine, p, max_steps)[1] for p in positions), 1)
 
 
-def compute_tracks(machine: BraidingMachine) -> List[Track]:
+def compute_tracks(machine: BraidingMachine) -> list[Track]:
     """Compute all distinct closed tracks for the machine.
 
     A slot belongs to one gear and one track, so the tracks partition the
@@ -295,14 +294,14 @@ def compute_tracks(machine: BraidingMachine) -> List[Track]:
         visited in order.
     """
     _require_fixed_tracks(machine, "Computing tracks")
-    all_positions: List[Position] = [
+    all_positions: list[Position] = [
         (name, slot)
         for name, gear in machine.gears.items()
         for slot in range(gear.n_slots)
     ]
 
     seen = set()
-    tracks: List[Track] = []
+    tracks: list[Track] = []
 
     for pos in all_positions:
         if pos in seen:
@@ -314,7 +313,7 @@ def compute_tracks(machine: BraidingMachine) -> List[Track]:
     return tracks
 
 
-def tracks_summary(tracks: List[Track]) -> Dict[str, int]:
+def tracks_summary(tracks: list[Track]) -> dict[str, int]:
     """Return summary statistics for a list of tracks.
 
     Args:

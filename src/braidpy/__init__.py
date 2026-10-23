@@ -16,5 +16,7 @@ License: Mozilla Public License 2.0
 from .braid import Braid as Braid
 from .properties import (
     alexander_polynomial as alexander_polynomial,
+)
+from .properties import (
     conjugacy_class as conjugacy_class,
 )

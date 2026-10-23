@@ -1,4 +1,5 @@
 import pytest
+
 from braidpy import Braid
 
 

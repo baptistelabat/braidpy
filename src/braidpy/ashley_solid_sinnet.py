@@ -31,19 +31,16 @@ Requirements:
 """
 
 from __future__ import annotations
+
+import itertools
+import math
+import os
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
     cast,
 )
-import math
-import os
 
 import numpy as np
 
@@ -54,8 +51,8 @@ from braidpy.utils import lazy_module
 if TYPE_CHECKING:
     import imageio.v2 as imageio
     import matplotlib
-    import matplotlib.patches as patches
     import matplotlib.pyplot as plt
+    from matplotlib import patches
     from matplotlib.axes import Axes
 
     from braidpy.braid import Braid
@@ -90,20 +87,20 @@ class AshleySolidSinnet:
             the book names it: "round", "triangle", "hexagon"…
     """
 
-    initial_counts_per_space: List[int]
-    moves: List[Tuple[int, int]]
-    shape: Optional[str] = None
+    initial_counts_per_space: list[int]
+    moves: list[tuple[int, int]]
+    shape: str | None = None
 
     @property
     def n_strands(self) -> int:
         """How many strands the sinnet has."""
         return sum(self.initial_counts_per_space)
 
-    def disk(self, n_cycles: int = 1) -> "SinnetDisk":
+    def disk(self, n_cycles: int = 1) -> SinnetDisk:
         """The sinnet worked on a disk — see :func:`sinnet_disk`."""
         return sinnet_disk(self, n_cycles)
 
-    def annular_word(self, n_cycles: int = 1) -> List[int]:
+    def annular_word(self, n_cycles: int = 1) -> list[int]:
         """The braid it makes, round the ring — see
         :func:`~braidpy.take_off.disk_annular_word`."""
         disk = self.disk(n_cycles)
@@ -112,7 +109,7 @@ class AshleySolidSinnet:
         )
         return word
 
-    def braid(self, n_cycles: int = 1) -> "Braid":
+    def braid(self, n_cycles: int = 1) -> Braid:
         """The braid it makes, as a flat braid word: the ring's, with the
         middle solid — see :func:`~braidpy.annulus_braid.solid_word`."""
         from braidpy.braid import Braid
@@ -120,7 +117,7 @@ class AshleySolidSinnet:
         word = solid_word(self.annular_word(n_cycles), self.n_strands)
         return Braid(word or [0], self.n_strands)
 
-    def to_mobidai(self) -> "MobidaiConfig":
+    def to_mobidai(self) -> MobidaiConfig:
         """One cycle as a kumihimo disk (mobidai) pattern — see
         :func:`sinnet_to_mobidai`."""
         return sinnet_to_mobidai(self)
@@ -170,9 +167,9 @@ class SinnetDisk:
 
     n_spaces: int
     slots_per_space: int
-    start: Dict[Hashable, int]
-    steps: List[Dict[Hashable, int]]
-    labels: List[str]
+    start: dict[Hashable, int]
+    steps: list[dict[Hashable, int]]
+    labels: list[str]
 
     @property
     def n_slots(self) -> int:
@@ -231,22 +228,22 @@ def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
 
     groups = init_spaces_from_counts(list(sinnet.initial_counts_per_space))
 
-    def placed(space: int, count: int) -> List[int]:
+    def placed(space: int, count: int) -> list[int]:
         first = (space - 1) * width + 1 + (width - count) // 2
         return list(range(first, first + count))
 
-    where: Dict[Hashable, int] = {}
+    where: dict[Hashable, int] = {}
     for space, strands in groups.items():
         where.update(zip(strands, placed(space, len(strands))))
-    start: Dict[Hashable, int] = dict(where)
-    steps: List[Dict[Hashable, int]] = []
-    labels: List[str] = []
+    start: dict[Hashable, int] = dict(where)
+    steps: list[dict[Hashable, int]] = []
+    labels: list[str] = []
 
     def settle(space: int) -> None:
         """Slide a space's strands to its middle, together."""
         strands = groups[space]
-        goal: Dict[Hashable, int] = dict(zip(strands, placed(space, len(strands))))
-        shift: Dict[Hashable, int] = {
+        goal: dict[Hashable, int] = dict(zip(strands, placed(space, len(strands))))
+        shift: dict[Hashable, int] = {
             k: goal[k] - where[k] for k in strands if goal[k] != where[k]
         }
         if not shift:
@@ -280,7 +277,7 @@ def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
     return SinnetDisk(n_spaces, width, start, steps, labels)
 
 
-def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> "MobidaiConfig":
+def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
     """One cycle of a sinnet as a kumihimo disk (mobidai) pattern.
 
     The disk of :func:`sinnet_disk`, numbered as a mobidai is, every move
@@ -302,7 +299,7 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> "MobidaiConfig":
     colours = strand_colours(sinnet.n_strands)
     where = {cast(int, k): slot for k, slot in disk.start.items()}
     strands = [Strand(colours[k - 1], slot) for k, slot in sorted(where.items())]
-    moves: List[Move] = []
+    moves: list[Move] = []
     for step in disk.steps:
         delta = next(iter(step.values()))
         sense = 1 if delta > 0 else -1
@@ -319,7 +316,7 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> "MobidaiConfig":
     )
 
 
-def strand_colours(n: int) -> List[str]:
+def strand_colours(n: int) -> list[str]:
     """A colour per strand, evenly round the hue circle."""
     import colorsys
 
@@ -330,7 +327,7 @@ def strand_colours(n: int) -> List[str]:
     return out
 
 
-def init_spaces_from_counts(counts: List[int]) -> Dict[int, List[int]]:
+def init_spaces_from_counts(counts: list[int]) -> dict[int, list[int]]:
     """Build the mapping sector -> strand IDs from counts.
 
     Strand IDs are assigned contiguously starting at 1, scanning sectors in ascending order.
@@ -341,7 +338,7 @@ def init_spaces_from_counts(counts: List[int]) -> Dict[int, List[int]]:
     Returns:
         Dict[int, List[int]]: Mapping from sector index (1-based) to list of strand IDs.
     """
-    spaces: Dict[int, List[int]] = {}
+    spaces: dict[int, list[int]] = {}
     strand_id = 1
     for i, c in enumerate(counts, start=1):
         spaces[i] = list(range(strand_id, strand_id + c))
@@ -349,7 +346,7 @@ def init_spaces_from_counts(counts: List[int]) -> Dict[int, List[int]]:
     return spaces
 
 
-def flatten_spaces(spaces: Dict[int, List[int]]) -> List[int]:
+def flatten_spaces(spaces: dict[int, list[int]]) -> list[int]:
     """Flatten the strands from all spaces into a single list in order of space index.
 
     Args:
@@ -365,8 +362,8 @@ def flatten_spaces(spaces: Dict[int, List[int]]) -> List[int]:
 
 
 def ashley_single_move_to_artin(
-    counts: List[int], from_space: int, to_space: int
-) -> Tuple[List[int], List[int]]:
+    counts: list[int], from_space: int, to_space: int
+) -> tuple[list[int], list[int]]:
     """Apply one Ashley move and return updated counts and the Artin braid word segment.
 
     The direction is determined by the parity of `from_space`: odd moves
@@ -392,7 +389,7 @@ def ashley_single_move_to_artin(
     n_spaces = len(counts)
     n_strands = sum(counts)
     spaces = init_spaces_from_counts(counts)
-    braid_word: List[int] = []
+    braid_word: list[int] = []
 
     if spaces[from_space]:
         from_parity = from_space % 2
@@ -441,8 +438,8 @@ def ashley_single_move_to_artin(
 
 
 def ashley_to_artin_exact(
-    counts: List[int], moves: Dict[int, int] | Sequence[Tuple[int, int]]
-) -> Tuple[List[int], List[int]]:
+    counts: list[int], moves: dict[int, int] | Sequence[tuple[int, int]]
+) -> tuple[list[int], list[int]]:
     """Convert an Ashley-style braid (sinnet) into an exact Artin braid word.
 
     Ashley braids are described in the Ashley book of knots
@@ -468,7 +465,7 @@ def ashley_to_artin_exact(
             - List of Artin σ generators as signed int.
             - Final mapping of spaces to strands.
     """
-    braid_word: List[int] = []
+    braid_word: list[int] = []
 
     pairs = moves.items() if isinstance(moves, dict) else moves
     for from_space, to_space in pairs:
@@ -481,7 +478,7 @@ def ashley_to_artin_exact(
 # ============================ Visualization ============================
 
 
-def _sector_bounds(n_spaces: int, idx0: int) -> Tuple[float, float]:
+def _sector_bounds(n_spaces: int, idx0: int) -> tuple[float, float]:
     """Compute angular bounds for a sector.
 
     Args:
@@ -496,7 +493,7 @@ def _sector_bounds(n_spaces: int, idx0: int) -> Tuple[float, float]:
     return theta1, theta2
 
 
-def _path_for_move(n_spaces: int, from_space: int, to_space: int) -> List[int]:
+def _path_for_move(n_spaces: int, from_space: int, to_space: int) -> list[int]:
     """Enumerate sector indices visited by a moving strand.
 
     Movement direction is set by the parity of `from_space`:
@@ -528,15 +525,15 @@ def _path_for_move(n_spaces: int, from_space: int, to_space: int) -> List[int]:
 
 def _draw_disk_state(
     axis: Axes,
-    counts_per_space: List[int],
+    counts_per_space: list[int],
     title: str,
     show_ids: bool = True,
-    highlight_path: Optional[List[int]] = None,
+    highlight_path: list[int] | None = None,
     r_outer: float = 1.0,
     r_inner: float = 0.5,
     r_strand_circle: float = 0.75,
     arc_pad_frac: float = 0.12,
-    strand_colors: Optional[Dict[int, Tuple[float, float, float, float]]] = None,
+    strand_colors: dict[int, tuple[float, float, float, float]] | None = None,
 ) -> None:
     """Draw one frame of the disk with colored strands and optional path arrows.
 
@@ -629,7 +626,7 @@ def _draw_disk_state(
             )
             for k in range(1, n_spaces + 1)
         }
-        for a, b in zip(highlight_path[:-1], highlight_path[1:]):
+        for a, b in itertools.pairwise(highlight_path):
             xa, ya = centers[a]
             xb, yb = centers[b]
             axis.add_patch(
@@ -651,8 +648,8 @@ def _draw_disk_state(
 
 
 def visualize_sinnet(
-    initial_counts: List[int],
-    moves: List[Tuple[int, int]],
+    initial_counts: list[int],
+    moves: list[tuple[int, int]],
     out_dir: str = "ashley_viz",
     prefix: str = "step",
     make_gif: bool = True,
@@ -660,7 +657,7 @@ def visualize_sinnet(
     show_ids: bool = True,
     r_strand_circle: float = 0.75,
     arc_pad_frac: float = 0.12,
-) -> Dict[str, List[str] | str]:
+) -> dict[str, list[str] | str]:
     """Render an Ashley sinnet into step images and an optional GIF.
 
     See :meth:`AshleySolidSinnet.animate` for an animation that follows
@@ -694,7 +691,7 @@ def visualize_sinnet(
             - "gif": str. Path to the saved GIF, or a message if skipped.
     """
     os.makedirs(out_dir, exist_ok=True)
-    frames: List[str] = []
+    frames: list[str] = []
 
     # Color map assignment (stable by ID)
     total_strands = sum(initial_counts)
@@ -764,7 +761,7 @@ def visualize_sinnet(
     plt.close(fig)
     frames.append(pf)
 
-    result: Dict[str, List[str] | str] = {"frames": frames, "final": pf}
+    result: dict[str, list[str] | str] = {"frames": frames, "final": pf}
 
     if make_gif:
         gif_path = os.path.join(out_dir, gif_name)

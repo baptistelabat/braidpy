@@ -9,13 +9,13 @@ what tightening them needs."""
 from __future__ import annotations
 
 import math
+from collections.abc import Hashable, Sequence
 from contextvars import ContextVar
-from typing import Any, Dict, Hashable, List, Optional, Sequence, cast
+from typing import Any, cast
 
 import numpy as np
 
 from braidpy.utils import PALETTE
-
 from braidpy.web._settings import ITERATIONS
 from braidpy.web._spec import Count
 from braidpy.web._types import Clock, Info, Result, Spec, Strand, Tightening, Timeline
@@ -36,9 +36,7 @@ _MAX_TIMES = 3000
 # are then only laid, and what tightening them needs is handed over instead.
 _PAGE_TIGHTENS: ContextVar[bool] = ContextVar("page_tightens", default=False)
 
-_TIGHTENING: ContextVar[Optional[Dict[str, Any]]] = ContextVar(
-    "tightening", default=None
-)
+_TIGHTENING: ContextVar[dict[str, Any] | None] = ContextVar("tightening", default=None)
 
 
 def _tightened(
@@ -90,7 +88,7 @@ def _tighten(
     return _tightened(paths, diameter, iterations.read(spec), rigid=rigid)
 
 
-def recoloured(result: Result, chosen: Sequence[Optional[str]]) -> Result:
+def recoloured(result: Result, chosen: Sequence[str | None]) -> Result:
     """The same braid with the colours a page chose for its strands.
 
     Whatever made the braid picks the colours to start with -- a word by the
@@ -119,21 +117,21 @@ def _result(
     title: str,
     paths,
     diameter: float,
-    colours: Optional[Sequence[str]] = None,
-    names: Optional[Sequence[str]] = None,
-    info: Optional[Info] = None,
+    colours: Sequence[str] | None = None,
+    names: Sequence[str] | None = None,
+    info: Info | None = None,
     notes: Sequence[str] = (),
-    timeline: Optional[Timeline] = None,
+    timeline: Timeline | None = None,
 ) -> Result:
     """Everything the page draws, as plain data."""
     n = paths.formed_count
-    keys: List[Hashable] = list(paths.points)
+    keys: list[Hashable] = list(paths.points)
     stride = max(1, math.ceil(n / _MAX_POINTS))
     centre = np.array([paths.axis[0], paths.axis[1], 0.0])
     chosen = list(range(0, n, stride))
     if chosen[-1] != n - 1:
         chosen.append(n - 1)
-    strands: List[Strand] = []
+    strands: list[Strand] = []
     for i, key in enumerate(keys):
         points = np.asarray(paths.points[key], dtype=float)[chosen] - centre
         if not np.all(np.isfinite(points)):
@@ -155,7 +153,7 @@ def _result(
             out_info["closest_approach"] = round(
                 float(paths.closest_approach(include_fell=False)), _DECIMALS
             )
-        except Exception:  # an estimate only; never worth failing the braid over
+        except Exception:  # noqa: BLE001, S110 — an estimate only; never worth failing the braid over
             pass
     result: Result = {
         "title": title,
@@ -179,7 +177,7 @@ def _timeline(
     trajectories,
     keys: Sequence[Hashable],
     kind: str,
-    clock: Optional[Clock] = None,
+    clock: Clock | None = None,
     ring=None,
 ) -> Timeline:
     """What made the braid, seen from above, over time: for the page to
@@ -206,7 +204,7 @@ def _timeline(
     cx, cy = trajectories.centre()
     shift = np.array([cx, cy])
 
-    def plane(points) -> List[List[float]]:
+    def plane(points) -> list[list[float]]:
         return np.round(np.asarray(points, dtype=float) - shift, 3).tolist()
 
     strands = [plane(trajectories.xy[k][chosen]) for k in keys]
@@ -257,7 +255,7 @@ def _timeline(
     return timeline
 
 
-def _hues(n: int) -> List[str]:
+def _hues(n: int) -> list[str]:
     from braidpy.ashley_solid_sinnet import strand_colours
 
     return strand_colours(n)

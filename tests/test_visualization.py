@@ -2,7 +2,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-from braidpy import Braid  # noqa: E402
+from braidpy import Braid
 
 # Run tests with: uv run pytest /tests
 

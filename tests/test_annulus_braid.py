@@ -30,7 +30,6 @@ from braidpy.annulus_braid import (
 )
 from braidpy.parametric_braid import closest_approach
 
-
 # ── The word ──────────────────────────────────────────────────────────────────
 
 

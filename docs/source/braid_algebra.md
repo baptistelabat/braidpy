@@ -8,8 +8,8 @@ is the identity, and every braid has an inverse, its mirror image.
 from braidpy import Braid
 
 b = Braid([1, -2], n_strands=3)
-b * b.inverse() == Braid([], n_strands=3)   # True
-b ** 3                                       # b followed by itself twice more
+b * b.inverse() == Braid([], n_strands=3)  # True
+b**3  # b followed by itself twice more
 ```
 
 ## Artin's relations
@@ -25,7 +25,7 @@ other by these relations (Artin, 1925):
 - And `σᵢσᵢ⁻¹` is no crossing at all.
 
 ```python
-Braid([1, 3], n_strands=4) == Braid([3, 1], n_strands=4)        # True
+Braid([1, 3], n_strands=4) == Braid([3, 1], n_strands=4)  # True
 Braid([1, 2, 1], n_strands=3) == Braid([2, 1, 2], n_strands=3)  # True
 ```
 

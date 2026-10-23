@@ -19,11 +19,10 @@ them, as every catalogue does (:mod:`braidpy.catalogue`).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
 
 from braidpy.catalogue import Entry
 
-__all__ = ["CATALOGUE", "CataloguedMobidai", "CataloguedBraid"]
+__all__ = ["CATALOGUE", "CataloguedBraid", "CataloguedMobidai"]
 
 
 @dataclass(frozen=True)
@@ -43,8 +42,8 @@ class CataloguedMobidai:
 
     name: str
     n_slots: int
-    initial_slots: Tuple[Tuple[int, str], ...]
-    moves: Tuple[Tuple[int, int], ...]
+    initial_slots: tuple[tuple[int, str], ...]
+    moves: tuple[tuple[int, int], ...]
     n_shift_after_cycle: int = 0
     source: str = "Delage-Calvet, Bracelets Kumihimo"
 
@@ -166,7 +165,7 @@ def _entry(braid: CataloguedMobidai) -> Entry[CataloguedMobidai]:
     )
 
 
-CATALOGUE: Dict[str, Entry[CataloguedMobidai]] = {
+CATALOGUE: dict[str, Entry[CataloguedMobidai]] = {
     "KONGO_8": _entry(KONGO_8),
     "SEVEN_ON_EIGHT": _entry(SEVEN_ON_EIGHT),
     "TWELVE_STRANDS": _entry(TWELVE_STRANDS),

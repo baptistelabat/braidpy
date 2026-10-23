@@ -8,7 +8,8 @@ marudai."""
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
+from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 from braidpy.utils import PALETTE
 from braidpy.web._info import _braid_info, _unit
@@ -35,7 +36,7 @@ def _ring_program(moves: Sequence[int], n_strands: int, mirrored: bool) -> DiskP
     start = [0] * n
     for place, strand in enumerate(at):
         start[strand] = 1 + slots * place
-    steps: List[List[List[int]]] = []
+    steps: list[list[list[int]]] = []
     for move in moves:
         index, sign = abs(move), (1 if move > 0 else -1)
         if index == n + 1:
@@ -65,7 +66,7 @@ def _ring_steps(program: DiskProgram):
     index, a turn of every bobbin one step, other moves one at a time."""
     start = dict(enumerate(program["start"]))
     n = len(start)
-    steps: List[Dict[int, int]] = []
+    steps: list[dict[int, int]] = []
     for step in program["steps"]:
         if len(step) == n and len({delta for _, delta in step}) == 1:
             steps.append({k: delta for k, delta in step})
@@ -214,10 +215,10 @@ def _word_entry() -> Source:
     return {
         "title": "Braid word",
         "defaults": dict(Word.starts),
-        "examples": cast(List[Example], word_examples()),
+        "examples": cast(list[Example], word_examples()),
     }
 
 
-SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
+SOURCES: dict[str, tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "word": (_word_entry, _from_word)
 }

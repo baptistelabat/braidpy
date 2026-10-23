@@ -1,5 +1,6 @@
-from braidpy.material_braid import MaterialStrand, MaterialBraid
 import pytest
+
+from braidpy.material_braid import MaterialBraid, MaterialStrand
 
 
 def test_init():

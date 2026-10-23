@@ -5,6 +5,8 @@
 """A braid as a punchcard for the Jacquard lace machine:
 braidpy.bridges.lace, checked by running the machine."""
 
+import itertools
+
 import pytest
 
 from braidpy import Braid
@@ -40,7 +42,7 @@ def test_a_step_turns_no_two_touching_gears_each_its_own_way():
     card = lace_card(Braid((1, 2, -3, 1, 2) * 3, 4))
     for ccw, cw in card.steps:
         on = [g for g in range(card.n_gears) if ccw[g] or cw[g]]
-        assert all((b - a) % card.n_gears > 1 for a, b in zip(on, on[1:]))
+        assert all((b - a) % card.n_gears > 1 for a, b in itertools.pairwise(on))
         assert all(g % 2 == 0 for g in range(card.n_gears) if ccw[g])
         assert all(g % 2 == 1 for g in range(card.n_gears) if cw[g])
     card.machine()  # the machine itself refuses a card that breaks these

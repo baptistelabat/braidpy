@@ -24,14 +24,15 @@ the same words.
 from __future__ import annotations
 
 import threading
-from typing import Any, Callable, List
+from collections.abc import Callable
+from typing import Any
 
 from braidpy import tools
 
 __all__ = ["TOOLS", "main", "server"]
 
 #: What the server offers, in the order it lists them.
-TOOLS: List[Callable[..., Any]] = [
+TOOLS: list[Callable[..., Any]] = [
     tools.list_braids,
     tools.describe_braid,
     tools.compare_braids,

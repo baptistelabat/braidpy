@@ -2,6 +2,7 @@
 import math
 
 import pytest
+
 from braidpy import Braid
 from braidpy.parametric_braid import (
     ParametricBraid,

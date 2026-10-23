@@ -2,9 +2,9 @@ import math
 
 from braidpy.craft_design_online import (
     BraidModel,
-    create_initial_braid_data,
-    Step,
     Move,
+    Step,
+    create_initial_braid_data,
 )
 
 

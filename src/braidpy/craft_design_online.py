@@ -1,10 +1,11 @@
 import json
 import math
-from pathlib import Path
-from typing import List, Optional, Literal
 import urllib.parse
 from dataclasses import dataclass, field
-from dataclasses_json import dataclass_json, DataClassJsonMixin, config
+from pathlib import Path
+from typing import Literal, Optional
+
+from dataclasses_json import DataClassJsonMixin, config, dataclass_json
 
 
 # --- Dataclass Definitions for the Braid Structure ---
@@ -38,7 +39,7 @@ class Move(DataClassJsonMixin):
 
     from_val: float = field(metadata=config(field_name="from"))
     to_val: float = field(metadata=config(field_name="to"))
-    id: Optional[int] = None
+    id: int | None = None
 
 
 @dataclass_json
@@ -63,7 +64,7 @@ class ThreadState(DataClassJsonMixin):
 
     color: int = field(metadata=config(field_name="colour"))
     dir_val: float = field(metadata=config(field_name="dir"))
-    poss: List[Point] = field(default_factory=list)  # Initial 3D path points
+    poss: list[Point] = field(default_factory=list)  # Initial 3D path points
 
 
 @dataclass_json
@@ -75,21 +76,19 @@ class Step(DataClassJsonMixin):
     """
 
     # NOTE: Updated to include "Repeat" as per user request
-    type: Optional[None | Literal["threadMove", "repeat"]] = None
-    num: Optional[int] = None
-    moves: List[Move] = field(default_factory=list)
+    type: Literal["threadMove", "repeat"] | None = None
+    num: int | None = None
+    moves: list[Move] = field(default_factory=list)
 
     # Configuration parameters, previously top-level, now nested here
-    tighten: Optional[int] = 0
+    tighten: int | None = 0
 
-    repeat_from: Optional[int] = field(
-        default=0, metadata=config(field_name="repeatFrom")
-    )
-    repeat_times: Optional[int] = field(
+    repeat_from: int | None = field(default=0, metadata=config(field_name="repeatFrom"))
+    repeat_times: int | None = field(
         default=0, metadata=config(field_name="repeatTimes")
     )
-    rotate: Optional[float] = 0.0
-    poss: Optional[list[AnglePosition]] = field(default_factory=list)
+    rotate: float | None = 0.0
+    poss: list[AnglePosition] | None = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """
@@ -115,11 +114,11 @@ class BraidModel(DataClassJsonMixin):
     n_strands: int = field(metadata=config(field_name="nThreads"))
 
     # Nested lists of dataclasses
-    thread_states: List[ThreadState] = field(
+    thread_states: list[ThreadState] = field(
         metadata=config(field_name="threadStates"), default_factory=list
     )
     # The 'steps' list, which contains all move blocks and config info
-    steps: List[Step] = field(metadata=config(field_name="steps"), default_factory=list)
+    steps: list[Step] = field(metadata=config(field_name="steps"), default_factory=list)
 
     def __post_init__(self) -> None:
         """
@@ -318,9 +317,9 @@ class BraidModel(DataClassJsonMixin):
 # --- Helper Function for Demonstration (Now returns ThreadState objects) ---
 
 
-def create_initial_braid_data(n_strands: int = 5) -> List[ThreadState]:
+def create_initial_braid_data(n_strands: int = 5) -> list[ThreadState]:
     """Creates mock initial data for demonstration, returning ThreadState dataclasses."""
-    states: List[ThreadState] = []
+    states: list[ThreadState] = []
     base_color = 0xAAAAAA
 
     for i in range(n_strands):

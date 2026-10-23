@@ -40,9 +40,9 @@ def _read_word(yarns):
 
 def _links(yarns, turn=0.0):
     """The closure's linking numbers, measured on the yarns."""
-    from braidpy.linking import yarn_linking
-
     import numpy as np
+
+    from braidpy.linking import yarn_linking
 
     return yarn_linking([np.reshape(y, (-1, 3)) for y in yarns], turn)
 

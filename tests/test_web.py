@@ -11,8 +11,8 @@ import sys
 
 import pytest
 
-from braidpy.web._settings import COLOURS
 from braidpy.web import build, catalogue
+from braidpy.web._settings import COLOURS
 
 
 @pytest.mark.parametrize(
@@ -260,7 +260,7 @@ def test_a_braid_made_with_the_site_is_the_braid_made_for_the_page(
 ):
     """Written as build lays it for a page to tighten, and said in the
     index; the same every time it is made."""
-    import braidpy.web as web
+    from braidpy import web
 
     specs = [
         {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 6},
