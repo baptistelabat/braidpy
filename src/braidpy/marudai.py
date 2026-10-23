@@ -8,8 +8,8 @@ over the others and drawn tight, the braid turning to balance.
 ``web/marudai.js``, which Braid Studio runs in the browser, in Python: the
 same algorithm, step for step, in the same order
 (``tests/test_marudai_python.py`` runs both and compares them).  The method
-is braid3dmin's, a kumihimo simulation in three.js, as
-``docs/source/braid3D.md`` describes it; the code is this
+is braid3dmin's, a kumihimo simulation in three.js;
+``docs/source/marudai.md`` describes it as done here.  The code is this
 project's own.  In short:
 
 - Each yarn is a chain of beads a unit apart, two units thick.  A link pulls
