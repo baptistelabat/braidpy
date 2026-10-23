@@ -28,7 +28,7 @@ its **permutation**. `perm()` gives where each strand ends, and
 `permutations()` the order of the strands after each crossing:
 
 ```python
-Braid([1, -2], n_strands=3).perm()   # [2, 3, 1]
+Braid([1, -2], n_strands=3).perm()  # [2, 3, 1]
 ```
 
 A braid whose permutation is the identity is **pure**

@@ -4,6 +4,7 @@
 
 """Basic tests for the horn gear simulator."""
 
+import itertools
 import math
 
 import numpy as np
@@ -38,8 +39,8 @@ from braidpy.horn_gear.layout import (
     tube_axials,
     tube_rings,
 )
-from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
 from braidpy.horn_gear.loading import load_carriers
+from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
 from braidpy.horn_gear.simulation import (
     carrier_places,
     initial_state,
@@ -1347,7 +1348,7 @@ def test_lace_carriers_never_jump_across_a_gear(n_gears):
     carriers = [f.data[-1] for f in fig.frames]
     worst = max(
         math.hypot(xb - xa, yb - ya)
-        for a, b in zip(carriers, carriers[1:])
+        for a, b in itertools.pairwise(carriers)
         for xa, ya, xb, yb in zip(a.x, a.y, b.x, b.y)
     )
     assert worst < 3 * smooth, (
@@ -1600,13 +1601,13 @@ def test_bobbins_and_notches_scale_together():
     """Halving the slot spacing must shrink bobbin and notch alike."""
     from braidpy.horn_gear.visualization import _carrier_marker_sizes
 
+    roomy_machine = soutache_braid(n_slots=5)
     roomy = _carrier_marker_sizes(
-        soutache_braid(n_slots=5),
-        *(lambda m: (compute_layout(m), gear_radii(m)))(soutache_braid(n_slots=5)),
+        roomy_machine, compute_layout(roomy_machine), gear_radii(roomy_machine)
     )
+    crowded_machine = soutache_braid(n_slots=9)
     crowded = _carrier_marker_sizes(
-        soutache_braid(n_slots=9),
-        *(lambda m: (compute_layout(m), gear_radii(m)))(soutache_braid(n_slots=9)),
+        crowded_machine, compute_layout(crowded_machine), gear_radii(crowded_machine)
     )
     # More slots on the same gear means a tighter seat for each.
     assert crowded["A"] <= roomy["A"]
@@ -1696,7 +1697,7 @@ def test_the_stored_track_is_not_a_path():
 
     # Walking it never does that.
     path = walk(m, track[0], simulation_period(m))
-    for here, nxt in zip(path, path[1:]):
+    for here, nxt in itertools.pairwise(path):
         assert here[0] == nxt[0] or m.graph.has_edge(here[0], nxt[0])
 
 
@@ -1728,7 +1729,7 @@ def test_trajectories_follow_the_animation_and_stay_continuous():
     radii = gear_radii(m)
     bound = max(2 * math.pi * r / m.gears[g].n_slots for g, r in radii.items()) / 6
     for xy in traj.xy.values():
-        steps = [math.dist(a, b) for a, b in zip(xy[:-1], xy[1:])]
+        steps = [math.dist(a, b) for a, b in itertools.pairwise(xy)]
         assert max(steps) <= bound * 1.01
 
 

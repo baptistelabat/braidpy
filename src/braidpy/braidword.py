@@ -1,8 +1,7 @@
 import re
-from typing import List
 
 
-def braidword_alpha_to_numeric(braidword: str) -> List[int]:
+def braidword_alpha_to_numeric(braidword: str) -> list[int]:
     """
     Convert an alphabetical braid word to its numerical representation.
 
@@ -32,7 +31,7 @@ def braidword_alpha_to_numeric(braidword: str) -> List[int]:
         >>> braidword_alpha_to_numeric("abAB")
         [1, 2, -1, -2]
     """
-    numeric_word: List[int] = []
+    numeric_word: list[int] = []
     for ch in braidword:
         if ch == "#":
             num = 0
@@ -46,7 +45,7 @@ def braidword_alpha_to_numeric(braidword: str) -> List[int]:
     return numeric_word
 
 
-def parse_word(text: str) -> List[int]:
+def parse_word(text: str) -> list[int]:
     """A braid word, as signed generator indices.
 
     Reads ``1 -2 1`` (or with commas), ``s1 s2^-1 s1`` (``σ`` too), and
@@ -67,7 +66,7 @@ def parse_word(text: str) -> List[int]:
         return []
     if re.fullmatch(r"[A-Za-z]+", text) and not re.search(r"[sσ]\d", text):
         return braidword_alpha_to_numeric(text)
-    word: List[int] = []
+    word: list[int] = []
     for token in re.split(r"[\s,;.]+", text):
         if not token:
             continue

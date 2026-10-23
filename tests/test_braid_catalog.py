@@ -1,17 +1,17 @@
-from braidpy.braid import Braid, slide_strand
 from braidpy.artin_generators import a
+from braidpy.braid import Braid, slide_strand
 from braidpy.braid_catalog import (
-    full_twist_braid,
-    flat3,
-    inverted_flat3,
-    square4,
-    asymmetric_flat4,
-    flat6,
-    flat5,
-    regular_flat6,
-    garside_half_twist_braid,
-    double_flat3,
     abok_2974,
+    asymmetric_flat4,
+    double_flat3,
+    flat3,
+    flat5,
+    flat6,
+    full_twist_braid,
+    garside_half_twist_braid,
+    inverted_flat3,
+    regular_flat6,
+    square4,
     weave3,
 )
 
@@ -92,16 +92,24 @@ def test_full_twist_braid():
     assert b * full_twist_braid(5) == full_twist_braid(5) * b
 
 
+def _drawn(make):
+    """A catalogued braid, drawn as it is made: a braid, and how many times
+    to repeat it."""
+    braid, repeat = make()
+    assert isinstance(braid, Braid) and braid.generators
+    assert isinstance(repeat, int) and repeat > 0
+
+
 def test_flat3():
-    b, n = flat3()
+    _drawn(flat3)
 
 
 def test_inverted_flat3():
-    b, n = inverted_flat3()
+    _drawn(inverted_flat3)
 
 
 def test_weave3():
-    b, n = weave3()
+    _drawn(weave3)
 
 
 def test_square4():
@@ -111,7 +119,7 @@ def test_square4():
     Returns:
 
     """
-    b, n = square4()
+    _drawn(square4)
 
 
 def test_flat4():
@@ -120,16 +128,16 @@ def test_flat4():
     Returns:
 
     """
-    b, n = asymmetric_flat4()
+    b, _ = asymmetric_flat4()
     assert b.is_periodic()
 
 
 def test_abok_2934():
-    b, n = abok_2974()
+    _drawn(abok_2974)
 
 
 def test_flat5():
-    b, n = flat5()
+    _drawn(flat5)
 
 
 def test_flat6():
@@ -138,7 +146,7 @@ def test_flat6():
     Returns:
 
     """
-    b, n = flat6()
+    _drawn(flat6)
 
 
 def test_regular_flat_braid_6():
@@ -147,11 +155,11 @@ def test_regular_flat_braid_6():
     Returns:
 
     """
-    b, n = regular_flat6()
+    _drawn(regular_flat6)
 
 
 def test_double_flat3():
-    b, n = double_flat3()
+    _drawn(double_flat3)
 
 
 def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):

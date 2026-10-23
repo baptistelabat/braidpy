@@ -19,10 +19,12 @@ def _node_tighten(job):
         [
             "node",
             "-e",
-            "const {tightenYarns} = require(process.argv[1]);"
-            "const job = JSON.parse(require('fs').readFileSync(0, 'utf8'));"
-            "const r = tightenYarns(job);"
-            "console.log(JSON.stringify({xy: Array.from(r.xy), closest: r.closest}));",
+            (
+                "const {tightenYarns} = require(process.argv[1]);"
+                "const job = JSON.parse(require('fs').readFileSync(0, 'utf8'));"
+                "const r = tightenYarns(job);"
+                "console.log(JSON.stringify({xy: Array.from(r.xy), closest: r.closest}));"
+            ),
             str(Path(__file__).resolve().parent.parent / "web" / "tighten.js"),
         ],
         input=json.dumps(job),
@@ -109,7 +111,7 @@ def test_the_page_tightens_as_braidpy_does(spec):
             # shortens, and two equally tight ones can differ by more.
             heights = laid.formed()[:, :, 2:]
 
-            def length(xy):
+            def length(xy, heights=heights):
                 yarns = np.concatenate([xy.reshape(n_yarns, n, 2), heights], axis=2)
                 return np.sum(np.linalg.norm(np.diff(yarns, axis=1), axis=-1))
 
@@ -120,7 +122,7 @@ def _laid_paths(spec):
     """The laid yarns ``build`` tightens, captured on their way."""
     from unittest import mock
 
-    import braidpy.take_off as take_off
+    from braidpy import take_off
 
     captured = {}
     real = take_off.tighten_yarns

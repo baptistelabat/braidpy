@@ -1,12 +1,10 @@
 import pytest
 from math_braid.canonical_factor import CanonicalFactor
+from sympy import Matrix, symbols
 
 from braidpy import Braid
 from braidpy.garside_canonical_form import permutation_word
-from sympy import symbols, Matrix
-
 from braidpy.operations import conjugate
-
 
 # Run tests with: uv run pytest /tests
 
@@ -281,7 +279,7 @@ class TestBraid:
         ]
         assert Braid([1, 2, -3, 0]).permutations(plot=True) == permutations
 
-        (Braid([1, -2]) ** 3).permutations(plot=True) == [1, 2, 3]
+        assert (Braid([1, -2]) ** 3).permutations(plot=True)[-1] == [1, 2, 3]
 
     def test_permutation(self):
         """Test permutation calculation"""
@@ -395,7 +393,7 @@ class TestBraid:
         assert Braid([10]) == Braid([10])
 
         # Check not equal with different number of strands
-        assert not Braid([1], 2) == Braid([1], 3)
+        assert Braid([1], 2) != Braid([1], 3)
 
         # Check with zero
         assert Braid([1, 0, 3], 4) == Braid([1, 3], 4)

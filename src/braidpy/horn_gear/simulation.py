@@ -29,15 +29,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
-
 
 from .model import BraidingMachine
 from .tracks import Position, _next_position
-
-
-if TYPE_CHECKING:
-    pass
 
 # Carrier identifier — any hashable type, typically int or str.
 CarrierId = int
@@ -57,8 +51,8 @@ class CollisionError(RuntimeError):
     def __init__(
         self,
         step: int,
-        collisions: Dict[Position, List[CarrierId]],
-        history: "List[MachineState]",
+        collisions: dict[Position, list[CarrierId]],
+        history: list[MachineState],
     ) -> None:
         parts = [
             f"gear={g} slot={s} → carriers {ids}" for (g, s), ids in collisions.items()
@@ -98,16 +92,16 @@ class MachineState:
     """
 
     time: int
-    carriers: Tuple[CarrierState, ...]
+    carriers: tuple[CarrierState, ...]
 
-    def carrier_positions(self) -> Dict[CarrierId, Position]:
+    def carrier_positions(self) -> dict[CarrierId, Position]:
         """Return {carrier_id: (gear, slot)} for all carriers."""
         return {c.carrier_id: c.position for c in self.carriers}
 
 
 def initial_state(
     machine: BraidingMachine,
-    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+    carrier_positions: dict[CarrierId, Position] | None = None,
 ) -> MachineState:
     """Create an initial MachineState.
 
@@ -126,7 +120,7 @@ def initial_state(
     """
     if carrier_positions is None:
         # Fill every slot with one carrier, numbered sequentially.
-        positions: Dict[CarrierId, Position] = {}
+        positions: dict[CarrierId, Position] = {}
         cid = 0
         for gear_name, gear in machine.gears.items():
             for slot in range(gear.n_slots):
@@ -136,7 +130,7 @@ def initial_state(
         positions = carrier_positions
 
     # Validate.
-    seen: Dict[Position, CarrierId] = {}
+    seen: dict[Position, CarrierId] = {}
     for cid, pos in positions.items():
         gear_name, slot = pos
         if gear_name not in machine.gears:
@@ -184,7 +178,7 @@ def step(machine: BraidingMachine, state: MachineState) -> MachineState:
 
 def carrier_places(
     machine: BraidingMachine, state: MachineState
-) -> Dict[CarrierId, Tuple[str, int]]:
+) -> dict[CarrierId, tuple[str, int]]:
     """Where each carrier actually *is*: its gear, and the angle it has reached.
 
     A slot index is a label painted on a turning gear, not a place.  Every step
@@ -218,9 +212,9 @@ def carrier_places(
 
 def state_period(
     machine: BraidingMachine,
-    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+    carrier_positions: dict[CarrierId, Position] | None = None,
     max_steps: int = 10_000,
-) -> Optional[int]:
+) -> int | None:
     """Steps after which the machine is exactly as it started, or None.
 
     "Exactly" means every carrier back at the point it set off from — see
@@ -265,8 +259,8 @@ def state_period(
 def simulate(
     machine: BraidingMachine,
     n_steps: int,
-    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
-) -> List[MachineState]:
+    carrier_positions: dict[CarrierId, Position] | None = None,
+) -> list[MachineState]:
     """Run the simulation for ``n_steps`` steps.
 
     Args:
@@ -278,7 +272,7 @@ def simulate(
         List of MachineState objects, length n_steps + 1 (includes t=0).
     """
     state = initial_state(machine, carrier_positions)
-    history: List[MachineState] = [state]
+    history: list[MachineState] = [state]
 
     # Check the initial state: if both sides of a connection are already occupied,
     # carriers are at the same physical point at frac=0 of step 0.
@@ -289,7 +283,7 @@ def simulate(
         state = step(machine, state)
 
         # 1. Same-gear same-slot collision.
-        occupied: Dict[Position, List[CarrierId]] = {}
+        occupied: dict[Position, list[CarrierId]] = {}
         for c in state.carriers:
             occupied.setdefault(c.position, []).append(c.carrier_id)
         same_slot = {pos: ids for pos, ids in occupied.items() if len(ids) > 1}
@@ -315,7 +309,7 @@ def simulate(
             ]
             if a_to_b and b_to_a:
                 new_map = {c.carrier_id: c for c in state.carriers}
-                col: Dict[Position, List[CarrierId]] = {}
+                col: dict[Position, list[CarrierId]] = {}
                 for cid in a_to_b:
                     col.setdefault(new_map[cid].position, []).append(cid)
                 for cid in b_to_a:
@@ -335,7 +329,7 @@ def simulate(
 def _check_connection_point_collision(
     machine: BraidingMachine,
     state: MachineState,
-    history: "List[MachineState]",
+    history: list[MachineState],
 ) -> None:
     """Raise CollisionError if both sides of any connection are occupied.
 

@@ -11,14 +11,14 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+from typing import Any
+
+import braidpy.braid
 from braidpy import Braid
 from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
-from braidpy.utils import StrictlyPositiveInt
-import braidpy.braid
-from typing import Any, Dict, List, Tuple
-
 from braidpy.catalogue import Entry
+from braidpy.utils import StrictlyPositiveInt
 
 """
 In flat braid all the strands follow the same track
@@ -73,7 +73,7 @@ def full_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     return b.full_twist()
 
 
-def flat3(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def flat3(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     Basic braid with 3 strands going above central braid
 
@@ -104,7 +104,7 @@ def flat3(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def inverted_flat3(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def inverted_flat3(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     Basic braid with 3 strands going below central braid. Also known as dutch braid
 
@@ -130,7 +130,7 @@ def inverted_flat3(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def square4(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def square4(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     Basic round braid with 4 strands
 
@@ -164,7 +164,7 @@ def square4(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def asymmetric_flat4(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def asymmetric_flat4(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     Basic flat braid with 4 strands
 
@@ -193,7 +193,7 @@ def asymmetric_flat4(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def flat6(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def flat6(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     This one is probably not unique !
 
@@ -229,7 +229,7 @@ def flat6(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def regular_flat6(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def regular_flat6(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=J65kCzm_BtI
 
@@ -328,7 +328,7 @@ def abok_2974(draw: bool = True):
     return step, n
 
 
-def flat5(draw: bool = True) -> Tuple[braidpy.braid.Braid, int]:
+def flat5(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     https://www.youtube.com/watch?v=uRy4wvJwSWA
 
@@ -477,7 +477,7 @@ https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 
 # More braids worth trying as braid words: Braid Studio offers them as
 # examples after the catalogue's (see :func:`word_examples`).
-WORD_EXAMPLES: List[Dict[str, Any]] = [
+WORD_EXAMPLES: list[dict[str, Any]] = [
     {"word": "1 2 3", "n_strands": 4, "repeat": 12, "title": "Twist"},
     {"word": "1 -2 3 -2", "n_strands": 4, "repeat": 4, "title": "Four-strand flat"},
     {"word": "1 1 1", "n_strands": 2, "repeat": 8, "title": "Two-ply"},
@@ -492,7 +492,7 @@ WORD_EXAMPLES: List[Dict[str, Any]] = [
 
 # The braids above that are a braid word, built without drawing them, as
 # every catalogue lists its braids (:mod:`braidpy.catalogue`).
-CATALOGUE: Dict[str, Entry[Braid]] = {
+CATALOGUE: dict[str, Entry[Braid]] = {
     "flat3": Entry(
         "Plait, or flat sinnet of 3 (ABOK 2965)",
         lambda: flat3(draw=False)[0],
@@ -550,7 +550,7 @@ CATALOGUE: Dict[str, Entry[Braid]] = {
 _FEWEST_CROSSINGS = 12
 
 
-def word_examples() -> List[Dict[str, Any]]:
+def word_examples() -> list[dict[str, Any]]:
     """Braids to try as braid words, as plain data: each of
     :data:`CATALOGUE` reduced to the word it repeats, then
     :data:`WORD_EXAMPLES`.  A braid is repeated as many times as brings
@@ -563,7 +563,7 @@ def word_examples() -> List[Dict[str, Any]]:
     """
     from braidpy.pure_braid import closing_repeats, repeating_unit
 
-    examples: List[Dict[str, Any]] = []
+    examples: list[dict[str, Any]] = []
     for entry in CATALOGUE.values():
         braid = entry.make()
         unit = repeating_unit(braid.generators)

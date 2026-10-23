@@ -30,8 +30,9 @@ sends them, there are no fixed tracks, and :func:`load_carriers` raises
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator
 from itertools import product
-from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Tuple
+from typing import TYPE_CHECKING
 
 import networkx as nx
 
@@ -53,9 +54,9 @@ _EXACT_LOADING_LIMIT = 48
 _MAX_TRACK_OFFSETS = 16
 
 
-def _number(positions: Iterable[Position]) -> Dict[CarrierId, Position]:
+def _number(positions: Iterable[Position]) -> dict[CarrierId, Position]:
     """Assign sequential carrier ids to positions, skipping repeats."""
-    numbered: Dict[CarrierId, Position] = {}
+    numbered: dict[CarrierId, Position] = {}
     seen: set = set()
     for pos in positions:
         if pos not in seen:
@@ -66,7 +67,7 @@ def _number(positions: Iterable[Position]) -> Dict[CarrierId, Position]:
 
 def _is_collision_free(
     machine: BraidingMachine,
-    positions: Dict[CarrierId, Position],
+    positions: dict[CarrierId, Position],
     period: int,
 ) -> bool:
     """True if this placement runs a full period without any collision.
@@ -83,7 +84,7 @@ def _is_collision_free(
 
 def _circulation_imbalance(
     machine: BraidingMachine,
-    positions: Dict[CarrierId, Position],
+    positions: dict[CarrierId, Position],
     period: int,
 ) -> int:
     """How lopsided a loading is between the two ways round; lower is better.
@@ -107,7 +108,7 @@ def _circulation_imbalance(
 
 def _crowding(
     machine: BraidingMachine,
-    positions: Dict[CarrierId, Position],
+    positions: dict[CarrierId, Position],
 ) -> int:
     """How many carriers sit in neighbouring slots; lower is better.
 
@@ -129,7 +130,7 @@ def _crowding(
 
 def _gear_balance(
     machine: BraidingMachine,
-    positions: Dict[CarrierId, Position],
+    positions: dict[CarrierId, Position],
     period: int,
 ) -> float:
     """How evenly a loading spreads over the gears, over the whole run.
@@ -152,7 +153,7 @@ def _gear_balance(
         return float("inf")
     total = 0.0
     for state in history[:-1]:
-        counts: Dict[str, int] = {name: 0 for name in machine.gears}
+        counts: dict[str, int] = {name: 0 for name in machine.gears}
         for carrier in state.carriers:
             counts[carrier.gear] += 1
         filled = [counts[name] / machine.gears[name].n_slots for name in machine.gears]
@@ -163,9 +164,9 @@ def _gear_balance(
 
 def _alternating_loadings(
     machine: BraidingMachine,
-    tracks: List["Track"],
+    tracks: list[Track],
     period: int,
-) -> Iterator[Dict[CarrierId, Position]]:
+) -> Iterator[dict[CarrierId, Position]]:
     """Every other slot along each track, for each choice of starting offset.
 
     Tracks may share a slot — carriers can cross it at different times without
@@ -177,7 +178,7 @@ def _alternating_loadings(
     loads every carrier onto one gear and leaves the other bare.
     """
     if len(tracks) > _MAX_TRACK_OFFSETS:
-        offsets_to_try: Iterable[Tuple[int, ...]] = [(0,) * len(tracks)]
+        offsets_to_try: Iterable[tuple[int, ...]] = [(0,) * len(tracks)]
     else:
         offsets_to_try = product((0, 1), repeat=len(tracks))
 
@@ -202,7 +203,7 @@ def _alternating_loadings(
 
 def _greedy_loadings(
     machine: BraidingMachine,
-) -> Iterator[List[Position]]:
+) -> Iterator[list[Position]]:
     """Candidate slot orderings for greedy loading, one per starting slot.
 
     Greedy loading is very sensitive to where it starts, so every slot gets a
@@ -220,7 +221,7 @@ def _greedy_loadings(
 def _fullest_loading(
     machine: BraidingMachine,
     period: int,
-) -> Dict[CarrierId, Position]:
+) -> dict[CarrierId, Position]:
     """The largest collision-free set of slots, computed exactly.
 
     Every collision this model detects involves exactly two carriers — two in
@@ -264,7 +265,7 @@ def _fullest_loading(
     )
 
 
-def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
+def load_carriers(machine: BraidingMachine) -> dict[CarrierId, Position]:
     """Fill the machine with as many carriers as it can hold without collisions.
 
     A real machine is loaded with a spool in every other slot along each track,
@@ -307,7 +308,7 @@ def load_carriers(machine: BraidingMachine) -> Dict[CarrierId, Position]:
     else:
         best = {}
         for order in _greedy_loadings(machine):
-            chosen: Dict[CarrierId, Position] = {}
+            chosen: dict[CarrierId, Position] = {}
             for pos in order:
                 trial = {**chosen, len(chosen): pos}
                 if _is_collision_free(machine, trial, period):

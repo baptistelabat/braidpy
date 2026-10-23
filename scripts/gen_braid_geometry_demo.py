@@ -20,26 +20,26 @@ import sys
 
 sys.path.insert(0, "src")
 
-from braidpy.annulus_braid import (  # noqa: E402
-    lay_radius,
+from braidpy.annulus_braid import (
     cover_factor,
     crossing_binds_above,
+    lay_radius,
+    minimum_lay,
+    packing_radius,
     radius_for_cover,
+    rope_helices,
     tubular_braid,
     tubular_braid_clearance,
     tubular_braid_radius,
-    minimum_lay,
-    packing_radius,
-    rope_helices,
 )
-from braidpy.braid import Braid  # noqa: E402
-from braidpy.parametric_braid import ParametricBraid, closest_approach  # noqa: E402
-from braidpy.parametric_strand import (  # noqa: E402
+from braidpy.braid import Braid
+from braidpy.parametric_braid import ParametricBraid, closest_approach
+from braidpy.parametric_strand import (
     SMOOTHSTEP,
     strand_paths,
 )
-from braidpy.pure_braid import closing_repeats  # noqa: E402
-from braidpy.symmetric_braid import (  # noqa: E402
+from braidpy.pure_braid import closing_repeats
+from braidpy.symmetric_braid import (
     braid_word,
     figure_eight_clearance,
     figure_eight_strands,
@@ -69,8 +69,10 @@ PLAITS = [
         "plait_5",
         5,
         12.0,
-        "Five-strand figure-eight braid, as tight as it goes "
-        "(<i>not</i> the classical flat sinnet \u2014 see braid_sinnet_5)",
+        (
+            "Five-strand figure-eight braid, as tight as it goes "
+            "(<i>not</i> the classical flat sinnet \u2014 see braid_sinnet_5)"
+        ),
     ),
     (
         "plait_5_long",

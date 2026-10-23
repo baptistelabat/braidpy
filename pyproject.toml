@@ -56,7 +56,7 @@ braidpy-mcp = "braidpy.mcp_server:main"
 dev = [
     # Working on braidpy, its drawings are tested too.
     "braidpy[viz]",
-    "ruff>=0.11.11",
+    "ruff>=0.17.2",
     "pytest>=8.3.5",
     "coverage>=7.8.2",
     "sphinx>=8.1.3",
@@ -76,6 +76,11 @@ markers = [
 
 [tool.setuptools.package-data]
 braidpy = ["py.typed"]
+
+[tool.ruff.lint]
+# dict(x=1, y=2) is how the drawing code builds Plotly's settings: read as
+# keywords, it stays as it is.
+ignore = ["C408"]
 
 [tool.mypy]
 # Libraries without type information.

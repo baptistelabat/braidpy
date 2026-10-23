@@ -12,13 +12,13 @@ what it needs, checking it (:mod:`braidpy.web._settings`).
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, TypedDict, Union
+from typing import TypedDict
 
 # A number as the page may give it: typed in, it comes as text.
-Value = Union[str, float, None]
+Value = str | float | None
 
 # A point, in the plane or in space.
-Point = List[float]
+Point = list[float]
 
 
 class Spec(TypedDict, total=False):
@@ -63,7 +63,7 @@ class Strand(TypedDict):
 
     name: str
     colour: str
-    points: List[Point]
+    points: list[Point]
 
 
 class Garside(TypedDict):
@@ -79,7 +79,7 @@ class Collision(TypedDict):
     that met, as ``[gear, slot]`` where they started."""
 
     step: int
-    at: List[List[Union[str, int]]]
+    at: list[list[str | int]]
 
 
 class Info(TypedDict, total=False):
@@ -90,13 +90,13 @@ class Info(TypedDict, total=False):
     annular_word: str
     crossings: int
     exponent_sum: int
-    permutation: List[int]
+    permutation: list[int]
     components: int
     garside: Garside
     # How many of its unit — its word, or its moves' cycle — make it pure,
     # None if there is no saying; what the unit is; how many were made, and
     # whether that is pure.
-    pure_after: Optional[int]
+    pure_after: int | None
     repeated: str
     made: int
     pure: bool
@@ -108,16 +108,16 @@ class Info(TypedDict, total=False):
 class Clock(TypedDict):
     """The source's time at some instants, and the braid's then."""
 
-    source: List[float]
-    braid: List[float]
+    source: list[float]
+    braid: list[float]
 
 
 class _Timeline(TypedDict):
     kind: str
-    times: List[float]
-    strands: List[List[Point]]
-    outlines: List[List[Point]]
-    slots: List[List[Union[float, str]]]
+    times: list[float]
+    strands: list[list[Point]]
+    outlines: list[list[Point]]
+    slots: list[list[float | str]]
     reach: float
     clock: Clock
 
@@ -127,7 +127,7 @@ class Timeline(_Timeline, total=False):
     the outlines under them and the slots, named; for a disk, how far its
     braid turns with it."""
 
-    turn: List[float]
+    turn: list[float]
 
 
 class Tightening(TypedDict):
@@ -144,18 +144,18 @@ class Tightening(TypedDict):
     step: float
     tolerance: float
     hold_top: bool
-    core_radius: Optional[float]
-    centre: List[float]
-    xy: List[float]
-    rigid: List[bool]
-    chosen: List[int]
+    core_radius: float | None
+    centre: list[float]
+    xy: list[float]
+    rigid: list[bool]
+    chosen: list[int]
 
 
 class _DiskProgram(TypedDict):
     n_slots: int
     clockwise: bool
-    start: List[int]
-    steps: List[List[List[int]]]
+    start: list[int]
+    steps: list[list[list[int]]]
 
 
 class DiskProgram(_DiskProgram, total=False):
@@ -170,11 +170,11 @@ class DiskProgram(_DiskProgram, total=False):
 
 class _Result(TypedDict):
     title: str
-    strands: List[Strand]
-    times: List[float]
+    strands: list[Strand]
+    times: list[float]
     yarn_diameter: float
     info: Info
-    notes: List[str]
+    notes: list[str]
 
 
 class Result(_Result, total=False):
@@ -188,7 +188,7 @@ class Result(_Result, total=False):
 # --------------------------------------------------------------- catalogue
 
 # A setting's value, as the catalogue gives it.
-Default = Union[str, int, float]
+Default = str | int | float
 
 
 class Example(TypedDict, total=False):
@@ -206,20 +206,20 @@ class Entry(TypedDict, total=False):
 
     name: str
     title: str
-    shape: Optional[str]
-    pattern: Dict[str, Default]
+    shape: str | None
+    pattern: dict[str, Default]
 
 
 class _Source(TypedDict):
     title: str
-    defaults: Dict[str, Default]
+    defaults: dict[str, Default]
 
 
 class Source(_Source, total=False):
     """A source of braids: its title, its defaults, and what it offers."""
 
-    entries: List[Entry]
-    examples: List[Example]
+    entries: list[Entry]
+    examples: list[Example]
 
 
 # ---------------------------------------------------------------- machines
@@ -251,24 +251,24 @@ class Contact(TypedDict):
 class TurnedFrame(TypedDict):
     """One picture of a machine turning: every slot's and carrier's place."""
 
-    slots: List[List[float]]
-    carriers: List[List[float]]
+    slots: list[list[float]]
+    carriers: list[list[float]]
 
 
 class MachineTurned(TypedDict):
     """A machine's handle turned by hand, as the page shows it."""
 
     time: int
-    carriers: List[List[Union[str, int]]]
-    met: List[List[Union[str, int]]]
-    slots: List[List[Union[str, int]]]
-    frames: List[TurnedFrame]
+    carriers: list[list[str | int]]
+    met: list[list[str | int]]
+    slots: list[list[str | int]]
+    frames: list[TurnedFrame]
 
 
 class MachineGeometry(TypedDict):
     """A machine as the page draws it from above, to load it by hand."""
 
     name: str
-    gears: List[Gear]
-    contacts: List[Contact]
-    loading: List[List[Union[str, int]]]
+    gears: list[Gear]
+    contacts: list[Contact]
+    loading: list[list[str | int]]

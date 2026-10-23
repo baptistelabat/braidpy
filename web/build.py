@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+
 try:
     import tomllib
 except ModuleNotFoundError:  # Python 3.10: tomllib's forerunner
@@ -193,7 +194,8 @@ def _settled(site: Path, cache: Path = SETTLED_CACHE) -> None:
         if not kept.exists():
             fresh = kept.with_suffix(".part")
             done = subprocess.run(
-                ["node", str(WEB / "settle_node.js"), str(laid), str(fresh)]
+                ["node", str(WEB / "settle_node.js"), str(laid), str(fresh)],
+                check=False,
             )
             if done.returncode:
                 # Left for the page to settle, as it would without Node.

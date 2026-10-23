@@ -15,21 +15,20 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import matplotlib.colors as mcolors  # noqa: E402
-import matplotlib.pyplot as plt  # noqa: E402
-import pytest  # noqa: E402
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import pytest
 
-from braidpy.braid import Braid  # noqa: E402
-from braidpy.braid_diagram import (  # noqa: E402
+from braidpy.braid import Braid
+from braidpy.braid_diagram import (
     DIAGRAM_COLORS,
     diagram_segments,
     draw_diagram,
     sample_period,
     strand_color,
 )
-from braidpy.parametric_strand import LINEAR, SMOOTHSTEP, strand_paths  # noqa: E402
-from braidpy.utils import terminal_colors  # noqa: E402
-
+from braidpy.parametric_strand import LINEAR, SMOOTHSTEP, strand_paths
+from braidpy.utils import terminal_colors
 
 # ── Colour: the reason the diagram is drawn here at all ───────────────────────
 

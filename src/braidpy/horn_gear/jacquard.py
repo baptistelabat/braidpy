@@ -49,34 +49,25 @@ class already asks itself through
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable, Sequence
 from math import gcd, lcm
-from typing import (
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
 
 import networkx as nx
 
 from .model import Axial, BraidingMachine, Connection, HornGear
 
 # One line of a mask: a bit per gear, as "1011", (1, 0, 1, 1) or (True, ...).
-MaskLine = Union[str, Sequence[Union[int, bool]]]
+MaskLine = str | Sequence[int | bool]
 
 # One programmed step: (trigonometric line, clockwise line).
-ProgramStep = Tuple[MaskLine, MaskLine]
+ProgramStep = tuple[MaskLine, MaskLine]
 
 
 class JacquardProgramError(ValueError):
     """Raised when a programme cannot be run on this machine."""
 
 
-def _parse_line(line: MaskLine, n_gears: int, where: str) -> Tuple[bool, ...]:
+def _parse_line(line: MaskLine, n_gears: int, where: str) -> tuple[bool, ...]:
     """Turn one mask line into a tuple of flags, one per gear."""
     if isinstance(line, str):
         stripped = line.strip().replace(" ", "")
@@ -84,7 +75,7 @@ def _parse_line(line: MaskLine, n_gears: int, where: str) -> Tuple[bool, ...]:
             raise JacquardProgramError(
                 f"{where}: mask line {line!r} may only contain 0 and 1."
             )
-        bits: Tuple[bool, ...] = tuple(ch == "1" for ch in stripped)
+        bits: tuple[bool, ...] = tuple(ch == "1" for ch in stripped)
     else:
         bits = tuple(bool(b) for b in line)
 
@@ -96,7 +87,7 @@ def _parse_line(line: MaskLine, n_gears: int, where: str) -> Tuple[bool, ...]:
     return bits
 
 
-def notch_positions(machine: "JacquardLaceMachine") -> Dict[int, Tuple[str, int]]:
+def notch_positions(machine: JacquardLaceMachine) -> dict[int, tuple[str, int]]:
     """One bobbin in every notch — the usual way a lace machine is threaded.
 
     A notch is shared by the two gears whose circles cut it, so there is one
@@ -143,11 +134,11 @@ class JacquardLaceMachine(BraidingMachine):
 
     def __init__(
         self,
-        gears: List[HornGear],
-        connections: List[Connection],
+        gears: list[HornGear],
+        connections: list[Connection],
         program: Sequence[ProgramStep],
         axials: Iterable[Axial] = (),
-        threaded: Optional[Sequence[int]] = None,
+        threaded: Sequence[int] | None = None,
     ) -> None:
         super().__init__(gears, connections, axials)
         #: The notches threaded, by contact; every one if None.
@@ -157,8 +148,8 @@ class JacquardLaceMachine(BraidingMachine):
             raise JacquardProgramError("A Jacquard machine needs a programme.")
 
         names = list(self.gears)
-        self.program: List[Tuple[Tuple[bool, ...], Tuple[bool, ...]]] = []
-        phases: List[FrozenSet[str]] = []
+        self.program: list[tuple[tuple[bool, ...], tuple[bool, ...]]] = []
+        phases: list[frozenset[str]] = []
 
         for index, entry in enumerate(program):
             if len(entry) != 2:
@@ -197,12 +188,12 @@ class JacquardLaceMachine(BraidingMachine):
                         )
                 phases.append(enabled)
 
-        self._phases: List[FrozenSet[str]] = phases
+        self._phases: list[frozenset[str]] = phases
 
         # Turns per gear over one pass of the programme, and after each phase
         # within it, so rotation() is O(1) rather than a walk from t=0.
-        self._per_cycle: Dict[str, int] = {n: 0 for n in names}
-        self._prefix: List[Dict[str, int]] = [dict(self._per_cycle)]
+        self._per_cycle: dict[str, int] = {n: 0 for n in names}
+        self._prefix: list[dict[str, int]] = [dict(self._per_cycle)]
         running = dict(self._per_cycle)
         for turning in phases:
             for name in turning:
@@ -212,13 +203,13 @@ class JacquardLaceMachine(BraidingMachine):
 
     # ── How the gears are driven ──────────────────────────────────────────
 
-    def turning_gears(self, step: int) -> FrozenSet[str]:
+    def turning_gears(self, step: int) -> frozenset[str]:
         """Gears enabled for the phase running from ``step`` to ``step + 1``."""
         return self._phases[step % len(self._phases)]
 
-    def program_rows(self) -> List[Tuple[str, Tuple[bool, ...]]]:
+    def program_rows(self) -> list[tuple[str, tuple[bool, ...]]]:
         """The programme as punchcard rows, two per punched step."""
-        rows: List[Tuple[str, Tuple[bool, ...]]] = []
+        rows: list[tuple[str, tuple[bool, ...]]] = []
         for ccw, cw in self.program:
             rows.append(("trigonometric", ccw))
             rows.append(("clockwise", cw))
@@ -226,7 +217,7 @@ class JacquardLaceMachine(BraidingMachine):
 
     def preferred_layout(
         self, scale: float = 1.0
-    ) -> Optional[Dict[str, Tuple[float, float]]]:
+    ) -> dict[str, tuple[float, float]] | None:
         """Place a ring so every notch lands exactly on a slot.
 
         The generic layout sets gear circles *tangent*, which is right for a
@@ -275,7 +266,7 @@ class JacquardLaceMachine(BraidingMachine):
             for i, name in enumerate(cycles[0])
         }
 
-    def riding_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+    def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Which gear sweeps a bobbin through this step — which may not be its own.
 
         A bobbin in a notch is swept by whichever of the two gears turns, so
@@ -289,14 +280,14 @@ class JacquardLaceMachine(BraidingMachine):
         """
         return self.next_position(pos, time)
 
-    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+    def default_carriers(self) -> dict[int, tuple[str, int]]:
         """Thread one bobbin into every notch, or into those threaded."""
         notches = notch_positions(self)
         if self.threaded is None:
             return notches
         return {k: notches[place] for k, place in enumerate(self.threaded)}
 
-    def next_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+    def next_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Where a carrier goes during the step from ``time`` to ``time + 1``.
 
         The gear circles interpenetrate, so a slot is the notch cut where two
@@ -371,7 +362,7 @@ def jacquard_lace_ring(
     n_gears: int = 6,
     program: Sequence[ProgramStep] | None = None,
     n_slots: int = 2,
-    threaded: Optional[Sequence[int]] = None,
+    threaded: Sequence[int] | None = None,
 ) -> JacquardLaceMachine:
     """A tubular Jacquard lace machine: 2-slot gears in a ring.
 

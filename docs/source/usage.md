@@ -13,9 +13,9 @@ in place `i + 1`; `σᵢ⁻¹` crosses it under. braidpy writes `σᵢ` as `i` a
 ```python
 from braidpy import Braid
 
-over = Braid([1], n_strands=3)    # σ₁: the left strand crosses over the middle one
+over = Braid([1], n_strands=3)  # σ₁: the left strand crosses over the middle one
 under = Braid([-1], n_strands=3)  # σ₁⁻¹: under, the inverse of σ₁
-under == over.inverse()           # True
+under == over.inverse()  # True
 ```
 
 The inverse of a braid is its image in a mirror: its crossings in the other
@@ -44,16 +44,16 @@ from braidpy.braidword import parse_word
 
 b = Braid([1, -2], n_strands=3)
 Braid(parse_word("s1 s2^-1"), n_strands=3) == b  # True: σ₁σ₂⁻¹
-Braid(parse_word("aB"), n_strands=3) == b        # True: a is σ₁, B is σ₂⁻¹
-b.format()                                       # 'σ₁σ₂⁻¹'
-b.format_to_notation("alpha")                    # 'aB'
+Braid(parse_word("aB"), n_strands=3) == b  # True: a is σ₁, B is σ₂⁻¹
+b.format()  # 'σ₁σ₂⁻¹'
+b.format_to_notation("alpha")  # 'aB'
 ```
 
 Braids multiply by following one with the other, and a power repeats one:
 
 ```python
 step = over * Braid([-2], n_strands=3)  # the same braid as b
-plait = step ** 3                       # three steps of the plait
+plait = step**3  # three steps of the plait
 ```
 
 ## Pure braids
@@ -62,8 +62,8 @@ Three steps of the plait bring every strand back to where it started:
 
 ```python
 plait.draw()
-plait.is_pure()   # True
-plait.perm()      # [1, 2, 3]: where each strand ends
+plait.is_pure()  # True
+plait.perm()  # [1, 2, 3]: where each strand ends
 ```
 
 A braid that brings every strand home is **pure**. A pure braid closes into
@@ -79,8 +79,8 @@ relations ({doc}`braid_algebra`). `==` compares braids, not words;
 ```python
 a = Braid([1, 2, 1], n_strands=3)
 c = Braid([2, 1, 2], n_strands=3)
-a == c         # True: the same braid
-a.word_eq(c)   # False: not the same word
+a == c  # True: the same braid
+a.word_eq(c)  # False: not the same word
 ```
 
 To compare braids however they are written — another starting point, more

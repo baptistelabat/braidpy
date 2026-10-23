@@ -9,17 +9,11 @@ draws it from above, to load it by hand."""
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Collection, Hashable
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Collection,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Tuple,
     cast,
 )
 
@@ -79,7 +73,7 @@ def _card_text(program: Any) -> str:
     )
 
 
-def _read_card(text: str, n_gears: int) -> List[Tuple[str, str]]:
+def _read_card(text: str, n_gears: int) -> list[tuple[str, str]]:
     """A card as typed: groups of 0 and 1, a digit a gear, taken two by two
     — the gears turning anticlockwise, then clockwise — however the steps
     are laid out on lines."""
@@ -122,7 +116,6 @@ def _own_lace(spec: Spec) -> Any:
 def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import axial_positions, compute_layout, gear_radii
     from braidpy.horn_gear.word import annular_word, flat_word
-
     from braidpy.machine_catalog import CATALOGUE as machines
 
     name = Machine.name.read(spec)
@@ -165,8 +158,10 @@ def _from_machine(spec: Spec) -> Result:
         notes = [_stopped_note(stopped, n_steps)]
     elif cores:
         notes = [
-            "It braids round a core, drawn here in grey as the yarn it is; its "
-            "word would need the core as a strand of its own: no word is given."
+            (
+                "It braids round a core, drawn here in grey as the yarn it is; its "
+                "word would need the core as a strand of its own: no word is given."
+            )
         ]
     elif name.startswith("tubular"):
         annular = annular_word(machine, carriers=carriers_at)
@@ -199,11 +194,11 @@ def _from_machine(spec: Spec) -> Result:
 
 def _braided(
     machine: Any,
-    carriers_at: Optional[Dict[int, Tuple[str, int]]],
+    carriers_at: dict[int, tuple[str, int]] | None,
     cycles: int,
-    period: Optional[int],
+    period: int | None,
     diameter: float,
-) -> Tuple[Any, Any, Optional[int]]:
+) -> tuple[Any, Any, int | None]:
     """The yarns a machine lays, ``cycles`` times ``period`` steps — or its
     own cycles, if no period is given — stopped where carriers meet.
 
@@ -244,7 +239,7 @@ def _braided(
     return paths, stopped, n_steps
 
 
-def _collision(stopped: Any, loading: List[Tuple[str, int]]) -> Collision:
+def _collision(stopped: Any, loading: list[tuple[str, int]]) -> Collision:
     """The carriers that met, where they started: as the page draws the
     machine, before it turns."""
     return {
@@ -257,7 +252,7 @@ def _collision(stopped: Any, loading: List[Tuple[str, int]]) -> Collision:
     }
 
 
-def _stopped_note(stopped: Any, n_steps: Optional[int]) -> str:
+def _stopped_note(stopped: Any, n_steps: int | None) -> str:
     return (
         f"Carriers met at step {stopped.step}, on {_met(stopped)}: the "
         f"braiding stopped there, after {n_steps} steps. The carriers that "
@@ -325,13 +320,13 @@ def _from_lace(spec: Spec) -> Result:
     )
 
 
-def _loading(text: Any, machine: Any) -> Optional[List[Tuple[str, int]]]:
+def _loading(text: Any, machine: Any) -> list[tuple[str, int]] | None:
     """Carriers given as ``gear:slot``, each once; None if not given."""
     if text is None or not str(text).strip():
         return None
     if str(text).strip().lower() == "none":
         raise ValueError("Give at least one carrier.")
-    loading: List[Tuple[str, int]] = []
+    loading: list[tuple[str, int]] = []
     for token in re.split(r"[\s,;]+", str(text).strip()):
         match = re.fullmatch(r"([^:\s]+):(\d+)", token)
         if not match:
@@ -404,7 +399,7 @@ def machine_geometry(name: str) -> MachineGeometry:
 
 
 @lru_cache(maxsize=4)
-def _worked(name: str) -> Tuple[Any, Any]:
+def _worked(name: str) -> tuple[Any, Any]:
     """A machine to turn by hand, and its drawing: made once."""
     from braidpy.horn_gear.handle import drawing
 
@@ -413,7 +408,7 @@ def _worked(name: str) -> Tuple[Any, Any]:
 
 
 def machine_turned(
-    name: str, loading: List[List[Any]], time: int, frames: int = 8
+    name: str, loading: list[list[Any]], time: int, frames: int = 8
 ) -> MachineTurned:
     """A machine's handle turned ``time`` steps by hand, as the page shows
     it (see :mod:`braidpy.horn_gear.handle`): stopped where carriers meet,
@@ -437,7 +432,7 @@ def machine_turned(
     turned = turn(machine, [(str(g), int(s)) for g, s in loading], int(time))
     slots, slot_xy, carrier_xy = sweep(machine, turned.state, frames, drawn)
 
-    def rounded(points: List[List[float]]) -> List[List[float]]:
+    def rounded(points: list[list[float]]) -> list[list[float]]:
         return [[round(x, 4), round(y, 4)] for x, y in points]
 
     return {
@@ -452,7 +447,7 @@ def machine_turned(
     }
 
 
-def machine_origin(name: str, place: List[Any], time: int) -> Optional[List[Any]]:
+def machine_origin(name: str, place: list[Any], time: int) -> list[Any] | None:
     """The slot at step 0 whose carrier is at ``place`` at step ``time``:
     where a carrier put on the machine there goes in its loading.
 
@@ -504,7 +499,7 @@ def _machine_entry() -> Source:
 def _lace_entry() -> Source:
     from braidpy.machine_catalog import LACE
 
-    entries: List[Any] = []
+    entries: list[Any] = []
     for name, entry in LACE.items():
         ring = entry.make()
         entries.append(
@@ -521,7 +516,7 @@ def _lace_entry() -> Source:
     }
 
 
-SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
+SOURCES: dict[str, tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "machine": (_machine_entry, _from_machine),
     "lace": (_lace_entry, _from_lace),
 }

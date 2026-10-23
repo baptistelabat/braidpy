@@ -41,8 +41,8 @@ machine's motion, the other from the shape that motion lays down.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -79,8 +79,8 @@ def _check_no_axials(machine: BraidingMachine) -> None:
 
 def _trajectories(
     machine: BraidingMachine,
-    carriers: Optional[Dict[CarrierId, Position]],
-    n_steps: Optional[int],
+    carriers: dict[CarrierId, Position] | None,
+    n_steps: int | None,
     n_substeps: int,
     scale: float,
 ):
@@ -97,7 +97,7 @@ def _trajectories(
     )
 
 
-def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> Tuple[float, float]:
+def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, float]:
     """The centroid of the gears, as a default point to look out from.
 
     For a machine whose gears ring a hole — a tubular braider — this is the
@@ -123,11 +123,11 @@ def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> Tuple[float, fl
 
 def flat_word(
     machine: BraidingMachine,
-    carriers: Optional[Dict[CarrierId, Position]] = None,
-    n_steps: Optional[int] = None,
+    carriers: dict[CarrierId, Position] | None = None,
+    n_steps: int | None = None,
     n_substeps: int = 64,
     scale: float = 1.0,
-) -> List[int]:
+) -> list[int]:
     """The Artin word of the braid this machine makes, seen from the front.
 
     Carriers are ordered left to right across the deck and a crossing is
@@ -161,7 +161,7 @@ def flat_word(
     depth = np.column_stack([tracks.xy[cid][:, 1] for cid in ids])
 
     order = sorted(range(len(ids)), key=lambda k: across[0, k])
-    word: List[int] = []
+    word: list[int] = []
     for sample in range(1, len(tracks.times)):
         for slot in range(len(ids) - 1):
             first, second = order[slot], order[slot + 1]
@@ -193,9 +193,9 @@ class AnnularWord:
             wrapping pair.
     """
 
-    generators: List[int]
-    winding: Dict[CarrierId, float]
-    centre: Tuple[float, float]
+    generators: list[int]
+    winding: dict[CarrierId, float]
+    centre: tuple[float, float]
     n_strands: int
 
     @property
@@ -210,9 +210,9 @@ class AnnularWord:
 
 def annular_word(
     machine: BraidingMachine,
-    around: Optional[Tuple[float, float]] = None,
-    carriers: Optional[Dict[CarrierId, Position]] = None,
-    n_steps: Optional[int] = None,
+    around: tuple[float, float] | None = None,
+    carriers: dict[CarrierId, Position] | None = None,
+    n_steps: int | None = None,
     n_substeps: int = 64,
     scale: float = 1.0,
 ) -> AnnularWord:
@@ -256,7 +256,7 @@ def annular_word(
     angle = np.unwrap(np.arctan2(offsets[1], offsets[0]), axis=0)
 
     order = sorted(range(count), key=lambda k: angle[0, k] % (2 * math.pi))
-    word: List[int] = []
+    word: list[int] = []
     for sample in range(1, len(tracks.times)):
         for slot in range(count):
             first, second = order[slot], order[(slot + 1) % count]
@@ -310,7 +310,7 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
         def __init__(self, points: np.ndarray) -> None:
             self._points = points
 
-        def position(self, z: float) -> Tuple[float, float, float]:
+        def position(self, z: float) -> tuple[float, float, float]:
             last = len(self._points) - 1
             at = min(max(z, 0.0), 1.0) * last
             low = int(at)
@@ -320,5 +320,5 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
             point = here + (nxt - here) * step
             return float(point[0]), float(point[1]), float(point[2])
 
-    ids: List = list(paths.points)
+    ids: list = list(paths.points)
     return [_Yarn(paths.points[cid]) for cid in sorted(ids)]

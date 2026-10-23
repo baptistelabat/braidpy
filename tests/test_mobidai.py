@@ -1,5 +1,6 @@
 import pytest
-from braidpy.mobidai import Mobidai, MobidaiConfig, Strand, Move, SlotAlreadyInUseError
+
+from braidpy.mobidai import Mobidai, MobidaiConfig, Move, SlotAlreadyInUseError, Strand
 
 
 def test_initialization():

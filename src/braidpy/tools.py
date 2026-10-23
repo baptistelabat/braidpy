@@ -23,7 +23,7 @@ for σ₂⁻¹, written as braidpy reads them (:func:`~braidpy.braidword.parse_w
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlencode
 
 from braidpy.braid import Braid
@@ -46,7 +46,7 @@ __all__ = [
 STUDIO = "https://baptistelabat.github.io/braidpy/studio/"
 
 
-def _braid(word: str, n_strands: Optional[int] = None) -> Braid:
+def _braid(word: str, n_strands: int | None = None) -> Braid:
     """A braid word read, on as many strands as it needs if not said."""
     from braidpy.braidword import parse_word
 
@@ -57,7 +57,7 @@ def _braid(word: str, n_strands: Optional[int] = None) -> Braid:
     return Braid(tuple(generators), n_strands or least)
 
 
-def studio_link(spec: Dict[str, Any]) -> str:
+def studio_link(spec: dict[str, Any]) -> str:
     """Where Braid Studio makes a braid, from what describes it — a link to
     open, to see it in 3D, turn it, grow it.
 
@@ -71,7 +71,7 @@ def studio_link(spec: Dict[str, Any]) -> str:
     return STUDIO + "#" + urlencode({k: v for k, v in spec.items() if v is not None})
 
 
-def list_braids(source: Optional[str] = None) -> Dict[str, Any]:
+def list_braids(source: str | None = None) -> dict[str, Any]:
     """The braids braidpy knows by name, by what makes them: braid words,
     kumihimo disks, Ashley's sinnets, braiding machines, lace machines
     (:func:`braidpy.web.catalogue`).
@@ -108,7 +108,7 @@ def list_braids(source: Optional[str] = None) -> Dict[str, Any]:
     return {source: listed[source]}
 
 
-def describe_braid(word: str, n_strands: Optional[int] = None) -> Dict[str, Any]:
+def describe_braid(word: str, n_strands: int | None = None) -> dict[str, Any]:
     """What is known of a braid from its word: strands, crossings, the
     permutation it makes, whether it is pure and after how many repeats,
     what it closes up into, its Garside normal form — as Braid Studio's
@@ -137,7 +137,7 @@ def describe_braid(word: str, n_strands: Optional[int] = None) -> Dict[str, Any]
     return info
 
 
-def compare_braids(a: str, b: str, n_strands: Optional[int] = None) -> Dict[str, Any]:
+def compare_braids(a: str, b: str, n_strands: int | None = None) -> dict[str, Any]:
     """Whether two braid words make the same braid, as braidpy compares
     braids — by their topology, however written
     (:func:`braidpy.ring_program.same_braid`) — and how unlike they are
@@ -162,8 +162,8 @@ def compare_braids(a: str, b: str, n_strands: Optional[int] = None) -> Dict[str,
 
 
 def similar_braids(
-    word: str, n_strands: Optional[int] = None, count: int = 5
-) -> List[Dict[str, Any]]:
+    word: str, n_strands: int | None = None, count: int = 5
+) -> list[dict[str, Any]]:
     """The braids of braidpy's catalogues most like this one, nearest first,
     each with every way braidpy knows of making it
     (:func:`braidpy.topology_catalog.related`).
@@ -198,7 +198,7 @@ def similar_braids(
     return found
 
 
-def ways_to_make(word: str, n_strands: Optional[int] = None) -> Dict[str, Any]:
+def ways_to_make(word: str, n_strands: int | None = None) -> dict[str, Any]:
     """How to make a braid by hand or on a machine (:mod:`braidpy.bridges`):
     a kumihimo disk's moves, a Jacquard lace machine's punchcard, and
     Ashley's stand — a sinnet of the book's kind if one makes it, or the
@@ -219,7 +219,7 @@ def ways_to_make(word: str, n_strands: Optional[int] = None) -> Dict[str, Any]:
     from braidpy.bridges.lace import lace_card
 
     braid = _braid(word, n_strands)
-    made: Dict[str, Any] = {}
+    made: dict[str, Any] = {}
     if 2 * braid.n_strands + 2 <= 32:
         disk = disk_moves(braid)
         made["disk"] = {"moves": disk.text(), "studio": studio_link(disk.spec())}
@@ -237,7 +237,7 @@ def ways_to_make(word: str, n_strands: Optional[int] = None) -> Dict[str, Any]:
     return made
 
 
-def make_braid(spec: Dict[str, Any]) -> Dict[str, Any]:
+def make_braid(spec: dict[str, Any]) -> dict[str, Any]:
     """A braid made as Braid Studio makes it (:func:`braidpy.web.build`),
     told in words: what is known of it and what was noted on the way —
     not the thousands of points of its yarns, for which ``build`` itself,

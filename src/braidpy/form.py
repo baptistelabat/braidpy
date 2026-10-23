@@ -50,8 +50,9 @@ References:
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set
+from typing import Any
 
 from braidpy.rope import (
     fire_mix,
@@ -59,10 +60,10 @@ from braidpy.rope import (
     move_beads,
     near_pairs,
     relay,
+    spread,
     stale,
     steer,
     stretch_and_bend,
-    spread,
     touching,
 )
 
@@ -75,23 +76,23 @@ _KEY = 4194304
 
 @dataclass
 class _Bead:
-    p: List[float]
+    p: list[float]
     id: int
 
 
 @dataclass
 class _Yarn:
-    made: List[_Bead]
-    working: List[_Bead]
-    to_come: List[_Bead]
-    rest: Optional[float] = None
+    made: list[_Bead]
+    working: list[_Bead]
+    to_come: list[_Bead]
+    rest: float | None = None
 
 
 @dataclass
 class _Outcome:
     done: bool
     steps: int
-    relay: List[int] = field(default_factory=list)
+    relay: list[int] = field(default_factory=list)
 
 
 def form(
@@ -99,7 +100,7 @@ def form(
     row: float,
     friction: float = 0.3,
     feed: float = 1.0,
-    weight: Optional[float] = None,
+    weight: float | None = None,
     stretch: float = 100.0,
     bend: float = 0.5,
     contact: float = 100.0,
@@ -110,8 +111,8 @@ def form(
     window: float = 2.0,
     steps_per_row: int = 4000,
     tolerance: float = 2e-3,
-    progress: Optional[Callable[[Dict[str, Any]], None]] = None,
-) -> Dict[str, Any]:
+    progress: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
     """A braid made crossing by crossing: ``form.js``'s ``form``.
 
     Args:
@@ -154,7 +155,7 @@ def form(
     # Each yarn: made beads (fixed), working beads, and beads to come, these
     # at their laid place lifted (or lowered) by the block's offset.
     next_id = 0
-    chains: List[_Yarn] = []
+    chains: list[_Yarn] = []
     for points in yarns:
         laid = relay([float(c) for c in points], spacing)
         beads = []
@@ -162,15 +163,15 @@ def form(
             beads.append(_Bead([laid[i], laid[i + 1], laid[i + 2]], next_id))
             next_id += 1
         chains.append(_Yarn(made=beads[:1], working=[], to_come=beads[1:]))
-    state: Dict[str, Any] = {"offset": 0.0, "deepestEver": 0.0}
+    state: dict[str, Any] = {"offset": 0.0, "deepestEver": 0.0}
     top = max(y.to_come[-1].p[2] for y in chains)
     # Friction springs, by pair of beads: their tangential stretch.
-    grips: Dict[int, List[float]] = {}
+    grips: dict[int, list[float]] = {}
 
-    def snapshot() -> List[List[float]]:
+    def snapshot() -> list[list[float]]:
         out = []
         for y in chains:
-            points: List[float] = []
+            points: list[float] = []
             for b in y.made:
                 points.extend(b.p)
             for b in y.working:
@@ -223,12 +224,12 @@ def form(
             for b in y.working:
                 low = min(low, b.p[2])
                 high = max(high, b.p[2])
-        spans: List[List[int]] = []  # per yarn: first bead, count, made
-        xs: List[float] = []
-        ids: List[int] = []
-        kinds: List[int] = []  # 0 made, 1 working, 2 to come
-        of_yarn: List[int] = []
-        rest_of: List[float] = []
+        spans: list[list[int]] = []  # per yarn: first bead, count, made
+        xs: list[float] = []
+        ids: list[int] = []
+        kinds: list[int] = []  # 0 made, 1 working, 2 to come
+        of_yarn: list[int] = []
+        rest_of: list[float] = []
 
         def push(p: Sequence[float], name: int, kind: int, a: int) -> None:
             xs.extend([p[0], p[1], p[2]])
@@ -277,12 +278,12 @@ def form(
         block = 0.0  # the block's move this run
 
         # Segments: consecutive beads of a chain.
-        segs: List[int] = []
+        segs: list[int] = []
         for start, count, _ in spans:
             segs.extend(range(start, start + count - 1))
         gap = math.ceil(2 / spacing) + 1
         reach = 1 + 2 * spacing + 0.5
-        pairs: List[int] = []
+        pairs: list[int] = []
         built = [0.0] * (3 * n)
         cells = [0] * (3 * n)
 
@@ -297,7 +298,7 @@ def form(
                 or ((kind[g] == 2 or kind[h] == 2) and kind[g] != kind[h])
             )
 
-        keys_here: Set[int] = set()
+        keys_here: set[int] = set()
 
         def neighbours() -> None:
             nonlocal pairs, keys_here
@@ -313,8 +314,8 @@ def form(
         fs = [0.0] * n_yarns
         v = [0.0] * (3 * n)
         vs = [0.0] * n_yarns
-        touched: Set[int] = set()
-        now: Dict[str, float] = {"dt": 0.0, "deepest": 0.0, "blockForce": 0.0}
+        touched: set[int] = set()
+        now: dict[str, float] = {"dt": 0.0, "deepest": 0.0, "blockForce": 0.0}
 
         def touch(
             e: int, u: float, w: float, px: float, py: float, pz: float, r2: float

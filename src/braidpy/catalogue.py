@@ -14,8 +14,9 @@ braid, by the name it is known by, in the order to offer them.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Generic, TypeVar
+from typing import Generic, TypeVar
 
 __all__ = ["Entry"]
 

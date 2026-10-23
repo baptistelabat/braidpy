@@ -57,8 +57,8 @@ Two facts about the family worth having, both exact:
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -84,7 +84,7 @@ class FigureEightStrand:
         """The period along the axis."""
         return self.period
 
-    def position(self, z: float) -> Tuple[float, float, float]:
+    def position(self, z: float) -> tuple[float, float, float]:
         """Where the strand is at ``z`` along the axis."""
         angle = 2.0 * math.pi * (z / self.period - self.phase)
         return (
@@ -99,7 +99,7 @@ def figure_eight_strands(
     height: float,
     period: float,
     n_strands: int = 3,
-) -> List[FigureEightStrand]:
+) -> list[FigureEightStrand]:
     """The strands of a symmetric flat braid, evenly spread in phase.
 
     Args:
@@ -347,7 +347,7 @@ def tightest_figure_eight(
     n_strands: int = 3,
     n_samples: int = 260,
     refinements: int = 4,
-) -> Optional[Tuple[float, float]]:
+) -> tuple[float, float] | None:
     """The shortest strands of this family that still clear a diameter.
 
     Length falls as the amplitudes shrink and clearance falls with them, so
@@ -369,7 +369,7 @@ def tightest_figure_eight(
     """
     low_a, high_a = 0.05 * diameter, 6.0 * diameter
     low_h, high_h = 0.05 * diameter, 4.0 * diameter
-    best: Optional[Tuple[float, float, float]] = None
+    best: tuple[float, float, float] | None = None
 
     for _ in range(refinements):
         found = None
@@ -415,7 +415,7 @@ def _strand_length(strand: FigureEightStrand, n_samples: int = 4000) -> float:
 def braid_word(
     strands: Sequence,
     n_samples: int = 200000,
-) -> List[int]:
+) -> list[int]:
     """Read the braid word off a set of curves.
 
     Which slots a crossing exchanges is read from the order of the strands
@@ -440,7 +440,7 @@ def braid_word(
     order = sorted(range(count), key=lambda k: strands[k].position(0.0)[0])
     previous = [strand.position(0.0)[0] for strand in strands]
 
-    word: List[int] = []
+    word: list[int] = []
     for step in range(1, n_samples + 1):
         z = period * step / n_samples
         across = [strand.position(z)[0] for strand in strands]

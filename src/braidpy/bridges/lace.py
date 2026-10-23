@@ -37,13 +37,13 @@ the machine's own motion, with each crossing the sign of the gear's turn.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 from braidpy.braid import Braid
 from braidpy.ring_program import RingProgram, Swap, _packed
 
-Position = Tuple[str, int]
+Position = tuple[str, int]
 
 __all__ = ["LaceCard", "lace_braid", "lace_card", "punchcard_text", "ring_braid"]
 
@@ -61,8 +61,8 @@ class LaceCard:
     """
 
     n_gears: int
-    steps: Tuple[Tuple[Tuple[bool, ...], Tuple[bool, ...]], ...]
-    bobbins: Tuple[Optional[int], ...]
+    steps: tuple[tuple[tuple[bool, ...], tuple[bool, ...]], ...]
+    bobbins: tuple[int | None, ...]
     program: RingProgram
 
     def machine(self):
@@ -77,12 +77,12 @@ class LaceCard:
             self.n_gears, list(self.steps), threaded=self.threaded()
         )
 
-    def threaded(self) -> List[int]:
+    def threaded(self) -> list[int]:
         """The notches threaded, strand after strand."""
         where = {k: place for place, k in enumerate(self.bobbins) if k is not None}
         return [where[k] for k in sorted(where)]
 
-    def threading(self) -> Dict[int, Tuple[str, int]]:
+    def threading(self) -> dict[int, tuple[str, int]]:
         """Where each strand's bobbin goes, as the machine numbers its slots.
 
         Returns:
@@ -95,7 +95,7 @@ class LaceCard:
             k: notches[place] for place, k in enumerate(self.bobbins) if k is not None
         }
 
-    def notches(self) -> List[str]:
+    def notches(self) -> list[str]:
         """The notches to put a bobbin in, named by the two gears that cut
         each — "A-B" — as the lace ring names its contacts; worked out
         without building the machine, which needs networkx.
@@ -115,7 +115,7 @@ class LaceCard:
         return punchcard_text(self.steps)
 
 
-def punchcard_text(steps: Sequence[Tuple[Sequence[bool], Sequence[bool]]]) -> str:
+def punchcard_text(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
     """A lace machine's card as it is punched and as the machine's animation
     draws it (:func:`~braidpy.horn_gear.visualization.animate`): a column
     per gear, ● punched and ○ not, two lines per step read downwards — the
@@ -148,7 +148,7 @@ def _gear_sign(gear: int) -> int:
     return 1 if gear % 2 == 0 else -1
 
 
-def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
+def lace_card(braid: Braid, n_gears: int | None = None) -> LaceCard:
     """A braid as a lace machine's punchcard; see the module.
 
     Args:
@@ -171,7 +171,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
             f"notch to spare: {n} strands cannot go on {gears}."
         )
     offset = 0
-    swaps: List[Swap] = []
+    swaps: list[Swap] = []
 
     def shift(to: int) -> None:
         """Every strand one notch along, into the spare one: no crossing."""
@@ -195,7 +195,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     if offset:
         shift(0)
 
-    start: List[Optional[int]] = [None] * gears
+    start: list[int | None] = [None] * gears
     for k in range(n):
         start[k] = k
     program = RingProgram(gears, tuple(start), _packed(gears, swaps))
@@ -221,7 +221,7 @@ def lace_braid(card: LaceCard) -> Braid:
     return ring_braid(card.machine(), card.threading())
 
 
-def ring_braid(machine, threading: Optional[Mapping[int, Position]] = None) -> Braid:
+def ring_braid(machine, threading: Mapping[int, Position] | None = None) -> Braid:
     """The braid one pass of a lace machine's card makes, read off the
     machine itself: the card run, each bobbin found in its notch after each
     step, and the two bobbins of each gear that turned swapped — with the
@@ -264,8 +264,8 @@ def ring_braid(machine, threading: Optional[Mapping[int, Position]] = None) -> B
     # A step of the card is two of the machine's: one per line.
     history = simulate(machine, 2 * len(machine.program), threading)
 
-    def held(state) -> List[Optional[int]]:
-        here: List[Optional[int]] = [None] * gears
+    def held(state) -> list[int | None]:
+        here: list[int | None] = [None] * gears
         for carrier in state.carriers:
             x, y = carrier_xy(
                 machine, layout, offsets, riding, carrier.position, state.time
@@ -301,7 +301,7 @@ def ring_braid(machine, threading: Optional[Mapping[int, Position]] = None) -> B
     return RingProgram(gears, tuple(held(history[0])), tuple(rows)).braid()
 
 
-def _notches(machine) -> List[Tuple[str, int]]:
+def _notches(machine) -> list[tuple[str, int]]:
     from braidpy.horn_gear.jacquard import notch_positions
 
     notches = notch_positions(machine)

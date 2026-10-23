@@ -16,7 +16,7 @@ b.draw()
 b.plot()
 
 # 3D braid plot
-strands = (b ** 12).to_parametric_strands()
+strands = (b**12).to_parametric_strands()
 p = ParametricBraid(strands)
 p.plot()
 ```

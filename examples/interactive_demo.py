@@ -19,7 +19,7 @@ def step(description, code, var_name=None):
         if var_name:
             globals()[var_name] = result
         return result
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — whatever the step's code raised
         print("Error during execution:", e)
         return None
 

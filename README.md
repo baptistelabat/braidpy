@@ -88,7 +88,7 @@ b = Braid([1, 2, -1])
 b.format()
 
 # Display using other common notation. You should get 'abA'.
-b.format_to_notation(target='alpha')
+b.format_to_notation(target="alpha")
 
 # Draw the braid in console. Alternatively use result.plot() for more advanced 2D plot.
 b.draw()
@@ -107,6 +107,7 @@ strands = result.to_parametric_strands()
 from braidpy.parametric_braid import (
     ParametricBraid,
 )
+
 p = ParametricBraid(strands)  # .plot()
 p.plot()
 ```
@@ -131,8 +132,8 @@ from braidpy.horn_gear.loading import load_carriers
 from braidpy.horn_gear.simulation import simulate
 
 machine = tubular_braid_8()
-len(compute_tracks(machine))      # 4 closed tracks
-simulation_period(machine)        # 8 steps to come home
+len(compute_tracks(machine))  # 4 closed tracks
+simulation_period(machine)  # 8 steps to come home
 
 history = simulate(machine, simulation_period(machine), load_carriers(machine))
 ```
@@ -165,8 +166,8 @@ space.
 ```python
 from braidpy.solid_sinnets_catalog import abok_3042
 
-abok_3042.braid()        # the braid word one cycle makes
-abok_3042.to_mobidai()   # the same, as a kumihimo disk pattern
+abok_3042.braid()  # the braid word one cycle makes
+abok_3042.to_mobidai()  # the same, as a kumihimo disk pattern
 abok_3042.animate(n_cycles=3, side_view=True, output_html="3042.html")
 ```
 
@@ -180,8 +181,8 @@ reason is not want of effort.
 import math
 from braidpy.annulus_braid import lay_radius, packing_radius, tubular_braid_radius
 
-packing_radius(3, 0.4)                          # 0.231 — the zero-lay limit
-lay_radius(3, 0.4, lay=2.0)                     # 0.259 — where it really settles
+packing_radius(3, 0.4)  # 0.231 — the zero-lay limit
+lay_radius(3, 0.4, lay=2.0)  # 0.259 — where it really settles
 tubular_braid_radius(8, 0.4, math.radians(45))  # 0.825 — in closed form
 ```
 
@@ -203,8 +204,8 @@ machine:
 from braidpy import tools
 
 tools.compare_braids("1 -2", "-2 1")  # {'same_braid': True, 'distance': 0.0}
-ways = tools.ways_to_make("1 -2")     # a kumihimo disk's moves, a lace punchcard,
-ways["disk"]["moves"]                 # a sinnet on Ashley's stand
+ways = tools.ways_to_make("1 -2")  # a kumihimo disk's moves, a lace punchcard,
+ways["disk"]["moves"]  # a sinnet on Ashley's stand
 ```
 
 [Comparing braids](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/comparing_braids.md)

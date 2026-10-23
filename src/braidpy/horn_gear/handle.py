@@ -25,7 +25,8 @@ Braid Studio keeps them in the page and asks :func:`turn` for each step.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from .model import BraidingMachine
 from .simulation import (
@@ -53,7 +54,7 @@ class Turned:
             none did.  The handle stops at the step they met.
     """
 
-    def __init__(self, state: MachineState, met: Dict[Position, List[CarrierId]]):
+    def __init__(self, state: MachineState, met: dict[Position, list[CarrierId]]):
         self.state = state
         self.met = met
 
@@ -63,12 +64,12 @@ class Turned:
         return self.state.time
 
     @property
-    def positions(self) -> List[Position]:
+    def positions(self) -> list[Position]:
         """Where each carrier is, in the loading's order."""
         return [c.position for c in self.state.carriers]
 
 
-def _numbered(loading: Sequence[Position]) -> Dict[CarrierId, Position]:
+def _numbered(loading: Sequence[Position]) -> dict[CarrierId, Position]:
     return {i: (str(g), int(s)) for i, (g, s) in enumerate(loading)}
 
 
@@ -85,7 +86,7 @@ def turn(machine: BraidingMachine, loading: Sequence[Position], time: int) -> Tu
         Where the handle got to.
     """
     numbered = _numbered(loading)
-    shared: Dict[Position, List[CarrierId]] = {}
+    shared: dict[Position, list[CarrierId]] = {}
     for cid, place in numbered.items():
         shared.setdefault(place, []).append(cid)
     shared = {place: ids for place, ids in shared.items() if len(ids) > 1}
@@ -100,9 +101,7 @@ def turn(machine: BraidingMachine, loading: Sequence[Position], time: int) -> Tu
     return Turned(history[-1], {})
 
 
-def origin(
-    machine: BraidingMachine, position: Position, time: int
-) -> Optional[Position]:
+def origin(machine: BraidingMachine, position: Position, time: int) -> Position | None:
     """The slot at step 0 whose carrier is at ``position`` at step ``time``.
 
     Args:
@@ -140,13 +139,13 @@ class Handle:
     """
 
     def __init__(
-        self, machine: BraidingMachine, loading: Optional[Sequence[Position]] = None
+        self, machine: BraidingMachine, loading: Sequence[Position] | None = None
     ):
         self.machine = machine
         if loading is None:
             own = machine.default_carriers()
             loading = [own[k] for k in sorted(own)]
-        self.loading: List[Position] = [(str(g), int(s)) for g, s in loading]
+        self.loading: list[Position] = [(str(g), int(s)) for g, s in loading]
         self.time = 0
 
     def turned(self) -> Turned:
@@ -154,11 +153,11 @@ class Handle:
         return turn(self.machine, self.loading, self.time)
 
     @property
-    def met(self) -> Dict[Position, List[CarrierId]]:
+    def met(self) -> dict[Position, list[CarrierId]]:
         """Where carriers met, if they did, on the way to this step."""
         return self.turned().met
 
-    def turn(self, steps: int = 1) -> "Handle":
+    def turn(self, steps: int = 1) -> Handle:
         """Turn the handle on, stopping where carriers meet.
 
         Args:
@@ -170,7 +169,7 @@ class Handle:
         self.time = turn(self.machine, self.loading, self.time + steps).time
         return self
 
-    def back(self, steps: int = 1) -> "Handle":
+    def back(self, steps: int = 1) -> Handle:
         """Turn the handle back, no further than step 0.
 
         Args:
@@ -182,7 +181,7 @@ class Handle:
         self.time = max(0, self.time - steps)
         return self
 
-    def toggle(self, position: Position) -> "Handle":
+    def toggle(self, position: Position) -> Handle:
         """Put a carrier on a place, as it is at this step, or take off the
         one there: the loading changes, at the slot that leads there.
 
@@ -204,7 +203,7 @@ class Handle:
             self.loading.append(start)
         return self
 
-    def figure(self, **options) -> "go.Figure":
+    def figure(self, **options) -> go.Figure:
         """The machine turned from step 0 to this one, as a plotly
         animation; where carriers met, ringed.
 
@@ -224,7 +223,7 @@ class Handle:
         )
 
 
-Drawing = Tuple[Dict[str, Tuple[float, float]], Dict[str, float], Dict[str, float]]
+Drawing = tuple[dict[str, tuple[float, float]], dict[str, float], dict[str, float]]
 
 
 def drawing(machine: BraidingMachine) -> Drawing:
@@ -242,8 +241,8 @@ def sweep(
     machine: BraidingMachine,
     state: MachineState,
     frames: int,
-    drawn: Optional[Drawing] = None,
-) -> Tuple[List[Position], List[List[List[float]]], List[List[List[float]]]]:
+    drawn: Drawing | None = None,
+) -> tuple[list[Position], list[list[list[float]]], list[list[list[float]]]]:
     """Where every slot and carrier is through one step, from ``state``:
     ``frames`` pictures, the first the step itself.  The same places as the
     plotly animation draws (:func:`~braidpy.horn_gear.visualization.animate`).
@@ -267,8 +266,8 @@ def sweep(
         for name, gear in machine.gears.items()
         for slot in range(gear.n_slots)
     ]
-    slot_xy: List[List[List[float]]] = []
-    carrier_places: List[List[List[float]]] = []
+    slot_xy: list[list[list[float]]] = []
+    carrier_places: list[list[list[float]]] = []
     for k in range(frames):
         frac = k / frames
         here = []

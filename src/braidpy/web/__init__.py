@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 from braidpy.web import disks, machines, words
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
@@ -73,7 +73,7 @@ __all__ = [
 _SOURCES = {**words.SOURCES, **disks.SOURCES, **machines.SOURCES}
 
 
-def catalogue() -> Dict[str, Source]:
+def catalogue() -> dict[str, Source]:
     """What the page can make, with sensible defaults for each source.
 
     Returns:
@@ -123,7 +123,7 @@ def build(spec: Spec, tighten: bool = True) -> Result:
         _TIGHTENING.reset(job)
 
 
-def premade_specs() -> List[Spec]:
+def premade_specs() -> list[Spec]:
     """The braids a page offers as they come — each catalogued braid and
     each braid word example, with the source's defaults — to be made once,
     with the site, rather than by every visitor (:func:`premade`).
@@ -132,7 +132,7 @@ def premade_specs() -> List[Spec]:
         Their descriptions, as short as they can be: what differs from the
         source's defaults is left to them.
     """
-    specs: List[Spec] = []
+    specs: list[Spec] = []
     for source, about in catalogue().items():
         for entry in about.get("entries", []):
             if entry["name"] != OWN:
@@ -143,7 +143,7 @@ def premade_specs() -> List[Spec]:
     return specs
 
 
-def _premade_one(spec: Spec) -> Optional[str]:
+def _premade_one(spec: Spec) -> str | None:
     """One braid, laid for a page to tighten, as JSON; None if it cannot be
     made."""
     try:
@@ -152,7 +152,7 @@ def _premade_one(spec: Spec) -> Optional[str]:
         return None
 
 
-def premade(directory: str, workers: Optional[int] = None) -> List[Dict[str, Any]]:
+def premade(directory: str, workers: int | None = None) -> list[dict[str, Any]]:
     """Make every braid of :func:`premade_specs`, laid as
     :func:`build` lays it for a page to tighten (``tighten=False``), and
     write each as JSON in ``directory``, with ``index.json`` saying which
@@ -172,7 +172,7 @@ def premade(directory: str, workers: Optional[int] = None) -> List[Dict[str, Any
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     specs = premade_specs()
-    index: List[Dict[str, Any]] = []
+    index: list[dict[str, Any]] = []
     with ProcessPoolExecutor(max_workers=workers) as pool:
         for number, (spec, text) in enumerate(
             zip(specs, pool.map(_premade_one, specs))
