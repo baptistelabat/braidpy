@@ -47,7 +47,7 @@ Braids people make:
       stand, animated with the braid growing below
 - [x] A braid made move by move on a marudai, each yarn carried over the
       others and drawn tight
-- [x] Bridges: from a braid word to how to make it on a kumihimo disk, on a
+- [x] Ways of making a braid: from a braid word to how to make it on a kumihimo disk, on a
       Jacquard lace machine's punchcard, or on Ashley's stand, each checked by
       reading the braid back off what it makes
 
@@ -209,7 +209,7 @@ ways["disk"]["moves"]  # a sinnet on Ashley's stand
 ```
 
 [Comparing braids](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/comparing_braids.md)
-and [Bridges between ways of braiding](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/bridges.md)
+and [Making a braid by hand or on a machine](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/making.md)
 explain how.
 
 ## For AI assistants

@@ -199,7 +199,7 @@ def similar_braids(
 
 
 def ways_to_make(word: str, n_strands: int | None = None) -> dict[str, Any]:
-    """How to make a braid by hand or on a machine (:mod:`braidpy.bridges`):
+    """How to make a braid by hand or on a machine (:mod:`braidpy.making`):
     a kumihimo disk's moves, a Jacquard lace machine's punchcard, and
     Ashley's stand — a sinnet of the book's kind if one makes it, or the
     braid itself one strand a space.
@@ -214,9 +214,9 @@ def ways_to_make(word: str, n_strands: int | None = None) -> dict[str, Any]:
         ``ashley``: its spaces, moves, whether it is ``a_sinnet`` of the
         book's kind, and a ``studio`` link.
     """
-    from braidpy.bridges.ashley import ashley_moves, ashley_sinnet, sinnet_spec
-    from braidpy.bridges.disk import disk_moves
-    from braidpy.bridges.lace import lace_card
+    from braidpy.making.ashley import ashley_moves, ashley_sinnet, sinnet_spec
+    from braidpy.making.disk import disk_moves
+    from braidpy.making.lace import lace_card
 
     braid = _braid(word, n_strands)
     made: dict[str, Any] = {}

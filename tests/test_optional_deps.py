@@ -28,7 +28,7 @@ def _run(script):
 
 def test_braidpy_computes_without_its_drawing_libraries():
     """Braids, their words and properties, the machines, the sinnets, the
-    bridges and Braid Studio's braids need nothing that draws."""
+    ways of making them and Braid Studio's braids need nothing that draws."""
     out = _run(
         """
 from braidpy import Braid, tools, web

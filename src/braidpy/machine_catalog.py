@@ -90,12 +90,12 @@ def _ring(n_gears: int) -> Callable[[], LaceRing]:
 def _card(braid: str) -> Callable[[], LaceRing]:
     """A lace ring driven by the punchcard for a braid of
     :data:`braidpy.braid_catalog.CATALOGUE`, its repeating unit
-    (:func:`~braidpy.bridges.lace.lace_card`), threaded as the card says."""
+    (:func:`~braidpy.making.lace.lace_card`), threaded as the card says."""
 
     def make() -> LaceRing:
         from braidpy.braid import Braid
         from braidpy.braid_catalog import CATALOGUE as BRAIDS
-        from braidpy.bridges.lace import lace_card
+        from braidpy.making.lace import lace_card
         from braidpy.pure_braid import repeating_unit
 
         made = BRAIDS[braid].make()

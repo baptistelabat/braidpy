@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """A braid as a punchcard for the Jacquard lace machine:
-braidpy.bridges.lace, checked by running the machine."""
+braidpy.making.lace, checked by running the machine."""
 
 import itertools
 
@@ -11,7 +11,7 @@ import pytest
 
 from braidpy import Braid
 from braidpy.braid_catalog import word_examples
-from braidpy.bridges.lace import _gear_sign, lace_braid, lace_card
+from braidpy.making.lace import _gear_sign, lace_braid, lace_card
 
 
 def _words():

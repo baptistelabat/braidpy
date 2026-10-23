@@ -39,7 +39,7 @@ The ring has a seam, between its last place and its first.  Strands carried
 across it twist the braid below them, as carriers going round a tubular
 braiding machine do: every strand once round the ring is a full twist.
 That is still a braid, and often a shorter way to make one; but a braid
-word has its strands in a row from the seam, so the bridges from a word
+word has its strands in a row from the seam, so the ways made from a word
 keep them off it for now, and make that very word.  Shorter programs, going
 over the seam, are for later.
 """
@@ -222,7 +222,7 @@ def from_braid(
 
 
 def same_braid(a: Braid, b: Braid) -> bool:
-    """Whether two braids are the same braid, as the bridges between ways
+    """Whether two braids are the same braid, as the ways
     of making one compare them: by their topology
     (:func:`~braidpy.similarity.same_fingerprint`), whatever their words.
 

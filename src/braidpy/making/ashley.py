@@ -8,7 +8,7 @@ On Ashley's stand (:mod:`braidpy.ashley_solid_sinnet`) the strands lie in
 spaces round the rim, and a move carries a strand from one space to
 another, over every strand it passes.  A move is not a swap of neighbours,
 so a braid cannot be turned into moves crossing by crossing as for a disk
-or a lace machine: the bridge searches for a sinnet that makes it instead.
+or a lace machine: a sinnet that makes it is searched for instead.
 
 The sinnets searched are made as the book's are: every space gives a strand
 and receives one in each cycle, so a cycle's moves follow a derangement of
@@ -17,8 +17,8 @@ after a cycle.  Each candidate is the strands shared out among the spaces,
 the derangement, and the order of its moves.  A cycle read from another
 move is the same braid, so the first move is taken from space 1.
 
-A sinnet is found when its braid is the braid wanted, as the bridges
-compare braids: by their topology
+A sinnet is found when its braid is the braid wanted, compared as every
+way of making a braid compares them: by their topology
 (:func:`~braidpy.ring_program.same_braid`) — the braid repeated, read from
 any strand, however written.  Fewer spaces are tried first, so the simplest
 sinnet is found first; the search stops at a time limit, and says whether

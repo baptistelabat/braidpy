@@ -11,8 +11,8 @@ on a marudai, a carrier's spool on a machine.
 **braid word** — a braid written as its crossings in order: `σ₁σ₂⁻¹`, `1 -2`,
 `aB`. See {doc}`braid_representations`.
 
-**bridge** — a way back from a braid to how to make it: a kumihimo disk's
-moves, a lace punchcard, a sinnet on Ashley's stand. See {doc}`bridges`.
+**way of making** — how to make a given braid: a kumihimo disk's moves, a
+lace punchcard, a sinnet on Ashley's stand. See {doc}`making`.
 
 **carrier** — what holds a yarn on a braiding machine, or a slot holding it
 on a disk, and moves it.
@@ -50,7 +50,7 @@ place `i` ends in place `perm()[i - 1]`.
 **pure braid** — a braid that brings every strand back to its place.
 
 **ring program** — a braid as neighbours swapping places round a ring: the
-common step between the ways of making it. See {doc}`bridges`.
+common step between the ways of making it. See {doc}`making`.
 
 **settled** — a braid tightened until its yarns press on each other: sideways,
 on a marudai, or by physics. See {doc}`rope_physics`.
