@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=46dd9b8090";
-import { showBridges, showKin } from "./info.js?v=46dd9b8090";
+import { onChosen, rebase } from "./colours.js?v=ad08f375cb";
+import { showMaking, showKin } from "./info.js?v=ad08f375cb";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=46dd9b8090";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=46dd9b8090";
-import { unpack } from "./frames.js?v=46dd9b8090";
-import { machineShapes, machineWanted } from "./machine.js?v=46dd9b8090";
-import { $ } from "./page.js?v=46dd9b8090";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=46dd9b8090";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=46dd9b8090";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=ad08f375cb";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=ad08f375cb";
+import { unpack } from "./frames.js?v=ad08f375cb";
+import { machineShapes, machineWanted } from "./machine.js?v=ad08f375cb";
+import { $ } from "./page.js?v=ad08f375cb";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=ad08f375cb";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=ad08f375cb";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -34,7 +34,7 @@ let settler = null;
 let settling = null; // {id, settle} while it works
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=46dd9b8090");
+  settler = new Worker("settle.js?v=ad08f375cb");
   settling = null;
   settler.onmessage = ({ data }) => {
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
@@ -51,7 +51,7 @@ const keys = new Map(); // id -> what it was made from
 // Each braid's kin, by what it was made from, for when it is shown again.
 const kinOf = new Map();
 // And the braid made other ways.
-const bridgesOf = new Map();
+const makingOf = new Map();
 
 function fromBraidpy({ data }) {
   // Laid by braidpy: shown, and handed on to be settled — stopping what
@@ -83,13 +83,13 @@ function heard(data) {
     // Unless a braid made with the site is already being shown.
     if (!pending) submit();
     else if (shownAtOnce === pending) setStatus(AT_ONCE);
-  } else if (data.type === "bridges") {
+  } else if (data.type === "making") {
     if (data.id !== pending) return;
     if (keys.has(data.id)) {
-      bridgesOf.set(keys.get(data.id), data.bridges);
-      if (bridgesOf.size > KEEP) bridgesOf.delete(bridgesOf.keys().next().value);
+      makingOf.set(keys.get(data.id), data.making);
+      if (makingOf.size > KEEP) makingOf.delete(makingOf.keys().next().value);
     }
-    showBridges(data.bridges);
+    showMaking(data.making);
   } else if (data.type === "sinnet") {
     document.dispatchEvent(new CustomEvent("braid-sinnet", { detail: data }));
   } else if (data.type === "kin") {
@@ -249,7 +249,7 @@ export function submit() {
   const key = JSON.stringify(spec, Object.keys(spec).sort());
   keys.set(pending, key);
   showKin(kinOf.get(key));
-  showBridges(bridgesOf.get(key));
+  showMaking(makingOf.get(key));
   if (madeBefore.has(key)) {
     const result = madeBefore.get(key);
     madeBefore.delete(key);
