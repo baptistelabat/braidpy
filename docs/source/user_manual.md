@@ -14,4 +14,5 @@ bridges.md
 ai_assistants.md
 reference.md
 glossary.md
+changelog.md
 ```

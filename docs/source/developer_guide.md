@@ -81,8 +81,8 @@ the branch's name, or under the release's tag from `main`.
 Releases are made by hand, from `main`:
 
 1. Merge `develop` into `main`.
-2. Set the version in `pyproject.toml`, and say what changed in the release's
-   notes.
+2. Set the version in `pyproject.toml`, and say what changed in
+   `CHANGELOG.md`, its date in place of "unreleased".
 3. Tag the release with its version (`git tag 0.3.0`), as the earlier ones
    are, and push the tag.
 4. Build and publish the package: `uv build`, then `uv publish` with a PyPI
