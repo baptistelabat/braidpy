@@ -107,7 +107,11 @@ The page has a form and a 3D view.
   takes the pull; the rest is drawn. The making shows as it goes — each
   yarn carried up over the others to its new place, drawn tight, the braid
   settling — and **Grow** replays it, move by move, before showing the
-  braid made. It is a half turn of the view
+  braid made. Each moment is kept only as its yarns still free: a bead
+  frozen into the braid moves only as the whole braid turns, so it is put
+  back from the braid as made, turned back to where it was. Even a sinnet
+  of 45 strands keeps some eighty moments within a few megabytes, made
+  with the site. It is a half turn of the view
   about a level axis: the braid stays the braid it is, where only flipping
   its heights would show its mirror image.
 - A disk braid or a sinnet can also be **your own**: choosing "Your own
