@@ -13,9 +13,8 @@ advances in braid theory, and to say how to make them.
 - **Sources** on [GitHub](https://github.com/baptistelabat/braidpy).
 
 braidpy is in **alpha**: its features work and are tested, but its API may
-still change between versions. The release on PyPI (0.2.2) is much older than
-the development version, which is what the documentation and Braid Studio
-describe; to use it, install it from GitHub (see Installation below).
+still change between versions. What changed in each is in the
+[changelog](https://github.com/baptistelabat/braidpy/blob/develop/CHANGELOG.md).
 
 ## Support
 
@@ -116,7 +115,7 @@ p.plot()
 word above it, each strand in the same colour the console draws it in, and the strand
 passing behind interrupted where the two meet. `p.plot()` opens the 3D view.
 
-![Plot braid example](braid_plot.png)
+![Plot braid example](https://raw.githubusercontent.com/baptistelabat/braidpy/develop/braid_plot.png)
 
 ## Braiding machines
 
@@ -235,8 +234,8 @@ pip install "braidpy[viz]" # with what it draws with: matplotlib, plotly
 braidpy alone computes everything; drawing braids (diagrams, 3D plots,
 animations) needs the `viz` extra.
 
-The release there (0.2.2) lacks most of what this page describes. Until the
-next one, install the development version from GitHub:
+The development version, with what is not released yet, installs from
+GitHub:
 
 ```bash
 pip install "braidpy[viz] @ git+https://github.com/baptistelabat/braidpy@develop"
