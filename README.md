@@ -140,7 +140,7 @@ history = simulate(machine, simulation_period(machine), load_carriers(machine))
 
 Threading is a search, not a convention: `load_carriers` tries placements,
 runs each one, and keeps the fullest that never collides. `visualize_machine`
-and `animate` draw the result, and `gen_demos.py` writes a page per machine —
+and `animate` draw the result, and `scripts/gen_demos.py` writes a page per machine —
 flat, tubular, soutache, diamond, and a Jacquard lace machine whose gears
 interpenetrate and whose switches are driven by a punched programme.
 

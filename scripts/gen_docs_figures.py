@@ -35,7 +35,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from braidpy.annulus_braid import (  # noqa: E402
     TubularBraidStrand,
@@ -49,7 +49,7 @@ from braidpy.annulus_braid import (  # noqa: E402
     tubular_braid_radius,
 )
 
-DOCS = Path(__file__).parent / "docs" / "source"
+DOCS = Path(__file__).parent.parent / "docs" / "source"
 
 INK = "#1f2933"
 MUTED = "#7b8794"
@@ -563,7 +563,7 @@ def tube_cover_gap(png_dir: Path | None) -> None:
 
 # ---------------------------------------------------------------- the rope solver
 
-ROPE_CASES = Path(__file__).parent / "tests" / "js" / "rope_cases.js"
+ROPE_CASES = Path(__file__).parent.parent / "tests" / "js" / "rope_cases.js"
 YARN = [
     "#1b6ac9",
     "#c2410c",

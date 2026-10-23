@@ -188,5 +188,5 @@ to give.
   crossings.
 - {py:func}`~braidpy.annulus_braid.tubular_braid_clearance` measures a built
   tube's actual clearance, which is how the formula above is checked.
-- The figures on this page are drawn by `gen_docs_figures.py`, which computes
+- The figures on this page are drawn by `scripts/gen_docs_figures.py`, which computes
   them with the functions it documents.

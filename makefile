@@ -105,7 +105,7 @@ doc-deploy: docs ## Deploy docs to gh-pages under versioned path
 	gh-pages-multi deploy -s docs/build/html -t "$$safe_tag"
 
 demo: ## Launch an interactive demo
-	uv run src/interactive_demo.py
+	uv run examples/interactive_demo.py
 
 
 

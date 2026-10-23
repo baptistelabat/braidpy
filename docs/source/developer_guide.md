@@ -34,8 +34,11 @@ is tested daily (see below).
 - `tests/` — pytest tests; `tests/js/` runs the page's JavaScript in Node for
   them.
 - `docs/source/` — these pages.
-- `gen_docs_figures.py`, `gen_demos.py`, `gen_braid_geometry_demo.py` — the
-  documentation's figures and the demo pages, drawn from braidpy itself.
+- `examples/` — short scripts using braidpy, and the console tour `make
+  demo` runs.
+- `scripts/` — the documentation's figures (`gen_docs_figures.py`) and the
+  demo pages (`gen_demos.py`, `gen_braid_geometry_demo.py`), each run from
+  the repository's root.
 
 ## How braidpy is written
 
@@ -69,7 +72,7 @@ hints throughout.
 `make docs` builds these pages in `docs/build/html`, with Sphinx and MyST.
 They are in three parts — the user manual, the theory manual and this
 guide — and each page links to others rather than repeat them. The figures
-are drawn by `gen_docs_figures.py` from braidpy's own functions: change one,
+are drawn by `scripts/gen_docs_figures.py` from braidpy's own functions: change one,
 draw them again. `make doc-deploy` publishes the pages to GitHub Pages, under
 the branch's name, or under the release's tag from `main`.
 

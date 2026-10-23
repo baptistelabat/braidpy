@@ -4,7 +4,7 @@ Writes one static diagram, one track diagram, and an animation per machine,
 then the braid each wired machine lays, in 3D: with no tension, and drawn in
 to a braiding point and tightened — and the same for a braid word and a
 mobidai, which are laid the same way.
-Run from the repository root: ``python gen_demos.py``
+Run from the repository root: ``python scripts/gen_demos.py``
 """
 
 import sys
