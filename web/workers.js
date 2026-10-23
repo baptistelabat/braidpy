@@ -32,16 +32,44 @@ function setStatus(text, error = false) {
 // braid on its marudai between braids, to make more of it.
 let settler = null;
 let settling = null; // {id, settle} while it works
+// A .b3d asked of the settler, waiting: its id and what to tell.
+let b3dAsked = null;
+let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
   settler = new Worker("settle.js");
   settling = null;
+  b3dAsked?.reject(new Error("another braid was asked for"));
+  b3dAsked = null;
   settler.onmessage = ({ data }) => {
+    if (data.type === "b3d") {
+      if (b3dAsked?.id !== data.id) return;
+      if (data.error) b3dAsked.reject(new Error(data.error));
+      else b3dAsked.resolve(data.text);
+      b3dAsked = null;
+      return;
+    }
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
     heard(data);
   };
 }
 startSettler();
+
+// The braid as braid3dmin saves it, made on the marudai by the settler
+// (b3d.js): a promise of the file's text.
+export function b3dOf(result) {
+  b3dAsked?.reject(new Error("asked again"));
+  return new Promise((resolve, reject) => {
+    b3dAsked = { id: ++b3dCount, resolve, reject };
+    settler.postMessage({
+      type: "b3d",
+      id: b3dCount,
+      result,
+      twist: result.used?.twist,
+      d: result.used?.yarn_diameter ?? result.yarn_diameter,
+    });
+  });
+}
 
 // The braids made, by what they were made from: going back to one is then
 // instant.

@@ -189,7 +189,12 @@ The page has a form and a 3D view.
   cross-section — are in the toolbar's **View** menu.
 - The address bar always describes the braid shown, so **Copy link** shares
   it. **Save…** keeps a picture, the yarns as an STL file for 3D printing or
-  an OBJ model, or their points as JSON.
+  an OBJ model, or their points as JSON. A braid made on a disk can also be
+  saved **for braid3dmin** (B3D): the braid as made move by move on the
+  marudai, each yarn bead by bead, with its moves listed as braid3dmin
+  lists them. When the disk turns with the braid on it, nothing moves
+  against anything else, so braid3dmin has no step for it, and the angles
+  that follow are counted from the braid.
 - **Braid** makes the braid described. Asking for another while one is
   being made stops it at once: the yarns are settled in a worker of their
   own (`web/settle.js`), apart from braidpy's, which is ended and started

@@ -51,6 +51,7 @@ SETTLING = [
     "rope.js",
     "form.js",
     "marudai.js",
+    "b3d.js",
     "frames.js",
 ]
 SETTLED_CACHE = Path(os.environ.get("BRAID_STUDIO_SETTLED", WEB / ".settled"))
@@ -80,6 +81,7 @@ PAGE = [
     "rope.js",
     "form.js",
     "marudai.js",
+    "b3d.js",
 ]
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
