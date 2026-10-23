@@ -47,6 +47,7 @@ SETTLING = [
     "rope.js",
     "form.js",
     "marudai.js",
+    "frames.js",
 ]
 SETTLED_CACHE = Path(os.environ.get("BRAID_STUDIO_SETTLED", WEB / ".settled"))
 PAGE = [
@@ -63,6 +64,7 @@ PAGE = [
     "workers.js",
     "defaults.js",
     "scene.js",
+    "frames.js",
     "insets.js",
     "info.js",
     "colours.js",

@@ -66,3 +66,25 @@ def test_a_twisted_word_settled_by_physics_keeps_or_loses_its_twist(
     else:
         assert turns == pytest.approx(8, abs=0.1)
         assert any(note.startswith("Untwisted") for note in result["notes"])
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 4},
+        {"source": "mobidai", "name": "KONGO_8", "cycles": 2},
+    ],
+)
+def test_grow_puts_each_moment_of_the_making_back_as_it_was(tmp_path, spec):
+    """A braid made on a marudai, its moments kept for Grow with only their
+    beads still free, packed and unpacked as the site keeps them: put back,
+    each moment is as it was to within the packing's hundredths of a yarn
+    diameter, though the braid turned as it went, frozen beads and all."""
+    from braidpy.web import build
+
+    path = tmp_path / "laid.json"
+    path.write_text(json.dumps(build(spec, tighten=False)))
+    result = _run("grown", path)
+    assert result["gap"] <= 0.0051
+    assert result["turned"] > 0.05
+    assert result["frozen"] > 0
