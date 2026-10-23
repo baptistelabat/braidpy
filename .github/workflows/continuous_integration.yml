@@ -2,8 +2,8 @@ name: Continuous integration
 run-name: ${{ github.actor }} is using out GitHub Actions 🚀
 
 # On every push, the quick tests: all but those marked slow, in parallel, on
-# one Python — a couple of minutes.  Every day, and on demand, everything:
-# the slow tests too, on every Python supported.
+# the newest Python — a couple of minutes.  Every day, and on demand,
+# everything: the slow tests too, on every Python supported.
 on:
   push:
   schedule:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   quick:
-    name: continuous-integration (quick, 3.11)
+    name: continuous-integration (quick, 3.15)
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     steps:
@@ -22,7 +22,7 @@ jobs:
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.11"
+          python-version: "3.15"
 
       - name: Install the project
         run: uv sync --all-extras --dev
@@ -41,10 +41,16 @@ jobs:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     strategy:
+      # Each Python's result in full, rather than the rest stopped by one.
+      fail-fast: false
       matrix:
         python-version:
           - "3.10"
           - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+          - "3.15"
 
     steps:
       - uses: actions/checkout@v4

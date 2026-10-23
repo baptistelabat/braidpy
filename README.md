@@ -242,7 +242,7 @@ next one, install the development version from GitHub:
 pip install "braidpy[viz] @ git+https://github.com/baptistelabat/braidpy@develop"
 ```
 
-braidpy needs Python 3.10 or later.
+braidpy needs Python 3.10 or later; it is tested daily on 3.10 to 3.15.
 
 ## 🛠️ Installation from source
 To work on braidpy itself, clone it (you are then on the `develop` branch)
