@@ -31,7 +31,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10: tomllib's forerunner
+    import tomli as tomllib
 import urllib.request
 from pathlib import Path
 
