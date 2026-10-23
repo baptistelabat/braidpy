@@ -19,6 +19,7 @@ rope_physics.md
 braid_algebra.md
 comparing_braids.md
 bridges.md
+ai_assistants.md
 usage.md
 references.md
 reference.md

@@ -1,5 +1,15 @@
 # API reference
 ```{eval-rst}
+.. automodule:: braidpy.tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.mcp_server
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.braid
    :members:
    :undoc-members:
