@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=ad08f375cb";
-import { showMaking, showKin } from "./info.js?v=ad08f375cb";
+import { onChosen, rebase } from "./colours.js?v=216ba49a90";
+import { showMaking, showKin } from "./info.js?v=216ba49a90";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=ad08f375cb";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=ad08f375cb";
-import { unpack } from "./frames.js?v=ad08f375cb";
-import { machineShapes, machineWanted } from "./machine.js?v=ad08f375cb";
-import { $ } from "./page.js?v=ad08f375cb";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=ad08f375cb";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=ad08f375cb";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=216ba49a90";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=216ba49a90";
+import { unpack } from "./frames.js?v=216ba49a90";
+import { machineShapes, machineWanted } from "./machine.js?v=216ba49a90";
+import { $ } from "./page.js?v=216ba49a90";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=216ba49a90";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=216ba49a90";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -32,16 +32,44 @@ function setStatus(text, error = false) {
 // braid on its marudai between braids, to make more of it.
 let settler = null;
 let settling = null; // {id, settle} while it works
+// A .b3d asked of the settler, waiting: its id and what to tell.
+let b3dAsked = null;
+let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=ad08f375cb");
+  settler = new Worker("settle.js?v=216ba49a90");
   settling = null;
+  b3dAsked?.reject(new Error("another braid was asked for"));
+  b3dAsked = null;
   settler.onmessage = ({ data }) => {
+    if (data.type === "b3d") {
+      if (b3dAsked?.id !== data.id) return;
+      if (data.error) b3dAsked.reject(new Error(data.error));
+      else b3dAsked.resolve(data.text);
+      b3dAsked = null;
+      return;
+    }
     if ((data.type === "result" || data.type === "error") && settling?.id === data.id) settling = null;
     heard(data);
   };
 }
 startSettler();
+
+// The braid as braid3dmin saves it, made on the marudai by the settler
+// (b3d.js): a promise of the file's text.
+export function b3dOf(result) {
+  b3dAsked?.reject(new Error("asked again"));
+  return new Promise((resolve, reject) => {
+    b3dAsked = { id: ++b3dCount, resolve, reject };
+    settler.postMessage({
+      type: "b3d",
+      id: b3dCount,
+      result,
+      twist: result.used?.twist,
+      d: result.used?.yarn_diameter ?? result.yarn_diameter,
+    });
+  });
+}
 
 // The braids made, by what they were made from: going back to one is then
 // instant.

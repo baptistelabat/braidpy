@@ -14,8 +14,11 @@
 //                {type: "frame", id, frame, disk, colours}
 //                {type: "result", id, result, seconds}
 //                {type: "error", id, message}
+//
+// And asked {type: "b3d", id, result, twist, d}, the braid made on the
+// marudai as braid3dmin saves it (b3d.js): {type: "b3d", id, text}.
 
-importScripts("tighten.js?v=ad08f375cb", "rope.js?v=ad08f375cb", "form.js?v=ad08f375cb", "marudai.js?v=ad08f375cb");
+importScripts("tighten.js?v=216ba49a90", "rope.js?v=216ba49a90", "form.js?v=216ba49a90", "marudai.js?v=216ba49a90", "b3d.js?v=216ba49a90");
 
 function status(text) {
   self.postMessage({ type: "status", text });
@@ -28,6 +31,10 @@ let asked = null;
 let busy = false;
 
 self.onmessage = ({ data }) => {
+  if (data.type === "b3d") {
+    asB3d(data);
+    return;
+  }
   if (data.type !== "settle") return;
   asked = data;
   if (!busy) run();
@@ -319,19 +326,44 @@ function formed(id, result, job) {
 // it is asked for another braid: if so, it leaves this one where it is,
 // to go on with should the other begin as this one does.  Returns null
 // when left so.
-async function onMarudai(id, result, job) {
-  const d = job.yarn_diameter;
-  const started = performance.now();
-  let shown = started;
-  // Kept, the braid is held throughout, its twist kept; untwisted, it
-  // hangs free throughout, and turning the bobbins together turns it along.
-  const twist = job.twist ?? "auto";
+// The braid's disk program, held or hanging free as asked.  Kept, the
+// braid is held throughout, its twist kept; untwisted, it hangs free
+// throughout, and turning the bobbins together turns it along.
+function programOf(result, twist) {
   const holding = {
     keep: { held: true, twists: true },
     turns: { held: false, twists: true },
     free: { held: false, twists: false },
-  }[twist] ?? {};
-  const program = { ...result.disk, ...holding };
+  }[twist ?? "auto"] ?? {};
+  return { ...result.disk, ...holding };
+}
+
+// The braid made on the marudai, as braid3dmin saves it: the braid on the
+// marudai if it is this one made through, else this one made afresh.
+function asB3d({ id, result, twist, d }) {
+  try {
+    const program = programOf(result, twist);
+    const same = JSON.stringify({ ...program, steps: undefined, d });
+    let making =
+      onDisk && onDisk.same === same && onDisk.made === JSON.stringify(program.steps) ? onDisk.making : null;
+    if (!making) {
+      status("Making it on the marudai, for braid3dmin…");
+      making = beginOnMarudai(program);
+      program.steps.forEach((moves, k) => making.step(moves, k));
+    }
+    const text = b3dText(program, making, result.strands.map((strand) => strand.colour));
+    self.postMessage({ type: "b3d", id, text });
+  } catch (error) {
+    self.postMessage({ type: "b3d", id, error: String(error?.message ?? error) });
+  }
+}
+
+async function onMarudai(id, result, job) {
+  const d = job.yarn_diameter;
+  const started = performance.now();
+  let shown = started;
+  const twist = job.twist ?? "auto";
+  const program = programOf(result, twist);
   const same = JSON.stringify({ ...program, steps: undefined, d });
   const goesOn =
     onDisk &&
