@@ -50,7 +50,9 @@ class GarsideCanonicalFactors:
         Computes the Dehornoy floor of the braid.
 
         It is the unique integer m such that:
+
             Δ^{2m} < β < Δ^{2m+2}
+
         An estimate is floor(n_half_twist / 2) or floor(n_half_twist / 2) + 1
         depending on the position of the braid in Dehornoy order.
 

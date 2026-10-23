@@ -150,7 +150,7 @@ interpenetrate and whose switches are driven by a punched programme.
 a web page. Describe a braid as a braid word, a kumihimo pattern, a disk
 braid, an Ashley sinnet or a braiding machine, and it is laid and tightened in
 3D. braidpy itself runs in your browser through Pyodide, and three.js draws
-the result. See [its plan](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braid_studio.md),
+the result. See [how to use it](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braid_studio.md),
 or run it locally:
 
 ```sh
@@ -299,15 +299,10 @@ Bots:
 
 Contributions are welcome! Please open an [issue](https://github.com/baptistelabat/braidpy/issues) or submit a pull request from your fork to suggest changes, report/correct bugs, or propose new features.
 
-Here are a few code guidelines:  
-- We use english for code and comments.
-- We use Google style docstring.
-- We use type hinting.  
-Please be sure to install the pre-commit tool in order to check your code while commiting in order to keep a clean project history.
-```bash
-pre-commit install
-```
-Please have a look to makefile to find helpful commands.
+The [developer guide](https://github.com/baptistelabat/braidpy/blob/develop/docs/source/developer_guide.md)
+says how to set up, the rules braidpy is written by, how to test it and how
+it is released. In short: English code and comments, Google-style
+docstrings, type hints, and `pre-commit install` to check each commit.
 
 ## 📜 License
 ![License](https://img.shields.io/badge/license-MPL%202.0-brightgreen)

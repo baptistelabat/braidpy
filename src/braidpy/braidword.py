@@ -15,6 +15,7 @@ def braidword_alpha_to_numeric(braidword: str) -> List[int]:
         - 'A' → σ₁⁻¹ → -1
         - 'B' → σ₂⁻¹ → -2
         - ...
+
     Special character # can be used for neutral element
 
     Args:

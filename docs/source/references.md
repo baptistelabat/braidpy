@@ -1,4 +1,6 @@
-# 🧶 Braid Group: Code Resources, Visualizations & Research
+# Further reading
+
+Code, visualisations and research on braids and braiding, beyond braidpy.
 
 ## 📘 General background wikis on braid theory
 

@@ -369,9 +369,9 @@ def ashley_single_move_to_artin(
 ) -> Tuple[List[int], List[int]]:
     """Apply one Ashley move and return updated counts and the Artin braid word segment.
 
-    The direction is determined by the parity of `from_space`:
-      odd -> move right (anticlockwise, increasing sector index), even -> move left (clockwise).
-    Wrap-around crosses all other strands in the appropriate Artin order.
+    The direction is determined by the parity of `from_space`: odd moves
+    right (anticlockwise, increasing sector index), even moves left
+    (clockwise). Wrap-around crosses all other strands in the appropriate Artin order.
 
     Note:
         This function updates only the per-sector counts. It reconstructs strand IDs
