@@ -13,6 +13,14 @@
 // anything else: braid3dmin has no such step, and the angles after it are
 // taken from the braid as it then lies.  Turned while the braid is held,
 // the bobbins twist the yarns in: that is written as every yarn moved.
+//
+// braid3dmin moves the yarn it finds at a move's angle, and a repeat step
+// plays its steps again from where it puts the yarns back to.  A braid
+// whose cycle comes round exactly — the same moves at the same angles, the
+// yarns back on the same angles — is written as one cycle and a repeat
+// that puts nothing back: braid3dmin makes it as it was made here.  Any
+// other braid is written move by move, as braid3dmin would put its yarns
+// back its own way.
 
 (function (root) {
   "use strict";
@@ -53,6 +61,7 @@
     const steps = [];
     steps.push(step(null, []));
     if (job.from) steps.push(step("threadMove", job.start.map((slot, t) => moved(t, angleOf(slot)))));
+    const first = steps.length;
     for (const moves of job.steps) {
       const moving = moves.filter(([, d]) => d);
       if (!moving.length) continue;
@@ -78,7 +87,38 @@
       dir: wrap(thread.dir - turned),
       poss: machine.positions(t).map(([x, y, z]) => ({ x: x * c + z * s, y, z: -x * s + z * c })),
     }));
-    return encodeURIComponent(JSON.stringify({ nThreads: n, threadStates, steps }));
+    return encodeURIComponent(JSON.stringify({ nThreads: n, threadStates, steps: repeated(steps, first) }));
+  }
+
+  // The steps from `first` on as one cycle and a repeat, if they come round
+  // exactly; else as they are.
+  function repeated(steps, first) {
+    const same = (a, b) => Math.abs(wrap(a - b)) < 1e-9;
+    const angles = (k) => steps[k].poss.map((p) => p.angle);
+    const sameMoves = (j, k) =>
+      steps[j].rotate === steps[k].rotate &&
+      steps[j].moves.length === steps[k].moves.length &&
+      steps[j].moves.every((m, i) => same(m.from, steps[k].moves[i].from) && same(m.to, steps[k].moves[i].to));
+    const sameAngles = (j, k) => angles(j).every((a, i) => same(a, angles(k)[i]));
+    const made = steps.length - first;
+    for (let cycle = 1; cycle <= made / 2; cycle++) {
+      if (made % cycle) continue;
+      let comesRound = true;
+      for (let k = cycle; k < made && comesRound; k++) {
+        comesRound = sameMoves(first + k, first + (k % cycle));
+        if (k % cycle === 0) comesRound &&= sameAngles(first - 1 + k, first - 1);
+      }
+      if (!comesRound || !sameAngles(steps.length - 1, first - 1)) continue;
+      const end = steps[steps.length - 1];
+      return [
+        ...steps.slice(0, first + cycle),
+        {
+          type: "repeat", num: first + cycle, moves: [], tighten: 0,
+          repeatFrom: first, repeatTimes: made / cycle - 1, rotate: 0, poss: end.poss,
+        },
+      ];
+    }
+    return steps;
   }
 
   root.b3dText = b3dText;

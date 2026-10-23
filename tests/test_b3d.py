@@ -83,3 +83,24 @@ def test_the_file_reads_back_as_braid3dmin_files_do(tmp_path):
     model = BraidModel.load_from_file(str(path))
     assert model.n_strands == saved["nThreads"]
     assert len(model.steps) == len(saved["steps"])
+
+
+def test_a_sinnet_comes_round_and_is_saved_as_one_cycle_and_a_repeat(tmp_path):
+    """A sinnet's cycle comes round exactly: the same moves at the same
+    angles, the yarns back on the same angles.  Saved over three cycles, it
+    is its first cycle — the same steps as a sinnet of one cycle — and a
+    repeat that plays it twice more, putting no yarn back first."""
+    spec = {"source": "sinnet", "name": "abok_3044"}
+    _, _, once = _saved(tmp_path, {**spec, "cycles": 1})
+    _, _, thrice = _saved(tmp_path, {**spec, "cycles": 3})
+    *cycle, repeat = thrice["steps"]
+    assert len(cycle) == len(once["steps"])
+    for ours, alone in zip(cycle, once["steps"], strict=True):
+        assert [(m["from"], m["to"]) for m in ours["moves"]] == pytest.approx(
+            [(m["from"], m["to"]) for m in alone["moves"]]
+        )
+    assert repeat["type"] == "repeat"
+    assert repeat["repeatFrom"] == 1
+    assert repeat["repeatTimes"] == 2
+    assert repeat["moves"] == []
+    assert repeat["rotate"] == 0
