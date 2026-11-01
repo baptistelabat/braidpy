@@ -142,6 +142,22 @@ def main() -> int:
                 except PlaywrightTimeout:
                     ok = False
                     errors.append("the machine's handle did not turn")
+            # A sinnet's moves stepped through, the moves typed left as they are.
+            if spec["source"] == "sinnet" and "moves" in spec:
+                try:
+                    typed = page.input_value("textarea[name=moves]")
+                    page.click("button[title='Before the first move']")
+                    page.click("button[title='A move on']")
+                    page.wait_for_function(
+                        "() => [...document.querySelectorAll('.handle .step')]"
+                        ".some((s) => s.textContent.startsWith('Move 1 of 6'))",
+                        timeout=10000,
+                    )
+                    if page.input_value("textarea[name=moves]") != typed:
+                        raise PlaywrightTimeout("the moves changed")
+                except PlaywrightTimeout:
+                    ok = False
+                    errors.append("a sinnet's moves were not stepped through")
             # Two strands coloured at once are a group, recoloured together.
             if spec["source"] == "word":
                 try:
