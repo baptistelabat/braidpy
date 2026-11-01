@@ -2,6 +2,15 @@
 
 What changed in each release of braidpy.
 
+## Unreleased
+
+### New
+
+- Four kumihimo disk braids shared by Richard Buenger: edo yatsu, naiki,
+  hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`). Edo yatsu is
+  Ashley's 8-strand square sinnet, ABOK #3070, and each is listed as a way of
+  making the other.
+
 ## 0.3.0 — 2026-10-24
 
 braidpy grows from braid words to the braids people make: on braiding and
