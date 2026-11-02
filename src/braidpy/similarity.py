@@ -41,6 +41,7 @@ None of these changes when a braid is read from another starting point
 polynomials do not change either when the strands are numbered otherwise.  Equal
 fingerprints do not prove two braids the same — no handful of invariants
 can — but different ones prove them different.
+:func:`braidpy.conjugacy.same_braid` proves either way, more slowly.
 """
 
 from __future__ import annotations

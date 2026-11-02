@@ -11,6 +11,10 @@ What changed in each release of braidpy.
 - Braid Studio steps through a disk's or a sinnet's moves, as through a
   machine's: ⏮ ◀ ▶ ⏭ or the caret in the moves typed show the strands after
   any move, without undoing it. A move clicked goes in at the cursor.
+- Whether two braids are the same braid however written, proven rather than
+  measured: `braidpy.conjugacy.same_braid` decides conjugacy by the super
+  summit set. It proves edo yatsu and ABOK #3070 different, and the flat
+  braid of 6 and ABOK #3021.
 
 ### Fixed
 

@@ -13,6 +13,7 @@ License: Mozilla Public License 2.0
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -145,7 +146,6 @@ def artin_left_normal_form(
         the other way — and the factors A_i as permutations.
     """
     n = n_strands
-    identity = tuple(range(n))
     delta = _delta(n)
     k = 0
     factors: list = []
@@ -161,7 +161,27 @@ def artin_left_normal_form(
             factors = [_flip(f) for f in factors]
             factors.append(_compose(delta, _swap(n, i)))
             k -= 1
+    return left_weighted(k, factors)
 
+
+def left_weighted(
+    k: int, factors: Sequence[Permutation]
+) -> tuple[int, tuple[Permutation, ...]]:
+    """Δ^k · F_1 ⋯ F_m, for any permutation braids F_i, in left normal form.
+
+    Args:
+        k: Half twists in front.
+        factors: Permutation braids, Δ and the identity among them if need be.
+
+    Returns:
+        ``k`` and the factors, as :func:`artin_left_normal_form` gives them.
+    """
+    factors = list(factors)
+    if not factors:
+        return k, ()
+    n = len(factors[0])
+    identity = tuple(range(n))
+    delta = _delta(n)
     # Make every neighbouring pair left-weighted, until nothing moves.
     changed = True
     while changed:

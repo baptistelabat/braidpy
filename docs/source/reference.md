@@ -84,6 +84,10 @@ Whether braids are alike, and the braids braidpy knows.
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.conjugacy
+   :members:
+   :show-inheritance:
+
 .. automodule:: braidpy.topology_catalog
    :members:
    :undoc-members:
