@@ -10,6 +10,9 @@ What changed in each release of braidpy.
   hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`). Edo yatsu is
   Ashley's 8-strand square sinnet, ABOK #3070, and each is listed as a way of
   making the other.
+- Braid Studio steps through a disk's or a sinnet's moves, as through a
+  machine's: ⏮ ◀ ▶ ⏭ or the caret in the moves typed show the strands after
+  any move, without undoing it. A move clicked goes in at the cursor.
 
 ## 0.3.0 — 2026-10-24
 

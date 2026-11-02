@@ -26,6 +26,13 @@ The page has a form and a 3D view.
 - A braid word is drawn as it is typed, as a 2D diagram — strands running
   down, the one passing behind broken where they cross — before the braid
   is made.
+- A disk braid's or a sinnet's **moves** are typed, or clicked on a drawing
+  of the disk or of Ashley's spaces. The drawing shows the strands with the
+  moves made up to a cursor, the last of them as an arrow; ⏮ ◀ ▶ ⏭ step it
+  through the moves, as a machine's handle is turned, and the caret in the
+  moves typed puts it on the move it is in. Stepping changes no move: a move
+  clicked goes in after the cursor, the ones after it kept, and **Undo
+  move** takes out the move at the cursor.
 - A braid word can also be a **ring word**, its strands round a circle as
   on a marudai: `1` to `n - 1` cross neighbours as in a braid word, `n`
   crosses the last strand and the first, across the seam, and `n + 1` turns
