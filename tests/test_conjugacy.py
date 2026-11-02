@@ -100,6 +100,7 @@ def test_numbering_the_strands_from_the_other_side_is_conjugation():
         ),
     ],
 )
+@pytest.mark.slow
 def test_braids_alike_in_every_number_measured_are_proven_different(a, b, n):
     """Their loops, writhe and linking numbers are equal, and their
     Alexander polynomials vanish: no fingerprint of those tells them
@@ -110,3 +111,14 @@ def test_braids_alike_in_every_number_measured_are_proven_different(a, b, n):
 def test_a_search_too_large_says_so():
     with pytest.raises(SuperSummitSetTooLarge):
         super_summit_set(Braid([1, -2, 3, -4, 5, -6, 7], 8), limit=2)
+
+
+@pytest.mark.slow
+def test_braids_repeated_as_often_are_compared_by_their_units():
+    """ABOK #3057's unit closes after 20 repeats, 460 crossings: compared by
+    the unit instead, read from another starting point, it is found the
+    same."""
+    unit = [7, 6, 5, 4, 3, 7, 6, 5, 4, -6, -7, -8, 4, 3, 2, 1, -3, -4, -5]
+    unit += [-2, -3, -4, -5]
+    turned = unit[5:] + unit[:5]
+    assert same_braid(Braid(unit * 2, 9), Braid(turned, 9))

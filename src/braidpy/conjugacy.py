@@ -265,6 +265,10 @@ def same_braid(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
     """Whether two braids are the same braid however written: their
     patterns (:func:`~braidpy.similarity.home`) conjugate.
 
+    Home braids repeated as often are conjugate exactly when their units
+    are, a braid's roots being unique up to conjugacy (González-Meneses):
+    so then the units are compared, far shorter.
+
     Args:
         a: A braid.
         b: Another.
@@ -280,5 +284,9 @@ def same_braid(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
 
     if a.n_strands != b.n_strands:
         return False
-    one, other = home(a)[1], home(b)[1]
-    return are_conjugate(one, other, limit)
+    (unit, whole), (other_unit, other) = home(a), home(b)
+    if len(whole.generators) * len(other_unit.generators) == len(
+        other.generators
+    ) * len(unit.generators):
+        return are_conjugate(unit, other_unit, limit)
+    return are_conjugate(whole, other, limit)

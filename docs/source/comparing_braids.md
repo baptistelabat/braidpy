@@ -188,3 +188,6 @@ description, and any other by the fingerprint of the braid made.
 - N. Franco and J. González-Meneses, "Conjugacy problem for braid groups and
   Garside groups", *J. Algebra* 266, 112 (2003): the super summit set found
   through minimal simple elements.
+- J. González-Meneses, "The nth root of a braid is unique up to conjugacy",
+  *Algebr. Geom. Topol.* 3, 1103 (2003): why braids repeated as often can be
+  compared by what is repeated.
