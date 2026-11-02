@@ -7,12 +7,18 @@ What changed in each release of braidpy.
 ### New
 
 - Four kumihimo disk braids shared by Richard Buenger: edo yatsu, naiki,
-  hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`). Edo yatsu is
-  Ashley's 8-strand square sinnet, ABOK #3070, and each is listed as a way of
-  making the other.
+  hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`).
 - Braid Studio steps through a disk's or a sinnet's moves, as through a
   machine's: ⏮ ◀ ▶ ⏭ or the caret in the moves typed show the strands after
   any move, without undoing it. A move clicked goes in at the cursor.
+
+### Fixed
+
+- Braids were taken for the same braid when their Alexander polynomial
+  vanished and the rest of their fingerprint agreed: edo yatsu with ABOK
+  #3070, and the flat braid of 6 with ABOK #3021. The fingerprint now holds
+  the characteristic polynomial of the braid's Burau matrix too
+  (`properties.burau_polynomial_on_circle`), which tells them apart.
 
 ## 0.3.0 — 2026-10-24
 
