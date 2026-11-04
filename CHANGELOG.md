@@ -11,6 +11,10 @@ What changed in each release of braidpy.
 - Braid Studio steps through a disk's or a sinnet's moves, as through a
   machine's: ⏮ ◀ ▶ ⏭ or the caret in the moves typed show the strands after
   any move, without undoing it. A move clicked goes in at the cursor.
+- Whether two braids are the same braid however written, proven rather than
+  measured: `braidpy.conjugacy.same_braid` decides conjugacy by the super
+  summit set. It proves edo yatsu and ABOK #3070 different, and the flat
+  braid of 6 and ABOK #3021.
 
 ### Fixed
 
@@ -19,6 +23,11 @@ What changed in each release of braidpy.
   #3070, and the flat braid of 6 with ABOK #3021. The fingerprint now holds
   the characteristic polynomial of the braid's Burau matrix too
   (`properties.burau_polynomial_on_circle`), which tells them apart.
+- A braid with a long home braid, read from another starting point, could
+  seem another braid: the Alexander polynomial was taken from the Burau
+  matrix raised to the repeats, whose entries reach 1e19 for ABOK #3057, and
+  lost the digits it cancelled. It is now taken from the matrix's
+  eigenvalues, as the Burau polynomial is.
 
 ## 0.3.0 — 2026-10-24
 
