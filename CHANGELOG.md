@@ -24,14 +24,6 @@ What changed in each release of braidpy.
   the characteristic polynomial of the braid's Burau matrix too
   (`properties.burau_polynomial_on_circle`), which tells them apart.
 
-### Fixed
-
-- Braids were taken for the same braid when their Alexander polynomial
-  vanished and the rest of their fingerprint agreed: edo yatsu with ABOK
-  #3070, and the flat braid of 6 with ABOK #3021. The fingerprint now holds
-  the characteristic polynomial of the braid's Burau matrix too
-  (`properties.burau_polynomial_on_circle`), which tells them apart.
-
 ## 0.3.0 — 2026-10-24
 
 braidpy grows from braid words to the braids people make: on braiding and
