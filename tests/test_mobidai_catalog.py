@@ -153,10 +153,11 @@ def test_a_shared_braid_is_the_braid_its_link_makes(name):
     ]
 
 
-def test_edo_yatsu_is_ashleys_8_strand_square():
-    """Edo yatsu, made on a kumihimo disk, is ABOK #3070 made on Ashley's
-    stand: nothing braidpy measures tells them apart, so each is listed as a
-    way of making the other."""
+def test_edo_yatsu_is_not_ashleys_8_strand_square():
+    """Edo yatsu and ABOK #3070, both of 8 strands, agree on their loops,
+    writhe and linking numbers, and their Alexander polynomials both vanish;
+    but the Burau polynomials of their braids differ, so they are not the
+    same braid however written, and are not listed as each other's."""
     from braidpy.ring_program import same_braid
     from braidpy.topology_catalog import braid_of
     from braidpy.web import build
@@ -166,4 +167,4 @@ def test_edo_yatsu_is_ashleys_8_strand_square():
 
     edo = braid({"source": "mobidai", "name": "EDO_YATSU"})
     ashley = braid({"source": "sinnet", "name": "abok_3070"})
-    assert same_braid(edo, ashley)
+    assert not same_braid(edo, ashley)

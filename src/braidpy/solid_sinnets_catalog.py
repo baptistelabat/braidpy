@@ -599,7 +599,6 @@ abok_3069 = AshleySolidSinnet(
 ABOK #3070
 8-strand square
 Odd strands move right; even strands move left.
-On a kumihimo disk, edo yatsu (braidpy.mobidai_catalog.EDO_YATSU).
 """
 abok_3070 = AshleySolidSinnet(
     shape="square",

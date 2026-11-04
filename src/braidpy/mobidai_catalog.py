@@ -158,8 +158,6 @@ SIXTEEN_STRANDS = CataloguedMobidai(
 # Studio links: the slots, moves and colours he set up there.
 BUENGER = "Richard Buenger, Kumihimo group (Facebook)"
 
-# The same braid as Ashley's 8-strand square, ABOK #3070
-# (braidpy.solid_sinnets_catalog.abok_3070).
 EDO_YATSU = CataloguedMobidai(
     name="edo yatsu",
     n_slots=32,

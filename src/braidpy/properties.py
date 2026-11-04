@@ -128,20 +128,76 @@ def alexander_on_circle(
     values: list[float | None] = []
     for theta in angles:
         t = complex(np.exp(1j * theta))
-        burau = _burau_product(
-            braid,
-            t,
-            1.0 + 0j,
-            0j,
-            lambda a, rows: a @ np.array(rows, dtype=complex),
-            np.eye(n - 1, dtype=complex),
-        )
-        power = np.linalg.matrix_power(burau, repeats)
+        power = _burau_on_circle(braid, theta, repeats)
         _, log_det = np.linalg.slogdet(np.eye(n - 1) - power)
         value = (log_det + np.log(abs(1 - t)) - np.log(abs(1 - t**n))) / np.log(10)
         values.append(
             None if not np.isfinite(value) or value < np.log10(_ZERO) else float(value)
         )
+    return tuple(values)
+
+
+def _burau_on_circle(braid: Braid, theta: float, repeats: int):
+    """The braid's reduced Burau matrix at t = e^{iθ}, raised to the power
+    ``repeats``: numerically, as a numpy array."""
+    import numpy as np
+
+    n = braid.n_strands
+    burau = _burau_product(
+        braid,
+        complex(np.exp(1j * theta)),
+        1.0 + 0j,
+        0j,
+        lambda a, rows: a @ np.array(rows, dtype=complex),
+        np.eye(n - 1, dtype=complex),
+    )
+    return np.linalg.matrix_power(burau, repeats)
+
+
+def burau_polynomial_on_circle(
+    braid: Braid, angles: Sequence[float], repeats: int = 1, at: float = 2.0
+) -> tuple[float, ...]:
+    """``log₁₀ |det(x − B(e^{iθ}))|`` at ``x = at``: the characteristic
+    polynomial of the braid's reduced Burau matrix ``B``, the braid repeated
+    ``repeats`` times, sampled on the unit circle.
+
+    The characteristic polynomial does not change when the braid is
+    conjugated — read from another starting point, as a braid round a disk
+    is wherever its circle is cut — so two braids it tells apart are not the
+    same braid however written.  It is a finer test than the Alexander
+    polynomial of the closure (:func:`alexander_on_circle`), which is that
+    polynomial at ``x = 1``: where the Burau matrix has the eigenvalue 1, as
+    for many braids with a closure of several loops, the Alexander polynomial
+    vanishes and tells nothing apart, but this does not.
+
+    Args:
+        braid: The braid.
+        angles: The angles θ, in radians.
+        repeats: How many times the braid is repeated.
+        at: Where the characteristic polynomial is taken, off the unit
+            circle so that it does not vanish there.
+
+    Returns:
+        Per angle, ``log₁₀ |det(x − B)|``.
+    """
+    import numpy as np
+
+    n = braid.n_strands
+    if n == 1:
+        return tuple(0.0 for _ in angles)
+    values = []
+    for theta in angles:
+        # From the eigenvalues λ of B: det(x − Bᵏ) is the product of the
+        # x − λᵏ, each taken in logarithms, so that a braid repeated a
+        # thousand times overflows nothing.
+        total = 0.0
+        for eigen in np.linalg.eigvals(_burau_on_circle(braid, theta, 1)):
+            grows = repeats * np.log(abs(eigen)) if eigen else -np.inf
+            if grows > 30:
+                total += grows
+            else:
+                total += np.log(abs(at - eigen**repeats))
+        values.append(float(total / np.log(10)))
     return tuple(values)
 
 

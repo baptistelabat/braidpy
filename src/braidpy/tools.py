@@ -141,7 +141,7 @@ def compare_braids(a: str, b: str, n_strands: int | None = None) -> dict[str, An
     """Whether two braid words make the same braid, as braidpy compares
     braids — by their topology, however written
     (:func:`braidpy.ring_program.same_braid`) — and how unlike they are
-    (:func:`braidpy.similarity.distance`: 0 the same, up to 5).
+    (:func:`braidpy.similarity.distance`: 0 the same, up to 6).
 
     Args:
         a: A braid word.
