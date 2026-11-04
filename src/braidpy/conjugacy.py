@@ -267,7 +267,9 @@ def same_braid(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
 
     Home braids repeated as often are conjugate exactly when their units
     are, a braid's roots being unique up to conjugacy (González-Meneses):
-    so then the units are compared, far shorter.
+    so then the units are compared, far shorter.  And braids whose
+    fingerprints differ (:func:`~braidpy.similarity.same_fingerprint`) are
+    different already: no search is made.
 
     Args:
         a: A braid.
@@ -280,9 +282,11 @@ def same_braid(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
     Raises:
         SuperSummitSetTooLarge: if it cannot tell within ``limit`` braids.
     """
-    from braidpy.similarity import home
+    from braidpy.similarity import fingerprint, home, same_fingerprint
 
     if a.n_strands != b.n_strands:
+        return False
+    if not same_fingerprint(fingerprint(a), fingerprint(b)):
         return False
     (unit, whole), (other_unit, other) = home(a), home(b)
     if len(whole.generators) * len(other_unit.generators) == len(

@@ -102,9 +102,10 @@ def test_numbering_the_strands_from_the_other_side_is_conjugation():
 )
 @pytest.mark.slow
 def test_braids_alike_in_every_number_measured_are_proven_different(a, b, n):
-    """Their loops, writhe and linking numbers are equal, and their
-    Alexander polynomials vanish: no fingerprint of those tells them
-    apart.  The proof does."""
+    """Their loops, writhe and linking numbers are equal and their
+    Alexander polynomials vanish: the fingerprint told them apart only once
+    it held the Burau polynomial.  The search tells them apart without it."""
+    assert not are_conjugate(Braid(a, n), Braid(b, n))
     assert not same_braid(Braid(a, n), Braid(b, n))
 
 
