@@ -140,8 +140,8 @@ class MultibandLine(BraidingMachine):
         loading: The carriers to start with, if known; else searched for.
     """
 
-    #: How much of a full turn the folded line spans, leaving the ends apart.
-    SPAN = math.radians(330.0)
+    #: How far the line turns, end to end, folded round on itself.
+    TURN = math.radians(310.0)
 
     def __init__(
         self,
@@ -206,11 +206,17 @@ class MultibandLine(BraidingMachine):
     def preferred_layout(
         self, scale: float = 1.0
     ) -> dict[str, tuple[float, float]] | None:
-        """Gear centres along an arc, consecutive rims touching, a split
-        gear's two halves on one centre.
+        """Gear centres along the folded line, consecutive rims touching, a
+        split gear's two halves on one centre.
 
-        The whole line's arc, whichever bands are built, so a band sits where
-        it does in the whole machine.
+        The line runs straight through a split gear, its two contacts
+        opposite each other, so that each half's three horns stand exactly
+        between the other's: the six make a regular hexagon.  It folds by the
+        same angle at every other interior gear, :attr:`TURN` in all, which
+        brings its ends round near each other without touching.
+
+        The whole line's fold, whichever bands are built, so a band sits
+        where it does in the whole machine.
 
         Args:
             scale: Overall scale factor.
@@ -221,30 +227,24 @@ class MultibandLine(BraidingMachine):
         from .layout import _gear_radius
 
         radii = [_gear_radius(n, scale) for n in self.slots]
-        chords = [radii[i] + radii[i + 1] for i in range(len(radii) - 1)]
-
-        def span(radius: float) -> float:
-            # Each chord subtends 2 asin(d / 2R); together they make SPAN.
-            return sum(2 * math.asin(min(1.0, d / (2 * radius))) for d in chords)
-
-        lo, hi = max(chords) / 2 + 1e-9, sum(chords)
-        for _ in range(200):
-            mid = (lo + hi) / 2
-            if span(mid) > self.SPAN:
-                lo = mid
-            else:
-                hi = mid
-        radius = (lo + hi) / 2
-
-        centres, angle = [], -self.SPAN / 2
-        for i in range(len(self.slots)):
-            centres.append((radius * math.cos(angle), radius * math.sin(angle)))
-            if i < len(chords):
-                angle += 2 * math.asin(min(1.0, chords[i] / (2 * radius)))
+        bends = [i for i in range(1, len(self.slots) - 1) if i not in self.split]
+        turn = self.TURN / len(bends) if bends else 0.0
+        centres = [(0.0, 0.0)]
+        # Its ends at the bottom, as in the drawing.
+        heading = math.pi - self.TURN / 2
+        for i in range(len(self.slots) - 1):
+            if i in bends:
+                heading += turn
+            step = radii[i] + radii[i + 1]
+            x, y = centres[-1]
+            centres.append((x + step * math.cos(heading), y + step * math.sin(heading)))
+        # Centred on the middle of the gears, so the fold sits in the picture.
+        cx = sum(x for x, _ in centres) / len(centres)
+        cy = sum(y for _, y in centres) / len(centres)
         layout = {}
         for name in self.gears:
-            index = int(name[1:].rstrip("ab"))
-            layout[name] = centres[index]
+            x, y = centres[int(name[1:].rstrip("ab"))]
+            layout[name] = (x - cx, y - cy)
         return layout
 
 

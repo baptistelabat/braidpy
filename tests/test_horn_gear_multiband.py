@@ -4,6 +4,7 @@
 
 """Split gears, and the three-band machine they make: braidpy.horn_gear.multiband."""
 
+import itertools
 import math
 
 import pytest
@@ -116,30 +117,39 @@ def test_a_split_gear_is_drawn_as_one_gear_whole():
         )
 
 
-def test_the_halves_of_a_split_gear_never_share_a_horn():
-    """Each half's horns stand between the other's: at every step, no horn
-    of one is within a sixth of a turn's half of a horn of the other."""
+def test_the_six_horns_of_a_split_gear_make_a_regular_hexagon():
+    """The line runs straight through a split gear, so each half's three
+    horns stand exactly between the other's, 60 degrees apart, at every step
+    and every moment of one."""
     machine = multiband_10_15_10()
     offsets = slot_offsets(machine, compute_layout(machine))
     for k in MULTIBAND_10_15_10_SPLIT:
-        a, b = f"G{k}a", f"G{k}b"
         for time in range(6):
-            gaps = [
-                abs(
-                    (
-                        machine.slot_angle(a, i, time)
-                        + offsets[a]
-                        - machine.slot_angle(b, j, time)
-                        - offsets[b]
-                        + math.pi
-                    )
+            for frac in (0.0, 0.25, 0.5):
+                angles = sorted(
+                    (machine.slot_angle(half, slot, time, frac) + offsets[half])
                     % (2 * math.pi)
-                    - math.pi
+                    for half in (f"G{k}a", f"G{k}b")
+                    for slot in range(3)
                 )
-                for i in range(3)
-                for j in range(3)
-            ]
-            assert min(gaps) > math.radians(20)
+                gaps = [b - a for a, b in itertools.pairwise(angles)]
+                gaps.append(angles[0] + 2 * math.pi - angles[-1])
+                assert gaps == pytest.approx([math.pi / 3] * 6)
+
+
+def test_the_fold_leaves_the_ends_apart():
+    """Folded round, the line's ends come near but do not touch, and no two
+    gears but neighbours do."""
+    machine = multiband_10_15_10()
+    layout, radii = compute_layout(machine), gear_radii(machine)
+
+    def index(name):
+        return int(name[1:].rstrip("ab"))
+
+    for a, b in itertools.combinations(layout, 2):
+        if abs(index(a) - index(b)) > 1:
+            gap = math.dist(layout[a], layout[b]) - radii[a] - radii[b]
+            assert gap > 1
 
 
 def test_band_of_names_each_half_by_the_band_it_serves():
