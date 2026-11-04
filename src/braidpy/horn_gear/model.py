@@ -43,11 +43,16 @@ class HornGear:
         name: Unique identifier for this gear.
         n_slots: Number of carrier slots (≥ 2).
         direction: +1 for counter-clockwise, -1 for clockwise rotation.
+        size: How large the gear is drawn, as the slot count of a gear that
+            size; its own slot count if None.  One half of a split gear
+            (:mod:`~braidpy.horn_gear.multiband`) has half the slots of the
+            gear it is part of, and is as large.
     """
 
     name: str
     n_slots: int
     direction: int = 1  # +1 CCW, -1 CW
+    size: int | None = None
 
     def __post_init__(self) -> None:
         if self.n_slots < 2:
@@ -290,28 +295,6 @@ class BraidingMachine:
             Gear name → (x, y), or None to let the layout be computed.
         """
         return None
-
-    def contact_exchanges(self, conn: Connection, time: int) -> bool:
-        """Whether this contact is handing a carrier over at ``time``.
-
-        On an ordinary machine every contact always exchanges, so the two
-        slots meeting there are the same point in space and only one of them
-        may hold a carrier -- which is what
-        :func:`~braidpy.horn_gear.simulation.simulate` checks for.
-
-        A machine with switched contacts overrides this.  Where a switch
-        declines the slots presented to it, the deflector stands between the
-        two gears and holds their paths apart, so a carrier may ride past on
-        either side without meeting the other.
-
-        Args:
-            conn: The contact in question.
-            time: Step being taken.
-
-        Returns:
-            True if the two slots at this contact share a point this step.
-        """
-        return True
 
     def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Which (gear, slot) sweeps a carrier through the step at ``time``.

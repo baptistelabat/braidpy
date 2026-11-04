@@ -6,6 +6,12 @@ What changed in each release of braidpy.
 
 ### New
 
+- A line of horn gears that braids three bands at once: the 10-15-10
+  machine of the Atelier de Tressage (`braidpy.horn_gear.multiband`). Where
+  two bands meet, a six-horn gear is split between them, three horns each, so
+  each band turns its carriers back on a gear of its own and the bands never
+  meet. Its 35 carriers run the whole machine; each band can be shown on its
+  own in Braid Studio.
 - Four kumihimo disk braids shared by Richard Buenger: edo yatsu, naiki,
   hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`).
 - Braid Studio steps through a disk's or a sinnet's moves, as through a

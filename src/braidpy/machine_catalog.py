@@ -25,13 +25,13 @@ if TYPE_CHECKING:
 __all__ = ["CATALOGUE", "LACE", "LaceRing"]
 
 
-def _switched(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
-    """Makes the machine :mod:`braidpy.horn_gear.switch` names."""
+def _multiband(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
+    """Makes the machine :mod:`braidpy.horn_gear.multiband` names."""
 
     def make() -> BraidingMachine:
-        from braidpy.horn_gear import switch
+        from braidpy.horn_gear import multiband
 
-        return getattr(switch, name)(**settings)
+        return getattr(multiband, name)(**settings)
 
     return make
 
@@ -69,21 +69,20 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
     # here as there.
     #
     # The whole line is not offered: its carriers only come back to where
-    # they started after 15120 steps, sixty times the next machine here, and
-    # the braid made over that is a word of some 120000 crossings -- minutes
-    # to work out before the page can draw anything.  It is still
-    # braidpy.horn_gear.switch.multiband_10_15_10 for Python to make.
+    # they started after 2280 steps, and the braid made over that is a word
+    # of many thousand crossings.  It is
+    # braidpy.horn_gear.multiband.multiband_10_15_10 for Python to make.
     "multiband_band_0": Entry(
         "Three-band machine: left band alone, gears G0-G4",
-        _switched("multiband_band", band=0),
+        _multiband("multiband_band", band=0),
     ),
     "multiband_band_1": Entry(
         "Three-band machine: middle band alone, gears G4-G11",
-        _switched("multiband_band", band=1),
+        _multiband("multiband_band", band=1),
     ),
     "multiband_band_2": Entry(
         "Three-band machine: right band alone, gears G11-G15",
-        _switched("multiband_band", band=2),
+        _multiband("multiband_band", band=2),
     ),
 }
 

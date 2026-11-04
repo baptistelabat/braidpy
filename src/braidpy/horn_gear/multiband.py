@@ -1,0 +1,316 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""A line of horn gears that braids several bands at once.
+
+A line of gears braids **one** band however long it is: every interior gear
+has two contacts, so a carrier entering by one leaves by the other and walks
+the whole line.  A band needs a gear at each end that turns its carriers
+back, and that gear needs an **odd** number of slots: an even one returns a
+carrier to the strand it came in on and breaks the band into short tracks that
+fill only part of it (see :func:`~braidpy.horn_gear.examples.flat_braid_9`).
+
+Where two bands meet, one gear turns the carriers of both back.  It is a
+**split gear**: two gears on one axis, turning together, one for each band,
+with their horns between each other's.  A six-horn split gear gives each band
+three: an odd turning gear for each, and the two never share a horn.  Each
+half meets only its own band's neighbour, so a carrier can never cross into
+the other band, and the half that is not at a contact is always a third of a
+pitch away from it.
+
+It is modelled as two :class:`~braidpy.horn_gear.model.HornGear` of three
+slots at the same centre, drawn as large as the six-horn gear they make.  Each
+turns one of its own slots a step, as every gear does, which is two horns of
+the whole gear: the bands see three-slot turning gears, which is what the
+machine needs.
+
+:func:`multiband_10_15_10` is the three-band machine of the Atelier de
+Tressage's circuit drawing (see the references page), sixteen gears::
+
+    5  4  4  8  6  8  4  4  4  4  8  6  8  4  4  5
+                ^                    ^
+             split                 split
+
+The two six-horn gears are split, cutting the line into bands of 24, 38 and
+24 slots.  Each band holds at most half its slots, 12, 19 and 12 carriers, as
+a flat braid does; the drawing runs 10, 15 and 10
+(:data:`MULTIBAND_10_15_10_LOADING`).
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Sequence
+
+from .model import BraidingMachine, Connection, HornGear
+
+#: Slots per gear along the line, read off the circuit drawing.  The gears
+#: lie on a line folded round into nearly a circle; its ends never join.
+MULTIBAND_10_15_10_SLOTS = (5, 4, 4, 8, 6, 8, 4, 4, 4, 4, 8, 6, 8, 4, 4, 5)
+
+#: The gears split between the bands on either side of them.
+MULTIBAND_10_15_10_SPLIT = (4, 11)
+
+#: Which gears of the line each band runs over, as (first, last) indices; a
+#: split gear is the last of one band and the first of the next.
+MULTIBAND_10_15_10_BANDS = ((0, 4), (4, 11), (11, 15))
+
+#: Carriers each band runs on the reference machine: the 10-15-10 of its name.
+MULTIBAND_10_15_10_CARRIERS = (10, 15, 10)
+
+#: Where the reference machine's carriers start, band by band: 10, 15 and 10.
+#: Found by the exact loading search, which gives 12, 19 and 12 at most, and
+#: thinned to the drawing's counts as evenly over the gears as they go; the
+#: tests run it over the whole machine's period, 2280 steps.
+MULTIBAND_10_15_10_LOADING = (
+    (
+        ("G0", 0),
+        ("G0", 2),
+        ("G0", 4),
+        ("G1", 2),
+        ("G1", 3),
+        ("G2", 1),
+        ("G2", 2),
+        ("G3", 2),
+        ("G3", 4),
+        ("G4a", 1),
+    ),
+    (
+        ("G4b", 0),
+        ("G4b", 2),
+        ("G5", 2),
+        ("G5", 4),
+        ("G6", 1),
+        ("G6", 2),
+        ("G7", 2),
+        ("G7", 3),
+        ("G8", 1),
+        ("G8", 2),
+        ("G9", 2),
+        ("G9", 3),
+        ("G10", 1),
+        ("G10", 3),
+        ("G11a", 2),
+    ),
+    (
+        ("G11b", 0),
+        ("G11b", 1),
+        ("G12", 1),
+        ("G12", 3),
+        ("G13", 2),
+        ("G13", 3),
+        ("G14", 1),
+        ("G14", 2),
+        ("G15", 2),
+        ("G15", 4),
+    ),
+)
+
+
+def gear_name(index: int, split: Sequence[int], side: int = 0) -> str:
+    """The name of gear ``index``, or of one half of it if it is split.
+
+    Args:
+        index: Position along the line.
+        split: The split gears.
+        side: For a split gear, -1 for the half serving the band before it,
+            +1 for the band after it.
+
+    Returns:
+        ``G<index>``, with ``a`` or ``b`` for a half.
+    """
+    if index not in split:
+        return f"G{index}"
+    return f"G{index}{'a' if side < 0 else 'b'}"
+
+
+class MultibandLine(BraidingMachine):
+    """A line of gears cut into bands by split gears, or some of its bands.
+
+    Gear names and slot numbering are the whole line's whichever bands are
+    built, so a loading reads the same on a band as on the whole machine.
+
+    Args:
+        slots: Slots per gear along the whole line; a split gear's count is
+            that of the whole gear, both halves.
+        split: Which gears are split between two bands.
+        first: The first gear built.
+        last: The last gear built.
+        loading: The carriers to start with, if known; else searched for.
+    """
+
+    #: How much of a full turn the folded line spans, leaving the ends apart.
+    SPAN = math.radians(330.0)
+
+    def __init__(
+        self,
+        slots: Sequence[int],
+        split: Sequence[int],
+        first: int = 0,
+        last: int | None = None,
+        loading: Sequence[tuple[str, int]] | None = None,
+    ):
+        self.slots = tuple(slots)
+        self.split = tuple(split)
+        last = len(self.slots) - 1 if last is None else last
+        self.first, self.last = first, last
+        self._loading = None if loading is None else tuple(loading)
+        for k in self.split:
+            if self.slots[k] % 2:
+                raise ValueError(
+                    f"Split gear G{k} has {self.slots[k]} slots, not even."
+                )
+        gears: list[HornGear] = []
+        for i in range(first, last + 1):
+            turn = +1 if i % 2 == 0 else -1
+            if i in self.split:
+                half = self.slots[i] // 2
+                if i > first:
+                    gears.append(
+                        HornGear(gear_name(i, split, -1), half, turn, self.slots[i])
+                    )
+                if i < last:
+                    gears.append(
+                        HornGear(gear_name(i, split, +1), half, turn, self.slots[i])
+                    )
+            else:
+                gears.append(HornGear(f"G{i}", self.slots[i], turn))
+        # An interior gear's two contacts sit opposite each other along the
+        # line; a split half, like an end gear, has only one.
+        connections = []
+        for i in range(first, last):
+            a, b = gear_name(i, split, +1), gear_name(i + 1, split, -1)
+            one_contact = i == 0 or i in self.split
+            connections.append(
+                Connection(
+                    a,
+                    b,
+                    slot_a0=0 if one_contact else self.slots[i] // 2,
+                    slot_b0=0,
+                    name=f"{a}-{b}",
+                )
+            )
+        super().__init__(gears, connections)
+
+    def default_carriers(self) -> dict[int, tuple[str, int]]:
+        """The loading given, or one found by the loading search.
+
+        Returns:
+            Carrier number -> (gear, slot).
+        """
+        if self._loading is not None:
+            return dict(enumerate(self._loading))
+        return super().default_carriers()
+
+    def preferred_layout(
+        self, scale: float = 1.0
+    ) -> dict[str, tuple[float, float]] | None:
+        """Gear centres along an arc, consecutive rims touching, a split
+        gear's two halves on one centre.
+
+        The whole line's arc, whichever bands are built, so a band sits where
+        it does in the whole machine.
+
+        Args:
+            scale: Overall scale factor.
+
+        Returns:
+            Gear name -> (x, y).
+        """
+        from .layout import _gear_radius
+
+        radii = [_gear_radius(n, scale) for n in self.slots]
+        chords = [radii[i] + radii[i + 1] for i in range(len(radii) - 1)]
+
+        def span(radius: float) -> float:
+            # Each chord subtends 2 asin(d / 2R); together they make SPAN.
+            return sum(2 * math.asin(min(1.0, d / (2 * radius))) for d in chords)
+
+        lo, hi = max(chords) / 2 + 1e-9, sum(chords)
+        for _ in range(200):
+            mid = (lo + hi) / 2
+            if span(mid) > self.SPAN:
+                lo = mid
+            else:
+                hi = mid
+        radius = (lo + hi) / 2
+
+        centres, angle = [], -self.SPAN / 2
+        for i in range(len(self.slots)):
+            centres.append((radius * math.cos(angle), radius * math.sin(angle)))
+            if i < len(chords):
+                angle += 2 * math.asin(min(1.0, chords[i] / (2 * radius)))
+        layout = {}
+        for name in self.gears:
+            index = int(name[1:].rstrip("ab"))
+            layout[name] = centres[index]
+        return layout
+
+
+def multiband_10_15_10() -> MultibandLine:
+    """The three-band 10-15-10 machine, loaded as its drawing is.
+
+    Sixteen gears, the two six-horn ones split between the bands on either
+    side; see the module.
+
+    Returns:
+        MultibandLine: the whole line.
+    """
+    return MultibandLine(
+        MULTIBAND_10_15_10_SLOTS,
+        MULTIBAND_10_15_10_SPLIT,
+        loading=[p for band in MULTIBAND_10_15_10_LOADING for p in band],
+    )
+
+
+def multiband_band(band: int) -> MultibandLine:
+    """One band of :func:`multiband_10_15_10`, on its own.
+
+    Its gears, with the half of each split gear that serves it, and its part
+    of the reference loading.  It braids exactly as it does in the whole
+    machine: the other halves never meet it.
+
+    Args:
+        band: 0, 1 or 2, along the line.
+
+    Returns:
+        MultibandLine: that band's gears.
+
+    Raises:
+        ValueError: If ``band`` is not 0, 1 or 2.
+    """
+    if band not in (0, 1, 2):
+        raise ValueError(f"The machine has bands 0, 1 and 2, not {band!r}.")
+    first, last = MULTIBAND_10_15_10_BANDS[band]
+    return MultibandLine(
+        MULTIBAND_10_15_10_SLOTS,
+        MULTIBAND_10_15_10_SPLIT,
+        first,
+        last,
+        loading=MULTIBAND_10_15_10_LOADING[band],
+    )
+
+
+def band_of(gear: str) -> int | None:
+    """Which band of :func:`multiband_10_15_10` a gear or half serves.
+
+    Args:
+        gear: Gear name, ``G0`` to ``G15``, with ``a`` or ``b`` for a half.
+
+    Returns:
+        The band from 0, or None if the gear is not on the machine.  An
+        unsplit gear's band; a half's own.
+    """
+    try:
+        index = int(gear[1:].rstrip("ab"))
+    except ValueError:
+        return None
+    for band, (first, last) in enumerate(MULTIBAND_10_15_10_BANDS):
+        if first <= index <= last:
+            if gear.endswith("a") and index == first:
+                continue
+            if gear.endswith("b") and index == last:
+                continue
+            return band
+    return None
