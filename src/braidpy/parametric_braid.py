@@ -14,15 +14,19 @@ License: Mozilla Public License 2.0
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
 from braidpy.parametric_strand import ParametricStrand
-from braidpy.utils import StrictlyPositiveInt, PositiveFloat, terminal_colors
-
-from braidpy.utils import lazy_module
+from braidpy.utils import (
+    PositiveFloat,
+    StrictlyPositiveInt,
+    lazy_module,
+    terminal_colors,
+)
 
 if TYPE_CHECKING:
     import matplotlib.pyplot as plt
@@ -43,7 +47,7 @@ class ParametricBraid:
         self.strands = strands
         self.n_strands = len(strands)
 
-    def get_positions_at(self, t: PositiveFloat) -> List[Tuple[float, float, float]]:
+    def get_positions_at(self, t: PositiveFloat) -> list[tuple[float, float, float]]:
         """
         Get position of different strands at a given time
 
@@ -55,11 +59,11 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
-    def _colour(self, index: int, colors: Optional[Sequence[str]]) -> str:
+    def _colour(self, index: int, colors: Sequence[str] | None) -> str:
         palette = colors if colors else terminal_colors
         return palette[index % len(palette)]
 
-    def _name(self, index: int, names: Optional[Sequence[str]]) -> str:
+    def _name(self, index: int, names: Sequence[str] | None) -> str:
         return names[index] if names is not None else f"Strand {index}"
 
     def _tube_traces(
@@ -68,9 +72,9 @@ class ParametricBraid:
         n_sample: int,
         n_around: int,
         opacity: float,
-        colors: Optional[Sequence[str]] = None,
-        names: Optional[Sequence[str]] = None,
-    ) -> List[go.Surface]:
+        colors: Sequence[str] | None = None,
+        names: Sequence[str] | None = None,
+    ) -> list[go.Surface]:
         """One tube per strand, swept at the strands' real thickness.
 
         See :func:`~braidpy.parametric_strand.tube_mesh` for the sweep.
@@ -103,10 +107,10 @@ class ParametricBraid:
     def _line_traces(
         self,
         n_sample: int,
-        colors: Optional[Sequence[str]] = None,
-        names: Optional[Sequence[str]] = None,
+        colors: Sequence[str] | None = None,
+        names: Sequence[str] | None = None,
         line_width: float = 10,
-    ) -> List[go.Scatter3d]:
+    ) -> list[go.Scatter3d]:
         """One line per strand, along the centrelines."""
         traces = []
         for index, strand in enumerate(self.strands):
@@ -129,11 +133,11 @@ class ParametricBraid:
         self,
         n_sample: StrictlyPositiveInt = 200,
         title: str = "",
-        tube_diameter: Optional[float] = None,
+        tube_diameter: float | None = None,
         n_around: int = 16,
         opacity: float = 0.55,
-        colors: Optional[Sequence[str]] = None,
-        names: Optional[Sequence[str]] = None,
+        colors: Sequence[str] | None = None,
+        names: Sequence[str] | None = None,
         line_width: float = 10,
         z_title: str = "Z (time)",
         flip_z: bool = True,
@@ -196,12 +200,12 @@ class ParametricBraid:
         self,
         n_sample: StrictlyPositiveInt = 200,
         plotter: Plotter = Plotter.PLOTLY,
-        output_html: Optional[str] = None,
+        output_html: str | None = None,
         title: str = "",
-        tube_diameter: Optional[float] = None,
+        tube_diameter: float | None = None,
         n_around: int = 16,
         opacity: float = 0.55,
-    ) -> "ParametricBraid":
+    ) -> ParametricBraid:
         """
         Plot the braid in 3D
 
@@ -254,7 +258,7 @@ def closest_approach(
     strands: Sequence,
     n_samples: int = 600,
     span: float = 1.0,
-    against: Optional[Sequence[int]] = None,
+    against: Sequence[int] | None = None,
 ) -> float:
     """The nearest the centres of two different strands come to each other.
 
@@ -303,7 +307,7 @@ def closest_approach(
             if second == first or (against is None and second < first):
                 continue
             other = strands[second]
-            reach = int(round((1 + 2 * span) * n_samples))
+            reach = round((1 + 2 * span) * n_samples)
             there = np.array(
                 [
                     other.position(

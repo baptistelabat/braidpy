@@ -93,7 +93,15 @@ export function attachMachine(holder) {
   let part = 0;
   let standing = null; // {name, slots}: where the slots were last drawn
   let running = false;
-  const shape = () => machineShapes.get(names.value);
+  // A lace machine with a card of your own goes by its gears and card
+  // (braidpy.web.machines.OWN_LACE).
+  const gears = holder.querySelector("[name=n_gears]");
+  const card = holder.querySelector("[name=card]");
+  const machineName = () =>
+    names.value === "custom" && gears && card
+      ? `lace:${gears.value}:${card.value.trim().split(/\s+/).join(" ")}`
+      : names.value;
+  const shape = () => machineShapes.get(machineName());
   const slotAt = (gear, slot) => {
     const angle = gear.offset + (2 * Math.PI * slot) / gear.slots;
     return [gear.x + gear.ride * Math.cos(angle), gear.y + gear.ride * Math.sin(angle)];
@@ -107,7 +115,7 @@ export function attachMachine(holder) {
     worker.postMessage({
       type: "turn",
       id: asked,
-      name: names.value,
+      name: machineName(),
       loading: readLoading(field.value),
       time: at,
     });
@@ -138,6 +146,7 @@ export function attachMachine(holder) {
   const fill = () => {
     const known = shape();
     if (!known) return;
+    if (known.error) return draw();
     const mine = loadingText(known.loading);
     if (!field.value.trim() || field.value === field.dataset.default) field.value = mine;
     field.dataset.default = mine;
@@ -158,7 +167,7 @@ export function attachMachine(holder) {
     fresh();
     draw();
   });
-  names.addEventListener("change", () => {
+  const another = () => {
     field.value = "";
     met = [];
     time = 0;
@@ -166,9 +175,13 @@ export function attachMachine(holder) {
     standing = null;
     running = false;
     turned = null;
-    askMachine(names.value);
+    askMachine(machineName());
     draw();
-  });
+  };
+  names.addEventListener("change", another);
+  // Your own card: another machine with every change to it — once the
+  // list has turned to "Your own card…", as it does on the same change.
+  for (const input of [gears, card]) input?.addEventListener("input", () => queueMicrotask(another));
   document.addEventListener("machine-shape", () => {
     if (canvas.isConnected) fill();
   });
@@ -315,6 +328,12 @@ export function attachMachine(holder) {
     const muted = style.getPropertyValue("--muted").trim();
     const line = style.getPropertyValue("--line").trim();
     const error = style.getPropertyValue("--error").trim();
+    if (known?.error) {
+      help.textContent = known.error;
+      view = null;
+      handle.hidden = true;
+      return;
+    }
     if (!known) {
       help.textContent = "Drawing the machine…";
       view = null;
@@ -449,7 +468,7 @@ export function attachMachine(holder) {
           resolve(detail.origin);
         };
         document.addEventListener("machine-origin", heard);
-        worker.postMessage({ type: "origin", name: names.value, place, time });
+        worker.postMessage({ type: "origin", name: machineName(), place, time });
       });
       if (!place) return;
     }
@@ -463,6 +482,6 @@ export function attachMachine(holder) {
   const observer = new ResizeObserver(draw);
   observer.observe(canvas);
   document.addEventListener("strand-colours", draw);
-  askMachine(names.value);
+  askMachine(machineName());
   draw();
 }

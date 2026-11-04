@@ -31,8 +31,8 @@ it can only ever come back into the group it left from.
 """
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Dict, FrozenSet, Iterable, List, Optional, Tuple
 
 from braidpy.horn_gear.model import Axial, BraidingMachine, Connection, HornGear
 
@@ -55,7 +55,7 @@ class Switch:
 
     connection: str
     gear: str
-    slots: FrozenSet[int]
+    slots: frozenset[int]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "slots", frozenset(self.slots))
@@ -83,16 +83,16 @@ class SwitchedMachine(BraidingMachine):
 
     def __init__(
         self,
-        gears: List[HornGear],
-        connections: List[Connection],
+        gears: list[HornGear],
+        connections: list[Connection],
         switches: Iterable[Switch] = (),
         axials: Iterable[Axial] = (),
     ):
         super().__init__(gears, connections, axials=axials)
-        self.switches: Tuple[Switch, ...] = tuple(switches)
+        self.switches: tuple[Switch, ...] = tuple(switches)
 
         by_name = {c.name: c for c in self.connections if c.name}
-        self._allowed: Dict[Tuple[str, str], FrozenSet[int]] = {}
+        self._allowed: dict[tuple[str, str], frozenset[int]] = {}
         for sw in self.switches:
             conn = by_name.get(sw.connection)
             if conn is None:
@@ -153,7 +153,7 @@ class SwitchedMachine(BraidingMachine):
                 return False
         return True
 
-    def next_position(self, pos: Tuple[str, int], time: int) -> Tuple[str, int]:
+    def next_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Where a carrier goes, with a switched contact free to decline it.
 
         Args:
@@ -208,7 +208,7 @@ class MultibandLine(SwitchedMachine):
     #: How much of a full turn the folded line spans, leaving the ends apart.
     SPAN = math.radians(330.0)
 
-    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+    def default_carriers(self) -> dict[int, tuple[str, int]]:
         """A loading to start from, found quickly enough to draw a page with.
 
         See :func:`threaded_loading`, which is why this machine does not use
@@ -219,7 +219,7 @@ class MultibandLine(SwitchedMachine):
 
     def preferred_layout(
         self, scale: float = 1.0
-    ) -> Optional[Dict[str, Tuple[float, float]]]:
+    ) -> dict[str, tuple[float, float]] | None:
         """Gear centres along an arc, consecutive rims touching as on the line.
 
         Args:
@@ -253,7 +253,7 @@ class MultibandLine(SwitchedMachine):
         return layout
 
 
-def threaded_loading(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
+def threaded_loading(machine: BraidingMachine) -> dict[int, tuple[str, int]]:
     """Carriers along the tracks, kept if they do not meet: a loading at once.
 
     The general search in :mod:`~braidpy.horn_gear.loading` validates every
@@ -283,8 +283,8 @@ def threaded_loading(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
     horizon = 4 * contact_period(machine)
     tracks = compute_tracks(machine)
 
-    def thread(order: List[Tuple[str, int]]) -> Dict[int, Tuple[str, int]]:
-        chosen: Dict[int, Tuple[str, int]] = {}
+    def thread(order: list[tuple[str, int]]) -> dict[int, tuple[str, int]]:
+        chosen: dict[int, tuple[str, int]] = {}
         for pos in order:
             trial = {**chosen, len(chosen): pos}
             if _is_collision_free(machine, trial, horizon):
@@ -297,14 +297,14 @@ def threaded_loading(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
     # machine gets fewer tries: the whole three-band line would take half a
     # minute to try them all, and a page is waiting.
     budget = max(2, 200 // max(1, machine.total_slots()))
-    best: Dict[int, Tuple[str, int]] = {}
+    best: dict[int, tuple[str, int]] = {}
     tried = 0
     for first in range(len(tracks)):
         for backwards in (False, True):
             if tried >= budget:
                 break
             tried += 1
-            order: List[Tuple[str, int]] = []
+            order: list[tuple[str, int]] = []
             for k in range(len(tracks)):
                 track = tracks[(first + k) % len(tracks)]
                 for pos in reversed(track) if backwards else track:
@@ -318,7 +318,7 @@ def threaded_loading(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
     return best
 
 
-def _threaded_once(machine: BraidingMachine) -> Dict[int, Tuple[str, int]]:
+def _threaded_once(machine: BraidingMachine) -> dict[int, tuple[str, int]]:
     """:func:`threaded_loading`, kept on the machine after the first time.
 
     Making a braid asks a machine for its loading more than once -- once to
@@ -341,7 +341,7 @@ class BandLine(BraidingMachine):
     :func:`threaded_loading` does, so a page drawing it need not wait.
     """
 
-    def default_carriers(self) -> Dict[int, Tuple[str, int]]:
+    def default_carriers(self) -> dict[int, tuple[str, int]]:
         """A loading to start from, found at once.  See
         :func:`threaded_loading`."""
         return _threaded_once(self)
@@ -437,7 +437,7 @@ def multiband_10_15_10() -> SwitchedMachine:
     # this pair holds the most carriers of those.  Halving each gear
     # contiguously, or by alternate slots, leaves the middle band as a long
     # circuit plus four short loops, which draws as a spurious fourth channel.
-    switches: List[Switch] = []
+    switches: list[Switch] = []
     for gear, inward in ((4, (2, 3, 5)), (11, (1, 3, 4))):
         outward = frozenset(range(slots[gear])) - frozenset(inward)
         switches.append(Switch(f"G{gear - 1}-G{gear}", f"G{gear}", frozenset(inward)))
@@ -445,7 +445,7 @@ def multiband_10_15_10() -> SwitchedMachine:
     return MultibandLine(gears, connections, switches)
 
 
-def band_of(gear: str) -> Optional[int]:
+def band_of(gear: str) -> int | None:
     """Which band of :func:`multiband_10_15_10` a gear belongs to.
 
     The two shared gears belong to two bands at once, so this gives the first

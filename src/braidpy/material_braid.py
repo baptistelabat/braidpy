@@ -11,9 +11,10 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
+
 from braidpy.parametric_strand import ParametricStrand
 from braidpy.utils import PositiveFloat, StrictlyPositiveFloat, StrictlyPositiveInt
 

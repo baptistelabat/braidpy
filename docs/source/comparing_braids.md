@@ -45,6 +45,7 @@ braid, whose closure makes a loop of each strand.
 | writhe | the unit's crossings counted with their signs | a braid from its mirror image |
 | linking numbers | how many times each two strands wind round each other in a repeat, sorted | how the strands are interlaced |
 | Alexander polynomial | of the home braid's closure, sampled on the unit circle | what linking numbers miss |
+| Burau polynomial | the characteristic polynomial of the home braid's Burau matrix, sampled on the unit circle | what the Alexander polynomial misses where it vanishes |
 
 None of them changes when the braid is read from another starting point, and
 none but the writhe when its strands are numbered from the other side. The
@@ -52,8 +53,8 @@ distance adds a share from 0 to 1 for each, 0 for the same fingerprint.
 
 ## Why the Alexander polynomial alone is not enough
 
-The Alexander polynomial Δ(t) of a braid's closure is the strongest of the
-five, and it is computed from the word through the Burau matrix
+The Alexander polynomial Δ(t) of a braid's closure is one of the strongest
+of the six, and it is computed from the word through the Burau matrix
 ({func}`braidpy.properties.alexander_polynomial`). But on its own:
 
 | Braid | Δ(t) |
@@ -77,6 +78,28 @@ five, and it is computed from the word through the Burau matrix
 Linking numbers alone are not enough either: the plait and three strands
 hanging straight both have all their linking numbers 0, and the Alexander
 polynomial tells them apart.
+
+## The Burau polynomial, where the Alexander polynomial vanishes
+
+The Alexander polynomial of a closed braid is det(1 − B), B the braid's
+Burau matrix, up to a factor: the characteristic polynomial det(x − B) of
+the matrix at x = 1. Where B has the eigenvalue 1, it is 0, as for many
+braids whose closure makes several loops, and it tells nothing apart. The
+whole characteristic polynomial does not vanish; like the Alexander
+polynomial, it does not change when the braid is read from another starting
+point. Sampled at x = 2, on the same circle
+({func}`braidpy.properties.burau_polynomial_on_circle`), it tells apart
+braids that agree on everything else:
+
+| Braids | Same loops, writhe, linking numbers | Alexander | Burau polynomial |
+| --- | --- | --- | --- |
+| edo yatsu on a kumihimo disk, ABOK #3070 | yes | 0, both | differ |
+| the flat braid of 6, ABOK #3021 | yes | 0, both | differ |
+
+Before the Burau polynomial was in the fingerprint, these were catalogued as
+the same braids. It is computed from the eigenvalues of the unit's Burau
+matrix, raised to the number of repeats, so that a home braid of thousands
+of crossings overflows nothing.
 
 ## The Alexander polynomial, sampled
 

@@ -26,18 +26,18 @@ from __future__ import annotations
 import argparse
 import math
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Sequence, Tuple
 
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from braidpy.annulus_braid import (  # noqa: E402
+from braidpy.annulus_braid import (
     TubularBraidStrand,
     cover_factor,
     crossing_binds_above,
@@ -49,7 +49,7 @@ from braidpy.annulus_braid import (  # noqa: E402
     tubular_braid_radius,
 )
 
-DOCS = Path(__file__).parent / "docs" / "source"
+DOCS = Path(__file__).parent.parent / "docs" / "source"
 
 INK = "#1f2933"
 MUTED = "#7b8794"
@@ -98,7 +98,7 @@ def _save(fig, name: str, png_dir: Path | None, note: str | None = None) -> None
 
 def _crossings(
     strands: Sequence[TubularBraidStrand], index: int = 0
-) -> List[Tuple[float, int]]:
+) -> list[tuple[float, int]]:
     """Every height at which one strand crosses a strand going the other way.
 
     Solved rather than sampled.  Strand ``i`` is at angle ``t`` after
@@ -107,7 +107,7 @@ def _crossings(
     """
     one = strands[index]
     turn = 2.0 * math.pi
-    found: List[Tuple[float, int]] = []
+    found: list[tuple[float, int]] = []
     for other_index, other in enumerate(strands):
         if other.direction == one.direction:
             continue
@@ -563,7 +563,7 @@ def tube_cover_gap(png_dir: Path | None) -> None:
 
 # ---------------------------------------------------------------- the rope solver
 
-ROPE_CASES = Path(__file__).parent / "tests" / "js" / "rope_cases.js"
+ROPE_CASES = Path(__file__).parent.parent / "tests" / "js" / "rope_cases.js"
 YARN = [
     "#1b6ac9",
     "#c2410c",
@@ -855,11 +855,10 @@ def rope_results(png_dir: Path | None) -> None:
     if shutil.which("node") is None:
         print("  rope_results: skipped, needs Node.js")
         return
-    from braidpy.web import build
-
     from braidpy.braid import Braid
     from braidpy.linking import yarn_linking
     from braidpy.parametric_strand import SMOOTHSTEP, sample_strands, strand_paths
+    from braidpy.web import build
 
     # A plait, laid by braidpy as the rope tests lay it.
     plait = strand_paths(

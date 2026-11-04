@@ -29,10 +29,16 @@ strand into a loop of its own.  It holds:
   sampled on the unit circle (:func:`braidpy.properties.alexander_on_circle`).
   It tells apart braids the linking numbers cannot: a plait from strands
   hanging straight, both with all their linking numbers 0.
+- ``burau``: the characteristic polynomial of the home braid's Burau matrix,
+  sampled on the unit circle
+  (:func:`braidpy.properties.burau_polynomial_on_circle`).  It tells apart
+  braids whose Alexander polynomial vanishes, as it does for many braids
+  closing into several loops: a kumihimo disk's edo yatsu from Ashley's
+  8-strand square sinnet, ABOK #3070, which agree on all the rest.
 
 None of these changes when a braid is read from another starting point
-(conjugation), and the loops, linking numbers and Alexander polynomial do
-not change either when the strands are numbered otherwise.  Equal
+(conjugation), and the loops, linking numbers and Alexander and Burau
+polynomials do not change either when the strands are numbered otherwise.  Equal
 fingerprints do not prove two braids the same — no handful of invariants
 can — but different ones prove them different.
 """
@@ -40,8 +46,8 @@ can — but different ones prove them different.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 from braidpy.braid import Braid
 
@@ -64,13 +70,14 @@ class Fingerprint:
     """What a braid's topology is, in a few numbers; see the module."""
 
     n_strands: int
-    loops: Tuple[int, ...]
+    loops: tuple[int, ...]
     writhe: int
-    linking: Tuple[int, ...]
-    alexander: Tuple[Optional[float], ...]
+    linking: tuple[int, ...]
+    alexander: tuple[float | None, ...]
+    burau: tuple[float, ...] = ()
 
 
-def home(braid: Braid) -> Tuple[Braid, Braid]:
+def home(braid: Braid) -> tuple[Braid, Braid]:
     """A braid's pattern: its repeating unit, and the unit repeated until
     every strand is back where it started.
 
@@ -97,7 +104,7 @@ def fingerprint(braid: Braid) -> Fingerprint:
         Its fingerprint.
     """
     from braidpy.linking import linking_matrix
-    from braidpy.properties import alexander_on_circle
+    from braidpy.properties import alexander_on_circle, burau_polynomial_on_circle
     from braidpy.pure_braid import cycles
 
     unit, whole = home(braid)
@@ -112,6 +119,7 @@ def fingerprint(braid: Braid) -> Fingerprint:
         writhe=int(sum(1 if g > 0 else -1 for g in unit.generators)),
         linking=tuple(sorted(upper)),
         alexander=alexander_on_circle(unit, ANGLES, repeats),
+        burau=burau_polynomial_on_circle(unit, ANGLES, repeats),
     )
 
 
@@ -127,12 +135,12 @@ def _apart(a: Sequence[float], b: Sequence[float]) -> float:
 
 def distance(a: Fingerprint, b: Fingerprint) -> float:
     """How unlike two braids are, from their fingerprints: 0 for the same
-    fingerprint, up to 5 for braids alike in nothing.
+    fingerprint, up to 6 for braids alike in nothing.
 
-    Each of the five parts adds a share from 0 to 1: the numbers of
+    Each of the six parts adds a share from 0 to 1: the numbers of
     strands, the loops, the writhe, the linking numbers, and the Alexander
-    polynomial on the circle (log₁₀ of it, so that a braid twice as long
-    is not twice as far away).
+    and Burau polynomials on the circle (log₁₀ of them, so that a braid
+    twice as long is not twice as far away).
 
     Args:
         a: A fingerprint.
@@ -152,7 +160,10 @@ def distance(a: Fingerprint, b: Fingerprint) -> float:
         else:
             alexander += abs(x - y) / (1 + abs(x) + abs(y))
     alexander /= max(1, len(ANGLES))
-    return strands + loops + writhe + linking + alexander
+    burau = sum(
+        abs(x - y) / (1 + abs(x) + abs(y)) for x, y in zip(a.burau, b.burau)
+    ) / max(1, len(ANGLES))
+    return strands + loops + writhe + linking + alexander + burau
 
 
 @dataclass(frozen=True)
@@ -165,8 +176,9 @@ class Match:
 
 
 def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
-    """Whether two fingerprints are the same, the Alexander polynomial's
-    samples but for rounding: nothing measured tells the braids apart.
+    """Whether two fingerprints are the same, the Alexander and Burau
+    polynomials' samples but for rounding: nothing measured tells the braids
+    apart.
 
     Args:
         a: A fingerprint.
@@ -186,10 +198,10 @@ def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
         (x is None and y is None)
         or (x is not None and y is not None and math.isclose(x, y, abs_tol=1e-6))
         for x, y in zip(a.alexander, b.alexander)
-    )
+    ) and all(math.isclose(x, y, abs_tol=1e-6) for x, y in zip(a.burau, b.burau))
 
 
-def catalogue_braids() -> Dict[str, Braid]:
+def catalogue_braids() -> dict[str, Braid]:
     """The braids of :mod:`braidpy.braid_catalog`, by name."""
     from braidpy.braid_catalog import CATALOGUE
 
@@ -198,9 +210,9 @@ def catalogue_braids() -> Dict[str, Braid]:
 
 def similar(
     braid: Braid,
-    candidates: Optional[Mapping[str, Braid]] = None,
+    candidates: Mapping[str, Braid] | None = None,
     count: int = 5,
-) -> List[Match]:
+) -> list[Match]:
     """The braids most like this one, nearest first.
 
     Args:

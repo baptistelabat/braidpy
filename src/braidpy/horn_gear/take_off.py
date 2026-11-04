@@ -19,10 +19,12 @@ rate in proportion to its gears.
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Dict, Hashable, List, Optional, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
+
 from braidpy.utils import lazy_module
 
 if TYPE_CHECKING:
@@ -74,14 +76,14 @@ class CarrierTrajectories(StrandTrajectories):
         radii: Gear radii at the same scale.
     """
 
-    layout: Dict[str, Tuple[float, float]] = field(default_factory=dict)
-    radii: Dict[str, float] = field(default_factory=dict)
+    layout: dict[str, tuple[float, float]] = field(default_factory=dict)
+    radii: dict[str, float] = field(default_factory=dict)
 
 
 def carrier_trajectories(
     machine: BraidingMachine,
     n_steps: int,
-    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
+    carrier_positions: dict[CarrierId, Position] | None = None,
     n_substeps: int = 12,
     scale: float = 1.0,
 ) -> CarrierTrajectories:
@@ -117,8 +119,8 @@ def carrier_trajectories(
     }
     history = simulate(machine, n_steps, carrier_positions)
 
-    times: List[float] = []
-    xy: Dict[CarrierId, List[Tuple[float, float]]] = {
+    times: list[float] = []
+    xy: dict[CarrierId, list[tuple[float, float]]] = {
         c.carrier_id: [] for c in history[0].carriers
     }
     for state in history:
@@ -168,9 +170,9 @@ def default_take_off(machine: BraidingMachine, scale: float = 1.0) -> float:
 
 def yarn_paths(
     machine: BraidingMachine,
-    n_steps: Optional[int] = None,
-    carrier_positions: Optional[Dict[CarrierId, Position]] = None,
-    take_off: Optional[float] = None,
+    n_steps: int | None = None,
+    carrier_positions: dict[CarrierId, Position] | None = None,
+    take_off: float | None = None,
     n_substeps: int = 12,
     scale: float = 1.0,
     n_cycles: int = 3,
@@ -219,7 +221,7 @@ def yarn_paths(
         machine, n_steps, carrier_positions, n_substeps=n_substeps, scale=scale
     )
     if axials and machine.axials:
-        standing: Dict[Hashable, np.ndarray] = {
+        standing: dict[Hashable, np.ndarray] = {
             name: np.tile(np.asarray(position, dtype=float), (len(traj.times), 1))
             for name, position in axial_positions(machine, traj.layout).items()
         }
@@ -229,10 +231,10 @@ def yarn_paths(
 
 def visualize_yarns(
     machine: BraidingMachine,
-    paths: Optional[YarnPaths] = None,
-    output_html: Optional[str] = None,
-    title: Optional[str] = None,
-    tube_diameter: Optional[float] = None,
+    paths: YarnPaths | None = None,
+    output_html: str | None = None,
+    title: str | None = None,
+    tube_diameter: float | None = None,
     n_around: int = 12,
     show_deck: bool = True,
     **kwargs,
@@ -264,7 +266,7 @@ def visualize_yarns(
         raise TypeError("kwargs are only used when paths is computed here.")
 
     layout = getattr(paths.trajectories, "layout", None) or compute_layout(machine)
-    cores: List[go.BaseTraceType] = [
+    cores: list[go.BaseTraceType] = [
         go.Scatter3d(
             x=[ax, ax],
             y=[ay, ay],

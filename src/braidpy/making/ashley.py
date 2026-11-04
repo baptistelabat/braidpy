@@ -8,7 +8,7 @@ On Ashley's stand (:mod:`braidpy.ashley_solid_sinnet`) the strands lie in
 spaces round the rim, and a move carries a strand from one space to
 another, over every strand it passes.  A move is not a swap of neighbours,
 so a braid cannot be turned into moves crossing by crossing as for a disk
-or a lace machine: the bridge searches for a sinnet that makes it instead.
+or a lace machine: a sinnet that makes it is searched for instead.
 
 The sinnets searched are made as the book's are: every space gives a strand
 and receives one in each cycle, so a cycle's moves follow a derangement of
@@ -17,8 +17,8 @@ after a cycle.  Each candidate is the strands shared out among the spaces,
 the derangement, and the order of its moves.  A cycle read from another
 move is the same braid, so the first move is taken from space 1.
 
-A sinnet is found when its braid is the braid wanted, as the bridges
-compare braids: by their topology
+A sinnet is found when its braid is the braid wanted, compared as every
+way of making a braid compares them: by their topology
 (:func:`~braidpy.ring_program.same_braid`) — the braid repeated, read from
 any strand, however written.  Fewer spaces are tried first, so the simplest
 sinnet is found first; the search stops at a time limit, and says whether
@@ -38,8 +38,8 @@ from __future__ import annotations
 
 import itertools
 import time
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from typing import Iterator, List, Optional, Sequence, Tuple
 
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.braid import Braid
@@ -60,29 +60,29 @@ class AshleySearch:
             tried, rather than the time running out.
     """
 
-    sinnet: Optional[AshleySolidSinnet]
-    nearest: Optional[AshleySolidSinnet]
+    sinnet: AshleySolidSinnet | None
+    nearest: AshleySolidSinnet | None
     distance: float
     tried: int
     complete: bool
 
 
-def _compositions(total: int, parts: int) -> Iterator[Tuple[int, ...]]:
+def _compositions(total: int, parts: int) -> Iterator[tuple[int, ...]]:
     """Every way of sharing ``total`` strands among ``parts`` spaces, each
     holding at least one."""
     for cuts in itertools.combinations(range(1, total), parts - 1):
         bounds = (0,) + cuts + (total,)
-        yield tuple(b - a for a, b in zip(bounds, bounds[1:]))
+        yield tuple(b - a for a, b in itertools.pairwise(bounds))
 
 
-def _derangements(n: int) -> Iterator[Tuple[int, ...]]:
+def _derangements(n: int) -> Iterator[tuple[int, ...]]:
     """Every permutation of ``range(n)`` moving every element."""
     for permutation in itertools.permutations(range(n)):
         if all(i != p for i, p in enumerate(permutation)):
             yield permutation
 
 
-def _cycles(spaces: int) -> Iterator[List[Tuple[int, int]]]:
+def _cycles(spaces: int) -> Iterator[list[tuple[int, int]]]:
     """Every cycle of moves, each space moved from once and to once, its
     first move from space 1; spaces numbered from 1, as the book does."""
     for target in _derangements(spaces):
@@ -94,7 +94,7 @@ def ashley_sinnet(
     braid: Braid,
     max_spaces: int = 6,
     time_limit: float = 20.0,
-    spaces: Optional[Sequence[int]] = None,
+    spaces: Sequence[int] | None = None,
 ) -> AshleySearch:
     """A sinnet on Ashley's stand that makes a braid; see the module.
 
@@ -114,7 +114,7 @@ def ashley_sinnet(
     n = braid.n_strands
     started = time.monotonic()
     tried = 0
-    nearest: Optional[AshleySolidSinnet] = None
+    nearest: AshleySolidSinnet | None = None
     nearest_distance = float("inf")
     counts_of = range(2, min(max_spaces, n) + 1) if spaces is None else spaces
     for count in counts_of:
@@ -162,7 +162,7 @@ def ashley_moves(braid: Braid) -> AshleySolidSinnet:
         exactly.
     """
     n = braid.n_strands
-    moves: List[Tuple[int, int]] = []
+    moves: list[tuple[int, int]] = []
     for g in braid.generators:
         a = 2 * (n - abs(int(g))) - 1
         b = a + 2

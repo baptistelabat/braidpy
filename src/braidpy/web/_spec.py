@@ -7,15 +7,16 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any
 
 from braidpy.braidword import parse_word
 
 __all__ = ["parse_moves", "parse_word"]
 
 
-def parse_moves(text: str) -> List[Tuple[int, int]]:
+def parse_moves(text: str) -> list[tuple[int, int]]:
     """Moves from one place to another, as ``(from, to)`` pairs.
 
     Reads ``1>15, 17>31``, ``1->15; 17->31``, ``1 15, 17 31``, ``(1, 15)
@@ -41,14 +42,14 @@ def parse_moves(text: str) -> List[Tuple[int, int]]:
     return list(zip(numbers[::2], numbers[1::2]))
 
 
-def _numbers(text: Any, what: str) -> List[int]:
+def _numbers(text: Any, what: str) -> list[int]:
     numbers = [int(n) for n in re.findall(r"-?\d+", str(text))]
     if not numbers:
         raise ValueError(f"Give the {what}, as numbers.")
     return numbers
 
 
-def _moves_text(moves: Sequence[Tuple[int, int]]) -> str:
+def _moves_text(moves: Sequence[tuple[int, int]]) -> str:
     return ", ".join(f"{a}>{b}" for a, b in moves)
 
 
@@ -82,7 +83,7 @@ class Count:
     low: int
     high: int
 
-    def read(self, spec: Mapping[str, Any], default: Optional[int] = None) -> int:
+    def read(self, spec: Mapping[str, Any], default: int | None = None) -> int:
         """The number given, checked; ``default`` if not, or this one's own."""
         own = self.default if default is None else default
         return _count(spec, self.key, own, self.low, self.high)
@@ -98,7 +99,7 @@ class Number:
     low: float
     high: float
 
-    def read(self, spec: Mapping[str, Any], default: Optional[float] = None) -> float:
+    def read(self, spec: Mapping[str, Any], default: float | None = None) -> float:
         """The number given, checked; ``default`` if not, or this one's own."""
         own = self.default if default is None else default
         return float(_number(spec, self.key, own, self.low, self.high))
@@ -120,7 +121,7 @@ class Colours:
 
     key: str
 
-    def read(self, spec: Mapping[str, Any]) -> Tuple[Optional[str], ...]:
+    def read(self, spec: Mapping[str, Any]) -> tuple[str | None, ...]:
         """The colours given, checked; empty if none.
 
         Args:
@@ -138,7 +139,7 @@ class Colours:
         parts = (
             list(given) if isinstance(given, (list, tuple)) else str(given).split(",")
         )
-        chosen: List[Optional[str]] = []
+        chosen: list[str | None] = []
         for part in parts:
             text = "" if part is None else str(part).strip()
             if not text:
@@ -165,7 +166,7 @@ class Text:
 
 
 def defaults(
-    *settings: Union[Count, Number, Text],
-) -> Dict[str, Union[str, int, float]]:
+    *settings: Count | Number | Text,
+) -> dict[str, str | int | float]:
     """The settings' defaults, by key: as the catalogue gives them."""
     return {setting.key: setting.default for setting in settings}

@@ -41,6 +41,19 @@ CASES = [
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
     # Laid on its fell ring, a machine's braid can be settled by physics.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
+    # A lace machine, its card turning the gears; its handle too.
+    ({"source": "lace", "name": "lace_plait", "cycles": 2}, 3),
+    # And a card of your own: every gear turning on a ring of 6.
+    (
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 6,
+            "card": "101010 010101",
+            "cycles": 1,
+        },
+        6,
+    ),
     (
         {
             "source": "sinnet",
@@ -78,6 +91,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=300, help="Seconds per page.")
     args = parser.parse_args()
 
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
     from playwright.sync_api import sync_playwright
 
     server = _serve(SITE)
@@ -92,12 +106,13 @@ def main() -> int:
         for spec, n_yarns in CASES:
             page = browser.new_page(viewport={"width": 1200, "height": 800})
             errors: list[str] = []
-            page.on("pageerror", lambda error: errors.append(str(error)))
+            # Each page's errors to its own list.
+            page.on("pageerror", lambda error, errors=errors: errors.append(str(error)))
             page.on(
                 "console",
-                lambda message: errors.append(message.text)
-                if message.type == "error"
-                else None,
+                lambda message, errors=errors: (
+                    errors.append(message.text) if message.type == "error" else None
+                ),
             )
             started = time.time()
             page.goto(base + query + "#" + urlencode(spec))
@@ -114,7 +129,7 @@ def main() -> int:
             if spec.get("settle") == "physics":
                 ok = ok and "Settled by physics" in page.inner_text("body")
             # A machine's handle turns it a step.
-            if spec["source"] == "machine":
+            if spec["source"] in ("machine", "lace"):
                 try:
                     forward = ".handle button[title='Turn the handle a step']"
                     page.wait_for_selector(forward + ":not([disabled])", timeout=30000)
@@ -124,9 +139,46 @@ def main() -> int:
                         ".textContent === 'Step 1'",
                         timeout=30000,
                     )
-                except Exception:
+                except PlaywrightTimeout:
                     ok = False
                     errors.append("the machine's handle did not turn")
+            # A sinnet's moves stepped through, the moves typed left as they are.
+            if spec["source"] == "sinnet" and "moves" in spec:
+                try:
+                    typed = page.input_value("textarea[name=moves]")
+                    page.click("button[title='Before the first move']")
+                    page.click("button[title='A move on']")
+                    page.wait_for_function(
+                        "() => [...document.querySelectorAll('.handle .step')]"
+                        ".some((s) => s.textContent.startsWith('Move 1 of 6'))",
+                        timeout=10000,
+                    )
+                    if page.input_value("textarea[name=moves]") != typed:
+                        raise PlaywrightTimeout("the moves changed")
+                except PlaywrightTimeout:
+                    ok = False
+                    errors.append("a sinnet's moves were not stepped through")
+            # Two strands coloured at once are a group, recoloured together.
+            if spec["source"] == "word":
+                try:
+                    page.click("#strand-list button[data-strand='0']")
+                    page.click(
+                        "#strand-list button[data-strand='1']", modifiers=["Shift"]
+                    )
+                    page.click("#strand-palette .dab[data-colour='#000000']")
+                    group = "#strand-groups button[data-strands='0,1']"
+                    page.wait_for_selector(group, timeout=10000)
+                    page.click(group)
+                    page.click("#strand-palette .dab[data-colour='#ffffff']")
+                    page.wait_for_function(
+                        "() => ['0', '1'].every((i) => document.querySelector("
+                        "`#strand-list button[data-strand='${i}']`)"
+                        ".style.getPropertyValue('--swatch') === '#ffffff')",
+                        timeout=10000,
+                    )
+                except PlaywrightTimeout:
+                    ok = False
+                    errors.append("a group of strands was not recoloured together")
             # Its kin, found in the page from the catalogue made with it.
             kin = ""
             if any(spec.get(key) == value for key, value in ALSO_MADE):
@@ -137,16 +189,16 @@ def main() -> int:
                         timeout=30000,
                     )
                     kin = "  also made as others"
-                except Exception:
+                except PlaywrightTimeout:
                     ok, kin = False, "  no kin shown"
                 # And the braid made other ways: a disk, a lace card.
                 try:
                     page.wait_for_function(
-                        "() => document.getElementById('bridges')"
+                        "() => document.getElementById('making')"
                         ".textContent.includes('Lace machine')",
                         timeout=30000,
                     )
-                except Exception:
+                except PlaywrightTimeout:
                     ok, kin = False, kin + ", no other ways to make it shown"
             failures += not ok
             print(

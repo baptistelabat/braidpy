@@ -11,8 +11,8 @@ import sys
 
 import pytest
 
-from braidpy.web._settings import COLOURS
 from braidpy.web import build, catalogue
+from braidpy.web._settings import COLOURS
 
 
 @pytest.mark.parametrize(
@@ -35,8 +35,14 @@ def test_moves_that_cannot_be_read_say_so(text, message):
         parse_moves(text)
 
 
+# Every sinnet, the biggest of 36 strands, takes minutes: run daily.
 @pytest.mark.parametrize(
-    "source", [s for s, about in catalogue().items() if "entries" in about]
+    "source",
+    [
+        pytest.param(s, marks=pytest.mark.slow) if s == "sinnet" else s
+        for s, about in catalogue().items()
+        if "entries" in about
+    ],
 )
 def test_every_catalogue_entry_is_made(source):
     for entry in catalogue()[source]["entries"]:
@@ -230,3 +236,48 @@ def test_every_kind_of_braid_can_be_recoloured(source):
     spec = {"source": source, "iterations": 0, **starts[source]}
     chosen = build(dict(spec, colours="#0a0b0c"))
     assert chosen["strands"][0]["colour"] == "#0a0b0c"
+
+
+def test_every_braid_offered_as_it_comes_is_made_with_the_site():
+    """Each catalogued braid and braid word example, nothing of your own."""
+    from braidpy.web import premade_specs
+
+    specs = premade_specs()
+    listed = catalogue()
+    for source, about in listed.items():
+        for entry in about.get("entries", []):
+            wanted = {"source": source, "name": entry["name"]}
+            assert (wanted in specs) == (entry["name"] != "custom")
+    for example in listed["word"]["examples"]:
+        assert {
+            "source": "word",
+            **{k: v for k, v in example.items() if k != "title"},
+        } in specs
+
+
+def test_a_braid_made_with_the_site_is_the_braid_made_for_the_page(
+    tmp_path, monkeypatch
+):
+    """Written as build lays it for a page to tighten, and said in the
+    index; the same every time it is made."""
+    from braidpy import web
+
+    specs = [
+        {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 6},
+        {"source": "sinnet", "name": "abok_2965"},
+        {"source": "sinnet", "name": "no_such_sinnet"},
+    ]
+    monkeypatch.setattr(web, "premade_specs", lambda: specs)
+    index = web.premade(str(tmp_path), workers=1)
+    assert [entry["spec"] for entry in index] == specs[
+        :2
+    ]  # what cannot be made is left out
+    assert json.loads((tmp_path / "index.json").read_text()) == index
+    for entry in index:
+        written = json.loads((tmp_path / entry["file"]).read_text())
+        assert written == json.loads(json.dumps(build(entry["spec"], tighten=False)))
+    again = web.premade(str(tmp_path / "again"), workers=1)
+    for entry in again:
+        assert (tmp_path / "again" / entry["file"]).read_text() == (
+            tmp_path / entry["file"]
+        ).read_text()

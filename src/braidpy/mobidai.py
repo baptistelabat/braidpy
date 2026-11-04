@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 """
 mobidai.py
 
@@ -11,8 +15,10 @@ associated with the braiding moves.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from braidpy.utils import lazy_module
@@ -30,8 +36,6 @@ else:
 
 class SlotAlreadyInUseError(Exception):
     """Exception raised when attempting to move a strand to an occupied slot."""
-
-    ...
 
 
 @dataclass
@@ -57,12 +61,12 @@ class Move:
     Attributes:
         from_slot (int): The slot number where the strand starts.
         to_slot (int): The slot number where the strand will be placed.
+        force_direction (int): The way round it goes: 1 clockwise, -1
+            anticlockwise, 0 (the default) the shorter way.
     """
 
     from_slot: int
     to_slot: int
-    # Optional: Force a direction if you want a "long way round" move
-    # 1 = CW, -1 = CCW, 0 = Auto (Shortest Path)
     force_direction: int = 0
 
 
@@ -80,16 +84,16 @@ class MobidaiConfig:
             Defaults to True.
     """
 
-    strands: List[Strand]
-    moves: List[Move]
+    strands: list[Strand]
+    moves: list[Move]
     n_shift_after_cycle: int
     n_slots: int = 32
     is_clockwise: bool = True
 
 
 def cycle_drift(
-    start_slots: List[int],
-    moves: List["Move"],
+    start_slots: list[int],
+    moves: list[Move],
     n_slots: int,
     n_shift_after_cycle: int = 0,
 ) -> int:
@@ -124,7 +128,7 @@ def cycle_drift(
     return 0
 
 
-def drifted(move: "Move", offset: int, n_slots: int) -> "Move":
+def drifted(move: Move, offset: int, n_slots: int) -> Move:
     """The same move, made ``offset`` slots round."""
     return Move(
         (move.from_slot - 1 + offset) % n_slots + 1,
@@ -151,7 +155,7 @@ class BraidTracker:
         strand_map (Dict[int, Strand]): Reference to the actual strand objects.
     """
 
-    def __init__(self, strands: List[Strand], n_slots: int, is_disk_clockwise: bool):
+    def __init__(self, strands: list[Strand], n_slots: int, is_disk_clockwise: bool):
         """Initializes the BraidTracker.
 
         Args:
@@ -261,7 +265,7 @@ class Mobidai:
     def __init__(self, config: MobidaiConfig):
         self.n_total_shift = 0
         self.config = config
-        self.slots: Dict[int, Strand | None] = {
+        self.slots: dict[int, Strand | None] = {
             i: None for i in range(1, config.n_slots + 1)
         }
 
@@ -280,7 +284,7 @@ class Mobidai:
         self.braid_tracker = BraidTracker(
             self.config.strands, self.config.n_slots, self.config.is_clockwise
         )
-        self.braid_word: List[str] = []
+        self.braid_word: list[str] = []
         # Each cycle is made from wherever the last one left the strands.
         self.drift = cycle_drift(
             [s.position for s in self.config.strands],
@@ -291,7 +295,7 @@ class Mobidai:
         self.n_cycles = 0
 
     @property
-    def generators(self) -> List[int]:
+    def generators(self) -> list[int]:
         """The braid word as signed generator indices.
 
         :attr:`braid_word` keeps one readable string per move, such as
@@ -313,8 +317,8 @@ class Mobidai:
         return parse_word(" ".join(self.braid_word))
 
     def single_step(
-        self, move: Move, slots: Dict[int, Optional[Strand]]
-    ) -> Dict[int, Optional[Strand]]:
+        self, move: Move, slots: dict[int, Strand | None]
+    ) -> dict[int, Strand | None]:
         strand = slots.get(move.from_slot)
         if strand:
             if slots.get(move.to_slot) is not None:
@@ -332,10 +336,9 @@ class Mobidai:
 
         return slots
 
-    # ... rotate, all_steps, visualize, simulate remain the same ...
     def rotate(self, steps: int):
         n = self.config.n_slots
-        new_slots: Dict[int, Optional[Strand]] = {i: None for i in range(1, n + 1)}
+        new_slots: dict[int, Strand | None] = {i: None for i in range(1, n + 1)}
         for slot, strand in self.slots.items():
             if strand:
                 new_pos = ((slot - 1 + steps) % n) + 1
@@ -370,7 +373,7 @@ class Mobidai:
         """
         n = self.config.n_slots
         if ax is None:
-            fig, ax = plt.subplots(figsize=(6, 6))
+            _fig, ax = plt.subplots(figsize=(6, 6))
         ax.set_aspect("equal")
         ax.axis("off")
         r_outer = 1.0

@@ -59,8 +59,8 @@ survives; see ``docs/source/why_no_closed_form.md``.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
 
 
 def crossing(index: int) -> int:
@@ -118,7 +118,7 @@ def turn(n_strands: int) -> int:
     return n_strands + 1
 
 
-def rope(n_strands: int) -> List[int]:
+def rope(n_strands: int) -> list[int]:
     """The word for a rope: every strand round together, once round the tube.
 
     Laying up a rope is not a sequence of crossings — no strand climbs over
@@ -133,14 +133,14 @@ def rope(n_strands: int) -> List[int]:
     return [turn(n_strands)] * n_strands
 
 
-def _turn_word(n_strands: int, sign: int = 1) -> List[int]:
+def _turn_word(n_strands: int, sign: int = 1) -> list[int]:
     """A turn of the ring as a solid braid makes it: ``σₙ₋₁…σ₂σ₁``, or
     undone, ``σ₁⁻¹σ₂⁻¹…σₙ₋₁⁻¹``."""
     turning = list(range(n_strands - 1, 0, -1))
     return turning if sign > 0 else [-g for g in reversed(turning)]
 
 
-def solid_word(moves: Sequence[int], n_strands: int) -> List[int]:
+def solid_word(moves: Sequence[int], n_strands: int) -> list[int]:
     """The flat braid word of a ring braid with nothing in the middle.
 
     A solid braid — a kumihimo cord, a solid sinnet — has no core for its
@@ -174,7 +174,7 @@ def solid_word(moves: Sequence[int], n_strands: int) -> List[int]:
     """
     n = n_strands
     turning, back = _turn_word(n), _turn_word(n, -1)
-    word: List[int] = []
+    word: list[int] = []
     for move in moves:
         index, sign = abs(move), (1 if move > 0 else -1)
         if not 1 <= index <= n + 1:
@@ -187,7 +187,7 @@ def solid_word(moves: Sequence[int], n_strands: int) -> List[int]:
             word += turning + [sign] + back
         else:
             word += turning if sign > 0 else back
-    reduced: List[int] = []
+    reduced: list[int] = []
     for g in word:
         if reduced and reduced[-1] == -g:
             reduced.pop()
@@ -196,7 +196,7 @@ def solid_word(moves: Sequence[int], n_strands: int) -> List[int]:
     return reduced
 
 
-def ring_moves(word: Sequence[int], n_strands: int) -> Tuple[List[int], bool]:
+def ring_moves(word: Sequence[int], n_strands: int) -> tuple[list[int], bool]:
     """A flat braid word as moves on a ring: what :func:`solid_word` undoes.
 
     A full run of crossings round the ring — ``σₙ₋₁…σ₁``, or its inverse
@@ -222,8 +222,8 @@ def ring_moves(word: Sequence[int], n_strands: int) -> Tuple[List[int], bool]:
     word = [int(g) for g in word]
     up, down = _turn_word(n), _turn_word(n, -1)
 
-    def rolled(letters: List[int]) -> List[int]:
-        moves: List[int] = []
+    def rolled(letters: list[int]) -> list[int]:
+        moves: list[int] = []
         k = 0
         while k < len(letters):
             if letters[k : k + n - 1] == up:
@@ -262,8 +262,8 @@ class TubularStrandPath:
         n_slots: How many slots the ring has.
     """
 
-    slots: Tuple[int, ...]
-    signs: Tuple[int, ...]
+    slots: tuple[int, ...]
+    signs: tuple[int, ...]
     n_slots: int
 
     @property
@@ -277,7 +277,7 @@ class TubularStrandPath:
         return (self.slots[-1] - self.slots[0]) / self.n_slots
 
 
-def tubular_paths(moves: Sequence[int], n_strands: int) -> List[TubularStrandPath]:
+def tubular_paths(moves: Sequence[int], n_strands: int) -> list[TubularStrandPath]:
     """Follow every strand round a tubular braid word.
 
     Args:
@@ -297,8 +297,8 @@ def tubular_paths(moves: Sequence[int], n_strands: int) -> List[TubularStrandPat
     n_slots = n_strands
     ring = list(range(n_strands))  # ring[slot] = strand standing there
     winding = [0] * n_strands  # how many times round each strand has gone
-    slots: List[List[int]] = [[strand] for strand in range(n_strands)]
-    signs: List[List[int]] = [[] for _ in range(n_strands)]
+    slots: list[list[int]] = [[strand] for strand in range(n_strands)]
+    signs: list[list[int]] = [[] for _ in range(n_strands)]
 
     def place(strand: int) -> int:
         return ring.index(strand) + n_slots * winding[strand]
@@ -478,7 +478,7 @@ def helix_clearance(
 def lay_radius(
     n_strands: int,
     diameter: float = 0.4,
-    lay: Optional[float] = None,
+    lay: float | None = None,
     tolerance: float = 1e-9,
 ) -> float:
     """The radius a rope of a given lay settles at, found by squeezing it.
@@ -553,7 +553,7 @@ class Helix:
     length: int
     phase: float = 0.0
 
-    def position(self, z: float) -> Tuple[float, float, float]:
+    def position(self, z: float) -> tuple[float, float, float]:
         """Where the strand is at ``z`` along the axis."""
         angle = self.phase + 2.0 * math.pi * self.turns * z / self.length
         return self.radius * math.cos(angle), self.radius * math.sin(angle), z
@@ -564,8 +564,8 @@ def rope_helices(
     diameter: float = 0.4,
     length: int = 1,
     turns: float = 1.0,
-    radius: Optional[float] = None,
-) -> List[Helix]:
+    radius: float | None = None,
+) -> list[Helix]:
     """The shape a laid rope takes: helices, touching, evenly spaced.
 
     The only braid shape in this package that is both closed-form and
@@ -642,7 +642,7 @@ class TubularBraidStrand:
         """The axial distance in which the strand goes once round the tube."""
         return 2.0 * math.pi * self.radius / math.tan(self.braid_angle)
 
-    def position(self, z: float) -> Tuple[float, float, float]:
+    def position(self, z: float) -> tuple[float, float, float]:
         """Where the strand is at ``z`` along the axis."""
         # z = R * u * cot(q), so the angle travelled follows from the height.
         travelled = z * math.tan(self.braid_angle) / self.radius
@@ -658,8 +658,8 @@ def tubular_braid(
     radius: float = 1.0,
     braid_angle: float = math.pi / 4.0,
     diameter: float = 0.4,
-    bulge: Optional[float] = None,
-) -> List[TubularBraidStrand]:
+    bulge: float | None = None,
+) -> list[TubularBraidStrand]:
     """A braided tube: half the strands each way, interlacing.
 
     Two things the bare formula does not say, and without which it does not
@@ -773,7 +773,7 @@ def tubular_braid_radius(
     n_strands: int,
     diameter: float = 0.4,
     braid_angle: float = math.pi / 4.0,
-    bulge: Optional[float] = None,
+    bulge: float | None = None,
 ) -> float:
     """The narrowest tube on which these strands braid without crowding.
 

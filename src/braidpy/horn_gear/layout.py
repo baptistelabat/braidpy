@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import math
 from collections import deque
-from typing import Dict, List, Optional, Tuple
 
 import networkx as nx
 import numpy as np
@@ -73,9 +72,9 @@ def _gear_radius(n_slots: int, scale: float = 1.0) -> float:
 def compute_layout(
     machine: BraidingMachine,
     scale: float = 1.0,
-    seed: Optional[int] = 42,
+    seed: int | None = 42,
     iterations: int = 500,
-) -> Dict[str, Tuple[float, float]]:
+) -> dict[str, tuple[float, float]]:
     """Compute 2-D positions for all gears with adjacent circles exactly tangential.
 
     For tree / path graphs (flat braid): BFS-based placement along the x-axis
@@ -116,7 +115,9 @@ def compute_layout(
 
     try:
         raw = nx.kamada_kawai_layout(g, weight="len")
-    except Exception:
+    # Without SciPy (in a browser) or for a graph it cannot lay out, the
+    # spring layout instead.
+    except Exception:  # noqa: BLE001
         raw = nx.spring_layout(g, seed=seed, iterations=iterations)
 
     pos = {n: np.array(xy) for n, xy in raw.items()}
@@ -138,8 +139,8 @@ def compute_layout(
 
 def _orient(
     machine: BraidingMachine,
-    placed: Dict[str, Tuple[float, float]],
-) -> Dict[str, Tuple[float, float]]:
+    placed: dict[str, tuple[float, float]],
+) -> dict[str, tuple[float, float]]:
     """Settle a ring layout's handedness so it comes out the same every time.
 
     A graph layout solver is free to hand back a machine or its mirror image,
@@ -191,7 +192,7 @@ def _orient(
 def _layout_bfs(
     machine: BraidingMachine,
     scale: float = 1.0,
-) -> Dict[str, Tuple[float, float]]:
+) -> dict[str, tuple[float, float]]:
     """Exact tangential layout for tree (path) graphs via BFS.
 
     Places gears left-to-right along the x-axis so every adjacent pair of
@@ -201,12 +202,12 @@ def _layout_bfs(
     radii = {n: _gear_radius(g.n_slots, scale) for n, g in machine.gears.items()}
     root = next(iter(machine.gears))
 
-    pos: Dict[str, Tuple[float, float]] = {root: (0.0, 0.0)}
+    pos: dict[str, tuple[float, float]] = {root: (0.0, 0.0)}
     visited: set = {root}
     queue: deque = deque([(root, 0.0)])  # (node, parent_x + parent_r)
 
     while queue:
-        parent, right_edge = queue.popleft()
+        parent, _right_edge = queue.popleft()
         r_parent = radii[parent]
         cx_parent = pos[parent][0]
 
@@ -223,9 +224,9 @@ def _layout_bfs(
 
 def axial_position(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
+    layout: dict[str, tuple[float, float]],
     axial: Axial,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Where an axial's column stands: the centroid of the gears it anchors to.
 
     One gear gives that gear's own centre; a ring of gears gives the centre of
@@ -246,16 +247,16 @@ def axial_position(
 
 def axial_positions(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, Tuple[float, float]]:
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, tuple[float, float]]:
     """Column position for every axial on the machine, keyed by axial name."""
     return {a.name: axial_position(machine, layout, a) for a in machine.axials}
 
 
 def axial_clearance(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    position: Tuple[float, float],
+    layout: dict[str, tuple[float, float]],
+    position: tuple[float, float],
     scale: float = 1.0,
 ) -> float:
     """Free space around a column: the distance to the nearest carrier path.
@@ -290,11 +291,11 @@ def axial_clearance(
 
 def contact_point(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
+    layout: dict[str, tuple[float, float]],
     gear: str,
     neighbor: str,
     scale: float = 1.0,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """The middle of the notch two gears share.
 
     Where the circles cross, the notch is the chord between the two crossings
@@ -314,7 +315,7 @@ def contact_point(
 
 def contact_angle(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
+    layout: dict[str, tuple[float, float]],
     gear: str,
     neighbor: str,
     scale: float = 1.0,
@@ -327,7 +328,7 @@ def contact_angle(
 
 def carrier_radius(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
+    layout: dict[str, tuple[float, float]],
     gear: str,
     scale: float = 1.0,
 ) -> float:
@@ -364,8 +365,8 @@ def carrier_radius(
 
 def _gear_constraints(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, List[float]]:
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, list[float]]:
     """Per gear, the rotation offset each of its connections asks for.
 
     A connection ``gear_a[slot_a0] ↔ gear_b[slot_b0]`` wants slot ``slot_a0`` of
@@ -373,7 +374,7 @@ def _gear_constraints(
     gear with several connections gets one such value per connection; they all
     agree only when the connection slots match the physical layout.
     """
-    wanted: Dict[str, List[float]] = {name: [] for name in machine.gears}
+    wanted: dict[str, list[float]] = {name: [] for name in machine.gears}
     for conn in machine.connections:
         for gname, other, slot0 in [
             (conn.gear_a, conn.gear_b, conn.slot_a0),
@@ -387,8 +388,8 @@ def _gear_constraints(
 
 def slot_offsets(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, float]:
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, float]:
     """Per-gear rotation offset phi so connection slots point toward their neighbors.
 
     Every connection of a gear is taken into account, via the circular mean of
@@ -397,7 +398,7 @@ def slot_offsets(
     they do not, the residual error is shared between the contacts instead of
     being dumped entirely onto whichever connection happened to come second.
     """
-    offsets: Dict[str, float] = {}
+    offsets: dict[str, float] = {}
     for name, wanted in _gear_constraints(machine, layout).items():
         if not wanted:
             offsets[name] = 0.0
@@ -415,8 +416,8 @@ def slot_offsets(
 
 def offset_residuals(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> Dict[str, float]:
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, float]:
     """Worst angular error (radians) between each gear's slots and its contacts.
 
     Zero means every contact of that gear falls exactly on a slot.  A non-zero
@@ -424,7 +425,7 @@ def offset_residuals(
     layout, and carriers will appear to jump when they transfer there.
     """
     offsets = slot_offsets(machine, layout)
-    residuals: Dict[str, float] = {}
+    residuals: dict[str, float] = {}
     for name, wanted in _gear_constraints(machine, layout).items():
         phi = offsets[name]
         residuals[name] = max(
@@ -435,8 +436,8 @@ def offset_residuals(
 
 
 def _signed_area(
-    face: List[str],
-    layout: Dict[str, Tuple[float, float]],
+    face: list[str],
+    layout: dict[str, tuple[float, float]],
 ) -> float:
     """Shoelace area of a face's polygon; sign gives its winding direction."""
     total = 0.0
@@ -449,8 +450,8 @@ def _signed_area(
 
 def tube_rings(
     machine: BraidingMachine,
-    layout: Optional[Dict[str, Tuple[float, float]]] = None,
-) -> List[List[str]]:
+    layout: dict[str, tuple[float, float]] | None = None,
+) -> list[list[str]]:
     """Find the rings of gears that enclose a hole — one per tube.
 
     Gears are tangent circles in the plane, so the connection graph is planar
@@ -478,7 +479,7 @@ def tube_rings(
         return []
 
     seen: set = set()
-    found: List[List[str]] = []
+    found: list[list[str]] = []
     for u, v in embedding.edges():
         if (u, v) in seen:
             continue
@@ -494,10 +495,10 @@ def tube_rings(
 
 def tube_axials(
     machine: BraidingMachine,
-    layout: Optional[Dict[str, Tuple[float, float]]] = None,
+    layout: dict[str, tuple[float, float]] | None = None,
     min_clearance: float = 1e-6,
     prefix: str = "core",
-) -> List[Axial]:
+) -> list[Axial]:
     """One core Axial per tube the machine braids.
 
     Rings too tight to hold a core — where the surrounding gears reach the
@@ -516,7 +517,7 @@ def tube_axials(
     if layout is None:
         layout = compute_layout(machine)
 
-    axials: List[Axial] = []
+    axials: list[Axial] = []
     for ring in tube_rings(machine, layout):
         candidate = Axial(name=prefix, anchor=tuple(ring))
         position = axial_position(machine, layout, candidate)
@@ -527,7 +528,7 @@ def tube_axials(
     return axials
 
 
-def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> Dict[str, float]:
+def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]:
     """Return the visual radius for each gear.
 
     Args:
@@ -544,13 +545,13 @@ def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> Dict[str, float]
 
 def carrier_xy(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    offsets: Dict[str, float],
-    carrier_radii: Dict[str, float],
-    position: Tuple[str, int],
+    layout: dict[str, tuple[float, float]],
+    offsets: dict[str, float],
+    carrier_radii: dict[str, float],
+    position: tuple[str, int],
     time: int,
     frac: float = 0.0,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Where in the plane a carrier is, at continuous time ``time + frac``.
 
     A carrier rides in a horn of its gear, so its angle is simply that slot's

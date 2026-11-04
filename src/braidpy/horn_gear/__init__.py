@@ -29,18 +29,6 @@ from .jacquard import (
     jacquard_lace_ring,
     notch_positions,
 )
-from .loading import load_carriers
-from .switch import (
-    MULTIBAND_10_15_10_BANDS,
-    MULTIBAND_10_15_10_CARRIERS,
-    MULTIBAND_10_15_10_SLOTS,
-    Switch,
-    SwitchedMachine,
-    SwitchError,
-    band_of,
-    multiband_10_15_10,
-    multiband_band,
-)
 from .layout import (
     axial_clearance,
     axial_position,
@@ -56,6 +44,7 @@ from .layout import (
     tube_axials,
     tube_rings,
 )
+from .loading import load_carriers
 from .model import Axial, BraidingMachine, Connection, HornGear
 from .simulation import (
     CarrierState,
@@ -66,6 +55,17 @@ from .simulation import (
     simulate,
     state_period,
     step,
+)
+from .switch import (
+    MULTIBAND_10_15_10_BANDS,
+    MULTIBAND_10_15_10_CARRIERS,
+    MULTIBAND_10_15_10_SLOTS,
+    Switch,
+    SwitchedMachine,
+    SwitchError,
+    band_of,
+    multiband_10_15_10,
+    multiband_band,
 )
 from .take_off import (
     CarrierTrajectories,
@@ -89,70 +89,70 @@ from .tracks import (
 from .visualization import animate, visualize_machine, visualize_tracks
 
 __all__ = [
-    # model
-    "HornGear",
-    "Connection",
-    "Axial",
-    "BraidingMachine",
-    # jacquard lace machine
-    "JacquardLaceMachine",
-    "JacquardProgramError",
-    "jacquard_lace_ring",
-    "notch_positions",
-    # layout
-    "compute_layout",
-    "gear_radii",
-    # geometry derived from the layout
-    "contact_point",
-    "contact_angle",
-    "carrier_radius",
-    "carrier_xy",
-    "slot_offsets",
-    "offset_residuals",
-    # axial columns and tube cores
-    "axial_position",
-    "axial_positions",
-    "axial_clearance",
-    "tube_rings",
-    "tube_axials",
-    # tracks
-    "compute_track",
-    "compute_tracks",
-    "simulation_period",
-    "NoFixedTracks",
-    "ring_order",
-    "circulation",
-    "walk",
-    # simulation
-    "CarrierState",
-    "MachineState",
-    "CollisionError",
-    "carrier_places",
-    "initial_state",
-    "load_carriers",
     "MULTIBAND_10_15_10_BANDS",
     "MULTIBAND_10_15_10_CARRIERS",
     "MULTIBAND_10_15_10_SLOTS",
-    "Switch",
-    "SwitchedMachine",
-    "SwitchError",
-    "band_of",
-    "multiband_10_15_10",
-    "multiband_band",
-    "step",
-    "simulate",
-    "state_period",
+    "Axial",
+    "BraidingMachine",
+    # simulation
+    "CarrierState",
     # the braid coming off the machine
     "CarrierTrajectories",
+    "CollisionError",
+    "Connection",
+    # model
+    "HornGear",
+    # jacquard lace machine
+    "JacquardLaceMachine",
+    "JacquardProgramError",
+    "MachineState",
+    "NoFixedTracks",
+    "Switch",
+    "SwitchError",
+    "SwitchedMachine",
     "YarnPaths",
+    "animate",
+    "axial_clearance",
+    # axial columns and tube cores
+    "axial_position",
+    "axial_positions",
+    "band_of",
+    "carrier_places",
+    "carrier_radius",
     "carrier_trajectories",
+    "carrier_xy",
+    "circulation",
+    # layout
+    "compute_layout",
+    # tracks
+    "compute_track",
+    "compute_tracks",
+    "contact_angle",
+    # geometry derived from the layout
+    "contact_point",
     "default_take_off",
-    "yarn_paths",
+    "gear_radii",
+    "initial_state",
+    "jacquard_lace_ring",
     "jammed_contraction",
+    "load_carriers",
+    "multiband_10_15_10",
+    "multiband_band",
+    "notch_positions",
+    "offset_residuals",
+    "ring_order",
+    "simulate",
+    "simulation_period",
+    "slot_offsets",
+    "state_period",
+    "step",
     "tighten_yarns",
-    "visualize_yarns",
+    "tube_axials",
+    "tube_rings",
     # visualization
     "visualize_machine",
     "visualize_tracks",
-    "animate",
+    "visualize_yarns",
+    "walk",
+    "yarn_paths",
 ]

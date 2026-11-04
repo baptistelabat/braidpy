@@ -1,12 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import pytest
 from math_braid.canonical_factor import CanonicalFactor
+from sympy import Matrix, symbols
 
 from braidpy import Braid
 from braidpy.garside_canonical_form import permutation_word
-from sympy import symbols, Matrix
-
 from braidpy.operations import conjugate
-
 
 # Run tests with: uv run pytest /tests
 
@@ -281,7 +283,7 @@ class TestBraid:
         ]
         assert Braid([1, 2, -3, 0]).permutations(plot=True) == permutations
 
-        (Braid([1, -2]) ** 3).permutations(plot=True) == [1, 2, 3]
+        assert (Braid([1, -2]) ** 3).permutations(plot=True)[-1] == [1, 2, 3]
 
     def test_permutation(self):
         """Test permutation calculation"""
@@ -291,6 +293,69 @@ class TestBraid:
         """Test trivial braid properties"""
         assert trivial_braid.is_trivial()
         assert trivial_braid.perm() == [1, 2, 3]
+
+    def test_a_braid_is_trivial_however_written(self):
+        """A word whose crossings undo each other is the trivial braid; one
+        that leaves the strands crossed is not, even if they come home."""
+        assert Braid([1, -1], n_strands=3).is_trivial()
+        assert Braid([1, 2, -1, -2, 1, -1, 2, 1, -2, -1], n_strands=3).is_trivial()
+        assert not Braid([1, 1], n_strands=3).is_trivial()
+        # Long words too, as math_braid's normal form says.
+        import random
+
+        import math_braid
+
+        random.seed(1)
+        word = [random.choice([1, -1]) * random.randint(1, 7) for _ in range(60)]
+        b = Braid(word, n_strands=8)
+        assert ((b * b.inverse()) ** 5).is_trivial()
+        assert b.is_trivial() == (not math_braid.Braid(word, 8))
+
+    def test_braids_compare_as_math_braid_compares_them(self):
+        """Equal braids, written differently, and braids that differ only a
+        little: each pair compared by handle reduction as math_braid's
+        normal forms compare it."""
+        import random
+
+        import math_braid
+
+        random.seed(2)
+        for n in (3, 5, 8):
+            for _ in range(20):
+                word = [
+                    random.choice([1, -1]) * random.randint(1, n - 1) for _ in range(30)
+                ]
+                b = Braid(word, n)
+                # The same braid with σᵢσᵢ⁻¹ inserted; another with its last
+                # crossing turned the other way.
+                g = random.randint(1, n - 1)
+                same = Braid(word[:10] + [g, -g] + word[10:], n)
+                changed = Braid(word[:-1] + [-word[-1]], n)
+                for other in (same, changed):
+                    expected = math_braid.Braid(word, n) == math_braid.Braid(
+                        other.generators, n
+                    )
+                    assert (b == other) == expected
+
+    def test_math_braid_decides_when_handle_reduction_takes_too_long(self, monkeypatch):
+        """Given no time at all, handle reduction gives up on a long word:
+        math_braid's normal form then says whether it is trivial."""
+        import braidpy.braid
+
+        monkeypatch.setattr(braidpy.braid, "HANDLE_REDUCTION_S", 0.0)
+        b = Braid([1, 2, -1, 3, -2, 1, 2, 3, -1, 2] * 3, n_strands=4)
+        assert (b * b.inverse()).is_trivial()
+        assert not b.is_trivial()
+
+    def test_a_braid_compares_with_the_trivial_braid(self):
+        """Compared with a braid of no crossings, either way round, a braid
+        is equal to it exactly when it is trivial."""
+        b = Braid([1, -2], n_strands=3)
+        trivial = Braid([], n_strands=3)
+        assert b * b.inverse() == trivial
+        assert trivial == b * b.inverse()
+        assert b != trivial and trivial != b
+        assert Braid([0], n_strands=3) == trivial
 
     def test_to_matrix(self, simple_braid):
         """Test unreduced Burau matrix representation"""
@@ -378,7 +443,7 @@ class TestBraid:
         assert Braid([10]) == Braid([10])
 
         # Check not equal with different number of strands
-        assert not Braid([1], 2) == Braid([1], 3)
+        assert Braid([1], 2) != Braid([1], 3)
 
         # Check with zero
         assert Braid([1, 0, 3], 4) == Braid([1, 3], 4)

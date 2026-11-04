@@ -5,9 +5,9 @@
 """Braid words for the web page, flat or round a ring."""
 
 import pytest
+from web_checks import check
 
 from braidpy.web import build, parse_word
-from web_checks import check
 
 
 def test_a_word():

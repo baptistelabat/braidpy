@@ -61,11 +61,16 @@ def defined_names() -> set:
     return names
 
 
+# The pages whose contents list the others: the home page and its three
+# parts.
+CONTENTS = ["index.md", "user_manual.md", "theory_manual.md", "developer_guide.md"]
+
+
 @pytest.mark.parametrize("page", PAGES)
 def test_the_pages_are_in_the_docs_and_in_the_toctree(page):
     """A page outside the toctree is a page nobody reaches."""
     assert (DOCS / page).is_file()
-    assert page in (DOCS / "index.md").read_text()
+    assert any(page in (DOCS / listing).read_text() for listing in CONTENTS)
 
 
 def test_the_analytic_directory_holds_only_a_pointer():

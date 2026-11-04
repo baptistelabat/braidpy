@@ -44,7 +44,10 @@ export function showDefaults(used) {
 // guessed from its source until it is made, then as it was made.  Chosen
 // otherwise, it stays chosen.
 export const CHOICES = {
-  settle: { guess: (source) => (source === "machine" ? "sideways" : "marudai"), used: (u) => u.settle },
+  settle: {
+    guess: (source) => (source === "machine" || source === "lace" ? "sideways" : "marudai"),
+    used: (u) => u.settle,
+  },
   twist: {
     guess: (source) =>
       $("settle").value !== "marudai" ? "free" : source === "word" ? "turns" : "free",
@@ -59,6 +62,7 @@ export const CHOICES = {
 // cannot have are not offered.
 const SETTLES = {
   machine: ["sideways", "physics", "crossing"],
+  lace: ["sideways", "physics", "crossing"],
 };
 
 function fitSettle() {

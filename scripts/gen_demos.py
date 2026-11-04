@@ -1,44 +1,40 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 """Generate the horn gear braiding machine demo pages.
 
 Writes one static diagram, one track diagram, and an animation per machine,
 then the braid each wired machine lays, in 3D: with no tension, and drawn in
 to a braiding point and tightened — and the same for a braid word and a
 mobidai, which are laid the same way.
-Run from the repository root: ``python gen_demos.py``
+Run from the repository root: ``python scripts/gen_demos.py``
 """
 
 import sys
 
 sys.path.insert(0, "src")
 
-from braidpy.horn_gear import (  # noqa: E402
-    BraidingMachine,
-    animate,
-    compute_tracks,
-    gear_radii,
-    jacquard_lace_ring,  # noqa: E402
-    tube_axials,
-    visualize_machine,
-    visualize_tracks,
-    tighten_yarns,
-    visualize_yarns,
-    yarn_paths,
-)
-from braidpy.take_off import (  # noqa: E402
-    braid_word_trajectories,
-    lay_yarns,
-    mobidai_braid,
-)
-from braidpy.disk_animation import (  # noqa: E402
+from braidpy.ashley_solid_sinnet import strand_colours
+from braidpy.disk_animation import (
     animate_kumihimo,
     animate_mobidai,
     animate_sinnet,
 )
-from braidpy.ashley_solid_sinnet import strand_colours  # noqa: E402
-from braidpy.solid_sinnets_catalog import abok_3042  # noqa: E402
-from braidpy.mobidai_catalog import KONGO_8  # noqa: E402
-from braidpy.take_off import visualize_yarns as visualize_yarns_from  # noqa: E402
-from braidpy.horn_gear.examples import (  # noqa: E402
+from braidpy.horn_gear import (
+    BraidingMachine,
+    animate,
+    compute_tracks,
+    gear_radii,
+    jacquard_lace_ring,
+    tighten_yarns,
+    tube_axials,
+    visualize_machine,
+    visualize_tracks,
+    visualize_yarns,
+    yarn_paths,
+)
+from braidpy.horn_gear.examples import (
     flat_braid_3,
     flat_braid_4,
     flat_braid_9,
@@ -48,6 +44,14 @@ from braidpy.horn_gear.examples import (  # noqa: E402
     tubular_braid_12,
     tubular_braid_16,
 )
+from braidpy.mobidai_catalog import KONGO_8
+from braidpy.solid_sinnets_catalog import abok_3042
+from braidpy.take_off import (
+    braid_word_trajectories,
+    lay_yarns,
+    mobidai_braid,
+)
+from braidpy.take_off import visualize_yarns as visualize_yarns_from
 
 
 def lace_program(n_gears, steps=8, hold=6):

@@ -37,13 +37,15 @@ the machine's own motion, with each crossing the sign of the gear's turn.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 from braidpy.braid import Braid
 from braidpy.ring_program import RingProgram, Swap, _packed
 
-__all__ = ["LaceCard", "lace_braid", "lace_card"]
+Position = tuple[str, int]
+
+__all__ = ["LaceCard", "lace_braid", "lace_card", "punchcard_text", "ring_braid"]
 
 
 @dataclass(frozen=True)
@@ -59,8 +61,8 @@ class LaceCard:
     """
 
     n_gears: int
-    steps: Tuple[Tuple[Tuple[bool, ...], Tuple[bool, ...]], ...]
-    bobbins: Tuple[Optional[int], ...]
+    steps: tuple[tuple[tuple[bool, ...], tuple[bool, ...]], ...]
+    bobbins: tuple[int | None, ...]
     program: RingProgram
 
     def machine(self):
@@ -71,9 +73,16 @@ class LaceCard:
         """
         from braidpy.horn_gear.jacquard import jacquard_lace_ring
 
-        return jacquard_lace_ring(self.n_gears, list(self.steps))
+        return jacquard_lace_ring(
+            self.n_gears, list(self.steps), threaded=self.threaded()
+        )
 
-    def threading(self) -> Dict[int, Tuple[str, int]]:
+    def threaded(self) -> list[int]:
+        """The notches threaded, strand after strand."""
+        where = {k: place for place, k in enumerate(self.bobbins) if k is not None}
+        return [where[k] for k in sorted(where)]
+
+    def threading(self) -> dict[int, tuple[str, int]]:
         """Where each strand's bobbin goes, as the machine numbers its slots.
 
         Returns:
@@ -86,7 +95,7 @@ class LaceCard:
             k: notches[place] for place, k in enumerate(self.bobbins) if k is not None
         }
 
-    def notches(self) -> List[str]:
+    def notches(self) -> list[str]:
         """The notches to put a bobbin in, named by the two gears that cut
         each — "A-B" — as the lace ring names its contacts; worked out
         without building the machine, which needs networkx.
@@ -102,22 +111,36 @@ class LaceCard:
         ]
 
     def text(self) -> str:
-        """The card as it is punched and as the machine's animation draws it
-        (:func:`~braidpy.horn_gear.visualization.animate`): a column per
-        gear, ● punched and ○ not, two lines per step read downwards — the
-        anticlockwise line ↺, then the clockwise line ↻, half a punch to its
-        right, as it is driven half a step later."""
-        names = " ".join(chr(ord("A") + g) for g in range(self.n_gears))
-        width = len(str(len(self.steps) - 1))
-        lines = [f"{'':>{width}}    {names}"]
+        """The card as it is punched: see :func:`punchcard_text`."""
+        return punchcard_text(self.steps)
 
-        def punched(line: Tuple[bool, ...]) -> str:
-            return " ".join("●" if on else "○" for on in line)
 
-        for number, (ccw, cw) in enumerate(self.steps):
-            lines.append(f"{number:>{width}} ↺  {punched(ccw)}")
-            lines.append(f"{'':>{width}} ↻   {punched(cw)}")
-        return "\n".join(lines)
+def punchcard_text(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
+    """A lace machine's card as it is punched and as the machine's animation
+    draws it (:func:`~braidpy.horn_gear.visualization.animate`): a column
+    per gear, ● punched and ○ not, two lines per step read downwards — the
+    anticlockwise line ↺, then the clockwise line ↻, half a punch to its
+    right, as it is driven half a step later.
+
+    Args:
+        steps: Per step, whether each gear turns anticlockwise, then
+            clockwise.
+
+    Returns:
+        The card, the gears named along the top.
+    """
+    n_gears = len(steps[0][0])
+    names = " ".join(chr(ord("A") + g) for g in range(n_gears))
+    width = len(str(len(steps) - 1))
+    lines = [f"{'':>{width}}    {names}"]
+
+    def punched(line: Sequence[bool]) -> str:
+        return " ".join("●" if on else "○" for on in line)
+
+    for number, (ccw, cw) in enumerate(steps):
+        lines.append(f"{number:>{width}} ↺  {punched(ccw)}")
+        lines.append(f"{'':>{width}} ↻   {punched(cw)}")
+    return "\n".join(lines)
 
 
 def _gear_sign(gear: int) -> int:
@@ -125,7 +148,7 @@ def _gear_sign(gear: int) -> int:
     return 1 if gear % 2 == 0 else -1
 
 
-def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
+def lace_card(braid: Braid, n_gears: int | None = None) -> LaceCard:
     """A braid as a lace machine's punchcard; see the module.
 
     Args:
@@ -148,7 +171,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
             f"notch to spare: {n} strands cannot go on {gears}."
         )
     offset = 0
-    swaps: List[Swap] = []
+    swaps: list[Swap] = []
 
     def shift(to: int) -> None:
         """Every strand one notch along, into the spare one: no crossing."""
@@ -172,7 +195,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     if offset:
         shift(0)
 
-    start: List[Optional[int]] = [None] * gears
+    start: list[int | None] = [None] * gears
     for k in range(n):
         start[k] = k
     program = RingProgram(gears, tuple(start), _packed(gears, swaps))
@@ -187,12 +210,29 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
 
 def lace_braid(card: LaceCard) -> Braid:
     """The braid a punchcard makes on the lace machine, read off the
-    machine itself: the card run, each bobbin found in its notch after each
-    step, and the two bobbins of each gear that turned swapped — with the
-    sign of that gear's turn.
+    machine itself (:func:`ring_braid`), threaded as the card says.
 
     Args:
         card: The card, and its threading.
+
+    Returns:
+        The braid.
+    """
+    return ring_braid(card.machine(), card.threading())
+
+
+def ring_braid(machine, threading: Mapping[int, Position] | None = None) -> Braid:
+    """The braid one pass of a lace machine's card makes, read off the
+    machine itself: the card run, each bobbin found in its notch after each
+    step, and the two bobbins of each gear that turned swapped — with the
+    sign of that gear's turn, + anticlockwise.
+
+    Args:
+        machine: A lace ring
+            (:func:`~braidpy.horn_gear.jacquard.jacquard_lace_ring`).
+        threading: Each bobbin's place at the start, as (gear, slot); the
+            machine's own threading if None.  Bobbins are the braid's
+            strands, numbered in the order they are given.
 
     Returns:
         The braid.
@@ -209,21 +249,23 @@ def lace_braid(card: LaceCard) -> Braid:
     )
     from braidpy.horn_gear.simulation import simulate
 
-    machine = card.machine()
-    gears = card.n_gears
-    threading = card.threading()
+    threading = dict(machine.default_carriers() if threading is None else threading)
+    strand = {k: number for number, k in enumerate(threading)}
+    names = list(machine.gears)
+    gears = len(names)
+    sign = [machine.gears[name].direction for name in names]
     layout = compute_layout(machine)
     offsets = slot_offsets(machine, layout)
-    riding = {name: carrier_radius(machine, layout, name) for name in machine.gears}
+    riding = {name: carrier_radius(machine, layout, name) for name in names}
     notch_xy = [
         carrier_xy(machine, layout, offsets, riding, place, 0)
         for place in _notches(machine)
     ]
     # A step of the card is two of the machine's: one per line.
-    history = simulate(machine, 2 * len(card.steps), threading)
+    history = simulate(machine, 2 * len(machine.program), threading)
 
-    def held(state) -> List[Optional[int]]:
-        here: List[Optional[int]] = [None] * gears
+    def held(state) -> list[int | None]:
+        here: list[int | None] = [None] * gears
         for carrier in state.carriers:
             x, y = carrier_xy(
                 machine, layout, offsets, riding, carrier.position, state.time
@@ -232,29 +274,34 @@ def lace_braid(card: LaceCard) -> Braid:
                 range(gears),
                 key=lambda k: math.hypot(notch_xy[k][0] - x, notch_xy[k][1] - y),
             )
-            here[notch] = carrier.carrier_id
+            here[notch] = strand[carrier.carrier_id]
         return here
 
     rows = []
     before = held(history[0])
-    for number, (ccw, cw) in enumerate(card.steps):
-        after = held(history[2 * (number + 1)])
-        turned = [g for g in range(gears) if ccw[g] or cw[g]]
-        row = tuple(Swap((g - 1) % gears, _gear_sign(g)) for g in turned)
+    for number, step in enumerate(machine.program):
+        # The two lines are driven one after the other: a gear of the second
+        # may take a bobbin the first has just brought.  Bobbins are found
+        # only after the whole step, where they sit exactly in their notches.
         expected = list(before)
-        for g in turned:
-            left, right = (g - 1) % gears, g
-            expected[left], expected[right] = expected[right], expected[left]
+        for line in step:
+            turned = [g for g in range(gears) if line[g]]
+            if not turned:
+                continue
+            rows.append(tuple(Swap((g - 1) % gears, sign[g]) for g in turned))
+            for g in turned:
+                left, right = (g - 1) % gears, g
+                expected[left], expected[right] = expected[right], expected[left]
+        after = held(history[2 * (number + 1)])
         if expected != after:
             raise RuntimeError(
                 f"Step {number}: the bobbins are in {after}, not {expected}."
             )
-        rows.append(row)
         before = after
     return RingProgram(gears, tuple(held(history[0])), tuple(rows)).braid()
 
 
-def _notches(machine) -> List[Tuple[str, int]]:
+def _notches(machine) -> list[tuple[str, int]]:
     from braidpy.horn_gear.jacquard import notch_positions
 
     notches = notch_positions(machine)

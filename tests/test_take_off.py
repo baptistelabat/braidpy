@@ -345,7 +345,7 @@ def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
     assert where == start  # round the whole disk, back where it began
     # The second cycle opens with the book's next two moves, (32, 14) and
     # (16, 30): the strands that started there, sent fourteen slots round.
-    second = [list(step.items())[0] for step in steps[4:6]]
+    second = [next(iter(step.items())) for step in steps[4:6]]
     made = [(start[k], (start[k] - 1 + d) % 32 + 1) for k, d in second]
     assert made == [(32, 14), (16, 30)]
     # Said outright, no drift sends the second cycle's moves to empty slots.

@@ -161,8 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Generated horn gear demo pages (see gen_demos.py)
+# Generated demo pages (see scripts/gen_demos.py, scripts/gen_braid_geometry_demo.py)
 demo_*.html
+braid_*.html
 
 # Written by the test suite
 test.svg
@@ -173,3 +174,9 @@ tests/abok3054*.json
 
 # generated demo figures
 demo_*.png
+
+# pytest-testmon's record of which tests touch which code (make test-changed)
+.testmondata*
+
+# Braid Studio's braids settled with the site, kept between builds (web/build.py)
+web/.settled/

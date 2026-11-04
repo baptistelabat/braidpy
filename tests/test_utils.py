@@ -1,12 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import pytest
 
 from braidpy.utils import (
-    int_to_superscript,
-    int_to_subscript,
     PositiveFloat,
     PositiveInt,
     StrictlyPositiveFloat,
     StrictlyPositiveInt,
+    int_to_subscript,
+    int_to_superscript,
 )
 
 

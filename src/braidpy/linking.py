@@ -36,7 +36,7 @@ is measured the same way.
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -129,10 +129,10 @@ def _rotate(point: np.ndarray, angle: float) -> np.ndarray:
 def close_yarns(
     yarns: Sequence[np.ndarray],
     turn: float = 0.0,
-    pairing: Optional[Sequence[int]] = None,
+    pairing: Sequence[int] | None = None,
     bottom_turn: float = 0.0,
     reach: float = 40.0,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     """A braid's yarns closed up into its loops, round the outside.
 
     Each yarn's top end is turned back by ``turn`` — the turn of the plate
@@ -183,7 +183,7 @@ def close_yarns(
         raise ValueError("The yarns' ends do not pair up.")
 
     steps = 30
-    closed: List[np.ndarray] = []
+    closed: list[np.ndarray] = []
     for a, yarn in enumerate(yarns):
         top = yarn[-1]
         # The top end turned back, rigidly, all ends alike, just above the
@@ -214,7 +214,7 @@ def close_yarns(
 
     # Loops: follow each yarn into the yarn whose bottom end it joins.
     seen = [False] * n
-    loops: List[np.ndarray] = []
+    loops: list[np.ndarray] = []
     for first in range(n):
         if seen[first]:
             continue
@@ -231,9 +231,9 @@ def close_yarns(
 def yarn_linking(
     yarns: Sequence[np.ndarray],
     turn: float = 0.0,
-    pairing: Optional[Sequence[int]] = None,
+    pairing: Sequence[int] | None = None,
     bottom_turn: float = 0.0,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """The linking numbers of yarns' closure, from their geometry.
 
     Args:
@@ -248,7 +248,7 @@ def yarn_linking(
         every pair of loops, ``(0, 1), (0, 2), … (1, 2), …``, not rounded.
     """
     loops = close_yarns(yarns, turn, pairing, bottom_turn)
-    links: List[float] = [
+    links: list[float] = [
         gauss_linking_number(loops[i], loops[j])
         for i in range(len(loops))
         for j in range(i + 1, len(loops))

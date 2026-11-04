@@ -9,7 +9,7 @@ import time
 import pytest
 
 from braidpy import Braid
-from braidpy.similarity import distance, fingerprint, similar
+from braidpy.similarity import distance, fingerprint, same_fingerprint, similar
 
 PLAIT = [1, -2]
 
@@ -40,6 +40,37 @@ def test_the_plait_is_not_strands_hanging_straight():
     assert plait.linking == straight.linking
     assert plait.alexander != straight.alexander
     assert distance(plait, straight) > 0.5
+
+
+@pytest.mark.parametrize(
+    "first, second, n_strands",
+    [
+        # Edo yatsu, on a kumihimo disk, and ABOK #3070, its repeating units.
+        (
+            [7, 6, 5, 4, 3, 2, -3, -5, -7, -1, -2, -3, -4, -5, -6, 5, 3, 1],
+            [6, 5, -3, -4, -5, -6, -7, 5, 4, 3, 2, 1, -3, -4],
+            8,
+        ),
+        # The flat braid of 6 and ABOK #3021.
+        (
+            [-4, -3, -2, 1, 2, 3, 2, 3, 4, -5, -4, -3],
+            [5, 3, -2, -3, -4, -5, 4, 3, 2, 1, -2, -4],
+            6,
+        ),
+    ],
+)
+def test_braids_whose_alexander_polynomial_vanishes_are_still_told_apart(
+    first, second, n_strands
+):
+    """They agree on their loops, writhe and linking numbers, and the
+    Alexander polynomial of both vanishes: the Burau polynomial tells them
+    apart."""
+    a = fingerprint(Braid(first, n_strands))
+    b = fingerprint(Braid(second, n_strands))
+    assert (a.loops, a.writhe, a.linking) == (b.loops, b.writhe, b.linking)
+    assert a.alexander == b.alexander == (None, None)
+    assert not same_fingerprint(a, b)
+    assert distance(a, b) > 0.05
 
 
 def test_a_mirror_image_is_told_apart_by_its_writhe():

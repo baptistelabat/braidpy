@@ -3,13 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """A braid as a sinnet on Ashley's stand, found by searching:
-braidpy.bridges.ashley."""
+braidpy.making.ashley."""
 
 import pytest
 
 from braidpy import Braid
 from braidpy.braid_catalog import word_examples
-from braidpy.bridges.ashley import ashley_moves, ashley_sinnet, sinnet_spec
+from braidpy.making.ashley import ashley_moves, ashley_sinnet, sinnet_spec
 from braidpy.ring_program import same_braid
 from braidpy.solid_sinnets_catalog import abok_2965, abok_2999
 

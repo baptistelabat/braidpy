@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 // The rope tests' cases, run by tests/test_rope.py: each settles yarns with
 // web/rope.js (or makes them with web/form.js) and prints the yarns and how
 // it went, as JSON.  Only the physics is here: braidpy, in Python, lays a

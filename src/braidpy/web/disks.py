@@ -11,7 +11,7 @@ marudai."""
 from __future__ import annotations
 
 import re
-from typing import Callable, Dict, Hashable, List, Sequence, Tuple
+from collections.abc import Callable, Hashable, Sequence
 
 import numpy as np
 
@@ -141,9 +141,8 @@ def _from_kumihimo(spec: Spec) -> Result:
 
 
 def _from_mobidai(spec: Spec) -> Result:
-    from braidpy.take_off import mobidai_steps, mobidai_trajectories
-
     from braidpy.mobidai_catalog import CataloguedMobidai
+    from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     mobidais = _mobidais()
     name = Mobidai.name.read(spec)
@@ -205,10 +204,8 @@ def _from_mobidai(spec: Spec) -> Result:
 
 
 def _from_sinnet(spec: Spec) -> Result:
-    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.ashley_solid_sinnet import AshleySolidSinnet, strand_colours
     from braidpy.take_off import disk_trajectories
-
-    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 
     sinnets = _sinnets()
     name = Sinnet.name.read(spec)
@@ -316,7 +313,7 @@ def _kumihimo_entry() -> Source:
 
 
 def _mobidai_entry() -> Source:
-    entries: List[Entry] = [
+    entries: list[Entry] = [
         {
             "name": key,
             "title": catalogued.title,
@@ -338,7 +335,7 @@ def _mobidai_entry() -> Source:
 
 
 def _sinnet_entry() -> Source:
-    entries: List[Entry] = [
+    entries: list[Entry] = [
         {
             "name": name,
             "title": catalogued.title,
@@ -359,7 +356,7 @@ def _sinnet_entry() -> Source:
 
 
 # Each source: its catalogue entry, and what builds it.
-SOURCES: Dict[str, Tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
+SOURCES: dict[str, tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "kumihimo": (_kumihimo_entry, _from_kumihimo),
     "mobidai": (_mobidai_entry, _from_mobidai),
     "sinnet": (_sinnet_entry, _from_sinnet),

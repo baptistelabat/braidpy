@@ -11,9 +11,17 @@ Repository: https://github.com/baptistelabat/braidpy
 License: Mozilla Public License 2.0
 """
 
+from __future__ import annotations
+
 import importlib
+from collections.abc import Sequence
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    # typing.Self is 3.11's; braidpy does not depend on typing_extensions,
+    # nor does a browser load it (Pyodide).
+    from typing_extensions import Self
 
 # Colours to tell strands apart, one after the other: the carriers of a
 # braiding machine's animation, and the yarns drawn from them.
@@ -71,7 +79,7 @@ def colorize_by_index(text: str, index: int) -> str:
     return f"{color}{text}{RESET}"
 
 
-def colorize(item: Union[str, int], index: Optional[int] = None) -> str:
+def colorize(item: str | int, index: int | None = None) -> str:
     """Colorize item based on index (or its value if it's an int).
 
     Args:
@@ -147,32 +155,37 @@ if TYPE_CHECKING:
 else:
 
     class PositiveFloat(float):
-        def __new__(cls, value: Any) -> "PositiveFloat":
+        def __new__(cls, value: Any) -> Self:
             val = float(value)
             if val < 0:
                 raise ValueError(f"Value must be >= 0, got {val}")
             return super().__new__(cls, val)
 
     class StrictlyPositiveFloat(float):
-        def __new__(cls, value: Any) -> "StrictlyPositiveFloat":
+        def __new__(cls, value: Any) -> Self:
             val = float(value)
             if val <= 0:
                 raise ValueError(f"Value must be > 0, got {val}")
             return super().__new__(cls, val)
 
     class PositiveInt(int):
-        def __new__(cls, value: Any) -> "PositiveInt":
+        def __new__(cls, value: Any) -> Self:
             val = int(value)
             if val < 0:
                 raise ValueError(f"Value must be >= 0, got {val}")
             return super().__new__(cls, val)
 
     class StrictlyPositiveInt(int):
-        def __new__(cls, value: Any) -> "StrictlyPositiveInt":
+        def __new__(cls, value: Any) -> Self:
             val = int(value)
             if val <= 0:
                 raise ValueError(f"Value must be > 0, got {val}")
             return super().__new__(cls, val)
+
+
+# What braidpy draws with, from its viz extra: not installed with braidpy
+# alone.
+_DRAWING = {"matplotlib", "mpl_toolkits", "plotly", "imageio"}
 
 
 class _LazyModule(ModuleType):
@@ -181,13 +194,22 @@ class _LazyModule(ModuleType):
     def __init__(self, name: str) -> None:
         super().__init__(name)
         self._lazy_name = name
-        self._lazy_module: Optional[ModuleType] = None
+        self._lazy_module: ModuleType | None = None
 
     def __getattr__(self, attr: str) -> Any:
         if attr.startswith("_lazy_"):
             raise AttributeError(attr)
         if self._lazy_module is None:
-            self._lazy_module = importlib.import_module(self._lazy_name)
+            try:
+                self._lazy_module = importlib.import_module(self._lazy_name)
+            except ModuleNotFoundError as missing:
+                if (missing.name or "").split(".")[0] not in _DRAWING:
+                    raise
+                raise ModuleNotFoundError(
+                    f"{missing.name} is needed to draw braids, and is not "
+                    "installed: pip install 'braidpy[viz]'",
+                    name=missing.name,
+                ) from missing
         return getattr(self._lazy_module, attr)
 
 
@@ -214,8 +236,8 @@ class FunctionalException(Exception):
 
 
 def play_controls(
-    frame_duration_ms: float, marks: Sequence[Tuple[str, str]]
-) -> Dict[str, List[Dict[str, Any]]]:
+    frame_duration_ms: float, marks: Sequence[tuple[str, str]]
+) -> dict[str, list[dict[str, Any]]]:
     """Play and pause buttons, and a slider, for a Plotly animation.
 
     Args:

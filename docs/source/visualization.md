@@ -1,13 +1,12 @@
 # Visualizing braids
 
-The followign code presents the different visualizations integrated in braidpy:
+The following code presents the different visualizations integrated in
+braidpy. They need its `viz` extra: `pip install "braidpy[viz]"`.
 
 ```python
 from braidpy import Braid
 from braidpy.parametric_braid import ParametricBraid
-import matplotlib
 
-matplotlib.use("QtAgg")
 b = Braid((1, -2), n_strands=3)
 
 # Draw in console
@@ -17,16 +16,16 @@ b.draw()
 b.plot()
 
 # 3D braid plot
-strands = b.to_parametric_strands(b ** 12)
+strands = (b**12).to_parametric_strands()
 p = ParametricBraid(strands)
 p.plot()
 ```
 ## Draw colored braid diagram in terminal
-The tirst basic visualization enables to draw a braid diagram directly in the console, with some colors !
+The first basic visualization enables to draw a braid diagram directly in the console, with some colors !
 
 ![colored ASCII braid example](draw_colored_ASCII_braid.png)
 
-The direction of the arrow indicates the braid of the corresponding color is moving above its neighboor.
+The direction of the arrow indicates the braid of the corresponding color is moving above its neighbour.
 
 ## Plot colored braid diagram
 The second type of visualization enables to plot a 2D braid diagram using matplotlib:

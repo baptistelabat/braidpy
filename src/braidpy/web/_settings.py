@@ -9,7 +9,7 @@ same defaults (``shown``): one place for each, kept in step."""
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import ClassVar
 
 from braidpy.web._spec import Colours, Count, Number, Text
 from braidpy.web._types import Default
@@ -51,7 +51,7 @@ class Word:
     by_physics = ("physics", "crossing")
     # What the page starts from; the words it offers are
     # braidpy.braid_catalog.word_examples().
-    starts: Dict[str, Default] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
+    starts: ClassVar[dict[str, Default]] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
 
 
 # ------------------------------------------------------------- disk braids
@@ -109,3 +109,17 @@ class Machine:
     of_gear_radius = 0.2
     core_colour = "#8a857c"
     shown = (name, cores, cycles)
+
+
+class Lace:
+    """A Jacquard lace machine, its card run so many passes; threaded as it
+    is, unless ``carriers`` says otherwise.  Yarns are a fifth of a gear
+    radius, as on a horn gear machine (:class:`Machine`)."""
+
+    name = Text("name", "lace_dutch")
+    cycles = Count("cycles", 6, low=1, high=24)
+    # Your own card: the gears round the ring, an even number, and per step
+    # the gears turning anticlockwise, then clockwise, as 0 and 1.
+    n_gears = Count("n_gears", 6, low=4, high=32)
+    card = Text("card", "")
+    shown = (name, cycles)

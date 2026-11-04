@@ -15,6 +15,7 @@
 //   workers.js   braidpy and the settling, each in a worker of its own
 //   defaults.js  settings left empty and choices not made: the braid's own
 //   scene.js     the 3D view: the braid, as laid, as settled, as made
+//   frames.js    a marudai's moments, kept short for Grow and put back
 //   insets.js    the cross-section and the view from above
 //   info.js      the card: what is known of the braid
 //   controls.js  the view's controls, sharing and saving

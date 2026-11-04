@@ -16,7 +16,7 @@ import pytest
 
 matplotlib.use("Agg")
 
-from braidpy.kumihimo import Kumihimo  # noqa: E402
+from braidpy.kumihimo import Kumihimo
 
 
 def permutation_of(word, n_strands):

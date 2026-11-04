@@ -22,7 +22,6 @@ fails at and the carriers that meet are printed as well.
 """
 
 import random
-from typing import Dict, List, Optional, Tuple
 
 from braidpy.horn_gear.layout import compute_layout
 from braidpy.horn_gear.simulation import CollisionError, simulate
@@ -46,7 +45,7 @@ from braidpy.horn_gear.visualization import animate, visualize_machine
 #:
 #: Bands: G0-G4, G4-G11, G11-G15.  The two 6-slot gears belong to the bands on
 #: both sides of them.  Set to None to search for the fullest loading instead.
-LOADING: Optional[List[Tuple[str, int]]] = None
+LOADING: list[tuple[str, int]] | None = None
 
 #: Steps of the machine to animate, and frames drawn per step.
 N_STEPS = 12
@@ -56,7 +55,7 @@ N_SUBSTEPS = 3
 CHECK_STEPS = 150
 
 
-def all_positions() -> List[Tuple[str, int]]:
+def all_positions() -> list[tuple[str, int]]:
     """Every (gear, slot) on the machine."""
     return [
         (f"G{i}", slot)
@@ -65,7 +64,7 @@ def all_positions() -> List[Tuple[str, int]]:
     ]
 
 
-def runs(machine, places: List[Tuple[str, int]], steps: int = CHECK_STEPS) -> bool:
+def runs(machine, places: list[tuple[str, int]], steps: int = CHECK_STEPS) -> bool:
     """Whether these carriers can run without meeting."""
     try:
         simulate(machine, steps, dict(enumerate(places)))
@@ -74,7 +73,7 @@ def runs(machine, places: List[Tuple[str, int]], steps: int = CHECK_STEPS) -> bo
     return True
 
 
-def search(machine, trials: int = 25) -> List[Tuple[str, int]]:
+def search(machine, trials: int = 25) -> list[tuple[str, int]]:
     """The fullest loading a greedy search finds.
 
     Args:
@@ -84,12 +83,12 @@ def search(machine, trials: int = 25) -> List[Tuple[str, int]]:
     Returns:
         The carrier positions found.
     """
-    best: List[Tuple[str, int]] = []
+    best: list[tuple[str, int]] = []
     for seed in range(trials):
         rng = random.Random(seed)
         order = all_positions()
         rng.shuffle(order)
-        placed: List[Tuple[str, int]] = []
+        placed: list[tuple[str, int]] = []
         for place in order:
             if runs(machine, placed + [place]):
                 placed.append(place)
@@ -98,7 +97,7 @@ def search(machine, trials: int = 25) -> List[Tuple[str, int]]:
     return best
 
 
-def band_of(gear: str) -> Optional[int]:
+def band_of(gear: str) -> int | None:
     """Which band a gear belongs to; the first, for the two shared ones."""
     index = int(gear[1:])
     for band, (first, last) in enumerate(MULTIBAND_10_15_10_BANDS):
@@ -107,7 +106,7 @@ def band_of(gear: str) -> Optional[int]:
     return None
 
 
-def report(machine, places: List[Tuple[str, int]]) -> int:
+def report(machine, places: list[tuple[str, int]]) -> int:
     """Say what the loading is, and how far it gets.
 
     Args:
@@ -118,7 +117,7 @@ def report(machine, places: List[Tuple[str, int]]) -> int:
         How many steps can be animated -- all of them if the loading runs, or
         the steps before it goes wrong if it does not.
     """
-    per_band: Dict[int, int] = {0: 0, 1: 0, 2: 0}
+    per_band: dict[int, int] = {0: 0, 1: 0, 2: 0}
     for gear, _ in places:
         per_band[band_of(gear)] += 1
     print(f"{len(places)} carriers: {per_band[0]} / {per_band[1]} / {per_band[2]}")

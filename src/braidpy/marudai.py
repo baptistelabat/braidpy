@@ -8,8 +8,8 @@ over the others and drawn tight, the braid turning to balance.
 ``web/marudai.js``, which Braid Studio runs in the browser, in Python: the
 same algorithm, step for step, in the same order
 (``tests/test_marudai_python.py`` runs both and compares them).  The method
-is braid3dmin's, a kumihimo simulation in three.js, as
-``docs/source/braid3D.md`` describes it; the code is this
+is braid3dmin's, a kumihimo simulation in three.js;
+``docs/source/marudai.md`` describes it as done here.  The code is this
 project's own.  In short:
 
 - Each yarn is a chain of beads a unit apart, two units thick.  A link pulls
@@ -45,7 +45,8 @@ checking it, not making long braids.
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 __all__ = ["Machine", "begin", "make"]
 
@@ -55,6 +56,7 @@ WEIGHT = 2  # the carriers stand REACH / WEIGHT above the braid's tip
 PULL = 1.2  # the bobbins' pull
 STIFF = 10  # links and contacts
 KEEP = 40  # beads behind what moved left free
+RING = 30  # the most yarns the method was made for: tied round one ring
 CHUNK = 20000
 
 # Spatial grid: cells of CELL units, so the 27 round a point hold all beads
@@ -98,7 +100,7 @@ class _Thread:
     __slots__ = ("beads", "dir", "tx", "ty", "tz")
 
     def __init__(self) -> None:
-        self.beads: List[int] = []
+        self.beads: list[int] = []
         self.dir = 0.0
         self.tx = self.ty = self.tz = 0.0
 
@@ -119,24 +121,24 @@ class Machine:
         self.turning = turning
         self.twisted = False
         # Beads, by number.
-        self.X: List[float] = []
-        self.Y: List[float] = []
-        self.Z: List[float] = []
-        self.LX: List[float] = []
-        self.LY: List[float] = []
-        self.LZ: List[float] = []
-        self.stamped: List[int] = []
-        self.fixed: List[int] = []
-        self.queued: List[int] = []
-        self.owner: List[int] = []
-        self.place: List[int] = []
-        self.cell_of: List[int] = []
-        self.cell_next: List[int] = []
-        self.cell_prev: List[int] = []
-        self.free: List[int] = []
+        self.X: list[float] = []
+        self.Y: list[float] = []
+        self.Z: list[float] = []
+        self.LX: list[float] = []
+        self.LY: list[float] = []
+        self.LZ: list[float] = []
+        self.stamped: list[int] = []
+        self.fixed: list[int] = []
+        self.queued: list[int] = []
+        self.owner: list[int] = []
+        self.place: list[int] = []
+        self.cell_of: list[int] = []
+        self.cell_next: list[int] = []
+        self.cell_prev: list[int] = []
+        self.free: list[int] = []
         self.head = [-1] * (NXZ * NXZ * NY)
         self.threads = [_Thread() for _ in range(n_threads)]
-        self.queue: List[int] = []
+        self.queue: list[int] = []
         self.hm_h = [-2.0] * (HW * HW)
         self.hm_t = [-1] * (HW * HW)
         self.highest = 0.0
@@ -144,9 +146,9 @@ class Machine:
         self.strength = 0.1
         # The same shuffles every time: the same braid every time.
         self.seed = 12345.0
-        self.last_moved: List[int] = []
+        self.last_moved: list[int] = []
         self.updates = 0
-        self.watcher: Optional[Callable[[str, int], None]] = None
+        self.watcher: Callable[[str, int], None] | None = None
         self.quiet = False
 
     # ------------------------------------------------------------ helpers
@@ -202,9 +204,9 @@ class Machine:
         if self.cell_of[b] >= 0 or not self.fixed[b]:
             self._link(b)
 
-    def _near(self, x: float, y: float, z: float) -> List[int]:
+    def _near(self, x: float, y: float, z: float) -> list[int]:
         """Every bead within CELL of (x, y, z), and some further."""
-        around: List[int] = []
+        around: list[int] = []
         i0, k0, j0 = _cx(x), _cx(z), math.floor(y / CELL)
         i1, k1 = min(NXZ - 1, i0 + 1), min(NXZ - 1, k0 + 1)
         head, nxt = self.head, self.cell_next
@@ -296,8 +298,7 @@ class Machine:
                 continue
             dx, dy, dz = X[o] - x, Y[o] - y, Z[o] - z
             d = dx * dx + dy * dy + dz * dz
-            if d < best:
-                best = d
+            best = min(best, d)
         return best
 
     # ------------------------------------------------------------ laying
@@ -481,7 +482,7 @@ class Machine:
                     self._enqueue(self._add_bead(t, ox, oy, oz))
 
     # ------------------------------------------------------------ relaxing
-    def _shuffle(self, items: List[int]) -> None:
+    def _shuffle(self, items: list[int]) -> None:
         """JavaScript's shuffle, its arithmetic in floating point as there."""
         for i in range(len(items) - 1, 0, -1):
             self.seed = math.fmod(self.seed * 1103515245 + 12345, 2147483648.0)
@@ -642,7 +643,13 @@ class Machine:
             if len(beads) < 20:
                 lean.append(0.0)
                 continue
-            e, b = beads[-1], beads[-2]
+            # Its last link's pull, as the method has it; with more yarns than
+            # it was made for, its pull along its way from the braid's tip to
+            # its end: the last link, just laid, may point any way, and the
+            # braid, turned on so many of them, swung back and forth further
+            # each time.
+            back_by = TAIL if self.n > RING else 1
+            e, b = beads[-1], beads[max(0, len(beads) - 1 - back_by)]
             cxv, czv = ax - X[e], az - Z[e]
             out = math.atan2(czv, cxv)
             back = math.atan2(Z[b] - Z[e], X[b] - X[e])
@@ -734,21 +741,32 @@ class Machine:
 
     # ------------------------------------------------------------ start
     def start(self, angles: Sequence[float]) -> None:
+        """The yarns tied together where the braid begins: round a ring, as
+        the method has it, for as many as it was made for; more, and the ring
+        would be so wide the yarns rose from it as a tube, never drawn in to
+        a braid.  So then rings of at most ``RING``, one under the other, the
+        yarns taken in turn round the disk."""
+        rings = math.ceil(self.n / RING)
+        each = math.ceil(self.n / rings)
+        ring = [0] * self.n
+        for k, t in enumerate(sorted(range(self.n), key=lambda t: _wrap(angles[t]))):
+            ring[t] = k % rings
         for t, a in enumerate(angles):
             # As the method has it, a third of a unit per yarn; but with six
             # yarns or fewer, their start beads would touch or overlap: far
             # enough apart, then, for them to clear each other.
-            touching = 1 / math.sin(math.pi / max(2, self.n))
-            r = self.n / 3 if self.n / 3 > touching else 1.1 * touching
-            self.fixed[self._add_bead(t, math.cos(a) * r, 0, math.sin(a) * r)] = 1
-            self.fixed[self._add_bead(t, math.cos(a) * r, 1, math.sin(a) * r)] = 1
+            touching = 1 / math.sin(math.pi / max(2, each))
+            r = each / 3 if each / 3 > touching else 1.1 * touching
+            y = -2 * ring[t]
+            self.fixed[self._add_bead(t, math.cos(a) * r, y, math.sin(a) * r)] = 1
+            self.fixed[self._add_bead(t, math.cos(a) * r, y + 1, math.sin(a) * r)] = 1
             self.lay(t, a)
 
-    def positions(self, t: int) -> List[List[float]]:
+    def positions(self, t: int) -> list[list[float]]:
         return [[self.X[b], self.Y[b], self.Z[b]] for b in self.threads[t].beads]
 
 
-def make(job: Dict[str, Any]) -> Dict[str, Any]:
+def make(job: dict[str, Any]) -> dict[str, Any]:
     """A disk braid made move by move: ``web/marudai.js``'s ``make``.
 
     Args:
@@ -769,7 +787,7 @@ def make(job: Dict[str, Any]) -> Dict[str, Any]:
     return making["result"]()
 
 
-def begin(job: Dict[str, Any]) -> Dict[str, Any]:
+def begin(job: dict[str, Any]) -> dict[str, Any]:
     """A braid being made: the marudai set up, its moves made one by one
     with ``step(moves, number)``, the braid as it is so far with
     ``result()``; and the machine itself, as ``machine``."""
@@ -831,10 +849,10 @@ def begin(job: Dict[str, Any]) -> Dict[str, Any]:
                 machine.lay(a, machine.threads[a].dir + sweep / parts)
         machine.relax()
 
-    def result() -> Dict[str, Any]:
+    def result() -> dict[str, Any]:
         tip = machine.tip / 2
 
-        def ours(p: List[float]) -> List[float]:
+        def ours(p: list[float]) -> list[float]:
             return [p[0] / 2, -p[2] / 2, p[1] / 2]
 
         whole = [[ours(p) for p in machine.positions(t)] for t in range(n)]
@@ -846,7 +864,7 @@ def begin(job: Dict[str, Any]) -> Dict[str, Any]:
                     start = i
             tails.append([c for p in y[start:] for c in p])
 
-        def mean(values: List[float]) -> float:
+        def mean(values: list[float]) -> float:
             kept = [v for v in values if math.isfinite(v)]
             return sum(kept) / len(kept) if kept else math.nan
 
@@ -857,9 +875,9 @@ def begin(job: Dict[str, Any]) -> Dict[str, Any]:
             "whole": [[c for p in y for c in p] for y in whole],
             "tails": tails,
             "rim": {
-                "radius": radius if radius == radius and radius else RIM / 2,
+                "radius": radius if not math.isnan(radius) and radius else RIM / 2,
                 "height": height
-                if height == height and height
+                if not math.isnan(height) and height
                 else tip + REACH / WEIGHT / 2,
             },
             "tip": tip,

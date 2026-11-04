@@ -24,14 +24,14 @@ bring it home.  :func:`closing_repeats` says how many, from the strands'
 :func:`cycles`.
 """
 
+from collections.abc import Sequence
 from functools import reduce
 from math import lcm
-from typing import List, Optional, Sequence
 
 from braidpy.braid import Braid
 
 
-def permutation(braid: Braid) -> List[int]:
+def permutation(braid: Braid) -> list[int]:
     """Where each strand ends up, as a slot per strand.
 
     Args:
@@ -57,7 +57,7 @@ def is_pure(braid: Braid) -> bool:
     return permutation(braid) == list(range(n_strands))
 
 
-def cycles(braid: Braid) -> List[List[int]]:
+def cycles(braid: Braid) -> list[list[int]]:
     """The strands' cycles: the slots a strand passes through, braid after
     braid, until it is back where it started.
 
@@ -70,11 +70,11 @@ def cycles(braid: Braid) -> List[List[int]]:
     """
     slot = permutation(braid)
     seen: set = set()
-    found: List[List[int]] = []
+    found: list[list[int]] = []
     for start in range(len(slot)):
         if start in seen:
             continue
-        cycle: List[int] = []
+        cycle: list[int] = []
         here = start
         while here not in seen:
             seen.add(here)
@@ -96,7 +96,7 @@ def components(braid: Braid) -> int:
     return len(cycles(braid))
 
 
-def closing_repeats(braid: Braid, limit: Optional[int] = 1000) -> Optional[int]:
+def closing_repeats(braid: Braid, limit: int | None = 1000) -> int | None:
     """How many times a braid must be repeated before it is pure.
 
     Repeating a braid repeats its permutation, so a strand is home after a
@@ -117,7 +117,7 @@ def closing_repeats(braid: Braid, limit: Optional[int] = 1000) -> Optional[int]:
     return repeats if limit is None or repeats <= limit else None
 
 
-def repeating_unit(word: Sequence[int]) -> List[int]:
+def repeating_unit(word: Sequence[int]) -> list[int]:
     """The shortest word that, repeated, makes ``word``.
 
     Args:

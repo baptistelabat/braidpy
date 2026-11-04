@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 from sympy import symbols
 
 t = symbols("t")
@@ -26,9 +30,9 @@ t = symbols("t")
 #         assert neg == [-1]
 
 
-import pytest  # noqa: E402
+import pytest
 
-from braidpy import Braid, alexander_polynomial  # noqa: E402
+from braidpy import Braid, alexander_polynomial
 
 
 @pytest.mark.parametrize(

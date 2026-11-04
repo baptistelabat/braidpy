@@ -1,8 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 from braidpy.ashley_solid_sinnet import (
-    init_spaces_from_counts,
-    flatten_spaces,
     ashley_single_move_to_artin,
     ashley_to_artin_exact,
+    flatten_spaces,
+    init_spaces_from_counts,
 )
 
 
@@ -94,12 +98,12 @@ def test_ashley_to_artin_exact():
 
 # ---------------------------------------------------------------- on a disk
 
-import numpy as np  # noqa: E402
-import pytest  # noqa: E402
+import numpy as np
+import pytest
 
-from braidpy import Braid  # noqa: E402
-from braidpy.ashley_solid_sinnet import AshleySolidSinnet, sinnet_disk  # noqa: E402
-from braidpy.take_off import (  # noqa: E402
+from braidpy import Braid
+from braidpy.ashley_solid_sinnet import AshleySolidSinnet, sinnet_disk
+from braidpy.take_off import (
     disk_annular_word,
     disk_crossing_steps,
     mobidai_steps,
@@ -141,7 +145,7 @@ def test_a_move_takes_the_earliest_strand_over_all_it_passes():
     from braidpy.solid_sinnets_catalog import abok_3042
 
     disk = sinnet_disk(abok_3042)
-    order, crossings, _ = disk_crossing_steps(disk.start, disk.steps, disk.n_slots)
+    _order, crossings, _ = disk_crossing_steps(disk.start, disk.steps, disk.n_slots)
     # 1 → 5: space 1's right-hand strand, 2, anticlockwise over the four
     # strands of spaces 2, 3 and 4, into the near end of space 5.
     assert disk.labels[0] == "1 → 5"
@@ -189,7 +193,16 @@ def test_the_braid_permutes_the_strands_as_the_disk_does(name):
     assert _cycles(moved) == _cycles([p - 1 for p in sinnet.braid().perm()])
 
 
-@pytest.mark.parametrize("name", sorted(_catalogue()))
+# Sinnets of 24 strands or more take seconds each: run daily.
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(name, marks=pytest.mark.slow)
+        if _catalogue()[name].n_strands >= 24
+        else name
+        for name in sorted(_catalogue())
+    ],
+)
 def test_the_braid_is_the_old_word_read_from_the_other_side(name):
     """Two ways of reading a sinnet, written apart, make the same braid.
 

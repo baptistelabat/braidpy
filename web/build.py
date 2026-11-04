@@ -23,18 +23,38 @@ Run from the repository root, after ``npm install`` in ``web/``::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10: tomllib's forerunner
+    import tomli as tomllib
 import urllib.request
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parent
 ROOT = WEB.parent
+# The page's settling, run by Node on the braids made with the site
+# (settle_node.js): what it runs, and where what it made is kept between
+# builds, by what went in.
+SETTLING = [
+    "settle_node.js",
+    "settle.js",
+    "tighten.js",
+    "rope.js",
+    "form.js",
+    "marudai.js",
+    "b3d.js",
+    "frames.js",
+]
+SETTLED_CACHE = Path(os.environ.get("BRAID_STUDIO_SETTLED", WEB / ".settled"))
 PAGE = [
     "index.html",
     "style.css",
@@ -49,6 +69,7 @@ PAGE = [
     "workers.js",
     "defaults.js",
     "scene.js",
+    "frames.js",
     "insets.js",
     "info.js",
     "colours.js",
@@ -60,6 +81,7 @@ PAGE = [
     "rope.js",
     "form.js",
     "marudai.js",
+    "b3d.js",
 ]
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
@@ -126,6 +148,74 @@ def _copy_page(site: Path) -> None:
         (site / name).write_text(_NAMED.sub(stamp, text))
 
 
+def _braidpy(script: str) -> subprocess.CompletedProcess:
+    """A Python script run with braidpy and all it needs: the project's own
+    environment."""
+    if shutil.which("uv"):
+        command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
+    else:
+        command = [sys.executable, "-c", script]
+    return subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+
+
+def _premade(site: Path) -> None:
+    """Every braid the page offers as it comes, made once here
+    (``braidpy.web.premade``): a visitor choosing one sees it at once,
+    without waiting for Python — the biggest sinnets took minutes."""
+    script = f"from braidpy import web; web.premade({str(site / 'made')!r})"
+    _braidpy(script)
+
+
+def _settled(site: Path, cache: Path = SETTLED_CACHE) -> None:
+    """Every braid made with the site, settled as the page would settle it
+    as it comes (settle_node.js runs the page's own settle.js): a visitor
+    choosing one is shown it settled at once, rather than after a minute
+    or more on the marudai.
+
+    Settling them all takes some twenty minutes of a processor, so each is
+    kept in ``cache`` by what went into it — the braid as laid, and the
+    settling's code — and settled again only when either changes.  What is
+    no longer asked for is cleared from the cache.  Without Node, the page
+    settles them itself, as before.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    if not shutil.which("node"):
+        print("No Node: the braids made with the site are left for the page to settle.")
+        return
+    made = site / "made"
+    code = hashlib.sha256(b"".join((WEB / name).read_bytes() for name in SETTLING))
+    index = json.loads((made / "index.json").read_text())
+    cache.mkdir(parents=True, exist_ok=True)
+
+    def settle(entry: dict) -> None:
+        laid = made / entry["file"]
+        key = code.copy()
+        key.update(laid.read_bytes())
+        kept = cache / f"{key.hexdigest()}.json"
+        if not kept.exists():
+            fresh = kept.with_suffix(".part")
+            done = subprocess.run(
+                ["node", str(WEB / "settle_node.js"), str(laid), str(fresh)],
+                check=False,
+            )
+            if done.returncode:
+                # Left for the page to settle, as it would without Node.
+                print(f"Not settled: {entry['spec']}")
+                return
+            fresh.replace(kept)
+        entry["settled"] = laid.stem + ".settled.json"
+        shutil.copyfile(kept, made / entry["settled"])
+        entry["key"] = kept.name
+
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        list(pool.map(settle, index))
+    kept = {cache / e.pop("key") for e in index if "key" in e}
+    for stale in set(cache.glob("*.json")) - kept:
+        stale.unlink()
+    (made / "index.json").write_text(json.dumps(index))
+
+
 def _data(site: Path) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
     catalogue — what it can make, offered before Python has started — and
@@ -136,17 +226,12 @@ def _data(site: Path) -> None:
         "from braidpy.topology_catalog import export; "
         "json.dump({'catalogue': web.catalogue(), 'topologies': export()}, sys.stdout)"
     )
-    if shutil.which("uv"):
-        command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
-    else:
-        command = [sys.executable, "-c", script]
-    made = subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
-    data = json.loads(made.stdout)
+    data = json.loads(_braidpy(script).stdout)
     for name, value in data.items():
         (site / f"{name}.json").write_text(json.dumps(value))
 
 
-def build(site: Path) -> None:
+def build(site: Path, premade: bool = True) -> None:
     if not (THREE / "build" / "three.module.js").exists():
         raise SystemExit("three.js is missing: run `npm install` in web/ first.")
     if site.exists():
@@ -155,6 +240,9 @@ def build(site: Path) -> None:
 
     _copy_page(site)
     _data(site)
+    if premade:
+        _premade(site)
+        _settled(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")
@@ -194,7 +282,13 @@ def main() -> None:
     parser.add_argument(
         "--out", type=Path, default=WEB / "site", help="Where to write the site."
     )
-    build(parser.parse_args().out)
+    parser.add_argument(
+        "--no-premade",
+        action="store_true",
+        help="Leave out the braids made with the site: quicker, for trying the page.",
+    )
+    args = parser.parse_args()
+    build(args.out, premade=not args.no_premade)
 
 
 if __name__ == "__main__":

@@ -3,11 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """What Braid Studio shows of the braid made other ways:
-braidpy.bridges.for_page and sinnet_for_page."""
+braidpy.making.for_page and sinnet_for_page."""
 
 from braidpy import Braid
-from braidpy.bridges import for_page, sinnet_for_page
-from braidpy.bridges.disk import DiskMoves, disk_braid
+from braidpy.making import for_page, sinnet_for_page
+from braidpy.making.disk import DiskMoves, disk_braid
 from braidpy.ring_program import same_braid
 from braidpy.web import build
 

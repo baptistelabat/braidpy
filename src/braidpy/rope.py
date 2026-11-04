@@ -53,7 +53,8 @@ References:
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Callable, Sequence
+from typing import Any
 
 __all__ = ["relay", "settle"]
 
@@ -77,9 +78,9 @@ def near_pairs(
     yarn_of: Sequence[int],
     gap: int,
     reach: float,
-    cells: List[int],
-    accept: Optional[Callable[[int, int], bool]] = None,
-) -> List[int]:
+    cells: list[int],
+    accept: Callable[[int, int], bool] | None = None,
+) -> list[int]:
     """Pairs of segments near enough to touch before the beads move a
     quarter diameter, found on a grid of cells ``reach`` wide: of ``segs``,
     neither two segments of a yarn closer than ``gap`` along it, nor a pair
@@ -94,7 +95,7 @@ def near_pairs(
     Returns:
         The pairs, flat: g, h, g, h, ...
     """
-    grid: Dict[Tuple[int, int, int], List[int]] = {}
+    grid: dict[tuple[int, int, int], list[int]] = {}
     for g in segs:
         i = math.floor((x[3 * g] + x[3 * g + 3]) / 2 / reach)
         j = math.floor((x[3 * g + 1] + x[3 * g + 4]) / 2 / reach)
@@ -103,7 +104,7 @@ def near_pairs(
         cells[3 * g + 1] = j
         cells[3 * g + 2] = k
         grid.setdefault((i, j, k), []).append(g)
-    found: List[int] = []
+    found: list[int] = []
     for g in segs:
         i, j, k = cells[3 * g], cells[3 * g + 1], cells[3 * g + 2]
         for di in (-1, 0, 1):
@@ -181,7 +182,7 @@ def touching(x: Sequence[float], pairs: Sequence[int], touch: Touch) -> None:
 
 
 def spread(
-    f: List[float],
+    f: list[float],
     i: int,
     j: int,
     u: float,
@@ -209,7 +210,7 @@ def spread(
 
 def stretch_and_bend(
     x: Sequence[float],
-    f: List[float],
+    f: list[float],
     start: int,
     end: int,
     s0: float,
@@ -251,7 +252,7 @@ def fire_sums(
     fs: Sequence[float],
     vs: Sequence[float],
     links: Sequence[float],
-    sums: List[float],
+    sums: list[float],
 ) -> None:
     """FIRE's sums, added to ``sums`` as the power f · v, |f|², |v|² and the
     largest force: over each yarn's rest length — f ``fs``, v ``vs``,
@@ -278,8 +279,7 @@ def fire_sums(
             power += f[k] * v[k]
             f_norm += f[k] * f[k]
             v_norm += v[k] * v[k]
-            if abs(f[k]) > largest:
-                largest = abs(f[k])
+            largest = max(largest, abs(f[k]))
     sums[0], sums[1], sums[2], sums[3] = power, f_norm, v_norm, largest
 
 
@@ -291,10 +291,10 @@ def fire_mix(sums: Sequence[float], alpha: float) -> float:
 
 
 def steer(
-    v: List[float],
+    v: list[float],
     f: Sequence[float],
     moves: Sequence[int],
-    vs: List[float],
+    vs: list[float],
     fs: Sequence[float],
     alpha: float,
     mix: float,
@@ -311,8 +311,8 @@ def steer(
 
 
 def move_beads(
-    x: List[float],
-    v: List[float],
+    x: list[float],
+    v: list[float],
     f: Sequence[float],
     dt: float,
     moves: Sequence[int],
@@ -333,7 +333,7 @@ def move_beads(
         x[3 * g + 2] += mz * k
 
 
-def relay(yarn: Sequence[float], spacing: float) -> List[float]:
+def relay(yarn: Sequence[float], spacing: float) -> list[float]:
     """A yarn's beads again, evenly spaced about ``spacing`` apart, its two
     ends kept."""
     k = len(yarn) // 3
@@ -362,10 +362,10 @@ def relay(yarn: Sequence[float], spacing: float) -> List[float]:
 
 def settle(
     yarns: Sequence[Sequence[float]],
-    spacing: Optional[float] = None,
+    spacing: float | None = None,
     force: float = 1.0,
     turns: bool = False,
-    feed: Optional[float] = None,
+    feed: float | None = None,
     stretch: float = 400.0,
     bend: float = 0.5,
     contact: float = 400.0,
@@ -374,8 +374,8 @@ def settle(
     steps: int = 20000,
     tolerance: float = 1e-3,
     dt_max: float = 0.05,
-    progress: Optional[Callable[[Dict[str, Any]], None]] = None,
-) -> Dict[str, Any]:
+    progress: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
     """Yarns settled at rest: ``rope.js``'s ``settle``.
 
     Args:
@@ -406,7 +406,7 @@ def settle(
     ks, kb, kc, kr = stretch, bend, contact, soft
     core = 1 - shell
     n_yarns = len(yarns)
-    state: Dict[str, Any] = {
+    state: dict[str, Any] = {
         # The end plate, kept from one laying out of the beads to the next.
         "rise": 0.0,
         "turn": 0.0,
@@ -438,7 +438,7 @@ def settle(
         for a in range(n_yarns):
             first[a + 1] = first[a] + len(beads[a]) // 3
         n = first[n_yarns]
-        x: List[float] = []
+        x: list[float] = []
         for yarn in beads:
             x.extend(yarn)
         yarn_of = [0] * n
@@ -467,7 +467,7 @@ def settle(
         # Pairs of segments near enough to touch, rebuilt as beads move.
         gap = math.ceil(2 / mean) + 1
         reach = 1 + 2 * mean + 0.5
-        pairs: List[int] = []
+        pairs: list[int] = []
         built = [0.0] * (3 * n)
         cells = [0] * (3 * n)
         segs = [g for g in range(n) if not is_top[g]]
@@ -489,10 +489,8 @@ def settle(
             push = (kr * (1 - r)) / max(r, 1e-9)
             if r < core:
                 state["contacts"] += 1
-                if core - r > state["deepest"]:
-                    state["deepest"] = core - r
-                if core - r > state["deepestEver"]:
-                    state["deepestEver"] = core - r
+                state["deepest"] = max(state["deepest"], core - r)
+                state["deepestEver"] = max(state["deepestEver"], core - r)
                 push += (kc * (core - r)) / max(r, 1e-9)
             spread(
                 f, 3 * pairs[e], 3 * pairs[e + 1], u, w, push * px, push * py, push * pz
@@ -511,7 +509,7 @@ def settle(
             state["deepest"] = 0.0
             touching(x, pairs, touch)
 
-        def snapshot() -> List[List[float]]:
+        def snapshot() -> list[list[float]]:
             return [x[3 * first[a] : 3 * first[a + 1]] for a in range(n_yarns)]
 
         def keep() -> None:

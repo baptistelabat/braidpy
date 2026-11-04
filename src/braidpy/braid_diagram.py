@@ -32,14 +32,19 @@ front, with the strand passing behind interrupted where the two meet.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, cast
 
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import numpy as np
 
 from .parametric_strand import LINEAR, SMOOTHSTEP, Profile, strand_paths
-from .utils import terminal_colors
+from .utils import lazy_module, terminal_colors
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+else:
+    plt = lazy_module("matplotlib.pyplot")
 
 __all__ = [
     "DIAGRAM_COLORS",
@@ -55,7 +60,7 @@ __all__ = [
 # entry is a plotly colour string that matplotlib cannot read.  Translate the
 # ones that need it and leave the rest alone, so the two palettes stay the
 # same colours in the same order.
-DIAGRAM_COLORS: Dict[int, str] = {
+DIAGRAM_COLORS: dict[int, str] = {
     index: {"rgb(0,128,128)": "teal"}.get(name, name)
     for index, name in terminal_colors.items()
 }
@@ -101,7 +106,7 @@ def diagram_segments(
     paths: Sequence,
     n_samples: int = 400,
     gap: float = 0.45,
-) -> List[List[np.ndarray]]:
+) -> list[list[np.ndarray]]:
     """Each strand as the pieces of it that are visible from the front.
 
     A strand is hidden where it passes *behind* another — where the two are
@@ -135,9 +140,9 @@ def diagram_segments(
             visible[first][meeting & behind] = False
             visible[second][meeting & ~behind] = False
 
-    pieces: List[List[np.ndarray]] = []
+    pieces: list[list[np.ndarray]] = []
     for points, mask in zip(sampled, visible):
-        runs: List[np.ndarray] = []
+        runs: list[np.ndarray] = []
         start = 0
         while start < len(mask):
             while start < len(mask) and not mask[start]:
@@ -159,11 +164,11 @@ def draw_diagram(
     gap: float = 0.45,
     amplitude: float = 0.28,
     profile: Profile = SMOOTHSTEP,
-    color: Optional[str] = None,
-    title: Optional[str] = None,
-    save: Optional[str] = None,
-    ax: Optional["plt.Axes"] = None,
-) -> "plt.Axes":
+    color: str | None = None,
+    title: str | None = None,
+    save: str | None = None,
+    ax: plt.Axes | None = None,
+) -> plt.Axes:
     """Draw a braid as a diagram, running down the page.
 
     Args:
@@ -219,6 +224,6 @@ def draw_diagram(
     ax.axis("off")
     if save:
         # The figure itself, even when the axes are in a subfigure of it.
-        figure = cast(Figure, ax.figure.figure)
+        figure = cast("Figure", ax.figure.figure)
         figure.savefig(save, bbox_inches="tight", dpi=150)
     return ax

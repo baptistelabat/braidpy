@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 // The marudai tests' cases, run by tests/test_marudai.py and
 // tests/test_marudai_python.py: each makes a braid move by move with
 // web/marudai.js, or measures one, and prints what the test checks, as JSON.
@@ -5,6 +9,7 @@ const path = require("path");
 const fs = require("fs");
 const MARUDAI = path.join(__dirname, "..", "..", "web", "marudai.js");
 const { make, begin } = require(MARUDAI);
+const { b3dText } = require(path.join(__dirname, "..", "..", "web", "b3d.js"));
 const { rounded } = require("./rounded.js");
 
 // How long a braid is, how close its yarns come above the start, and how
@@ -117,6 +122,19 @@ const cases = {
     const top = Math.max(...yarns.flat().map((p) => p[2]));
     const shown = yarns.map((y) => y.map(([x, yy, z]) => [x, -yy, top - z]));
     return { braidpy: gauss(strands), made: gauss(shown), tip: made.tip };
+  },
+
+  // A braid made on a marudai, as braid3dmin saves it (web/b3d.js); and
+  // the yarns made, in braid3dmin's units, for the test to compare.
+  b3d() {
+    const { disk, strands } = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+    const making = begin(disk);
+    disk.steps.forEach((step, k) => making.step(step, k));
+    const machine = making.machine;
+    return {
+      text: b3dText(disk, making, strands.map((s) => s.colour)),
+      beads: machine.threads.map((_, t) => machine.positions(t).length),
+    };
   },
 };
 

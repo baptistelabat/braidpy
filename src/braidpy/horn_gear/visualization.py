@@ -41,9 +41,10 @@ without it knowing the difference.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
+
 from braidpy.utils import PALETTE, lazy_module, play_controls
 
 if TYPE_CHECKING:
@@ -189,7 +190,7 @@ def _arc_xy(
     theta_end: float,
     direction: int,
     n_points: int = 60,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Arc on a circle from theta_start to theta_end following rotation direction.
 
     direction +1 → CCW (angle increases), -1 → CW (angle decreases).
@@ -211,7 +212,7 @@ def _arc_xy(
 
 def _track_runs(
     track: Track,
-) -> List[Tuple[str, str, str]]:
+) -> list[tuple[str, str, str]]:
     """Decompose a cyclic track into (gear, prev_gear, next_gear) run descriptors.
 
     A "run" is a maximal consecutive sub-sequence of the (cyclic) track that
@@ -235,7 +236,7 @@ def _track_runs(
         return [(track[0][0], track[0][0], track[0][0])]
 
     # Build runs starting from the position right after the first transfer.
-    runs: List[Tuple[str, str, str]] = []
+    runs: list[tuple[str, str, str]] = []
     # Each transfer[k] ends the k-th run; the run starts at transfers[k-1]+1.
     m = len(transfers)
     for k in range(m):
@@ -255,8 +256,8 @@ def _track_runs(
 
 def _notch_radius(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
     gear: str,
     scale: float = 1.0,
 ) -> float:
@@ -272,10 +273,10 @@ def _notch_radius(
 
 def _carrier_marker_sizes(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
     scale: float = 1.0,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Marker size per gear, in points, so a bobbin sits snugly in its notch.
 
     Plotly sizes markers in pixels while the notches are in layout units, so
@@ -300,12 +301,12 @@ def _carrier_marker_sizes(
 
 def _track_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    tracks: Optional[List[Track]] = None,
+    layout: dict[str, tuple[float, float]],
+    tracks: list[Track] | None = None,
     scale: float = 1.0,
     width: float = 2.5,
     opacity: float = 1.0,
-) -> List[go.BaseTraceType]:
+) -> list[go.BaseTraceType]:
     """Each carrier track as a closed run of arcs, one trace per track.
 
     A run of positions on the same gear is drawn as a single arc from the notch
@@ -336,7 +337,7 @@ def _track_traces(
     # step apart in time, and on a flat braid reading them as though they were
     # draws a jump between the two end gears, which do not touch.
     period = simulation_period(machine)
-    paths: Dict[Tuple[Tuple[str, str, str], ...], None] = {}
+    paths: dict[tuple[tuple[str, str, str], ...], None] = {}
     for track in tracks:
         runs = tuple(_track_runs(walk(machine, track[0], period)))
         if not runs:
@@ -344,10 +345,10 @@ def _track_traces(
         # Same loop entered at a different gear is still the same loop.
         paths.setdefault(min(runs[i:] + runs[:i] for i in range(len(runs))), None)
 
-    traces: List[go.BaseTraceType] = []
+    traces: list[go.BaseTraceType] = []
     for index, runs in enumerate(paths):
-        xs_all: List = []
-        ys_all: List = []
+        xs_all: list = []
+        ys_all: list = []
         for gear_name, prev_gear, next_gear in runs:
             cx, cy = layout[gear_name]
             xs, ys = _arc_xy(
@@ -391,10 +392,10 @@ def _track_traces(
 
 def _disc_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
     t: int = 0,
-) -> List[go.BaseTraceType]:
+) -> list[go.BaseTraceType]:
     """One disc per gear, coloured by which way it is turning.
 
     Discs are coloured green while a gear turns clockwise and red the other
@@ -410,7 +411,7 @@ def _disc_traces(
     turning = machine.turning_gears(t)
     theta = np.linspace(0, 2 * math.pi, 90)
 
-    traces: List[go.BaseTraceType] = []
+    traces: list[go.BaseTraceType] = []
     for name in machine.gears:
         cx, cy = layout[name]
         r = radii[name]
@@ -434,13 +435,13 @@ def _disc_traces(
 
 def _slot_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
-    offsets: Dict[str, float],
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
+    offsets: dict[str, float],
     t: int = 0,
     frac: float = 0.0,
     scale: float = 1.0,
-) -> List[go.BaseTraceType]:
+) -> list[go.BaseTraceType]:
     """The slots of every gear, as one trace, at the angle they have reached.
 
     This is the one part of a gear that really moves, and on a long animation
@@ -451,8 +452,8 @@ def _slot_traces(
     # radial mark through it, so they stay legible as the gear turns.  Notch
     # and mark share one trace, separated by None, which keeps the number of
     # traces fixed however many slots a machine has.
-    slot_xs: List = []
-    slot_ys: List = []
+    slot_xs: list = []
+    slot_ys: list = []
     for name, gear in machine.gears.items():
         cx, cy = layout[name]
         rim = radii[name]
@@ -488,8 +489,8 @@ def _slot_traces(
 
 def _gear_label_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> List[go.BaseTraceType]:
+    layout: dict[str, tuple[float, float]],
+) -> list[go.BaseTraceType]:
     """Name, slot count and turning direction at the middle of each gear."""
     return [
         go.Scatter(
@@ -510,13 +511,13 @@ def _gear_label_traces(
 
 def _gear_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
-    offsets: Dict[str, float],
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
+    offsets: dict[str, float],
     t: int = 0,
     frac: float = 0.0,
     scale: float = 1.0,
-) -> List[go.BaseTraceType]:
+) -> list[go.BaseTraceType]:
     """Discs, slots and labels for *all* the gears, in a handful of traces.
 
     Every gear could have its own traces, but a real lace machine has dozens of
@@ -535,17 +536,17 @@ def _gear_traces(
 
 def _connection_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
-) -> List[go.BaseTraceType]:
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
+) -> list[go.BaseTraceType]:
     """Dashed link and label for every connection, batched into two traces.
 
     A lace machine has dozens of connections and this is redrawn every frame,
     so all the links go in one ``None``-separated trace and all the labels in
     another, rather than a pair of traces per connection.
     """
-    xs: List = []
-    ys: List = []
+    xs: list = []
+    ys: list = []
     label_x, label_y, labels = [], [], []
     for conn in machine.connections:
         cx_a, cy_a = layout[conn.gear_a]
@@ -586,8 +587,8 @@ def _connection_traces(
 
 def _axial_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-) -> List[go.BaseTraceType]:
+    layout: dict[str, tuple[float, float]],
+) -> list[go.BaseTraceType]:
     """Column marker for each axial — a ring with a dot, the column end-on.
 
     Axials never move, so the same marker is drawn in every animation frame.
@@ -625,10 +626,10 @@ def _axial_traces(
 
 def _punchcard_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
-    current_phase: Optional[int] = None,
-) -> List[go.BaseTraceType]:
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
+    current_phase: int | None = None,
+) -> list[go.BaseTraceType]:
     """Draw the machine's programme below it, as the punchcard it is.
 
     One column per gear and one row per phase, read downwards.  A punched hole
@@ -656,12 +657,12 @@ def _punchcard_traces(
     # size carried per point.  Splitting them into "lit" and "unlit" traces
     # would shuffle which punch sits at which index from frame to frame, and
     # Plotly — which pairs traces up by index — would slide them about.
-    xs: List[float] = []
-    ys: List[float] = []
-    colors: List[str] = []
-    symbols: List[str] = []
-    sizes: List[int] = []
-    hovers: List[str] = []
+    xs: list[float] = []
+    ys: list[float] = []
+    colors: list[str] = []
+    symbols: list[str] = []
+    sizes: list[int] = []
+    hovers: list[str] = []
 
     for row_index, (label, flags) in enumerate(rows):
         shift = dx / 2 if label == "clockwise" else 0.0
@@ -686,7 +687,7 @@ def _punchcard_traces(
                 f"step {row_index // 2} · {label}<br>{name} {'turns' if on else 'held'}"
             )
 
-    traces: List[go.BaseTraceType] = [
+    traces: list[go.BaseTraceType] = [
         go.Scatter(
             x=xs,
             y=ys,
@@ -739,9 +740,9 @@ def _punchcard_traces(
 
 def _contact_point_traces(
     machine: BraidingMachine,
-    layout: Dict[str, Tuple[float, float]],
-    radii: Dict[str, float],
-) -> List[go.BaseTraceType]:
+    layout: dict[str, tuple[float, float]],
+    radii: dict[str, float],
+) -> list[go.BaseTraceType]:
     """X marker at each notch where two gear circles meet."""
     xs, ys, labels = [], [], []
     for conn in machine.connections:
@@ -771,7 +772,7 @@ def _contact_point_traces(
 def visualize_machine(
     machine: BraidingMachine,
     scale: float = 1.0,
-    output_html: Optional[str] = None,
+    output_html: str | None = None,
     title: str = "Horn Gear Braiding Machine",
 ) -> go.Figure:
     """Static diagram of the machine layout with oriented slot tick marks."""
@@ -779,7 +780,7 @@ def visualize_machine(
     radii = gear_radii(machine, scale=scale)
     offsets = slot_offsets(machine, layout)
 
-    traces: List[go.BaseTraceType] = []
+    traces: list[go.BaseTraceType] = []
     traces.extend(_connection_traces(machine, layout, radii))
     traces.extend(_contact_point_traces(machine, layout, radii))
     traces.extend(_gear_traces(machine, layout, radii, offsets, scale=scale))
@@ -833,9 +834,9 @@ def visualize_machine(
 
 def visualize_tracks(
     machine: BraidingMachine,
-    tracks: Optional[List[Track]] = None,
+    tracks: list[Track] | None = None,
     scale: float = 1.0,
-    output_html: Optional[str] = None,
+    output_html: str | None = None,
     title: str = "Carrier Tracks",
 ) -> go.Figure:
     """Draw carrier tracks as circular arcs that meet at physical contact points.
@@ -872,10 +873,10 @@ def visualize_tracks(
 
 def animate(
     machine: BraidingMachine,
-    n_steps: Optional[int] = None,
-    carrier_positions: Optional[Dict] = None,
+    n_steps: int | None = None,
+    carrier_positions: dict | None = None,
     scale: float = 1.0,
-    output_html: Optional[str] = None,
+    output_html: str | None = None,
     title: str = "Carrier Animation",
     frame_duration_ms: int = 40,
     n_substeps: int = 9,
@@ -952,7 +953,7 @@ def animate(
     # down rather than the cycle short.
     n_substeps = max(1, min(n_substeps, max_frames // max(n_steps, 1)))
 
-    collision_info: Optional[CollisionError] = None
+    collision_info: CollisionError | None = None
     try:
         history = simulate(machine, n_steps, carrier_positions)
     except CollisionError as e:
@@ -1072,10 +1073,10 @@ def animate(
 
     def _build(
         state: MachineState, frac: float
-    ) -> Tuple[List[go.BaseTraceType], List[bool]]:
+    ) -> tuple[list[go.BaseTraceType], list[bool]]:
         """One frame's traces in drawing order, each flagged if it can change."""
         t = state.time
-        parts: List[Tuple[List[go.BaseTraceType], bool]] = [
+        parts: list[tuple[list[go.BaseTraceType], bool]] = [
             (still_links, False),
             (still_contacts, False),
             (
@@ -1103,14 +1104,14 @@ def animate(
             ([_met_trace(state)], collision_info is not None),
             ([_carrier_trace(state, frac)], True),
         ]
-        traces: List[go.BaseTraceType] = []
-        moves: List[bool] = []
+        traces: list[go.BaseTraceType] = []
+        moves: list[bool] = []
         for group, changes in parts:
             traces.extend(group)
             moves.extend([changes] * len(group))
         return traces, moves
 
-    frames: List[go.Frame] = []
+    frames: list[go.Frame] = []
     # Every frame gets its own notch on the slider, so it can be scrubbed to
     # and the handle travels smoothly, but only the frames that open a step are
     # *numbered*: the rest carry an empty label.  Plotly writes the numbers by
@@ -1118,7 +1119,7 @@ def animate(
     # will not be told what that interval is — but a notch with nothing to say
     # prints nothing wherever the stride lands on it, so a number can only ever
     # appear at a whole step.
-    slider_marks: List[Tuple[str, str]] = []
+    slider_marks: list[tuple[str, str]] = []
 
     # The tracks go in first so they sit underneath, and every frame is told
     # which traces it carries — only the ones that can change.  Plotly pairs

@@ -12,9 +12,10 @@ License: Mozilla Public License 2.0
 """
 
 import enum
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union, cast
-import numpy as np
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, cast
 
+import numpy as np
 
 if TYPE_CHECKING:
     # sympy is only needed for the Burau matrices, and is slow to import —
@@ -24,20 +25,19 @@ from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
 from braidpy.parametric_strand import (
-    ParametricStrand,
-    make_idle_arc,
-    make_arc,
     Arc,
+    ParametricStrand,
     combine_arcs,
+    make_arc,
+    make_idle_arc,
 )
 from braidpy.utils import (
-    int_to_superscript,
-    int_to_subscript,
-    colorize,
-    lazy_module,
     StrictlyPositiveInt,
+    colorize,
+    int_to_subscript,
+    int_to_superscript,
+    lazy_module,
 )
-
 
 if TYPE_CHECKING:
     import math_braid
@@ -47,7 +47,7 @@ else:
 from collections.abc import Iterable
 
 
-def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> List[list]:
+def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> list[list]:
     """The reduced Burau matrix of one generator, σ_i or its inverse, as
     rows: the identity, but for row i (from 0),
 
@@ -83,10 +83,14 @@ def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> Lis
     return rows
 
 
+# How long handle reduction is given to say whether a braid is trivial,
+# before math_braid's normal form decides instead (Braid.is_trivial).
+HANDLE_REDUCTION_S = 5.0
+
 # Define a type alias for clarity
 SignedCrossingIndex = int
-BraidingStep = Union[SignedCrossingIndex, Tuple[SignedCrossingIndex, ...]]
-BraidingProcess = Tuple[BraidingStep, ...]
+BraidingStep = SignedCrossingIndex | tuple[SignedCrossingIndex, ...]
+BraidingProcess = tuple[BraidingStep, ...]
 
 
 class BraidWordNotation(str, enum.Enum):
@@ -97,14 +101,14 @@ class BraidWordNotation(str, enum.Enum):
 
 def single_crossing_braiding_process(
     process: BraidingProcess,
-) -> List[SignedCrossingIndex]:
+) -> list[SignedCrossingIndex]:
     """
     Flattens a tuple of braiding steps into a list of signed crossings.
 
     Each step may be a single crossing or multiple simultaneous crossings.
     To get Artin generators we need only consecutive single crossing, which is topologically equivalent
     """
-    sequential_single_crossings_index: List[SignedCrossingIndex] = []
+    sequential_single_crossings_index: list[SignedCrossingIndex] = []
     for step in process:
         if isinstance(step, Iterable):
             sequential_single_crossings_index.extend(step)
@@ -116,13 +120,13 @@ def single_crossing_braiding_process(
 
 
 # Recursive type for nested sequences of integers
-BraidProcess = Union[int, Sequence["BraidProcess"]]
+BraidProcess = int | Sequence["BraidProcess"]
 
 
 @dataclass(frozen=True)
 class Braid:
     """
-    Sometimes referred as algebraic braids
+    Sometimes referred to as algebraic braids
     Args:
         process (BraidProcess): list of Artin's generator, which may group or not by parenthesis (tuples)
         n_strands (Optional[int]): number of strands. Default to the minimum number needed for process
@@ -162,7 +166,7 @@ class Braid:
         return single_crossing_braiding_process(cast(BraidingProcess, self.process))
 
     @property
-    def main_generator(self) -> Optional[int]:
+    def main_generator(self) -> int | None:
         """A main generator of a braid word w is the generator with the lowest index.
 
         https://pure.tue.nl/ws/portalfiles/portal/67742824/630595-1.pdf page 33
@@ -191,7 +195,7 @@ class Braid:
                 'default' syntax used by other tools such as math-braid and braidlab
 
         Returns:
-            str: the formated braid word
+            str: the formatted braid word
         """
         match target.upper():
             case BraidWordNotation.ARTIN.value:
@@ -223,8 +227,8 @@ class Braid:
 
     def format(
         self,
-        generator_symbols: Optional[list[str]] = None,
-        inverse_generator_symbols: Optional[list[str]] = None,
+        generator_symbols: list[str] | None = None,
+        inverse_generator_symbols: list[str] | None = None,
         zero_symbol: str = "e",
         separator: str = "",
     ) -> str:
@@ -242,7 +246,7 @@ class Braid:
             separator(Optional(str)): Default to ""
 
         Returns:
-            str: the formated braid word
+            str: the formatted braid word
         """
         if generator_symbols is None:
             generator_symbols = [
@@ -355,20 +359,14 @@ class Braid:
         return hash(self.__key())
 
     def __eq__(self, other: object) -> bool:
-        """Check if two braids are topologically equivalent.
+        """Check if two braids are topologically equivalent: the same braid,
+        however their words are written.
 
-        Relies on math_braid implementation from J. Cha et al,
-        "An Efficient Implementation of Braid Groups", Advances in Cryptology:
-        Proceedings of ASIACRYPT 2001, Lecture Notes in Computer Science (2001),
-        144--156. https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
-
-        Complexity is in O(l²n.log n) where n is the word size and l corresponds
-        roughly to the number of strands.
-
-        Might not be the best algorithm compared to handle reduction which is
-        efficient in practice and whose complexity is assumed to be linear in O(n),
-        but without proof and an exponential majorant.
-        ON WORD REVERSING IN BRAID GROUPS PATRICK DEHORNOY AND BERT WIEST
+        By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`):
+        two braids are the same exactly when one followed by the other's
+        inverse is trivial (:meth:`is_trivial`, which falls back on
+        math_braid's normal form for the rare braids handle reduction is slow
+        on).  PATRICK DEHORNOY AND BERT WIEST, "On word reversing in braid groups",
         https://dehornoy.lmno.cnrs.fr/Papers/Dhg.pdf
 
         Args:
@@ -381,11 +379,7 @@ class Braid:
             return NotImplemented
         if self.n_strands != other.n_strands:
             return False
-        if not self.no_zero().generators and not other.no_zero().generators:
-            return True
-        return math_braid.Braid(
-            list(self.generators), self.n_strands
-        ) == math_braid.Braid(list(other.generators), other.n_strands)
+        return (self * other.inverse()).is_trivial()
 
     def inverse(self) -> "Braid":
         """Return the inverse of the braid.
@@ -663,14 +657,39 @@ class Braid:
         return matrix
 
     def is_trivial(self) -> bool:
-        """Check if the braid is trivial (identity braid).
+        """Check if the braid is trivial (identity braid): no crossing at
+        all, however its word is written (``σ₁σ₁⁻¹`` is trivial).
+
+        By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`): a
+        braid is trivial exactly when its Dehornoy sign is 0.  It is the
+        faster on most braids, several times faster than math_braid's normal
+        form; but it can blow up on long words of many strands (ABOK #3082's,
+        61 strands and 2400 crossings: five minutes, where math_braid takes
+        half a minute).  So it is given ``HANDLE_REDUCTION_S`` seconds, and
+        math_braid's normal form decides if it has not.
 
         Returns:
             bool: True if the braid is trivial.
         """
-        return not self.generators or all(g == 0 for g in self.generators)
+        # Here: handles_reduction itself imports this module.
+        from braidpy.handles_reduction import (
+            HandleReducedButUnexpectedResult,
+            HandleReductionMode,
+            dehornoy_reduce_core,
+        )
 
-    def permutations(self, plot: bool = False) -> List[List[int]]:
+        crossings = self.no_zero().generators
+        if not crossings:
+            return True
+        try:
+            reduced = dehornoy_reduce_core(
+                crossings, HandleReductionMode.COMPARE, time_out_s=HANDLE_REDUCTION_S
+            )
+        except HandleReducedButUnexpectedResult:
+            return not math_braid.Braid(list(crossings), self.n_strands)
+        return reduced.sign == 0
+
+    def permutations(self, plot: bool = False) -> list[list[int]]:
         """Return the permutations induced by the braid"""
         perms = []
         strands = list(range(1, self.n_strands + 1))
@@ -696,11 +715,8 @@ class Braid:
                     )
                 strands[i + 1], strands[i] = strands[i], strands[i + 1]
 
-            else:
-                if plot:
-                    print(" ".join(colorize(item) for item in strands))
-                # No crossing
-                strands = strands
+            elif plot:  # No crossing: the strands stay where they are
+                print(" ".join(colorize(item) for item in strands))
 
             perms.append(strands.copy())
         if plot:
@@ -900,9 +916,9 @@ class Braid:
         gap: float = 0.45,
         amplitude: float = 0.28,
         profile=None,
-        color: Optional[str] = None,
-        title: Optional[str] = None,
-        save: Optional[str] = None,
+        color: str | None = None,
+        title: str | None = None,
+        save: str | None = None,
         ax=None,
     ) -> "Braid":
         """Draw the braid as a 2D diagram, running down the page.
@@ -969,7 +985,7 @@ def slide_strand(n_slide: int, start_index: int = 1, sign: int = +1) -> Braid:
         Braid: The corresponding braid.
     """
     b = Braid(0, n_strands=n_slide + start_index)
-    for i in range(0, n_slide):
+    for i in range(n_slide):
         b = b * Braid(sign * (start_index + i), n_strands=n_slide + start_index)
     return b.no_zero()
 
@@ -986,7 +1002,7 @@ def weave_strand(n_slide: int, start_index: int = 1, sign: int = +1) -> Braid:
         Braid: The corresponding braid.
     """
     b = Braid(0, n_strands=n_slide + start_index)
-    for i in range(0, n_slide):
+    for i in range(n_slide):
         b = b * Braid(
             sign * (start_index + i) * (-1) ** i, n_strands=n_slide + start_index
         )

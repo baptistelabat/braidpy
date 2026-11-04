@@ -14,7 +14,7 @@ License: Mozilla Public License 2.0
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     # math_braid imports sympy, slow to import: only named here for types.
@@ -42,7 +42,7 @@ class GarsideCanonicalFactors:
 
     n_half_twist: int
     n_strands: StrictlyPositiveInt
-    Ai: Tuple[CanonicalFactor | Tuple[int, ...], ...]
+    Ai: tuple[CanonicalFactor | tuple[int, ...], ...]
 
     @property
     def dehornoy_floor(self) -> int:
@@ -50,7 +50,9 @@ class GarsideCanonicalFactors:
         Computes the Dehornoy floor of the braid.
 
         It is the unique integer m such that:
+
             Δ^{2m} < β < Δ^{2m+2}
+
         An estimate is floor(n_half_twist / 2) or floor(n_half_twist / 2) + 1
         depending on the position of the braid in Dehornoy order.
 
@@ -85,7 +87,7 @@ class GarsideCanonicalFactors:
 # A permutation is kept as a tuple ``p`` with ``p[j]`` the position strand j,
 # starting at position j, ends at; σ_i swaps positions i-1 and i (0-based).
 
-Permutation = Tuple[int, ...]
+Permutation = tuple[int, ...]
 
 
 def _compose(a: Permutation, b: Permutation) -> Permutation:
@@ -130,7 +132,7 @@ def _ends_with(a: Permutation) -> set:
 
 def artin_left_normal_form(
     generators, n_strands: int
-) -> Tuple[int, Tuple[Permutation, ...]]:
+) -> tuple[int, tuple[Permutation, ...]]:
     """A braid word in Artin's left normal form, Δ^k · A_1 ⋯ A_r.
 
     Args:

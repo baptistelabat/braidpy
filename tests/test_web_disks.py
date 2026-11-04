@@ -7,9 +7,9 @@
 import math
 
 import pytest
+from web_checks import check
 
 from braidpy.web import build, catalogue
-from web_checks import check
 
 
 def test_a_kumihimo_pattern():
@@ -41,8 +41,8 @@ def test_what_cannot_be_made_is_explained(spec, message):
 
 
 def test_a_disk_braid_is_made_in_step_with_its_crossings():
-    from braidpy.take_off import disk_crossing_steps, mobidai_steps
     from braidpy.mobidai_catalog import KONGO_8
+    from braidpy.take_off import disk_crossing_steps, mobidai_steps
 
     result = build(
         {"source": "mobidai", "name": "KONGO_8", "cycles": 2, "iterations": 5}

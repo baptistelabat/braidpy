@@ -4,9 +4,9 @@
 
 """What a braid word does to the order of the strands."""
 
-from braidpy.braid import Braid
 import pytest
 
+from braidpy.braid import Braid
 from braidpy.pure_braid import closing_repeats, components, cycles, is_pure, permutation
 
 FLAT = Braid((1, -2), n_strands=3)

@@ -12,6 +12,7 @@ import { copyText } from "./info.js";
 import { drawSection, section, top } from "./insets.js";
 import { $ } from "./page.js";
 import { braid, camera, controls, fit, hangs, lastResult, made, renderer, scene, showTubes } from "./scene.js";
+import { b3dOf } from "./workers.js";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {
@@ -66,10 +67,33 @@ function download(name, href) {
   if (href.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
 
+// Only a braid with a disk program can be made on braid3dmin's marudai.
+for (const asked of ["focus", "pointerdown"]) {
+  $("save").addEventListener(asked, () => {
+    $("save-b3d").hidden = !lastResult?.disk;
+  });
+}
+
 $("save").addEventListener("change", (event) => {
   const what = event.target.value;
   event.target.value = "";
   if (!lastResult || !braid) return;
+  if (what === "b3d") {
+    if (!lastResult.disk) return;
+    const name = fileName("b3d");
+    const status = $("status");
+    status.textContent = "Making it on the marudai, for braid3dmin…";
+    b3dOf(lastResult).then(
+      (text) => {
+        download(name, URL.createObjectURL(new Blob([text], { type: "text/plain" })));
+        status.textContent = `Saved for braid3dmin: ${name}`;
+      },
+      (error) => {
+        status.textContent = `Not saved for braid3dmin: ${error.message}`;
+      },
+    );
+    return;
+  }
   if (what === "png") {
     download(fileName("png"), renderer.domElement.toDataURL("image/png"));
     return;
