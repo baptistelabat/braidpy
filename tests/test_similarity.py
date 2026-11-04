@@ -115,3 +115,14 @@ def test_a_long_sinnet_is_fingerprinted_quickly():
     assert time.perf_counter() - started < 10
     assert found.n_strands == 17
     assert all(value is not None for value in found.alexander)
+
+
+def test_a_long_home_braid_keeps_its_fingerprint_read_from_anywhere():
+    """ABOK #3057's unit closes after 20 repeats.  Its Burau matrix raised
+    to that power has entries near 1e19, and the Alexander polynomial taken
+    from them lost the digits it cancelled: read from another starting
+    point, the unit seemed another braid.  From the eigenvalues it does not."""
+    unit = [7, 6, 5, 4, 3, 7, 6, 5, 4, -6, -7, -8, 4, 3, 2, 1, -3, -4, -5]
+    unit += [-2, -3, -4, -5]
+    turned = unit[5:] + unit[:5]
+    assert same_fingerprint(fingerprint(Braid(unit, 9)), fingerprint(Braid(turned, 9)))
