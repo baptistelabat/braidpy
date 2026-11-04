@@ -35,7 +35,7 @@ from braidpy.conjugacy import same_braid
 same_braid(Braid([1, -2], 3), Braid([-2, 1], 3))  # True
 ```
 
-It goes by summit sets (Elrifai and Morton): each braid is cycled to its
+It goes by summit sets (Elrifai and Morton https://nsalter.science.nd.edu/teaching/braidsspring2024/elrifaimorton.pdf): each braid is cycled to its
 *super summit set*, the conjugates as short as any in Garside's normal form,
 and that finite set is searched whole; two braids are conjugate exactly when
 their sets meet. A first implementation of that conjugated by every
