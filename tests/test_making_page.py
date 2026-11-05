@@ -90,3 +90,18 @@ def test_a_braid_with_no_word_has_nothing_shown():
     info = _info({"source": "machine", "name": "soutache_5"})
     assert for_page(info) == {}
     assert sinnet_for_page(info)["spec"] is None
+
+
+def test_the_twin_plait_machine_is_made_on_a_lace_machine():
+    """Two plaits braided at once on a line with a split gear: its lace card
+    is a link to a lace machine making the same braid."""
+    from braidpy.conjugacy import same_braid as proven
+
+    shown = _info({"source": "machine", "name": "twin_plait"})
+    made = build({**for_page(shown)["lace"]["spec"], "iterations": 0}, tighten=False)
+
+    def braid(info):
+        word = tuple(int(g) for g in info["word"].split())
+        return Braid(word, info["n_strands"])
+
+    assert proven(braid(shown), braid(made["info"]))
