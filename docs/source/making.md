@@ -172,8 +172,10 @@ made.braid(1) == weave  # True
 
 Beside every braid it makes, Braid Studio's card offers **Make it as…**:
 its repeating unit as moves on a kumihimo disk, a link that makes them;
-as a lace machine's punchcard, to copy or download, with the notches to
-thread; and, when asked, a sinnet on Ashley's stand, searched for in the
+as a lace machine's punchcard, with the notches to thread, a link that
+makes it on your own lace machine
+({meth}`~braidpy.making.lace.LaceCard.spec`) and to copy or download; and,
+when asked, a sinnet on Ashley's stand, searched for in the
 browser for a few seconds, a link that makes it — or the nearest, if no
 sinnet makes the braid ({func}`~braidpy.making.for_page`,
 {func}`~braidpy.making.sinnet_for_page`).

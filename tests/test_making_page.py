@@ -5,6 +5,8 @@
 """What Braid Studio shows of the braid made other ways:
 braidpy.making.for_page and sinnet_for_page."""
 
+import pytest
+
 from braidpy import Braid
 from braidpy.making import for_page, sinnet_for_page
 from braidpy.making.disk import DiskMoves, disk_braid
@@ -40,6 +42,30 @@ def test_braid_studio_makes_what_it_shows():
     made = build({**for_page(_info(PLAIT))["disk"]["spec"], "iterations": 0})
     word = tuple(int(g) for g in made["info"]["word"].split())
     assert Braid(word, 3) == Braid((1, -2) * 6, 3)
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        PLAIT,
+        # Two plaits side by side, as on a line of three gears whose middle
+        # one is split between them.
+        {"source": "word", "word": "1 -2 4 -5", "n_strands": 6, "repeat": 3},
+    ],
+)
+def test_braid_studio_makes_the_lace_card_it_shows(spec):
+    """The lace machine shown is one the page makes, from its own address:
+    the same braid comes off it, however written (braidpy.conjugacy)."""
+    from braidpy.conjugacy import same_braid as proven
+
+    lace = for_page(_info(spec))["lace"]["spec"]
+    assert lace["name"] == "custom" and lace["cycles"] == spec["repeat"]
+    made = build({**lace, "iterations": 0}, tighten=False)["info"]
+    word = tuple(int(g) for g in made["word"].split())
+    shown = tuple(int(g) for g in spec["word"].split())
+    n = spec["n_strands"]
+    assert made["n_strands"] == n
+    assert proven(Braid(word, n), Braid(shown, n))
 
 
 def test_ashley_s_stand_is_searched_for_when_asked():

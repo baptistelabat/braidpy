@@ -122,7 +122,7 @@ const FIELDS = {
       name: "carriers",
       label: "Bobbins",
       kind: "text",
-      hint: "Each as gear:slot. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
+      hint: "Each as gear:slot, or by its notch, A-B, as the card names them. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
     },
     { name: "cycles", label: "Passes of the card", kind: "number", min: 1, max: 24 },
   ],

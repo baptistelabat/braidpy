@@ -64,15 +64,6 @@ def _machine(name: str) -> Any:
     return made.machine() if isinstance(made, LaceRing) else made
 
 
-def _card_text(program: Any) -> str:
-    """A lace machine's card as typed: a step a line, the gears turning
-    anticlockwise, then those turning clockwise, a 0 or 1 a gear."""
-    return "\n".join(
-        " ".join("".join("1" if on else "0" for on in line) for line in step)
-        for step in program
-    )
-
-
 def _read_card(text: str, n_gears: int) -> list[tuple[str, str]]:
     """A card as typed: groups of 0 and 1, a digit a gear, taken two by two
     — the gears turning anticlockwise, then clockwise — however the steps
@@ -327,7 +318,22 @@ def _loading(text: Any, machine: Any) -> list[tuple[str, int]] | None:
     if str(text).strip().lower() == "none":
         raise ValueError("Give at least one carrier.")
     loading: list[tuple[str, int]] = []
+    # A lace machine's bobbins may be named by their notch, "A-B", as its
+    # card names them: the notch the two gears' circles cut.
+    from braidpy.horn_gear.jacquard import JacquardLaceMachine, notch_positions
+
+    notches = {}
+    if isinstance(machine, JacquardLaceMachine):
+        named = {conn.name: k for k, conn in enumerate(machine.connections)}
+        at = notch_positions(machine)
+        notches = {name: at[k] for name, k in named.items() if name}
     for token in re.split(r"[\s,;]+", str(text).strip()):
+        if token in notches:
+            gear, slot = notches[token]
+            if (gear, slot) in loading:
+                raise ValueError(f"Two bobbins in the same notch, {token}.")
+            loading.append((gear, slot))
+            continue
         match = re.fullmatch(r"([^:\s]+):(\d+)", token)
         if not match:
             raise ValueError(f"Cannot read {token!r}: give each carrier as gear:slot.")
@@ -498,6 +504,7 @@ def _machine_entry() -> Source:
 
 def _lace_entry() -> Source:
     from braidpy.machine_catalog import LACE
+    from braidpy.making.lace import card_digits
 
     entries: list[Any] = []
     for name, entry in LACE.items():
@@ -506,7 +513,7 @@ def _lace_entry() -> Source:
             {
                 "name": name,
                 "title": entry.title,
-                "pattern": {"n_gears": ring.n_gears, "card": _card_text(ring.steps)},
+                "pattern": {"n_gears": ring.n_gears, "card": card_digits(ring.steps)},
             }
         )
     return {
