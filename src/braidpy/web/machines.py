@@ -23,7 +23,17 @@ if TYPE_CHECKING:
     from braidpy.horn_gear.jacquard import JacquardLaceMachine
 from braidpy.utils import PALETTE
 from braidpy.web._result import _result, _tighten, _timeline
-from braidpy.web._settings import DISK_ITERATIONS, OWN, Lace, Machine, Word
+from braidpy.web._settings import (
+    CORE,
+    CORE_COLOUR,
+    CORE_KINDS,
+    DISK_ITERATIONS,
+    OLD_CORES,
+    OWN,
+    Lace,
+    Machine,
+    Word,
+)
 from braidpy.web._spec import defaults
 from braidpy.web._types import (
     Collision,
@@ -111,7 +121,7 @@ def _own_gears(spec: Spec) -> int:
 
 
 def _from_machine(spec: Spec) -> Result:
-    from braidpy.horn_gear import axial_positions, compute_layout, gear_radii
+    from braidpy.horn_gear import gear_radii
     from braidpy.horn_gear.word import annular_word, flat_word
     from braidpy.machine_catalog import CATALOGUE as machines
 
@@ -123,16 +133,7 @@ def _from_machine(spec: Spec) -> Result:
     radii = gear_radii(machine)
     default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
     diameter = Machine.yarn_diameter.read(spec, default=default)
-    layout = compute_layout(machine)
-    cores = axial_positions(machine, layout)
-    stiff = Machine.cores.read(spec)
-    if stiff not in Machine.stiffness:
-        raise ValueError("Cores are either yarn or rigid.")
-    # The cores run up the braid, each in its own place, where the machine
-    # lays it; the yarns are drawn in round them.  A rigid core stays
-    # straight there; a core of yarn is held there at both ends, and gives
-    # way between to the yarns pressing on it — never so far as to pass
-    # another core.
+    machine, cores, rigid = _cored(machine, spec)
     # Loaded by hand, or as the machine loads itself.  Carriers that meet
     # stop the machine: the braid is what it made until then.
     loading = _loading(spec.get("carriers"), machine)
@@ -144,9 +145,7 @@ def _from_machine(spec: Spec) -> Result:
         period = state_period(machine, carriers_at) or machine.contact_period()
     paths, stopped, n_steps = _braided(machine, carriers_at, cycles, period, diameter)
     paths = _place_cores(paths, cores)
-    paths = _tighten(
-        paths, spec, diameter, rigid=list(cores) if stiff == "rigid" else []
-    )
+    paths = _tighten(paths, spec, diameter, rigid=list(cores) if rigid else [])
     info: Info = {}
     notes = ["Words are read over one cycle of the machine."]
     if stopped is not None:
@@ -154,12 +153,7 @@ def _from_machine(spec: Spec) -> Result:
         info["collision"] = _collision(stopped, loading)
         notes = [_stopped_note(stopped, n_steps)]
     elif cores:
-        notes = [
-            (
-                "It braids round a core, drawn here in grey as the yarn it is; its "
-                "word would need the core as a strand of its own: no word is given."
-            )
-        ]
+        notes = [_core_note(rigid)]
     elif name.startswith("tubular"):
         annular = annular_word(machine, carriers=carriers_at)
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
@@ -177,7 +171,7 @@ def _from_machine(spec: Spec) -> Result:
     carriers = [k for k in keys if k not in cores]
     own = machine.carrier_colours(carriers_at) or {}
     colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
-    colour.update({k: Machine.core_colour for k in cores})
+    colour.update({k: CORE_COLOUR for k in cores})
     return _result(
         machines[name].title + f", {cycles} cycles",
         paths,
@@ -187,6 +181,57 @@ def _from_machine(spec: Spec) -> Result:
         info=info,
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
+    )
+
+
+def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
+    """The machine braiding round the core asked for (``CORE``): its own
+    cores, none, or — for a machine with none of its own that is one ring
+    of gears — one down the hole of the ring
+    (:func:`~braidpy.horn_gear.ring_core`).
+
+    The cores run up the braid, each in its own place, where the machine
+    lays it; the yarns are drawn in round them.  A rigid core stays straight
+    there; a core of yarn is held there at both ends, and gives way between
+    to the yarns pressing on it — never so far as to pass another core.
+
+    Returns:
+        The machine, where its cores stand, by name, and whether they are
+        rigid.
+
+    Raises:
+        ValueError: For a core asked of a machine with nowhere for one.
+    """
+    from braidpy.horn_gear import axial_positions, compute_layout, ring_core
+
+    if CORE.key in spec:
+        asked = CORE.read(spec)
+    else:
+        # A link made before says only how stiff the machine's own cores are.
+        asked = "rigid" if OLD_CORES.read(spec) == "rigid" and machine.axials else "own"
+    if asked not in CORE_KINDS:
+        raise ValueError(f"A core is one of {', '.join(CORE_KINDS)}.")
+    layout = compute_layout(machine)
+    if asked == "none":
+        machine = machine.with_axials([])
+    elif asked != "own" and not machine.axials:
+        core = ring_core(machine, layout)
+        if core is None:
+            raise ValueError(
+                "This machine has nowhere for a core: a core goes down the hole "
+                "a ring of gears encloses, where the carriers leave room for it."
+            )
+        machine = machine.with_axials([core])
+    return machine, axial_positions(machine, layout), asked == "rigid"
+
+
+def _core_note(rigid: bool) -> str:
+    kind = (
+        "rigid, it stays straight" if rigid else "of yarn, it gives way to the others"
+    )
+    return (
+        f"It braids round a core, drawn in grey: {kind}. Its word would need the "
+        "core as a strand of its own: no word is given."
     )
 
 
@@ -387,7 +432,8 @@ def _from_lace(spec: Spec) -> Result:
     """A Jacquard lace machine's braid: its card run so many passes, read
     off the machine itself (:func:`~braidpy.making.lace.ring_braid`) — or,
     to be made on a marudai, off its card (:func:`_lace_on_disk`)."""
-    if Lace.settle.read(spec) == "marudai":
+    # Not yet round a core: a marudai makes it from the card alone.
+    if Lace.settle.read(spec) == "marudai" and CORE.read(spec) in ("own", "none"):
         return _lace_on_disk(spec)
     from braidpy.horn_gear import gear_radii
     from braidpy.machine_catalog import LACE
@@ -411,22 +457,26 @@ def _from_lace(spec: Spec) -> Result:
     loading = _loading(spec.get("carriers"), machine)
     own = machine.default_carriers()
     carriers_at = dict(enumerate(loading)) if loading else own
+    machine, cores, rigid = _cored(machine, spec)
     paths, stopped, n_steps = _braided(
         machine, carriers_at, cycles, machine.steps_per_pass, diameter
     )
-    paths = _tighten(paths, spec, diameter, rigid=[])
+    paths = _place_cores(paths, cores)
+    paths = _tighten(paths, spec, diameter, rigid=list(cores) if rigid else [])
     info: Info = {}
-    card = punchcard_text(machine.program)
-    notes = [
-        "Words are read over one pass of the card. The card, a column a gear, "
-        "two lines a step — the gears turning anticlockwise ↺, then "
-        "clockwise ↻ — ● punched:\n" + card
-    ]
+    card = (
+        "The card, a column a gear, two lines a step — the gears turning "
+        "anticlockwise ↺, then clockwise ↻ — ● punched:\n"
+        + punchcard_text(machine.program)
+    )
+    notes = ["Words are read over one pass of the card. " + card]
     if stopped is not None:
         info["collision"] = _collision(
             stopped, loading or [own[k] for k in sorted(own)]
         )
         notes = [_stopped_note(stopped, n_steps)]
+    elif cores:
+        notes = [_core_note(rigid), card]
     else:
         word = ring_braid(machine, carriers_at).generators
         info.update(_braid_info([int(g) for g in word], len(paths.points)))
@@ -434,18 +484,22 @@ def _from_lace(spec: Spec) -> Result:
         info["made"] = cycles
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
+    bobbins = [k for k in keys if k not in cores]
+    colour = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(bobbins)}
+    colour.update({k: CORE_COLOUR for k in cores})
     result = _result(
         title + f", {cycles} passes",
         paths,
         diameter,
-        colours=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
-        names=[f"Bobbin {k}" for k in keys],
+        colours=[colour[k] for k in keys],
+        names=[f"Core {k}" if k in cores else f"Bobbin {k}" for k in keys],
         info=info,
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
     )
-    # To make it on a marudai, as asked later, from the card.
-    if stopped is None:
+    # To make it on a marudai, as asked later, from the card: not yet round
+    # a core.
+    if stopped is None and not cores:
         from braidpy.web.words import _in_order
 
         result["disk"] = _in_order(_lace_disk(spec)[3], keys)

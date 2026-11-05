@@ -39,7 +39,7 @@ def test_a_machines_cores_never_cross_or_touch_a_yarn(cores):
     import numpy as np
 
     result = build(
-        {"source": "machine", "name": "soutache_7", "cycles": 2, "cores": cores}
+        {"source": "machine", "name": "soutache_7", "cycles": 2, "core": cores}
     )
     d = result["yarn_diameter"]
     assert result["info"]["closest_approach"] >= 0.99 * d
@@ -57,7 +57,7 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
 
     def spread(cores):
         result = build(
-            {"source": "machine", "name": "soutache_5", "cycles": 2, "cores": cores}
+            {"source": "machine", "name": "soutache_5", "cycles": 2, "core": cores}
         )
         core = next(s for s in result["strands"] if s["name"].startswith("Core"))
         xy = np.array(core["points"])[:, :2]
@@ -67,9 +67,78 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
     assert spread("yarn") > 0
 
 
-def test_cores_are_yarn_or_rigid():
-    with pytest.raises(ValueError, match="yarn or rigid"):
-        build({"source": "machine", "name": "soutache_5", "cores": "glass"})
+def test_a_core_is_the_machines_own_none_yarn_or_rigid():
+    with pytest.raises(ValueError, match="own, none, yarn, rigid"):
+        build({"source": "machine", "name": "soutache_5", "core": "glass"})
+
+
+def _cores(result):
+    return [s for s in result["strands"] if s["name"].startswith("Core")]
+
+
+def test_a_link_made_before_keeps_its_cores():
+    """``cores`` said how stiff a machine's own cores were: it still does,
+    and adds none to a machine without."""
+    for name, stiff in (("soutache_5", "rigid"), ("tubular_8", "rigid")):
+        old = build(
+            {"source": "machine", "name": name, "cycles": 1, "cores": stiff},
+            tighten=False,
+        )
+        new = build(
+            {"source": "machine", "name": name, "cycles": 1, "core": "own"},
+            tighten=False,
+        )
+        assert len(_cores(old)) == len(_cores(new))
+    rigid = build({"source": "machine", "name": "soutache_5", "cores": "rigid"})
+    assert (
+        rigid["notes"]
+        == build({"source": "machine", "name": "soutache_5", "core": "rigid"})["notes"]
+    )
+
+
+def test_a_machine_can_braid_without_its_cores():
+    result = build({"source": "machine", "name": "soutache_5", "core": "none"})
+    assert _cores(result) == []
+    assert "word" in result["info"]
+
+
+@pytest.mark.parametrize(
+    "source, name", [("machine", "tubular_8"), ("lace", "lace_tubular_8")]
+)
+@pytest.mark.parametrize("core", ["yarn", "rigid"])
+def test_a_ring_of_gears_braids_round_a_core_down_its_hole(source, name, core):
+    """The core stands on the axis, the yarns all round it, none passing
+    through it; a rigid one stays straight, and none is made on a marudai."""
+    import numpy as np
+
+    result = build({"source": source, "name": name, "cycles": 1, "core": core})
+    (made,) = _cores(result)
+    assert made["name"] == "Core centre"
+    assert result["info"]["closest_approach"] >= 0.99 * result["yarn_diameter"]
+    points = np.array(made["points"])
+    yarns = [np.array(s["points"]) for s in result["strands"] if s is not made]
+    middle = len(points) // 2
+    angles = sorted(
+        np.arctan2(*(y[middle, 1::-1] - points[middle, 1::-1])) for y in yarns
+    )
+    gaps = np.diff([*angles, angles[0] + 2 * np.pi])
+    assert gaps.max() < np.pi, "the yarns all round the core"
+    if core == "rigid":
+        assert np.ptp(points[:, :2], axis=0).max() < 1e-9
+    assert "disk" not in result
+    assert "word" not in result["info"]
+
+
+def test_a_core_needs_a_hole_to_go_down():
+    """A flat machine has none, nor the line folded round of the multiband
+    machine, nor a ring of four lace gears, whose bobbins cross its middle."""
+    for source, name in (
+        ("machine", "flat_3"),
+        ("machine", "multiband_10_15_10"),
+        ("lace", "lace_dutch"),
+    ):
+        with pytest.raises(ValueError, match="nowhere for a core"):
+            build({"source": source, "name": name, "core": "yarn"})
 
 
 @pytest.mark.parametrize(

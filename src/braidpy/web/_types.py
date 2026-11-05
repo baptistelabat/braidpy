@@ -49,6 +49,8 @@ class Spec(TypedDict, total=False):
     counts: str
     # A machine.
     carriers: str
+    core: str
+    # A link made before ``core``: how stiff a machine's own cores are.
     cores: str
     # Your own lace machine.
     n_gears: Value

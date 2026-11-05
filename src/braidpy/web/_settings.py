@@ -95,20 +95,28 @@ class Sinnet:
 
 # ------------------------------------------------------------------ machines
 
+# The core a braid is made round: as whatever makes it is built (a
+# machine's own cores, of yarn); none; or one of yarn or rigid — a machine's
+# own, or one down the hole of a ring of gears.
+CORE = Text("core", "own")
+CORE_KINDS = ("own", "none", "yarn", "rigid")
+CORE_COLOUR = "#8a857c"
+# Links made before: the stiffness, yarn or rigid, of a machine's own cores.
+OLD_CORES = Text("cores", "yarn")
+
 
 class Machine:
-    """A horn gear braiding machine, run so many cycles, its cores of yarn or
-    rigid; loaded as it loads itself, unless ``carriers`` says otherwise."""
+    """A horn gear braiding machine, run so many cycles, round the core
+    asked for (``CORE``); loaded as it loads itself, unless ``carriers``
+    says otherwise."""
 
     name = Text("name", "tubular_8")
     cycles = Count("cycles", 2, low=1, high=8)
-    cores = Text("cores", "yarn")
-    stiffness = ("yarn", "rigid")
+    core = CORE
     # By default, a fifth of a gear radius: a plausible yarn.
     yarn_diameter = Number("yarn_diameter", 0.2, low=0.01, high=10.0)
     of_gear_radius = 0.2
-    core_colour = "#8a857c"
-    shown = (name, cores, cycles)
+    shown = (name, core, cycles)
 
 
 class Lace:
@@ -124,4 +132,5 @@ class Lace:
     card = Text("card", "")
     # How it is to be settled: on a marudai, made from its card alone.
     settle = Text("settle", "")
-    shown = (name, cycles)
+    core = CORE
+    shown = (name, core, cycles)

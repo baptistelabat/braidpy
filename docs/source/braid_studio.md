@@ -75,10 +75,16 @@ The page has a form and a 3D view.
   number of gears and a card typed a step a line, the gears turning
   anticlockwise then those turning clockwise, a 0 or 1 a gear —
   `1000 0100`. A card that cannot drive the machine says why, in the panel.
-- A machine that braids round **cores** braids them in either as yarn, held
-  at both ends and giving way between to the yarns pressing on it, or as
-  rigid cores, straight; either way each core keeps its own place, where the
-  machine lays it, and no yarn or other core ever passes through it.
+- A machine can braid round a **core**: its own, as soutache braids round
+  its cords, or, for a ring of gears — a tubular machine, a lace machine of
+  six gears or more — one down the hole the ring encloses
+  ({func}`~braidpy.horn_gear.ring_core`). **Core** chooses: as the machine
+  is built, none, of yarn, held at both ends and giving way between to the
+  yarns pressing on it, or rigid, straight. Either way each core keeps its
+  own place, where the machine lays it, and no yarn or other core ever
+  passes through it. A machine with nowhere for a core — a flat one, or a
+  ring of four lace gears, whose bobbins cross its middle — says so. A lace
+  machine round a core is not made on a marudai yet.
 - A disk braid — kumihimo, mobidai, a sinnet — is **made on a marudai**
   (`web/marudai.js`): the disk's own moves, one by one, each moved yarn
   laid over the others and drawn tight, as braid3dmin makes a braid. It is
