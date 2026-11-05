@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=3f065e4dec";
-import { attachEditor } from "./editor.js?v=3f065e4dec";
-import { attachMachine } from "./machine.js?v=3f065e4dec";
-import { $ } from "./page.js?v=3f065e4dec";
-import { submit } from "./workers.js?v=3f065e4dec";
+import { attachDiagram } from "./diagram.js?v=0f81e39eba";
+import { attachEditor } from "./editor.js?v=0f81e39eba";
+import { attachMachine } from "./machine.js?v=0f81e39eba";
+import { $ } from "./page.js?v=0f81e39eba";
+import { submit } from "./workers.js?v=0f81e39eba";
 
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
@@ -122,7 +122,7 @@ const FIELDS = {
       name: "carriers",
       label: "Bobbins",
       kind: "text",
-      hint: "Each as gear:slot. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
+      hint: "Each as gear:slot, or by its notch, A-B, as the card names them. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
     },
     { name: "cycles", label: "Passes of the card", kind: "number", min: 1, max: 24 },
   ],
