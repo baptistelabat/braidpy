@@ -84,7 +84,10 @@ The page has a form and a 3D view.
   laid over the others and drawn tight, as braid3dmin makes a braid. It is
   the closest to a real braid, sinnets taking the shapes of their
   cross-sections. A braid word is made there too, its strands rolled onto
-  a ring of bobbins, the braid held. A machine's braid is tightened
+  a ring of bobbins, the braid held; and a lace machine's, its card run
+  round its ring of notches, each gear's turn its two notches swapping
+  bobbins ({func}`~braidpy.making.lace.card_program`), worked out from the
+  card alone. A machine's braid is tightened
   **sideways**, fast, keeping the pitch it was laid with. Under "Yarn and tightening", **Settle the
   yarns** can choose otherwise: sideways for a disk braid too, or, for any
   braid, by physics (`web/rope.js`, in beta) — each yarn an elastic

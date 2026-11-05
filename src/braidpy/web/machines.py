@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from braidpy.horn_gear.jacquard import JacquardLaceMachine
 from braidpy.utils import PALETTE
 from braidpy.web._result import _result, _tighten, _timeline
-from braidpy.web._settings import OWN, Lace, Machine
+from braidpy.web._settings import DISK_ITERATIONS, OWN, Lace, Machine, Word
 from braidpy.web._spec import defaults
 from braidpy.web._types import (
     Collision,
@@ -95,13 +95,19 @@ def _own_lace(spec: Spec) -> Any:
     """A lace machine of your own: its gears, an even number, and its card."""
     from braidpy.horn_gear.jacquard import jacquard_lace_ring
 
+    n_gears = _own_gears(spec)
+    return jacquard_lace_ring(n_gears, _read_card(Lace.card.read(spec), n_gears))
+
+
+def _own_gears(spec: Spec) -> int:
+    """How many gears your own lace ring has: an even number."""
     n_gears = Lace.n_gears.read(spec)
     if n_gears % 2:
         raise ValueError(
             f"{n_gears} gears cannot mesh in a ring: neighbours turn opposite "
             "ways, so give an even number."
         )
-    return jacquard_lace_ring(n_gears, _read_card(Lace.card.read(spec), n_gears))
+    return n_gears
 
 
 def _from_machine(spec: Spec) -> Result:
@@ -252,9 +258,137 @@ def _stopped_note(stopped: Any, n_steps: int | None) -> str:
     )
 
 
+def _notch_names(n_gears: int) -> dict[str, int]:
+    """A lace ring's notches by name, ``A-B``, as its card names them: the
+    notch gears A and B cut is notch 0, and so round."""
+    names = [chr(ord("A") + g) for g in range(n_gears)]
+    return {f"{names[k]}-{names[(k + 1) % n_gears]}": k for k in range(n_gears)}
+
+
+def _lace_threading(text: Any, n_gears: int) -> list[int] | None:
+    """The notches bobbins are put in, strand after strand: by name, ``A-B``,
+    or as ``gear:slot`` at the start — slot 0 of a gear faces the next gear
+    round the ring, slot 1 the previous.  None if not given."""
+    if text is None or not str(text).strip():
+        return None
+    if str(text).strip().lower() == "none":
+        raise ValueError("Give at least one bobbin.")
+    named = _notch_names(n_gears)
+    threaded: list[int] = []
+    for token in re.split(r"[\s,;]+", str(text).strip()):
+        match = re.fullmatch(r"([A-Za-z]):([01])", token)
+        if token in named:
+            notch = named[token]
+        elif match and ord(match.group(1).upper()) - ord("A") < n_gears:
+            gear = ord(match.group(1).upper()) - ord("A")
+            notch = gear if match.group(2) == "0" else (gear - 1) % n_gears
+        else:
+            raise ValueError(
+                f"Cannot read {token!r}: give each bobbin by its notch, A-B, "
+                "or as gear:slot."
+            )
+        if notch in threaded:
+            raise ValueError(f"Two bobbins in the same notch, {token}.")
+        threaded.append(notch)
+    return threaded
+
+
+def _lace_card(spec: Spec) -> tuple[str, int, list[Any], list[int] | None]:
+    """The lace machine asked for, as its card: its title, its gears, per
+    step whether each gear turns anticlockwise, then clockwise, and the
+    notches threaded, strand after strand (every one if None).  Read without
+    building the machine."""
+    from braidpy.machine_catalog import LACE
+
+    name = Lace.name.read(spec)
+    if name == OWN:
+        n_gears = _own_gears(spec)
+        steps = [
+            (tuple(c == "1" for c in ccw), tuple(c == "1" for c in cw))
+            for ccw, cw in _read_card(Lace.card.read(spec), n_gears)
+        ]
+        threaded: list[int] | None = None
+        title = f"Your own card, {n_gears} gears"
+    elif name in LACE:
+        ring = LACE[name].make()
+        n_gears, steps, title = ring.n_gears, list(ring.steps), LACE[name].title
+        threaded = None if ring.threaded is None else list(ring.threaded)
+    else:
+        raise ValueError(f"No lace machine {name!r}: one of {sorted(LACE)}.")
+    threaded = _lace_threading(spec.get("carriers"), n_gears) or threaded
+    return title, n_gears, steps, threaded
+
+
+def _lace_disk(spec: Spec):
+    """The card asked for run round its ring, ``cycles`` passes, as a disk
+    program for the page's marudai; and one pass, as a ring program."""
+    from braidpy.making.lace import card_program
+    from braidpy.ring_program import RingProgram
+    from braidpy.web.words import place_program
+
+    title, n_gears, steps, threaded = _lace_card(spec)
+    once = card_program(n_gears, steps, threaded)
+    whole = RingProgram(once.n_places, once.start, once.rows * Lace.cycles.read(spec))
+    return title, steps, once, place_program(whole)
+
+
+def _lace_on_disk(spec: Spec) -> Result:
+    """A lace machine's braid made on a marudai: the card run round its ring
+    of notches, each gear's turn its two notches swapping bobbins
+    (:func:`~braidpy.making.lace.card_program`), the bobbins moved as a
+    disk's.  Worked out from the card alone: no machine is built, so nothing
+    is loaded that the machine needs."""
+    from braidpy.making.lace import punchcard_text
+    from braidpy.take_off import disk_trajectories
+    from braidpy.web.disks import _disk_in_step
+    from braidpy.web.words import _in_order, _ring_steps
+
+    title, steps, once, disk = _lace_disk(spec)
+    cycles = Lace.cycles.read(spec)
+    diameter = Machine.yarn_diameter.read(spec, default=Word.yarn_diameter.default)
+    start, moves = _ring_steps(disk)
+    paths, clock, ring_seen = _disk_in_step(
+        start,
+        moves,
+        disk["n_slots"],
+        diameter,
+        DISK_ITERATIONS.read(spec),
+        clockwise=True,
+    )
+    keys = list(paths.points)
+    trajectories = disk_trajectories(start, moves, disk["n_slots"], clockwise=True)
+    info: Info = {}
+    word = [int(g) for g in once.braid().generators]
+    info.update(_braid_info(word, len(keys)))
+    info["repeated"] = "cycle"
+    info["made"] = cycles
+    info["pure"] = cycles % (info.get("pure_after") or 1) == 0
+    result = _result(
+        title + f", {cycles} passes",
+        paths,
+        diameter,
+        colours=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
+        names=[f"Bobbin {k}" for k in keys],
+        info=info,
+        notes=[
+            "Made on a marudai: the card run round its ring of notches, each "
+            "gear's turn its two notches swapping bobbins. Words are read over "
+            "one pass of the card. The card, a column a gear, two lines a step "
+            "— the gears turning anticlockwise ↺, then clockwise ↻ — ● "
+            "punched:\n" + punchcard_text(steps)
+        ],
+        timeline=_timeline(trajectories, keys, "disk", clock, ring_seen),
+    )
+    result["disk"] = _in_order(disk, keys)
+    return result
+
+
 def _from_lace(spec: Spec) -> Result:
     """A Jacquard lace machine's braid: its card run so many passes, read
-    off the machine itself (:func:`~braidpy.making.lace.ring_braid`)."""
+    off the machine itself (:func:`~braidpy.making.lace.ring_braid`) — or,
+    to be made on a marudai, off its card (:func:`_lace_on_disk`)."""
+    if Lace.settle.read(spec) == "marudai":
+        return _lace_on_disk(spec)
     from braidpy.horn_gear import gear_radii
     from braidpy.machine_catalog import LACE
     from braidpy.making.lace import punchcard_text, ring_braid
@@ -300,7 +434,7 @@ def _from_lace(spec: Spec) -> Result:
         info["made"] = cycles
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
-    return _result(
+    result = _result(
         title + f", {cycles} passes",
         paths,
         diameter,
@@ -310,6 +444,12 @@ def _from_lace(spec: Spec) -> Result:
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
     )
+    # To make it on a marudai, as asked later, from the card.
+    if stopped is None:
+        from braidpy.web.words import _in_order
+
+        result["disk"] = _in_order(_lace_disk(spec)[3], keys)
+    return result
 
 
 def _loading(text: Any, machine: Any) -> list[tuple[str, int]] | None:
@@ -325,9 +465,8 @@ def _loading(text: Any, machine: Any) -> list[tuple[str, int]] | None:
 
     notches = {}
     if isinstance(machine, JacquardLaceMachine):
-        named = {conn.name: k for k, conn in enumerate(machine.connections)}
         at = notch_positions(machine)
-        notches = {name: at[k] for name, k in named.items() if name}
+        notches = {name: at[k] for name, k in _notch_names(len(machine.gears)).items()}
     for token in re.split(r"[\s,;]+", str(text).strip()):
         if token in notches:
             gear, slot = notches[token]

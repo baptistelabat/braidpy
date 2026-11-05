@@ -6,6 +6,11 @@ What changed in each release of braidpy.
 
 ### New
 
+- A lace machine's braid can be made on a marudai in Braid Studio: the
+  braid grows at the fell as the card turns the gears, each gear's turn its
+  two notches swapping bobbins. Worked out from the card alone
+  (`making.lace.card_program`), without building the machine or loading
+  what it needs.
 - The multiband machines draw every carrier of a band in that band's colour,
   so the bands can be told apart in the braid they make together; a band
   shown alone keeps its colour (`BraidingMachine.carrier_colours`).
