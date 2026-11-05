@@ -44,6 +44,11 @@ MANY = {
     "repeat": 1,
 }
 
+# Round a core up the axis: of yarn, pulled straight up, and rigid, held.
+CORED = {"source": "kumihimo", "pattern": "SR", "n_strands": 4, "repeat": 2}
+CORE_YARN = {**CORED, "core": "yarn"}
+CORE_RIGID = {**CORED, "core": "rigid"}
+
 
 def _js(case, path):
     out = subprocess.run(
@@ -64,7 +69,11 @@ def _disk(tmp_path, spec):
     return disk, path
 
 
-@pytest.mark.parametrize("spec", [PLAIT, ROPE, MANY], ids=["plait", "rope", "many"])
+@pytest.mark.parametrize(
+    "spec",
+    [PLAIT, ROPE, MANY, CORE_YARN, CORE_RIGID],
+    ids=["plait", "rope", "many", "core-yarn", "core-rigid"],
+)
 @pytest.mark.slow
 def test_the_port_is_the_same_algorithm_bead_for_bead(tmp_path, monkeypatch, spec):
     from braidpy import marudai

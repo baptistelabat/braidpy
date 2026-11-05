@@ -164,10 +164,12 @@ class DiskProgram(_DiskProgram, total=False):
     """What a disk does, for the page to make the braid move by move: each
     strand's slot to start with, and per step, the strands that move, by
     index, and by how many slots.  A word's ring program also says whether
-    its bobbins' turns twist the yarns in, and whether it is held."""
+    its bobbins' turns twist the yarns in, and whether it is held; and a
+    disk braid round a core, the core's kind: yarn or rigid."""
 
     twists: bool
     held: bool
+    core: str
 
 
 class _Result(TypedDict):

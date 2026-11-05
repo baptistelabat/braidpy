@@ -22,7 +22,13 @@ from braidpy.web._info import _braid_info
 if TYPE_CHECKING:
     from braidpy.horn_gear.jacquard import JacquardLaceMachine
 from braidpy.utils import PALETTE
-from braidpy.web._result import _place_cores, _result, _tighten, _timeline
+from braidpy.web._result import (
+    _place_cores,
+    _result,
+    _tighten,
+    _timeline,
+    _with_core,
+)
 from braidpy.web._settings import (
     CORE,
     CORE_COLOUR,
@@ -382,12 +388,22 @@ def _lace_on_disk(spec: Spec) -> Result:
     of notches, each gear's turn its two notches swapping bobbins
     (:func:`~braidpy.making.lace.card_program`), the bobbins moved as a
     disk's.  Worked out from the card alone: no machine is built, so nothing
-    is loaded that the machine needs."""
+    is loaded that the machine needs.
+
+    Round a core, it goes down the marudai's middle, as a disk braid's
+    (:func:`~braidpy.web.disks._disk_in_step`): a marudai has room for one
+    whatever card it is made from.
+    """
     from braidpy.making.lace import punchcard_text
     from braidpy.take_off import disk_trajectories
-    from braidpy.web.disks import _disk_in_step
+    from braidpy.web.disks import CORE_NAME, _cored, _disk_in_step
     from braidpy.web.words import _in_order, _ring_steps
 
+    core = CORE.read(spec)
+    if core not in CORE_KINDS:
+        raise ValueError(f"A core is one of {', '.join(CORE_KINDS)}.")
+    # A lace machine has no core of its own.
+    core = "none" if core == "own" else core
     title, steps, once, disk = _lace_disk(spec)
     cycles = Lace.cycles.read(spec)
     diameter = Machine.yarn_diameter.read(spec, default=Word.yarn_diameter.default)
@@ -399,12 +415,16 @@ def _lace_on_disk(spec: Spec) -> Result:
         diameter,
         DISK_ITERATIONS.read(spec),
         clockwise=True,
+        core=core,
     )
     keys = list(paths.points)
+    bobbins = [k for k in keys if k != CORE_NAME]
     trajectories = disk_trajectories(start, moves, disk["n_slots"], clockwise=True)
+    if core != "none":
+        trajectories = _with_core(trajectories, CORE_NAME)
     info: Info = {}
     word = [int(g) for g in once.braid().generators]
-    info.update(_braid_info(word, len(keys)))
+    info.update(_braid_info(word, len(bobbins)))
     info["repeated"] = "cycle"
     info["made"] = cycles
     info["pure"] = cycles % (info.get("pure_after") or 1) == 0
@@ -424,16 +444,14 @@ def _lace_on_disk(spec: Spec) -> Result:
         ],
         timeline=_timeline(trajectories, keys, "disk", clock, ring_seen),
     )
-    result["disk"] = _in_order(disk, keys)
-    return result
+    return _cored(result, core, keys, _in_order(disk, bobbins))
 
 
 def _from_lace(spec: Spec) -> Result:
     """A Jacquard lace machine's braid: its card run so many passes, read
     off the machine itself (:func:`~braidpy.making.lace.ring_braid`) — or,
     to be made on a marudai, off its card (:func:`_lace_on_disk`)."""
-    # Not yet round a core: a marudai makes it from the card alone.
-    if Lace.settle.read(spec) == "marudai" and CORE.read(spec) in ("own", "none"):
+    if Lace.settle.read(spec) == "marudai":
         return _lace_on_disk(spec)
     from braidpy.horn_gear import gear_radii
     from braidpy.machine_catalog import LACE
@@ -497,12 +515,16 @@ def _from_lace(spec: Spec) -> Result:
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
     )
-    # To make it on a marudai, as asked later, from the card: not yet round
-    # a core.
-    if stopped is None and not cores:
+    # To make it on a marudai, as asked later, from the card; its core, if
+    # it has one, after the bobbins, as the marudai has it.
+    if stopped is None:
         from braidpy.web.words import _in_order
 
-        result["disk"] = _in_order(_lace_disk(spec)[3], keys)
+        bobbins = [k for k in keys if k not in cores]
+        assert keys[len(bobbins) :] == list(cores)
+        result["disk"] = _in_order(_lace_disk(spec)[3], bobbins)
+        if cores:
+            result["disk"]["core"] = "rigid" if rigid else "yarn"
     return result
 
 

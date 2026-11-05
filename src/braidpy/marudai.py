@@ -25,6 +25,11 @@ project's own.  In short:
   shrinking until the queue dies down.
 - Hanging free, the braid turns until its yarns' ends pull it no way round.
 - Well behind a yarn's end, the braid is made: frozen.
+- A core, if there is one, rises up the braid's axis, past the carriers: a
+  yarn pulled straight up, or rigid, held where it stands.  A yarn's move
+  passes beside it, on the side it goes round — a move of more than nine
+  tenths of a half turn is made in two — and is drawn tight round it.  The
+  braid turns about it.
 
 Inside, lengths are in units of half a yarn diameter, y up, as the method was
 given; what :func:`make` returns is in yarn diameters, z up.
@@ -111,10 +116,15 @@ class Machine:
     Args:
         n_threads: How many yarns.
         turning: Whether the braid hangs free and turns to balance.
+        core: A core up the axis, ``"yarn"`` or ``"rigid"``, after the
+            yarns; None for none.
     """
 
-    def __init__(self, n_threads: int, turning: bool = True) -> None:
+    def __init__(
+        self, n_threads: int, turning: bool = True, core: str | None = None
+    ) -> None:
         self.n = n_threads
+        self.core = core
         # While the bobbins turn round the braid, together: held, and the
         # yarns carried round with them, not over each other.
         self._balancing = turning
@@ -137,7 +147,8 @@ class Machine:
         self.cell_prev: list[int] = []
         self.free: list[int] = []
         self.head = [-1] * (NXZ * NXZ * NY)
-        self.threads = [_Thread() for _ in range(n_threads)]
+        # The core, after the yarns.
+        self.threads = [_Thread() for _ in range(n_threads + (1 if core else 0))]
         self.queue: list[int] = []
         self.hm_h = [-2.0] * (HW * HW)
         self.hm_t = [-1] * (HW * HW)
@@ -595,6 +606,7 @@ class Machine:
             self._trim(t)
         self._heights()
         self._find_tip()
+        self._grow_core()
         self.quiet = True
         self._balance()
         self.quiet = False
@@ -622,7 +634,7 @@ class Machine:
 
     def _find_tip(self) -> None:
         s = 0.0
-        for thread in self.threads:
+        for thread in self.threads[: self.n]:
             s += self.Y[thread.beads[max(0, len(thread.beads) - TAIL)]]
         self.tip = s / self.n
 
@@ -636,9 +648,12 @@ class Machine:
             az += Z[self._last(t)]
         ax /= self.n
         az /= self.n
+        # Round a core, the braid turns about it.
+        if self.core:
+            ax = az = 0.0
         span = REACH - 4
         lean = []
-        for thread in self.threads:
+        for thread in self.threads[: self.n]:
             beads = thread.beads
             if len(beads) < 20:
                 lean.append(0.0)
@@ -697,7 +712,7 @@ class Machine:
         """The bobbins carried round by f together, the braid held: each
         yarn's free part turns with them about the axis, all of it at its
         carrier and none of it at the braid's tip, twisting the yarns in."""
-        for t, thread in enumerate(self.threads):
+        for t, thread in enumerate(self.threads[: self.n]):
             beads = thread.beads
             end = self._last(t)
             top = max(self.Y[end], self.tip + 1)
@@ -721,6 +736,38 @@ class Machine:
                 thread.tx * c - thread.tz * s,
                 thread.tx * s + thread.tz * c,
             )
+
+    def _grow_core(self) -> None:
+        """The core up the axis, past the carriers, from where the braid
+        begins: of yarn, its end pulled straight up and frozen where the
+        braid is made; rigid, held all along."""
+        if not self.core:
+            return
+        c = self.n
+        beads = self.threads[c].beads
+        top = self.tip + REACH
+        if not beads:
+            self.fixed[self._add_bead(c, 0, 0, 0)] = 1
+            self.fixed[self._add_bead(c, 0, 1, 0)] = 1
+        while self.Y[self._last(c)] < top:
+            e = self._last(c)
+            b = self._add_bead(c, self.X[e], self.Y[e] + 1, self.Z[e])
+            if self.core == "rigid":
+                self.fixed[b] = 1
+            else:
+                self._enqueue(b)
+        # Pulled towards well above wherever its end can be.
+        self.threads[c].ty = top + REACH
+        low = math.inf
+        for thread in self.threads[: self.n]:
+            for b in reversed(thread.beads):
+                if self.fixed[b]:
+                    break
+                low = min(low, self.Y[b])
+        if low < math.inf:
+            for b in beads:
+                if self.Y[b] < low:
+                    self.fixed[b] = 1
 
     def _forget(self) -> None:
         """The made braid, well below anything free, leaves the grid."""
@@ -746,6 +793,7 @@ class Machine:
         would be so wide the yarns rose from it as a tube, never drawn in to
         a braid.  So then rings of at most ``RING``, one under the other, the
         yarns taken in turn round the disk."""
+        self._grow_core()
         rings = math.ceil(self.n / RING)
         each = math.ceil(self.n / rings)
         ring = [0] * self.n
@@ -757,6 +805,9 @@ class Machine:
             # enough apart, then, for them to clear each other.
             touching = 1 / math.sin(math.pi / max(2, each))
             r = each / 3 if each / 3 > touching else 1.1 * touching
+            # Round a core, clear of it.
+            if self.core:
+                r = max(r, 2.2)
             y = -2 * ring[t]
             self.fixed[self._add_bead(t, math.cos(a) * r, y, math.sin(a) * r)] = 1
             self.fixed[self._add_bead(t, math.cos(a) * r, y + 1, math.sin(a) * r)] = 1
@@ -773,8 +824,8 @@ def make(job: dict[str, Any]) -> dict[str, Any]:
         job: A disk program, as :mod:`braidpy.web` gives it: ``n_slots``,
             ``start`` (each yarn's slot, from 1), ``steps`` (per step,
             ``[yarn, slots moved]``), ``clockwise``; and optionally
-            ``split``, ``held``, ``twists``, ``from`` and ``turning``, as in
-            the JavaScript.
+            ``split``, ``held``, ``twists``, ``from``, ``turning`` and
+            ``core``, as in the JavaScript.
 
     Returns:
         ``yarns`` (each yarn's beads, flat ``[x, y, z, …]`` in yarn
@@ -802,7 +853,7 @@ def begin(job: dict[str, Any]) -> dict[str, Any]:
     split = job.get("split", True)
     twists = job["twists"] if job.get("twists") is not None else bool(job.get("held"))
     turning = job["turning"] if job.get("turning") is not None else not job.get("held")
-    machine = Machine(n, turning)
+    machine = Machine(n, turning, job.get("core"))
     steps = job["steps"]
 
     def uniform(step: Sequence[Sequence[float]]) -> bool:
@@ -855,7 +906,9 @@ def begin(job: dict[str, Any]) -> dict[str, Any]:
         def ours(p: list[float]) -> list[float]:
             return [p[0] / 2, -p[2] / 2, p[1] / 2]
 
-        whole = [[ours(p) for p in machine.positions(t)] for t in range(n)]
+        whole = [
+            [ours(p) for p in machine.positions(t)] for t in range(len(machine.threads))
+        ]
         tails = []
         for y in whole:
             start = 0
@@ -868,8 +921,9 @@ def begin(job: dict[str, Any]) -> dict[str, Any]:
             kept = [v for v in values if math.isfinite(v)]
             return sum(kept) / len(kept) if kept else math.nan
 
-        radius = mean([math.hypot(t[-3], t[-2]) for t in tails])
-        height = mean([t[-1] for t in tails])
+        # The yarns' own, not a core's: it goes to no carrier.
+        radius = mean([math.hypot(t[-3], t[-2]) for t in tails[:n]])
+        height = mean([t[-1] for t in tails[:n]])
         return {
             "yarns": [[c for p in y if p[2] <= tip for c in p] for y in whole],
             "whole": [[c for p in y for c in p] for y in whole],

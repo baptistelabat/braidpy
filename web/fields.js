@@ -35,7 +35,7 @@ const DISK_CORE = {
     ["yarn", "Yarn: gives way to the yarns braided round it"],
     ["rigid", "Rigid: stays straight"],
   ],
-  hint: "A core down the disk's middle, the braid made round it. Not made on a marudai yet: the yarns are tightened sideways.",
+  hint: "A core down the disk's middle, the braid made round it: on a marudai, it rises up the braid's axis and each move passes beside it.",
 };
 
 // What each source asks for.  ``entries`` and ``examples`` come from

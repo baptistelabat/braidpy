@@ -82,6 +82,38 @@ const cases = {
   },
 
   // A braid made elsewhere — by braidpy.marudai — measured the same way.
+  // Round a core, the last strand: the braid measured, and up it, the
+  // widest gap the yarns leave round the core, and how far the core goes
+  // from the axis.
+  cored() {
+    const out = make(JSON.parse(fs.readFileSync(process.argv[3], "utf8")));
+    const core = out.yarns[out.yarns.length - 1];
+    const yarns = out.yarns.slice(0, -1);
+    const at = (y, z) => {
+      for (let i = 3; i < y.length; i += 3) {
+        if ((y[i - 1] - z) * (y[i + 2] - z) <= 0 && y[i - 1] !== y[i + 2]) {
+          const f = (z - y[i - 1]) / (y[i + 2] - y[i - 1]);
+          return [y[i - 3] + f * (y[i] - y[i - 3]), y[i - 2] + f * (y[i + 1] - y[i - 2])];
+        }
+      }
+      return null;
+    };
+    let widest = 0;
+    for (let z = 1; z < out.tip - 0.5; z += 0.5) {
+      const c = at(core, z);
+      const angles = yarns
+        .map((y) => at(y, z))
+        .filter(Boolean)
+        .map(([x, y]) => Math.atan2(y - c[1], x - c[0]))
+        .sort((p, q) => p - q);
+      let gap = angles[0] + 2 * Math.PI - angles[angles.length - 1];
+      for (let i = 1; i < angles.length; i++) gap = Math.max(gap, angles[i] - angles[i - 1]);
+      widest = Math.max(widest, gap);
+    }
+    let off = 0;
+    for (let i = 0; i < core.length; i += 3) off = Math.max(off, Math.hypot(core[i], core[i + 1]));
+    return { ...measure(out), widest, off, strands: out.yarns.length };
+  },
   measure() {
     return measure(JSON.parse(fs.readFileSync(process.argv[3], "utf8")));
   },
