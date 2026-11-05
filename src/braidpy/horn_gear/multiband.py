@@ -36,6 +36,9 @@ The two six-horn gears are split, cutting the line into bands of 24, 38 and
 24 slots.  Each band holds at most half its slots, 12, 19 and 12 carriers, as
 a flat braid does; the drawing runs 10, 15 and 10
 (:data:`MULTIBAND_10_15_10_LOADING`).
+
+:func:`twin_plait` is the smallest such machine: three gears, ``3 6 3``, and
+two plaits braided side by side.
 """
 
 from __future__ import annotations
@@ -44,6 +47,15 @@ import math
 from collections.abc import Sequence
 
 from .model import BraidingMachine, Connection, HornGear
+
+#: The smallest line that braids two bands: an end gear of three slots, a
+#: six-slot gear split three and three, and another end gear.  Each band is
+#: three slots of end gear and three of split gear, the smallest flat braid
+#: there is: two plaits side by side.
+TWIN_PLAIT_SLOTS = (3, 6, 3)
+
+#: Its one split gear.
+TWIN_PLAIT_SPLIT = (1,)
 
 #: Slots per gear along the line, read off the circuit drawing.  The gears
 #: lie on a line folded round into nearly a circle; its ends never join.
@@ -246,6 +258,20 @@ class MultibandLine(BraidingMachine):
             x, y = centres[int(name[1:].rstrip("ab"))]
             layout[name] = (x - cx, y - cy)
         return layout
+
+
+def twin_plait() -> MultibandLine:
+    """Two plaits braided at once on one line of three gears.
+
+    The smallest machine with a split gear, to see what one does: two
+    three-slot end gears either side of a six-slot gear split between them.
+    Each band is a plait of three carriers, turned back on its own half of
+    the middle gear; the two plaits share that gear and never meet.
+
+    Returns:
+        MultibandLine: the line, loaded with three carriers in each band.
+    """
+    return MultibandLine(TWIN_PLAIT_SLOTS, TWIN_PLAIT_SPLIT)
 
 
 def multiband_10_15_10() -> MultibandLine:

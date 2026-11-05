@@ -20,6 +20,7 @@ from braidpy.horn_gear.multiband import (
     band_of,
     multiband_10_15_10,
     multiband_band,
+    twin_plait,
 )
 from braidpy.horn_gear.simulation import simulate
 from braidpy.horn_gear.tracks import compute_tracks, simulation_period
@@ -160,3 +161,26 @@ def test_band_of_names_each_half_by_the_band_it_serves():
     assert band_of("G0") == 0
     assert band_of("G15") == 2
     assert band_of("nope") is None
+
+
+def test_the_smallest_multiband_braids_two_plaits():
+    """Three gears, 3 6 3, the middle one split: each band is the smallest
+    flat braid, three carriers, and the two run together without meeting,
+    every carrier back where it started after six steps."""
+    machine = twin_plait()
+    assert list(machine.gears) == ["G0", "G1a", "G1b", "G2"]
+    loading = machine.default_carriers()
+    assert len(loading) == 6
+    first_band = [gear in ("G0", "G1a") for gear, _ in loading.values()]
+    assert first_band.count(True) == first_band.count(False) == 3
+    assert simulation_period(machine) == 6
+    simulate(machine, 6, loading)
+    for track in compute_tracks(machine):
+        assert {gear in ("G0", "G1a") for gear, _ in track} in ({True}, {False})
+
+
+def test_the_whole_machine_and_the_smallest_are_in_braid_studio():
+    from braidpy.machine_catalog import CATALOGUE
+
+    for name in ("twin_plait", "multiband_10_15_10"):
+        assert CATALOGUE[name].make().total_slots() in (12, 86)
