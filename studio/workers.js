@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=0f81e39eba";
-import { showMaking, showKin } from "./info.js?v=0f81e39eba";
+import { onChosen, rebase } from "./colours.js?v=16f3a4bc62";
+import { showMaking, showKin } from "./info.js?v=16f3a4bc62";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=0f81e39eba";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=0f81e39eba";
-import { unpack } from "./frames.js?v=0f81e39eba";
-import { machineShapes, machineWanted } from "./machine.js?v=0f81e39eba";
-import { $ } from "./page.js?v=0f81e39eba";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=0f81e39eba";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=0f81e39eba";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=16f3a4bc62";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=16f3a4bc62";
+import { unpack } from "./frames.js?v=16f3a4bc62";
+import { machineShapes, machineWanted } from "./machine.js?v=16f3a4bc62";
+import { $ } from "./page.js?v=16f3a4bc62";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=16f3a4bc62";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=16f3a4bc62";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -37,7 +37,7 @@ let b3dAsked = null;
 let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=0f81e39eba");
+  settler = new Worker("settle.js?v=16f3a4bc62");
   settling = null;
   b3dAsked?.reject(new Error("another braid was asked for"));
   b3dAsked = null;
@@ -147,7 +147,7 @@ function heard(data) {
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
     // Settling sends the braid as it goes: the view stays put.
-    rebase(data.result);
+    if (rebase(data.result)) relink();
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
@@ -165,7 +165,7 @@ function heard(data) {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
-    rebase(data.result);
+    if (rebase(data.result)) relink();
     show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
     showDefaults(data.result.used);
     document.dispatchEvent(
@@ -305,9 +305,13 @@ export function submit() {
 // it — written again without making anything, since nothing has changed but
 // what the strands are painted with.
 onChosen((saved) => {
-  if (!saved) return;
-  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+  if (saved) relink();
 });
+
+// The address written again for the braid asked for, nothing made.
+function relink() {
+  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+}
 
 // Reset: stop whatever is being made, and forget the marudai and the
 // braids made, so that the next is made from the start.

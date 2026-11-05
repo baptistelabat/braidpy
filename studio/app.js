@@ -23,15 +23,15 @@
 //
 // Each sets itself up as it loads, in this order.
 
-import "./fields.js?v=0f81e39eba";
-import "./diagram.js?v=0f81e39eba";
-import "./machine.js?v=0f81e39eba";
-import "./editor.js?v=0f81e39eba";
-import "./spec.js?v=0f81e39eba";
-import "./workers.js?v=0f81e39eba";
-import "./defaults.js?v=0f81e39eba";
-import "./scene.js?v=0f81e39eba";
-import "./insets.js?v=0f81e39eba";
-import "./info.js?v=0f81e39eba";
-import "./colours.js?v=0f81e39eba";
-import "./controls.js?v=0f81e39eba";
+import "./fields.js?v=16f3a4bc62";
+import "./diagram.js?v=16f3a4bc62";
+import "./machine.js?v=16f3a4bc62";
+import "./editor.js?v=16f3a4bc62";
+import "./spec.js?v=16f3a4bc62";
+import "./workers.js?v=16f3a4bc62";
+import "./defaults.js?v=16f3a4bc62";
+import "./scene.js?v=16f3a4bc62";
+import "./insets.js?v=16f3a4bc62";
+import "./info.js?v=16f3a4bc62";
+import "./colours.js?v=16f3a4bc62";
+import "./controls.js?v=16f3a4bc62";
