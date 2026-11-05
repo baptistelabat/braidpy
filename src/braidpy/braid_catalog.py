@@ -482,12 +482,11 @@ https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 
 #: The rectangular braid of fourteen strands, as the word it repeats.
 #:
-#: Two tracks of seven strands that never exchange one — the word's
-#: permutation is two 7-cycles — so seven repeats bring every strand home.
-#: Across the face the tracks run ABBAABBAABBAAB: a strand of one, then two
-#: of the other, then two of the first, which is how a braid two strands
-#: deep reads from the front, column by column.  Thirty-two crossings a
-#: repeat, as many one way as the other.
+#: The fourteen places fall into two sets of seven that never mix: the
+#: word's permutation is two 7-cycles, so seven repeats bring every strand
+#: home.  The sets interleave across the face, one place of the first, then
+#: two of the second, then two of the first: ABBAABBAABBAAB.  Thirty-two
+#: crossings a repeat, as many one way as the other, so nothing twists.
 RECTANGULAR_14 = (
     "2 -5 -9 7 -11 -3 13 1 -6 10 -8 4 -4 -10 -7 -12 "
     "-2 4 7 10 5 9 -7 -13 -1 11 3 -10 -4 6 8 12"
@@ -510,6 +509,38 @@ def rectangular14(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     if draw:
         b.draw()
     return b, 7
+
+
+#: The rectangular braid of twenty strands, as the word it repeats.
+#:
+#: Forty-six crossings a repeat, as many one way as the other, and every
+#: one of the nineteen crossing places used.  The twenty places fall into
+#: two sets of ten that never mix — the word's permutation is two 10-cycles
+#: — so ten repeats bring every strand home.  Wider than
+#: :data:`RECTANGULAR_14` and not a wider copy of it: the sets interleave
+#: as ABBABAABABBABAABABBA, in threes and pairs rather than evenly.
+RECTANGULAR_20 = (
+    "2 19 -4 -16 1 -10 -9 -11 10 3 17 -5 -15 -6 -14 -4 -16 -8 -12 5 15 -3 "
+    "-17 9 11 -2 6 14 -18 7 13 -6 -14 17 3 8 12 7 13 -12 -1 -8 -19 5 15 18"
+)
+
+
+def rectangular20(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
+    """The rectangular braid of twenty strands (:data:`RECTANGULAR_20`).
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
+    Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
+    """
+    from braidpy.braidword import parse_word
+
+    b = Braid(tuple(parse_word(RECTANGULAR_20)), 20)
+    if draw:
+        b.draw()
+    return b, 10
 
 
 # More braids worth trying as braid words: Braid Studio offers them as
@@ -582,6 +613,9 @@ CATALOGUE: dict[str, Entry[Braid]] = {
     ),
     "rectangular14": Entry(
         "Rectangular braid of 14", lambda: rectangular14(draw=False)[0]
+    ),
+    "rectangular20": Entry(
+        "Rectangular braid of 20", lambda: rectangular20(draw=False)[0]
     ),
 }
 

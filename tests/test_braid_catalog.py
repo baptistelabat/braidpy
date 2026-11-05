@@ -200,12 +200,13 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
 
 
 def test_the_rectangular_braid_of_14_runs_on_two_tracks_of_seven():
-    """Its two tracks never exchange a strand, and they interleave in pairs.
+    """Its two sets of seven places never mix, and they interleave in pairs.
 
     The permutation of one repeat is two 7-cycles, so seven repeats bring
-    every strand home; reading across the face, the tracks run one, two,
-    two, as a braid two strands deep does column by column.  As many
-    crossings go one way as the other, so nothing twists.
+    every strand home; labelling each place by its cycle and reading across
+    the face gives ABBAABBAABBAAB.  That is a property of the word, not of
+    any arrangement behind it.  As many crossings go one way as the other,
+    so nothing twists.
     """
     from braidpy.braid_catalog import rectangular14
     from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
@@ -221,3 +222,28 @@ def test_the_rectangular_braid_of_14_runs_on_two_tracks_of_seven():
     track = {place: number for number, orbit in enumerate(orbits) for place in orbit}
     assert [track[place] for place in range(14)] == [0, 1, 1, 0] * 3 + [0, 1]
     assert is_pure(Braid(tuple(braid.generators) * home, 14))
+
+
+def test_the_rectangular_braid_of_20_is_not_a_wider_copy_of_the_14():
+    """Two sets of ten this time, and they interleave unevenly.
+
+    Forty-six crossings a repeat over all nineteen places, as many one way
+    as the other; ten repeats bring every strand home.  Labelling each place
+    by its cycle gives ABBABAABABBABAABABBA, in threes and pairs where the
+    braid of fourteen is in pairs throughout.
+    """
+    from braidpy.braid_catalog import rectangular20
+    from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
+
+    braid, home = rectangular20(draw=False)
+    assert braid.n_strands == 20
+    assert len(braid.generators) == 46
+    assert len({abs(g) for g in braid.generators}) == 19
+    assert repeating_unit(list(braid.generators)) == list(braid.generators)
+    assert sum(1 if g > 0 else -1 for g in braid.generators) == 0
+    assert home == 10 == closing_repeats(braid, limit=None)
+    orbits = cycles(braid)
+    assert sorted(len(orbit) for orbit in orbits) == [10, 10]
+    track = {place: number for number, orbit in enumerate(orbits) for place in orbit}
+    assert "".join("AB"[track[place]] for place in range(20)) == "ABBABAABABBABAABABBA"
+    assert is_pure(Braid(tuple(braid.generators) * home, 20))

@@ -21,8 +21,12 @@ def _words():
 
 
 def test_every_catalogue_word_is_made_on_the_disk():
+    """On a disk with room for it: a strand wants two slots, with room
+    either side, so the 32-slot disk of the shops holds fifteen strands and
+    a wider braid needs a wider disk."""
     for title, braid in _words():
-        assert disk_braid(disk_moves(braid)) == braid, title
+        slots = max(32, 2 * braid.n_strands + 2)
+        assert disk_braid(disk_moves(braid, slots)) == braid, title
 
 
 def test_a_crossing_is_three_moves_and_only_the_first_crosses():
