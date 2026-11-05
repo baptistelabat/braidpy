@@ -480,6 +480,38 @@ https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 
 # ------------------------------------------------------------ as braid words
 
+#: The rectangular braid of fourteen strands, as the word it repeats.
+#:
+#: Two tracks of seven strands that never exchange one — the word's
+#: permutation is two 7-cycles — so seven repeats bring every strand home.
+#: Across the face the tracks run ABBAABBAABBAAB: a strand of one, then two
+#: of the other, then two of the first, which is how a braid two strands
+#: deep reads from the front, column by column.  Thirty-two crossings a
+#: repeat, as many one way as the other.
+RECTANGULAR_14 = (
+    "2 -5 -9 7 -11 -3 13 1 -6 10 -8 4 -4 -10 -7 -12 "
+    "-2 4 7 10 5 9 -7 -13 -1 11 3 -10 -4 6 8 12"
+)
+
+
+def rectangular14(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
+    """The rectangular braid of fourteen strands (:data:`RECTANGULAR_14`).
+
+    Args:
+        draw: Draw the braid as it is made (the default); False only builds it.
+
+    Returns:
+        Braid: the braid object describing the single step to realize the braid
+        n: the number of iterations to get back to initial order of strands
+    """
+    from braidpy.braidword import parse_word
+
+    b = Braid(tuple(parse_word(RECTANGULAR_14)), 14)
+    if draw:
+        b.draw()
+    return b, 7
+
+
 # More braids worth trying as braid words: Braid Studio offers them as
 # examples after the catalogue's (see :func:`word_examples`).
 WORD_EXAMPLES: list[dict[str, Any]] = [
@@ -547,6 +579,9 @@ CATALOGUE: dict[str, Entry[Braid]] = {
         "Flat sinnet of 7 (ABOK 2968)",
         lambda: flat_sinnet7(draw=False)[0],
         "The Ashley Book of Knots, #2968",
+    ),
+    "rectangular14": Entry(
+        "Rectangular braid of 14", lambda: rectangular14(draw=False)[0]
     ),
 }
 

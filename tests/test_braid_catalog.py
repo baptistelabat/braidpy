@@ -197,3 +197,27 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
         repeated = Braid(tuple(unit * example["repeat"]), example["n_strands"])
         assert is_pure(repeated), name
         assert len(repeated.generators) >= 12, name
+
+
+def test_the_rectangular_braid_of_14_runs_on_two_tracks_of_seven():
+    """Its two tracks never exchange a strand, and they interleave in pairs.
+
+    The permutation of one repeat is two 7-cycles, so seven repeats bring
+    every strand home; reading across the face, the tracks run one, two,
+    two, as a braid two strands deep does column by column.  As many
+    crossings go one way as the other, so nothing twists.
+    """
+    from braidpy.braid_catalog import rectangular14
+    from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
+
+    braid, home = rectangular14(draw=False)
+    assert braid.n_strands == 14
+    assert len(braid.generators) == 32
+    assert repeating_unit(list(braid.generators)) == list(braid.generators)
+    assert sum(1 if g > 0 else -1 for g in braid.generators) == 0
+    assert home == 7 == closing_repeats(braid, limit=None)
+    orbits = cycles(braid)
+    assert sorted(len(orbit) for orbit in orbits) == [7, 7]
+    track = {place: number for number, orbit in enumerate(orbits) for place in orbit}
+    assert [track[place] for place in range(14)] == [0, 1, 1, 0] * 3 + [0, 1]
+    assert is_pure(Braid(tuple(braid.generators) * home, 14))
