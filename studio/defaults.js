@@ -5,7 +5,7 @@
 // Settings left empty, and choices not made, take the braid's own: shown
 // greyed with "default" once it is made.
 
-import { $, round } from "./page.js?v=16f3a4bc62";
+import { $, round } from "./page.js?v=0f1d4730f4";
 
 // A setting left empty takes the braid's own default, shown greyed with
 // "default" once the braid is made.  Going into the field puts the default
