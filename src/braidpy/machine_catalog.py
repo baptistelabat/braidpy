@@ -25,6 +25,17 @@ if TYPE_CHECKING:
 __all__ = ["CATALOGUE", "LACE", "LaceRing"]
 
 
+def _multiband(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
+    """Makes the machine :mod:`braidpy.horn_gear.multiband` names."""
+
+    def make() -> BraidingMachine:
+        from braidpy.horn_gear import multiband
+
+        return getattr(multiband, name)(**settings)
+
+    return make
+
+
 def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
     """Makes the machine :mod:`braidpy.horn_gear.examples` names."""
 
@@ -53,6 +64,30 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
     "tubular_8": Entry("Tubular braid, 8 carriers", _example("tubular_braid_8")),
     "tubular_12": Entry("Tubular braid, 12 carriers", _example("tubular_braid_12")),
     "tubular_16": Entry("Tubular braid, 16 carriers", _example("tubular_braid_16")),
+    # Lines braiding several bands at once, split gears between them: the
+    # smallest, two plaits on three gears, then the three-band machine of the
+    # Atelier de Tressage whole and its bands one at a time.  A band keeps the
+    # whole machine's gear names and slot numbering, so a loading reads the
+    # same there as here.
+    "twin_plait": Entry(
+        "Two plaits at once: 3/6/3 gears, the middle one split",
+        _multiband("twin_plait"),
+    ),
+    "multiband_10_15_10": Entry(
+        "Three-band machine, 10-15-10 carriers", _multiband("multiband_10_15_10")
+    ),
+    "multiband_band_0": Entry(
+        "Three-band machine: left band alone, gears G0-G4",
+        _multiband("multiband_band", band=0),
+    ),
+    "multiband_band_1": Entry(
+        "Three-band machine: middle band alone, gears G4-G11",
+        _multiband("multiband_band", band=1),
+    ),
+    "multiband_band_2": Entry(
+        "Three-band machine: right band alone, gears G11-G15",
+        _multiband("multiband_band", band=2),
+    ),
 }
 
 
