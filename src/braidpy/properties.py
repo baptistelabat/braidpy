@@ -107,8 +107,8 @@ def alexander_on_circle(
 
     On the unit circle ``|±tᵏ| = 1``, so the modulus is exactly an invariant of
     the closure, with nothing to normalise; it is computed numerically, from
-    the braid's Burau matrix at t = e^{iθ} raised to the power ``repeats`` —
-    milliseconds where the polynomial of a long braid takes minutes.  The
+    the eigenvalues of the braid's Burau matrix at t = e^{iθ}
+    (:func:`_log_det_minus_power`) — milliseconds where the polynomial of a long braid takes minutes.  The
     angles should not be rational multiples of π: at an n-th root of unity
     the formula divides by zero.
 
@@ -128,8 +128,7 @@ def alexander_on_circle(
     values: list[float | None] = []
     for theta in angles:
         t = complex(np.exp(1j * theta))
-        power = _burau_on_circle(braid, theta, repeats)
-        _, log_det = np.linalg.slogdet(np.eye(n - 1) - power)
+        log_det = _log_det_minus_power(braid, theta, repeats, 1.0)
         value = (log_det + np.log(abs(1 - t)) - np.log(abs(1 - t**n))) / np.log(10)
         values.append(
             None if not np.isfinite(value) or value < np.log10(_ZERO) else float(value)
@@ -137,13 +136,13 @@ def alexander_on_circle(
     return tuple(values)
 
 
-def _burau_on_circle(braid: Braid, theta: float, repeats: int):
-    """The braid's reduced Burau matrix at t = e^{iθ}, raised to the power
-    ``repeats``: numerically, as a numpy array."""
+def _burau_on_circle(braid: Braid, theta: float):
+    """The braid's reduced Burau matrix at t = e^{iθ}, numerically, as a
+    numpy array."""
     import numpy as np
 
     n = braid.n_strands
-    burau = _burau_product(
+    return _burau_product(
         braid,
         complex(np.exp(1j * theta)),
         1.0 + 0j,
@@ -151,7 +150,29 @@ def _burau_on_circle(braid: Braid, theta: float, repeats: int):
         lambda a, rows: a @ np.array(rows, dtype=complex),
         np.eye(n - 1, dtype=complex),
     )
-    return np.linalg.matrix_power(burau, repeats)
+
+
+def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> float:
+    """``ln |det(x − Bᵏ)|``, ``B`` the braid's reduced Burau matrix at
+    t = e^{iθ} and ``k`` the repeats.
+
+    From the eigenvalues λ of ``B``: the product of the ``x − λᵏ``, each
+    taken in logarithms.  ``Bᵏ`` itself is never formed: its entries grow
+    with ``k``, and ``det(x − Bᵏ)`` taken from them loses the digits the
+    subtraction cancels, so that a braid read from another starting point
+    seemed another braid.  And a braid repeated a thousand times overflows
+    nothing.
+    """
+    import numpy as np
+
+    total = 0.0
+    for eigen in np.linalg.eigvals(_burau_on_circle(braid, theta)):
+        grows = repeats * np.log(abs(eigen)) if eigen else -np.inf
+        if grows > 30:
+            total += grows
+        else:
+            total += np.log(abs(x - eigen**repeats))
+    return float(total)
 
 
 def burau_polynomial_on_circle(
@@ -185,19 +206,10 @@ def burau_polynomial_on_circle(
     n = braid.n_strands
     if n == 1:
         return tuple(0.0 for _ in angles)
-    values = []
-    for theta in angles:
-        # From the eigenvalues λ of B: det(x − Bᵏ) is the product of the
-        # x − λᵏ, each taken in logarithms, so that a braid repeated a
-        # thousand times overflows nothing.
-        total = 0.0
-        for eigen in np.linalg.eigvals(_burau_on_circle(braid, theta, 1)):
-            grows = repeats * np.log(abs(eigen)) if eigen else -np.inf
-            if grows > 30:
-                total += grows
-            else:
-                total += np.log(abs(at - eigen**repeats))
-        values.append(float(total / np.log(10)))
+    values = [
+        float(_log_det_minus_power(braid, theta, repeats, at) / np.log(10))
+        for theta in angles
+    ]
     return tuple(values)
 
 

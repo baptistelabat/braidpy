@@ -22,15 +22,32 @@ similar(mine, count=3)
 # [Match(name='flat3', distance=0.0, same_fingerprint=True), ...]
 ```
 
-## Why not decide it exactly
+## Deciding it exactly
 
 "The same braid, read from another starting point" is conjugacy in the braid
-group, and it can be decided exactly, by summit sets (Elrifai and Morton). A
-first implementation of that answered in an instant on 4 strands, took
-68 seconds on 5 and over 2 minutes on 6 and 8: it conjugates by every
-permutation braid, n! of them. Sinnets and kumihimo braids have 8 to 17
-strands. And to suggest braids *like* yours, a yes or no is not enough: a
-distance is wanted.
+group, and {mod}`braidpy.conjugacy` decides it: {func}`~braidpy.conjugacy.same_braid`
+says yes or no, a proof, where fingerprints only ever prove braids different.
+
+```python
+from braidpy.braid import Braid
+from braidpy.conjugacy import same_braid
+
+same_braid(Braid([1, -2], 3), Braid([-2, 1], 3))  # True
+```
+
+It goes by summit sets (Elrifai and Morton https://nsalter.science.nd.edu/teaching/braidsspring2024/elrifaimorton.pdf): each braid is cycled to its
+*super summit set*, the conjugates as short as any in Garside's normal form,
+and that finite set is searched whole; two braids are conjugate exactly when
+their sets meet. A first implementation of that conjugated by every
+permutation braid, n! of them, and took minutes on 6 and 8 strands. This one
+follows only the least permutation braids that keep a braid in the set, at
+most one for each crossing σᵢ (Franco and González-Meneses): edo yatsu's
+set, 472 braids on 8 strands, is found in about 3 seconds. The set can still
+grow exponentially with the strands, so the search stops at a limit and
+says so ({class}`~braidpy.conjugacy.SuperSummitSetTooLarge`).
+
+A yes or no does not suggest braids *like* yours: for that, a distance is
+wanted, and the fingerprint gives one.
 
 ## The fingerprint
 
@@ -149,7 +166,7 @@ description, and any other by the fingerprint of the braid made.
 ## Limits
 
 - **Equal fingerprints do not prove two braids the same.** Different ones
-  prove them different.
+  prove them different; {func}`~braidpy.conjugacy.same_braid` proves either.
 - **A braid seen from behind is the same braid.** The Dutch braid,
   σ₁⁻¹σ₂, is the plait σ₁σ₂⁻¹ with its strands numbered from the other side,
   and has its fingerprint.
@@ -168,3 +185,9 @@ description, and any other by the fingerprint of the braid made.
   closed braids, and Markov's theorem.
 - E. A. Elrifai and H. R. Morton, "Algorithms for positive braids", *Quart. J.
   Math.* 45, 479 (1994): conjugacy, decided exactly.
+- N. Franco and J. González-Meneses, "Conjugacy problem for braid groups and
+  Garside groups", *J. Algebra* 266, 112 (2003): the super summit set found
+  through minimal simple elements.
+- J. González-Meneses, "The nth root of a braid is unique up to conjugacy",
+  *Algebr. Geom. Topol.* 3, 1103 (2003): why braids repeated as often can be
+  compared by what is repeated.
