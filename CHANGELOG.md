@@ -29,6 +29,11 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- A Braid Studio link could carry colours for strands its braid does not
+  have: colours chosen on a braid of twenty strands stayed when one of
+  sixteen was made after it, and its link listed all twenty. They are let go
+  once the braid is made, and empty places after the last colour are not
+  written.
 - Braids were taken for the same braid when their Alexander polynomial
   vanished and the rest of their fingerprint agreed: edo yatsu with ABOK
   #3070, and the flat braid of 6 with ABOK #3021. The fingerprint now holds
