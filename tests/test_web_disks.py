@@ -192,3 +192,46 @@ def test_a_disk_braid_made_from_its_catalogue_defaults_is_made_by_default(source
     )
     assumed = build({"source": source, "iterations": 1}, tighten=False)
     assert given == assumed
+
+
+def _round_a_core(result):
+    import numpy as np
+
+    (core,) = [s for s in result["strands"] if s["name"] == "Core"]
+    points = np.array(core["points"])
+    middle = len(points) // 2
+    angles = sorted(
+        np.arctan2(*(np.array(s["points"])[middle, 1::-1] - points[middle, 1::-1]))
+        for s in result["strands"]
+        if s is not core
+    )
+    return points, np.diff([*angles, angles[0] + 2 * np.pi]).max()
+
+
+@pytest.mark.parametrize("source", ["kumihimo", "mobidai"])
+@pytest.mark.parametrize("core", ["yarn", "rigid"])
+def test_a_disk_braids_round_a_core_down_its_middle(source, core):
+    """The core stands on the axis, grey, the yarns all round it and none
+    through it; a rigid one stays straight.  The word is the yarns' own,
+    and with no core for it yet, the marudai is not offered."""
+    import numpy as np
+
+    from braidpy.web._settings import CORE_COLOUR
+
+    plain = build({"source": source})
+    result = build({"source": source, "core": core})
+    assert len(result["strands"]) == len(plain["strands"]) + 1
+    assert result["info"]["word"] == plain["info"]["word"]
+    assert result["info"]["closest_approach"] >= 0.99 * result["yarn_diameter"]
+    points, widest = _round_a_core(result)
+    assert widest < np.pi, "the yarns all round the core"
+    assert result["strands"][-1]["colour"] == CORE_COLOUR
+    if core == "rigid":
+        assert np.ptp(points[:, :2], axis=0).max() < 1e-9
+    assert "disk" not in result and "disk" in plain
+    assert "core" in result["notes"][-1]
+
+
+def test_a_disk_has_no_core_unless_asked():
+    with pytest.raises(ValueError, match="none, yarn, rigid"):
+        build({"source": "kumihimo", "core": "own"})

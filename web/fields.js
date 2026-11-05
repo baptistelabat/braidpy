@@ -25,6 +25,19 @@ const CORE = {
   hint: "A core goes down the hole a ring of gears encloses, unless the machine has cores of its own.",
 };
 
+// A disk's core, down its middle (braidpy.web._settings.DISK_CORE).
+const DISK_CORE = {
+  name: "core",
+  label: "Core",
+  kind: "choice",
+  choices: [
+    ["none", "None"],
+    ["yarn", "Yarn: gives way to the yarns braided round it"],
+    ["rigid", "Rigid: stays straight"],
+  ],
+  hint: "A core down the disk's middle, the braid made round it. Not made on a marudai yet: the yarns are tightened sideways.",
+};
+
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
 const FIELDS = {
@@ -56,6 +69,7 @@ const FIELDS = {
     },
     { name: "n_strands", label: "Strands", kind: "number", min: 4, max: 32, step: 4 },
     { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },
+    DISK_CORE,
   ],
   mobidai: [
     { name: "name", label: "Braid", kind: "entries" },
@@ -83,6 +97,7 @@ const FIELDS = {
       custom: true,
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 40 },
+    DISK_CORE,
   ],
   sinnet: [
     { name: "name", label: "Sinnet", kind: "entries" },
