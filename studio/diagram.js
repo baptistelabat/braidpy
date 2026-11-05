@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import { PALETTE, strandColour } from "./colours.js?v=0f1d4730f4";
+import { PALETTE, strandColour } from "./colours.js?v=80ca721595";
 
 // A braid word drawn as it is typed, before it is made: flat, or round a
 // ring.
