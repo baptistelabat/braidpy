@@ -43,11 +43,16 @@ class HornGear:
         name: Unique identifier for this gear.
         n_slots: Number of carrier slots (≥ 2).
         direction: +1 for counter-clockwise, -1 for clockwise rotation.
+        size: How large the gear is drawn, as the slot count of a gear that
+            size; its own slot count if None.  One half of a split gear
+            (:mod:`~braidpy.horn_gear.multiband`) has half the slots of the
+            gear it is part of, and is as large.
     """
 
     name: str
     n_slots: int
     direction: int = 1  # +1 CCW, -1 CW
+    size: int | None = None
 
     def __post_init__(self) -> None:
         if self.n_slots < 2:

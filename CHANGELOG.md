@@ -6,6 +6,13 @@ What changed in each release of braidpy.
 
 ### New
 
+- A line of horn gears that braids three bands at once: the 10-15-10
+  machine of the Atelier de Tressage (`braidpy.horn_gear.multiband`). Where
+  two bands meet, a six-horn gear is split between them, three horns each, so
+  each band turns its carriers back on a gear of its own and the bands never
+  meet. Its 35 carriers run the whole machine, shown in Braid Studio whole
+  or a band at a time, with the smallest such machine beside it: two plaits
+  braided at once on three gears, the middle one split.
 - Four kumihimo disk braids shared by Richard Buenger: edo yatsu, naiki,
   hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`).
 - Braid Studio steps through a disk's or a sinnet's moves, as through a
@@ -28,6 +35,11 @@ What changed in each release of braidpy.
   matrix raised to the repeats, whose entries reach 1e19 for ABOK #3057, and
   lost the digits it cancelled. It is now taken from the matrix's
   eigenvalues, as the Burau polynomial is.
+- A braid's fingerprint took a minute when its home braid was hundreds of
+  repeats of a long unit (the three-band machine: 210 repeats of 34515
+  crossings). Its linking numbers are now summed from the unit once, the
+  repeats at once (`linking.linking_matrix(braid, repeats)`), and the Burau
+  matrix is built a column update per crossing: five seconds.
 
 ## 0.3.0 — 2026-10-24
 

@@ -109,8 +109,8 @@ def compute_layout(
     # ── Cyclic graph: Kamada-Kawai + per-edge exact rescaling ─────────────────
     g = machine.graph.copy()
     for u, v in g.edges():
-        r_u = _gear_radius(machine.gears[u].n_slots, scale)
-        r_v = _gear_radius(machine.gears[v].n_slots, scale)
+        r_u = gear_radii(machine, scale)[u]
+        r_v = gear_radii(machine, scale)[v]
         g[u][v]["len"] = r_u + r_v
 
     try:
@@ -199,7 +199,7 @@ def _layout_bfs(
     gear circles touches exactly.  Works for any tree, including linear chains
     and branching topologies.
     """
-    radii = {n: _gear_radius(g.n_slots, scale) for n, g in machine.gears.items()}
+    radii = gear_radii(machine, scale)
     root = next(iter(machine.gears))
 
     pos: dict[str, tuple[float, float]] = {root: (0.0, 0.0)}
@@ -539,7 +539,8 @@ def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]
         Dict mapping gear name → radius.
     """
     return {
-        name: _gear_radius(gear.n_slots, scale) for name, gear in machine.gears.items()
+        name: _gear_radius(gear.size or gear.n_slots, scale)
+        for name, gear in machine.gears.items()
     }
 
 
