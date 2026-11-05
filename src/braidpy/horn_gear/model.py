@@ -180,6 +180,15 @@ class BraidingMachine:
         self.graph: nx.Graph = self._build_graph()
         self._validate()
 
+    def with_axials(self, axials: Iterable[Axial]) -> BraidingMachine:
+        """The same machine braiding round these axials instead of its own."""
+        import copy
+
+        machine = copy.copy(self)
+        machine.axials = list(axials)
+        machine._validate()
+        return machine
+
     def _build_graph(self) -> nx.Graph:
         g = nx.Graph()
         for gear in self.gears.values():

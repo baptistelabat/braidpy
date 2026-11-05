@@ -528,6 +528,31 @@ def tube_axials(
     return axials
 
 
+def ring_core(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]] | None = None,
+) -> Axial | None:
+    """The core a machine that is one ring of gears braids round: down the
+    hole the ring encloses, as a tubular machine's or a lace machine's.
+
+    Only a ring of every gear makes a tube: a line folded round, as the
+    multiband machine's, encloses a hole between its gears too, but braids
+    flat bands, not round it.
+
+    Args:
+        machine: The machine.
+        layout: Gear centre positions (computed if None).
+
+    Returns:
+        The core, named ``centre``; None if the machine is not one ring, or
+        its hole has no room for a core.
+    """
+    for core in tube_axials(machine, layout, prefix="centre"):
+        if set(core.anchor) == set(machine.gears):
+            return core
+    return None
+
+
 def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]:
     """Return the visual radius for each gear.
 

@@ -42,6 +42,8 @@ def _node_tighten(job):
         {"source": "word", "word": "1 -2", "repeat": 4},
         {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
         {"source": "machine", "name": "tubular_8", "cycles": 1},
+        # A core of yarn down a ring's hole, held at both ends.
+        {"source": "lace", "name": "lace_sinnet4", "cycles": 2, "core": "yarn"},
         # Round cores held straight.  Every yarn meets at the braiding
         # point, beside them, and which way two part there is decided by
         # the last digit: alike in the end, not step for step.
@@ -49,7 +51,7 @@ def _node_tighten(job):
             "source": "machine",
             "name": "soutache_7",
             "cycles": 1,
-            "cores": "rigid",
+            "core": "rigid",
             "ties": True,
         },
         # Kept outside a core round the axis, as tighten_yarns can.

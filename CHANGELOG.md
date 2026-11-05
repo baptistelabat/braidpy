@@ -6,6 +6,11 @@ What changed in each release of braidpy.
 
 ### New
 
+- A tubular machine, or a lace machine of six gears or more, can braid
+  round a core in Braid Studio, of yarn or rigid, down the hole its ring of
+  gears encloses (`horn_gear.ring_core`); soutache can braid without its
+  cords. **Core** replaces **Cores**, which said only how stiff a machine's
+  own cores were: links made with it make the same braid.
 - A lace machine's braid can be made on a marudai in Braid Studio: the
   braid grows at the fell as the card turns the gears, each gear's turn its
   two notches swapping bobbins. Worked out from the card alone
