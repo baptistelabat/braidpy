@@ -164,8 +164,8 @@ The page has a form and a 3D view.
   makes them, each with how unlike it is; your own braid too, found by its
   fingerprint ({doc}`comparing_braids`). Each is a link that makes it. And
   **Make it as…** gives the braid made other ways ({doc}`making`): its
-  moves on a kumihimo disk, to make; a lace machine's punchcard, to copy or
-  download; and, when asked, a sinnet on Ashley's stand, to make. The
+  moves on a kumihimo disk, to make; a lace machine's punchcard, to make,
+  copy or download; and, when asked, a sinnet on Ashley's stand, to make. The
   braid is drawn in the middle of what the card leaves free.
 - A braid word or ring word is made on the marudai hanging free, as a disk
   braid is; when the bobbins turn together it is held while they turn,

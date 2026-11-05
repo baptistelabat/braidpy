@@ -13,6 +13,10 @@ What changed in each release of braidpy.
   meet. Its 35 carriers run the whole machine, shown in Braid Studio whole
   or a band at a time, with the smallest such machine beside it: two plaits
   braided at once on three gears, the middle one split.
+- Braid Studio's **Make it as…** makes the braid on a lace machine too: the
+  card it shows is a link to your own lace machine, loaded with that card and
+  its bobbins, at an address of its own. Bobbins can be named by their
+  notch, `A-B`, as the card names them.
 - Four kumihimo disk braids shared by Richard Buenger: edo yatsu, naiki,
   hira-naiki and uneri-maru-genji (`braidpy.mobidai_catalog`).
 - Braid Studio steps through a disk's or a sinnet's moves, as through a

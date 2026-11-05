@@ -39,6 +39,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from braidpy.braid import Braid
 from braidpy.ring_program import RingProgram, Swap, _packed
@@ -113,6 +114,44 @@ class LaceCard:
     def text(self) -> str:
         """The card as it is punched: see :func:`punchcard_text`."""
         return punchcard_text(self.steps)
+
+    def spec(self, cycles: int = 1) -> dict[str, Any]:
+        """The card as Braid Studio makes your own lace machine
+        (:func:`braidpy.web.build`): its gears, the card as typed and the
+        bobbins in their notches.
+
+        Args:
+            cycles: Passes of the card.
+
+        Returns:
+            The description, as the page writes it in its address.
+        """
+        return {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": self.n_gears,
+            "card": card_digits(self.steps),
+            "carriers": " ".join(self.notches()),
+            "cycles": cycles,
+        }
+
+
+def card_digits(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
+    """A lace machine's card as it is typed into Braid Studio: a step a line,
+    the gears turning anticlockwise, then those turning clockwise, a 0 or 1 a
+    gear.
+
+    Args:
+        steps: Per step, whether each gear turns anticlockwise, then
+            clockwise.
+
+    Returns:
+        The card.
+    """
+    return "\n".join(
+        " ".join("".join("1" if on else "0" for on in line) for line in step)
+        for step in steps
+    )
 
 
 def punchcard_text(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:

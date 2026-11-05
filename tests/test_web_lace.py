@@ -129,3 +129,40 @@ def test_your_own_lace_machine_is_drawn_and_turned_by_hand():
     shape = machine_geometry(name)
     assert len(shape["gears"]) == 6 and len(shape["loading"]) == 6
     assert machine_turned(name, shape["loading"], 2)["time"] == 2
+
+
+def test_bobbins_can_be_named_by_their_notch():
+    """ "A-B" is the notch gears A and B cut, as the card names it: the same
+    bobbin as giving its gear and slot."""
+    from braidpy.horn_gear.jacquard import notch_positions
+
+    card = [("1000", "0000"), ("0000", "0100")]
+    at = notch_positions(jacquard_lace_ring(4, card))
+    spec = {
+        "source": "lace",
+        "name": "custom",
+        "n_gears": 4,
+        "card": "1000 0000 0000 0100",
+        "cycles": 1,
+        "iterations": 0,
+    }
+    named = build({**spec, "carriers": "A-B C-D"}, tighten=False)
+    slots = " ".join(f"{g}:{s}" for g, s in (at[0], at[2]))
+    given = build({**spec, "carriers": slots}, tighten=False)
+    assert len(named["strands"]) == 2
+    assert named["info"]["word"] == given["info"]["word"]
+
+
+def test_a_notch_named_twice_is_refused():
+    with pytest.raises(ValueError, match="same notch"):
+        build(
+            {
+                "source": "lace",
+                "name": "custom",
+                "n_gears": 4,
+                "card": "1000 0000",
+                "carriers": "A-B A-B",
+                "cycles": 1,
+            },
+            tighten=False,
+        )

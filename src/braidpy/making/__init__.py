@@ -47,8 +47,8 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
 
     Returns:
         ``disk``: Braid Studio's description of the disk braid, and the
-        moves; ``lace``: the card, the gears and how the bobbins are
-        threaded.  Empty for a braid with no braid word, or too long.
+        moves; ``lace``: the card, the gears, how the bobbins are threaded
+        and Braid Studio's description of the lace machine.  Empty for a braid with no braid word, or too long.
     """
     from braidpy.making.disk import disk_moves
     from braidpy.making.lace import lace_card
@@ -72,6 +72,8 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
         "card": card.text(),
         # Named without building the machine, which needs networkx.
         "threading": " ".join(card.notches()),
+        # Made as many times as the braid shown repeats its unit.
+        "spec": card.spec(cycles=repeats),
     }
     return shown
 
