@@ -169,7 +169,8 @@ def _from_machine(spec: Spec) -> Result:
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
-    colour = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(carriers)}
+    own = machine.carrier_colours(carriers_at) or {}
+    colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
     colour.update({k: Machine.core_colour for k in cores})
     return _result(
         machines[name].title + f", {cycles} cycles",

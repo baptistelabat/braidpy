@@ -6,6 +6,9 @@ What changed in each release of braidpy.
 
 ### New
 
+- The multiband machines draw every carrier of a band in that band's colour,
+  so the bands can be told apart in the braid they make together; a band
+  shown alone keeps its colour (`BraidingMachine.carrier_colours`).
 - A line of horn gears that braids three bands at once: the 10-15-10
   machine of the Atelier de Tressage (`braidpy.horn_gear.multiband`). Where
   two bands meet, a six-horn gear is split between them, three horns each, so
