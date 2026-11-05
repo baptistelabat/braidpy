@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=4bf4b932b6";
-import { attachEditor } from "./editor.js?v=4bf4b932b6";
-import { attachMachine } from "./machine.js?v=4bf4b932b6";
-import { $ } from "./page.js?v=4bf4b932b6";
-import { submit } from "./workers.js?v=4bf4b932b6";
+import { attachDiagram } from "./diagram.js?v=0968532e1e";
+import { attachEditor } from "./editor.js?v=0968532e1e";
+import { attachMachine } from "./machine.js?v=0968532e1e";
+import { $ } from "./page.js?v=0968532e1e";
+import { submit } from "./workers.js?v=0968532e1e";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -23,6 +23,19 @@ const CORE = {
     ["rigid", "Rigid: stays straight"],
   ],
   hint: "A core goes down the hole a ring of gears encloses, unless the machine has cores of its own.",
+};
+
+// A disk's core, down its middle (braidpy.web._settings.DISK_CORE).
+const DISK_CORE = {
+  name: "core",
+  label: "Core",
+  kind: "choice",
+  choices: [
+    ["none", "None"],
+    ["yarn", "Yarn: gives way to the yarns braided round it"],
+    ["rigid", "Rigid: stays straight"],
+  ],
+  hint: "A core down the disk's middle, the braid made round it. Not made on a marudai yet: the yarns are tightened sideways.",
 };
 
 // What each source asks for.  ``entries`` and ``examples`` come from
@@ -56,6 +69,7 @@ const FIELDS = {
     },
     { name: "n_strands", label: "Strands", kind: "number", min: 4, max: 32, step: 4 },
     { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },
+    DISK_CORE,
   ],
   mobidai: [
     { name: "name", label: "Braid", kind: "entries" },
@@ -83,6 +97,7 @@ const FIELDS = {
       custom: true,
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 40 },
+    DISK_CORE,
   ],
   sinnet: [
     { name: "name", label: "Sinnet", kind: "entries" },
