@@ -103,3 +103,32 @@ def test_a_ring_that_cannot_hold_the_strands_is_refused(gears):
     """Odd, or too few for six strands and a spare notch."""
     with pytest.raises(ValueError, match="notch to spare"):
         lace_card(Braid((1, 2, 3, 4, 5), 6), n_gears=gears)
+
+
+def test_a_card_run_on_its_ring_is_the_braid_the_machine_reads():
+    """Each gear's turn its two notches swapping bobbins, the crossing the
+    sign of its turn: the braid the machine itself makes, word for word,
+    for every card of the catalogue and for cards made from braid words."""
+    import random
+
+    from braidpy.machine_catalog import LACE
+    from braidpy.making.lace import card_program, ring_braid
+
+    for entry in LACE.values():
+        ring = entry.make()
+        program = card_program(ring.n_gears, ring.steps, ring.threaded)
+        assert program.braid().generators == ring_braid(ring.machine()).generators
+    rng = random.Random(0)
+    for _ in range(30):
+        n = rng.randint(2, 6)
+        word = [rng.choice([-1, 1]) * rng.randint(1, n - 1) for _ in range(8)]
+        card = lace_card(Braid(word, n))
+        program = card_program(card.n_gears, card.steps, card.threaded())
+        assert program.braid() == lace_braid(card)
+
+
+def test_a_gear_turned_the_wrong_way_is_refused():
+    from braidpy.making.lace import card_program
+
+    with pytest.raises(ValueError, match="cannot turn anticlockwise"):
+        card_program(4, [((False, True, False, False), (False,) * 4)])

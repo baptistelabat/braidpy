@@ -122,4 +122,6 @@ class Lace:
     # the gears turning anticlockwise, then clockwise, as 0 and 1.
     n_gears = Count("n_gears", 6, low=4, high=32)
     card = Text("card", "")
+    # How it is to be settled: on a marudai, made from its card alone.
+    settle = Text("settle", "")
     shown = (name, cycles)

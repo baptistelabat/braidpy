@@ -9,7 +9,7 @@ marudai."""
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from braidpy.utils import PALETTE
 from braidpy.web._info import _braid_info, _unit
@@ -18,6 +18,9 @@ from braidpy.web._settings import DISK_ITERATIONS, Word
 from braidpy.web._spec import parse_word
 from braidpy.web._types import DiskProgram, Example, Result, Source, Spec
 from braidpy.web.disks import _disk_in_step
+
+if TYPE_CHECKING:
+    from braidpy.ring_program import RingProgram
 
 
 def _ring_program(moves: Sequence[int], n_strands: int, mirrored: bool) -> DiskProgram:
@@ -43,12 +46,7 @@ def _ring_program(moves: Sequence[int], n_strands: int, mirrored: bool) -> DiskP
             steps.append([[strand, sign * slots] for strand in range(n)])
             at = at[-1:] + at[:-1] if sign > 0 else at[1:] + at[:1]
             continue
-        a, b = index - 1, index % n
-        over, under = (at[b], at[a]) if sign > 0 else (at[a], at[b])
-        way = slots if under == at[a] else -slots
-        most = round(0.75 * way)
-        steps.append([[under, most], [over, -way], [under, way - most]])
-        at[a], at[b] = at[b], at[a]
+        steps.append(_swapped(at, index - 1, index % n, sign, slots))
     return {
         "n_slots": n * slots,
         "clockwise": False,
@@ -57,6 +55,62 @@ def _ring_program(moves: Sequence[int], n_strands: int, mirrored: bool) -> DiskP
         "twists": True,
         # Nothing but turns is a rope: held all the while it is laid up.
         "held": all(abs(move) == n + 1 for move in moves),
+    }
+
+
+def _swapped(at: list, a: int, b: int, sign: int, slots: int) -> list[list[int]]:
+    """Two neighbouring places ``a`` and ``b`` swapping what they hold, as a
+    disk makes it, ``slots`` slots apart; ``at`` is updated.
+
+    Two strands cross in three moves: the strand passing under goes most of
+    the way first, the one passing over (the one at ``b`` for a positive
+    ``sign``) is then laid across it, and the first goes the rest of the
+    way.  A strand beside an empty place just moves into it."""
+    if at[a] is None or at[b] is None:
+        moving = [[at[a], slots]] if at[a] is not None else []
+        if at[b] is not None:
+            moving = [[at[b], -slots]]
+        at[a], at[b] = at[b], at[a]
+        return moving
+    over, under = (at[b], at[a]) if sign > 0 else (at[a], at[b])
+    way = slots if under == at[a] else -slots
+    most = round(0.75 * way)
+    at[a], at[b] = at[b], at[a]
+    return [[under, most], [over, -way], [under, way - most]]
+
+
+def place_program(program: RingProgram, slots: int = 12) -> DiskProgram:
+    """A ring program (:class:`braidpy.ring_program.RingProgram`) as a disk
+    program for the page: each place ``slots`` slots on from the last, each
+    swap made as :func:`_swapped` makes it, the braid hanging free.  An
+    empty place holds no bobbin: a strand beside it moves into it.
+
+    Args:
+        program: The ring program.
+        slots: Slots between neighbouring places.
+
+    Returns:
+        What the disk does, strands by index.
+    """
+    at = list(program.start)
+    start = [0] * program.n_strands
+    for place, strand in enumerate(at):
+        if strand is not None:
+            start[strand] = 1 + slots * place
+    steps: list[list[list[int]]] = []
+    for swap in program.swaps():
+        moves = _swapped(
+            at, swap.place, (swap.place + 1) % program.n_places, swap.sign, slots
+        )
+        if moves:
+            steps.append(moves)
+    return {
+        "n_slots": program.n_places * slots,
+        "clockwise": False,
+        "start": start,
+        "steps": steps,
+        "twists": False,
+        "held": False,
     }
 
 

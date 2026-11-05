@@ -247,6 +247,52 @@ def lace_card(braid: Braid, n_gears: int | None = None) -> LaceCard:
     return LaceCard(gears, tuple(steps), tuple(start), program)
 
 
+def card_program(
+    n_gears: int,
+    steps: Sequence[tuple[Sequence[bool], Sequence[bool]]],
+    threaded: Sequence[int] | None = None,
+) -> RingProgram:
+    """A punchcard run on its ring, as neighbours swapping places: what the
+    machine does, worked out without building it.
+
+    Gear ``g`` turning swaps the bobbins of notches ``g - 1`` and ``g``, the
+    crossing the sign of its turn: + anticlockwise (an even gear), - clockwise
+    (an odd one).  A step's anticlockwise line turns first, then its
+    clockwise line, as the machine reads them: a row each.
+
+    Args:
+        n_gears: Gears round the ring.
+        steps: Per step, whether each gear turns anticlockwise, then
+            clockwise.
+        threaded: The notch of each strand's bobbin, strand after strand;
+            every notch if None.
+
+    Returns:
+        The ring program, notches being its places.
+
+    Raises:
+        ValueError: If a gear is asked to turn the way it does not.
+    """
+    if threaded is None:
+        threaded = range(n_gears)
+    start: list[int | None] = [None] * n_gears
+    for k, notch in enumerate(threaded):
+        start[notch] = k
+    rows: list[tuple[Swap, ...]] = []
+    for number, step in enumerate(steps):
+        for line, parity in zip(step, (0, 1)):
+            turning = [g for g, on in enumerate(line) if on]
+            wrong = [g for g in turning if g % 2 != parity]
+            if wrong:
+                way = "anticlockwise" if parity == 0 else "clockwise"
+                raise ValueError(
+                    f"Step {number}: gears {wrong} cannot turn {way}; "
+                    "A, C, E... turn anticlockwise, B, D, F... clockwise."
+                )
+            rows.append(tuple(Swap((g - 1) % n_gears, _gear_sign(g)) for g in turning))
+    return RingProgram(n_gears, tuple(start), tuple(rows))
+
+
 def lace_braid(card: LaceCard) -> Braid:
     """The braid a punchcard makes on the lace machine, read off the
     machine itself (:func:`ring_braid`), threaded as the card says.

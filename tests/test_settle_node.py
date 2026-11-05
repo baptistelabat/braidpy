@@ -40,16 +40,16 @@ def _made(site, specs):
 
 def test_braids_made_with_the_site_are_settled_once_and_kept(tmp_path):
     """Each braid is settled as the page settles it as it comes: one made
-    move by move, a braid word or a kumihimo disk's, on a marudai; any
-    other, a lace machine's, sideways.  Built again, both
+    move by move, a braid word, a kumihimo disk's or a lace machine's, on a
+    marudai; any other, a braiding machine's, sideways.  Built again, both
     are taken from where they were kept, not settled again; and what is no
     longer made is cleared from there."""
     studio = _site_build()
     site, cache = tmp_path / "site", tmp_path / "settled"
     word = {"source": "word", "word": "1 -2", "n_strands": 3, "repeat": 2}
     disk = {"source": "mobidai", "name": "KONGO_8", "cycles": 2}
-    lace = {"source": "lace", "cycles": 2}
-    made = _made(site, [word, disk, lace])
+    machine = {"source": "machine", "name": "flat_3", "cycles": 1}
+    made = _made(site, [word, disk, machine])
 
     studio._settled(site, cache)
     index = json.loads((made / "index.json").read_text())
@@ -63,7 +63,7 @@ def test_braids_made_with_the_site_are_settled_once_and_kept(tmp_path):
         e["spec"]["source"]
         for e in index
         if "disk" not in json.loads((made / e["file"]).read_text())
-    ] == ["lace"]
+    ] == ["machine"]
     kept = {path: path.stat().st_mtime_ns for path in cache.glob("*.json")}
     assert len(kept) == 3
 

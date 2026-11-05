@@ -166,3 +166,69 @@ def test_a_notch_named_twice_is_refused():
             },
             tighten=False,
         )
+
+
+@pytest.mark.parametrize("name", list(LACE))
+def test_a_lace_machine_made_on_a_marudai_is_the_braid_of_its_card(name):
+    """Made on a marudai, the braid is read off the card, not the machine:
+    the same word, and a disk program that reads back the card run twice."""
+    from braidpy.annulus_braid import solid_word
+    from braidpy.take_off import disk_annular_word
+    from braidpy.web.words import _ring_steps
+
+    spec = {"source": "lace", "name": name, "cycles": 2, "iterations": 0}
+    machine = build(spec, tighten=False)
+    disk = build({**spec, "settle": "marudai"}, tighten=False)
+    assert disk["info"]["word"] == machine["info"]["word"]
+    assert disk["timeline"]["kind"] == "disk"
+    twice = [int(g) for g in machine["info"]["word"].split()] * 2
+    for made in (machine, disk):
+        start, steps = _ring_steps(made["disk"])
+        annular, n = disk_annular_word(
+            start, steps, made["disk"]["n_slots"], clockwise=True
+        )
+        assert list(solid_word(annular, n)) == twice
+
+
+def test_a_lace_machine_on_a_marudai_loads_nothing_the_machine_needs():
+    """Worked out from its card: neither the machine's code nor networkx is
+    imported, as the page would otherwise load them in the browser."""
+    import subprocess
+    import sys
+
+    script = (
+        "import sys; from braidpy.web import build; "
+        "build({'source': 'lace', 'name': 'custom', 'n_gears': 6, "
+        "'card': '101010 010101', 'carriers': 'A-B C:0 E:1', 'cycles': 2, "
+        "'settle': 'marudai', 'iterations': 0}, tighten=False); "
+        "print('networkx' in sys.modules, "
+        "any(m.startswith('braidpy.horn_gear') for m in sys.modules))"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    assert out.stdout.split() == ["False", "False"]
+
+
+def test_bobbins_on_a_marudai_go_in_the_notches_named():
+    """By notch, A-B, or as gear:slot: slot 0 faces the next gear round the
+    ring, slot 1 the previous."""
+    made = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 6,
+            "card": "101010 010101",
+            "carriers": "C:0 A-B E:1",
+            "cycles": 1,
+            "settle": "marudai",
+            "iterations": 0,
+        },
+        tighten=False,
+    )
+    # Yarn i of the braid is the bobbin it names; the disk lists them alike.
+    notch = {
+        int(strand["name"].split()[-1]): (slot - 1) // 12
+        for strand, slot in zip(made["strands"], made["disk"]["start"])
+    }
+    assert notch == {0: 2, 1: 0, 2: 3}
