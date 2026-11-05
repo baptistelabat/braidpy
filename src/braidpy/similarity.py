@@ -88,11 +88,18 @@ def home(braid: Braid) -> tuple[Braid, Braid]:
     Returns:
         The unit, and the home braid.
     """
+    unit, repeats = _unit_and_repeats(braid)
+    return unit, Braid(tuple(unit.generators) * repeats, braid.n_strands)
+
+
+def _unit_and_repeats(braid: Braid) -> tuple[Braid, int]:
+    """The braid's repeating unit, and how many repeats bring every strand
+    home: :func:`home` without writing the home braid out, which for a long
+    unit is millions of crossings."""
     from braidpy.pure_braid import closing_repeats, repeating_unit
 
     unit = Braid(tuple(repeating_unit(braid.generators)), braid.n_strands)
-    repeats = closing_repeats(unit, limit=None) or 1
-    return unit, Braid(tuple(unit.generators) * repeats, braid.n_strands)
+    return unit, closing_repeats(unit, limit=None) or 1
 
 
 def fingerprint(braid: Braid) -> Fingerprint:
@@ -108,9 +115,8 @@ def fingerprint(braid: Braid) -> Fingerprint:
     from braidpy.properties import alexander_on_circle, burau_polynomial_on_circle
     from braidpy.pure_braid import cycles
 
-    unit, whole = home(braid)
-    repeats = len(whole.generators) // max(1, len(unit.generators))
-    links = linking_matrix(whole)
+    unit, repeats = _unit_and_repeats(braid)
+    links = linking_matrix(unit, repeats)
     upper = [
         int(links[i, j]) for i in range(len(links)) for j in range(i + 1, len(links))
     ]

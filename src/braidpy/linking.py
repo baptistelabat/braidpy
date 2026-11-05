@@ -43,37 +43,63 @@ import numpy as np
 __all__ = ["close_yarns", "gauss_linking_number", "linking_matrix", "yarn_linking"]
 
 
-def linking_matrix(braid) -> np.ndarray:
+def linking_matrix(braid, repeats: int = 1) -> np.ndarray:
     """The linking numbers of a braid's closure, from its word.
 
     Each crossing between strands of two different loops adds half its sign
     to their linking number; crossings of a loop with itself add nothing.
 
+    The braid may be taken repeated: each repeat makes the same crossings at
+    the same slots, between whichever strands the repeats before have brought
+    there, so the word is read once however many times it is repeated.  A
+    home braid of a few hundred repeats of a long unit
+    (:func:`braidpy.similarity.home`) is millions of crossings, and reading
+    them one by one took a minute.
+
     Args:
         braid: A :class:`~braidpy.braid.Braid`.
+        repeats: How many times it is repeated before it is closed.
 
     Returns:
         A symmetric matrix of whole numbers, one row and column per loop,
         the loops in the order of :func:`braidpy.pure_braid.cycles` (by
-        their first strand); zero on the diagonal.
+        their first strand) of the braid repeated; zero on the diagonal.
     """
-    from braidpy.pure_braid import cycles
-
-    loops = cycles(braid)
-    loop_of = {strand: k for k, loop in enumerate(loops) for strand in loop}
     history = braid.slot_history()
-    twice = np.zeros((len(loops), len(loops)), dtype=int)
+    n = len(history[0])
+    once = history[-1]
+    # Where each strand is after r repeats, and the loops that makes.
+    after = [list(range(n))]
+    for _ in range(repeats):
+        after.append([once[slot] for slot in after[-1]])
+    whole = after[-1]
+    loop_of = [-1] * n
+    loops = 0
+    for start in range(n):
+        here = start
+        while loop_of[here] < 0:
+            loop_of[here] = loops
+            here = whole[here]
+        if loop_of[start] == loops:
+            loops += 1
+    # In repeat r the strand starting in slot s of the unit is the one that
+    # r repeats have brought to slot s: who[r, s], as a loop.
+    who = np.zeros((repeats, n), dtype=int)
+    for r in range(repeats):
+        for strand, slot in enumerate(after[r]):
+            who[r, slot] = loop_of[strand]
+    twice = np.zeros((loops, loops), dtype=int)
     for step, generator in enumerate(braid.generators):
         if not generator:
             continue
         lower = abs(generator) - 1
         row = history[step]
-        a = loop_of[row.index(lower)]
-        b = loop_of[row.index(lower + 1)]
-        if a != b:
-            sign = 1 if generator > 0 else -1
-            twice[a, b] += sign
-            twice[b, a] += sign
+        a = who[:, row.index(lower)]
+        b = who[:, row.index(lower + 1)]
+        apart = a != b
+        sign = 1 if generator > 0 else -1
+        np.add.at(twice, (a[apart], b[apart]), sign)
+        np.add.at(twice, (b[apart], a[apart]), sign)
     return twice // 2
 
 

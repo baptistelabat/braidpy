@@ -20,16 +20,30 @@ if TYPE_CHECKING:
     from sympy import Poly
 
 
-def _burau_product(braid: Braid, t, one, zero, product, identity):
-    """The braid's reduced Burau matrix, a generator at a time, in whatever
-    ring ``t``, ``one`` and ``zero`` are of: ``product(a, rows)`` multiplies
-    a matrix by a generator's rows, ``identity`` is where it starts."""
-    matrix = identity
+def _burau_product(braid: Braid, t, one, zero) -> list[list]:
+    """The braid's reduced Burau matrix, as rows, in whatever ring ``t``,
+    ``one`` and ``zero`` are of.
+
+    A generator's matrix is the identity but for one row
+    (:func:`~braidpy.braid.reduced_burau_generator`), so multiplying by it
+    changes three columns at most: a generator at a time, that is a few
+    multiplications per row, where a whole matrix product is one per entry.
+    """
+    m = braid.n_strands - 1
+    matrix = [[one if r == c else zero for c in range(m)] for r in range(m)]
     for generator in braid.generators:
-        matrix = product(
-            matrix,
-            reduced_burau_generator(generator, braid.n_strands, t, one, zero),
-        )
+        i = abs(generator) - 1
+        row = reduced_burau_generator(generator, braid.n_strands, t, one, zero)[i]
+        columns = [c for c in (i - 1, i, i + 1) if 0 <= c < m]
+        for r in range(m):
+            here = matrix[r][i]
+            if here == zero:
+                continue
+            for c in columns:
+                if c == i:
+                    matrix[r][c] = here * row[c]
+                else:
+                    matrix[r][c] = matrix[r][c] + here * row[c]
     return matrix
 
 
@@ -74,13 +88,8 @@ def alexander_polynomial(braid: Braid) -> "Poly":
         return Poly(Integer(1), t)
     field = QQ.frac_field(t)
     m = n - 1
-    burau = _burau_product(
-        braid,
-        field.convert(t),
-        field.one,
-        field.zero,
-        lambda a, rows: a * DomainMatrix(rows, (m, m), field),
-        DomainMatrix.eye(m, field),
+    burau = DomainMatrix(
+        _burau_product(braid, field.convert(t), field.one, field.zero), (m, m), field
     )
     determinant = field.to_sympy((DomainMatrix.eye(m, field) - burau).det())
     numerator, _ = fraction((determinant * (1 - t) / (1 - t**n)).cancel())
@@ -141,15 +150,8 @@ def _burau_on_circle(braid: Braid, theta: float):
     numpy array."""
     import numpy as np
 
-    n = braid.n_strands
-    return _burau_product(
-        braid,
-        complex(np.exp(1j * theta)),
-        1.0 + 0j,
-        0j,
-        lambda a, rows: a @ np.array(rows, dtype=complex),
-        np.eye(n - 1, dtype=complex),
-    )
+    rows = _burau_product(braid, complex(np.exp(1j * theta)), 1.0 + 0j, 0j)
+    return np.array(rows, dtype=complex).reshape(braid.n_strands - 1, -1)
 
 
 def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> float:
@@ -166,12 +168,15 @@ def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> 
     import numpy as np
 
     total = 0.0
-    for eigen in np.linalg.eigvals(_burau_on_circle(braid, theta)):
-        grows = repeats * np.log(abs(eigen)) if eigen else -np.inf
-        if grows > 30:
-            total += grows
-        else:
-            total += np.log(abs(x - eigen**repeats))
+    # A factor exactly zero gives -inf: the determinant vanishes, which the
+    # callers read as such (the Alexander polynomial of a split link).
+    with np.errstate(divide="ignore"):
+        for eigen in np.linalg.eigvals(_burau_on_circle(braid, theta)):
+            grows = repeats * np.log(abs(eigen)) if eigen else -np.inf
+            if grows > 30:
+                total += grows
+            else:
+                total += np.log(abs(x - eigen**repeats))
     return float(total)
 
 
