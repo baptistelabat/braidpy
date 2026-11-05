@@ -43,6 +43,7 @@ two plaits braided side by side.
 
 from __future__ import annotations
 
+import itertools
 import math
 from collections.abc import Sequence
 
@@ -64,15 +65,9 @@ MULTIBAND_10_15_10_SLOTS = (5, 4, 4, 8, 6, 8, 4, 4, 4, 4, 8, 6, 8, 4, 4, 5)
 #: The gears split between the bands on either side of them.
 MULTIBAND_10_15_10_SPLIT = (4, 11)
 
-#: Which gears of the line each band runs over, as (first, last) indices; a
-#: split gear is the last of one band and the first of the next.
-MULTIBAND_10_15_10_BANDS = ((0, 4), (4, 11), (11, 15))
-
-#: Carriers each band runs on the reference machine: the 10-15-10 of its name.
-MULTIBAND_10_15_10_CARRIERS = (10, 15, 10)
-
-#: Where the reference machine's carriers start, band by band: 10, 15 and 10.
-#: Found by the exact loading search, which gives 12, 19 and 12 at most, and
+#: Where the reference machine's carriers start, band by band: 10, 15 and 10,
+#: the 10-15-10 of its name.  Not the most it holds: found by the exact
+#: loading search, which gives 12, 19 and 12 at most, and
 #: thinned to the drawing's counts as evenly over the gears as they go; the
 #: tests run it over the whole machine's period, 2280 steps.
 MULTIBAND_10_15_10_LOADING = (
@@ -118,6 +113,22 @@ MULTIBAND_10_15_10_LOADING = (
         ("G15", 4),
     ),
 )
+
+
+def bands_of(n_gears: int, split: Sequence[int]) -> tuple[tuple[int, int], ...]:
+    """Which gears each band of a line runs over: from an end or a split gear
+    to the next.
+
+    Args:
+        n_gears: Gears along the line.
+        split: The split gears.
+
+    Returns:
+        Per band, its first and last gear; a split gear is the last of one
+        band and the first of the next.
+    """
+    cuts = [0, *sorted(split), n_gears - 1]
+    return tuple(itertools.pairwise(cuts))
 
 
 def gear_name(index: int, split: Sequence[int], side: int = 0) -> str:
@@ -204,6 +215,35 @@ class MultibandLine(BraidingMachine):
                 )
             )
         super().__init__(gears, connections)
+
+    @property
+    def bands(self) -> tuple[tuple[int, int], ...]:
+        """Which gears each band of the whole line runs over: see
+        :func:`bands_of`."""
+        return bands_of(len(self.slots), self.split)
+
+    def band_of(self, gear: str) -> int | None:
+        """Which band a gear, or a split gear's half, serves.
+
+        Args:
+            gear: Gear name, ``G<index>``, with ``a`` or ``b`` for a half.
+
+        Returns:
+            The band, counted from 0 along the whole line; None if the line
+            has no such gear.
+        """
+        try:
+            index = int(gear[1:].rstrip("ab"))
+        except ValueError:
+            return None
+        for band, (first, last) in enumerate(self.bands):
+            if first <= index <= last:
+                if gear.endswith("a") and index == first:
+                    continue
+                if gear.endswith("b") and index == last:
+                    continue
+                return band
+        return None
 
     def default_carriers(self) -> dict[int, tuple[str, int]]:
         """The loading given, or one found by the loading search.
@@ -306,9 +346,10 @@ def multiband_band(band: int) -> MultibandLine:
     Raises:
         ValueError: If ``band`` is not 0, 1 or 2.
     """
-    if band not in (0, 1, 2):
+    bands = bands_of(len(MULTIBAND_10_15_10_SLOTS), MULTIBAND_10_15_10_SPLIT)
+    if band not in range(len(bands)):
         raise ValueError(f"The machine has bands 0, 1 and 2, not {band!r}.")
-    first, last = MULTIBAND_10_15_10_BANDS[band]
+    first, last = bands[band]
     return MultibandLine(
         MULTIBAND_10_15_10_SLOTS,
         MULTIBAND_10_15_10_SPLIT,
@@ -316,27 +357,3 @@ def multiband_band(band: int) -> MultibandLine:
         last,
         loading=MULTIBAND_10_15_10_LOADING[band],
     )
-
-
-def band_of(gear: str) -> int | None:
-    """Which band of :func:`multiband_10_15_10` a gear or half serves.
-
-    Args:
-        gear: Gear name, ``G0`` to ``G15``, with ``a`` or ``b`` for a half.
-
-    Returns:
-        The band from 0, or None if the gear is not on the machine.  An
-        unsplit gear's band; a half's own.
-    """
-    try:
-        index = int(gear[1:].rstrip("ab"))
-    except ValueError:
-        return None
-    for band, (first, last) in enumerate(MULTIBAND_10_15_10_BANDS):
-        if first <= index <= last:
-            if gear.endswith("a") and index == first:
-                continue
-            if gear.endswith("b") and index == last:
-                continue
-            return band
-    return None

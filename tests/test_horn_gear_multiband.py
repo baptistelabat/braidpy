@@ -12,12 +12,11 @@ import pytest
 from braidpy.horn_gear.layout import compute_layout, gear_radii, slot_offsets
 from braidpy.horn_gear.loading import _fullest_loading
 from braidpy.horn_gear.multiband import (
-    MULTIBAND_10_15_10_CARRIERS,
     MULTIBAND_10_15_10_LOADING,
     MULTIBAND_10_15_10_SLOTS,
     MULTIBAND_10_15_10_SPLIT,
     MultibandLine,
-    band_of,
+    bands_of,
     multiband_10_15_10,
     multiband_band,
     twin_plait,
@@ -47,8 +46,8 @@ def test_no_track_leaves_its_band():
     machine = multiband_10_15_10()
     tracks = compute_tracks(machine)
     for track in tracks:
-        assert len({band_of(gear) for gear, _ in track}) == 1
-    assert {band_of(gear) for track in tracks for gear, _ in track} == {0, 1, 2}
+        assert len({machine.band_of(gear) for gear, _ in track}) == 1
+    assert {machine.band_of(gear) for track in tracks for gear, _ in track} == {0, 1, 2}
 
 
 def test_a_band_alone_braids_as_it_does_in_the_whole_machine():
@@ -79,8 +78,8 @@ def test_the_reference_loading_is_ten_fifteen_and_ten():
     machine = multiband_10_15_10()
     per_band = [0, 0, 0]
     for gear, _ in machine.default_carriers().values():
-        per_band[band_of(gear)] += 1
-    assert tuple(per_band) == MULTIBAND_10_15_10_CARRIERS
+        per_band[machine.band_of(gear)] += 1
+    assert tuple(per_band) == (10, 15, 10)
     assert [len(b) for b in MULTIBAND_10_15_10_LOADING] == list(per_band)
 
 
@@ -97,7 +96,7 @@ def test_the_reference_loading_runs_the_whole_machine_without_a_collision():
 def test_a_band_runs_its_own_loading(band):
     machine = multiband_band(band)
     loading = machine.default_carriers()
-    assert len(loading) == MULTIBAND_10_15_10_CARRIERS[band]
+    assert len(loading) == (10, 15, 10)[band]
     simulate(machine, simulation_period(machine), loading)
 
 
@@ -153,14 +152,21 @@ def test_the_fold_leaves_the_ends_apart():
             assert gap > 1
 
 
+def test_the_bands_run_from_an_end_or_a_split_gear_to_the_next():
+    assert bands_of(16, MULTIBAND_10_15_10_SPLIT) == ((0, 4), (4, 11), (11, 15))
+    assert multiband_10_15_10().bands == ((0, 4), (4, 11), (11, 15))
+    assert twin_plait().bands == ((0, 1), (1, 2))
+
+
 def test_band_of_names_each_half_by_the_band_it_serves():
-    assert band_of("G4a") == 0
-    assert band_of("G4b") == 1
-    assert band_of("G11a") == 1
-    assert band_of("G11b") == 2
-    assert band_of("G0") == 0
-    assert band_of("G15") == 2
-    assert band_of("nope") is None
+    machine = multiband_10_15_10()
+    assert machine.band_of("G4a") == 0
+    assert machine.band_of("G4b") == 1
+    assert machine.band_of("G11a") == 1
+    assert machine.band_of("G11b") == 2
+    assert machine.band_of("G0") == 0
+    assert machine.band_of("G15") == 2
+    assert machine.band_of("nope") is None
 
 
 def test_the_smallest_multiband_braids_two_plaits():

@@ -12,7 +12,7 @@ Writes ``demo_multiband_machine.html``, the machine, and
 bands apart.
 """
 
-from braidpy.horn_gear.multiband import band_of, multiband_10_15_10
+from braidpy.horn_gear.multiband import multiband_10_15_10
 from braidpy.horn_gear.tracks import compute_tracks, simulation_period
 from braidpy.horn_gear.visualization import animate, visualize_machine
 
@@ -26,7 +26,7 @@ def main() -> None:
     carriers = machine.default_carriers()
     per_band = [0, 0, 0]
     for gear, _ in carriers.values():
-        per_band[band_of(gear)] += 1
+        per_band[machine.band_of(gear)] += 1
     print(
         f"{len(machine.gears)} gears and halves, {machine.total_slots()} slots, "
         f"{len(compute_tracks(machine))} tracks, period {simulation_period(machine)}"

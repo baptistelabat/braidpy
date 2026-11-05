@@ -47,13 +47,11 @@ from .layout import (
 from .loading import load_carriers
 from .model import Axial, BraidingMachine, Connection, HornGear
 from .multiband import (
-    MULTIBAND_10_15_10_BANDS,
-    MULTIBAND_10_15_10_CARRIERS,
     MULTIBAND_10_15_10_LOADING,
     MULTIBAND_10_15_10_SLOTS,
     MULTIBAND_10_15_10_SPLIT,
     MultibandLine,
-    band_of,
+    bands_of,
     multiband_10_15_10,
     multiband_band,
 )
@@ -89,8 +87,6 @@ from .tracks import (
 from .visualization import animate, visualize_machine, visualize_tracks
 
 __all__ = [
-    "MULTIBAND_10_15_10_BANDS",
-    "MULTIBAND_10_15_10_CARRIERS",
     "MULTIBAND_10_15_10_LOADING",
     "MULTIBAND_10_15_10_SLOTS",
     "MULTIBAND_10_15_10_SPLIT",
@@ -116,7 +112,7 @@ __all__ = [
     # axial columns and tube cores
     "axial_position",
     "axial_positions",
-    "band_of",
+    "bands_of",
     "carrier_places",
     "carrier_radius",
     "carrier_trajectories",
