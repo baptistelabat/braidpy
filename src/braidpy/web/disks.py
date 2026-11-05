@@ -16,8 +16,18 @@ from collections.abc import Callable, Hashable, Sequence
 import numpy as np
 
 from braidpy.web._info import _disk_info, _disk_unit
-from braidpy.web._result import _hues, _result, _tightened, _timeline
+from braidpy.web._result import (
+    _hues,
+    _place_cores,
+    _result,
+    _tightened,
+    _timeline,
+    _with_core,
+)
 from braidpy.web._settings import (
+    CORE_COLOUR,
+    DISK_CORE,
+    DISK_CORE_KINDS,
     DISK_ITERATIONS,
     DISK_YARN,
     OWN,
@@ -60,6 +70,18 @@ def _disk_program(
     }
 
 
+# A disk braid's core, by name among its strands.
+CORE_NAME = "core"
+
+
+def _disk_core(spec: Spec) -> str:
+    """The core asked for down the disk's middle: none, yarn or rigid."""
+    core = DISK_CORE.read(spec)
+    if core not in DISK_CORE_KINDS:
+        raise ValueError(f"A disk's core is one of {', '.join(DISK_CORE_KINDS)}.")
+    return core
+
+
 def _disk_in_step(
     start,
     steps,
@@ -67,15 +89,20 @@ def _disk_in_step(
     diameter: float,
     iterations: int,
     clockwise: bool,
+    core: str = "none",
 ):
     """A disk's braid, laid round a ring with its rows made in the order
     the disk makes their crossings — as the side view of
     :class:`~braidpy.disk_animation.BraidGrowth` does — so the page can show
     the disk and the braid in step.
 
+    A core goes down the disk's middle, as kumihimo braids round one: it
+    stands on the ring's axis, the yarns drawn in round it, of yarn or
+    rigid as a machine's core is (:func:`braidpy.web.machines._cored`).
+
     Returns:
         The braid, and its clock: the disk's time at each crossing, and the
-        braid's then.
+        braid's then; and the ring, without the core.
     """
     from braidpy.take_off import (
         crossing_rows,
@@ -89,13 +116,41 @@ def _disk_in_step(
         raise ValueError("These moves cross no strands: there is no braid.")
     rows = crossing_rows(order, crossings, in_turn=True)
     ring = ring_trajectories(order, crossings, diameter, clockwise=clockwise, rows=rows)
-    paths = lay_yarns(ring, take_off=1.5 * diameter, yarn_diameter=diameter)
-    paths = _tightened(paths, diameter, iterations)
+    cores = [] if core == "none" else [CORE_NAME]
+    laid = _with_core(ring, CORE_NAME) if cores else ring
+    paths = lay_yarns(laid, take_off=1.5 * diameter, yarn_diameter=diameter)
+    paths = _place_cores(paths, cores)
+    paths = _tightened(
+        paths, diameter, iterations, rigid=cores if core == "rigid" else []
+    )
     clock = {
         "source": [0.0, *map(float, made_at), float(len(steps))],
         "braid": [0.0, *(r + 0.5 for r in rows), float(rows[-1] + 1)],
     }
     return paths, clock, ring
+
+
+def _cored(result: Result, core: str, keys: Sequence[Hashable], program) -> Result:
+    """A disk braid's result, round its core if it has one: the core grey
+    and named, the note saying so; and, without one, the moves for the
+    page's marudai, which does not braid round a core yet."""
+    if core == "none":
+        result["disk"] = program
+        return result
+    for strand, key in zip(result["strands"], keys):
+        if key == CORE_NAME:
+            strand["name"] = "Core"
+            strand["colour"] = CORE_COLOUR
+    kind = "rigid, it stays straight" if core == "rigid" else "of yarn, it gives way"
+    result["notes"] = [
+        *result["notes"],
+        (
+            f"Braided round a core down the disk's middle, drawn in grey: {kind}. "
+            "The word is the yarns' alone. A marudai does not braid round a core "
+            "yet: the yarns are tightened sideways."
+        ),
+    ]
+    return result
 
 
 def _kumihimo_cycles(pattern: str, n_strands: int):
@@ -112,6 +167,7 @@ def _from_kumihimo(spec: Spec) -> Result:
     n_strands = Kumihimo.n_strands.read(spec)
     repeat = Kumihimo.repeat.read(spec)
     diameter = DISK_YARN.read(spec)
+    core = _disk_core(spec)
     n_slots, start, steps = kumihimo_steps(pattern * repeat, n_strands)
     paths, clock, ring = _disk_in_step(
         start,
@@ -120,8 +176,11 @@ def _from_kumihimo(spec: Spec) -> Result:
         diameter,
         DISK_ITERATIONS.read(spec),
         clockwise=False,
+        core=core,
     )
     disk = kumihimo_trajectories(pattern * repeat, n_strands)
+    if core != "none":
+        disk = _with_core(disk, CORE_NAME)
     result = _result(
         f"Kumihimo {pattern} × {repeat}, {n_strands} strands",
         paths,
@@ -135,7 +194,11 @@ def _from_kumihimo(spec: Spec) -> Result:
         ),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
-    result["disk"] = _disk_program(start, steps, n_slots, False, list(paths.points))
+    keys = list(paths.points)
+    yarns = [k for k in keys if k != CORE_NAME]
+    result = _cored(
+        result, core, keys, _disk_program(start, steps, n_slots, False, yarns)
+    )
     result["info"]["made"] = repeat
     return result
 
@@ -171,6 +234,7 @@ def _from_mobidai(spec: Spec) -> Result:
     config = entry.to_config()
     cycles = Mobidai.cycles.read(spec)
     diameter = DISK_YARN.read(spec)
+    core = _disk_core(spec)
     start, steps = mobidai_steps(config, cycles)
     clockwise = getattr(config, "is_clockwise", True)
     paths, clock, ring = _disk_in_step(
@@ -180,10 +244,14 @@ def _from_mobidai(spec: Spec) -> Result:
         diameter,
         DISK_ITERATIONS.read(spec),
         clockwise=clockwise,
+        core=core,
     )
     # Coloured by strand, in the order the braid gives them.
     colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
+    colour_of[CORE_NAME] = CORE_COLOUR
     disk = mobidai_trajectories(config, n_cycles=cycles, slot_offset=0.5)
+    if core != "none":
+        disk = _with_core(disk, CORE_NAME)
     result = _result(
         f"{entry.name[0].upper()}{entry.name[1:]}, {cycles} cycles",
         paths,
@@ -196,8 +264,13 @@ def _from_mobidai(spec: Spec) -> Result:
         ),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
-    result["disk"] = _disk_program(
-        start, steps, config.n_slots, clockwise, list(paths.points)
+    keys = list(paths.points)
+    yarns = [k for k in keys if k != CORE_NAME]
+    result = _cored(
+        result,
+        core,
+        keys,
+        _disk_program(start, steps, config.n_slots, clockwise, yarns),
     )
     result["info"]["made"] = cycles
     return result

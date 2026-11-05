@@ -41,6 +41,16 @@ def _node_tighten(job):
     [
         {"source": "word", "word": "1 -2", "repeat": 4},
         {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
+        # A rigid core down the disk's middle, held straight: every yarn
+        # meets beside it at the braiding point, as round soutache's.
+        {
+            "source": "kumihimo",
+            "pattern": "SR",
+            "n_strands": 8,
+            "repeat": 2,
+            "core": "rigid",
+            "ties": True,
+        },
         {"source": "machine", "name": "tubular_8", "cycles": 1},
         # A core of yarn down a ring's hole, held at both ends.
         {"source": "lace", "name": "lace_sinnet4", "cycles": 2, "core": "yarn"},

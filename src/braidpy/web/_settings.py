@@ -54,6 +54,20 @@ class Word:
     starts: ClassVar[dict[str, Default]] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
 
 
+# ------------------------------------------------------------------- cores
+
+# The core a braid is made round: as whatever makes it is built (a
+# machine's own cores, of yarn); none; or one of yarn or rigid — a machine's
+# own, or one down the hole of a ring of gears.
+CORE = Text("core", "own")
+CORE_KINDS = ("own", "none", "yarn", "rigid")
+CORE_COLOUR = "#8a857c"
+# Links made before: the stiffness, yarn or rigid, of a machine's own cores.
+OLD_CORES = Text("cores", "yarn")
+# A disk has no core of its own: none, or one down its middle.
+DISK_CORE = Text("core", "none")
+DISK_CORE_KINDS = ("none", "yarn", "rigid")
+
 # ------------------------------------------------------------- disk braids
 
 # Every disk braid: its yarn, a fraction of the disk's radius, and the
@@ -69,7 +83,8 @@ class Kumihimo:
     # Its moves take the strands in fours: top, bottom, left and right.
     n_strands = Count("n_strands", 8, low=4, high=32)
     repeat = Count("repeat", 8, low=1, high=50)
-    shown = (pattern, n_strands, repeat)
+    core = DISK_CORE
+    shown = (pattern, n_strands, repeat, core)
 
 
 class Mobidai:
@@ -80,7 +95,8 @@ class Mobidai:
     # Your own: the disk's slots, and how far it turns after each cycle.
     n_slots = Count("n_slots", 32, low=3, high=128)
     shift = Count("shift", 0, low=-128, high=128)
-    shown = (name, cycles)
+    core = DISK_CORE
+    shown = (name, cycles, core)
 
 
 class Sinnet:
@@ -94,15 +110,6 @@ class Sinnet:
 
 
 # ------------------------------------------------------------------ machines
-
-# The core a braid is made round: as whatever makes it is built (a
-# machine's own cores, of yarn); none; or one of yarn or rigid — a machine's
-# own, or one down the hole of a ring of gears.
-CORE = Text("core", "own")
-CORE_KINDS = ("own", "none", "yarn", "rigid")
-CORE_COLOUR = "#8a857c"
-# Links made before: the stiffness, yarn or rigid, of a machine's own cores.
-OLD_CORES = Text("cores", "yarn")
 
 
 class Machine:

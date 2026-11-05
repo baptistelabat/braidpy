@@ -9,7 +9,7 @@ draws it from above, to load it by hand."""
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Collection, Hashable
+from collections.abc import Callable
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -22,7 +22,7 @@ from braidpy.web._info import _braid_info
 if TYPE_CHECKING:
     from braidpy.horn_gear.jacquard import JacquardLaceMachine
 from braidpy.utils import PALETTE
-from braidpy.web._result import _result, _tighten, _timeline
+from braidpy.web._result import _place_cores, _result, _tighten, _timeline
 from braidpy.web._settings import (
     CORE,
     CORE_COLOUR,
@@ -664,24 +664,6 @@ def machine_origin(name: str, place: list[Any], time: int) -> list[Any] | None:
     machine, _ = _worked(name)
     found = origin(machine, (str(place[0]), int(place[1])), int(time))
     return None if found is None else [found[0], int(found[1])]
-
-
-def _place_cores(paths, cores: Collection[Hashable]):
-    """The cores, each standing straight in the braid where the machine
-    lays it, all the way down to the fell: drawn in to the fell with the
-    yarns, the cores would come closer there than the machine lays them,
-    and could pass each other."""
-    from dataclasses import replace
-
-    if not cores:
-        return paths
-    points = dict(paths.points)
-    n = paths.formed_count
-    for k in cores:
-        line = points[k].copy()
-        line[:n, :2] = line[0, :2]
-        points[k] = line
-    return replace(paths, points=points)
 
 
 def _machine_entry() -> Source:

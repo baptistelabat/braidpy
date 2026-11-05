@@ -9,7 +9,7 @@ what tightening them needs."""
 from __future__ import annotations
 
 import math
-from collections.abc import Hashable, Sequence
+from collections.abc import Collection, Hashable, Sequence
 from contextvars import ContextVar
 from typing import Any, cast
 
@@ -76,6 +76,33 @@ def _tightened(
         paths, diameter, iterations=iterations, core_radius=core_radius, rigid=rigid
     )
     return tightened
+
+
+def _place_cores(paths, cores: Collection[Hashable]):
+    """The cores, each standing straight in the braid where the machine
+    lays it, all the way down to the fell: drawn in to the fell with the
+    yarns, the cores would come closer there than the machine lays them,
+    and could pass each other."""
+    from dataclasses import replace
+
+    if not cores:
+        return paths
+    points = dict(paths.points)
+    n = paths.formed_count
+    for k in cores:
+        line = points[k].copy()
+        line[:n, :2] = line[0, :2]
+        points[k] = line
+    return replace(paths, points=points)
+
+
+def _with_core(trajectories, name: Hashable):
+    """The strands' paths, and a core standing at their axis all along."""
+    from dataclasses import replace
+
+    centre = trajectories.centre()
+    standing = np.tile(np.asarray(centre, dtype=float), (len(trajectories.times), 1))
+    return replace(trajectories, axis=centre, xy={**trajectories.xy, name: standing})
 
 
 def _tighten(
@@ -225,7 +252,8 @@ def _timeline(
     if ring is not None:
         rows = np.interp(times[chosen], clock["source"], clock["braid"])
         pull = np.zeros(len(chosen), dtype=complex)
-        for k in keys:
+        # A core, on the axis, pulls the braid no way round.
+        for k in (k for k in keys if k in ring.xy):
             at = np.asarray(trajectories.xy[k][chosen], dtype=float) - shift
             on = np.asarray(ring.xy[k], dtype=float)
             x = np.interp(rows, ring.times, on[:, 0])
