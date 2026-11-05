@@ -5,10 +5,10 @@
 // The braid asked for, read from the form, written into the address, and
 // read back from it: a link makes the same braid.
 
-import { chosenColours, useColours } from "./colours.js?v=80ca721595";
-import { CHOICES, guessChoices } from "./defaults.js?v=80ca721595";
-import { catalogue, renderFields } from "./fields.js?v=80ca721595";
-import { $ } from "./page.js?v=80ca721595";
+import { chosenColours, useColours } from "./colours.js?v=4bf4b932b6";
+import { CHOICES, guessChoices } from "./defaults.js?v=4bf4b932b6";
+import { catalogue, renderFields } from "./fields.js?v=4bf4b932b6";
+import { $ } from "./page.js?v=4bf4b932b6";
 
 export function readSpec() {
   const spec = { source: $("source").value };

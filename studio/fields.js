@@ -5,11 +5,25 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=80ca721595";
-import { attachEditor } from "./editor.js?v=80ca721595";
-import { attachMachine } from "./machine.js?v=80ca721595";
-import { $ } from "./page.js?v=80ca721595";
-import { submit } from "./workers.js?v=80ca721595";
+import { attachDiagram } from "./diagram.js?v=4bf4b932b6";
+import { attachEditor } from "./editor.js?v=4bf4b932b6";
+import { attachMachine } from "./machine.js?v=4bf4b932b6";
+import { $ } from "./page.js?v=4bf4b932b6";
+import { submit } from "./workers.js?v=4bf4b932b6";
+
+// The core a braid is made round (braidpy.web._settings.CORE).
+const CORE = {
+  name: "core",
+  label: "Core",
+  kind: "choice",
+  choices: [
+    ["own", "As built: its own cores, of yarn, if it has any"],
+    ["none", "None"],
+    ["yarn", "Yarn: gives way to the yarns braided round it"],
+    ["rigid", "Rigid: stays straight"],
+  ],
+  hint: "A core goes down the hole a ring of gears encloses, unless the machine has cores of its own.",
+};
 
 // What each source asks for.  ``entries`` and ``examples`` come from
 // braidpy's own catalogue once it has loaded.
@@ -96,16 +110,7 @@ const FIELDS = {
       kind: "text",
       hint: "Each as gear:slot, slots numbered from each gear's first. Click a slot on the machine to put a carrier on it or take it off: carriers that meet stop the braiding there.",
     },
-    {
-      name: "cores",
-      label: "Cores",
-      kind: "choice",
-      choices: [
-        ["yarn", "Yarn: gives way to the yarns braided round it"],
-        ["rigid", "Rigid: stays straight"],
-      ],
-      hint: "For a machine that braids round cores.",
-    },
+    CORE,
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
   ],
   lace: [
@@ -124,6 +129,7 @@ const FIELDS = {
       kind: "text",
       hint: "Each as gear:slot, or by its notch, A-B, as the card names them. A bobbin sits in a notch, where two gears overlap: click one on the machine to put a bobbin in it or take it off. The card turns the gears; bobbins that meet stop the braiding there.",
     },
+    CORE,
     { name: "cycles", label: "Passes of the card", kind: "number", min: 1, max: 24 },
   ],
 };
