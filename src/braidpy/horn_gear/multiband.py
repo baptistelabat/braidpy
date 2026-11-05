@@ -245,6 +245,29 @@ class MultibandLine(BraidingMachine):
                 return band
         return None
 
+    def carrier_colours(
+        self, carriers: dict[int, tuple[str, int]] | None = None
+    ) -> dict[int, str] | None:
+        """Every carrier in its band's colour, so the bands can be told
+        apart in the braid they make together.
+
+        Args:
+            carriers: Carrier number -> (gear, slot) it starts at; the
+                machine's own loading if None.
+
+        Returns:
+            Carrier number -> colour: the palette's first for the first band,
+            its second for the next, and so on.
+        """
+        from braidpy.utils import PALETTE
+
+        if carriers is None:
+            carriers = self.default_carriers()
+        return {
+            k: PALETTE[(self.band_of(gear) or 0) % len(PALETTE)]
+            for k, (gear, _) in carriers.items()
+        }
+
     def default_carriers(self) -> dict[int, tuple[str, int]]:
         """The loading given, or one found by the loading search.
 

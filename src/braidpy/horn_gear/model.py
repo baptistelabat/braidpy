@@ -332,6 +332,23 @@ class BraidingMachine:
 
         return load_carriers(self)
 
+    def carrier_colours(
+        self, carriers: dict[int, tuple[str, int]] | None = None
+    ) -> dict[int, str] | None:
+        """The colours a loading's carriers are drawn in, if the machine has
+        a way of its own to choose them.
+
+        Args:
+            carriers: Carrier number -> (gear, slot) it starts at; the
+                machine's own loading if None.
+
+        Returns:
+            Carrier number -> colour as ``#rrggbb``; None to leave it to
+            whoever draws them, which gives each carrier a colour of the
+            palette (:data:`braidpy.utils.PALETTE`) in turn.
+        """
+        return None
+
     def next_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Where a carrier goes during the step from ``time`` to ``time + 1``.
 

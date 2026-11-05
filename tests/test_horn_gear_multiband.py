@@ -23,6 +23,7 @@ from braidpy.horn_gear.multiband import (
 )
 from braidpy.horn_gear.simulation import simulate
 from braidpy.horn_gear.tracks import compute_tracks, simulation_period
+from braidpy.utils import PALETTE
 
 
 def test_a_split_gear_is_two_halves_one_for_each_band():
@@ -190,3 +191,39 @@ def test_the_whole_machine_and_the_smallest_are_in_braid_studio():
 
     for name in ("twin_plait", "multiband_10_15_10"):
         assert CATALOGUE[name].make().total_slots() in (12, 86)
+
+
+def test_each_band_is_drawn_in_one_colour():
+    """The bands braid together to one fell; a colour for each tells them
+    apart in the braid: 10, 15 and 10 carriers in three colours, and a band
+    shown alone in the colour it has in the whole machine."""
+    from collections import Counter
+
+    whole = multiband_10_15_10()
+    colours = whole.carrier_colours()
+    assert sorted(Counter(colours.values()).values()) == [10, 10, 15]
+    for k, (gear, _) in whole.default_carriers().items():
+        assert colours[k] == PALETTE[whole.band_of(gear)]
+    alone = multiband_band(1)
+    assert set(alone.carrier_colours().values()) == {PALETTE[1]}
+    assert sorted(Counter(twin_plait().carrier_colours().values()).values()) == [3, 3]
+
+
+def test_braid_studio_draws_the_bands_in_their_colours():
+    from collections import Counter
+
+    from braidpy.web import build
+
+    made = build(
+        {"source": "machine", "name": "twin_plait", "cycles": 1}, tighten=False
+    )
+    assert Counter(s["colour"] for s in made["strands"]) == {
+        PALETTE[0]: 3,
+        PALETTE[1]: 3,
+    }
+
+
+def test_an_ordinary_machine_leaves_its_colours_to_the_palette():
+    from braidpy.horn_gear.examples import flat_braid_9
+
+    assert flat_braid_9().carrier_colours() is None
