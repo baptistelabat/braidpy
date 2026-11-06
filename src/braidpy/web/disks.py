@@ -131,12 +131,13 @@ def _disk_in_step(
 
 
 def _cored(result: Result, core: str, keys: Sequence[Hashable], program) -> Result:
-    """A disk braid's result, round its core if it has one: the core grey
-    and named, the note saying so; and, without one, the moves for the
-    page's marudai, which does not braid round a core yet."""
+    """A disk braid's result with the moves for the page's marudai, round
+    its core if it has one: the core grey, named, after the yarns, and the
+    note saying so."""
+    result["disk"] = program
     if core == "none":
-        result["disk"] = program
         return result
+    program["core"] = core
     for strand, key in zip(result["strands"], keys):
         if key == CORE_NAME:
             strand["name"] = "Core"
@@ -146,8 +147,7 @@ def _cored(result: Result, core: str, keys: Sequence[Hashable], program) -> Resu
         *result["notes"],
         (
             f"Braided round a core down the disk's middle, drawn in grey: {kind}. "
-            "The word is the yarns' alone. A marudai does not braid round a core "
-            "yet: the yarns are tightened sideways."
+            "The word is the yarns' alone."
         ),
     ]
     return result

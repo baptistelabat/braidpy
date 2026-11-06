@@ -364,6 +364,8 @@ async function onMarudai(id, result, job) {
   let shown = started;
   const twist = job.twist ?? "auto";
   const program = programOf(result, twist);
+  // The yarns; a core, if any, comes after them.
+  const n = program.start.length;
   const same = JSON.stringify({ ...program, steps: undefined, d });
   const goesOn =
     onDisk &&
@@ -391,7 +393,7 @@ async function onMarudai(id, result, job) {
     if (performance.now() - shown < 80) return;
     shown = performance.now();
     if (!onDisk.mirror) {
-      const ends = frame.yarns.filter((y) => y.length).map((y) => [y[y.length - 3], y[y.length - 2], y[y.length - 1]]);
+      const ends = frame.yarns.slice(0, n).filter((y) => y.length).map((y) => [y[y.length - 3], y[y.length - 2], y[y.length - 1]]);
       onDisk.mirror = mirrorOf(
         {
           rim: {
@@ -405,7 +407,7 @@ async function onMarudai(id, result, job) {
     }
     const mirror = onDisk.mirror;
     const disk = { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) };
-    self.postMessage({ type: "frame", id, frame: pageFrame(frame, d, mirror), disk, colours: result.strands.map((s) => s.colour) });
+    self.postMessage({ type: "frame", id, frame: pageFrame(frame, d, mirror, n), disk, colours: result.strands.map((s) => s.colour) });
   };
   making.hooks.progress = ({ fraction }) => {
     status(
@@ -451,14 +453,13 @@ async function onMarudai(id, result, job) {
   const frames = onDisk.frames;
   const every = Math.max(1, Math.ceil(frames.length / 600));
   const shownFrames = frames.filter((_, i) => i % every === 0 || i === frames.length - 1);
-  out.marudai = onMarudaiFrame(made, d, shownFrames, making.look());
+  out.marudai = onMarudaiFrame(made, d, shownFrames, making.look(), n);
   out.notes = [
     ...(out.notes || []),
     `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
   ];
   // Every bobbin turning together, the braid hanging free: it turns along,
   // and what those turns would have twisted in is not there.
-  const n = result.disk.start.length;
   const turns = result.disk.steps.some(
     (step) => step.length === n && step.every(([, d]) => d && d === step[0][1]),
   );
@@ -493,12 +494,13 @@ function mirrorOf(made, d) {
 }
 
 // One yarn, flat [x, y, z, …] as marudai.js gives it, in the page's frame,
-// the fell (``tip``) at height 0, and on across the mirror and over its edge.
-function onMirror(yarn, tip, d, mirror) {
+// the fell (``tip``) at height 0, and on across the mirror and over its edge;
+// a core, going to no bobbin, straight up through the mirror's hole.
+function onMirror(yarn, tip, d, mirror, core = false) {
   const out = [];
   for (let i = 0; i < yarn.length; i += 3) out.push([yarn[i] * d, -yarn[i + 1] * d, (tip - yarn[i + 2]) * d]);
   // While the yarns are first laid out, those still to come have nothing.
-  if (!out.length) return out;
+  if (!out.length || core) return out;
   const [x, y, z] = out[out.length - 1];
   const r = Math.hypot(x, y) || 1;
   const ux = x / r, uy = y / r;
@@ -518,7 +520,7 @@ function onMirror(yarn, tip, d, mirror) {
 // frozen ones being as the braid ends them (base), turned back to where
 // they were and raised with the fell.  Grow puts each moment back together
 // as it shows it (frames.js).
-function onMarudaiFrame(made, d, frames, end) {
+function onMarudaiFrame(made, d, frames, end, n) {
   let top = -Infinity;
   for (const y of made.yarns) for (let i = 2; i < y.length; i += 3) top = Math.max(top, y[i]);
   const mirror = mirrorOf(made, d);
@@ -526,7 +528,7 @@ function onMarudaiFrame(made, d, frames, end) {
   const needed = end.yarns.map((_, t) => Math.max(0, ...frames.map((f) => f.frozen[t])));
   const [endAngle, endX, endY] = end.placed;
   return {
-    tails: made.tails.map((tail) => onMirror(tail, top, d, mirror).map((p) => p.map(round))),
+    tails: made.tails.map((tail, t) => onMirror(tail, top, d, mirror, t >= n).map((p) => p.map(round))),
     disk: { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) },
     base: end.yarns.map((yarn, t) => {
       const out = new Float32Array(3 * needed[t]);
@@ -545,7 +547,7 @@ function onMarudaiFrame(made, d, frames, end) {
       const [ex, ey] = [endX * d, -endY * d];
       const [fx, fy] = [frame.placed[1] * d, -frame.placed[2] * d];
       return {
-        ...pageFrame(frame, d, mirror),
+        ...pageFrame(frame, d, mirror, n),
         frozen: frame.frozen,
         turn: [c, s, fx - (c * ex + s * ey), fy - (-s * ex + c * ey)],
         lift: (frame.tip - end.tip) * d,
@@ -562,13 +564,13 @@ function kept(frame) {
 
 // A moment in the making, for the page to draw: every yarn whole, in the
 // page's frame, its fell at height 0.
-function pageFrame(frame, d, mirror) {
+function pageFrame(frame, d, mirror, n) {
   return {
     what: frame.what,
     thread: frame.thread,
     step: frame.step,
     moved: frame.moved,
-    yarns: frame.yarns.map((yarn) => Float32Array.from(onMirror(yarn, frame.tip, d, mirror).flat())),
+    yarns: frame.yarns.map((yarn, t) => Float32Array.from(onMirror(yarn, frame.tip, d, mirror, t >= n).flat())),
   };
 }
 
