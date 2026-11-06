@@ -40,6 +40,26 @@ cases.paged = () => {
   return { ...seen, notes: out.notes };
 };
 
+// A machine's braid made by its carriers by the page's settle worker
+// (byCarriers), from what braidpy worked out for it: the strands as the
+// page gets them, and its notes.
+cases.carried = () => {
+  const vm = require("vm");
+  const web = path.join(__dirname, "..", "..", "web");
+  const page = { console, performance, setTimeout, structuredClone, postMessage: () => {} };
+  page.self = page;
+  page.importScripts = (...names) =>
+    names.forEach((name) => vm.runInContext(fs.readFileSync(path.join(web, name), "utf8"), page, { filename: name }));
+  vm.createContext(page);
+  vm.runInContext(fs.readFileSync(path.join(web, "settle.js"), "utf8"), page, { filename: "settle.js" });
+  page.status = () => {};
+  const result = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+  const job = result.tighten;
+  delete result.tighten;
+  const out = page.byCarriers(1, result, job);
+  return { strands: out.strands, notes: out.notes, carriers: "carriers" in out };
+};
+
 // A braid made on a marudai by the page's settle worker, its moments kept
 // for Grow as the page keeps them (frames.js), packed as the site keeps
 // them and unpacked: each put back together, beside the moment as it was,

@@ -9,7 +9,7 @@ draws it from above, to load it by hand."""
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Collection, Hashable
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -36,6 +36,7 @@ from braidpy.web._settings import (
     DISK_ITERATIONS,
     OLD_CORES,
     OWN,
+    Carried,
     Lace,
     Machine,
     Word,
@@ -178,7 +179,7 @@ def _from_machine(spec: Spec) -> Result:
     own = machine.carrier_colours(carriers_at) or {}
     colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
     colour.update({k: CORE_COLOUR for k in cores})
-    return _result(
+    result = _result(
         machines[name].title + f", {cycles} cycles",
         paths,
         diameter,
@@ -188,6 +189,39 @@ def _from_machine(spec: Spec) -> Result:
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
     )
+    if Machine.settle.read(spec) == Carried.settle:
+        if n_steps is None:
+            from braidpy.horn_gear.simulation import state_period
+
+            own_period = state_period(machine, machine.default_carriers())
+            n_steps = cycles * (own_period or machine.contact_period())
+        _by_carriers(result, machine, carriers_at, n_steps, cores, stopped)
+    return result
+
+
+def _by_carriers(
+    result: Result,
+    machine: Any,
+    carriers_at: dict[int, tuple[str, int]] | None,
+    n_steps: int,
+    cores: Collection[Hashable],
+    stopped: Any,
+) -> None:
+    """What the page needs to make the braid by its carriers going round
+    (:func:`braidpy.carried.carriers_job`), over at most
+    ``Carried.most_steps`` steps: not round cores, which it has none of
+    yet, nor once carriers have met."""
+    from braidpy.carried import carriers_job
+
+    if cores or stopped is not None:
+        return
+    steps = min(n_steps, Carried.most_steps)
+    result["carriers"] = carriers_job(machine, steps, carriers_at)
+    if steps < n_steps:
+        result["notes"] = [
+            *result["notes"],
+            f"Made by its carriers over its first {steps} steps of {n_steps}.",
+        ]
 
 
 def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
@@ -515,6 +549,8 @@ def _from_lace(spec: Spec) -> Result:
         notes=notes,
         timeline=_timeline(paths.trajectories, keys, "machine"),
     )
+    if Lace.settle.read(spec) == Carried.settle and n_steps is not None:
+        _by_carriers(result, machine, carriers_at, n_steps, cores, stopped)
     # To make it on a marudai, as asked later, from the card; its core, if
     # it has one, after the bobbins, as the marudai has it.
     if stopped is None:
