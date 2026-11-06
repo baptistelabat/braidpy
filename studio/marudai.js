@@ -23,6 +23,11 @@
 //   with steps shrinking until the queue dies down.
 // - Hanging free, the braid turns until its yarns' ends pull it no way round.
 // - Well behind a yarn's end, the braid is made: frozen.
+// - A core, if there is one, rises up the braid's axis, past the carriers:
+//   a yarn pulled straight up, or rigid, held where it stands.  A yarn's
+//   move passes beside it, on the side it goes round — a move of more than
+//   nine tenths of a half turn is made in two — and is drawn tight round
+//   it.  The braid turns about it.
 //
 // Inside, lengths are in units of half a yarn diameter, y up, as the method
 // was given; what comes out is in yarn diameters, z up.
@@ -35,6 +40,8 @@
   const WEIGHT = 2; // the carriers stand REACH / WEIGHT above the braid's tip
   const PULL = 1.2; // the bobbins' pull
   const STIFF = 10; // links and contacts
+  const THICK = 2; // a yarn's thickness: beads closer than this push apart
+  const CLEAR = 1.1; // start beads kept so much further apart than touching
   const TAIL = Math.round(Math.sqrt(REACH * REACH * (1 + 1 / (WEIGHT * WEIGHT)))); // beads from tip to rim
   const KEEP = 40; // beads behind what moved left free
   const RING = 30; // the most yarns the method was made for: tied round one ring
@@ -53,7 +60,7 @@
 
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
 
-  function Machine(nThreads, turning = true) {
+  function Machine(nThreads, turning = true, core = null) {
     // While the bobbins turn round the braid, together: held, and the yarns
     // carried round with them, not over each other; then as before again.
     const balancing = turning;
@@ -129,6 +136,9 @@
     // ------------------------------------------------------------ yarns
     const threads = [];
     for (let t = 0; t < nThreads; t++) threads.push({ beads: [], dir: 0, tx: 0, ty: 0, tz: 0 });
+    // The core, after the yarns.
+    const C = nThreads;
+    if (core) threads.push({ beads: [], dir: 0, tx: 0, ty: 0, tz: 0 });
     const last = (t) => threads[t].beads[threads[t].beads.length - 1];
     const prevOf = (b) => (place[b] > 0 ? threads[owner[b]].beads[place[b] - 1] : -1);
     const nextOf = (b) => {
@@ -440,6 +450,7 @@
       for (let t = 0; t < nThreads; t++) trim(t);
       heights();
       findTip();
+      growCore();
       quiet = true;
       balance();
       quiet = false;
@@ -466,7 +477,7 @@
 
     function findTip() {
       let s = 0;
-      for (const thread of threads) s += Y[thread.beads[Math.max(0, thread.beads.length - TAIL)]];
+      for (let t = 0; t < nThreads; t++) s += Y[threads[t].beads[Math.max(0, threads[t].beads.length - TAIL)]];
       tip = s / nThreads;
     }
 
@@ -476,8 +487,10 @@
       let ax = 0, az = 0;
       for (let t = 0; t < nThreads; t++) { ax += X[last(t)]; az += Z[last(t)]; }
       ax /= nThreads; az /= nThreads;
+      // Round a core, the braid turns about it.
+      if (core) ax = az = 0;
       const span = REACH - 4;
-      const lean = threads.map((thread) => {
+      const lean = threads.slice(0, nThreads).map((thread) => {
         const list = thread.beads;
         if (list.length < 20) return 0;
         // Its last link's pull, as the method has it; with more yarns than
@@ -501,7 +514,7 @@
         else { lo = g; hi = h; }
       }
       const f = turning ? (lo + hi) / 2 : 0;
-      const order = [...threads.keys()].sort((p, q) => threads[p].dir - threads[q].dir);
+      const order = [...lean.keys()].sort((p, q) => threads[p].dir - threads[q].dir);
       if (Math.abs(f) > 0.01) turn(ax, az, f);
       if (f > 0) order.reverse();
       // Held, the yarns are laid out again to their carriers without being
@@ -533,9 +546,10 @@
     // free part turns with them about the axis, all of it at its carrier
     // and none of it at the braid's tip, twisting the yarns in there.
     function twist(f) {
-      for (const thread of threads) {
+      for (let t = 0; t < nThreads; t++) {
+        const thread = threads[t];
         const list = thread.beads;
-        const end = last(threads.indexOf(thread));
+        const end = last(t);
         const top = Math.max(Y[end], tip + 1);
         for (let i = list.length - 1; i >= 0 && !fixed[list[i]]; i--) {
           const b = list[i];
@@ -549,6 +563,33 @@
         const c = Math.cos(f), s = Math.sin(f);
         [thread.tx, thread.tz] = [thread.tx * c - thread.tz * s, thread.tx * s + thread.tz * c];
       }
+    }
+
+    // The core up the axis, past the carriers, from where the braid begins:
+    // of yarn, its end pulled straight up and frozen where the braid is
+    // made; rigid, held all along.
+    function growCore() {
+      if (!core) return;
+      const list = threads[C].beads;
+      const top = tip + REACH;
+      if (!list.length) {
+        fixed[addBead(C, 0, 0, 0)] = 1;
+        fixed[addBead(C, 0, 1, 0)] = 1;
+      }
+      while (Y[last(C)] < top) {
+        const e = last(C);
+        const b = addBead(C, X[e], Y[e] + 1, Z[e]);
+        if (core === "rigid") fixed[b] = 1;
+        else enqueue(b);
+      }
+      // Pulled towards well above wherever its end can be.
+      threads[C].ty = top + REACH;
+      let low = Infinity;
+      for (let t = 0; t < nThreads; t++) {
+        const beads = threads[t].beads;
+        for (let i = beads.length - 1; i >= 0 && !fixed[beads[i]]; i--) low = Math.min(low, Y[beads[i]]);
+      }
+      if (low < Infinity) for (const b of list) if (Y[b] < low) fixed[b] = 1;
     }
 
     // The made braid, well below anything free, leaves the grid.
@@ -570,6 +611,7 @@
     // a braid.  So then rings of at most RING, one under the other, the
     // yarns taken in turn round the disk.
     function start(angles) {
+      growCore();
       const rings = Math.ceil(nThreads / RING);
       const each = Math.ceil(nThreads / rings);
       const ring = new Array(nThreads);
@@ -581,7 +623,9 @@
         // yarns or fewer, their start beads would touch or overlap: far
         // enough apart, then, for them to clear each other.
         const touching = 1 / Math.sin(Math.PI / Math.max(2, each));
-        const r = each / 3 > touching ? each / 3 : 1.1 * touching;
+        let r = each / 3 > touching ? each / 3 : CLEAR * touching;
+        // Round a core, clear of it.
+        if (core) r = Math.max(r, CLEAR * THICK);
         const y = -2 * ring[t];
         fixed[addBead(t, Math.cos(a) * r, y, Math.sin(a) * r)] = 1;
         fixed[addBead(t, Math.cos(a) * r, y + 1, Math.sin(a) * r)] = 1;
@@ -646,6 +690,9 @@
    * @param {boolean} [job.twists]  When every yarn moves alike, the bobbins
    *     turn round the braid, held for as long as they turn, twisting the
    *     yarns in; it hangs free again for the other moves (job.held).
+   * @param {string} [job.core]  A core up the braid's axis: "yarn" or
+   *     "rigid"; none if not given.  It comes after the yarns, in what is
+   *     returned.
    * @param {number[]} [job.from]  Each yarn's slot to lay it from first, if
    *     not job.start: the yarns then go from these to job.start as a first
    *     step.
@@ -678,7 +725,7 @@
     const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
     const split = job.split ?? true;
     const twists = job.twists ?? !!job.held;
-    const machine = Machine(n, job.turning ?? !job.held);
+    const machine = Machine(n, job.turning ?? !job.held, job.core ?? null);
     const hooks = { watch: job.watch, progress: job.progress, total: job.steps.length };
     let current = -1;
     // A moment of the making: every yarn whole, how many of each one's
@@ -765,6 +812,8 @@
         y.forEach((p, i) => { if (p[2] <= tip) from = i; });
         return y.slice(from).flat();
       });
+      // The yarns' own, not a core's: it goes to no carrier.
+      const ends = tails.slice(0, n);
       return {
         yarns: whole.map((y) => y.filter((p) => p[2] <= tip).flat()),
         whole: whole.map((y) => y.flat()),
@@ -772,8 +821,8 @@
         // Where the yarns' ends are, about the carriers' circle: the
         // marudai's mirror they lie over.
         rim: {
-          radius: mean(tails.map((t) => Math.hypot(t[t.length - 3], t[t.length - 2]))) || RIM / 2,
-          height: mean(tails.map((t) => t[t.length - 1])) || tip + REACH / WEIGHT / 2,
+          radius: mean(ends.map((t) => Math.hypot(t[t.length - 3], t[t.length - 2]))) || RIM / 2,
+          height: mean(ends.map((t) => t[t.length - 1])) || tip + REACH / WEIGHT / 2,
         },
         tip,
       };

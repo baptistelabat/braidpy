@@ -82,7 +82,8 @@
     // disk, as the angles are.
     const c = Math.cos(turned), s = Math.sin(turned);
     const machine = making.machine;
-    const threadStates = machine.threads.map((thread, t) => ({
+    // braid3dmin has no core: the yarns alone.
+    const threadStates = machine.threads.slice(0, n).map((thread, t) => ({
       colour: colourNumber(colours[t]),
       dir: wrap(thread.dir - turned),
       poss: machine.positions(t).map(([x, y, z]) => ({ x: x * c + z * s, y, z: -x * s + z * c })),

@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=0968532e1e";
-import { attachEditor } from "./editor.js?v=0968532e1e";
-import { attachMachine } from "./machine.js?v=0968532e1e";
-import { $ } from "./page.js?v=0968532e1e";
-import { submit } from "./workers.js?v=0968532e1e";
+import { attachDiagram } from "./diagram.js?v=22919e3c84";
+import { attachEditor } from "./editor.js?v=22919e3c84";
+import { attachMachine } from "./machine.js?v=22919e3c84";
+import { $ } from "./page.js?v=22919e3c84";
+import { submit } from "./workers.js?v=22919e3c84";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -35,7 +35,7 @@ const DISK_CORE = {
     ["yarn", "Yarn: gives way to the yarns braided round it"],
     ["rigid", "Rigid: stays straight"],
   ],
-  hint: "A core down the disk's middle, the braid made round it. Not made on a marudai yet: the yarns are tightened sideways.",
+  hint: "A core down the disk's middle, the braid made round it: on a marudai, it rises up the braid's axis and each move passes beside it.",
 };
 
 // What each source asks for.  ``entries`` and ``examples`` come from
