@@ -12,7 +12,7 @@ what it needs, checking it (:mod:`braidpy.web._settings`).
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 # A number as the page may give it: typed in, it comes as text.
 Value = str | float | None
@@ -187,6 +187,8 @@ class Result(_Result, total=False):
     timeline: Timeline
     tighten: Tightening
     disk: DiskProgram
+    # To make it by its carriers: braidpy.carried.carriers_job.
+    carriers: dict[str, Any]
 
 
 # --------------------------------------------------------------- catalogue

@@ -123,7 +123,19 @@ class Machine:
     # By default, a fifth of a gear radius: a plausible yarn.
     yarn_diameter = Number("yarn_diameter", 0.2, low=0.01, high=10.0)
     of_gear_radius = 0.2
+    # How it is to be settled: by its carriers (Carried).
+    settle = Text("settle", "")
     shown = (name, core, cycles)
+
+
+class Carried:
+    """A machine's braid made by its carriers going round, in the page
+    (braidpy.carried, web/carried.js): asked for as how to settle it."""
+
+    settle = "carriers"
+    # The most steps of the machine it is made over: a step takes about a
+    # second for a few carriers, in the page.
+    most_steps = 24
 
 
 class Lace:

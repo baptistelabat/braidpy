@@ -32,7 +32,8 @@
    * @param {number} [hooks.frameEvery]  Keep a moment every so many
    *     settlings; 0 for none.
    * @param {function(Object):void} [hooks.progress]  Told after each step
-   *     of the machine: {step, of}.
+   *     of the machine: {step, of, yarns}, yarns() the yarns as they are,
+   *     as returned.
    * @returns {{yarns: number[][], made: number[], deepest: number, frames:
    *     Object[]}} Each yarn, oldest first, flat: the braid made, then the
    *     free beads; how many of each are made; how deep any two yarns'
@@ -85,7 +86,11 @@
       }
       if (hooks.frameEvery && sample % hooks.frameEvery === 0) frames.push({ sample, ...snapshot() });
       if (hooks.progress && sample % substeps === 0) {
-        hooks.progress({ step: sample / substeps, of: Math.floor((samples - 1) / substeps) });
+        hooks.progress({
+          step: sample / substeps,
+          of: Math.floor((samples - 1) / substeps),
+          yarns: () => snapshot().yarns,
+        });
       }
     }
     return { ...snapshot(), deepest: state.deepest, frames };
