@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 else:
     go = lazy_module("plotly.graph_objects")
 
-__all__ = ["CarriedBraid", "braid_by_carriers", "figure"]
+__all__ = ["CarriedBraid", "braid_by_carriers", "carriers_job", "figure", "make"]
 
 # ------------------------------------------------------------- the machine
 # In yarn diameters: 1100 dtex polyester, some 0.4 mm thick.
@@ -98,13 +98,19 @@ SUBSTEPS = 60  # the carriers' places between settlings, a step
 MOST_STEPS = 400  # FIRE steps to settle, at most, each time
 TOLERANCE = 2e-2  # settled once no force is larger
 # Bead names in a friction spring's key, as braidpy.form's.
-_KEY = 4194304
-# FIRE's own (Bitzek et al., 2006), as braidpy.form uses them.
-_DT, _DT_MOST, _ALPHA = 0.01, 0.05, 0.1
-_GROW, _SHRINK, _DAMP, _AFTER = 1.1, 0.5, 0.99, 5
-# Near enough to touch before beads move a quarter diameter (rope.stale).
-_GAP = math.ceil(2 / SPACING) + 1
-_REACH = 1 + 2 * SPACING + 0.5
+KEY = 4194304
+# FIRE's own (Bitzek et al., 2006), as braidpy.form uses them: its first
+# and longest steps, its first mix, how it grows the step, shrinks it and
+# lessens the mix, and after how many steps downhill.
+FIRE = {
+    "dt": 0.01,
+    "dt_most": 0.05,
+    "alpha": 0.1,
+    "grow": 1.1,
+    "shrink": 0.5,
+    "damp": 0.99,
+    "after": 5,
+}
 
 
 @dataclass
@@ -147,6 +153,57 @@ def braid_by_carriers(
     machine: BraidingMachine,
     n_steps: int,
     carriers: dict[int, tuple[str, int]] | None = None,
+    frame_every: int = 0,
+    progress: Callable[[dict[str, Any]], None] | None = None,
+    **options: Any,
+) -> CarriedBraid:
+    """A braid made by a machine's carriers going round; see the module.
+
+    Args:
+        machine: The machine.
+        n_steps: Steps of the machine to make.
+        carriers: The loading; the machine's own if None.
+        frame_every: Keep a moment of the making every so many settlings;
+            0 for none.
+        progress: Told after each step: ``{"step", "of"}``.
+        **options: As :func:`carriers_job` takes them.
+
+    Returns:
+        The braid made, and how.
+    """
+    job = carriers_job(machine, n_steps, carriers, **options)
+    made = make(job, frame_every, progress)
+    eyes = np.array([[*e, 0.0] for e in job["eyes"][-1]])
+
+    def points(flat: Sequence[float]) -> np.ndarray:
+        return np.asarray(flat, dtype=float).reshape(-1, 3)
+
+    return CarriedBraid(
+        yarns=[points(y) for y in made["yarns"]],
+        made=made["made"],
+        eyes=eyes,
+        frames=[
+            {
+                "time": frame["sample"] / job["substeps"],
+                "yarns": [points(y) for y in frame["yarns"]],
+                "made": frame["made"],
+                "eyes": np.array([[*e, 0.0] for e in job["eyes"][frame["sample"]]]),
+            }
+            for frame in made["frames"]
+        ],
+        colours=job["colours"],
+        machine=job["deck"],
+        ring=job["ring"],
+        deepest=made["deepest"],
+        settings={k: job["settings"][k] for k in ("take_off", "tension", "friction")}
+        | {"gear_diameter": job["deck"]["gear_diameter"], "yarn_mm": YARN_MM},
+    )
+
+
+def carriers_job(
+    machine: BraidingMachine,
+    n_steps: int,
+    carriers: dict[int, tuple[str, int]] | None = None,
     gear_diameter: float = GEAR_DIAMETER,
     ring_height: float = RING_HEIGHT,
     ring_radius: float | None = None,
@@ -154,10 +211,10 @@ def braid_by_carriers(
     tension: float = TENSION,
     friction: float = FRICTION,
     substeps: int = SUBSTEPS,
-    frame_every: int = 0,
-    progress: Callable[[dict[str, Any]], None] | None = None,
-) -> CarriedBraid:
-    """A braid made by a machine's carriers going round; see the module.
+) -> dict[str, Any]:
+    """What :func:`make` (and ``web/carried.js``) makes a braid from: each
+    carrier's eye at each moment, the yarns as they start, the ring, and
+    every setting, as plain data.
 
     Args:
         machine: The machine.
@@ -171,12 +228,11 @@ def braid_by_carriers(
         tension: Each carrier's pull on its yarn.
         friction: mu, between yarns.
         substeps: The carriers' places between settlings, a step.
-        frame_every: Keep a moment of the making every so many settlings;
-            0 for none.
-        progress: Told after each step: ``{"step", "of"}``.
 
     Returns:
-        The braid made, and how.
+        The job: ``eyes``, per moment each carrier's ``[x, y]``; ``start``,
+        each yarn's beads flat, the first made; ``ring``; ``settings``;
+        ``substeps``; ``colours``; and the ``deck``, to draw it.
     """
     from braidpy.horn_gear import gear_radii
     from braidpy.horn_gear.take_off import carrier_trajectories
@@ -197,133 +253,152 @@ def braid_by_carriers(
     start = max(SPACING, CLEAR * RADIUS / math.sin(math.pi / max(2, n_yarns)))
     if ring_radius is None:
         ring_radius = start + RING_ROOM + RING_WIRE + RADIUS
-    inside = ring_radius - RING_WIRE - RADIUS
-    if inside <= start:
+    if ring_radius - RING_WIRE - RADIUS <= start:
         raise ValueError("The forming ring is too small for the yarns to pass.")
-    z_ring = ring_height
-    z_low = z_ring - BELOW
-    z_made = z_ring + ABOVE
-    v_sub = take_off / substeps
-
-    next_id = 0
-
-    def bead(p: Sequence[float]) -> _Bead:
-        nonlocal next_id
-        next_id += 1
-        return _Bead([float(c) for c in p], next_id - 1)
-
-    chains: list[_Yarn] = []
+    z_low = ring_height - BELOW
+    starts = []
     for k in range(n_yarns):
         eye = eyes[0, k]
         u = eye / max(float(np.linalg.norm(eye)), 1e-9)
-        top = np.array([*(u * start), z_made + SPACING])
+        top = np.array([*(u * start), ring_height + ABOVE + SPACING])
         # Straight down through the ring and under its wire, then out along
         # the run to the carrier.
-        knee = np.array([*(u * start), z_ring - RING_WIRE - RADIUS - SPACING])
+        knee = np.array([*(u * start), ring_height - RING_WIRE - RADIUS - SPACING])
         to_eye = np.array([*eye, 0.0]) - knee
         foot = knee + to_eye * ((knee[2] - z_low) / knee[2])
         points = [top]
         for a, b in ((top, knee), (knee, foot)):
             count = max(1, round(float(np.linalg.norm(b - a)) / SPACING))
             points += [a + (b - a) * (i / count) for i in range(1, count + 1)]
-        chains.append(
-            _Yarn(
-                made=[bead(points[0].tolist())],
-                free=[bead(p.tolist()) for p in points[1:]],
-            )
-        )
+        starts.append([float(c) for p in points for c in p])
 
-    offset = 0.0
-    grips: dict[int, list[float]] = {}
-    deepest = 0.0
-    frames: list[dict[str, Any]] = []
-
-    def made_at(b: _Bead) -> list[float]:
-        return [b.p[0], b.p[1], b.p[2] + offset]
-
-    def snapshot(at: np.ndarray) -> dict[str, Any]:
-        return {
-            "yarns": [
-                np.array([made_at(b) for b in y.made] + [b.p for b in y.free])
-                for y in chains
-            ],
-            "made": [len(y.made) for y in chains],
-            "eyes": np.array([[*e, 0.0] for e in at]),
-        }
-
-    for sample in range(1, len(traj.times)):
-        offset += v_sub
-        at = eyes[sample]
-        deepest = max(
-            deepest,
-            _settle(
-                chains,
-                offset,
-                at,
-                grips,
-                tension,
-                friction,
-                (ring_radius, z_ring),
-            ),
-        )
-        _feed(chains, at, z_low, bead)
-        for y in chains:
-            while len(y.free) > 2 and y.free[0].p[2] > z_made:
-                b = y.free.pop(0)
-                b.p[2] -= offset
-                y.made.append(b)
-        if frame_every and sample % frame_every == 0:
-            frames.append({"time": float(traj.times[sample]), **snapshot(at)})
-        if progress is not None and sample % substeps == 0:
-            progress({"step": sample // substeps, "of": n_steps})
-
-    end = snapshot(eyes[-1])
     own: dict[Any, str] = dict(machine.carrier_colours(carriers) or {})
-    colours = [own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(keys)]
-    return CarriedBraid(
-        yarns=end["yarns"],
-        made=end["made"],
-        eyes=end["eyes"],
-        frames=frames,
-        colours=colours,
-        machine={
+    return {
+        "eyes": eyes.tolist(),
+        "start": starts,
+        "substeps": substeps,
+        "ring": {"radius": ring_radius, "height": ring_height, "wire": RING_WIRE},
+        "settings": {
+            "radius": RADIUS,
+            "spacing": SPACING,
+            "below": BELOW,
+            "above": ABOVE,
+            "take_off": take_off,
+            "tension": tension,
+            "friction": friction,
+            "stretch": STRETCH,
+            "bend": BEND,
+            "contact": CONTACT,
+            "soft": SOFT,
+            "shell": SHELL,
+            "grip": GRIP,
+            "near_made": NEAR_MADE,
+            "most_steps": MOST_STEPS,
+            "tolerance": TOLERANCE,
+            "key": KEY,
+            "fire": FIRE,
+        },
+        "colours": [own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(keys)],
+        "deck": {
+            "gear_diameter": gear_diameter,
             "centres": {
                 g: ((np.asarray(c) - centre) * scale).tolist()
                 for g, c in traj.layout.items()
             },
             "radii": {g: r * scale for g, r in traj.radii.items()},
         },
-        ring={"radius": ring_radius, "height": z_ring, "wire": RING_WIRE},
-        deepest=deepest,
-        settings={
-            "gear_diameter": gear_diameter,
-            "take_off": take_off,
-            "tension": tension,
-            "friction": friction,
-            "yarn_mm": YARN_MM,
-        },
-    )
+    }
+
+
+def make(
+    job: dict[str, Any],
+    frame_every: int = 0,
+    progress: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    """The braid made from a job (:func:`carriers_job`): ``web/carried.js``'s
+    ``make``, step for step.
+
+    Args:
+        job: What to make it from.
+        frame_every: Keep a moment of the making every so many settlings;
+            0 for none.
+        progress: Told after each step of the machine: ``{"step", "of"}``.
+
+    Returns:
+        ``yarns``, each oldest first, flat: the braid made, then the free
+        beads; ``made``, how many of each are made; ``deepest``; and
+        ``frames``, each ``{"sample", "yarns", "made"}``.
+    """
+    st = job["settings"]
+    ring = job["ring"]
+    substeps = job["substeps"]
+    z_low = ring["height"] - st["below"]
+    z_made = ring["height"] + st["above"]
+    v_sub = st["take_off"] / substeps
+    next_id = 0
+
+    def bead(p: Sequence[float]) -> _Bead:
+        nonlocal next_id
+        next_id += 1
+        return _Bead([p[0], p[1], p[2]], next_id - 1)
+
+    chains = []
+    for flat in job["start"]:
+        beads = [bead(flat[i : i + 3]) for i in range(0, len(flat), 3)]
+        chains.append(_Yarn(made=beads[:1], free=beads[1:]))
+    state = {"offset": 0.0, "deepest": 0.0}
+    grips: dict[int, list[float]] = {}
+    frames = []
+
+    def snapshot() -> dict[str, Any]:
+        yarns = []
+        for y in chains:
+            flat: list[float] = []
+            for b in y.made:
+                flat.extend([b.p[0], b.p[1], b.p[2] + state["offset"]])
+            for b in y.free:
+                flat.extend(b.p)
+            yarns.append(flat)
+        return {"yarns": yarns, "made": [len(y.made) for y in chains]}
+
+    samples = len(job["eyes"])
+    for sample in range(1, samples):
+        state["offset"] += v_sub
+        eyes = job["eyes"][sample]
+        state["deepest"] = max(
+            state["deepest"], _settle(chains, state["offset"], eyes, grips, st, ring)
+        )
+        _feed(chains, eyes, z_low, st["spacing"], bead)
+        for y in chains:
+            while len(y.free) > 2 and y.free[0].p[2] > z_made:
+                b = y.free.pop(0)
+                b.p[2] -= state["offset"]
+                y.made.append(b)
+        if frame_every and sample % frame_every == 0:
+            frames.append({"sample": sample, **snapshot()})
+        if progress is not None and sample % substeps == 0:
+            progress({"step": sample // substeps, "of": (samples - 1) // substeps})
+    return {**snapshot(), "deepest": state["deepest"], "frames": frames}
 
 
 def _feed(
     chains: list[_Yarn],
-    eyes: np.ndarray,
+    eyes: Sequence[Sequence[float]],
     z_low: float,
+    spacing: float,
     bead: Callable[[Sequence[float]], _Bead],
 ) -> None:
     """Each carrier pays yarn out, a bead at the bottom, while the braid has
     drawn its lowest bead up over ``z_low``; and takes it back while the
     yarn has slackened down under it."""
     for k, y in enumerate(chains):
-        eye = np.array([*eyes[k], 0.0])
         while True:
-            low = np.array(y.free[-1].p)
+            low = y.free[-1].p
             if low[2] > z_low:
-                way = eye - low
-                y.free.append(
-                    bead((low + way * (SPACING / float(np.linalg.norm(way)))).tolist())
-                )
-            elif low[2] < z_low - SPACING and len(y.free) > 2:
+                dx, dy, dz = eyes[k][0] - low[0], eyes[k][1] - low[1], -low[2]
+                f = spacing / math.sqrt(dx * dx + dy * dy + dz * dz)
+                y.free.append(bead([low[0] + dx * f, low[1] + dy * f, low[2] + dz * f]))
+            elif low[2] < z_low - spacing and len(y.free) > 2:
                 y.free.pop()
             else:
                 break
@@ -332,11 +407,10 @@ def _feed(
 def _settle(
     chains: list[_Yarn],
     offset: float,
-    eyes: np.ndarray,
+    eyes: Sequence[Sequence[float]],
     grips: dict[int, list[float]],
-    tension: float,
-    mu: float,
-    ring: tuple[float, float],
+    st: dict[str, Any],
+    ring: dict[str, float],
 ) -> float:
     """The free beads settled by FIRE: stretching and bending, contacts and
     their friction, each carrier's pull and the ring.
@@ -344,8 +418,14 @@ def _settle(
     Returns:
         How deep any two yarns' cores pressed into each other.
     """
-    core = 1 - SHELL
-    ring_radius, z_ring = ring
+    spacing = st["spacing"]
+    core = 1 - st["shell"]
+    mu, kt, key_of = st["friction"], st["grip"], st["key"]
+    fire = st["fire"]
+    # Near enough to touch before beads move a quarter diameter, as
+    # braidpy.form finds them.
+    gap = math.ceil(2 / spacing) + 1
+    reach = 1 + 2 * spacing + 0.5
     xs: list[float] = []
     ids: list[int] = []
     moves: list[int] = []
@@ -355,7 +435,7 @@ def _settle(
     for a, y in enumerate(chains):
         first = len(ids)
         # The made braid near the free yarns, then the free beads.
-        near = [b for b in y.made[-NEAR_MADE:] if b.p[2] + offset > low - _REACH]
+        near = [b for b in y.made[-st["near_made"] :] if b.p[2] + offset > low - reach]
         if not near:
             near = y.made[-1:]
         for b in near:
@@ -382,16 +462,16 @@ def _settle(
 
     def neighbours() -> None:
         nonlocal pairs, keys_here
-        pairs = near_pairs(x, segs, yarn_of, _GAP, _REACH, cells, accept)
+        pairs = near_pairs(x, segs, yarn_of, gap, reach, cells, accept)
         built[:] = x
         keys_here = {
-            ids[pairs[e]] * _KEY + ids[pairs[e + 1]] for e in range(0, len(pairs), 2)
+            ids[pairs[e]] * key_of + ids[pairs[e + 1]] for e in range(0, len(pairs), 2)
         }
 
     f = [0.0] * (3 * n)
     v = [0.0] * (3 * n)
     touched: set[int] = set()
-    now = {"dt": _DT, "deepest": 0.0}
+    now = {"dt": fire["dt"], "deepest": 0.0}
 
     def touch(
         e: int, u: float, w: float, px: float, py: float, pz: float, r2: float
@@ -399,45 +479,46 @@ def _settle(
         g, h = pairs[e], pairs[e + 1]
         i, j = 3 * g, 3 * h
         r = math.sqrt(r2)
-        push = SOFT * (1 - r)
+        push = st["soft"] * (1 - r)
         if r < core:
             now["deepest"] = max(now["deepest"], core - r)
-            push += CONTACT * (core - r)
+            push += st["contact"] * (core - r)
         nx, ny, nz = px / max(r, 1e-9), py / max(r, 1e-9), pz / max(r, 1e-9)
         qx, qy, qz = push * nx, push * ny, push * nz
         if mu > 0:
-            key = ids[g] * _KEY + ids[h]
+            key = ids[g] * key_of + ids[h]
             touched.add(key)
             tx, ty, tz = friction_force(
-                grips, key, v, i, j, u, w, nx, ny, nz, push, now["dt"], mu, GRIP
+                grips, key, v, i, j, u, w, nx, ny, nz, push, now["dt"], mu, kt
             )
             qx, qy, qz = qx + tx, qy + ty, qz + tz
         spread(f, i, j, u, w, qx, qy, qz)
 
+    clear = ring["wire"] + st["radius"]
+
     def forces() -> None:
         f[:] = [0.0] * (3 * n)
         for first, last in spans:
-            stretch_and_bend(x, f, first, last, SPACING, STRETCH, BEND)
+            stretch_and_bend(x, f, first, last, spacing, st["stretch"], st["bend"])
         # Each carrier's pull on its lowest bead.
         for a, (_, last) in enumerate(spans):
             i = 3 * last
             dx, dy, dz = eyes[a][0] - x[i], eyes[a][1] - x[i + 1], -x[i + 2]
             r = math.sqrt(dx * dx + dy * dy + dz * dz)
-            f[i] += tension * dx / r
-            f[i + 1] += tension * dy / r
-            f[i + 2] += tension * dz / r
-        # The ring's wire: a bead closer to it than its radius and a half
-        # diameter is pushed off it.
-        clear = RING_WIRE + RADIUS
+            f[i] += st["tension"] * dx / r
+            f[i + 1] += st["tension"] * dy / r
+            f[i + 2] += st["tension"] * dz / r
+        # The ring's wire: a bead closer to it than its radius and a yarn's
+        # is pushed off it.
         for g in range(n):
             if not moves[g]:
                 continue
             i = 3 * g
             r = math.hypot(x[i], x[i + 1])
-            qr, qz = r - ring_radius, x[i + 2] - z_ring
+            qr, qz = r - ring["radius"], x[i + 2] - ring["height"]
             dist = math.hypot(qr, qz)
             if dist < clear:
-                push = CONTACT * (clear - dist) / max(dist, 1e-9)
+                push = st["contact"] * (clear - dist) / max(dist, 1e-9)
                 f[i] += push * qr * x[i] / max(r, 1e-9)
                 f[i + 1] += push * qr * x[i + 1] / max(r, 1e-9)
                 f[i + 2] += push * qz
@@ -447,11 +528,11 @@ def _settle(
         for key in keys_here - touched:
             grips.pop(key, None)
 
-    dt, alpha, downhill = _DT, _ALPHA, 0
+    dt, alpha, downhill = fire["dt"], fire["alpha"], 0
     none: list[float] = []
     neighbours()
     deepest = 0.0
-    for _ in range(MOST_STEPS):
+    for _ in range(st["most_steps"]):
         if stale(x, built):
             neighbours()
         now["dt"] = dt
@@ -459,23 +540,23 @@ def _settle(
         deepest = max(deepest, now["deepest"])
         sums = [0.0, 0.0, 0.0, 0.0]
         fire_sums(f, v, moves, none, none, none, sums)
-        if sums[3] < TOLERANCE:
+        if sums[3] < st["tolerance"]:
             break
         mix = fire_mix(sums, alpha)
         steer(v, f, moves, [], none, alpha, mix)
         if sums[0] > 0:
             downhill += 1
-            if downhill > _AFTER:
-                dt = min(dt * _GROW, _DT_MOST)
-                alpha *= _DAMP
+            if downhill > fire["after"]:
+                dt = min(dt * fire["grow"], fire["dt_most"])
+                alpha *= fire["damp"]
         else:
             downhill = 0
-            dt *= _SHRINK
-            alpha = _ALPHA
+            dt *= fire["shrink"]
+            alpha = fire["alpha"]
             v[:] = [0.0] * (3 * n)
         move_beads(x, v, f, dt, moves)
     for a, y in enumerate(chains):
-        first, last = spans[a]
+        _, last = spans[a]
         for k, b in enumerate(y.free):
             g = last - len(y.free) + 1 + k
             b.p = [x[3 * g], x[3 * g + 1], x[3 * g + 2]]
