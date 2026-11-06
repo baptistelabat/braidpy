@@ -93,7 +93,8 @@ without one.
   any other.
 - **Turning about it.** The braid turns to balance about the core, the axis,
   rather than about its yarns' ends.
-- The yarns are tied clear of it, at least 2.2 units from the axis.
+- The yarns are tied clear of it: a tenth further from it than touching, as
+  they are tied clear of each other.
 
 The core comes after the yarns in everything returned, and has no carrier:
 the carriers' circle is the yarns' alone.

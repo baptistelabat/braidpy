@@ -60,6 +60,8 @@ RIM = REACH - 1  # the carriers' circle
 WEIGHT = 2  # the carriers stand REACH / WEIGHT above the braid's tip
 PULL = 1.2  # the bobbins' pull
 STIFF = 10  # links and contacts
+THICK = 2  # a yarn's thickness: beads closer than this push apart
+CLEAR = 1.1  # start beads kept so much further apart than touching
 KEEP = 40  # beads behind what moved left free
 RING = 30  # the most yarns the method was made for: tied round one ring
 CHUNK = 20000
@@ -804,10 +806,10 @@ class Machine:
             # yarns or fewer, their start beads would touch or overlap: far
             # enough apart, then, for them to clear each other.
             touching = 1 / math.sin(math.pi / max(2, each))
-            r = each / 3 if each / 3 > touching else 1.1 * touching
+            r = each / 3 if each / 3 > touching else CLEAR * touching
             # Round a core, clear of it.
             if self.core:
-                r = max(r, 2.2)
+                r = max(r, CLEAR * THICK)
             y = -2 * ring[t]
             self.fixed[self._add_bead(t, math.cos(a) * r, y, math.sin(a) * r)] = 1
             self.fixed[self._add_bead(t, math.cos(a) * r, y + 1, math.sin(a) * r)] = 1

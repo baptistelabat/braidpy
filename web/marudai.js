@@ -40,6 +40,8 @@
   const WEIGHT = 2; // the carriers stand REACH / WEIGHT above the braid's tip
   const PULL = 1.2; // the bobbins' pull
   const STIFF = 10; // links and contacts
+  const THICK = 2; // a yarn's thickness: beads closer than this push apart
+  const CLEAR = 1.1; // start beads kept so much further apart than touching
   const TAIL = Math.round(Math.sqrt(REACH * REACH * (1 + 1 / (WEIGHT * WEIGHT)))); // beads from tip to rim
   const KEEP = 40; // beads behind what moved left free
   const RING = 30; // the most yarns the method was made for: tied round one ring
@@ -621,9 +623,9 @@
         // yarns or fewer, their start beads would touch or overlap: far
         // enough apart, then, for them to clear each other.
         const touching = 1 / Math.sin(Math.PI / Math.max(2, each));
-        let r = each / 3 > touching ? each / 3 : 1.1 * touching;
+        let r = each / 3 > touching ? each / 3 : CLEAR * touching;
         // Round a core, clear of it.
-        if (core) r = Math.max(r, 2.2);
+        if (core) r = Math.max(r, CLEAR * THICK);
         const y = -2 * ring[t];
         fixed[addBead(t, Math.cos(a) * r, y, Math.sin(a) * r)] = 1;
         fixed[addBead(t, Math.cos(a) * r, y + 1, Math.sin(a) * r)] = 1;
