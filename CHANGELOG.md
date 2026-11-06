@@ -6,6 +6,11 @@ What changed in each release of braidpy.
 
 ### New
 
+- A braid made by its carriers (`braidpy.carried`): a horn gear machine's
+  carriers go round at the machine's real size, each pulling its yarn at a
+  steady tension up through a forming ring into the braid taken off above,
+  the yarns held where they cross by friction. Drawn near, and to scale
+  beside the machine (`examples/demo_carried.py`).
 - A kumihimo or mobidai braid can be made round a core in Braid Studio,
   down the disk's middle, of yarn or rigid, as a machine's core is.
 - A tubular machine, or a lace machine of six gears or more, can braid
