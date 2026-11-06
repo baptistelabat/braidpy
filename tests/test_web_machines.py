@@ -108,7 +108,8 @@ def test_a_machine_can_braid_without_its_cores():
 @pytest.mark.parametrize("core", ["yarn", "rigid"])
 def test_a_ring_of_gears_braids_round_a_core_down_its_hole(source, name, core):
     """The core stands on the axis, the yarns all round it, none passing
-    through it; a rigid one stays straight, and none is made on a marudai."""
+    through it; a rigid one stays straight.  It goes on to the marudai
+    after the bobbins."""
     import numpy as np
 
     result = build({"source": source, "name": name, "cycles": 1, "core": core})
@@ -125,8 +126,10 @@ def test_a_ring_of_gears_braids_round_a_core_down_its_hole(source, name, core):
     assert gaps.max() < np.pi, "the yarns all round the core"
     if core == "rigid":
         assert np.ptp(points[:, :2], axis=0).max() < 1e-9
-    assert "disk" not in result
     assert "word" not in result["info"]
+    if source == "lace":
+        assert result["disk"]["core"] == core
+        assert len(result["disk"]["start"]) == len(yarns)
 
 
 def test_a_core_needs_a_hole_to_go_down():

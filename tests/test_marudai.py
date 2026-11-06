@@ -212,3 +212,27 @@ def test_a_word_made_on_a_marudai_keeps_its_hand(tmp_path, word, n_strands, repe
     assert hand["tip"] > 1
     assert abs(hand["braidpy"]) > 1
     assert hand["made"] * hand["braidpy"] > 0
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("source", ["kumihimo", "mobidai"])
+@pytest.mark.parametrize("core", ["yarn", "rigid"])
+def test_a_disk_braid_is_made_round_its_core(tmp_path, source, core):
+    """The core rises up the braid's axis, after the yarns; each move passes
+    beside it, so all the way up the yarns stand all round it, none through
+    it.  A rigid core stays on the axis; one of yarn gives way a little."""
+    from braidpy.web import build
+
+    disk = build({"source": source, "core": core}, tighten=False)["disk"]
+    assert disk["core"] == core
+    program = tmp_path / "disk.json"
+    program.write_text(json.dumps(disk))
+    result = _run("cored", program)
+    assert result["strands"] == len(disk["start"]) + 1
+    assert result["tip"] > 5
+    assert result["closest"] > 0.85
+    assert result["widest"] < 3, "the yarns all round the core, all the way up"
+    if core == "rigid":
+        assert result["off"] == 0
+    else:
+        assert 0 < result["off"] < 2

@@ -13,6 +13,10 @@ What changed in each release of braidpy.
   beside the machine (`examples/demo_carried.py`).
 - A kumihimo or mobidai braid can be made round a core in Braid Studio,
   down the disk's middle, of yarn or rigid, as a machine's core is.
+- The marudai makes a braid round a core: up the braid's axis, of yarn or
+  rigid, each move passing beside it (`braidpy.marudai`, `web/marudai.js`).
+  A disk braid, a lace braid made from its card, or a lace machine's round
+  its core, is made on the marudai with it.
 - A tubular machine, or a lace machine of six gears or more, can braid
   round a core in Braid Studio, of yarn or rigid, down the hole its ring of
   gears encloses (`horn_gear.ring_core`); soutache can braid without its

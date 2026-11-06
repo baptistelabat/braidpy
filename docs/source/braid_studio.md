@@ -85,9 +85,11 @@ The page has a form and a 3D view.
   passes through it. A machine with nowhere for a core — a flat one, or a
   ring of four lace gears, whose bobbins cross its middle — says so. A
   kumihimo or mobidai braid can be made round a core too, down the disk's
-  middle, of yarn or rigid as a machine's; its word is the yarns' own. A
-  braid round a core is not made on a marudai yet: it is tightened
-  sideways.
+  middle, of yarn or rigid as a machine's; its word is the yarns' own. On
+  a marudai, the core rises up the braid's axis and the yarns are carried
+  round it ([the marudai, round a core](marudai.md#round-a-core)); a lace
+  braid made there can have one whatever its card, the marudai having room
+  for one where four lace gears do not.
 - A disk braid — kumihimo, mobidai, a sinnet — is **made on a marudai**
   (`web/marudai.js`): the disk's own moves, one by one, each moved yarn
   laid over the others and drawn tight, as braid3dmin makes a braid. It is

@@ -74,6 +74,31 @@ turn round it and twist the yarns in.
   neighbours are found in a grid of cells 2.6 units wide; the made braid,
   well below anything free, leaves the grid.
 
+## Round a core
+
+A braid can be made round a core (`job.core`, `"yarn"` or `"rigid"`): a chain
+of beads up the braid's axis, from where the braid begins to 20 units above
+its tip, past the carriers, kept growing as the braid grows. This is
+braidpy's own; braid3dmin has no core, and a braid saved for it is saved
+without one.
+
+- **Of yarn,** its end is drawn straight up, and it gives way to the yarns
+  pressing on it; its beads freeze as the braid is made round them.
+  **Rigid,** every bead is held where it stands.
+- **Passed beside.** The core is left out of the heights a yarn is carried
+  over, so a moved yarn goes past it, not over its top. A move of more than
+  nine tenths of a half turn is made in two halves already, so a yarn
+  goes round the core on the side it is moving to. It is then drawn tight
+  round the core, as round any yarn in its way, and pushed off it as off
+  any other.
+- **Turning about it.** The braid turns to balance about the core, the axis,
+  rather than about its yarns' ends.
+- The yarns are tied clear of it: a tenth further from it than touching, as
+  they are tied clear of each other.
+
+The core comes after the yarns in everything returned, and has no carrier:
+the carriers' circle is the yarns' alone.
+
 ## What comes out
 
 The yarns, cut at the braid's tip, and their tails from the tip out to their
