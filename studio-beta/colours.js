@@ -18,7 +18,7 @@
 // were made; only what they are painted with changes, so it is immediate
 // however long the braid took.
 
-import { $ } from "./page.js?v=3f065e4dec";
+import { $ } from "./page.js?v=df991870a8";
 
 // The colours braidpy gives a braid's strands (braidpy.utils.PALETTE).
 export const PALETTE = [
@@ -54,9 +54,30 @@ export function onChosen(callback) {
   listeners.push(callback);
 }
 
-/** Remember the colours a braid was made with, before any are put on it. */
+/**
+ * Remember the colours a braid was made with, before any are put on it.
+ *
+ * Colours chosen for strands this braid does not have are let go: chosen on
+ * a braid of twenty strands, they would stay on one of sixteen made after
+ * it, painting nothing but written into its link all the same.
+ *
+ * @returns {boolean} Whether any were let go, so the link needs writing again.
+ */
 export function rebase(result) {
-  if (result && result.strands) made = result.strands.map((strand) => strand.colour);
+  if (!result || !result.strands) return false;
+  made = result.strands.map((strand) => strand.colour);
+  const kept = trimmed(chosen.slice(0, made.length));
+  const changed = kept.length !== chosen.length;
+  chosen = kept;
+  return changed;
+}
+
+// The colours chosen without the empty places after the last: those say
+// nothing, and a link need not carry them.
+function trimmed(colours) {
+  let end = colours.length;
+  while (end > 0 && !colours[end - 1]) end -= 1;
+  return colours.slice(0, end);
 }
 
 /** The colour a strand is really in, whatever is drawn while one is picked. */
@@ -103,8 +124,9 @@ export function strandColour(i, fallback) {
 
 /** The colours chosen, as the description writes them: `#rgb,,#rgb`. */
 export function chosenColours() {
-  if (!chosen.some(Boolean)) return "";
-  return chosen.map((colour) => colour || "").join(",");
+  return trimmed(chosen)
+    .map((colour) => colour || "")
+    .join(",");
 }
 
 /** Take the colours from a description, as `readSpec` wrote them. */

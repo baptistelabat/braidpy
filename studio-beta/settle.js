@@ -18,7 +18,7 @@
 // And asked {type: "b3d", id, result, twist, d}, the braid made on the
 // marudai as braid3dmin saves it (b3d.js): {type: "b3d", id, text}.
 
-importScripts("tighten.js?v=3f065e4dec", "rope.js?v=3f065e4dec", "form.js?v=3f065e4dec", "marudai.js?v=3f065e4dec", "b3d.js?v=3f065e4dec");
+importScripts("tighten.js?v=df991870a8", "rope.js?v=df991870a8", "form.js?v=df991870a8", "carried.js?v=df991870a8", "marudai.js?v=df991870a8", "b3d.js?v=df991870a8");
 
 function status(text) {
   self.postMessage({ type: "status", text });
@@ -62,6 +62,7 @@ async function run() {
 async function settle({ id, result, job, settle, twist }) {
   if (job) {
     if (settle === "marudai") result = await onMarudai(id, result, { ...job, twist });
+    else if (settle === "carriers") result = byCarriers(id, result, job);
     else if (settle === "crossing") result = formed(id, result, { ...job, twist });
     else if (settle !== "sideways") result = settled(id, result, { ...job, twist });
     else {
@@ -246,6 +247,42 @@ const UNBRAIDED =
 // each row beaten up against the made braid, with friction, and frozen
 // into it; then the whole settled by its own physics (rope.js), as above,
 // from that start rather than from the braid as laid.
+// The braid made by its carriers going round (carried.js), from what
+// braidpy worked out for it (braidpy.carried.carriers_job): the braid
+// formed over the forming ring, the yarns at their heights there, shown as
+// it grows.
+function byCarriers(id, result, job) {
+  const d = job.yarn_diameter;
+  const ring = result.carriers.ring.height;
+  // Each yarn from the fell, at the ring, up: newest first, the fell at 0.
+  const fromFell = (yarns) =>
+    yarns.map((flat) => {
+      const out = [];
+      for (let i = flat.length - 3; i >= 0; i -= 3) {
+        if (flat[i + 2] >= ring) out.push(flat[i], flat[i + 1], flat[i + 2] - ring);
+      }
+      return out;
+    });
+  const laid = { ...result };
+  delete laid.carriers;
+  let shown = performance.now();
+  const made = makeByCarriers(result.carriers, {
+    progress: ({ step, of, yarns }) => {
+      status(`Making it by its carriers… step ${step} of ${of}`);
+      if (performance.now() - shown > 700) {
+        shown = performance.now();
+        self.postMessage({ type: "laid", id, result: onLevels(laid, fromFell(yarns()), d) });
+      }
+    },
+  });
+  const out = onLevels(laid, fromFell(made.yarns), d);
+  out.notes = [
+    ...(out.notes || []),
+    "Made by its carriers going round, each pulling its yarn at a steady tension up through a forming ring, the yarns held where they cross by friction: the machine to scale, the yarns 0.4 mm thick.",
+  ];
+  return out;
+}
+
 function formed(id, result, job) {
   status("Pulling the yarns clear…");
   const clear = pulledClear(job);
@@ -364,6 +401,8 @@ async function onMarudai(id, result, job) {
   let shown = started;
   const twist = job.twist ?? "auto";
   const program = programOf(result, twist);
+  // The yarns; a core, if any, comes after them.
+  const n = program.start.length;
   const same = JSON.stringify({ ...program, steps: undefined, d });
   const goesOn =
     onDisk &&
@@ -391,7 +430,7 @@ async function onMarudai(id, result, job) {
     if (performance.now() - shown < 80) return;
     shown = performance.now();
     if (!onDisk.mirror) {
-      const ends = frame.yarns.filter((y) => y.length).map((y) => [y[y.length - 3], y[y.length - 2], y[y.length - 1]]);
+      const ends = frame.yarns.slice(0, n).filter((y) => y.length).map((y) => [y[y.length - 3], y[y.length - 2], y[y.length - 1]]);
       onDisk.mirror = mirrorOf(
         {
           rim: {
@@ -405,7 +444,7 @@ async function onMarudai(id, result, job) {
     }
     const mirror = onDisk.mirror;
     const disk = { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) };
-    self.postMessage({ type: "frame", id, frame: pageFrame(frame, d, mirror), disk, colours: result.strands.map((s) => s.colour) });
+    self.postMessage({ type: "frame", id, frame: pageFrame(frame, d, mirror, n), disk, colours: result.strands.map((s) => s.colour) });
   };
   making.hooks.progress = ({ fraction }) => {
     status(
@@ -451,14 +490,13 @@ async function onMarudai(id, result, job) {
   const frames = onDisk.frames;
   const every = Math.max(1, Math.ceil(frames.length / 600));
   const shownFrames = frames.filter((_, i) => i % every === 0 || i === frames.length - 1);
-  out.marudai = onMarudaiFrame(made, d, shownFrames, making.look());
+  out.marudai = onMarudaiFrame(made, d, shownFrames, making.look(), n);
   out.notes = [
     ...(out.notes || []),
     `Made move by move, as on a marudai: ${made.tip.toFixed(1)} yarn diameters long.`,
   ];
   // Every bobbin turning together, the braid hanging free: it turns along,
   // and what those turns would have twisted in is not there.
-  const n = result.disk.start.length;
   const turns = result.disk.steps.some(
     (step) => step.length === n && step.every(([, d]) => d && d === step[0][1]),
   );
@@ -493,12 +531,13 @@ function mirrorOf(made, d) {
 }
 
 // One yarn, flat [x, y, z, …] as marudai.js gives it, in the page's frame,
-// the fell (``tip``) at height 0, and on across the mirror and over its edge.
-function onMirror(yarn, tip, d, mirror) {
+// the fell (``tip``) at height 0, and on across the mirror and over its edge;
+// a core, going to no bobbin, straight up through the mirror's hole.
+function onMirror(yarn, tip, d, mirror, core = false) {
   const out = [];
   for (let i = 0; i < yarn.length; i += 3) out.push([yarn[i] * d, -yarn[i + 1] * d, (tip - yarn[i + 2]) * d]);
   // While the yarns are first laid out, those still to come have nothing.
-  if (!out.length) return out;
+  if (!out.length || core) return out;
   const [x, y, z] = out[out.length - 1];
   const r = Math.hypot(x, y) || 1;
   const ux = x / r, uy = y / r;
@@ -518,7 +557,7 @@ function onMirror(yarn, tip, d, mirror) {
 // frozen ones being as the braid ends them (base), turned back to where
 // they were and raised with the fell.  Grow puts each moment back together
 // as it shows it (frames.js).
-function onMarudaiFrame(made, d, frames, end) {
+function onMarudaiFrame(made, d, frames, end, n) {
   let top = -Infinity;
   for (const y of made.yarns) for (let i = 2; i < y.length; i += 3) top = Math.max(top, y[i]);
   const mirror = mirrorOf(made, d);
@@ -526,7 +565,7 @@ function onMarudaiFrame(made, d, frames, end) {
   const needed = end.yarns.map((_, t) => Math.max(0, ...frames.map((f) => f.frozen[t])));
   const [endAngle, endX, endY] = end.placed;
   return {
-    tails: made.tails.map((tail) => onMirror(tail, top, d, mirror).map((p) => p.map(round))),
+    tails: made.tails.map((tail, t) => onMirror(tail, top, d, mirror, t >= n).map((p) => p.map(round))),
     disk: { z: round(-mirror.above), radius: round(mirror.radius), hole: round(mirror.hole) },
     base: end.yarns.map((yarn, t) => {
       const out = new Float32Array(3 * needed[t]);
@@ -545,7 +584,7 @@ function onMarudaiFrame(made, d, frames, end) {
       const [ex, ey] = [endX * d, -endY * d];
       const [fx, fy] = [frame.placed[1] * d, -frame.placed[2] * d];
       return {
-        ...pageFrame(frame, d, mirror),
+        ...pageFrame(frame, d, mirror, n),
         frozen: frame.frozen,
         turn: [c, s, fx - (c * ex + s * ey), fy - (-s * ex + c * ey)],
         lift: (frame.tip - end.tip) * d,
@@ -562,13 +601,13 @@ function kept(frame) {
 
 // A moment in the making, for the page to draw: every yarn whole, in the
 // page's frame, its fell at height 0.
-function pageFrame(frame, d, mirror) {
+function pageFrame(frame, d, mirror, n) {
   return {
     what: frame.what,
     thread: frame.thread,
     step: frame.step,
     moved: frame.moved,
-    yarns: frame.yarns.map((yarn) => Float32Array.from(onMirror(yarn, frame.tip, d, mirror).flat())),
+    yarns: frame.yarns.map((yarn, t) => Float32Array.from(onMirror(yarn, frame.tip, d, mirror, t >= n).flat())),
   };
 }
 

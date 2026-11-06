@@ -5,7 +5,7 @@
 // Settings left empty, and choices not made, take the braid's own: shown
 // greyed with "default" once it is made.
 
-import { $, round } from "./page.js?v=3f065e4dec";
+import { $, round } from "./page.js?v=df991870a8";
 
 // A setting left empty takes the braid's own default, shown greyed with
 // "default" once the braid is made.  Going into the field puts the default
@@ -45,7 +45,7 @@ export function showDefaults(used) {
 // otherwise, it stays chosen.
 export const CHOICES = {
   settle: {
-    guess: (source) => (source === "machine" || source === "lace" ? "sideways" : "marudai"),
+    guess: (source) => (source === "machine" ? "sideways" : "marudai"),
     used: (u) => u.settle,
   },
   twist: {
@@ -58,11 +58,14 @@ export const CHOICES = {
 // The ways of settling the yarns each source can have: a disk braid or a
 // braid word any — a word to settle by physics is laid round a ring, as
 // from a disk; a machine's braid, laid on its fell ring, sideways or by
-// physics, but not on a marudai, which makes only disk moves.  Those it
+// physics, but not on a marudai, which makes only disk moves — but for a
+// lace machine, whose bobbins move round a ring of notches as on a disk.  Those it
 // cannot have are not offered.
 const SETTLES = {
-  machine: ["sideways", "physics", "crossing"],
-  lace: ["sideways", "physics", "crossing"],
+  machine: ["sideways", "physics", "crossing", "carriers"],
+  // A lace machine is a ring of notches: its card runs on a marudai as
+  // well, each gear's turn its two notches swapping bobbins.
+  lace: ["marudai", "sideways", "physics", "crossing", "carriers"],
 };
 
 function fitSettle() {
@@ -84,7 +87,8 @@ function fitTwist() {
   fitSettle();
   const settle = $("settle").value;
   const twist = $("twist");
-  twist.closest("label").hidden = settle === "sideways";
+  // Made by its carriers, the braid takes the twist they give it.
+  twist.closest("label").hidden = settle === "sideways" || settle === "carriers";
   const turns = twist.querySelector("option[value=turns]");
   turns.hidden = turns.disabled = settle !== "marudai";
   if (settle !== "marudai" && twist.dataset.default === "turns") {

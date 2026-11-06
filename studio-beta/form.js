@@ -51,7 +51,45 @@
   "use strict";
 
   const { relay, nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads } =
-    root.yarnMechanics || require("./rope.js?v=3f065e4dec").yarnMechanics;
+    root.yarnMechanics || require("./rope.js?v=df991870a8").yarnMechanics;
+
+  /**
+   * Friction at a contact: the tangential spring between the segments at
+   * offsets i and j of the beads' velocities v, at u and w along them,
+   * stretched by how the contact points slid past each other this step —
+   * kept in the contact's tangent plane, normal (nx, ny, nz) — and given way
+   * to what friction holds, mu times the push, when it pulls harder: the
+   * contact slips.  The springs are kept in `grips` by the pair's key.
+   *
+   * @returns {number[]} The friction force on the first segment.
+   */
+  function frictionForce(grips, key, v, i, j, u, w, nx, ny, nz, push, dt, mu, kt) {
+    let spring = grips.get(key);
+    if (!spring) grips.set(key, (spring = [0, 0, 0]));
+    const vx = (1 - u) * v[i] + u * v[i + 3] - (1 - w) * v[j] - w * v[j + 3];
+    const vy = (1 - u) * v[i + 1] + u * v[i + 4] - (1 - w) * v[j + 1] - w * v[j + 4];
+    const vz = (1 - u) * v[i + 2] + u * v[i + 5] - (1 - w) * v[j + 2] - w * v[j + 5];
+    spring[0] += vx * dt;
+    spring[1] += vy * dt;
+    spring[2] += vz * dt;
+    const along = spring[0] * nx + spring[1] * ny + spring[2] * nz;
+    spring[0] -= along * nx;
+    spring[1] -= along * ny;
+    spring[2] -= along * nz;
+    let tx = -kt * spring[0], ty = -kt * spring[1], tz = -kt * spring[2];
+    const size = Math.hypot(tx, ty, tz);
+    const most = mu * push;
+    if (size > most) {
+      const k = most / size;
+      tx *= k;
+      ty *= k;
+      tz *= k;
+      spring[0] *= k;
+      spring[1] *= k;
+      spring[2] *= k;
+    }
+    return [tx, ty, tz];
+  }
 
   /**
    * @param {Object} job
@@ -261,35 +299,8 @@
           const nx = px / Math.max(r, 1e-9), ny = py / Math.max(r, 1e-9), nz = pz / Math.max(r, 1e-9);
           let qx = push * nx, qy = push * ny, qz = push * nz;
           if (mu > 0) {
-            // Friction: the tangential spring, stretched by how the
-            // contact points slid past each other this step.
             touched.add(key);
-            let spring = grips.get(key);
-            if (!spring) grips.set(key, (spring = [0, 0, 0]));
-            const vx = (1 - u) * v[i] + u * v[i + 3] - (1 - w) * v[j] - w * v[j + 3];
-            const vy = (1 - u) * v[i + 1] + u * v[i + 4] - (1 - w) * v[j + 1] - w * v[j + 4];
-            const vz = (1 - u) * v[i + 2] + u * v[i + 5] - (1 - w) * v[j + 2] - w * v[j + 5];
-            spring[0] += vx * stepDt;
-            spring[1] += vy * stepDt;
-            spring[2] += vz * stepDt;
-            // Kept in the contact's tangent plane.
-            const along = spring[0] * nx + spring[1] * ny + spring[2] * nz;
-            spring[0] -= along * nx;
-            spring[1] -= along * ny;
-            spring[2] -= along * nz;
-            let tx = -kt * spring[0], ty = -kt * spring[1], tz = -kt * spring[2];
-            const size = Math.hypot(tx, ty, tz);
-            const most = mu * push;
-            if (size > most) {
-              // Slipping: the spring gives way to what friction holds.
-              const k = most / size;
-              tx *= k;
-              ty *= k;
-              tz *= k;
-              spring[0] *= k;
-              spring[1] *= k;
-              spring[2] *= k;
-            }
+            const [tx, ty, tz] = frictionForce(grips, key, v, i, j, u, w, nx, ny, nz, push, stepDt, mu, kt);
             qx += tx;
             qy += ty;
             qz += tz;
@@ -392,5 +403,6 @@
   }
 
   root.formBraid = form;
-  if (typeof module !== "undefined" && module.exports) module.exports = { form };
+  root.frictionForce = frictionForce;
+  if (typeof module !== "undefined" && module.exports) module.exports = { form, frictionForce };
 })(typeof self !== "undefined" ? self : globalThis);

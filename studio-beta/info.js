@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=3f065e4dec";
-import { $, round } from "./page.js?v=3f065e4dec";
-import { lastResult } from "./scene.js?v=3f065e4dec";
-import { writeSpec } from "./spec.js?v=3f065e4dec";
-import { pending, submit, worker } from "./workers.js?v=3f065e4dec";
+import { catalogue } from "./fields.js?v=df991870a8";
+import { $, round } from "./page.js?v=df991870a8";
+import { lastResult } from "./scene.js?v=df991870a8";
+import { writeSpec } from "./spec.js?v=df991870a8";
+import { pending, submit, worker } from "./workers.js?v=df991870a8";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -138,7 +138,7 @@ export function showKin(kin) {
 
 // The braid made other ways (braidpy.making): its repeating unit as a
 // kumihimo disk's moves, to make here; as a lace machine's punchcard, to
-// copy or download; and, when asked, as a sinnet on Ashley's stand, which
+// make here, copy or download; and, when asked, as a sinnet on Ashley's stand, which
 // is searched for.  None: nothing shown.
 export function showMaking(making) {
   const box = $("making");
@@ -228,7 +228,7 @@ export function showMaking(making) {
     lace.card +
     "\n";
   item(
-    document.createTextNode("Lace machine"),
+    lace.spec ? link("Lace machine", lace.spec) : document.createTextNode("Lace machine"),
     muted(` ${lace.gears} gears, ${lace.steps} steps a repeat `),
     small("Copy card", (button) => copyText(card, button)),
     small("Download", () => {
