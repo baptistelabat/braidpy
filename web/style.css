@@ -508,6 +508,19 @@ footer {
   padding: 6px 8px;
 }
 
+/* Where the slider is: a step, and a sub-step, of what made the braid. */
+.made-at {
+  min-width: 8.5em;
+  color: var(--muted);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.made-at:empty {
+  display: none;
+}
+
 /* The view's switches, in a menu opening up from the toolbar. */
 .menu {
   position: relative;
