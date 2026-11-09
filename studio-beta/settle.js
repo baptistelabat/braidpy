@@ -18,7 +18,7 @@
 // And asked {type: "b3d", id, result, twist, d}, the braid made on the
 // marudai as braid3dmin saves it (b3d.js): {type: "b3d", id, text}.
 
-importScripts("tighten.js?v=15246a9bc1", "rope.js?v=15246a9bc1", "form.js?v=15246a9bc1", "carried.js?v=15246a9bc1", "marudai.js?v=15246a9bc1", "b3d.js?v=15246a9bc1");
+importScripts("tighten.js?v=86cbc19805", "rope.js?v=86cbc19805", "form.js?v=86cbc19805", "marudai.js?v=86cbc19805", "b3d.js?v=86cbc19805");
 
 function status(text) {
   self.postMessage({ type: "status", text });
@@ -62,7 +62,6 @@ async function run() {
 async function settle({ id, result, job, settle, twist }) {
   if (job) {
     if (settle === "marudai") result = await onMarudai(id, result, { ...job, twist });
-    else if (settle === "carriers") result = byCarriers(id, result, job);
     else if (settle === "crossing") result = formed(id, result, { ...job, twist });
     else if (settle !== "sideways") result = settled(id, result, { ...job, twist });
     else {
@@ -247,42 +246,6 @@ const UNBRAIDED =
 // each row beaten up against the made braid, with friction, and frozen
 // into it; then the whole settled by its own physics (rope.js), as above,
 // from that start rather than from the braid as laid.
-// The braid made by its carriers going round (carried.js), from what
-// braidpy worked out for it (braidpy.carried.carriers_job): the braid
-// formed over the forming ring, the yarns at their heights there, shown as
-// it grows.
-function byCarriers(id, result, job) {
-  const d = job.yarn_diameter;
-  const ring = result.carriers.ring.height;
-  // Each yarn from the fell, at the ring, up: newest first, the fell at 0.
-  const fromFell = (yarns) =>
-    yarns.map((flat) => {
-      const out = [];
-      for (let i = flat.length - 3; i >= 0; i -= 3) {
-        if (flat[i + 2] >= ring) out.push(flat[i], flat[i + 1], flat[i + 2] - ring);
-      }
-      return out;
-    });
-  const laid = { ...result };
-  delete laid.carriers;
-  let shown = performance.now();
-  const made = makeByCarriers(result.carriers, {
-    progress: ({ step, of, yarns }) => {
-      status(`Making it by its carriers… step ${step} of ${of}`);
-      if (performance.now() - shown > 700) {
-        shown = performance.now();
-        self.postMessage({ type: "laid", id, result: onLevels(laid, fromFell(yarns()), d) });
-      }
-    },
-  });
-  const out = onLevels(laid, fromFell(made.yarns), d);
-  out.notes = [
-    ...(out.notes || []),
-    "Made by its carriers going round, each pulling its yarn at a steady tension up through a forming ring, the yarns held where they cross by friction: the machine to scale, the yarns 0.4 mm thick.",
-  ];
-  return out;
-}
-
 function formed(id, result, job) {
   status("Pulling the yarns clear…");
   const clear = pulledClear(job);
