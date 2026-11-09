@@ -5,6 +5,8 @@
 """Laying, drawing in and tightening a braid from any source of strands."""
 
 import re
+import warnings
+from dataclasses import replace
 from types import SimpleNamespace
 
 import matplotlib
@@ -17,6 +19,7 @@ from braidpy.mobidai import Mobidai, MobidaiConfig, Move, Strand
 from braidpy.parametric_braid import ParametricBraid
 from braidpy.symmetric_braid import braid_word
 from braidpy.take_off import (
+    SAFE_STEP,
     StrandTrajectories,
     braid_word_trajectories,
     default_take_off,
@@ -24,6 +27,7 @@ from braidpy.take_off import (
     kumihimo_steps,
     kumihimo_trajectories,
     lay_yarns,
+    longest_step,
     mobidai_steps,
     mobidai_trajectories,
     parametric_trajectories,
@@ -310,6 +314,27 @@ def test_kumihimo_is_laid_and_tightened():
     tight, history = tighten_yarns(paths, 0.15, iterations=40)
     assert history["length"][-1] < history["length"][0]
     assert tight.closest_approach(include_fell=False) >= 0.15 * (1 - 2e-3)
+
+
+def test_a_braid_laid_too_coarsely_to_tighten_is_warned_of():
+    """Tightening looks for contact between samples, so a yarn that moves a
+    diameter or more sideways between two levels can let another through
+    unseen: it says so, and says nothing of a braid laid finely enough."""
+    d = 0.15
+    # Sampled finely enough that no strand moves a diameter between samples.
+    traj = kumihimo_trajectories("SR" * 2, n_strands=8, samples_per_step=192)
+    paths = lay_yarns(traj, yarn_diameter=d, fell_radius=0.0)
+    assert longest_step(paths) < SAFE_STEP * d
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        tighten_yarns(paths, d, iterations=1)
+    first = next(iter(paths.points))
+    shoved = paths.points[first].copy()
+    shoved[paths.formed_count // 2, 0] += 3 * d
+    jumpy = replace(paths, points={**paths.points, first: shoved})
+    assert longest_step(jumpy) >= SAFE_STEP * d
+    with pytest.warns(UserWarning, match="pass through each other"):
+        tighten_yarns(jumpy, d, iterations=1)
 
 
 def test_mobidai_is_laid_and_tightened():

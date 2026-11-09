@@ -48,6 +48,13 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- Tightening warns when a braid is laid too coarsely for it: it looks for
+  contact between samples only, so two yarns whose sideways steps between
+  two levels add up to two diameters can cross there unseen, as the
+  three-band machine's did. A step of a diameter or more is warned of
+  (`take_off.SAFE_STEP`, `longest_step`), for the page's tightening too.
+  Every machine is laid well inside it; a two-strand word settled by
+  physics, and a lace braid made on a marudai round a core, are not.
 - Carriers no longer jump where a line of gears bends. On the three-band
   machine, folded round, and on the 12- and 16-carrier tubular braiders, a
   gear's horns turned rigidly cannot meet both its contacts, so a carrier

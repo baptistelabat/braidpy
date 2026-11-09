@@ -48,11 +48,13 @@ def _tightened(
 ):
     """The yarns pulled taut — or, for a page that does it itself, as laid,
     with what it needs to do so noted for :func:`_result`."""
-    from braidpy.take_off import tighten_yarns
+    from braidpy.take_off import tighten_yarns, warn_if_too_coarse
 
     if iterations == 0:
         return paths
     if _PAGE_TIGHTENS.get():
+        # web/tighten.js tightens as tighten_yarns does, and is as blind.
+        warn_if_too_coarse(paths, diameter)
         formed = paths.formed()
         _TIGHTENING.set(
             {

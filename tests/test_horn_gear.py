@@ -1768,6 +1768,24 @@ def test_a_carrier_is_handed_on_where_it_is(name):
             assert math.dist(left, joined) <= gap + 1e-9, (c, joins)
 
 
+@pytest.mark.slow
+@pytest.mark.parametrize("name", list(MACHINES))
+def test_a_machine_lays_its_braid_finely_enough_to_tighten(name):
+    """Laid as Braid Studio lays it, no yarn moves so far sideways between two
+    levels that tightening could let another through it unseen: carriers
+    jumping as they were handed on did, and the three-band machine's bands
+    came apart."""
+    from braidpy.horn_gear.take_off import yarn_paths
+    from braidpy.take_off import SAFE_STEP, longest_step
+    from braidpy.web._settings import Machine
+
+    m = MACHINES[name].make()
+    radii = gear_radii(m)
+    d = Machine.of_gear_radius * sum(radii.values()) / len(radii)
+    paths = yarn_paths(m, n_cycles=1, yarn_diameter=d)
+    assert longest_step(paths) < SAFE_STEP * d
+
+
 def test_yarns_are_laid_off_along_the_axis():
     from braidpy.horn_gear.take_off import yarn_paths
 
