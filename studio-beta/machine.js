@@ -6,8 +6,9 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour, trueColour } from "./colours.js?v=df991870a8";
-import { worker } from "./workers.js?v=df991870a8";
+import { PALETTE, strandColour, trueColour } from "./colours.js?v=f65efc4a5f";
+import { inTime } from "./page.js?v=f65efc4a5f";
+import { worker } from "./workers.js?v=f65efc4a5f";
 
 // A machine seen from above, to load by hand: its gears, the contacts
 // between them, and every slot, a carrier on it or not.  Clicking a slot
@@ -229,7 +230,8 @@ export function attachMachine(holder) {
     }
     draw();
   }
-  forward.addEventListener("click", () => {
+  forward.addEventListener("click", (event) => {
+    if (!inTime(event)) return;
     running = false;
     part = 0;
     step();
@@ -238,7 +240,8 @@ export function attachMachine(holder) {
   // last, the step itself is taken and the handle sits on a whole step
   // again.  A quarter, because the two slots at a contact are furthest
   // apart half way through -- so the second press is the one to click on.
-  nudge.addEventListener("click", () => {
+  nudge.addEventListener("click", (event) => {
+    if (!inTime(event)) return;
     running = false;
     if (!turned || turned.met.length || sweeping) return;
     const by = Math.max(1, Math.round(turned.frames.length / 4));
@@ -250,8 +253,8 @@ export function attachMachine(holder) {
       step();
     }
   });
-  back.addEventListener("click", () => goTo(time - 1));
-  start.addEventListener("click", () => goTo(0));
+  back.addEventListener("click", (event) => inTime(event) && goTo(time - 1));
+  start.addEventListener("click", (event) => inTime(event) && goTo(0));
   run.addEventListener("click", async () => {
     if (running) {
       running = false;

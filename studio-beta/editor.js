@@ -9,6 +9,8 @@
 // changes no move; a move clicked goes in after the cursor, and Undo takes
 // out the one at it.
 
+import { inTime } from "./page.js?v=f65efc4a5f";
+
 function hue(i, n) {
   return `hsl(${(360 * i) / Math.max(n, 1)}, 100%, 50%)`;
 }
@@ -126,10 +128,10 @@ export function attachEditor(source, holder) {
     else moves.setSelectionRange(0, 0);
     draw();
   }
-  first.addEventListener("click", () => stepTo(0));
-  back.addEventListener("click", () => stepTo(made() - 1));
-  forward.addEventListener("click", () => stepTo(made() + 1));
-  end.addEventListener("click", () => stepTo(count()));
+  first.addEventListener("click", (event) => inTime(event) && stepTo(0));
+  back.addEventListener("click", (event) => inTime(event) && stepTo(made() - 1));
+  forward.addEventListener("click", (event) => inTime(event) && stepTo(made() + 1));
+  end.addEventListener("click", (event) => inTime(event) && stepTo(count()));
   // The caret on a move, or just after it, puts the cursor there; a move
   // selected, as stepping selects it, too.
   function fromCaret() {

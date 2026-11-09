@@ -8,11 +8,24 @@
 import * as THREE from "three";
 import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import { copyText } from "./info.js?v=df991870a8";
-import { drawSection, section, top } from "./insets.js?v=df991870a8";
-import { $ } from "./page.js?v=df991870a8";
-import { braid, camera, controls, fit, hangs, lastResult, made, renderer, scene, showTubes } from "./scene.js?v=df991870a8";
-import { b3dOf } from "./workers.js?v=df991870a8";
+import { copyText } from "./info.js?v=f65efc4a5f";
+import { drawSection, section, top } from "./insets.js?v=f65efc4a5f";
+import { $ } from "./page.js?v=f65efc4a5f";
+import {
+  awake,
+  braid,
+  camera,
+  controls,
+  fit,
+  hangs,
+  lastResult,
+  made,
+  renderer,
+  SUBSTEPS,
+  scene,
+  showTubes,
+} from "./scene.js?v=f65efc4a5f";
+import { b3dOf } from "./workers.js?v=f65efc4a5f";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {
@@ -41,15 +54,36 @@ $("made").addEventListener("input", (event) => {
   $("grow").textContent = "▶ Grow";
   made(Number(event.target.value));
 });
+// The arrow keys go a sub-step at a time, and with Shift a whole step, by
+// the clock of whatever made the braid, from the one it is nearest.
+$("made").addEventListener("keydown", (event) => {
+  const way = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[event.key];
+  if (!way || !braid) return;
+  const [first, last] = braid.span;
+  const length = last - first;
+  // Made in less than a step: the slider's own steps.
+  if (!(length >= 1)) return;
+  event.preventDefault();
+  const slider = $("made");
+  const most = Number(slider.max);
+  const per = event.shiftKey ? 1 : 1 / SUBSTEPS;
+  const at = (Number(slider.value) / most) * length;
+  const next = Math.min(length, Math.max(0, (Math.round(at / per) + way) * per));
+  slider.value = String(Math.round((next / length) * most));
+  slider.dispatchEvent(new Event("input"));
+});
 
+// Grow: from nothing to the whole braid in so long.
+const GROW_MS = 12000;
 let growing = false;
 let growFrom = 0;
 $("grow").addEventListener("click", () => {
   growing = !growing;
   $("grow").textContent = growing ? "⏸ Pause" : "▶ Grow";
   if (growing) {
-    if (Number($("made").value) >= 1000) $("made").value = 0;
-    growFrom = performance.now() - Number($("made").value) * 12;
+    const most = Number($("made").max);
+    if (Number($("made").value) >= most) $("made").value = 0;
+    growFrom = performance.now() - (Number($("made").value) / most) * GROW_MS;
   }
 });
 
@@ -129,17 +163,18 @@ $("save").addEventListener("change", (event) => {
 
 function frame(now) {
   if (growing && braid) {
-    // Twelve seconds from nothing to the whole braid.
-    const value = Math.min(1000, (now - growFrom) / 12);
+    const most = Number($("made").max);
+    const value = Math.min(most, ((now - growFrom) / GROW_MS) * most);
     $("made").value = value;
     made(value);
-    if (value >= 1000) {
+    if (value >= most) {
       growing = false;
       $("grow").textContent = "▶ Grow";
     }
   }
-  controls.update();
-  renderer.render(scene, camera);
+  // Drawn while the view moves, spins or grows, or something changed.
+  const moved = controls.update();
+  if (moved || growing || controls.autoRotate || awake(now)) renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
