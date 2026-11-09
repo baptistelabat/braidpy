@@ -56,6 +56,9 @@ What changed in each release of braidpy.
   go. The slider under the view goes a sub-step at a time, an eighth of a
   machine's step or a disk's move, the arrow keys a sub-step and with
   Shift a step, and says which step it is at.
+- Braid Studio's machine handle, held part way through a step (▸), went
+  back to the step's start to turn it whole when pressed on, ▸ or ▶: it
+  now turns on from where it is held.
 - A Braid Studio link could carry colours for strands its braid does not
   have: colours chosen on a braid of twenty strands stayed when one of
   sixteen was made after it, and its link listed all twenty. They are let go
