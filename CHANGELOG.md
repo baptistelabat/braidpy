@@ -53,6 +53,14 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- Braid Studio stepped a big machine's braid, the three-band machine's,
+  badly: the page drew the whole braid again at every frame, even when
+  nothing moved, so it was slow to answer, and the handle, pressed a few
+  times meanwhile, then turned on by itself. The view is drawn only while
+  something changes, and a press the page could not answer in time is let
+  go. The slider under the view goes a sub-step at a time, an eighth of a
+  machine's step or a disk's move, the arrow keys a sub-step and with
+  Shift a step, and says which step it is at.
 - A Braid Studio link could carry colours for strands its braid does not
   have: colours chosen on a braid of twenty strands stayed when one of
   sixteen was made after it, and its link listed all twenty. They are let go
