@@ -41,6 +41,8 @@ from .tracks import Position, _next_position
 if TYPE_CHECKING:
     import plotly.graph_objects as go
 
+    from .layout import GearAngles
+
 __all__ = ["Handle", "Turned", "drawing", "origin", "sweep", "turn"]
 
 
@@ -223,18 +225,20 @@ class Handle:
         )
 
 
-Drawing = tuple[dict[str, tuple[float, float]], dict[str, float], dict[str, float]]
+Drawing = tuple[
+    dict[str, tuple[float, float]], dict[str, "GearAngles"], dict[str, float]
+]
 
 
 def drawing(machine: BraidingMachine) -> Drawing:
     """Where a machine's gears are, how they are turned and the circle their
     carriers ride: worked out once, for :func:`sweep` to draw every step."""
-    from .layout import carrier_radius, compute_layout, slot_offsets
+    from .layout import carrier_radius, compute_layout, slot_angles
 
     layout = compute_layout(machine)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
     riding = {name: carrier_radius(machine, layout, name) for name in machine.gears}
-    return layout, offsets, riding
+    return layout, angles, riding
 
 
 def sweep(
@@ -260,7 +264,7 @@ def sweep(
     from .layout import carrier_xy
     from .visualization import _slot_angle
 
-    layout, offsets, riding = drawn or drawing(machine)
+    layout, angles, riding = drawn or drawing(machine)
     slots = [
         (name, slot)
         for name, gear in machine.gears.items()
@@ -272,7 +276,7 @@ def sweep(
         frac = k / frames
         here = []
         for name, slot in slots:
-            angle = _slot_angle(machine, name, slot, offsets[name], state.time, frac)
+            angle = _slot_angle(machine, name, slot, angles[name], state.time, frac)
             cx, cy = layout[name]
             here.append(
                 [
@@ -285,7 +289,7 @@ def sweep(
             [
                 list(
                     carrier_xy(
-                        machine, layout, offsets, riding, c.position, state.time, frac
+                        machine, layout, angles, riding, c.position, state.time, frac
                     )
                 )
                 for c in state.carriers

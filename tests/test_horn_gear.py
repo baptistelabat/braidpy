@@ -58,6 +58,7 @@ from braidpy.horn_gear.tracks import (
     walk,
 )
 from braidpy.horn_gear.visualization import animate, visualize_machine
+from braidpy.machine_catalog import CATALOGUE as MACHINES
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -1446,17 +1447,16 @@ def _laps_per_carrier(m):
     Measured from where the carriers actually are, rather than inferred from
     the tracks, so it is independent of how tracks are computed or drawn.
     """
-    from braidpy.horn_gear.layout import carrier_radius
-    from braidpy.horn_gear.visualization import slot_offsets
+    from braidpy.horn_gear.layout import carrier_radius, slot_angles
 
     layout = compute_layout(m)
-    offsets = slot_offsets(m, layout)
+    angles = slot_angles(m, layout)
     radii = {n: carrier_radius(m, layout, n) for n in m.gears}
     hub_x = sum(p[0] for p in layout.values()) / len(layout)
     hub_y = sum(p[1] for p in layout.values()) / len(layout)
 
     def angle(carrier, time):
-        a = offsets[carrier.gear] + m.slot_angle(carrier.gear, carrier.slot, time)
+        a = angles[carrier.gear](m.slot_angle(carrier.gear, carrier.slot, time))
         x = layout[carrier.gear][0] + radii[carrier.gear] * math.cos(a)
         y = layout[carrier.gear][1] + radii[carrier.gear] * math.sin(a)
         return math.atan2(y - hub_y, x - hub_x)
@@ -1715,13 +1715,13 @@ def test_trajectories_follow_the_animation_and_stay_continuous():
 
     # The last sample is where the simulation leaves the carrier.
     layout = compute_layout(m)
-    from braidpy.horn_gear.layout import slot_offsets
+    from braidpy.horn_gear.layout import slot_angles
 
-    offsets = slot_offsets(m, layout)
+    angles = slot_angles(m, layout)
     riding = {g: carrier_radius(m, layout, g) for g in m.gears}
     last = simulate(m, 8, m.default_carriers())[-1]
     for c in last.carriers:
-        expected = carrier_xy(m, layout, offsets, riding, c.position, 8)
+        expected = carrier_xy(m, layout, angles, riding, c.position, 8)
         assert traj.xy[c.carrier_id][-1] == pytest.approx(expected)
 
     # No jumps, transfers included: a sample never moves further than the arc
@@ -1731,6 +1731,41 @@ def test_trajectories_follow_the_animation_and_stay_continuous():
     for xy in traj.xy.values():
         steps = [math.dist(a, b) for a, b in itertools.pairwise(xy)]
         assert max(steps) <= bound * 1.01
+
+
+@pytest.mark.parametrize("name", list(MACHINES))
+def test_a_carrier_is_handed_on_where_it_is(name):
+    """At every transfer, the end of the step on the gear it leaves is where
+    it starts on the gear it joins: no jump, even where a line of gears bends
+    so that a gear's slots, turned rigidly, cannot meet both its contacts."""
+    from braidpy.horn_gear.layout import carrier_xy, slot_angles
+
+    m = MACHINES[name].make()
+    layout = compute_layout(m)
+    angles = slot_angles(m, layout)
+    riding = {g: carrier_radius(m, layout, g) for g in m.gears}
+
+    def apart(a, b):
+        """How far apart two gears' riding circles are where they meet: a
+        layout found numerically leaves them a hair apart, or none."""
+        if a == b:
+            return 0.0
+        return abs(math.dist(layout[a], layout[b]) - riding[a] - riding[b])
+
+    history = simulate(m, 24, m.default_carriers())
+    for now, nxt in itertools.pairwise(history):
+        after = {c.carrier_id: c.position for c in nxt.carriers}
+        for c in now.carriers:
+            joins = after[c.carrier_id]
+            left = carrier_xy(m, layout, angles, riding, c.position, now.time, 1.0)
+            joined = carrier_xy(m, layout, angles, riding, joins, nxt.time)
+            gap = apart(
+                *(
+                    m.riding_position(p, t)[0]
+                    for p, t in ((c.position, now.time), (joins, nxt.time))
+                )
+            )
+            assert math.dist(left, joined) <= gap + 1e-9, (c, joins)
 
 
 def test_yarns_are_laid_off_along_the_axis():

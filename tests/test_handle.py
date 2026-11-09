@@ -76,13 +76,13 @@ def test_the_sweep_draws_what_the_animation_draws():
 
     machine = flat_braid_9()
     state = turn(machine, _own(machine), 2).state
-    layout, offsets, riding = drawing(machine)
+    layout, angles, riding = drawing(machine)
     slots, slot_xy, carriers = sweep(machine, state, 4)
     assert len(slots) == machine.total_slots()
     assert len(slot_xy) == len(carriers) == 4
     for c, xy in zip(state.carriers, carriers[0]):
         assert xy == pytest.approx(
-            carrier_xy(machine, layout, offsets, riding, c.position, 2)
+            carrier_xy(machine, layout, angles, riding, c.position, 2)
         )
 
 

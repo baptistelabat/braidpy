@@ -48,6 +48,19 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- Carriers no longer jump where a line of gears bends. On the three-band
+  machine, folded round, and on the 12- and 16-carrier tubular braiders, a
+  gear's horns turned rigidly cannot meet both its contacts, so a carrier
+  was drawn jumping, by up to a third of a gear, as it was handed on. The
+  jump left yarns too long between samples for tightening to see one pass
+  through another, and at the three-band machine's seams, where the bands
+  pull apart, the yarns twisted together there slipped through each other,
+  so the bands came apart into three. Such a gear's horns are now drawn
+  spread unevenly, the one at a contact always on it
+  (`horn_gear.layout.slot_angles`, `GearAngles`): carriers are handed on
+  where they are, and the bands stay one braid when tightened. Which
+  carrier crosses which is unchanged; machines whose horns met their
+  contacts are drawn as before.
 - The 10-15-10 machine is loaded as its drawing is: each eight-horn gear
   carries one carrier each way, as drawn, where both went the same way
   (`MULTIBAND_10_15_10_LOADING`: G3 and G5 carry on slots 2 and 5, G10 and

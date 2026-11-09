@@ -330,7 +330,7 @@ def ring_braid(machine, threading: Mapping[int, Position] | None = None) -> Brai
         carrier_radius,
         carrier_xy,
         compute_layout,
-        slot_offsets,
+        slot_angles,
     )
     from braidpy.horn_gear.simulation import simulate
 
@@ -340,10 +340,10 @@ def ring_braid(machine, threading: Mapping[int, Position] | None = None) -> Brai
     gears = len(names)
     sign = [machine.gears[name].direction for name in names]
     layout = compute_layout(machine)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
     riding = {name: carrier_radius(machine, layout, name) for name in names}
     notch_xy = [
-        carrier_xy(machine, layout, offsets, riding, place, 0)
+        carrier_xy(machine, layout, angles, riding, place, 0)
         for place in _notches(machine)
     ]
     # A step of the card is two of the machine's: one per line.
@@ -353,7 +353,7 @@ def ring_braid(machine, threading: Mapping[int, Position] | None = None) -> Brai
         here: list[int | None] = [None] * gears
         for carrier in state.carriers:
             x, y = carrier_xy(
-                machine, layout, offsets, riding, carrier.position, state.time
+                machine, layout, angles, riding, carrier.position, state.time
             )
             notch = min(
                 range(gears),
