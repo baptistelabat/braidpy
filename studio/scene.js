@@ -7,12 +7,12 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onChosen, paint } from "./colours.js?v=22919e3c84";
-import { wholeFrame } from "./frames.js?v=22919e3c84";
-import { describe } from "./info.js?v=22919e3c84";
-import { drawSection, drawTop } from "./insets.js?v=22919e3c84";
-import { $ } from "./page.js?v=22919e3c84";
-import { pending } from "./workers.js?v=22919e3c84";
+import { onChosen, paint } from "./colours.js?v=b9a61635d4";
+import { wholeFrame } from "./frames.js?v=b9a61635d4";
+import { describe } from "./info.js?v=b9a61635d4";
+import { drawSection, drawTop } from "./insets.js?v=b9a61635d4";
+import { $ } from "./page.js?v=b9a61635d4";
+import { pending } from "./workers.js?v=b9a61635d4";
 
 export let lastResult = null;
 
@@ -39,6 +39,39 @@ const fill = new THREE.DirectionalLight(0xffffff, 0.5);
 fill.position.set(-6, 4, -2);
 scene.add(fill);
 
+// The slider goes through the making a sub-step at a time: so many
+// positions a step of whatever made the braid — a machine's step, a disk's
+// move — and at least so many in all, for a braid made in a step or two.
+export const SUBSTEPS = 8;
+const LEAST_POSITIONS = 1000;
+// What a step of it is called, by what made it (its timeline's kind).
+const STEP_NAMES = { machine: "Step", disk: "Move" };
+
+// Where the slider is, as a step and a sub-step of whatever made the braid.
+function showMade(fraction) {
+  const name = STEP_NAMES[braid.timeline?.kind];
+  const [first, last] = braid.span;
+  const at = first + fraction * (last - first);
+  let whole = Math.floor(at);
+  let sub = Math.round((at - whole) * SUBSTEPS);
+  if (sub === SUBSTEPS) [whole, sub] = [whole + 1, 0];
+  $("made-at").textContent = !name ? "" : sub ? `${name} ${whole} · ${sub}/${SUBSTEPS}` : `${name} ${whole}`;
+}
+
+// Drawn only while something may have changed: for a while after anything
+// is done to the view (wake), and while it spins or grows (controls.js).
+// Idle, a braid of many yarns costs nothing to show, and the page stays
+// quick to answer a click.
+const AWAKE_MS = 1500;
+let awakeUntil = 0;
+export function wake() {
+  awakeUntil = performance.now() + AWAKE_MS;
+}
+export function awake(now) {
+  return now < awakeUntil;
+}
+controls.addEventListener("change", wake);
+
 function stageColour() {
   return getComputedStyle(document.documentElement)
     .getPropertyValue("--stage")
@@ -47,6 +80,7 @@ function stageColour() {
 scene.background = new THREE.Color(stageColour());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   scene.background = new THREE.Color(stageColour());
+  wake();
 });
 
 function resize() {
@@ -57,6 +91,7 @@ function resize() {
   renderer.domElement.style.height = height + "px";
   camera.aspect = width / height;
   clearOfCard();
+  wake();
 }
 new ResizeObserver(() => {
   resize();
@@ -85,7 +120,7 @@ new ResizeObserver(clearOfCard).observe($("about"));
 
 function currentTime() {
   const [first, last] = braid.span;
-  return first + (Number($("made").value) / 1000) * (last - first);
+  return first + (Number($("made").value) / Number($("made").max)) * (last - first);
 }
 resize();
 
@@ -152,6 +187,7 @@ function dispose(object) {
 export let shownLaid = null;
 
 export function show(result, seconds, keepView = false) {
+  wake();
   // One place decides what colour a strand is.
   paint(result);
   shownLaid = seconds === null ? pending : null;
@@ -277,6 +313,8 @@ export function show(result, seconds, keepView = false) {
   $("topview").hidden = !timeline || !$("showtop").checked;
   $("section").hidden = !$("showsection").checked;
   drawSection(result);
+  // A sub-step at a time through whatever made it.
+  $("made").max = String(Math.max(LEAST_POSITIONS, Math.ceil((span[1] - span[0]) * SUBSTEPS)));
   $("made").value = $("made").max;
   made(Number($("made").max));
   if (!keepView) fit();
@@ -305,6 +343,7 @@ function mirrorMesh({ z, radius, hole }) {
 // every yarn whole, from the start of the braid out over the mirror to its
 // bobbin, one tube each, and the mirror.
 export function showFrame(frame, disk, colours) {
+  wake();
   if (!braid) return;
   clearFrame();
   const shown = new THREE.Group();
@@ -337,6 +376,7 @@ export function showFrame(frame, disk, colours) {
 }
 
 function clearFrame() {
+  wake();
   if (!braid?.frame) return;
   braid.group.remove(braid.frame);
   dispose(braid.frame);
@@ -344,6 +384,7 @@ function clearFrame() {
 }
 
 export function showTubes(tubes) {
+  wake();
   if (!braid) return;
   for (const yarn of [...braid.yarns, ...braid.tails]) {
     yarn.tube.visible = tubes;
@@ -358,7 +399,9 @@ export function showTubes(tubes) {
 // it, at that same instant.
 export function made(value) {
   if (!braid) return;
-  const fraction = value / 1000;
+  wake();
+  const fraction = value / Number($("made").max);
+  showMade(fraction);
   const [first, last] = braid.span;
   // Made on a marudai: the making itself, move by move, until it is made.
   const frames = braid.frames;
@@ -450,6 +493,7 @@ function countUpTo(values, limit) {
 }
 
 export function fit() {
+  wake();
   if (!braid) return;
   const box = braid.box;
   const centre = box.getCenter(new THREE.Vector3());
