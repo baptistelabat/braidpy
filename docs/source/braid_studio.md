@@ -162,7 +162,9 @@ The page has a form and a 3D view.
   inset shows what made it, seen from above, at the same instant — the disk
   with its strands as spokes, the machine's gears and carriers — and a
   disk's braid turns with the disk, each strand at the fell nearest its
-  carrier.
+  carrier. The slider beside it goes through the making a sub-step at a
+  time, an eighth of a machine's step or a disk's move: the arrow keys a
+  sub-step, with Shift a step, and it says which step it is at.
 - Over the view, in a card that folds away to its title, what is known of
   the braid: its strands; after how many of its words or cycles it is pure
   — every strand back where it started — how many were made, and so
