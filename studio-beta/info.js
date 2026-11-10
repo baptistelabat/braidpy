@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=fc54ea37f6";
-import { $, round } from "./page.js?v=fc54ea37f6";
-import { lastResult } from "./scene.js?v=fc54ea37f6";
-import { writeSpec } from "./spec.js?v=fc54ea37f6";
-import { pending, submit, worker } from "./workers.js?v=fc54ea37f6";
+import { catalogue } from "./fields.js?v=511921bdce";
+import { $, round } from "./page.js?v=511921bdce";
+import { lastResult } from "./scene.js?v=511921bdce";
+import { writeSpec } from "./spec.js?v=511921bdce";
+import { pending, submit, worker } from "./workers.js?v=511921bdce";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -29,6 +29,8 @@ export function describe(result, seconds) {
     ],
     ["Made", info.made && info.repeated && times(info.made, info.repeated)],
     ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    // Pure, and trivial with any one strand out, as the Borromean rings.
+    ["Brunnian", info.brunnian === undefined ? undefined : info.brunnian ? "yes" : "no"],
     ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
     ["Crossings", info.crossings],
     ["Exponent sum", info.exponent_sum],

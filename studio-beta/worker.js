@@ -147,6 +147,7 @@ function laid(id, spec, result) {
   if (
     job &&
     settle !== "sideways" &&
+    settle !== "endless" &&
     (settle === "marudai" ? !result.disk : settle === "carriers" ? !result.carriers : rigid)
   ) {
     result.notes = [

@@ -13,7 +13,8 @@
 //
 // The Python stays the reference: tests/test_tighten_js.py tightens the same braid
 // both ways and checks they agree.  Everything here mirrors it, in the same
-// order, (I + step/2 L) x = b solved as the same tridiagonal system.
+// order, (I + step/2 L) x = b solved as the same tridiagonal system, or,
+// endless, as the same system round a closed loop.
 //
 // Loaded as a classic script by the worker (importScripts) and required by
 // Node for the tests.
@@ -21,8 +22,35 @@
 (function (root) {
   "use strict";
 
+  // A tridiagonal system, solved in place by the Thomas algorithm: the
+  // forward sweep depends on the matrix only, and is done once.  braidpy's
+  // _thomas.
+  function thomas(lower, diagonal, upper) {
+    const n = diagonal.length;
+    const c = new Float64Array(n);
+    const m = new Float64Array(n);
+    m[0] = diagonal[0];
+    c[0] = n > 1 ? upper[0] / m[0] : 0;
+    for (let i = 1; i < n; i++) {
+      m[i] = diagonal[i] - lower[i] * c[i - 1];
+      c[i] = i < n - 1 ? upper[i] / m[i] : 0;
+    }
+    const d = new Float64Array(n);
+    return function solve(values) {
+      d[0] = values[0] / m[0];
+      for (let i = 1; i < n; i++) {
+        d[i] = (values[i] - lower[i] * d[i - 1]) / m[i];
+      }
+      values[n - 1] = d[n - 1];
+      for (let i = n - 2; i >= 0; i--) {
+        values[i] = d[i] - c[i] * values[i + 1];
+      }
+    };
+  }
+
   // Solve (I + h L) x = b in place in ``b``, for L the second difference
-  // along a yarn: the last row fixed, the first fixed or free.
+  // along a yarn: the last row fixed, the first fixed or free.  braidpy's
+  // _tension_solver.
   function makeSettle(n, h, holdTop) {
     const lower = new Float64Array(n);
     const diagonal = new Float64Array(n);
@@ -39,26 +67,65 @@
       diagonal[0] = 1 + h;
       upper[0] = -h;
     }
-    // Thomas algorithm: the forward sweep depends on the matrix only.
-    const c = new Float64Array(n);
-    const m = new Float64Array(n);
-    m[0] = diagonal[0];
-    c[0] = n > 1 ? upper[0] / m[0] : 0;
-    for (let i = 1; i < n; i++) {
-      m[i] = diagonal[i] - lower[i] * c[i - 1];
-      c[i] = i < n - 1 ? upper[i] / m[i] : 0;
-    }
-    const d = new Float64Array(n);
+    return thomas(lower, diagonal, upper);
+  }
+
+  // The fewest samples round a closed loop that tension can settle: with
+  // fewer, a sample's two neighbours are one sample, or itself.  braidpy's
+  // FEWEST_ROUND.
+  const FEWEST_ROUND = 3;
+
+  // Solve (I + w L) x = b in place in ``b``, for L the second difference
+  // round a closed loop: the open system with its corners folded into its
+  // first and last diagonal terms, corrected by one column worked out once
+  // (Sherman and Morrison).  braidpy's _loop_settler.
+  function loopSettle(length, weight) {
+    if (length < FEWEST_ROUND) return function settle() {};
+    const side = -weight;
+    const middle = 1.0 + 2.0 * weight;
+    const gamma = -middle;
+    const lower = new Float64Array(length).fill(side);
+    const upper = new Float64Array(length).fill(side);
+    const diagonal = new Float64Array(length).fill(middle);
+    diagonal[0] = middle - gamma;
+    diagonal[length - 1] = middle - (side * side) / gamma;
+    const solve = thomas(lower, diagonal, upper);
+    const z = new Float64Array(length);
+    z[0] = gamma;
+    z[length - 1] = side;
+    solve(z);
+    const below = 1.0 + z[0] + (side * z[length - 1]) / gamma;
     return function settle(values) {
-      d[0] = values[0] / m[0];
-      for (let i = 1; i < n; i++) {
-        d[i] = (values[i] - lower[i] * d[i - 1]) / m[i];
-      }
-      values[n - 1] = d[n - 1];
-      for (let i = n - 2; i >= 0; i--) {
-        values[i] = d[i] - c[i] * values[i + 1];
-      }
+      solve(values);
+      const fact = (values[0] + (side * values[length - 1]) / gamma) / below;
+      for (let i = 0; i < length; i++) values[i] = values[i] - fact * z[i];
     };
+  }
+
+  // How close a sample at the fell end of a window must be to its
+  // partner's at the top for the two to be one level met twice.  braidpy's
+  // TIED.
+  const TIED = 1e-6;
+
+  // The closed loops the wrap makes, as sample indices in order: one per
+  // cycle of the partners, the repeated last level left out if ``tied``.
+  // braidpy's Periodic.loops.
+  function loopsOf(partner, n, tied) {
+    const seen = new Set();
+    const found = [];
+    const last = tied ? n - 1 : n;
+    for (let start = 0; start < partner.length; start++) {
+      if (seen.has(start)) continue;
+      const loop = [];
+      let here = start;
+      while (!seen.has(here)) {
+        seen.add(here);
+        for (let i = 0; i < last; i++) loop.push(here * n + i);
+        here = partner[here];
+      }
+      found.push(Int32Array.from(loop));
+    }
+    return found;
   }
 
   /**
@@ -79,6 +146,11 @@
    * @param {number[]} job.centre  The axis, for the core.
    * @param {boolean[]} [job.rigid]  Yarns held where they are all along,
    *     as stiff cores.
+   * @param {?number[]} [job.partner]  The yarn each one runs into past the
+   *     fell end, for a braid laid over a whole number of periods.
+   * @param {boolean} [job.periodic]  Tighten it as a window on an endless
+   *     braid, joining each yarn's fell end to its partner's top, rather
+   *     than holding both ends: braidpy's Periodic.
    * @param {function(number):void} [progress]  Told the fraction done.
    * @returns {{xy: Float64Array, closest: number}}
    */
@@ -98,15 +170,49 @@
     const count = spacing <= 0 ? 1 : Math.min(n, Math.ceil(d / spacing));
     for (let o = 0; o < count; o++) offsets.push(o);
 
+    const partner = job.periodic && job.partner ? job.partner : null;
+    if (partner && partner.length !== nYarns) {
+      throw new Error(`partner covers ${partner.length} yarns, the braid has ${nYarns}`);
+    }
     const held = new Uint8Array(rows);
     const free = new Float64Array(rows);
     for (let k = 0; k < rows; k++) {
       const level = k % n;
       const rigid = job.rigid && job.rigid[Math.floor(k / n)];
-      held[k] = rigid || level === n - 1 || (level === 0 && job.hold_top) ? 1 : 0;
+      // Endless, neither end is held: the braid runs on into its own copy.
+      const end = !partner && (level === n - 1 || (level === 0 && job.hold_top));
+      held[k] = rigid || end ? 1 : 0;
       free[k] = held[k] ? 0 : 1;
     }
-    const settle = makeSettle(n, 0.5 * job.step, job.hold_top);
+    const settle = partner ? null : makeSettle(n, 0.5 * job.step, job.hold_top);
+
+    // Endless: the last level, laid over a whole period, is the first over
+    // again, tied to it rather than a sample of its own.
+    let tied = false;
+    if (partner) {
+      let gap = 0;
+      for (let a = 0; a < nYarns; a++) {
+        for (let c = 0; c < 2; c++) {
+          const off = Math.abs(xy[2 * (a * n + n - 1) + c] - xy[2 * partner[a] * n + c]);
+          if (off > gap) gap = off;
+        }
+      }
+      tied = gap <= TIED;
+    }
+    const loops = partner ? loopsOf(partner, n, tied) : [];
+    const settlers = new Map();
+    for (const loop of loops) {
+      if (!settlers.has(loop.length)) settlers.set(loop.length, loopSettle(loop.length, 0.5 * job.step));
+    }
+    function tie() {
+      if (!tied) return;
+      for (let a = 0; a < nYarns; a++) {
+        const k = a * n + n - 1;
+        const t = partner[a] * n;
+        xy[2 * k] = xy[2 * t];
+        xy[2 * k + 1] = xy[2 * t + 1];
+      }
+    }
 
     // Pairs of samples that could touch before the list is rebuilt.
     let p = new Int32Array(0);
@@ -123,9 +229,15 @@
         for (let a = 0; a < nYarns; a++) {
           for (let b = 0; b < nYarns; b++) {
             if (o === 0 ? a >= b : a === b) continue;
-            for (let i = 0; i < n - o; i++) {
+            // Endless and tied: every level but the tied one, against
+            // levels up to past the fell end, in the next copy (braidpy's
+            // ``beyond``).
+            const top = tied ? n - 1 : n - o;
+            for (let i = 0; i < top; i++) {
               const s = a * n + i;
-              const t = b * n + i + o;
+              const j = i + o;
+              const t = !tied || j < n - 1 ? b * n + j : partner[b] * n + (j - (n - 1));
+              if (s === t) continue;
               // Only where one of the two is free to move.
               if (free[s] + free[t] <= 0) continue;
               const dx = xy[2 * s] - xy[2 * t];
@@ -188,12 +300,13 @@
             }
           }
         }
-        if (worst <= slack) return;
+        if (worst <= slack) break;
         for (let k = 0; k < rows; k++) {
           if (held[k]) continue;
           clampAdd(k, push[2 * k], push[2 * k + 1]);
         }
       }
+      tie();
     }
 
     // Move a sample, but never more than a fifth of a diameter at once.
@@ -232,18 +345,33 @@
     const column = new Float64Array(n);
     const target = new Float64Array(2 * rows);
     for (let iteration = 0; iteration < job.iterations; iteration++) {
-      // Tension: every yarn, x and y alike, settled along its length.
-      for (let a = 0; a < nYarns; a++) {
-        for (let c = 0; c < 2; c++) {
-          for (let i = 0; i < n; i++) column[i] = xy[2 * (a * n + i) + c];
-          settle(column);
-          for (let i = 0; i < n; i++) target[2 * (a * n + i) + c] = column[i];
+      // Tension: every yarn, x and y alike, settled along its length — or,
+      // endless, round its loop.
+      if (partner) {
+        target.set(xy);
+        for (const loop of loops) {
+          const round = new Float64Array(loop.length);
+          const settleRound = settlers.get(loop.length);
+          for (let c = 0; c < 2; c++) {
+            for (let i = 0; i < loop.length; i++) round[i] = xy[2 * loop[i] + c];
+            settleRound(round);
+            for (let i = 0; i < loop.length; i++) target[2 * loop[i] + c] = round[i];
+          }
+        }
+      } else {
+        for (let a = 0; a < nYarns; a++) {
+          for (let c = 0; c < 2; c++) {
+            for (let i = 0; i < n; i++) column[i] = xy[2 * (a * n + i) + c];
+            settle(column);
+            for (let i = 0; i < n; i++) target[2 * (a * n + i) + c] = column[i];
+          }
         }
       }
       for (let k = 0; k < rows; k++) {
         if (held[k]) continue;
         clampAdd(k, target[2 * k] - xy[2 * k], target[2 * k + 1] - xy[2 * k + 1]);
       }
+      tie();
       separate();
       // The push itself can carry a sample out of the list's reach.
       while (movedSince(built) > d / 4) {
