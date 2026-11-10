@@ -51,6 +51,7 @@ SETTLING = [
     "tighten.js",
     "rope.js",
     "form.js",
+    "carried.js",
     "marudai.js",
     "b3d.js",
     "frames.js",
@@ -84,6 +85,7 @@ PAGE = [
     "tighten.js",
     "rope.js",
     "form.js",
+    "carried.js",
     "marudai.js",
     "b3d.js",
 ]
@@ -149,6 +151,15 @@ def _copy_page(site: Path) -> None:
         for module in re.findall(r'(?:from|import) "\./([^"]+)"', text):
             if module not in PAGE:
                 raise RuntimeError(f"{name} imports {module}, which is not in PAGE.")
+        # A worker's own scripts, too: those named outright, not a URL
+        # put together.
+        for loaded in re.findall(r"importScripts\(([^)]*)\)", text):
+            for given in loaded.split(","):
+                script = re.fullmatch(r'\s*"([^"]+)"\s*', given)
+                if script and script.group(1) not in PAGE:
+                    raise RuntimeError(
+                        f"{name} loads {script.group(1)}, which is not in PAGE."
+                    )
         (site / name).write_text(_NAMED.sub(stamp, text))
 
 

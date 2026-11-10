@@ -44,6 +44,11 @@ mistake before:
   one page, other pages link to it and say only what differs.
 - **Data apart from code.** Defaults, limits, titles and catalogues are data
   (`web/_settings.py`, the `CATALOGUE`s), not literals inside functions.
+- **No magic numbers.** A number that means something (a size, a margin, a
+  factor) gets a name and a comment saying what it is, once, beside its
+  kin (`REACH`, `THICK`, `CLEAR` in `marudai`), and is written as that
+  name, or derived from it, wherever it is used: `CLEAR * THICK`, never
+  `2.2`.
 - **Refactoring keeps results.** Check outputs are the same before and after
   (for `braidpy.web`, the same JSON for every build); say so in the PR, and
   say what changes when something does.

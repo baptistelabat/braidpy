@@ -41,6 +41,8 @@ CASES = [
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
     # Laid on its fell ring, a machine's braid can be settled by physics.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
+    # And made by its carriers going round.
+    ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "carriers"}, 3),
     # A lace machine, its card turning the gears; its handle too.
     ({"source": "lace", "name": "lace_plait", "cycles": 2}, 3),
     # And a card of your own: every gear turning on a ring of 6.

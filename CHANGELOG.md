@@ -6,6 +6,11 @@ What changed in each release of braidpy.
 
 ### New
 
+- A braid made by its carriers (`braidpy.carried`): a horn gear machine's
+  carriers go round at the machine's real size, each pulling its yarn at a
+  steady tension up through a forming ring into the braid taken off above,
+  the yarns held where they cross by friction. Drawn near, and to scale
+  beside the machine (`examples/demo_carried.py`).
 - A triaxial braid among the machines: the tubular braid of 16 round an
   axial yarn up each of its eight gears, as a triaxial braider feeds them
   up its hollow horn gear spindles (`horn_gear.triaxial_braid_16`; J. H.

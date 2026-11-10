@@ -88,3 +88,42 @@ def test_grow_puts_each_moment_of_the_making_back_as_it_was(tmp_path, spec):
     assert result["gap"] <= 0.0051
     assert result["turned"] > 0.05
     assert result["frozen"] > 0
+
+
+@pytest.mark.slow
+def test_a_machines_braid_is_made_by_its_carriers_in_the_page(tmp_path):
+    """Asked to settle it by its carriers, the page makes the flat plait as
+    braidpy.carried does: its strands cross as the braid laid off the
+    machine, and the job is not kept in what the page shows."""
+    import numpy as np
+    from test_carried import _crossings
+
+    from braidpy.horn_gear import yarn_paths
+    from braidpy.machine_catalog import CATALOGUE
+    from braidpy.web import build
+
+    cycles = 2
+    spec = {
+        "source": "machine",
+        "name": "flat_3",
+        "cycles": cycles,
+        "settle": "carriers",
+    }
+    laid = build(spec, tighten=False)
+    path = tmp_path / "laid.json"
+    path.write_text(json.dumps(laid))
+    out = _run("carried", path)
+    assert not out["carriers"]
+    assert "carriers" in out["notes"][-1]
+    made = _crossings([np.asarray(s["points"]) for s in out["strands"]])
+    steps = len(laid["carriers"]["eyes"]) // laid["carriers"]["substeps"]
+    machine = _crossings(
+        [
+            np.asarray(p)
+            for p in yarn_paths(
+                CATALOGUE["flat_3"].make(), n_steps=steps
+            ).points.values()
+        ]
+    )
+    assert len(made) >= steps // 3
+    assert made == machine[: len(made)]
