@@ -36,11 +36,6 @@ What is known and left for later, each with enough said to pick it up.
 
 ## Later
 
-- **Split `take_off.py`** (1734 lines): trajectories for every source,
-  laying, tightening, the checks (`least_take_off`, `longest_step`,
-  `closest_approach`) and drawing, into a package, every name still
-  importable from `braidpy.take_off`. A refactor: the same JSON for every
-  Braid Studio build before and after.
 - **Reducible, periodic or pseudo-Anosov** (`Braid.is_reducible` is a stub).
   No library fits: `flipper` and `curver` (MIT) took over two minutes on
   three strands, and libbraiding is not on PyPI. Garside theory decides it,

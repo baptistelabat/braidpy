@@ -279,6 +279,8 @@ Laying braids in 3D, drawing them, and settling their yarns.
    :undoc-members:
    :show-inheritance:
 
+.. autodata:: braidpy.take_off.tighten.SAFE_STEP
+
 .. automodule:: braidpy.rope
    :members:
    :undoc-members:
