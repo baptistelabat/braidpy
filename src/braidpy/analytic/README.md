@@ -10,7 +10,8 @@ where something closed-form does survive, is in the documentation:
 - `docs/source/why_no_closed_form.md` — why there is no formula, where closed
   form does survive, and what is in the package instead.
 - `docs/source/solving_numerically.md` — the numerical problem worth posing
-  once the analytic one is abandoned. Not implemented.
+  once the analytic one is abandoned, and how braidpy solves it
+  (`braidpy.take_off.tighten_yarns`).
 
 Keeping the directory seemed better than pretending the question was never
 asked.

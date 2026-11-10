@@ -2,13 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: annulus_braid.py
-Description: Braids on a ring of slots, and the shape a laid rope takes
-Authors: Baptiste Labat
-Created: 2025-05-26
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""Braids on a ring of slots, and the shape a laid rope takes.
 
 References on the annular braid group:
 

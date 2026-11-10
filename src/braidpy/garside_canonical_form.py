@@ -2,13 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: garside_canonical_form.py
-Description: Another way to describe braid as twist and permutations
-Authors: Baptiste Labat
-Created: 2025-06-04
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""The Garside canonical form: a braid as a power of the half twist and
+permutation braids, the same however the braid was written.
 """
 
 from __future__ import annotations
