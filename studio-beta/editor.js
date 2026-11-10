@@ -9,7 +9,7 @@
 // changes no move; a move clicked goes in after the cursor, and Undo takes
 // out the one at it.
 
-import { inTime } from "./page.js?v=4745f51331";
+import { inTime } from "./page.js?v=fc54ea37f6";
 
 function hue(i, n) {
   return `hsl(${(360 * i) / Math.max(n, 1)}, 100%, 50%)`;

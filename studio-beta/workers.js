@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=4745f51331";
-import { showMaking, showKin } from "./info.js?v=4745f51331";
+import { onChosen, rebase } from "./colours.js?v=fc54ea37f6";
+import { showMaking, showKin } from "./info.js?v=fc54ea37f6";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=4745f51331";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=4745f51331";
-import { unpack } from "./frames.js?v=4745f51331";
-import { machineShapes, machineWanted } from "./machine.js?v=4745f51331";
-import { $ } from "./page.js?v=4745f51331";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=4745f51331";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=4745f51331";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=fc54ea37f6";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=fc54ea37f6";
+import { unpack } from "./frames.js?v=fc54ea37f6";
+import { machineShapes, machineWanted } from "./machine.js?v=fc54ea37f6";
+import { $ } from "./page.js?v=fc54ea37f6";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=fc54ea37f6";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=fc54ea37f6";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -37,7 +37,7 @@ let b3dAsked = null;
 let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=4745f51331");
+  settler = new Worker("settle.js?v=fc54ea37f6");
   settling = null;
   b3dAsked?.reject(new Error("another braid was asked for"));
   b3dAsked = null;
@@ -231,10 +231,18 @@ async function premadeFor(spec) {
   return null;
 }
 
+// Kept gzipped (web/build.py), and unpacked here as they come: gzip's
+// own first two bytes say so, in case a server has unpacked one already.
+const GZIP_MAGIC = [0x1f, 0x8b];
+
 async function fetched(file) {
   try {
     const response = await fetch(`made/${file}`);
-    return response.ok ? await response.json() : null;
+    if (!response.ok) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const packed = GZIP_MAGIC.every((byte, k) => bytes[k] === byte);
+    const body = packed ? new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip")) : new Blob([bytes]).stream();
+    return await new Response(body).json();
   } catch {
     return null;
   }
