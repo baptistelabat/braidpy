@@ -125,16 +125,24 @@ from .sources import (
 )
 from .tighten import (
     SAFE_STEP,
+    Periodic,
     longest_step,
     tighten_yarns,
     warn_if_too_coarse,
 )
 from .tighten import (
+    _loop_settler as _loop_settler,
+)
+from .tighten import (
     _tension_solver as _tension_solver,
+)
+from .tighten import (
+    _tied_ends as _tied_ends,
 )
 
 __all__ = [
     "SAFE_STEP",
+    "Periodic",
     "StrandTrajectories",
     "YarnPaths",
     "braid_word_trajectories",

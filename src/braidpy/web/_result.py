@@ -48,7 +48,7 @@ def _tightened(
 ):
     """The yarns pulled taut — or, for a page that does it itself, as laid,
     with what it needs to do so noted for :func:`_result`."""
-    from braidpy.take_off import tighten_yarns, warn_if_too_coarse
+    from braidpy.take_off import Periodic, tighten_yarns, warn_if_too_coarse
 
     if iterations == 0:
         return paths
@@ -56,6 +56,10 @@ def _tightened(
         # web/tighten.js tightens as tighten_yarns does, and is as blind.
         warn_if_too_coarse(paths, diameter)
         formed = paths.formed()
+        # Each yarn's partner past the fell end, for the page to tighten the
+        # braid endless if asked: laid over a whole number of periods, every
+        # braid closes on itself.
+        closing = Periodic.closing(formed)
         _TIGHTENING.set(
             {
                 "n_yarns": int(formed.shape[0]),
@@ -71,6 +75,7 @@ def _tightened(
                 "centre": [float(paths.axis[0]), float(paths.axis[1])],
                 "xy": np.round(formed[:, :, :2].reshape(-1), 9).tolist(),
                 "rigid": [k in rigid for k in paths.points],
+                "partner": None if closing is None else list(closing.partner),
             }
         )
         return paths

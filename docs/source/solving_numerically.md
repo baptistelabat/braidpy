@@ -148,9 +148,44 @@ in and tightening it, then reading the word back off the yarns, gives the
 word it started from — less any crossing that undoes itself, which tension
 pulls out. Both are in the tests.
 
+### Periodicity, instead of holding both ends
+
+A braid off a machine repeats, so a length of it is a window on something
+endless. Holding both ends still is a boundary the real braid does not have,
+and it is felt for a few periods in from each end — the braid is wider in the
+middle than at the pins, which is the boundary, not the braid.
+
+`take_off.Periodic` says instead that the yarn leaving the fell end of the
+window arrives at the top of it. The window must be a whole number of periods,
+and its partner mapping says which yarn each one runs into: the period's
+permutation of the strands, or the identity where the window is a whole
+number of full cycles. `take_off.Periodic.closing` reads it from the laid braid: laid
+over a whole number of periods, each yarn's last sample sits on some yarn's
+first, as every braid Braid Studio lays does. A window that does not close on
+itself, as one over which the pattern turns part way about the axis, has
+none.
+
+Following a yarn into its partner comes back where it started after one cycle
+of the permutation, so the samples fall into one closed loop per cycle, and
+each loop is settled on its own. Round a loop the backward-Euler matrix is
+tridiagonal but for two corners, joining the last sample to the first;
+Sherman and Morrison's formula solves it as the open system with its first and
+last diagonal terms changed, swept as a held yarn is, then corrected by one
+column worked out once. It is exact, and as fast as the held yarn's solve.
+
+One subtlety. `take_off.lay_yarns` gives one sample more than the window has intervals,
+so over a whole period the last level is the first over again. It is not an
+unknown of its own, and counting it as one would lengthen the braid by a level
+in every period, so it is tied to the level it repeats rather than left free.
+Being a copy, it takes no part in contact either: the samples just above the
+fell end are kept clear of those at the top of the next copy instead, as they
+would be in the endless braid. Without that, nothing kept them apart across
+the wrap, and a tubular braid came out with its yarns overlapping there by a
+twentieth of a diameter.
+
 What it does not yet do: let samples move along the axis, which a full length
-minimisation would; bending stiffness; periodicity, rather than holding both
-ends; and the check against the rope limit.
+minimisation would; bending stiffness; a window that turns about the axis; and
+the check against the rope limit.
 
 ### Another approach: beads on springs
 

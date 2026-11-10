@@ -4,11 +4,13 @@ run-name: Braid Studio — build, test${{ github.event_name == 'push' && ' and p
 # The web page: braidpy run in the browser by Pyodide, drawn with three.js.
 # Built and tried in a real browser on every change to it or to braidpy;
 # published beside the documentation, under studio/, from develop — and as
-# a beta, under studio-beta/, from the branch it is being made on.
+# a beta, under studio-beta/, from any other branch run by hand (Actions,
+# Braid Studio, Run workflow, choosing the branch): one beta at a time, the
+# last run.
 
 on:
   push:
-    branches: [develop, feat/multiband_machine]
+    branches: [develop]
     paths:
       - "src/**"
       - "web/**"

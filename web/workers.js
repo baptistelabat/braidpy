@@ -166,7 +166,8 @@ function heard(data) {
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
     if (rebase(data.result)) relink();
-    show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
+    const sideways = data.result.settled === "sideways" || data.result.settled === "endless";
+    show(data.result, data.seconds, shownLaid === data.id && sideways);
     showDefaults(data.result.used);
     document.dispatchEvent(
       new CustomEvent("machine-met", { detail: data.result.info?.collision?.at ?? [] }),
