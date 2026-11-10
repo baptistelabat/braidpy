@@ -6,6 +6,11 @@ What changed in each release of braidpy.
 
 ### New
 
+- Tightening a braid as a window on an endless one rather than a piece
+  held at both ends (`take_off.Periodic`, `tighten_yarns(periodic=...)`):
+  the yarn leaving the fell end of the window runs on into the top of it,
+  so the braid is not pinched where it was held. The window must be a
+  whole number of periods. Without it, tightening is as before.
 - Whether a braid is Brunnian: pure, and trivial once any one of its
   strands is taken out, as the Borromean rings' braid (`Braid.is_brunnian`,
   with `Braid.without_strand`; it raised NotImplementedError). Braid
