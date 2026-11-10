@@ -22,7 +22,18 @@ else:
 
 
 def _outline_traces(trajectories: StrandTrajectories) -> list[go.Scatter3d]:
-    """The source's outlines on the plane at z = 0, so the yarns have a footing."""
+    """The source's outlines, drawn on the plane at z = 0, so the yarns stand
+    on what laid them: a machine's gears, a disk's rim.
+
+    Args:
+        trajectories: Where the strands went, with the outlines of what moved
+            them (:attr:`~braidpy.take_off.paths.StrandTrajectories.outlines`)
+            and the name to show for them (``outline_name``).
+
+    Returns:
+        One Plotly trace holding every outline, each a closed line, the next
+        apart from it by a gap; none if the source has no outlines.
+    """
     if not trajectories.outlines:
         return []
     xs: list[float | None] = []
