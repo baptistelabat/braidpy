@@ -15,7 +15,7 @@ Features:
 - Displays step labels, strand IDs, and pattern info
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -227,7 +227,7 @@ class Kumihimo:
         plt.tight_layout()
         plt.show()
 
-    def animate(self, output_html: str | None = None, **kwargs):
+    def animate(self, output_html: Optional[str] = None, **kwargs):
         """Animate the moves made so far on the disk, seen from above.
 
         A Plotly animation in which each strand runs from its slot to the

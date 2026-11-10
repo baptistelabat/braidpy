@@ -31,6 +31,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import reduce
 from math import lcm
+from typing import Optional
 
 import networkx as nx
 
@@ -342,7 +343,7 @@ class BraidingMachine:
         return load_carriers(self)
 
     def carrier_colours(
-        self, carriers: dict[int, tuple[str, int]] | None = None
+        self, carriers: Optional[dict[int, tuple[str, int]]] = None
     ) -> dict[int, str] | None:
         """The colours a loading's carriers are drawn in, if the machine has
         a way of its own to choose them.

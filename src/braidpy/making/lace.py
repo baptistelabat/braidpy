@@ -39,7 +39,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from braidpy.braid import Braid
 from braidpy.ring_program import RingProgram, Swap, _packed
@@ -187,7 +187,7 @@ def _gear_sign(gear: int) -> int:
     return 1 if gear % 2 == 0 else -1
 
 
-def lace_card(braid: Braid, n_gears: int | None = None) -> LaceCard:
+def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     """A braid as a lace machine's punchcard; see the module.
 
     Args:
@@ -250,7 +250,7 @@ def lace_card(braid: Braid, n_gears: int | None = None) -> LaceCard:
 def card_program(
     n_gears: int,
     steps: Sequence[tuple[Sequence[bool], Sequence[bool]]],
-    threaded: Sequence[int] | None = None,
+    threaded: Optional[Sequence[int]] = None,
 ) -> RingProgram:
     """A punchcard run on its ring, as neighbours swapping places: what the
     machine does, worked out without building it.
@@ -306,7 +306,7 @@ def lace_braid(card: LaceCard) -> Braid:
     return ring_braid(card.machine(), card.threading())
 
 
-def ring_braid(machine, threading: Mapping[int, Position] | None = None) -> Braid:
+def ring_braid(machine, threading: Optional[Mapping[int, Position]] = None) -> Braid:
     """The braid one pass of a lace machine's card makes, read off the
     machine itself: the card run, each bobbin found in its notch after each
     step, and the two bobbins of each gear that turned swapped — with the

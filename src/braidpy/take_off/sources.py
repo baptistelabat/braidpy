@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import replace
+from typing import Optional
 
 import numpy as np
 
@@ -114,7 +115,7 @@ def disk_trajectories(
     clockwise: bool = True,
     label: str = "Strand ",
     slot_offset: float = 0.0,
-    slot_names: Mapping[int, str] | None = None,
+    slot_names: Optional[Mapping[int, str]] = None,
 ) -> StrandTrajectories:
     """Strands moved between the slots round a disk, as trajectories to lay.
 
@@ -226,7 +227,7 @@ def disk_trajectories(
 
 
 def mobidai_steps(
-    mobidai, n_cycles: int = 1, drift: int | None = None
+    mobidai, n_cycles: int = 1, drift: Optional[int] = None
 ) -> tuple[dict[Hashable, int], list[dict[Hashable, int]]]:
     """A mobidai's cycles, as the start and steps :func:`disk_trajectories` takes.
 
@@ -289,7 +290,7 @@ def mobidai_steps(
 def mobidai_trajectories(
     mobidai,
     n_cycles: int = 3,
-    drift: int | None = None,
+    drift: Optional[int] = None,
     radius: float = 1.0,
     lift: float = 0.15,
     samples_per_step: int = 12,
@@ -326,7 +327,7 @@ def mobidai_trajectories(
 
 
 def kumihimo_steps(
-    kumihimo, n_strands: int | None = None
+    kumihimo, n_strands: Optional[int] = None
 ) -> tuple[int, dict[Hashable, int], list[dict[Hashable, int]]]:
     """A kumihimo sequence, as the disk and steps :func:`disk_trajectories` takes.
 
@@ -390,7 +391,7 @@ def kumihimo_steps(
 
 def kumihimo_trajectories(
     kumihimo,
-    n_strands: int | None = None,
+    n_strands: Optional[int] = None,
     radius: float = 1.0,
     lift: float = 0.15,
     samples_per_step: int = 12,

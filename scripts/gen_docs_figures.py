@@ -37,6 +37,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from typing import Optional
+
 from braidpy.annulus_braid import (
     TubularBraidStrand,
     cover_factor,
@@ -84,7 +86,7 @@ def _style() -> None:
     )
 
 
-def _save(fig, name: str, png_dir: Path | None, note: str | None = None) -> None:
+def _save(fig, name: str, png_dir: Path | None, note: Optional[str] = None) -> None:
     if note:
         fig.text(0.0, -0.02, note, color=MUTED, fontsize=8, va="top")
     DOCS.mkdir(parents=True, exist_ok=True)

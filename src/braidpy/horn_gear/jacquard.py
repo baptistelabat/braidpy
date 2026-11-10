@@ -51,6 +51,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Sequence
 from math import gcd, lcm
+from typing import Optional
 
 import networkx as nx
 
@@ -138,7 +139,7 @@ class JacquardLaceMachine(BraidingMachine):
         connections: list[Connection],
         program: Sequence[ProgramStep],
         axials: Iterable[Axial] = (),
-        threaded: Sequence[int] | None = None,
+        threaded: Optional[Sequence[int]] = None,
     ) -> None:
         super().__init__(gears, connections, axials)
         #: The notches threaded, by contact; every one if None.
@@ -360,9 +361,9 @@ class JacquardLaceMachine(BraidingMachine):
 
 def jacquard_lace_ring(
     n_gears: int = 6,
-    program: Sequence[ProgramStep] | None = None,
+    program: Optional[Sequence[ProgramStep]] = None,
     n_slots: int = 2,
-    threaded: Sequence[int] | None = None,
+    threaded: Optional[Sequence[int]] = None,
 ) -> JacquardLaceMachine:
     """A tubular Jacquard lace machine: 2-slot gears in a ring.
 

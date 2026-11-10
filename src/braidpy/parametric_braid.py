@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -65,8 +65,8 @@ class ParametricBraid:
         n_sample: int,
         n_around: int,
         opacity: float,
-        colors: Sequence[str] | None = None,
-        names: Sequence[str] | None = None,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
     ) -> list[go.Surface]:
         """One tube per strand, swept at the strands' real thickness.
 
@@ -100,8 +100,8 @@ class ParametricBraid:
     def _line_traces(
         self,
         n_sample: int,
-        colors: Sequence[str] | None = None,
-        names: Sequence[str] | None = None,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
         line_width: float = 10,
     ) -> list[go.Scatter3d]:
         """One line per strand, along the centrelines."""
@@ -126,11 +126,11 @@ class ParametricBraid:
         self,
         n_sample: StrictlyPositiveInt = 200,
         title: str = "",
-        tube_diameter: float | None = None,
+        tube_diameter: Optional[float] = None,
         n_around: int = 16,
         opacity: float = 0.55,
-        colors: Sequence[str] | None = None,
-        names: Sequence[str] | None = None,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
         line_width: float = 10,
         z_title: str = "Z (time)",
         flip_z: bool = True,
@@ -193,9 +193,9 @@ class ParametricBraid:
         self,
         n_sample: StrictlyPositiveInt = 200,
         plotter: Plotter = Plotter.PLOTLY,
-        output_html: str | None = None,
+        output_html: Optional[str] = None,
         title: str = "",
-        tube_diameter: float | None = None,
+        tube_diameter: Optional[float] = None,
         n_around: int = 16,
         opacity: float = 0.55,
     ) -> ParametricBraid:
@@ -251,7 +251,7 @@ def closest_approach(
     strands: Sequence,
     n_samples: int = 600,
     span: float = 1.0,
-    against: Sequence[int] | None = None,
+    against: Optional[Sequence[int]] = None,
 ) -> float:
     """The nearest the centres of two different strands come to each other.
 

@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -56,12 +56,12 @@ def _outline_traces(trajectories: StrandTrajectories) -> list[go.Scatter3d]:
 
 def visualize_yarns(
     paths: YarnPaths,
-    output_html: str | None = None,
-    title: str | None = None,
-    tube_diameter: float | None = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
+    tube_diameter: Optional[float] = None,
     n_around: int = 12,
     show_deck: bool = True,
-    colors: Sequence[str] | None = None,
+    colors: Optional[Sequence[str]] = None,
     extra_traces: Sequence[go.BaseTraceType] = (),
 ) -> go.Figure:
     """The yarns in 3D, standing on whatever laid them.

@@ -87,7 +87,10 @@ braidpy = ["py.typed"]
 [tool.ruff.lint]
 # dict(x=1, y=2) is how the drawing code builds Plotly's settings: read as
 # keywords, it stays as it is.
-ignore = ["C408"]
+# Optional[X] marks an optional argument, one whose default is None; X | None
+# is kept for a None that means something, for returns and for attributes
+# (CLAUDE.md). So pyupgrade's UP045 is not wanted.
+ignore = ["C408", "UP045"]
 
 [tool.mypy]
 # Libraries without type information.

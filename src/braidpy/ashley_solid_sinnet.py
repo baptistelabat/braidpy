@@ -41,10 +41,7 @@ import math
 import os
 from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    cast,
-)
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -532,12 +529,12 @@ def _draw_disk_state(
     counts_per_space: list[int],
     title: str,
     show_ids: bool = True,
-    highlight_path: list[int] | None = None,
+    highlight_path: Optional[list[int]] = None,
     r_outer: float = 1.0,
     r_inner: float = 0.5,
     r_strand_circle: float = 0.75,
     arc_pad_frac: float = 0.12,
-    strand_colors: dict[int, tuple[float, float, float, float]] | None = None,
+    strand_colors: Optional[dict[int, tuple[float, float, float, float]]] = None,
 ) -> None:
     """Draw one frame of the disk with colored strands and optional path arrows.
 

@@ -8,6 +8,7 @@ rate, drawn in to a fell and, above it, as tight as its yarns allow."""
 from __future__ import annotations
 
 from collections.abc import Hashable
+from typing import Optional
 
 import numpy as np
 
@@ -38,13 +39,13 @@ def default_take_off(trajectories: StrandTrajectories) -> float:
 
 def lay_yarns(
     trajectories: StrandTrajectories,
-    take_off: float | None = None,
-    fell_radius: float | None = None,
-    yarn_diameter: float | None = None,
-    fell_height: float | None = None,
-    axis: tuple[float, float] | None = None,
+    take_off: Optional[float] = None,
+    fell_radius: Optional[float] = None,
+    yarn_diameter: Optional[float] = None,
+    fell_height: Optional[float] = None,
+    axis: Optional[tuple[float, float]] = None,
     n_converge: int = 16,
-    settle_length: float | None = None,
+    settle_length: Optional[float] = None,
 ) -> YarnPaths:
     """The braid laid from these trajectories, as it stands at their last sample.
 

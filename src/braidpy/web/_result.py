@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 from collections.abc import Collection, Hashable, Sequence
 from contextvars import ContextVar
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import numpy as np
 
@@ -146,11 +146,11 @@ def _result(
     title: str,
     paths,
     diameter: float,
-    colours: Sequence[str] | None = None,
-    names: Sequence[str] | None = None,
-    info: Info | None = None,
+    colours: Optional[Sequence[str]] = None,
+    names: Optional[Sequence[str]] = None,
+    info: Optional[Info] = None,
     notes: Sequence[str] = (),
-    timeline: Timeline | None = None,
+    timeline: Optional[Timeline] = None,
 ) -> Result:
     """Everything the page draws, as plain data."""
     n = paths.formed_count
@@ -206,7 +206,7 @@ def _timeline(
     trajectories,
     keys: Sequence[Hashable],
     kind: str,
-    clock: Clock | None = None,
+    clock: Optional[Clock] = None,
     ring=None,
 ) -> Timeline:
     """What made the braid, seen from above, over time: for the page to

@@ -41,7 +41,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 
@@ -152,9 +152,9 @@ class CarriedBraid:
 def braid_by_carriers(
     machine: BraidingMachine,
     n_steps: int,
-    carriers: dict[int, tuple[str, int]] | None = None,
+    carriers: Optional[dict[int, tuple[str, int]]] = None,
     frame_every: int = 0,
-    progress: Callable[[dict[str, Any]], None] | None = None,
+    progress: Optional[Callable[[dict[str, Any]], None]] = None,
     **options: Any,
 ) -> CarriedBraid:
     """A braid made by a machine's carriers going round; see the module.
@@ -203,10 +203,10 @@ def braid_by_carriers(
 def carriers_job(
     machine: BraidingMachine,
     n_steps: int,
-    carriers: dict[int, tuple[str, int]] | None = None,
+    carriers: Optional[dict[int, tuple[str, int]]] = None,
     gear_diameter: float = GEAR_DIAMETER,
     ring_height: float = RING_HEIGHT,
-    ring_radius: float | None = None,
+    ring_radius: Optional[float] = None,
     take_off: float = TAKE_OFF,
     tension: float = TENSION,
     friction: float = FRICTION,
@@ -313,7 +313,7 @@ def carriers_job(
 def make(
     job: dict[str, Any],
     frame_every: int = 0,
-    progress: Callable[[dict[str, Any]], None] | None = None,
+    progress: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> dict[str, Any]:
     """The braid made from a job (:func:`carriers_job`): ``web/carried.js``'s
     ``make``, step for step.

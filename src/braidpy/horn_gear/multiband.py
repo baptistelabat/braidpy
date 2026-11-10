@@ -46,6 +46,7 @@ from __future__ import annotations
 import itertools
 import math
 from collections.abc import Sequence
+from typing import Optional
 
 from .model import BraidingMachine, Connection, HornGear
 
@@ -174,8 +175,8 @@ class MultibandLine(BraidingMachine):
         slots: Sequence[int],
         split: Sequence[int],
         first: int = 0,
-        last: int | None = None,
-        loading: Sequence[tuple[str, int]] | None = None,
+        last: Optional[int] = None,
+        loading: Optional[Sequence[tuple[str, int]]] = None,
     ):
         self.slots = tuple(slots)
         self.split = tuple(split)
@@ -249,7 +250,7 @@ class MultibandLine(BraidingMachine):
         return None
 
     def carrier_colours(
-        self, carriers: dict[int, tuple[str, int]] | None = None
+        self, carriers: Optional[dict[int, tuple[str, int]]] = None
     ) -> dict[int, str] | None:
         """Every carrier in its band's colour, so the bands can be told
         apart in the braid they make together.

@@ -12,7 +12,7 @@ import math
 import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from dataclasses_json import DataClassJsonMixin, config, dataclass_json
 
@@ -257,7 +257,7 @@ class BraidModel(DataClassJsonMixin):
         print(f"Braid model successfully saved to file: {filepath}")
 
     @classmethod
-    def load_from_file(cls, filepath: str) -> Optional["BraidModel"]:
+    def load_from_file(cls, filepath: str) -> "BraidModel | None":
         """
         Loads a BraidModel configuration from a URL-encoded JSON file using dataclasses-json.
         """

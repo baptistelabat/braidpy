@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .model import BraidingMachine
 from .simulation import (
@@ -141,7 +141,7 @@ class Handle:
     """
 
     def __init__(
-        self, machine: BraidingMachine, loading: Sequence[Position] | None = None
+        self, machine: BraidingMachine, loading: Optional[Sequence[Position]] = None
     ):
         self.machine = machine
         if loading is None:
@@ -245,7 +245,7 @@ def sweep(
     machine: BraidingMachine,
     state: MachineState,
     frames: int,
-    drawn: Drawing | None = None,
+    drawn: Optional[Drawing] = None,
 ) -> tuple[list[Position], list[list[list[float]]], list[list[list[float]]]]:
     """Where every slot and carrier is through one step, from ``state``:
     ``frames`` pictures, the first the step itself.  The same places as the

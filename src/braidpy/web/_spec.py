@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from braidpy.braidword import parse_word
 
@@ -83,7 +83,7 @@ class Count:
     low: int
     high: int
 
-    def read(self, spec: Mapping[str, Any], default: int | None = None) -> int:
+    def read(self, spec: Mapping[str, Any], default: Optional[int] = None) -> int:
         """The number given, checked; ``default`` if not, or this one's own."""
         own = self.default if default is None else default
         return _count(spec, self.key, own, self.low, self.high)
@@ -99,7 +99,7 @@ class Number:
     low: float
     high: float
 
-    def read(self, spec: Mapping[str, Any], default: float | None = None) -> float:
+    def read(self, spec: Mapping[str, Any], default: Optional[float] = None) -> float:
         """The number given, checked; ``default`` if not, or this one's own."""
         own = self.default if default is None else default
         return float(_number(spec, self.key, own, self.low, self.high))

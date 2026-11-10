@@ -35,7 +35,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from functools import lru_cache
-from typing import Any
+from typing import Any, Optional
 
 from braidpy.braid import Braid
 from braidpy.catalogue import Entry
@@ -251,7 +251,7 @@ def catalogue() -> dict[str, Entry[Topology]]:
 
 
 def topology_of(
-    source: str, name: str, topologies: Sequence[Topology] | None = None
+    source: str, name: str, topologies: Optional[Sequence[Topology]] = None
 ) -> Topology | None:
     """The topology a catalogue's braid has: the way back from a method.
 
@@ -273,7 +273,7 @@ def topology_of(
 def related(
     braid: Braid,
     count: int = 5,
-    topologies: Sequence[Topology] | None = None,
+    topologies: Optional[Sequence[Topology]] = None,
 ) -> list[tuple[Topology, float]]:
     """The topologies nearest a braid — one of your own, say — nearest
     first; distance 0 for its own, if the catalogue has it.

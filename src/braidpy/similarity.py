@@ -49,6 +49,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import Optional
 
 from braidpy.braid import Braid
 
@@ -217,7 +218,7 @@ def catalogue_braids() -> dict[str, Braid]:
 
 def similar(
     braid: Braid,
-    candidates: Mapping[str, Braid] | None = None,
+    candidates: Optional[Mapping[str, Braid]] = None,
     count: int = 5,
 ) -> list[Match]:
     """The braids most like this one, nearest first.
