@@ -103,5 +103,8 @@ jobs:
           publish_branch: gh-pages
           publish_dir: site
           destination_dir: ${{ github.ref_name == 'develop' && 'studio' || 'studio-beta' }}
-          keep_files: true
+          # Replaces only that directory, files gone from the build included
+          # (stale ones once kept studio-beta over GitHub Pages' size); the
+          # documentation and the other studio are left as they are.
+          keep_files: false
           commit_message: "Braid Studio from ${{ github.sha }}"
