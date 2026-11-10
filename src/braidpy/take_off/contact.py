@@ -24,21 +24,54 @@ if TYPE_CHECKING:
 
 
 def _level_pairs(n_yarns: int, offset: int) -> tuple[np.ndarray, np.ndarray]:
-    """Yarn index pairs to compare at a level offset, each unordered pair once."""
+    """Which yarns to compare with which, ``offset`` levels apart.
+
+    Args:
+        n_yarns: How many yarns.
+        offset: How many levels apart the two samples compared are: the first
+            yarn's at a level, the second's that many levels up.
+
+    Returns:
+        The two yarns of each pair, as two index arrays of the same length.
+        At no offset each unordered pair comes once, a yarn never with
+        itself; at any other, every ordered pair of different yarns, since
+        which of the two is the higher then matters.
+    """
     a, b = np.meshgrid(np.arange(n_yarns), np.arange(n_yarns), indexing="ij")
     keep = a < b if offset == 0 else a != b
     return a[keep], b[keep]
 
 
 def _offsets(spacing: float, diameter: float, n: int) -> range:
-    """Level offsets at which two samples can still be within a diameter."""
+    """How many levels apart two samples can be and still touch.
+
+    Args:
+        spacing: Height between two levels.
+        diameter: Yarn diameter: samples further apart cannot touch.
+        n: How many levels there are.
+
+    Returns:
+        The offsets, 0 up to fewer than ``diameter / spacing`` and fewer than
+        ``n``; only 0 if the levels have no height between them.
+    """
     if spacing <= 0:
         return range(1)
     return range(min(n, math.ceil(diameter / spacing)))
 
 
 def _closest_approach(formed: np.ndarray, spacing: float) -> float:
-    """Smallest distance between samples of two different yarns."""
+    """The closest two different yarns come, between their samples.
+
+    Args:
+        formed: The yarns, ``(yarns, levels, 3)``, every yarn sampled at the
+            same heights (:meth:`~braidpy.take_off.paths.YarnPaths.formed`).
+        spacing: Height between two levels; offsets are only searched while
+            their height alone is less than the closest found so far.
+
+    Returns:
+        The smallest distance between a sample of one yarn and a sample of
+        another, at any levels; infinity for fewer than two yarns.
+    """
     n_yarns, n, _ = formed.shape
     if n_yarns < 2:
         return math.inf
