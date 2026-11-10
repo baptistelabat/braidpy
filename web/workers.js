@@ -231,10 +231,18 @@ async function premadeFor(spec) {
   return null;
 }
 
+// Kept gzipped (web/build.py), and unpacked here as they come: gzip's
+// own first two bytes say so, in case a server has unpacked one already.
+const GZIP_MAGIC = [0x1f, 0x8b];
+
 async function fetched(file) {
   try {
     const response = await fetch(`made/${file}`);
-    return response.ok ? await response.json() : null;
+    if (!response.ok) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const packed = GZIP_MAGIC.every((byte, k) => bytes[k] === byte);
+    const body = packed ? new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip")) : new Blob([bytes]).stream();
+    return await new Response(body).json();
   } catch {
     return null;
   }
