@@ -18,31 +18,26 @@ from .contact import _level_pairs, _offsets
 from .paths import YarnPaths
 
 
-def _tension_solver(
-    n: int, h: float, hold_top: bool
+def _thomas(
+    lower: np.ndarray, diagonal: np.ndarray, upper: np.ndarray
 ) -> Callable[[np.ndarray], np.ndarray]:
-    """Solves (I + h L) x = b, L the second difference along a yarn of ``n``
-    samples: its last sample fixed, its first fixed too if ``hold_top``,
-    else free.
+    """Solves a tridiagonal system by the Thomas algorithm.
 
-    The matrix is tridiagonal, so the Thomas algorithm solves it in time
-    and memory proportional to ``n``, where inverting it costs ``n²`` memory
-    and ``n³`` time: its forward sweep depends on the matrix only, and is
-    done once.  The same solve as ``makeSettle`` in web/tighten.js.
+    Its forward sweep depends on the matrix only, and is done once: each
+    solve then costs time proportional to the size.  The same as ``thomas``
+    in web/tighten.js.
+
+    Args:
+        lower: The subdiagonal, ``lower[i]`` in row ``i``; ``lower[0]``
+            unused.
+        diagonal: The diagonal.
+        upper: The superdiagonal, ``upper[i]`` in row ``i``; the last unused.
 
     Returns:
-        A function taking ``b``, ``(n, m)``, one column per right-hand side —
-        every yarn's x and y at once — and returning ``x``.
+        A function taking ``b``, ``(n, m)``, one column per right-hand side,
+        and returning ``x``.
     """
-    lower = np.zeros(n)
-    diagonal = np.ones(n)
-    upper = np.zeros(n)
-    lower[1 : n - 1] = -h
-    diagonal[1 : n - 1] = 1 + 2 * h
-    upper[1 : n - 1] = -h
-    if not hold_top and n > 1:
-        diagonal[0] = 1 + h
-        upper[0] = -h
+    n = len(diagonal)
     c = np.zeros(n)
     m = np.empty(n)
     m[0] = diagonal[0]
@@ -65,6 +60,33 @@ def _tension_solver(
     return solve
 
 
+def _tension_solver(
+    n: int, h: float, hold_top: bool
+) -> Callable[[np.ndarray], np.ndarray]:
+    """Solves (I + h L) x = b, L the second difference along a yarn of ``n``
+    samples: its last sample fixed, its first fixed too if ``hold_top``,
+    else free.
+
+    The matrix is tridiagonal, so :func:`_thomas` solves it in time and
+    memory proportional to ``n``, where inverting it costs ``n²`` memory and
+    ``n³`` time.  The same solve as ``makeSettle`` in web/tighten.js.
+
+    Returns:
+        A function taking ``b``, ``(n, m)``, one column per right-hand side —
+        every yarn's x and y at once — and returning ``x``.
+    """
+    lower = np.zeros(n)
+    diagonal = np.ones(n)
+    upper = np.zeros(n)
+    lower[1 : n - 1] = -h
+    diagonal[1 : n - 1] = 1 + 2 * h
+    upper[1 : n - 1] = -h
+    if not hold_top and n > 1:
+        diagonal[0] = 1 + h
+        upper[0] = -h
+    return _thomas(lower, diagonal, upper)
+
+
 #: How far, in diameters, a yarn may move sideways between two levels and
 #: tightening still keep yarns from passing through each other.  It looks for
 #: contact between samples only, and two yarns can cross between two levels
@@ -75,7 +97,9 @@ SAFE_STEP = 1.0
 
 #: How close, in the braid's units, a sample at the fell end of a window must
 #: be to its partner's at the top for the two to be one level met twice.
-TIED = 1e-9
+#: Laid, they are some 1e-15 apart; the page gets positions rounded to 1e-9,
+#: and must see the same.
+TIED = 1e-6
 
 
 @dataclass(frozen=True)
@@ -113,6 +137,29 @@ class Periodic:
             raise ValueError(
                 f"partner must be a permutation of 0..{len(order) - 1}, got {order}"
             )
+
+    @classmethod
+    def closing(cls, formed: np.ndarray) -> Periodic | None:
+        """The wrap a laid braid closes on, if it does.
+
+        A braid laid over a whole number of periods ends where it began:
+        each yarn's last level sits on some yarn's first.
+
+        Args:
+            formed: Yarn samples, shape ``(n_yarns, n_levels, 3)``.
+
+        Returns:
+            The wrap that joins each yarn's last level to the first it sits
+            on, or None if the braid does not close.
+        """
+        last = formed[:, -1, None, :2]
+        first = formed[None, :, 0, :2]
+        gap = np.max(np.abs(last - first), axis=-1)
+        partner = np.argmin(gap, axis=1)
+        closes = np.max(gap[np.arange(len(partner)), partner]) <= TIED
+        if not closes or len(set(partner.tolist())) != len(partner):
+            return None
+        return cls(tuple(partner.tolist()))
 
     def check(self, n_yarns: int) -> None:
         """Raise if the wrap does not cover ``n_yarns`` yarns."""
@@ -170,30 +217,55 @@ def _tied_ends(formed: np.ndarray, periodic: Periodic) -> bool:
     """
     here = formed[:, -1, :2]
     there = formed[list(periodic.partner), 0, :2]
-    return bool(np.allclose(here, there, atol=TIED))
+    return bool(np.max(np.abs(here - there)) <= TIED)
+
+
+#: The fewest samples round a closed loop that tension can settle: with
+#: fewer, a sample's two neighbours are one sample, or itself.
+FEWEST_ROUND = 3
 
 
 def _loop_settler(length: int, weight: float) -> Callable[[np.ndarray], np.ndarray]:
     """Apply ``(I + weight · L)⁻¹`` on a closed loop, where L is its Laplacian.
 
-    Round a loop of evenly spaced samples the matrix is circulant, so it is
-    diagonal in the Fourier basis and the solve is a transform, a divide and a
-    transform back -- exact, in time ``length · log(length)``.  A closed loop
-    is not tridiagonal, so :func:`_tension_solver`'s sweep does not apply.
+    Round a loop the matrix is tridiagonal but for its two corners, which
+    join the last sample to the first.  Sherman and Morrison's formula
+    solves it as the open, tridiagonal system with its first and last
+    diagonal terms changed, by :func:`_thomas`, then corrects that by one
+    column worked out once: exact, in time proportional to the loop.  The
+    same as ``loopSettle`` in web/tighten.js.
+
+    A loop of fewer than :data:`FEWEST_ROUND` samples is left as it is.
 
     Args:
         length: Samples round the loop.
         weight: The ``0.5 · step`` of the backward Euler step.
 
     Returns:
-        A function taking ``(length, 2)`` positions to their settled ones.
+        A function taking ``(length, m)`` positions to their settled ones.
     """
-    modes = np.arange(length // 2 + 1)
-    eigen = 1.0 + 4.0 * weight * np.sin(np.pi * modes / length) ** 2
+    if length < FEWEST_ROUND:
+        return lambda values: values.copy()
+    side = -weight
+    middle = 1.0 + 2.0 * weight
+    # B = A - u vᵀ with u = (gamma, 0, …, 0, side), v = (1, 0, …, 0, side/gamma).
+    gamma = -middle
+    lower = np.full(length, side)
+    upper = np.full(length, side)
+    diagonal = np.full(length, middle)
+    diagonal[0] = middle - gamma
+    diagonal[-1] = middle - side * side / gamma
+    solve = _thomas(lower, diagonal, upper)
+    u = np.zeros((length, 1))
+    u[0] = gamma
+    u[-1] = side
+    z = solve(u)
+    below = 1.0 + z[0, 0] + side * z[-1, 0] / gamma
 
     def settle(values: np.ndarray) -> np.ndarray:
-        spectrum = np.fft.rfft(values, axis=0) / eigen[:, None]
-        return np.fft.irfft(spectrum, n=length, axis=0)
+        x = solve(values)
+        fact = (x[0] + side * x[-1] / gamma) / below
+        return x - fact * z
 
     return settle
 
@@ -308,6 +380,11 @@ def tighten_yarns(
         held = np.zeros(n_yarns * n, dtype=bool)
     held |= np.repeat([k in set(rigid) for k in paths.points], n)
 
+    # Endless and tied, each yarn's levels on past the fell end, as the
+    # samples they are: level n - 1 + k of a yarn is level k of its partner.
+    # The tied level itself, a copy, takes no part in contact; the samples
+    # near the fell end meet those at the top of the next copy instead.
+    beyond: np.ndarray | None = None
     if periodic is None:
         # Backward Euler on the tension: (I + step/2 L) x_new = x, with L the
         # second difference along a yarn — the fell end fixed, the top end
@@ -322,7 +399,20 @@ def tighten_yarns(
         # lengthening the braid by one level in every period.
         tied = _tied_ends(formed, periodic)
         loops = periodic.loops(n_yarns, n, tied)
-        settlers = [_loop_settler(len(loop), 0.5 * step) for loop in loops]
+        if tied:
+            levels = np.arange(n - 1 + len(offsets))
+            beyond = np.where(
+                levels < n - 1,
+                np.arange(n_yarns)[:, None] * n + levels,
+                np.asarray(periodic.partner)[:, None] * n + (levels - (n - 1)),
+            )
+        rounds = {
+            length: (
+                np.stack([loop for loop in loops if len(loop) == length]),
+                _loop_settler(length, 0.5 * step),
+            )
+            for length in sorted({len(loop) for loop in loops})
+        }
         twin = np.arange(n_yarns) * n + (n - 1)
         twin_of = np.asarray(periodic.partner) * n
 
@@ -338,8 +428,12 @@ def tighten_yarns(
             target = settle(lines).reshape(n, n_yarns, 2).transpose(1, 0, 2)
             return target.reshape(-1, 2) - xy
         move = np.zeros_like(xy)
-        for loop, settler in zip(loops, settlers):
-            move[loop] = settler(xy[loop]) - xy[loop]
+        # Loops of one length share a solver, and are settled together, a
+        # column for each one's x and each one's y.
+        for length, (rows, settler) in rounds.items():
+            values = xy[rows].transpose(1, 0, 2).reshape(length, -1)
+            settled = settler(values).reshape(length, -1, 2).transpose(1, 0, 2)
+            move[rows] = settled - xy[rows]
         return move
 
     def clamp(move: np.ndarray) -> np.ndarray:
@@ -360,7 +454,14 @@ def tighten_yarns(
             if len(a) == 0:
                 continue
             need = math.sqrt(max(yarn_diameter**2 - (o * spacing) ** 2, 0.0))
-            p, q = grid[a, : n - o].ravel(), grid[b, o:].ravel()
+            if beyond is None:
+                p, q = grid[a, : n - o].ravel(), grid[b, o:].ravel()
+            else:
+                # Endless: every level but the tied one, against levels up
+                # to past the fell end, in the next copy.
+                p, q = grid[a, : n - 1].ravel(), beyond[b, o : o + n - 1].ravel()
+                apart = p != q
+                p, q = p[apart], q[apart]
             close = np.linalg.norm(xy[p] - xy[q], axis=-1) < need + yarn_diameter
             first.append(p[close])
             second.append(q[close])
@@ -404,9 +505,10 @@ def tighten_yarns(
                     unit = rel[low] / np.maximum(r[low], 1e-300)[:, None]
                     push[low] += unit * (inner - r[low])[:, None]
             if worst <= slack:
-                return
+                break
             push[held] = 0.0
             xy[:] += clamp(push)
+        tie()
 
     def closest(p: np.ndarray, q: np.ndarray, rise: np.ndarray) -> float:
         if not len(p):
@@ -446,7 +548,6 @@ def tighten_yarns(
         xy[inner] += clamp(move[inner])
         tie()
         separate(p, q, need)
-        tie()
         # The push itself can carry a sample out of the list's reach, so the
         # check comes after it, and a rebuilt list is pushed against again.
         while np.max(np.linalg.norm(xy - built, axis=-1)) > yarn_diameter / 4:

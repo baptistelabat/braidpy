@@ -139,7 +139,9 @@ class Tightening(TypedDict):
     """What tightening the yarns needs, for a page that does it itself, as
     :func:`braidpy.take_off.tighten_yarns` would: the samples' ``xy``, yarn
     after yarn, and its settings; ``chosen``, which samples the strands'
-    points are, and ``centre``, what was taken off them."""
+    points are, and ``centre``, what was taken off them; ``partner``, the
+    yarn each runs into past the fell end, for tightening it endless
+    (:class:`braidpy.take_off.Periodic`), None if the braid does not close."""
 
     n_yarns: int
     n: int
@@ -153,6 +155,7 @@ class Tightening(TypedDict):
     centre: list[float]
     xy: list[float]
     rigid: list[bool]
+    partner: list[int] | None
     chosen: list[int]
 
 

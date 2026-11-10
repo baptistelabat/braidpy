@@ -100,7 +100,11 @@ The page has a form and a 3D view.
   bobbins ({func}`~braidpy.making.lace.card_program`), worked out from the
   card alone. A machine's braid is tightened
   **sideways**, fast, keeping the pitch it was laid with. Under "Yarn and tightening", **Settle the
-  yarns** can choose otherwise: sideways for a disk braid too, or, for any
+  yarns** can choose otherwise: sideways for a disk braid too; **sideways,
+  endless**, the braid tightened as a length cut from a longer one, its fell
+  end running on into its top rather than both ends held (see *Periodicity,
+  instead of holding both ends* in [Solving a braid's shape
+  numerically](solving_numerically.md)); or, for any
   braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
   chain of beads, clamped at the fell and fed from a bobbin, the braid
   beaten up until its crossings jam — or made crossing by crossing, with
@@ -200,7 +204,8 @@ The page has a form and a 3D view.
 - **Twist** applies to each way of settling the yarns as it can: on a
   marudai, kept, held while the bobbins turn together, or untwisted;
   settled by physics, the end plate the braid is drawn off by held still
-  (kept) or free to turn (untwisted); tightened sideways it is not offered,
+  (kept) or free to turn (untwisted); tightened sideways, endless or not, it
+  is not offered,
   the yarns keeping the twist they were laid with.
 - A sinnet's disk, to click your own moves on, is numbered as its top view
   is: anticlockwise from the top, the first space and the last meeting

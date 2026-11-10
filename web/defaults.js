@@ -62,10 +62,10 @@ export const CHOICES = {
 // lace machine, whose bobbins move round a ring of notches as on a disk.  Those it
 // cannot have are not offered.
 const SETTLES = {
-  machine: ["sideways", "physics", "crossing", "carriers"],
+  machine: ["sideways", "endless", "physics", "crossing", "carriers"],
   // A lace machine is a ring of notches: its card runs on a marudai as
   // well, each gear's turn its two notches swapping bobbins.
-  lace: ["marudai", "sideways", "physics", "crossing", "carriers"],
+  lace: ["marudai", "sideways", "endless", "physics", "crossing", "carriers"],
 };
 
 function fitSettle() {
@@ -88,7 +88,7 @@ function fitTwist() {
   const settle = $("settle").value;
   const twist = $("twist");
   // Made by its carriers, the braid takes the twist they give it.
-  twist.closest("label").hidden = settle === "sideways" || settle === "carriers";
+  twist.closest("label").hidden = settle === "sideways" || settle === "endless" || settle === "carriers";
   const turns = twist.querySelector("option[value=turns]");
   turns.hidden = turns.disabled = settle !== "marudai";
   if (settle !== "marudai" && twist.dataset.default === "turns") {

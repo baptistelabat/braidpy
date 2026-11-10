@@ -64,10 +64,11 @@ async function settle({ id, result, job, settle, twist }) {
     if (settle === "marudai") result = await onMarudai(id, result, { ...job, twist });
     else if (settle === "carriers") result = byCarriers(id, result, job);
     else if (settle === "crossing") result = formed(id, result, { ...job, twist });
-    else if (settle !== "sideways") result = settled(id, result, { ...job, twist });
+    else if (settle !== "sideways" && settle !== "endless") result = settled(id, result, { ...job, twist });
     else {
       status("Tightening the yarns…");
-      const tight = tightenYarns(job, (fraction) =>
+      // Endless: as a window on a longer braid, its ends not held.
+      const tight = tightenYarns({ ...job, periodic: settle === "endless" }, (fraction) =>
         status(`Tightening the yarns… ${Math.round(100 * fraction)}%`),
       );
       result = tightened(result, job, tight);
@@ -83,7 +84,7 @@ async function settle({ id, result, job, settle, twist }) {
     // The braid's own choices, for the page to mark as its defaults.
     settle: job ? (result.disk ? "marudai" : "sideways") : undefined,
     twist:
-      !job || settle === "sideways"
+      !job || settle === "sideways" || settle === "endless"
         ? undefined
         : settle !== "marudai"
           ? "free"

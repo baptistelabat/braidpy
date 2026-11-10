@@ -10,7 +10,10 @@ What changed in each release of braidpy.
   held at both ends (`take_off.Periodic`, `tighten_yarns(periodic=...)`):
   the yarn leaving the fell end of the window runs on into the top of it,
   so the braid is not pinched where it was held. The window must be a
-  whole number of periods. Without it, tightening is as before.
+  whole number of periods; `take_off.Periodic.closing` finds the wrap a laid braid
+  closes on. Without it, tightening is as before. In Braid Studio,
+  **Sideways, endless** under *Settle the yarns* (`web/tighten.js`, tested
+  against braidpy step for step).
 - Whether a braid is Brunnian: pure, and trivial once any one of its
   strands is taken out, as the Borromean rings' braid (`Braid.is_brunnian`,
   with `Braid.without_strand`; it raised NotImplementedError). Braid

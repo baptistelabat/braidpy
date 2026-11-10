@@ -146,3 +146,43 @@ def _laid_paths(spec):
     with mock.patch.object(take_off, "tighten_yarns", capture):
         build({**spec, "iterations": 20})
     return captured["paths"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
+@pytest.mark.parametrize(
+    "spec",
+    [
+        # The strands permuted over the window: one loop through them all.
+        {"source": "word", "word": "1 2", "n_strands": 3, "repeat": 4},
+        {"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2},
+        {"source": "machine", "name": "tubular_8", "cycles": 1},
+    ],
+)
+@pytest.mark.slow
+def test_the_page_tightens_endless_as_braidpy_does(spec):
+    """Endless, the fell end joined to the top, web/tighten.js is
+    tighten_yarns with a Periodic, step for step at first, and as tight
+    and as clear after many steps."""
+    import numpy as np
+
+    from braidpy.take_off import Periodic, tighten_yarns
+
+    handed = build({**spec, "iterations": 20}, tighten=False)
+    job = {**handed["tighten"], "periodic": True}
+    laid = _laid_paths(spec)
+    wrap = Periodic.closing(laid.formed())
+    assert wrap is not None and list(wrap.partner) == job["partner"]
+    exact = laid.formed()[:, :, :2].reshape(-1).tolist()
+    for iterations, close in [(20, 1e-8), (300, None)]:
+        mine = _node_tighten({**job, "xy": exact, "iterations": iterations})
+        theirs, history = tighten_yarns(
+            laid, job["yarn_diameter"], iterations=iterations, periodic=wrap
+        )
+        xy_py = theirs.formed()[:, :, :2].reshape(-1)
+        xy_js = np.array(mine["xy"])
+        if close is not None:
+            assert np.max(np.abs(xy_js - xy_py)) < close
+        else:
+            d = job["yarn_diameter"]
+            assert mine["closest"] >= d * (1 - 3e-3)
+            assert abs(mine["closest"] - history["closest"][-1]) < 0.01 * d

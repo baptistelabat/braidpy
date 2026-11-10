@@ -159,22 +159,29 @@ middle than at the pins, which is the boundary, not the braid.
 window arrives at the top of it. The window must be a whole number of periods,
 and its partner mapping says which yarn each one runs into: the period's
 permutation of the strands, or the identity where the window is a whole
-number of full cycles. A window over which the pattern also turns about the axis is not
-handled; choose a whole number of turns, where there is nothing to undo.
+number of full cycles. `take_off.Periodic.closing` reads it from the laid braid: laid
+over a whole number of periods, each yarn's last sample sits on some yarn's
+first, as every braid Braid Studio lays does. A window that does not close on
+itself, as one over which the pattern turns part way about the axis, has
+none.
 
-Two things make it cheap. Following a yarn into its partner comes back where
-it started after one cycle of the permutation, so the samples fall into one
-closed loop per cycle, and each loop is settled on its own. Round a loop of
-evenly spaced samples the backward-Euler matrix is **circulant**, so it is
-diagonal in the Fourier basis: the solve is a transform, a divide and a
-transform back, exact, in time proportional to the loop's length times its
-logarithm. (A closed loop is not tridiagonal, so the sweep that settles a held
-yarn does not apply.)
+Following a yarn into its partner comes back where it started after one cycle
+of the permutation, so the samples fall into one closed loop per cycle, and
+each loop is settled on its own. Round a loop the backward-Euler matrix is
+tridiagonal but for two corners, joining the last sample to the first;
+Sherman and Morrison's formula solves it as the open system with its first and
+last diagonal terms changed, swept as a held yarn is, then corrected by one
+column worked out once. It is exact, and as fast as the held yarn's solve.
 
 One subtlety. `take_off.lay_yarns` gives one sample more than the window has intervals,
 so over a whole period the last level is the first over again. It is not an
 unknown of its own, and counting it as one would lengthen the braid by a level
 in every period, so it is tied to the level it repeats rather than left free.
+Being a copy, it takes no part in contact either: the samples just above the
+fell end are kept clear of those at the top of the next copy instead, as they
+would be in the endless braid. Without that, nothing kept them apart across
+the wrap, and a tubular braid came out with its yarns overlapping there by a
+twentieth of a diameter.
 
 What it does not yet do: let samples move along the axis, which a full length
 minimisation would; bending stiffness; a window that turns about the axis; and

@@ -306,7 +306,8 @@ export function show(result, seconds, keepView = false) {
   const seam = seamOf(timeline);
   braid.topTurn = seam === null ? 0 : Math.PI / 2 - seam;
   braid.program = result.disk;
-  braid.aligned = seam !== null && Boolean(result.disk) && result.settled !== "sideways";
+  const sideways = result.settled === "sideways" || result.settled === "endless";
+  braid.aligned = seam !== null && Boolean(result.disk) && !sideways;
   if (braid.aligned) turner.rotation.z = alignment();
   braid.box = new THREE.Box3().setFromObject(turner);
   showTubes($("tubes").checked);
