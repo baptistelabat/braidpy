@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=86cbc19805";
-import { attachEditor } from "./editor.js?v=86cbc19805";
-import { attachMachine } from "./machine.js?v=86cbc19805";
-import { $ } from "./page.js?v=86cbc19805";
-import { submit } from "./workers.js?v=86cbc19805";
+import { attachDiagram } from "./diagram.js?v=d191167df5";
+import { attachEditor } from "./editor.js?v=d191167df5";
+import { attachMachine } from "./machine.js?v=d191167df5";
+import { $ } from "./page.js?v=d191167df5";
+import { submit } from "./workers.js?v=d191167df5";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
