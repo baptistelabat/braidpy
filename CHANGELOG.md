@@ -59,6 +59,16 @@ What changed in each release of braidpy.
   summit set. It proves edo yatsu and ABOK #3070 different, and the flat
   braid of 6 and ABOK #3021.
 
+### Changed
+
+- `braidpy.take_off` is a package rather than one module of 1734 lines:
+  the trajectories laid and the yarns (`paths`), laying (`laying`),
+  contact between yarns (`contact`), tightening (`tighten`), drawing
+  (`drawing`), where each source's strands go (`sources`) and a disk's
+  braid laid round a ring (`ring`). Every name is imported from
+  `braidpy.take_off` as before, and every braid Braid Studio makes with the
+  site comes out the same.
+
 ### Fixed
 
 - Tightening warns when a braid is laid too coarsely for it: it looks for
