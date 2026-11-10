@@ -26,7 +26,7 @@ disk and animate it; :func:`animate_disk` does the drawing for any disk.
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -190,7 +190,7 @@ class BraidGrowth:
         self,
         time: float,
         colour: Mapping[Hashable, str],
-        carriers: Mapping[Hashable, Sequence[float]] | None = None,
+        carriers: Optional[Mapping[Hashable, Sequence[float]]] = None,
     ) -> list[go.Scatter3d]:
         """Each yarn's visible length, ``time`` disk steps in.
 
@@ -263,14 +263,14 @@ class BraidGrowth:
 
 def animate_disk(
     trajectories: StrandTrajectories,
-    step_labels: Sequence[str] | None = None,
+    step_labels: Optional[Sequence[str]] = None,
     title: str = "Braiding disk",
-    output_html: str | None = None,
-    colors: Sequence[str] | None = None,
+    output_html: Optional[str] = None,
+    colors: Optional[Sequence[str]] = None,
     show_ids: bool = True,
     frame_duration_ms: int = 50,
     max_frames: int = 900,
-    braid: BraidGrowth | None = None,
+    braid: Optional[BraidGrowth] = None,
 ) -> go.Figure:
     """Animate strands moving round a disk, seen from above.
 
@@ -531,7 +531,7 @@ def animate_disk(
     return fig
 
 
-def kumihimo_step_labels(kumihimo, n_strands: int | None = None) -> list[str]:
+def kumihimo_step_labels(kumihimo, n_strands: Optional[int] = None) -> list[str]:
     """What each disk step of a kumihimo sequence is, for the slider.
 
     A swap takes three steps on the disk (see
@@ -553,9 +553,9 @@ def kumihimo_step_labels(kumihimo, n_strands: int | None = None) -> list[str]:
 
 def animate_kumihimo(
     kumihimo,
-    n_strands: int | None = None,
-    output_html: str | None = None,
-    title: str | None = None,
+    n_strands: Optional[int] = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
     samples_per_step: int = 12,
     side_view: bool = False,
     yarn_diameter: float = 0.12,
@@ -604,9 +604,9 @@ def animate_kumihimo(
 def animate_mobidai(
     mobidai,
     n_cycles: int = 1,
-    drift: int | None = None,
-    output_html: str | None = None,
-    title: str | None = None,
+    drift: Optional[int] = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
     samples_per_step: int = 12,
     slot_offset: float = 0.0,
     side_view: bool = False,
@@ -672,8 +672,8 @@ def animate_mobidai(
 def animate_sinnet(
     sinnet,
     n_cycles: int = 1,
-    output_html: str | None = None,
-    title: str | None = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
     samples_per_step: int = 12,
     side_view: bool = False,
     yarn_diameter: float = 0.12,

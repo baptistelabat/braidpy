@@ -9,7 +9,7 @@ from __future__ import annotations
 import importlib
 from collections.abc import Sequence
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     # typing.Self is 3.11's; braidpy does not depend on typing_extensions,
@@ -72,7 +72,7 @@ def colorize_by_index(text: str, index: int) -> str:
     return f"{color}{text}{RESET}"
 
 
-def colorize(item: str | int, index: int | None = None) -> str:
+def colorize(item: str | int, index: Optional[int] = None) -> str:
     """Colorize item based on index (or its value if it's an int).
 
     Args:

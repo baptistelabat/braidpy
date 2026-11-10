@@ -11,6 +11,7 @@ import math
 import warnings
 from collections.abc import Callable, Collection, Hashable
 from dataclasses import dataclass, replace
+from typing import Optional
 
 import numpy as np
 
@@ -302,11 +303,11 @@ def tighten_yarns(
     yarn_diameter: float,
     iterations: int = 400,
     step: float = 20.0,
-    core_radius: float | None = None,
+    core_radius: Optional[float] = None,
     tolerance: float = 1e-3,
     hold_top: bool = True,
     rigid: Collection[Hashable] = (),
-    periodic: Periodic | None = None,
+    periodic: Optional[Periodic] = None,
 ) -> tuple[YarnPaths, dict[str, list[float]]]:
     """Pull the yarns taut above the fell, without letting them overlap.
 

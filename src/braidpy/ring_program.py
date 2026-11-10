@@ -48,6 +48,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
+from typing import Optional
 
 from braidpy.braid import Braid
 
@@ -186,7 +187,7 @@ def _packed(n_places: int, swaps: Sequence[Swap]) -> tuple[tuple[Swap, ...], ...
 
 
 def from_braid(
-    braid: Braid, n_places: int | None = None, offset: int = 0
+    braid: Braid, n_places: Optional[int] = None, offset: int = 0
 ) -> RingProgram:
     """A braid as a ring program: its strands side by side from place
     ``offset``, each crossing ``σᵢ^±1`` the strands at places

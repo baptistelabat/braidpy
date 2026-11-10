@@ -8,6 +8,7 @@ and laid round a ring as a braid holds its strands."""
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, Sequence
+from typing import Optional
 
 import numpy as np
 
@@ -253,7 +254,7 @@ def ring_trajectories(
     samples_per_row: int = 12,
     clockwise: bool = True,
     label: str = "Strand ",
-    rows: Sequence[int] | None = None,
+    rows: Optional[Sequence[int]] = None,
 ) -> StrandTrajectories:
     """Strands standing evenly round a ring, swapping neighbours as they cross.
 
@@ -414,7 +415,7 @@ def mobidai_braid(
 
 
 def kumihimo_braid(
-    kumihimo, yarn_diameter: float, n_strands: int | None = None, **kwargs
+    kumihimo, yarn_diameter: float, n_strands: Optional[int] = None, **kwargs
 ) -> YarnPaths:
     """The braid a kumihimo sequence makes — see :func:`disk_braid`.
 

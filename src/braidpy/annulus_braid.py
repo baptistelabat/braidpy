@@ -55,6 +55,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Optional
 
 
 def crossing(index: int) -> int:
@@ -472,7 +473,7 @@ def helix_clearance(
 def lay_radius(
     n_strands: int,
     diameter: float = 0.4,
-    lay: float | None = None,
+    lay: Optional[float] = None,
     tolerance: float = 1e-9,
 ) -> float:
     """The radius a rope of a given lay settles at, found by squeezing it.
@@ -558,7 +559,7 @@ def rope_helices(
     diameter: float = 0.4,
     length: int = 1,
     turns: float = 1.0,
-    radius: float | None = None,
+    radius: Optional[float] = None,
 ) -> list[Helix]:
     """The shape a laid rope takes: helices, touching, evenly spaced.
 
@@ -652,7 +653,7 @@ def tubular_braid(
     radius: float = 1.0,
     braid_angle: float = math.pi / 4.0,
     diameter: float = 0.4,
-    bulge: float | None = None,
+    bulge: Optional[float] = None,
 ) -> list[TubularBraidStrand]:
     """A braided tube: half the strands each way, interlacing.
 
@@ -767,7 +768,7 @@ def tubular_braid_radius(
     n_strands: int,
     diameter: float = 0.4,
     braid_angle: float = math.pi / 4.0,
-    bulge: float | None = None,
+    bulge: Optional[float] = None,
 ) -> float:
     """The narrowest tube on which these strands braid without crowding.
 

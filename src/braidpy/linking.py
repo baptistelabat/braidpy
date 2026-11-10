@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
+from typing import Optional
 
 import numpy as np
 
@@ -155,7 +156,7 @@ def _rotate(point: np.ndarray, angle: float) -> np.ndarray:
 def close_yarns(
     yarns: Sequence[np.ndarray],
     turn: float = 0.0,
-    pairing: Sequence[int] | None = None,
+    pairing: Optional[Sequence[int]] = None,
     bottom_turn: float = 0.0,
     reach: float = 40.0,
 ) -> list[np.ndarray]:
@@ -257,7 +258,7 @@ def close_yarns(
 def yarn_linking(
     yarns: Sequence[np.ndarray],
     turn: float = 0.0,
-    pairing: Sequence[int] | None = None,
+    pairing: Optional[Sequence[int]] = None,
     bottom_turn: float = 0.0,
 ) -> dict[str, object]:
     """The linking numbers of yarns' closure, from their geometry.

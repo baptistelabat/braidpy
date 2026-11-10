@@ -27,7 +27,7 @@ front, with the strand passing behind interrupted where the two meet.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -158,10 +158,10 @@ def draw_diagram(
     gap: float = 0.45,
     amplitude: float = 0.28,
     profile: Profile = SMOOTHSTEP,
-    color: str | None = None,
-    title: str | None = None,
-    save: str | None = None,
-    ax: plt.Axes | None = None,
+    color: Optional[str] = None,
+    title: Optional[str] = None,
+    save: Optional[str] = None,
+    ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """Draw a braid as a diagram, running down the page.
 

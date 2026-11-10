@@ -40,6 +40,7 @@ import itertools
 import time
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
+from typing import Optional
 
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.braid import Braid
@@ -94,7 +95,7 @@ def ashley_sinnet(
     braid: Braid,
     max_spaces: int = 6,
     time_limit: float = 20.0,
-    spaces: Sequence[int] | None = None,
+    spaces: Optional[Sequence[int]] = None,
 ) -> AshleySearch:
     """A sinnet on Ashley's stand that makes a braid; see the module.
 

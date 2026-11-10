@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Optional
 
 from .model import BraidingMachine
 from .tracks import Position, _next_position
@@ -101,7 +102,7 @@ class MachineState:
 
 def initial_state(
     machine: BraidingMachine,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
 ) -> MachineState:
     """Create an initial MachineState.
 
@@ -212,7 +213,7 @@ def carrier_places(
 
 def state_period(
     machine: BraidingMachine,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
     max_steps: int = 10_000,
 ) -> int | None:
     """Steps after which the machine is exactly as it started, or None.
@@ -259,7 +260,7 @@ def state_period(
 def simulate(
     machine: BraidingMachine,
     n_steps: int,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
 ) -> list[MachineState]:
     """Run the simulation for ``n_steps`` steps.
 

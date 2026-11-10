@@ -49,6 +49,11 @@ mistake before:
   kin (`REACH`, `THICK`, `CLEAR` in `marudai`), and is written as that
   name, or derived from it, wherever it is used: `CLEAR * THICK`, never
   `2.2`.
+- **`Optional[X]` for an optional argument, `X | None` for the rest.** A
+  parameter whose default is `None`, meaning "not given", is `Optional[X]`.
+  A parameter that takes `None` as a value of its own (with no default, or
+  another default, as `limit: int | None = 10000`, None for no limit), a
+  return, an attribute and an element type are `X | None`.
 - **Refactoring keeps results.** Check outputs are the same before and after
   (for `braidpy.web`, the same JSON for every build); say so in the PR, and
   say what changes when something does.

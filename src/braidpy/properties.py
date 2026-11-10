@@ -5,7 +5,7 @@
 """Properties and invariants of braids."""
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .braid import Braid, reduced_burau_generator
 
@@ -212,7 +212,7 @@ def burau_polynomial_on_circle(
 
 
 def conjugacy_class(
-    braid: Braid, conjugators: list[Braid] | None = None
+    braid: Braid, conjugators: Optional[list[Braid]] = None
 ) -> list[Braid]:
     """Generate conjugates of a braid by a list of other braids.
 

@@ -52,7 +52,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 from braidpy.rope import (
     fire_mix,
@@ -153,7 +153,7 @@ def form(
     row: float,
     friction: float = 0.3,
     feed: float = 1.0,
-    weight: float | None = None,
+    weight: Optional[float] = None,
     stretch: float = 100.0,
     bend: float = 0.5,
     contact: float = 100.0,
@@ -164,7 +164,7 @@ def form(
     window: float = 2.0,
     steps_per_row: int = 4000,
     tolerance: float = 2e-3,
-    progress: Callable[[dict[str, Any]], None] | None = None,
+    progress: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> dict[str, Any]:
     """A braid made crossing by crossing: ``form.js``'s ``form``.
 

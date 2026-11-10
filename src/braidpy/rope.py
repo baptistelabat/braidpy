@@ -54,7 +54,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, Optional
 
 __all__ = ["relay", "settle"]
 
@@ -79,7 +79,7 @@ def near_pairs(
     gap: int,
     reach: float,
     cells: list[int],
-    accept: Callable[[int, int], bool] | None = None,
+    accept: Optional[Callable[[int, int], bool]] = None,
 ) -> list[int]:
     """Pairs of segments near enough to touch before the beads move a
     quarter diameter, found on a grid of cells ``reach`` wide: of ``segs``,
@@ -362,10 +362,10 @@ def relay(yarn: Sequence[float], spacing: float) -> list[float]:
 
 def settle(
     yarns: Sequence[Sequence[float]],
-    spacing: float | None = None,
+    spacing: Optional[float] = None,
     force: float = 1.0,
     turns: bool = False,
-    feed: float | None = None,
+    feed: Optional[float] = None,
     stretch: float = 400.0,
     bend: float = 0.5,
     contact: float = 400.0,
@@ -374,7 +374,7 @@ def settle(
     steps: int = 20000,
     tolerance: float = 1e-3,
     dt_max: float = 0.05,
-    progress: Callable[[dict[str, Any]], None] | None = None,
+    progress: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> dict[str, Any]:
     """Yarns settled at rest: ``rope.js``'s ``settle``.
 

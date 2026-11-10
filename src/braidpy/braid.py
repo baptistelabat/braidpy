@@ -8,7 +8,7 @@ many strands, and what can be done with it.
 
 import enum
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -222,8 +222,8 @@ class Braid:
 
     def format(
         self,
-        generator_symbols: list[str] | None = None,
-        inverse_generator_symbols: list[str] | None = None,
+        generator_symbols: Optional[list[str]] = None,
+        inverse_generator_symbols: Optional[list[str]] = None,
         zero_symbol: str = "e",
         separator: str = "",
     ) -> str:
@@ -957,9 +957,9 @@ class Braid:
         gap: float = 0.45,
         amplitude: float = 0.28,
         profile=None,
-        color: str | None = None,
-        title: str | None = None,
-        save: str | None = None,
+        color: Optional[str] = None,
+        title: Optional[str] = None,
+        save: Optional[str] = None,
         ax=None,
     ) -> "Braid":
         """Draw the braid as a 2D diagram, running down the page.

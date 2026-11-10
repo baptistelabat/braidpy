@@ -43,6 +43,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 
@@ -123,8 +124,8 @@ def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, fl
 
 def flat_word(
     machine: BraidingMachine,
-    carriers: dict[CarrierId, Position] | None = None,
-    n_steps: int | None = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+    n_steps: Optional[int] = None,
     n_substeps: int = 64,
     scale: float = 1.0,
 ) -> list[int]:
@@ -210,9 +211,9 @@ class AnnularWord:
 
 def annular_word(
     machine: BraidingMachine,
-    around: tuple[float, float] | None = None,
-    carriers: dict[CarrierId, Position] | None = None,
-    n_steps: int | None = None,
+    around: Optional[tuple[float, float]] = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+    n_steps: Optional[int] = None,
     n_substeps: int = 64,
     scale: float = 1.0,
 ) -> AnnularWord:
