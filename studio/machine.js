@@ -6,9 +6,9 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour, trueColour } from "./colours.js?v=6bd1e3c56b";
-import { inTime } from "./page.js?v=6bd1e3c56b";
-import { worker } from "./workers.js?v=6bd1e3c56b";
+import { PALETTE, strandColour, trueColour } from "./colours.js?v=86cbc19805";
+import { inTime } from "./page.js?v=86cbc19805";
+import { worker } from "./workers.js?v=86cbc19805";
 
 // A machine seen from above, to load by hand: its gears, the contacts
 // between them, and every slot, a carrier on it or not.  Clicking a slot
@@ -104,7 +104,7 @@ export function attachMachine(holder) {
       : names.value;
   const shape = () => machineShapes.get(machineName());
   const slotAt = (gear, slot) => {
-    const angle = gear.offset + (2 * Math.PI * slot) / gear.slots;
+    const angle = gear.angles[slot];
     return [gear.x + gear.ride * Math.cos(angle), gear.y + gear.ride * Math.sin(angle)];
   };
 

@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=6bd1e3c56b";
-import { showMaking, showKin } from "./info.js?v=6bd1e3c56b";
+import { onChosen, rebase } from "./colours.js?v=86cbc19805";
+import { showMaking, showKin } from "./info.js?v=86cbc19805";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=6bd1e3c56b";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=6bd1e3c56b";
-import { unpack } from "./frames.js?v=6bd1e3c56b";
-import { machineShapes, machineWanted } from "./machine.js?v=6bd1e3c56b";
-import { $ } from "./page.js?v=6bd1e3c56b";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=6bd1e3c56b";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=6bd1e3c56b";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=86cbc19805";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=86cbc19805";
+import { unpack } from "./frames.js?v=86cbc19805";
+import { machineShapes, machineWanted } from "./machine.js?v=86cbc19805";
+import { $ } from "./page.js?v=86cbc19805";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=86cbc19805";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=86cbc19805";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -37,7 +37,7 @@ let b3dAsked = null;
 let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=6bd1e3c56b");
+  settler = new Worker("settle.js?v=86cbc19805");
   settling = null;
   b3dAsked?.reject(new Error("another braid was asked for"));
   b3dAsked = null;
