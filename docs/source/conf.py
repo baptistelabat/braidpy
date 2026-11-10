@@ -33,6 +33,8 @@ extensions = [
 # $...$ for inline maths, and the aligned environments the geometry
 # pages use.  Without these, the formulas render as literal dollars.
 myst_enable_extensions = ["dollarmath", "amsmath"]
+# Sections get anchors down to ##, for links such as marudai.md#round-a-core.
+myst_heading_anchors = 2
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
