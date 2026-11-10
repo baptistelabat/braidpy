@@ -2,13 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: braid_diagram.py
-Description: The 2D braid diagram, drawn by braidpy rather than by a library
-Authors: Baptiste Labat
-Created: 2025-06-06
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""The 2D braid diagram, drawn by braidpy rather than by a library.
 
 braidpy used to hand this picture to `braid-visualiser`, which drew a
 perfectly good diagram in **its own colours** — so a strand was one colour in

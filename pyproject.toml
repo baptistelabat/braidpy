@@ -38,6 +38,13 @@ dependencies = [
     "networkx>=3.4.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/baptistelabat/braidpy"
+Documentation = "https://baptistelabat.github.io/braidpy"
+"Braid Studio" = "https://baptistelabat.github.io/braidpy/studio/"
+Changelog = "https://github.com/baptistelabat/braidpy/blob/develop/CHANGELOG.md"
+Issues = "https://github.com/baptistelabat/braidpy/issues"
+
 [project.optional-dependencies]
 # Drawing braids: diagrams, 3D plots, animations (braid.plot,
 # ParametricBraid.plot, the machines' and disks' animations).

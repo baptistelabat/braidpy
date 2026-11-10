@@ -166,6 +166,9 @@ class Machine:
 
     # ------------------------------------------------------------ helpers
     def hold(self, held: bool) -> None:
+        """While the bobbins turn round the braid together: held, the yarns
+        carried round with them rather than over each other, and not
+        balanced; then as before again (``hold`` in ``web/marudai.js``)."""
         self.turning = False if held else self._balancing
         self.twisted = held
 
@@ -816,6 +819,7 @@ class Machine:
             self.lay(t, a)
 
     def positions(self, t: int) -> list[list[float]]:
+        """Thread ``t``'s beads as they stand, oldest first, each ``[x, y, z]``."""
         return [[self.X[b], self.Y[b], self.Z[b]] for b in self.threads[t].beads]
 
 

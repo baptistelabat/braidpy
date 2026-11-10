@@ -2,14 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: utils.py
-Description: Utility functions, not directly related to braids
-Authors: Baptiste Labat
-Created: 2025-05-24
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
-"""
+"""Utilities braidpy shares, not about braids themselves."""
 
 from __future__ import annotations
 
@@ -155,6 +148,8 @@ if TYPE_CHECKING:
 else:
 
     class PositiveFloat(float):
+        """A float that is zero or more: anything else raises ValueError."""
+
         def __new__(cls, value: Any) -> Self:
             val = float(value)
             if val < 0:
@@ -162,6 +157,8 @@ else:
             return super().__new__(cls, val)
 
     class StrictlyPositiveFloat(float):
+        """A float that is more than zero: anything else raises ValueError."""
+
         def __new__(cls, value: Any) -> Self:
             val = float(value)
             if val <= 0:
@@ -169,6 +166,8 @@ else:
             return super().__new__(cls, val)
 
     class PositiveInt(int):
+        """An int that is zero or more: anything else raises ValueError."""
+
         def __new__(cls, value: Any) -> Self:
             val = int(value)
             if val < 0:
@@ -176,6 +175,8 @@ else:
             return super().__new__(cls, val)
 
     class StrictlyPositiveInt(int):
+        """An int that is more than zero: anything else raises ValueError."""
+
         def __new__(cls, value: Any) -> Self:
             val = int(value)
             if val <= 0:
@@ -232,7 +233,8 @@ def lazy_module(name: str) -> Any:
 
 
 class FunctionalException(Exception):
-    pass
+    """A braid computation that ran but did not give what it must: a bug in
+    braidpy rather than in what it was asked."""
 
 
 def play_controls(
