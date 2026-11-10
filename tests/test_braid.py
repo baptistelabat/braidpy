@@ -459,9 +459,32 @@ class TestBraid:
         assert Braid([1, 4, 4, 1], 7) == Braid([4, -5, 1, 1, 5, 4], 7)
         assert Braid([1, 4, 4, 1], 7) != Braid([4, -5, 1, 1, 6, 4], 7)
 
-    def test_brunnian_not_implemented(self):
-        with pytest.raises(NotImplementedError):
-            Braid([]).is_brunnian()
+    def test_a_strand_taken_out_takes_its_crossings_with_it(self):
+        """The others keep theirs, each between the same two strands and the
+        same way over, renumbered for the slot no longer taken."""
+        braid = Braid([1, -2, 3, 2], 4)
+        assert braid.without_strand(2) == Braid([-1, 2, 1], 3)
+        assert braid.without_strand(4).generators == [1, -2]
+        assert braid.without_strand(1).n_strands == 3
+        with pytest.raises(ValueError):
+            braid.without_strand(5)
+        with pytest.raises(ValueError):
+            Braid([], 1).without_strand(1)
+
+    def test_brunnian_braids_come_apart_with_any_one_strand_out(self):
+        """The Borromean rings' braid, and a commutator of two pure
+        crossings: trivial with any strand out, though not before."""
+        borromean = Braid([1, -2] * 3, 3)
+        commutator = Braid([1, 1, 2, 2, -1, -1, -2, -2], 3)
+        for braid in (borromean, commutator, Braid([], 3), Braid([1, 1], 2)):
+            assert braid.is_brunnian()
+        assert not borromean.is_trivial()
+        # Pure, but a strand out leaves the other two still crossed.
+        assert not Braid([1, 1], 3).is_brunnian()
+        assert not Braid([1, 2] * 3, 3).is_brunnian()
+        # Not pure.
+        assert not Braid([1], 2).is_brunnian()
+        assert not Braid([1, -2], 3).is_brunnian()
 
 
 def test_full_twists_are_counted_and_taken_out():
