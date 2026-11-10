@@ -57,8 +57,10 @@ static files, published with the documentation.
   makes a braid of every kind there.
 - `.github/workflows/braid_studio.yml` builds and smoke-tests the site on
   every pull request touching braidpy or the page. On `develop`, it publishes
-  the site to `gh-pages` under `studio/`, beside the documentation; on the
-  branch it lists beside `develop`, under `studio-beta/`.
+  the site to `gh-pages` under `studio/`, beside the documentation. Run by
+  hand on any other branch (Actions, Braid Studio, Run workflow), it
+  publishes that branch under `studio-beta/`, replacing whatever beta was
+  there.
 
 ### Why not a JavaScript port, or a Python server?
 
