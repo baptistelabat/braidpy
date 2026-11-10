@@ -102,6 +102,9 @@ class Info(TypedDict, total=False):
     repeated: str
     made: int
     pure: bool
+    # Pure, and trivial with any one strand out (Braid.is_brunnian): said
+    # only of a pure braid small enough to ask.
+    brunnian: bool
     closest_approach: float
     expected_shape: str
     collision: Collision

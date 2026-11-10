@@ -6,6 +6,10 @@ What changed in each release of braidpy.
 
 ### New
 
+- Whether a braid is Brunnian: pure, and trivial once any one of its
+  strands is taken out, as the Borromean rings' braid (`Braid.is_brunnian`,
+  with `Braid.without_strand`; it raised NotImplementedError). Braid
+  Studio's card says so of a pure braid.
 - A braid made by its carriers (`braidpy.carried`): a horn gear machine's
   carriers go round at the machine's real size, each pulling its yarn at a
   steady tension up through a forming ring into the braid taken off above,
