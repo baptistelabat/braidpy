@@ -66,10 +66,13 @@ MULTIBAND_10_15_10_SLOTS = (5, 4, 4, 8, 6, 8, 4, 4, 4, 4, 8, 6, 8, 4, 4, 5)
 MULTIBAND_10_15_10_SPLIT = (4, 11)
 
 #: Where the reference machine's carriers start, band by band: 10, 15 and 10,
-#: the 10-15-10 of its name.  Not the most it holds: found by the exact
-#: loading search, which gives 12, 19 and 12 at most, and
-#: thinned to the drawing's counts as evenly over the gears as they go; the
-#: tests run it over the whole machine's period, 2280 steps.
+#: the 10-15-10 of its name.  Not the most it holds (the exact loading search
+#: gives 12, 19 and 12): as the drawing loads it, gear by gear, each carrier
+#: going the way the drawing's arrows send it.  Every gear but the eight-horn
+#: ones takes its carriers on the only slots that do; an eight-horn gear
+#: carries one each way, as drawn, on one of the four pairs of slots that run
+#: (the drawing does not say which).  The tests run it over the whole
+#: machine's period, 2280 steps.
 MULTIBAND_10_15_10_LOADING = (
     (
         ("G0", 0),
@@ -80,14 +83,14 @@ MULTIBAND_10_15_10_LOADING = (
         ("G2", 1),
         ("G2", 2),
         ("G3", 2),
-        ("G3", 4),
+        ("G3", 5),
         ("G4a", 1),
     ),
     (
         ("G4b", 0),
         ("G4b", 2),
         ("G5", 2),
-        ("G5", 4),
+        ("G5", 5),
         ("G6", 1),
         ("G6", 2),
         ("G7", 2),
@@ -97,14 +100,14 @@ MULTIBAND_10_15_10_LOADING = (
         ("G9", 2),
         ("G9", 3),
         ("G10", 1),
-        ("G10", 3),
+        ("G10", 4),
         ("G11a", 2),
     ),
     (
         ("G11b", 0),
         ("G11b", 1),
         ("G12", 1),
-        ("G12", 3),
+        ("G12", 4),
         ("G13", 2),
         ("G13", 3),
         ("G14", 1),
