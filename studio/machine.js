@@ -6,9 +6,9 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour, trueColour } from "./colours.js?v=b9a61635d4";
-import { inTime } from "./page.js?v=b9a61635d4";
-import { worker } from "./workers.js?v=b9a61635d4";
+import { PALETTE, strandColour, trueColour } from "./colours.js?v=6bd1e3c56b";
+import { inTime } from "./page.js?v=6bd1e3c56b";
+import { worker } from "./workers.js?v=6bd1e3c56b";
 
 // A machine seen from above, to load by hand: its gears, the contacts
 // between them, and every slot, a carrier on it or not.  Clicking a slot
@@ -87,7 +87,7 @@ export function attachMachine(holder) {
   let time = 0; // how far the handle is turned
   let turned = null; // braidpy's answer for this machine, loading and step
   let asked = 0; // the newest question to braidpy
-  let sweeping = null; // {from, started}: a step being turned
+  let sweeping = null; // {from, started, at, ms}: a step being turned, from its picture at
   // Held part way through the step, so that the two slots at a contact --
   // which sit on the same point when the step is whole -- come apart and a
   // click can tell them from one another.  0 is the step itself.
@@ -193,16 +193,20 @@ export function attachMachine(holder) {
   });
 
   // A step forwards: turned smoothly through braidpy's pictures of it,
-  // while braidpy works out the next; stopped where carriers meet.
+  // while braidpy works out the next; stopped where carriers meet.  Held
+  // part way through it, the handle turns on from there, through what is
+  // left of the step, in as much of the time.
   async function step() {
     if (!turned || turned.met.length || sweeping) return false;
     const from = turned;
     const next = answer(ask(from.time + 1));
-    sweeping = { from, started: performance.now() };
+    const count = from.frames.length;
+    const at = Math.min(part, count - 1);
+    sweeping = { from, started: performance.now(), at, ms: (SWEEP_MS * (count - at)) / count };
     await new Promise((done) => {
       const frame = () => {
         draw();
-        if (performance.now() - sweeping.started < SWEEP_MS) requestAnimationFrame(frame);
+        if (performance.now() - sweeping.started < sweeping.ms) requestAnimationFrame(frame);
         else done();
       };
       requestAnimationFrame(frame);
@@ -230,10 +234,10 @@ export function attachMachine(holder) {
     }
     draw();
   }
+  // A step on: from where the handle is held, if it is, to the next step.
   forward.addEventListener("click", (event) => {
     if (!inTime(event)) return;
     running = false;
-    part = 0;
     step();
   });
   // Each press holds the handle a quarter of a step further on; past the
@@ -249,7 +253,7 @@ export function attachMachine(holder) {
       part += by;
       draw();
     } else {
-      part = 0;
+      // On through the rest of the step, from where it is held.
       step();
     }
   });
@@ -278,9 +282,10 @@ export function attachMachine(holder) {
     if (turned && turned.carriers.length === loading.length) {
       let picture = turned.frames[Math.min(part, turned.frames.length - 1)];
       if (sweeping && sweeping.from === turned) {
-        const done = Math.min(1, (performance.now() - sweeping.started) / SWEEP_MS);
-        const last = turned.frames.length - 1;
-        picture = turned.frames[Math.min(last, Math.floor(done * turned.frames.length))];
+        const done = Math.min(1, (performance.now() - sweeping.started) / sweeping.ms);
+        const count = turned.frames.length;
+        const at = sweeping.at + Math.floor(done * (count - sweeping.at));
+        picture = turned.frames[Math.min(count - 1, at)];
       }
       standing = {
         name: names.value,
