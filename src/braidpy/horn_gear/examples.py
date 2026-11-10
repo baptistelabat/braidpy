@@ -303,6 +303,31 @@ def tubular_braid_16() -> BraidingMachine:
     return BraidingMachine(gears, connections)
 
 
+def triaxial_braid_16() -> BraidingMachine:
+    """16-carrier triaxial braid: the tubular braid of 16, round 8 axial yarns.
+
+    A triaxial braid lays a third set of yarns along the braid, at 0°,
+    between the two sets braided at ±θ: they stiffen it along its length and
+    hold its diameter, which is why braided composites are made so.  On a
+    maypole braider each axial yarn is fed up through a hollow horn gear
+    spindle (van Ravenhorst's thesis, see the references page): it stands
+    still at that gear's centre while the gear's carriers go round it, those
+    of one set passing it on the inside of the braid and those of the other on
+    the outside, so that it lies between them.
+
+    So this is :func:`tubular_braid_16`, unchanged, with an
+    :class:`~braidpy.horn_gear.model.Axial` up each of its eight gears.
+
+    Returns:
+        BraidingMachine for an 8-gear ring braid with an axial yarn up each
+        gear.
+    """
+    machine = tubular_braid_16()
+    return machine.with_axials(
+        Axial(f"axial_{name}", (name,)) for name in machine.gears
+    )
+
+
 def diamond_braid() -> BraidingMachine:
     """Diamond / square braid — the same machine as :func:`tubular_braid_8`.
 

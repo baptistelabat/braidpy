@@ -171,6 +171,11 @@ produce several patterns.
 
 - [ScienceDirect — Triaxial braid overview](https://www.sciencedirect.com/topics/engineering/triaxial-braid)
   — diamond/regular/Hercules definitions and relative stability.
+- [J. H. van Ravenhorst, *Design tools for circular overbraiding of complex
+  mandrels*](https://ris.utwente.nl/ws/portalfiles/portal/46645249/PhD_thesis_Johan_van_Ravenhorst.pdf)
+  (PhD thesis, University of Twente) — the maypole braider and its yarn
+  paths, axial yarns fed up the horn gears' spindles for triaxial braids;
+  what `triaxial_braid_16()` models.
 - [L'Atelier de Tressage — la tresse plate](https://www.atelierdetressage.paris/tresse-plate/)
   — French flat-braid designs (uni, chiné, grappé, damier, pied-de-poule,
   diagonal, milanaise). Flat looms run 7–121 fuseaux, single circuit.

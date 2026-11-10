@@ -64,6 +64,11 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
     "tubular_8": Entry("Tubular braid, 8 carriers", _example("tubular_braid_8")),
     "tubular_12": Entry("Tubular braid, 12 carriers", _example("tubular_braid_12")),
     "tubular_16": Entry("Tubular braid, 16 carriers", _example("tubular_braid_16")),
+    # The tubular braid of 16 again, round an axial yarn up each gear.
+    "triaxial_16": Entry(
+        "Triaxial braid, 16 carriers round 8 axial yarns",
+        _example("triaxial_braid_16"),
+    ),
     # Lines braiding several bands at once, split gears between them: the
     # smallest, two plaits on three gears, then the three-band machine of the
     # Atelier de Tressage whole and its bands one at a time.  A band keeps the
