@@ -188,7 +188,7 @@ def test_a_machine_is_drawn_for_the_page_to_load_by_hand():
     json.dumps(shape)
     assert {g["name"] for g in shape["gears"]} == {"A", "B", "C", "D"}
     for gear in shape["gears"]:
-        assert {"x", "y", "radius", "ride", "slots", "direction", "offset"} <= set(gear)
+        assert {"x", "y", "radius", "ride", "slots", "direction", "angles"} <= set(gear)
     assert shape["contacts"]
     own = _machines()["tubular_8"].make().default_carriers()
     assert shape["loading"] == [list(own[k]) for k in sorted(own)]

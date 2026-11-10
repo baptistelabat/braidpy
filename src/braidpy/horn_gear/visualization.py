@@ -28,9 +28,10 @@ centres, and a carrier rides at that distance from its gear's centre — on the
 rim when the gears merely touch, inside it when they overlap.
 
 The rotation offset ``phi_G`` turns each gear so its connection slots point at
-its notches, fitted across all of them (:func:`slot_offsets`); where a
-machine's slots cannot be reconciled with its layout, :func:`offset_residuals`
-says by how much and the figure is labelled with it.
+its notches, fitted across all of them (:func:`slot_offsets`); where a line of
+gears bends, so that turned rigidly they cannot all meet them, the slots are
+drawn spread unevenly instead, so that carriers are handed on without jumping
+(:func:`slot_angles`).
 
 Nothing here decides how far a gear has turned, where a carrier goes next, or
 which gear is carrying it — those belong to the machine, so that an ordinary
@@ -53,6 +54,7 @@ else:
     go = lazy_module("plotly.graph_objects")
 
 from .layout import (
+    GearAngles,
     axial_clearance,
     axial_position,
     carrier_radius,
@@ -61,8 +63,7 @@ from .layout import (
     contact_angle,
     contact_point,
     gear_radii,
-    offset_residuals,
-    slot_offsets,
+    slot_angles,
 )
 from .model import BraidingMachine
 from .simulation import (
@@ -169,7 +170,7 @@ def _slot_angle(
     machine: BraidingMachine,
     gear_name: str,
     slot: int,
-    offset: float,
+    angles: GearAngles,
     t: int = 0,
     frac: float = 0.0,
 ) -> float:
@@ -177,9 +178,10 @@ def _slot_angle(
 
     How far the gear has turned by then is the machine's business — it is
     ``direction * t`` on an ordinary machine and whatever the programme says
-    on a Jacquard one — so this only adds the layout offset on top.
+    on a Jacquard one — so this only draws it where the layout puts it
+    (:class:`~braidpy.horn_gear.layout.GearAngles`).
     """
-    return offset + machine.slot_angle(gear_name, slot, t, frac)
+    return angles(machine.slot_angle(gear_name, slot, t, frac))
 
 
 def _arc_xy(
@@ -437,7 +439,7 @@ def _slot_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     radii: dict[str, float],
-    offsets: dict[str, float],
+    angles: dict[str, GearAngles],
     t: int = 0,
     frac: float = 0.0,
     scale: float = 1.0,
@@ -461,7 +463,7 @@ def _slot_traces(
         notch = _notch_radius(machine, layout, radii, name, scale)
 
         for slot in range(gear.n_slots):
-            angle = _slot_angle(machine, name, slot, offsets[name], t, frac)
+            angle = _slot_angle(machine, name, slot, angles[name], t, frac)
             px = cx + seat * math.cos(angle)
             py = cy + seat * math.sin(angle)
 
@@ -513,7 +515,7 @@ def _gear_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     radii: dict[str, float],
-    offsets: dict[str, float],
+    angles: dict[str, GearAngles],
     t: int = 0,
     frac: float = 0.0,
     scale: float = 1.0,
@@ -529,7 +531,7 @@ def _gear_traces(
     """
     return (
         _disc_traces(machine, layout, radii, t)
-        + _slot_traces(machine, layout, radii, offsets, t, frac, scale)
+        + _slot_traces(machine, layout, radii, angles, t, frac, scale)
         + _gear_label_traces(machine, layout)
     )
 
@@ -778,12 +780,12 @@ def visualize_machine(
     """Static diagram of the machine layout with oriented slot tick marks."""
     layout = compute_layout(machine, scale=scale)
     radii = gear_radii(machine, scale=scale)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
 
     traces: list[go.BaseTraceType] = []
     traces.extend(_connection_traces(machine, layout, radii))
     traces.extend(_contact_point_traces(machine, layout, radii))
-    traces.extend(_gear_traces(machine, layout, radii, offsets, scale=scale))
+    traces.extend(_gear_traces(machine, layout, radii, angles, scale=scale))
 
     # Slot dots, in the notches the bobbins ride in.
     seat_sizes = _carrier_marker_sizes(machine, layout, radii, scale)
@@ -792,7 +794,7 @@ def visualize_machine(
         cx, cy = layout[name]
         r_carrier = carrier_radius(machine, layout, name, scale)
         for s in range(gear.n_slots):
-            ang = _slot_angle(machine, name, s, offsets[name])
+            ang = _slot_angle(machine, name, s, angles[name])
             xs.append(cx + r_carrier * math.cos(ang))
             ys.append(cy + r_carrier * math.sin(ang))
             labels.append(f"{name}[{s}]")
@@ -916,7 +918,7 @@ def animate(
     """
     layout_pos = compute_layout(machine, scale=scale)
     radii_dict = gear_radii(machine, scale=scale)
-    offsets = slot_offsets(machine, layout_pos)
+    angles = slot_angles(machine, layout_pos)
     bobbin_sizes = _carrier_marker_sizes(machine, layout_pos, radii_dict, scale)
 
     # The tracks are a property of the wiring, so they are identical in
@@ -967,16 +969,6 @@ def animate(
         )
         title = f"{title} — COLLISION at step {collision_info.step} ({coll_detail})"
 
-    # Warn when the machine's connection slots cannot be reconciled with its
-    # layout: carriers then visibly jump as they transfer.  That is a property
-    # of the machine definition, not of the animation.
-    worst = max(offset_residuals(machine, layout_pos).values(), default=0.0)
-    if math.degrees(worst) > 1.0:
-        title = (
-            f"{title}<br><sub>slots miss their contacts by up to "
-            f"{math.degrees(worst):.0f}° — carriers jump when transferring</sub>"
-        )
-
     carrier_colors = {
         c.carrier_id: PALETTE[i % len(PALETTE)]
         for i, c in enumerate(history[0].carriers)
@@ -1012,7 +1004,7 @@ def animate(
         xs, ys, htexts, colors_list, texts, sizes = [], [], [], [], [], []
         for c in state.carriers:
             x, y = carrier_xy(
-                machine, layout_pos, offsets, carrier_radii, c.position, t, frac
+                machine, layout_pos, angles, carrier_radii, c.position, t, frac
             )
             gear_name, _ = machine.riding_position(c.position, t)
             xs.append(x)
@@ -1050,7 +1042,7 @@ def animate(
                     x, y = carrier_xy(
                         machine,
                         layout_pos,
-                        offsets,
+                        angles,
                         carrier_radii,
                         c.position,
                         state.time,
@@ -1086,7 +1078,7 @@ def animate(
                 discs_change,
             ),
             (
-                _slot_traces(machine, layout_pos, radii_dict, offsets, t, frac, scale),
+                _slot_traces(machine, layout_pos, radii_dict, angles, t, frac, scale),
                 True,
             ),
             (still_labels, False),

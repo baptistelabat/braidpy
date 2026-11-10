@@ -132,6 +132,12 @@ From there it is the same for all of them:
   iterations rather than thousands, but no sample moves more than *d*/5 per
   iteration, so a feasible path from the start stays in the same braid
   class, as argued above. The yarn is held at the fell and at its oldest end.
+  Contact is looked for between samples only, so this holds only while the
+  braid is sampled finely enough: two yarns can cross between two levels
+  unseen if their sideways steps there add up to two diameters, and
+  tightening warns when any step reaches one (`take_off.SAFE_STEP`).
+  Carriers drawn jumping as they were handed on once did this, and the
+  three-band machine's bands came apart.
 
 The check that matters is that the result does not depend on the start. Far
 enough from the fell, a braid made at a braiding point, at the jammed fell,

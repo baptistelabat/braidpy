@@ -104,7 +104,7 @@ export function attachMachine(holder) {
       : names.value;
   const shape = () => machineShapes.get(machineName());
   const slotAt = (gear, slot) => {
-    const angle = gear.offset + (2 * Math.PI * slot) / gear.slots;
+    const angle = gear.angles[slot];
     return [gear.x + gear.ride * Math.cos(angle), gear.y + gear.ride * Math.sin(angle)];
   };
 

@@ -231,7 +231,7 @@ class Source(_Source, total=False):
 
 class Gear(TypedDict):
     """A gear seen from above: where it is, how big, the circle its carriers
-    ride, its slots, the way it turns and where its first slot is."""
+    ride, its slots, the way it turns and where each slot is at step 0."""
 
     name: str
     x: float
@@ -240,7 +240,9 @@ class Gear(TypedDict):
     ride: float
     slots: int
     direction: int
-    offset: float
+    # Each slot's angle at step 0, as braidpy draws it
+    # (braidpy.horn_gear.layout.GearAngles).
+    angles: list[float]
 
 
 class Contact(TypedDict):

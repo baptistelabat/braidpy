@@ -18,15 +18,18 @@ drawing convention and not a mechanical one — see :func:`_gear_radius`.
 Everything else here is derived from those centres: where two gears meet
 (:func:`contact_point`), how far out a carrier rides (:func:`carrier_radius`),
 how each gear must be turned for its slots to face its notches
-(:func:`slot_offsets`) and by how much that fails when a machine's slots cannot
-be reconciled with its layout (:func:`offset_residuals`).  It is all plain
+(:func:`slot_offsets`), by how much that fails where a line of gears bends
+(:func:`offset_residuals`), and how the slots are drawn so that carriers are
+handed on without jumping all the same (:func:`slot_angles`).  It is all plain
 geometry with no drawing in it, so it can be measured and tested directly.
 """
 
 from __future__ import annotations
 
+import bisect
 import math
 from collections import deque
+from dataclasses import dataclass
 
 import networkx as nx
 import numpy as np
@@ -363,6 +366,31 @@ def carrier_radius(
     return sum(distances) / len(distances)
 
 
+def _contacts(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, list[tuple[float, float]]]:
+    """Per gear, each of its contacts: the angle on the gear of the slot that
+    is there at every step, ``2π*slot0/N``, and the contact's angle on the
+    deck, seen from the gear's centre."""
+    contacts: dict[str, list[tuple[float, float]]] = {
+        name: [] for name in machine.gears
+    }
+    for conn in machine.connections:
+        for gname, other, slot0 in [
+            (conn.gear_a, conn.gear_b, conn.slot_a0),
+            (conn.gear_b, conn.gear_a, conn.slot_b0),
+        ]:
+            gear = machine.gears[gname]
+            contacts[gname].append(
+                (
+                    2 * math.pi * slot0 / gear.n_slots,
+                    contact_angle(machine, layout, gname, other),
+                )
+            )
+    return contacts
+
+
 def _gear_constraints(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
@@ -374,16 +402,10 @@ def _gear_constraints(
     gear with several connections gets one such value per connection; they all
     agree only when the connection slots match the physical layout.
     """
-    wanted: dict[str, list[float]] = {name: [] for name in machine.gears}
-    for conn in machine.connections:
-        for gname, other, slot0 in [
-            (conn.gear_a, conn.gear_b, conn.slot_a0),
-            (conn.gear_b, conn.gear_a, conn.slot_b0),
-        ]:
-            gear = machine.gears[gname]
-            theta = contact_angle(machine, layout, gname, other)
-            wanted[gname].append(theta - 2 * math.pi * slot0 / gear.n_slots)
-    return wanted
+    return {
+        name: [theta - slot for slot, theta in contacts]
+        for name, contacts in _contacts(machine, layout).items()
+    }
 
 
 def slot_offsets(
@@ -421,8 +443,9 @@ def offset_residuals(
     """Worst angular error (radians) between each gear's slots and its contacts.
 
     Zero means every contact of that gear falls exactly on a slot.  A non-zero
-    value means the machine's connection slots cannot be reconciled with its
-    layout, and carriers will appear to jump when they transfer there.
+    value means its slots, turned rigidly, cannot meet every contact, as where
+    a line of gears bends; :class:`GearAngles` then draws them spread
+    unevenly, so that carriers do not jump when they transfer there.
     """
     offsets = slot_offsets(machine, layout)
     residuals: dict[str, float] = {}
@@ -433,6 +456,79 @@ def offset_residuals(
             default=0.0,
         )
     return residuals
+
+
+#: How far (radians) a gear's slots may miss its contacts and still be drawn
+#: turned rigidly: rounding, not a bend.
+FITS = 1e-9
+
+
+@dataclass(frozen=True)
+class GearAngles:
+    """Where a gear's slots are drawn on the deck, from their angle on the gear.
+
+    A gear's slots are evenly spaced round it and turn at its rate, and are
+    drawn turned by its offset (:func:`slot_offsets`).  That puts a slot on
+    every contact at every step only when the contacts are a whole number of
+    slots apart round the gear, as on a straight line of gears.  Where a line
+    bends at a gear they are not, so its slots are drawn spread unevenly
+    instead: the slot at a contact is always drawn on it, and those between
+    two contacts evenly between their angles.  A carrier rounds the outside of
+    the bend a little faster than the inside, then, and is handed on where it
+    is, without jumping.  Which slot is where is the machine's; only the
+    drawing changes (see :func:`offset_residuals`).
+
+    Args:
+        offset: The gear's offset, from :func:`slot_offsets`.
+        knots: Each contact as (angle of its slot on the gear, angle on the
+            deck), in order round the gear; empty where turning the slots
+            rigidly by ``offset`` puts one on every contact.
+    """
+
+    offset: float
+    knots: tuple[tuple[float, float], ...] = ()
+
+    def __call__(self, angle: float) -> float:
+        """The angle on the deck of a slot at ``angle`` on the gear."""
+        if len(self.knots) < 2:
+            return self.offset + angle
+        turn = 2 * math.pi
+        # Where on the gear, in [0, 2π): rounding can carry ``%`` to 2π.
+        angle %= turn
+        if angle >= turn:
+            angle = 0.0
+        # The last knot at or before it, the one before the first if none is.
+        k = bisect.bisect_right([slot for slot, _ in self.knots], angle) - 1
+        here, at = self.knots[k]
+        there, to = self.knots[(k + 1) % len(self.knots)]
+        span = (there - here) % turn or turn
+        return at + ((to - at) % turn or turn) * ((angle - here) % turn) / span
+
+
+def slot_angles(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, GearAngles]:
+    """How each gear's slots are drawn: see :class:`GearAngles`.
+
+    Args:
+        machine: The machine definition.
+        layout: Gear centres, from :func:`compute_layout`.
+
+    Returns:
+        Gear name -> its :class:`GearAngles`.
+    """
+    offsets = slot_offsets(machine, layout)
+    residuals = offset_residuals(machine, layout)
+    angles = {}
+    for name, contacts in _contacts(machine, layout).items():
+        if residuals[name] <= FITS:
+            angles[name] = GearAngles(offsets[name])
+            continue
+        # One knot a slot: two contacts on one slot are one point.
+        knots = dict(sorted(contacts))
+        angles[name] = GearAngles(offsets[name], tuple(knots.items()))
+    return angles
 
 
 def _signed_area(
@@ -572,7 +668,7 @@ def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]
 def carrier_xy(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
-    offsets: dict[str, float],
+    angles: dict[str, GearAngles],
     carrier_radii: dict[str, float],
     position: tuple[str, int],
     time: int,
@@ -581,7 +677,8 @@ def carrier_xy(
     """Where in the plane a carrier is, at continuous time ``time + frac``.
 
     A carrier rides in a horn of its gear, so its angle is simply that slot's
-    angle: it turns at exactly the gear's rate and always sits on its slot.
+    angle: it turns with the gear and always sits on its slot, drawn where
+    :class:`GearAngles` draws it.
     It is drawn on whatever is actually moving it this step — on a machine
     with shared slots that is the receiving gear, see
     :meth:`~braidpy.horn_gear.model.BraidingMachine.riding_position`.
@@ -589,13 +686,13 @@ def carrier_xy(
     Transfers stay continuous without any special casing: a carrier moves to
     the neighbour only at the step where its slot is at the contact point, and
     it lands on the neighbour's slot that is at that same contact point at that
-    same instant, so the two coincide (provided the machine's connection slots
-    match its layout — see :func:`offset_residuals`).
+    same instant, so the two coincide; where a line bends at a gear, its
+    slots are drawn so that they still do (:class:`GearAngles`).
 
     Args:
         machine: The machine definition.
         layout: Gear centres, from :func:`compute_layout`.
-        offsets: Per-gear rotation offsets, from :func:`slot_offsets`.
+        angles: How each gear's slots are drawn, from :func:`slot_angles`.
         carrier_radii: Per-gear riding radius, from :func:`carrier_radius`.
         position: The carrier's recorded (gear, slot) at ``time``.
         time: The step being taken.
@@ -607,5 +704,5 @@ def carrier_xy(
     gear_name, slot = machine.riding_position(position, time)
     cx, cy = layout[gear_name]
     r = carrier_radii[gear_name]
-    ang = offsets[gear_name] + machine.slot_angle(gear_name, slot, time, frac)
+    ang = angles[gear_name](machine.slot_angle(gear_name, slot, time, frac))
     return cx + r * math.cos(ang), cy + r * math.sin(ang)
