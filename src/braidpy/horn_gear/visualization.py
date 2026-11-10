@@ -42,7 +42,7 @@ without it knowing the difference.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -304,7 +304,7 @@ def _carrier_marker_sizes(
 def _track_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
-    tracks: list[Track] | None = None,
+    tracks: Optional[list[Track]] = None,
     scale: float = 1.0,
     width: float = 2.5,
     opacity: float = 1.0,
@@ -630,7 +630,7 @@ def _punchcard_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     radii: dict[str, float],
-    current_phase: int | None = None,
+    current_phase: Optional[int] = None,
 ) -> list[go.BaseTraceType]:
     """Draw the machine's programme below it, as the punchcard it is.
 
@@ -774,7 +774,7 @@ def _contact_point_traces(
 def visualize_machine(
     machine: BraidingMachine,
     scale: float = 1.0,
-    output_html: str | None = None,
+    output_html: Optional[str] = None,
     title: str = "Horn Gear Braiding Machine",
 ) -> go.Figure:
     """Static diagram of the machine layout with oriented slot tick marks."""
@@ -836,9 +836,9 @@ def visualize_machine(
 
 def visualize_tracks(
     machine: BraidingMachine,
-    tracks: list[Track] | None = None,
+    tracks: Optional[list[Track]] = None,
     scale: float = 1.0,
-    output_html: str | None = None,
+    output_html: Optional[str] = None,
     title: str = "Carrier Tracks",
 ) -> go.Figure:
     """Draw carrier tracks as circular arcs that meet at physical contact points.
@@ -875,10 +875,10 @@ def visualize_tracks(
 
 def animate(
     machine: BraidingMachine,
-    n_steps: int | None = None,
-    carrier_positions: dict | None = None,
+    n_steps: Optional[int] = None,
+    carrier_positions: Optional[dict] = None,
     scale: float = 1.0,
-    output_html: str | None = None,
+    output_html: Optional[str] = None,
     title: str = "Carrier Animation",
     frame_duration_ms: int = 40,
     n_substeps: int = 9,

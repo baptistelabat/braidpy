@@ -30,6 +30,7 @@ import bisect
 import math
 from collections import deque
 from dataclasses import dataclass
+from typing import Optional
 
 import networkx as nx
 import numpy as np
@@ -546,7 +547,7 @@ def _signed_area(
 
 def tube_rings(
     machine: BraidingMachine,
-    layout: dict[str, tuple[float, float]] | None = None,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
 ) -> list[list[str]]:
     """Find the rings of gears that enclose a hole — one per tube.
 
@@ -591,7 +592,7 @@ def tube_rings(
 
 def tube_axials(
     machine: BraidingMachine,
-    layout: dict[str, tuple[float, float]] | None = None,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
     min_clearance: float = 1e-6,
     prefix: str = "core",
 ) -> list[Axial]:
@@ -626,7 +627,7 @@ def tube_axials(
 
 def ring_core(
     machine: BraidingMachine,
-    layout: dict[str, tuple[float, float]] | None = None,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
 ) -> Axial | None:
     """The core a machine that is one ring of gears braids round: down the
     hole the ring encloses, as a tubular machine's or a lace machine's.

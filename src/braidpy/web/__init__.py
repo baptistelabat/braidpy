@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from braidpy.web import disks, machines, words
 from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
@@ -152,7 +152,7 @@ def _premade_one(spec: Spec) -> str | None:
         return None
 
 
-def premade(directory: str, workers: int | None = None) -> list[dict[str, Any]]:
+def premade(directory: str, workers: Optional[int] = None) -> list[dict[str, Any]]:
     """Make every braid of :func:`premade_specs`, laid as
     :func:`build` lays it for a page to tighten (``tighten=False``), and
     write each as JSON in ``directory``, with ``index.json`` saying which

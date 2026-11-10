@@ -51,7 +51,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, Optional
 
 __all__ = ["Machine", "begin", "make"]
 
@@ -123,7 +123,7 @@ class Machine:
     """
 
     def __init__(
-        self, n_threads: int, turning: bool = True, core: str | None = None
+        self, n_threads: int, turning: bool = True, core: Optional[str] = None
     ) -> None:
         self.n = n_threads
         self.core = core

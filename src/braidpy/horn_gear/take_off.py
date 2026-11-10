@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -83,7 +83,7 @@ class CarrierTrajectories(StrandTrajectories):
 def carrier_trajectories(
     machine: BraidingMachine,
     n_steps: int,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
     n_substeps: int = 12,
     scale: float = 1.0,
 ) -> CarrierTrajectories:
@@ -170,9 +170,9 @@ def default_take_off(machine: BraidingMachine, scale: float = 1.0) -> float:
 
 def yarn_paths(
     machine: BraidingMachine,
-    n_steps: int | None = None,
-    carrier_positions: dict[CarrierId, Position] | None = None,
-    take_off: float | None = None,
+    n_steps: Optional[int] = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
+    take_off: Optional[float] = None,
     n_substeps: int = 12,
     scale: float = 1.0,
     n_cycles: int = 3,
@@ -231,10 +231,10 @@ def yarn_paths(
 
 def visualize_yarns(
     machine: BraidingMachine,
-    paths: YarnPaths | None = None,
-    output_html: str | None = None,
-    title: str | None = None,
-    tube_diameter: float | None = None,
+    paths: Optional[YarnPaths] = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
+    tube_diameter: Optional[float] = None,
     n_around: int = 12,
     show_deck: bool = True,
     **kwargs,
