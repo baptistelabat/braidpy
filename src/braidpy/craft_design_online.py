@@ -2,6 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Braids as the 3D braid designer of craftdesignonline.com describes them
+(see the references page): its threads, where each starts, and the steps of
+moves that braid them, as dataclasses, read from and saved to its file (JSON,
+URL-encoded as the designer keeps it)."""
+
 import json
 import math
 import urllib.parse

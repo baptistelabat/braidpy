@@ -65,6 +65,12 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- The package says where braidpy lives: its repository, documentation,
+  Braid Studio, changelog and issues (`project.urls`), for PyPI to show.
+  Modules that began with a form (file name, author, date) say what they
+  hold instead; `horn_gear.multiband` is in the API reference; and the
+  documentation's one link to a section, the marudai round a core, leads
+  there.
 - Tightening warns when a braid is laid too coarsely for it: it looks for
   contact between samples only, so two yarns whose sideways steps between
   two levels add up to two diameters can cross there unseen, as the

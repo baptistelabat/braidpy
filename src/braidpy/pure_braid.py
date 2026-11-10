@@ -2,13 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: pure_braid.py
-Description: Pure braids: the ones that leave every strand where it started
-Authors: Baptiste Labat
-Created: 2025-05-30
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""Pure braids: the ones that leave every strand where it started.
 
 A braid is *pure* when its word returns every strand to the slot it set out
 from — when the permutation it performs is the identity.  The pure braids

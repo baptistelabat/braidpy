@@ -2,13 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: braid.py
-Description: Main braid class
-Authors: Baptiste Labat
-Created: 2025-05-24
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""The braid itself (:class:`Braid`): a word in Artin's generators on so
+many strands, and what can be done with it.
 """
 
 import enum

@@ -2,14 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: parametric_braid.py
-Description: A braid describes by a punctured disk
-Authors: Baptiste Labat
-Created: 2025-05-25
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
-"""
+"""A braid as curves in space, its strands through a punctured disk."""
 
 from __future__ import annotations
 
