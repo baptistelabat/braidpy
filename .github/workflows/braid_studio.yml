@@ -8,7 +8,7 @@ run-name: Braid Studio — build, test${{ github.event_name == 'push' && ' and p
 
 on:
   push:
-    branches: [develop, feat/multiband_machine]
+    branches: [develop, claude/periodic-tightening]
     paths:
       - "src/**"
       - "web/**"
