@@ -779,18 +779,64 @@ class Braid:
             range(1, self.n_strands + 1)
         )
 
-    def is_brunnian(self) -> bool:
-        """Check if the braid is Brunnian.
+    def without_strand(self, strand: int) -> "Braid":
+        """The braid with one strand taken out, as if it had never been there.
 
-        A Brunnian braid is a braid that becomes trivial upon removal of any
-        one of its strings. Brunnian braids form a subgroup of the braid group.
+        The crossings that strand takes part in go with it; every other
+        crossing stays, between the same two strands and the same way over,
+        renumbered for the slot the strand no longer takes up.
+
+        Args:
+            strand: The strand to take out, numbered from 1 by where it
+                starts, as :meth:`perm` numbers them.
+
+        Returns:
+            The braid on one strand fewer.
+
+        Raises:
+            ValueError: If there is no such strand, or none would be left.
+        """
+        n = self.n_strands
+        if not 1 <= strand <= n:
+            raise ValueError(f"No strand {strand}: the braid has strands 1 to {n}.")
+        if n < 2:
+            raise ValueError("Taking out its only strand leaves no braid.")
+        history = self.slot_history()
+        out = strand - 1
+        kept: list[int] = []
+        for before, generator in zip(history, self.generators, strict=False):
+            if generator == 0:
+                continue
+            lower = abs(generator) - 1
+            gone = before[out]
+            if gone in (lower, lower + 1):
+                continue
+            moved = lower if lower < gone else lower - 1
+            kept.append((moved + 1) * (1 if generator > 0 else -1))
+        return Braid(kept, n - 1)
+
+    def is_brunnian(self) -> bool:
+        """Whether the braid is Brunnian: pure, and trivial once any one of
+        its strands is taken out (:meth:`without_strand`), though perhaps
+        not before — as three strands make the Borromean rings, any two of
+        them apart.
+
+        Brunnian braids form a subgroup of the pure braid group.  On three
+        strands or more a braid trivial with any one strand out is pure
+        anyway; on two, purity is what rules out a single crossing.  The
+        trivial braid is Brunnian.
 
         https://en.wikipedia.org/wiki/Brunnian_link#Brunnian_braids
 
         Returns:
             bool: True if Brunnian.
         """
-        raise NotImplementedError()
+        if not self.is_pure():
+            return False
+        return all(
+            self.without_strand(strand).is_trivial()
+            for strand in range(1, self.n_strands + 1)
+        )
 
     def is_reducible(self) -> bool:
         """Check if the braid is reducible.

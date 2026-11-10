@@ -29,6 +29,8 @@ export function describe(result, seconds) {
     ],
     ["Made", info.made && info.repeated && times(info.made, info.repeated)],
     ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    // Pure, and trivial with any one strand out, as the Borromean rings.
+    ["Brunnian", info.brunnian === undefined ? undefined : info.brunnian ? "yes" : "no"],
     ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
     ["Crossings", info.crossings],
     ["Exponent sum", info.exponent_sum],

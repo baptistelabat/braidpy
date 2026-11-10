@@ -35,11 +35,14 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
         info["pure_after"] = closing_repeats(braid, limit=None)
         info["components"] = components(braid)
         # The Garside normal form costs more the more strands there are:
-        # beyond this, minutes in a browser.
+        # beyond this, minutes in a browser; and taking out each strand in
+        # turn to see the braid come apart (Brunnian), more again.
         if n_strands <= 12 and len(word) <= 300:
             factors = braid.get_canonical_factors()
             least = int(factors.n_half_twist)
             most = least + len(factors.Ai)
+            if info["pure"]:
+                info["brunnian"] = bool(braid.is_brunnian())
             info["garside"] = {
                 "half_twists": least,
                 "factors": len(factors.Ai),
