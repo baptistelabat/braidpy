@@ -160,7 +160,7 @@ def _from_machine(spec: Spec) -> Result:
         info["collision"] = _collision(stopped, loading)
         notes = [_stopped_note(stopped, n_steps)]
     elif cores:
-        notes = [_core_note(rigid)]
+        notes = [_core_note(rigid, len(cores))]
     elif name.startswith("tubular"):
         annular = annular_word(machine, carriers=carriers_at)
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
@@ -265,13 +265,23 @@ def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
     return machine, axial_positions(machine, layout), asked == "rigid"
 
 
-def _core_note(rigid: bool) -> str:
+def _core_note(rigid: bool, n_cores: int = 1) -> str:
+    if n_cores == 1:
+        kind = (
+            "rigid, it stays straight"
+            if rigid
+            else "of yarn, it gives way to the others"
+        )
+        return (
+            f"It braids round a core, drawn in grey: {kind}. Its word would need "
+            "the core as a strand of its own: no word is given."
+        )
     kind = (
-        "rigid, it stays straight" if rigid else "of yarn, it gives way to the others"
+        "rigid, they stay straight" if rigid else "of yarn, they give way to the others"
     )
     return (
-        f"It braids round a core, drawn in grey: {kind}. Its word would need the "
-        "core as a strand of its own: no word is given."
+        f"It braids round {n_cores} cores, drawn in grey: {kind}. Its word would "
+        "need the cores as strands of their own: no word is given."
     )
 
 

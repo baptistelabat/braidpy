@@ -11,6 +11,14 @@ What changed in each release of braidpy.
   steady tension up through a forming ring into the braid taken off above,
   the yarns held where they cross by friction. Drawn near, and to scale
   beside the machine (`examples/demo_carried.py`).
+- A triaxial braid among the machines: the tubular braid of 16 round an
+  axial yarn up each of its eight gears, as a triaxial braider feeds them
+  up its hollow horn gear spindles (`horn_gear.triaxial_braid_16`; J. H.
+  van Ravenhorst's thesis on the references page). At every axial the
+  carriers going round one way pass it on one side and those going the
+  other way on the other, so it lies between the two sets. Braid Studio
+  says how many cores a machine braids round, where it said "a core" of
+  the soutache's two cords and now these eight.
 - A kumihimo or mobidai braid can be made round a core in Braid Studio,
   down the disk's middle, of yarn or rigid, as a machine's core is.
 - The marudai makes a braid round a core: up the braid's axis, of yarn or
