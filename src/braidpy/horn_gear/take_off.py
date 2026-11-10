@@ -47,7 +47,7 @@ from .layout import (
     carrier_xy,
     compute_layout,
     gear_radii,
-    slot_offsets,
+    slot_angles,
 )
 from .model import BraidingMachine
 from .simulation import CarrierId, Position, simulate, state_period
@@ -113,7 +113,7 @@ def carrier_trajectories(
         carrier_positions = machine.default_carriers()
 
     layout = compute_layout(machine, scale=scale)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
     riding = {
         name: carrier_radius(machine, layout, name, scale) for name in machine.gears
     }
@@ -131,15 +131,15 @@ def carrier_trajectories(
             for c in state.carriers:
                 xy[c.carrier_id].append(
                     carrier_xy(
-                        machine, layout, offsets, riding, c.position, state.time, frac
+                        machine, layout, angles, riding, c.position, state.time, frac
                     )
                 )
 
     radii = gear_radii(machine, scale=scale)
-    angles = np.linspace(0.0, 2 * np.pi, 73)
+    round_ = np.linspace(0.0, 2 * np.pi, 73)
     gears = tuple(
         np.column_stack(
-            [cx + radii[name] * np.cos(angles), cy + radii[name] * np.sin(angles)]
+            [cx + radii[name] * np.cos(round_), cy + radii[name] * np.sin(round_)]
         )
         for name, (cx, cy) in layout.items()
     )

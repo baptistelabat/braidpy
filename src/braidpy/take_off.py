@@ -62,6 +62,7 @@ the shape its yarns pull it into, whatever the fell started it as.
 from __future__ import annotations
 
 import math
+import warnings
 from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import (
@@ -535,6 +536,41 @@ def _tension_solver(
     return solve
 
 
+#: How far, in diameters, a yarn may move sideways between two levels and
+#: tightening still keep yarns from passing through each other.  It looks for
+#: contact between samples only, and two yarns can cross between two levels
+#: without a sample of either coming within a diameter of the other only if
+#: their steps there add up to two diameters or more.
+SAFE_STEP = 1.0
+
+
+def longest_step(paths: YarnPaths) -> float:
+    """The furthest any yarn moves sideways between two levels of the braid
+    above the fell."""
+    formed = paths.formed()
+    if formed.shape[1] < 2:
+        return 0.0
+    return float(np.max(np.linalg.norm(np.diff(formed[:, :, :2], axis=1), axis=-1)))
+
+
+def warn_if_too_coarse(paths: YarnPaths, yarn_diameter: float) -> None:
+    """Warn when the braid is laid too coarsely for :func:`tighten_yarns` to
+    keep its yarns apart: see :data:`SAFE_STEP`.
+
+    Args:
+        paths: The braid about to be tightened.
+        yarn_diameter: Its yarns' diameter.
+    """
+    step = longest_step(paths) / yarn_diameter
+    if step >= SAFE_STEP:
+        warnings.warn(
+            f"A yarn moves {step:.1f} diameters sideways between two levels: "
+            f"tightening may let yarns pass through each other there, "
+            f"unseen.  Lay the braid in more samples, or find why it jumps.",
+            stacklevel=3,
+        )
+
+
 def tighten_yarns(
     paths: YarnPaths,
     yarn_diameter: float,
@@ -583,11 +619,16 @@ def tighten_yarns(
         The tightened braid, and its history: ``"length"``, the total yarn
         length above the fell, and ``"closest"``, the closest approach, after
         each iteration.
+
+    Warns:
+        UserWarning: If the braid is laid too coarsely for contact between
+            samples to keep its yarns apart (:func:`warn_if_too_coarse`).
     """
     if yarn_diameter <= 0:
         raise ValueError("yarn_diameter must be positive.")
     if step <= 0:
         raise ValueError("step must be positive.")
+    warn_if_too_coarse(paths, yarn_diameter)
 
     formed = paths.formed().copy()
     n_yarns, n, _ = formed.shape

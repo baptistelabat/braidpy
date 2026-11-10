@@ -9,7 +9,15 @@ import math
 
 import pytest
 
-from braidpy.horn_gear.layout import compute_layout, gear_radii, slot_offsets
+from braidpy.horn_gear.examples import flat_braid_9
+from braidpy.horn_gear.layout import (
+    compute_layout,
+    contact_angle,
+    gear_radii,
+    offset_residuals,
+    slot_angles,
+    slot_offsets,
+)
 from braidpy.horn_gear.loading import _fullest_loading
 from braidpy.horn_gear.multiband import (
     MULTIBAND_10_15_10_LOADING,
@@ -136,6 +144,41 @@ def test_the_six_horns_of_a_split_gear_make_a_regular_hexagon():
                 gaps = [b - a for a, b in itertools.pairwise(angles)]
                 gaps.append(angles[0] + 2 * math.pi - angles[-1])
                 assert gaps == pytest.approx([math.pi / 3] * 6)
+
+
+def test_a_gear_the_line_bends_at_has_a_slot_drawn_on_each_contact():
+    """Folded round, the line bends at every gear but its ends and split
+    gears: their slots, turned rigidly, miss one contact or the other by half
+    the bend, so they are drawn spread so that the slot at a contact is on it."""
+    machine = multiband_10_15_10()
+    layout = compute_layout(machine)
+    angles = slot_angles(machine, layout)
+    residuals = offset_residuals(machine, layout)
+    bent = {name for name, miss in residuals.items() if miss > 1e-6}
+    ends = {"G0", "G15"} | {
+        f"G{k}{half}" for k in MULTIBAND_10_15_10_SPLIT for half in "ab"
+    }
+    assert bent == set(machine.gears) - ends
+    for conn in machine.connections:
+        for gear, other, slot in (
+            (conn.gear_a, conn.gear_b, conn.slot_a0),
+            (conn.gear_b, conn.gear_a, conn.slot_b0),
+        ):
+            n = machine.gears[gear].n_slots
+            drawn = angles[gear](2 * math.pi * slot / n)
+            wanted = contact_angle(machine, layout, gear, other)
+            assert math.cos(drawn - wanted) == pytest.approx(1.0)
+
+
+def test_slots_that_meet_their_contacts_turned_rigidly_are_drawn_so():
+    """Where a gear's slots, turned by its offset, meet every contact, as on a
+    straight line, they are drawn exactly as they always were."""
+    machine = flat_braid_9()
+    layout = compute_layout(machine)
+    offsets = slot_offsets(machine, layout)
+    for name, drawn in slot_angles(machine, layout).items():
+        assert drawn.knots == ()
+        assert drawn(0.7) == offsets[name] + 0.7
 
 
 def test_the_fold_leaves_the_ends_apart():

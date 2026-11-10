@@ -30,6 +30,7 @@ from .jacquard import (
     notch_positions,
 )
 from .layout import (
+    GearAngles,
     axial_clearance,
     axial_position,
     axial_positions,
@@ -41,6 +42,7 @@ from .layout import (
     gear_radii,
     offset_residuals,
     ring_core,
+    slot_angles,
     slot_offsets,
     tube_axials,
     tube_rings,
@@ -99,6 +101,7 @@ __all__ = [
     "CarrierTrajectories",
     "CollisionError",
     "Connection",
+    "GearAngles",
     # model
     "HornGear",
     # jacquard lace machine
@@ -141,6 +144,7 @@ __all__ = [
     "ring_order",
     "simulate",
     "simulation_period",
+    "slot_angles",
     "slot_offsets",
     "state_period",
     "step",

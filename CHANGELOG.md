@@ -53,6 +53,31 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- Tightening warns when a braid is laid too coarsely for it: it looks for
+  contact between samples only, so two yarns whose sideways steps between
+  two levels add up to two diameters can cross there unseen, as the
+  three-band machine's did. A step of a diameter or more is warned of
+  (`take_off.SAFE_STEP`, `longest_step`), for the page's tightening too.
+  Every machine is laid well inside it; a two-strand word settled by
+  physics, and a lace braid made on a marudai round a core, are not.
+- Carriers no longer jump where a line of gears bends. On the three-band
+  machine, folded round, and on the 12- and 16-carrier tubular braiders, a
+  gear's horns turned rigidly cannot meet both its contacts, so a carrier
+  was drawn jumping, by up to a third of a gear, as it was handed on. The
+  jump left yarns too long between samples for tightening to see one pass
+  through another, and at the three-band machine's seams, where the bands
+  pull apart, the yarns twisted together there slipped through each other,
+  so the bands came apart into three. Such a gear's horns are now drawn
+  spread unevenly, the one at a contact always on it
+  (`horn_gear.layout.slot_angles`, `GearAngles`): carriers are handed on
+  where they are, and the bands stay one braid when tightened. Which
+  carrier crosses which is unchanged; machines whose horns met their
+  contacts are drawn as before.
+- The 10-15-10 machine is loaded as its drawing is: each eight-horn gear
+  carries one carrier each way, as drawn, where both went the same way
+  (`MULTIBAND_10_15_10_LOADING`: G3 and G5 carry on slots 2 and 5, G10 and
+  G12 on 1 and 4). Every other gear was already as drawn. The braid it
+  makes changes; how the bands join does not.
 - Braid Studio stepped a big machine's braid, the three-band machine's,
   badly: the page drew the whole braid again at every frame, even when
   nothing moved, so it was slow to answer, and the handle, pressed a few

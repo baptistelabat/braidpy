@@ -611,21 +611,21 @@ def _met(error: Any) -> str:
 def machine_geometry(name: str) -> MachineGeometry:
     """A machine as the page draws it from above, to load it by hand: its
     gears — where, how big, the circle their carriers ride, their slots, the
-    way they turn and where their first slot is — the contacts between them,
-    and the machine's own loading.  A slot's angle at step ``t`` is
-    ``offset + 2π (slot + direction · t) / slots``."""
+    way they turn and where each slot is at step 0, drawn as braidpy draws it
+    (:class:`~braidpy.horn_gear.layout.GearAngles`) — the contacts between
+    them, and the machine's own loading."""
     from braidpy.horn_gear.layout import (
         carrier_radius,
         compute_layout,
         contact_point,
         gear_radii,
-        slot_offsets,
+        slot_angles,
     )
 
     machine = _machine(name)
     layout = compute_layout(machine)
     radii = gear_radii(machine)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
     own = machine.default_carriers()
     return {
         "name": name,
@@ -638,7 +638,10 @@ def machine_geometry(name: str) -> MachineGeometry:
                 "ride": float(carrier_radius(machine, layout, gear_name)),
                 "slots": int(gear.n_slots),
                 "direction": int(gear.direction),
-                "offset": float(offsets[gear_name]),
+                "angles": [
+                    float(angles[gear_name](machine.slot_angle(gear_name, slot, 0)))
+                    for slot in range(gear.n_slots)
+                ],
             }
             for gear_name, gear in machine.gears.items()
         ],
