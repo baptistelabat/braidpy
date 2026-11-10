@@ -9,13 +9,13 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet, a braiding machine or a lace machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=9eaac93ce8" />
+    <link rel="stylesheet" href="style.css?v=511921bdce" />
     <script>
       // braidpy's worker starts first, while three.js and the page's
       // modules load: Python is the slowest to start.  What it says before
       // the page is ready to hear it is kept for workers.js to read.
       window.braidpy = (() => {
-        const worker = new Worker("worker.js?v=9eaac93ce8");
+        const worker = new Worker("worker.js?v=511921bdce");
         const early = [];
         worker.onmessage = ({ data }) => early.push(data);
         const pyodideUrl =
@@ -38,7 +38,7 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=9eaac93ce8"></script>
+    <script type="module" src="app.js?v=511921bdce"></script>
   </head>
   <body>
     <aside class="panel">
@@ -90,6 +90,7 @@
             <select id="settle" name="settle">
               <option value="marudai">On a marudai: move by move, each yarn laid over and drawn tight</option>
               <option value="sideways">Sideways: fast, keeps the laid pitch</option>
+              <option value="endless">Sideways, endless: its fell end running on into its top, as a length cut from a longer braid</option>
               <option value="physics">Physics: beaten up until it jams (beta)</option>
               <option value="crossing">Physics: made crossing by crossing, with friction, then settled (beta)</option>
               <option value="carriers">By its carriers: each pulling its yarn through a forming ring, to scale (beta)</option>
@@ -103,7 +104,7 @@
               <option value="turns">Held while every bobbin turns together, hanging free otherwise</option>
               <option value="free">Untwisted: the braid hanging free, turning as its yarns pull it</option>
             </select>
-            <small>Each braid's own is marked "default". On a marudai, untwisted, the bobbins turning together carry the braid round with them: a rope's twist comes straight back out. Settled by physics, the end the braid is drawn off by is held or turns. Tightened sideways, the yarns keep the twist they were laid with.</small>
+            <small>Each braid's own is marked "default". On a marudai, untwisted, the bobbins turning together carry the braid round with them: a rope's twist comes straight back out. Settled by physics, the end the braid is drawn off by is held or turns. Tightened sideways, endless or not, the yarns keep the twist they were laid with.</small>
           </label>
         </details>
 

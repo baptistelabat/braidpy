@@ -7,12 +7,12 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onChosen, paint } from "./colours.js?v=9eaac93ce8";
-import { wholeFrame } from "./frames.js?v=9eaac93ce8";
-import { describe } from "./info.js?v=9eaac93ce8";
-import { drawSection, drawTop } from "./insets.js?v=9eaac93ce8";
-import { $ } from "./page.js?v=9eaac93ce8";
-import { pending } from "./workers.js?v=9eaac93ce8";
+import { onChosen, paint } from "./colours.js?v=511921bdce";
+import { wholeFrame } from "./frames.js?v=511921bdce";
+import { describe } from "./info.js?v=511921bdce";
+import { drawSection, drawTop } from "./insets.js?v=511921bdce";
+import { $ } from "./page.js?v=511921bdce";
+import { pending } from "./workers.js?v=511921bdce";
 
 export let lastResult = null;
 
@@ -306,7 +306,8 @@ export function show(result, seconds, keepView = false) {
   const seam = seamOf(timeline);
   braid.topTurn = seam === null ? 0 : Math.PI / 2 - seam;
   braid.program = result.disk;
-  braid.aligned = seam !== null && Boolean(result.disk) && result.settled !== "sideways";
+  const sideways = result.settled === "sideways" || result.settled === "endless";
+  braid.aligned = seam !== null && Boolean(result.disk) && !sideways;
   if (braid.aligned) turner.rotation.z = alignment();
   braid.box = new THREE.Box3().setFromObject(turner);
   showTubes($("tubes").checked);

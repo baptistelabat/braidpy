@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=9eaac93ce8";
-import { showMaking, showKin } from "./info.js?v=9eaac93ce8";
+import { onChosen, rebase } from "./colours.js?v=511921bdce";
+import { showMaking, showKin } from "./info.js?v=511921bdce";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=9eaac93ce8";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=9eaac93ce8";
-import { unpack } from "./frames.js?v=9eaac93ce8";
-import { machineShapes, machineWanted } from "./machine.js?v=9eaac93ce8";
-import { $ } from "./page.js?v=9eaac93ce8";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=9eaac93ce8";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=9eaac93ce8";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=511921bdce";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=511921bdce";
+import { unpack } from "./frames.js?v=511921bdce";
+import { machineShapes, machineWanted } from "./machine.js?v=511921bdce";
+import { $ } from "./page.js?v=511921bdce";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=511921bdce";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=511921bdce";
 
 // Started by the page itself, before its modules (index.html).
 export const worker = window.braidpy.worker;
@@ -37,7 +37,7 @@ let b3dAsked = null;
 let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=9eaac93ce8");
+  settler = new Worker("settle.js?v=511921bdce");
   settling = null;
   b3dAsked?.reject(new Error("another braid was asked for"));
   b3dAsked = null;
@@ -166,7 +166,8 @@ function heard(data) {
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
     if (rebase(data.result)) relink();
-    show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
+    const sideways = data.result.settled === "sideways" || data.result.settled === "endless";
+    show(data.result, data.seconds, shownLaid === data.id && sideways);
     showDefaults(data.result.used);
     document.dispatchEvent(
       new CustomEvent("machine-met", { detail: data.result.info?.collision?.at ?? [] }),
