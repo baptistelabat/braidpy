@@ -53,7 +53,12 @@ def test_every_braid_word_is_in_exactly_one_topology():
     # Machines braiding round cores have no braid word of their strands.
     assert topology_of("machine", "soutache_5") is None
     left_out = {m.key for m in methods()} - set(listed)
-    assert left_out == {"machine:soutache_5", "machine:soutache_7", "machine:princess"}
+    assert left_out == {
+        "machine:soutache_5",
+        "machine:soutache_7",
+        "machine:princess",
+        "machine:triaxial_16",
+    }
 
 
 def test_every_source_is_in_the_catalogue():

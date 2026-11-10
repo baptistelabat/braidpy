@@ -18,6 +18,7 @@ from braidpy.horn_gear.examples import (
     mixed_gear_machine,
     princess_braid,
     soutache_braid,
+    triaxial_braid_16,
     tubular_braid_8,
     tubular_braid_12,
     tubular_braid_16,
@@ -1702,6 +1703,42 @@ def test_the_stored_track_is_not_a_path():
 
 
 # ── The braid coming off the machine ──────────────────────────────────────────
+
+
+def test_a_triaxial_braid_lays_each_axial_between_the_two_sets():
+    """The tubular braid of 16 round an axial yarn up each gear: at every
+    axial, the carriers going round one way all pass it on one side, inside
+    the braid or out, and those going the other way all on the other, so it
+    lies between the two sets braided at plus and minus the braid angle."""
+    from braidpy.horn_gear.layout import axial_positions
+    from braidpy.horn_gear.take_off import carrier_trajectories
+    from braidpy.horn_gear.word import deck_centre
+
+    m = triaxial_braid_16()
+    plain = tubular_braid_16()
+    assert m.default_carriers() == plain.default_carriers()
+    assert sorted(a.anchor for a in m.axials) == [(g,) for g in sorted(m.gears)]
+
+    period = simulation_period(m)
+    traj = carrier_trajectories(m, period, n_substeps=24)
+    centre = np.array(deck_centre(m))
+    sides: dict[tuple[str, bool], set[str]] = {}
+    for xy in traj.xy.values():
+        rel = xy - centre
+        angle = np.unwrap(np.arctan2(rel[:, 1], rel[:, 0]))
+        radius = np.hypot(rel[:, 0], rel[:, 1])
+        anticlockwise = bool(angle[-1] > angle[0])
+        for name, at in axial_positions(m, traj.layout).items():
+            dx, dy = at[0] - centre[0], at[1] - centre[1]
+            turns = (angle - math.atan2(dy, dx)) / (2 * math.pi)
+            passing = np.nonzero(np.floor(turns[:-1]) != np.floor(turns[1:]))[0]
+            assert len(passing)
+            for i in passing:
+                side = "inside" if radius[i] < math.hypot(dx, dy) else "outside"
+                sides.setdefault((name, anticlockwise), set()).add(side)
+    for name in (a.name for a in m.axials):
+        assert len(sides[name, True]) == len(sides[name, False]) == 1
+        assert sides[name, True] != sides[name, False]
 
 
 def test_trajectories_follow_the_animation_and_stay_continuous():
