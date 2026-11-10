@@ -18,7 +18,7 @@
 // And asked {type: "b3d", id, result, twist, d}, the braid made on the
 // marudai as braid3dmin saves it (b3d.js): {type: "b3d", id, text}.
 
-importScripts("tighten.js?v=fc54ea37f6", "rope.js?v=fc54ea37f6", "form.js?v=fc54ea37f6", "carried.js?v=fc54ea37f6", "marudai.js?v=fc54ea37f6", "b3d.js?v=fc54ea37f6");
+importScripts("tighten.js?v=9eaac93ce8", "rope.js?v=9eaac93ce8", "form.js?v=9eaac93ce8", "carried.js?v=9eaac93ce8", "marudai.js?v=9eaac93ce8", "b3d.js?v=9eaac93ce8");
 
 function status(text) {
   self.postMessage({ type: "status", text });
