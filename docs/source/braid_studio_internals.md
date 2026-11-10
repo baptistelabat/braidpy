@@ -114,8 +114,11 @@ is shown settled at once, rather than after the minutes its tightening takes
 in the browser; a twist or another settling asked for is done in the page.
 Settled braids are kept in `web/.settled`, filed under a hash of the settling
 code and of the braid laid, so a build settles only what changed; without
-Node, braids are kept laid only. `python web/build.py --no-premade` leaves
-them all out, to try the page sooner.
+Node, braids are kept laid only. Laid and settled, they are kept gzipped, a
+tenth of their size or less, and the page unpacks each as it fetches it
+(`DecompressionStream`): as JSON they came to some 300 MB, more than GitHub
+Pages takes, and its deployments timed out. `python web/build.py
+--no-premade` leaves them all out, to try the page sooner.
 
 ## Trying it locally
 
