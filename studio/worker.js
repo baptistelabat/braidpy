@@ -144,12 +144,18 @@ function laid(id, spec, result) {
   let settle = (spec.settle ?? "auto") === "auto" ? (result.disk ? "marudai" : "sideways") : spec.settle;
   // By physics, every yarn is a yarn: a rigid core is not held rigid.
   const rigid = job?.rigid?.some(Boolean);
-  if (job && settle !== "sideways" && (settle === "marudai" ? !result.disk : rigid)) {
+  if (
+    job &&
+    settle !== "sideways" &&
+    (settle === "marudai" ? !result.disk : settle === "carriers" ? !result.carriers : rigid)
+  ) {
     result.notes = [
       ...(result.notes || []),
       settle === "marudai"
         ? "Only disk braids and braid words are made on a marudai for now: these yarns were tightened sideways."
-        : "Settled by physics, a rigid core would bend as a yarn does: these yarns were tightened sideways.",
+        : settle === "carriers"
+          ? "Only a machine's braid is made by its carriers, and not yet round a core: these yarns were tightened sideways."
+          : "Settled by physics, a rigid core would bend as a yarn does: these yarns were tightened sideways.",
     ];
     settle = "sideways";
   }
