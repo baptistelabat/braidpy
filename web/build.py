@@ -23,6 +23,7 @@ Run from the repository root, after ``npm install`` in ``web/``::
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -55,6 +56,9 @@ SETTLING = [
     "frames.js",
 ]
 SETTLED_CACHE = Path(os.environ.get("BRAID_STUDIO_SETTLED", WEB / ".settled"))
+# How hard the braids made with the site are gzipped (_compressed): the most,
+# as it costs only the build; a browser unpacks any level as fast.
+GZIP_LEVEL = 9
 PAGE = [
     "index.html",
     "style.css",
@@ -216,6 +220,26 @@ def _settled(site: Path, cache: Path = SETTLED_CACHE) -> None:
     (made / "index.json").write_text(json.dumps(index))
 
 
+def _compressed(site: Path) -> None:
+    """The braids made with the site, gzipped: a tenth of their size or less,
+    and the site within what GitHub Pages will serve.  The page unpacks each
+    as it fetches it (workers.js), natively.  Done last, so that what they
+    are made and settled from, and the settled cache's keys, are the braids
+    themselves; written the same every time, the same braid unchanged."""
+    made = site / "made"
+    index = json.loads((made / "index.json").read_text())
+    for entry in index:
+        for key in ("file", "settled"):
+            if key not in entry:
+                continue
+            plain = made / entry[key]
+            packed = plain.with_name(plain.name + ".gz")
+            packed.write_bytes(gzip.compress(plain.read_bytes(), GZIP_LEVEL, mtime=0))
+            plain.unlink()
+            entry[key] = packed.name
+    (made / "index.json").write_text(json.dumps(index))
+
+
 def _data(site: Path) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
     catalogue — what it can make, offered before Python has started — and
@@ -243,6 +267,7 @@ def build(site: Path, premade: bool = True) -> None:
     if premade:
         _premade(site)
         _settled(site)
+        _compressed(site)
     vendor = site / "vendor" / "three"
     (vendor / "addons" / "controls").mkdir(parents=True)
     shutil.copy2(THREE / "build" / "three.module.js", vendor / "three.module.js")
