@@ -493,10 +493,10 @@ function countUpTo(values, limit) {
   return low;
 }
 
-export function fit(close = false) {
+export function fit(close = false, frame = null) {
   wake();
   if (!braid) return;
-  const box = braid.box;
+  const box = frame ?? braid.box;
   const centre = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const height = size.z;
@@ -541,7 +541,31 @@ export function portrait() {
   const { marudai, ...alone } = lastResult;
   void marudai;
   show(alone, null, true);
-  fit(true);
+  fit(true, middle());
+}
+
+// How much of the braid's length a picture frames, about its middle: its
+// ends are not yet the braid it settles into — at the fell it is still
+// being made, and at the oldest end it is drawn in to where it was held.
+const PORTRAIT_MIDDLE = 0.6;
+
+// What of the braid lies in the middle of its length, for a picture.
+function middle() {
+  const whole = braid.box;
+  const cut = ((1 - PORTRAIT_MIDDLE) / 2) * (whole.max.z - whole.min.z);
+  const low = whole.min.z + cut;
+  const high = whole.max.z - cut;
+  const box = new THREE.Box3();
+  const point = new THREE.Vector3();
+  for (const yarn of braid.yarns) {
+    yarn.tube.updateMatrixWorld(true);
+    const at = yarn.tube.geometry.attributes.position;
+    for (let i = 0; i < at.count; i++) {
+      point.fromBufferAttribute(at, i).applyMatrix4(yarn.tube.matrixWorld);
+      if (point.z >= low && point.z <= high) box.expandByPoint(point);
+    }
+  }
+  return box.isEmpty() ? whole : box;
 }
 
 // Choosing a colour does not remake the braid: the strands are the ones that

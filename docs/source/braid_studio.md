@@ -21,8 +21,14 @@ what else makes the same braid (the catalogue of braids by topology,
 shown made: the book, videos, pages ({class}`braidpy.catalogue.Link`).
 Clicking a braid opens it in the studio, at once.
 
-A braid round cores, or made on a lace machine, has no braid word of its
-strands alone, so its figures are not given.
+Two kinds of braid have no figures yet. A braid made round cores — a
+machine's axial yarns, held straight up through it, as soutache's two
+cords or a triaxial braid's eight — is its yarns wrapped round the cores:
+the crossings of the yarns among themselves leave out how they pass the
+cores, so they are not the braid's word, and braidpy does not yet read one
+with the cores in it. A lace machine's braid has a word, but the catalogue
+of braids by topology ({mod}`braidpy.topology_catalog`) does not take
+lace machines yet.
 
 ## What it does
 
