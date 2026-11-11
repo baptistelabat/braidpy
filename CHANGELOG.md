@@ -6,6 +6,11 @@ What changed in each release of braidpy.
 
 ### New
 
+- A machine's carrier tracks in Braid Studio, as the demo draws them: on
+  the machine to load, and in the view of it turning, each track in a
+  colour of its own (`horn_gear.visualization.track_curves`, which the
+  demo now draws its tracks with too). A machine's braid gives them in its
+  timeline (`tracks`); otherwise every build is as before.
 - Each catalogued braid's links, as data: where it comes from and where it
   is shown made, each a title, a kind (book, article, video, page, post)
   and a web address (`catalogue.Link`, `Entry.links`; `Entry.reference` is
