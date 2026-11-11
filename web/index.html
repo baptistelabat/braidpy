@@ -12,9 +12,13 @@
     <script>
       // An address naming a braid is the studio's, from before it had a
       // front page: it goes on there, braid and all.
-      if (/(^#|&)source=/.test(location.hash)) {
-        location.replace("make.html" + location.search + location.hash);
-      }
+      const studio = () => {
+        if (/(^#|&)source=/.test(location.hash)) {
+          location.replace("make.html" + location.search + location.hash);
+        }
+      };
+      studio();
+      addEventListener("hashchange", studio);
     </script>
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="home.js"></script>

@@ -30,9 +30,9 @@ from smoke_test import SITE, _serve
 # The picture, in pixels: twice the front page's 96 × 128, for sharp screens.
 WIDTH, HEIGHT = 192, 256
 # The browser's window: the studio's panel beside a view of the picture's
-# shape, big enough to draw it well.
+# shape, twice its size, to draw it well.
 PANEL = 360
-VIEW_SCALE = 3
+VIEW_SCALE = 2
 # How good the pictures are, 0 to 1: small files, the eye sees no loss.
 QUALITY = 0.8
 
@@ -75,8 +75,8 @@ def main() -> int:
         # One context for them all: Pyodide and the page are fetched once.
         context = browser.new_context(
             viewport={
-                "width": PANEL + WIDTH * VIEW_SCALE // 2,
-                "height": HEIGHT * VIEW_SCALE // 2,
+                "width": PANEL + WIDTH * VIEW_SCALE,
+                "height": HEIGHT * VIEW_SCALE,
             }
         )
         for braid in braids:
@@ -88,7 +88,8 @@ def main() -> int:
                     "() => window.braidStudio?.result?.settled",
                     timeout=args.timeout * 1000,
                 )
-                # Drawn once more, settled, before it is read.
+                # The braid alone, framed close, drawn before it is read.
+                page.evaluate("() => window.braidStudio.portrait()")
                 page.wait_for_timeout(500)
                 data = page.evaluate(_DRAWN, [WIDTH, HEIGHT, QUALITY])
                 picture = base64.b64decode(data.split(",", 1)[1])

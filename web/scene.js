@@ -493,7 +493,7 @@ function countUpTo(values, limit) {
   return low;
 }
 
-export function fit() {
+export function fit(close = false) {
   wake();
   if (!braid) return;
   const box = braid.box;
@@ -503,10 +503,17 @@ export function fit() {
   const across = Math.max(size.x, size.y);
   const fov = THREE.MathUtils.degToRad(camera.fov);
   const tall = height / 2 / Math.tan(fov / 2);
-  // Wide enough for what the card leaves free.
-  const free = Math.max(0.5, 1 - Math.min(cardCover(), viewer.clientWidth / 2) / viewer.clientWidth);
+  // Wide enough for what the card leaves free; close, for a picture, the
+  // whole view.
+  const free = close ? 1 : Math.max(0.5, 1 - Math.min(cardCover(), viewer.clientWidth / 2) / viewer.clientWidth);
   const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect * free, 0.3);
-  const distance = 1.25 * Math.max(tall, wide, across * 2);
+  // Close, the whole braid in view from any side: its bounding sphere,
+  // within the narrower of the view's two angles.
+  const sphere = box.getBoundingSphere(new THREE.Sphere());
+  const narrowest = Math.min(fov, 2 * Math.atan(Math.tan(fov / 2) * camera.aspect));
+  const distance = close
+    ? (PORTRAIT_MARGIN * sphere.radius) / Math.sin(narrowest / 2)
+    : 1.25 * Math.max(tall, wide, across * 2);
   // Seen from the side the strands' seam is not: a disk braid made on a
   // marudai from the top view's bottom, as it is turned; others turned
   // about the vertical as each kind of braid needs it.
@@ -521,6 +528,20 @@ export function fit() {
   camera.updateProjectionMatrix();
   controls.target.copy(centre);
   controls.update();
+}
+
+// How much room a picture leaves round the braid: a twentieth.
+const PORTRAIT_MARGIN = 1.05;
+
+// The braid alone, framed close, for its picture on the front page
+// (web/snapshots.py): without the yarns going on from the fell to their
+// bobbins, nor the marudai's mirror.
+export function portrait() {
+  if (!lastResult) return;
+  const { marudai, ...alone } = lastResult;
+  void marudai;
+  show(alone, null, true);
+  fit(true);
 }
 
 // Choosing a colour does not remake the braid: the strands are the ones that

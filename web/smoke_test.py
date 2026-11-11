@@ -112,8 +112,11 @@ def _front_page(browser, base: str, query: str) -> bool:
             timeout=10000,
         )
         shown = page.locator("#braids tbody tr").count()
-        page.goto(base + query + "#" + urlencode({"source": "word", "word": "1 -2"}))
-        page.wait_for_url("**/make.html*", timeout=10000)
+        # An old address, opened afresh.
+        old = browser.new_page()
+        old.goto(base + query + "#" + urlencode({"source": "word", "word": "1 -2"}))
+        old.wait_for_url("**/make.html*", timeout=10000)
+        old.close()
         ok = 0 < shown < listed and not errors
     except PlaywrightTimeout as error:
         ok, shown = False, 0

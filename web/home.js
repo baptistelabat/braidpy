@@ -42,6 +42,14 @@ function studio(spec) {
   return "make.html#" + new URLSearchParams(Object.entries(spec).map(([k, v]) => [k, String(v)]));
 }
 
+// The loops' sizes, largest first, a size repeated written once with how
+// many there are: 2 · 1×2.
+function loopSizes(loops) {
+  const counts = new Map();
+  for (const size of loops) counts.set(size, (counts.get(size) ?? 0) + 1);
+  return [...counts].map(([size, count]) => (count > 1 ? `${size}×${count}` : `${size}`)).join(" · ");
+}
+
 function row(braid) {
   const open = studio(braid.spec);
   const image = element("img", {
@@ -73,7 +81,7 @@ function row(braid) {
     ? element(
         "span",
         { title: braid.loops.length === braid.n_strands ? "A loop per strand: pure" : "" },
-        braid.loops.join(" · "),
+        loopSizes(braid.loops),
       )
     : dash();
   return element(
