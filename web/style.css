@@ -815,3 +815,205 @@ footer {
   font-weight: 600;
   border-color: var(--line, #8884);
 }
+
+/* ------------------------------------------------------------ front page */
+/* index.html: the braids to look up, in a table (home.js). */
+
+body.home {
+  display: block;
+  height: auto;
+  overflow: auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.home-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.home-head .lede {
+  font-size: 14px;
+  max-width: 60ch;
+}
+
+a.primary {
+  flex: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: flex-end;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.filters .field {
+  flex: 1 1 160px;
+}
+
+.filters .field.narrow {
+  flex: 0 1 96px;
+}
+
+.filters .check {
+  padding-bottom: 8px;
+}
+
+.count {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 12px 2px 6px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+table.braids {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.braids th,
+.braids td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.braids tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.braids th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+}
+
+.braids th[data-sort] {
+  cursor: pointer;
+}
+
+.braids th[aria-sort="ascending"]::after {
+  content: " ↑";
+}
+
+.braids th[aria-sort="descending"]::after {
+  content: " ↓";
+}
+
+.braids td.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.braids td.pic {
+  width: 112px;
+}
+
+.braids td.pic img,
+.braids .no-picture {
+  display: block;
+  width: 96px;
+  height: 128px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--stage);
+}
+
+.braids a.title {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.braids a.title:hover {
+  color: var(--accent);
+}
+
+.braids td.same {
+  max-width: 22ch;
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+ul.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  min-width: 18ch;
+}
+
+.kind {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.home-foot {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+  .home-head {
+    flex-direction: column;
+  }
+
+  .braids td.pic img,
+  .braids .no-picture {
+    width: 64px;
+    height: 85px;
+  }
+
+  .braids td.pic {
+    width: 76px;
+  }
+}

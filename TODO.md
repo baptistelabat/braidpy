@@ -57,10 +57,10 @@ What is known and left for later, each with enough said to pick it up.
     (1995): the other way, flipper's.
 
   Then Braid Studio's card can say which of the three a braid is.
-- **Links for a braid on the website**: each catalogued braid's links are
-  data (`catalogue.Link`) and go out with the topology catalogue; Braid
-  Studio's front page is to list them, with every braid's picture, in a
-  table filtered by the braid's characteristics.
+- **Lace and cored braids on the front page**: they have no topology, so
+  their strands, loops and writhe are not shown. A lace machine's braid has
+  a braid word: adding lace to the topology catalogue's methods would give
+  them.
 - **An axial that stays straight but moves**: a triaxial braid's axials are
   tensioned yarns, straight, yet free to shift sideways as the braid closes
   up. A core is either of yarn (bends) or rigid (does not move at all).

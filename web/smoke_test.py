@@ -87,6 +87,46 @@ def _serve(site: Path) -> socketserver.TCPServer:
     return server
 
 
+def _front_page(browser, base: str, query: str) -> bool:
+    """The front page lists every braid of braids.json, filters them, and
+    sends an address naming a braid on to the studio."""
+    import json
+
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
+
+    listed = len(json.loads((SITE / "braids.json").read_text()))
+    page = browser.new_page(viewport={"width": 1200, "height": 800})
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    try:
+        page.goto(base + query)
+        page.wait_for_function(
+            f"() => document.querySelectorAll('#braids tbody tr').length === {listed}",
+            timeout=30000,
+        )
+        page.fill("#strands_min", "3")
+        page.fill("#strands_max", "3")
+        page.wait_for_function(
+            "() => [...document.querySelectorAll('#braids tbody tr')]"
+            ".every((row) => row.cells[2].textContent === '3')",
+            timeout=10000,
+        )
+        shown = page.locator("#braids tbody tr").count()
+        page.goto(base + query + "#" + urlencode({"source": "word", "word": "1 -2"}))
+        page.wait_for_url("**/make.html*", timeout=10000)
+        ok = 0 < shown < listed and not errors
+    except PlaywrightTimeout as error:
+        ok, shown = False, 0
+        errors.append(str(error).splitlines()[0])
+    print(
+        f"{'ok  ' if ok else 'FAIL'} front page: {listed} braids listed, "
+        f"{shown} of 3 strands, an old address sent on to the studio"
+        + (f"  errors: {errors}" if errors else "")
+    )
+    page.close()
+    return ok
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--pyodide", help="Where Pyodide is; its CDN if not given.")
@@ -107,6 +147,7 @@ def main() -> int:
         if args.chromium:
             launch["executable_path"] = args.chromium
         browser = playwright.chromium.launch(**launch)
+        failures += not _front_page(browser, base, query)
         for spec, n_yarns in CASES:
             page = browser.new_page(viewport={"width": 1200, "height": 800})
             errors: list[str] = []
@@ -119,7 +160,7 @@ def main() -> int:
                 ),
             )
             started = time.time()
-            page.goto(base + query + "#" + urlencode(spec))
+            page.goto(base + "make.html" + query + "#" + urlencode(spec))
             page.wait_for_function(
                 "() => { const s = document.getElementById('status');"
                 " return s.textContent.startsWith('Made') ||"
