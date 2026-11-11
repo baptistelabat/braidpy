@@ -48,6 +48,7 @@ __all__ = [
     "catalogue",
     "export",
     "for_page",
+    "links_of",
     "load",
     "methods",
     "related",
@@ -126,7 +127,7 @@ def _spec(**items: Any) -> tuple[tuple[str, Any], ...]:
     return tuple(items.items())
 
 
-def _links(source: str, name: str) -> tuple[Link, ...]:
+def links_of(source: str, name: str) -> tuple[Link, ...]:
     """A catalogued braid's links, by the source that makes it and its name
     there; none for one no catalogue lists."""
     from importlib import import_module
@@ -163,7 +164,7 @@ def methods() -> list[Method]:
                 name,
                 example["title"],
                 _spec(source="word", **rest),
-                _links("word", name),
+                links_of("word", name),
             )
         )
     pattern = listed["kumihimo"]["defaults"]
@@ -190,7 +191,7 @@ def methods() -> list[Method]:
                     entry["name"],
                     entry["title"],
                     _spec(source=source, name=entry["name"], cycles=1),
-                    _links(source, entry["name"]),
+                    links_of(source, entry["name"]),
                 )
             )
     return found
