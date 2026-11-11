@@ -41,7 +41,14 @@ static files, published with the documentation.
   reference: a test tightens the same braid both ways, and they agree to
   the last digits for the first tens of steps, and come out as tight and as
   clear as each other after hundreds.
-- The page is in modules, `web/app.js` loading them: the form (`fields.js`,
+- The front page, `web/index.html` with `web/home.js`, is a table of
+  braids, written by braidpy when the site is built
+  ({func}`~braidpy.web.braids`, `braids.json`), each with its picture
+  (`snapshots/`, below). It filters and sorts that table, and opens a braid
+  in the studio, `web/make.html`. An address naming a braid
+  (`studio/#source=…`), from before the front page, is sent on to the
+  studio.
+- The studio is in modules, `web/app.js` loading them: the form (`fields.js`,
   with `diagram.js`, `machine.js` and `editor.js` for drawing a word,
   loading a machine and editing a disk's moves), the braid asked for in the
   address (`spec.js`), the workers (`workers.js`), the braid's own defaults
@@ -53,8 +60,13 @@ static files, published with the documentation.
   since PyPI has no wheel of it; and writes `catalogue.json`, what the page
   can make, and `topologies.json`, the catalogue of braids by topology, made
   once here rather than in every browser.
-- `web/smoke_test.py` serves the site, opens it in a headless browser and
-  makes a braid of every kind there.
+- `web/smoke_test.py` serves the site, opens it in a headless browser,
+  checks the front page lists and filters its braids, and makes a braid of
+  every kind in the studio.
+- `web/snapshots.py` opens every braid the front page lists in the studio,
+  in a headless browser, and keeps the 3D view of it settled as a small
+  picture, `snapshots/<key>.webp`. A site built without a browser has no
+  pictures, and its front page shows none.
 - `.github/workflows/braid_studio.yml` builds and smoke-tests the site on
   every pull request touching braidpy or the page. On `develop`, it publishes
   the site to `gh-pages` under `studio/`, beside the documentation. Run by

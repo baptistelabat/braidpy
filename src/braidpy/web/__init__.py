@@ -41,6 +41,7 @@ tightening steps; 0 lays the yarns without tightening them.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Optional, cast
 
@@ -57,6 +58,7 @@ __all__ = [
     "Result",
     "Source",
     "Spec",
+    "braids",
     "build",
     "catalogue",
     "machine_geometry",
@@ -141,6 +143,93 @@ def premade_specs() -> list[Spec]:
             made = {k: v for k, v in example.items() if k != "title"}
             specs.append(cast(Spec, {"source": source, **made}))
     return specs
+
+
+def _key(spec: Spec, title: str) -> str:
+    """A braid's name for files and addresses: its source and its name in
+    its catalogue, or its title for one with no name."""
+    name = spec.get("name") or "".join(
+        c if c.isalnum() else "_" for c in title.lower()
+    ).strip("_")
+    return f"{spec['source']}-{name}"
+
+
+def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Every braid a page offers as it comes (:func:`premade_specs`), as a
+    row of a table to look braids up in: what it is called and made from,
+    what it is — from its topology, where the catalogue of braids by
+    topology has it — and where it is shown.
+
+    Args:
+        topologies: The catalogue of braids by topology, as
+            :func:`braidpy.topology_catalog.export` writes it.
+
+    Returns:
+        Per braid: ``key``, a name for its files; ``title``; ``source``;
+        ``spec``, what :func:`build` makes it from; ``links``, as
+        :class:`braidpy.catalogue.Link` has them; and, if its topology is
+        known, ``topology``, its name, ``n_strands``, ``loops``, the sizes
+        of the loops its closure makes, ``writhe``, and ``same``, the
+        titles of the other braids of the catalogue it is.  A braid with no
+        braid word of its strands alone, as one round cores, has no
+        topology.
+    """
+    from dataclasses import asdict
+
+    from braidpy.topology_catalog import links_of, load
+
+    known = load(topologies)
+    titles = {
+        (source, entry["name"]): entry["title"]
+        for source, about in catalogue().items()
+        for entry in about.get("entries", [])
+    }
+    examples = {
+        json.dumps(
+            {"source": source, **{k: v for k, v in e.items() if k != "title"}},
+            sort_keys=True,
+        ): e["title"]
+        for source, about in catalogue().items()
+        for e in about.get("examples", [])
+    }
+    rows: list[dict[str, Any]] = []
+    for spec in premade_specs():
+        source = spec["source"]
+        name = spec.get("name")
+        title = (
+            titles[(source, name)]
+            if name is not None
+            else examples[json.dumps(dict(spec), sort_keys=True)]
+        )
+        found = next(
+            (
+                (topology, method)
+                for topology in known
+                for method in topology.methods
+                if method.source == source and method.describes(spec)
+            ),
+            None,
+        )
+        links = found[1].links if found else links_of(source, str(name))
+        row: dict[str, Any] = {
+            "key": f"{source}-{found[1].name}" if found else _key(spec, title),
+            "title": title,
+            "source": source,
+            "spec": dict(spec),
+            "links": [asdict(link) for link in links],
+        }
+        if found:
+            topology, method = found
+            mark = topology.fingerprint
+            row.update(
+                topology=topology.name,
+                n_strands=mark.n_strands,
+                loops=list(mark.loops),
+                writhe=mark.writhe,
+                same=[m.title for m in topology.methods if m is not method],
+            )
+        rows.append(row)
+    return rows
 
 
 def _premade_one(spec: Spec) -> str | None:

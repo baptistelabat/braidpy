@@ -20,6 +20,7 @@ import {
   hangs,
   lastResult,
   made,
+  portrait,
   renderer,
   SUBSTEPS,
   scene,
@@ -179,8 +180,10 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-// For tests: what the page holds.
+// For tests, and for the front page's pictures: what the page holds, and
+// the braid alone, framed close.
 window.braidStudio = {
+  portrait,
   get result() {
     return lastResult;
   },

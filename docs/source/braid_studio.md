@@ -7,9 +7,32 @@ machine — and see it laid and tightened in 3D, without installing anything.
 This page says what it does and how to use it. How it is built is in the
 developer guide.
 
+## Looking braids up
+
+Its front page lists every braid it offers as it comes — each catalogued
+braid, each braid word example — in a table, each with a picture of it
+settled, as the studio shows it. The table can be narrowed down by what the
+braid is: by name, by what makes it, by how many strands it has, by the
+loops its strands make when its ends are joined (one, several, or one per
+strand, a pure braid), and by its writhe, its crossings counted with their
+signs (see {mod}`braidpy.similarity` for what each says). Each row says
+what else makes the same braid (the catalogue of braids by topology,
+{mod}`braidpy.topology_catalog`), and where the braid comes from and is
+shown made: the book, videos, pages ({class}`braidpy.catalogue.Link`).
+Clicking a braid opens it in the studio, at once.
+
+Two kinds of braid have no figures yet. A braid made round cores — a
+machine's axial yarns, held straight up through it, as soutache's two
+cords or a triaxial braid's eight — is its yarns wrapped round the cores:
+the crossings of the yarns among themselves leave out how they pass the
+cores, so they are not the braid's word, and braidpy does not yet read one
+with the cores in it. A lace machine's braid has a word, but the catalogue
+of braids by topology ({mod}`braidpy.topology_catalog`) does not take
+lace machines yet.
+
 ## What it does
 
-The page has a form and a 3D view.
+The studio has a form and a 3D view.
 
 - **Made by** picks the source: a braid word; a braid from the mobidai
   catalogue; an Ashley solid sinnet; a braiding machine; or a Jacquard lace
