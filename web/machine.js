@@ -95,13 +95,19 @@ export function attachMachine(holder) {
   let standing = null; // {name, slots}: where the slots were last drawn
   let running = false;
   // A lace machine with a card of your own goes by its gears and card
-  // (braidpy.web.machines.OWN_LACE).
+  // (braidpy.web.machines.OWN_LACE), a horn gear machine of your own by its
+  // slots and the gears that mesh (OWN_GEARS).
   const gears = holder.querySelector("[name=n_gears]");
   const card = holder.querySelector("[name=card]");
-  const machineName = () =>
-    names.value === "custom" && gears && card
-      ? `lace:${gears.value}:${card.value.trim().split(/\s+/).join(" ")}`
-      : names.value;
+  const graph = holder.querySelector("[name=graph]");
+  const slots = holder.querySelector("[name=n_slots]");
+  const words = (input) => input.value.trim().split(/\s+/).join(" ");
+  const machineName = () => {
+    if (names.value !== "custom") return names.value;
+    if (gears && card) return `lace:${gears.value}:${words(card)}`;
+    if (graph && slots) return `gears:${slots.value}:${words(graph)}`;
+    return names.value;
+  };
   const shape = () => machineShapes.get(machineName());
   const slotAt = (gear, slot) => {
     const angle = gear.angles[slot];
@@ -179,10 +185,23 @@ export function attachMachine(holder) {
     askMachine(machineName());
     draw();
   };
-  names.addEventListener("change", another);
-  // Your own card: another machine with every change to it — once the
-  // list has turned to "Your own card…", as it does on the same change.
-  for (const input of [gears, card]) input?.addEventListener("input", () => queueMicrotask(another));
+  // Your own machine starts from the one drawn before, written as the gears
+  // that mesh (braidpy.web.machines.machine_geometry's graph).
+  let drawnBefore = names.value;
+  names.addEventListener("change", () => {
+    if (names.value !== "custom") drawnBefore = names.value;
+    else if (graph && slots) {
+      const from = machineShapes.get(drawnBefore)?.graph;
+      if (from) {
+        graph.value = from.graph;
+        slots.value = String(from.n_slots);
+      }
+    }
+    another();
+  });
+  // Your own card or gears: another machine with every change to them —
+  // once the list has turned to "Your own…", as it does on the same change.
+  for (const input of [gears, card, graph, slots]) input?.addEventListener("input", () => queueMicrotask(another));
   document.addEventListener("machine-shape", () => {
     if (canvas.isConnected) fill();
   });

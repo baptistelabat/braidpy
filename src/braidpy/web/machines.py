@@ -65,13 +65,20 @@ def _machines():
 # the page to draw it and turn it by hand as a catalogued one:
 # "lace:6:100000 010000 ...".
 OWN_LACE = "lace:"
+# A horn gear machine of your own, likewise, by its slots and graph:
+# "gears:4:A-B B-C C-D D-A".
+OWN_GEARS = "gears:"
 
 
 def _machine(name: str) -> Any:
-    """A machine by name: catalogued, or a lace machine of your own."""
+    """A machine by name: catalogued, or a lace or horn gear machine of
+    your own."""
     if name.startswith(OWN_LACE):
         n_gears, _, card = name[len(OWN_LACE) :].partition(":")
         return _own_lace({"n_gears": n_gears, "card": card})
+    if name.startswith(OWN_GEARS):
+        n_slots, _, graph = name[len(OWN_GEARS) :].partition(":")
+        return _own_machine({"n_slots": n_slots, "graph": graph})
     from braidpy.machine_catalog import LaceRing
 
     machines = _machines()
@@ -116,6 +123,14 @@ def _own_lace(spec: Spec) -> Any:
     return jacquard_lace_ring(n_gears, _read_card(Lace.card.read(spec), n_gears))
 
 
+def _own_machine(spec: Spec) -> Any:
+    """A horn gear machine of your own: the gears that mesh, and their
+    slots (:func:`~braidpy.horn_gear.described.machine_from_graph`)."""
+    from braidpy.horn_gear.described import machine_from_graph
+
+    return machine_from_graph(Machine.graph.read(spec), Machine.n_slots.read(spec))
+
+
 def _own_gears(spec: Spec) -> int:
     """How many gears your own lace ring has: an even number."""
     n_gears = Lace.n_gears.read(spec)
@@ -129,13 +144,19 @@ def _own_gears(spec: Spec) -> int:
 
 def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import gear_radii
+    from braidpy.horn_gear.tracks import ring_order
     from braidpy.horn_gear.word import annular_word, flat_word
     from braidpy.machine_catalog import CATALOGUE as machines
 
     name = Machine.name.read(spec)
-    if name not in machines:
+    if name == OWN:
+        machine = _own_machine(spec)
+        title = f"Your own machine, {len(machine.gears)} gears"
+    elif name in machines:
+        machine = machines[name].make()
+        title = machines[name].title
+    else:
         raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
-    machine = machines[name].make()
     cycles = Machine.cycles.read(spec)
     radii = gear_radii(machine)
     default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
@@ -161,7 +182,8 @@ def _from_machine(spec: Spec) -> Result:
         notes = [_stopped_note(stopped, n_steps)]
     elif cores:
         notes = [_core_note(rigid, len(cores))]
-    elif name.startswith("tubular"):
+    elif ring_order(machine) is not None:
+        # Gears in one ring: the braid is read round it.
         annular = annular_word(machine, carriers=carriers_at)
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
         info["crossings"] = len(annular.generators)
@@ -180,7 +202,7 @@ def _from_machine(spec: Spec) -> Result:
     colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
     colour.update({k: CORE_COLOUR for k in cores})
     result = _result(
-        machines[name].title + f", {cycles} cycles",
+        title + f", {cycles} cycles",
         paths,
         diameter,
         colours=[colour[k] for k in keys],
@@ -623,7 +645,11 @@ def machine_geometry(name: str) -> MachineGeometry:
     gears — where, how big, the circle their carriers ride, their slots, the
     way they turn and where each slot is at step 0, drawn as braidpy draws it
     (:class:`~braidpy.horn_gear.layout.GearAngles`) — the contacts between
-    them, and the machine's own loading."""
+    them, the machine's own loading, and, for a machine of gears geared
+    together, the machine written as the gears that mesh
+    (:func:`~braidpy.horn_gear.described.graph_of`), for your own to start
+    from."""
+    from braidpy.horn_gear import BraidingMachine
     from braidpy.horn_gear.layout import (
         carrier_radius,
         compute_layout,
@@ -666,7 +692,17 @@ def machine_geometry(name: str) -> MachineGeometry:
             for point in [contact_point(machine, layout, conn.gear_a, conn.gear_b)]
         ],
         "loading": [[own[k][0], int(own[k][1])] for k in sorted(own)],
+        "graph": _graph(machine) if type(machine) is BraidingMachine else None,
     }
+
+
+def _graph(machine: Any) -> dict[str, Any]:
+    """A machine as the fields of your own: the gears that mesh, and the
+    slots most of its gears have."""
+    from braidpy.horn_gear.described import graph_of
+
+    graph, n_slots = graph_of(machine)
+    return {"graph": graph, "n_slots": n_slots}
 
 
 @lru_cache(maxsize=4)
@@ -740,12 +776,16 @@ def machine_origin(name: str, place: list[Any], time: int) -> list[Any] | None:
 def _machine_entry() -> Source:
     from braidpy.machine_catalog import CATALOGUE
 
+    # Your own starts from the machine drawn before, written as its graph
+    # (machine_geometry): the catalogue makes no machine, which would load
+    # networkx before one is asked for.
+    entries: list[Any] = [
+        {"name": name, "title": entry.title} for name, entry in CATALOGUE.items()
+    ]
     return {
         "title": "Horn gear braiding machine",
         "defaults": defaults(*Machine.shown),
-        "entries": [
-            {"name": name, "title": entry.title} for name, entry in CATALOGUE.items()
-        ],
+        "entries": entries + [{"name": OWN, "title": "Your own machine…"}],
     }
 
 

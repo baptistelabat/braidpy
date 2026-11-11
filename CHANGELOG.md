@@ -6,6 +6,14 @@ What changed in each release of braidpy.
 
 ### New
 
+- Any horn gear machine, written as the gears that mesh: `A-B B-C C-D D-A`,
+  a gear with its own slots `A:6` (`horn_gear.described.machine_from_graph`;
+  `graph_of` writes a machine back so). Each gear's direction and contacts
+  are worked out from the graph; a ring of an odd number of gears, or gears
+  in separate machines, are refused saying why. In Braid Studio, **Your own
+  machine…**, starting from the machine chosen before. Studio now reads a
+  machine's braid round its ring whenever its gears make one, not by its
+  name.
 - Each catalogued braid's links, as data: where it comes from and where it
   is shown made, each a title, a kind (book, article, video, page, post)
   and a web address (`catalogue.Link`, `Entry.links`; `Entry.reference` is

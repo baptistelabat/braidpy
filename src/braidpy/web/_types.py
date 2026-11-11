@@ -55,6 +55,8 @@ class Spec(TypedDict, total=False):
     # Your own lace machine.
     n_gears: Value
     card: str
+    # Your own horn gear machine: the gears that mesh (and n_slots).
+    graph: str
 
 
 # ------------------------------------------------------------------ result
@@ -286,3 +288,6 @@ class MachineGeometry(TypedDict):
     gears: list[Gear]
     contacts: list[Contact]
     loading: list[list[str | int]]
+    # The gears that mesh, and the slots most have; None for a machine of
+    # split gears, or a lace machine.
+    graph: dict[str, Any] | None
