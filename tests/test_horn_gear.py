@@ -2096,3 +2096,67 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
         laid = np.asarray(paths.points[name])
         assert np.allclose(np.asarray(rigid.points[name]), laid)
         assert not np.allclose(np.asarray(free.points[name]), laid)
+
+
+def _side_by_side(machine, copies):
+    """The machine several times over, the copies sharing no contact."""
+    from braidpy.horn_gear.model import BraidingMachine, Connection, HornGear
+
+    gears, connections = [], []
+    for k in range(copies):
+        for name, gear in machine.gears.items():
+            gears.append(
+                HornGear(
+                    f"{k}{name}", gear.n_slots, direction=gear.direction, size=gear.size
+                )
+            )
+        for c in machine.connections:
+            connections.append(
+                Connection(
+                    f"{k}{c.gear_a}",
+                    f"{k}{c.gear_b}",
+                    c.slot_a0,
+                    c.slot_b0,
+                    name=f"{k}{c.name}",
+                )
+            )
+    return BraidingMachine(gears, connections)
+
+
+def test_a_machine_in_parts_holds_what_its_parts_hold():
+    """Three bands side by side hold three bands' worth of carriers.
+
+    Slots of different parts never meet, so the fullest loading is the
+    fullest of each part.  Seventy-two slots is past the limit on the exact
+    search, which counts the largest part — twenty-four here — rather than
+    the whole machine, so the loading stays exact instead of falling back on
+    greedy and losing a third of the carriers.
+    """
+    from braidpy.horn_gear.loading import _is_collision_free, _parts
+    from braidpy.horn_gear.multiband import multiband_band
+    from braidpy.horn_gear.simulation import simulate
+    from braidpy.horn_gear.tracks import simulation_period
+
+    band = multiband_band(0)
+    own = len(load_carriers(band))
+    assert own == 12 and band.total_slots() == 24
+
+    machine = _side_by_side(band, 3)
+    assert len(_parts(machine)) == 3
+    assert machine.total_slots() == 72
+    loading = load_carriers(machine)
+    assert len(loading) == 3 * own
+
+    period = simulation_period(machine)
+    assert _is_collision_free(machine, loading, period)
+    history = simulate(machine, period, loading)
+    first = {c.carrier_id: c.position for c in history[0].carriers}
+    assert first == {c.carrier_id: c.position for c in history[-1].carriers}
+
+
+def test_one_part_is_what_an_ordinary_machine_has():
+    """So loading a machine that does not split is unchanged."""
+    from braidpy.horn_gear.loading import _parts
+
+    for machine in (flat_braid_3(), flat_braid_9(), tubular_braid_8()):
+        assert _parts(machine) == [sorted(machine.gears)]
