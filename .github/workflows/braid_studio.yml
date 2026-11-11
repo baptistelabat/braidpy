@@ -71,6 +71,16 @@ jobs:
           uv run --no-project --with playwright python web/smoke_test.py \
             --screenshots web/screenshots ${chrome:+--chromium "$chrome"}
 
+      # The front page's pictures, each braid settled as the studio shows
+      # it.  A braid that does not settle in time is left without one, and
+      # the site is published all the same.
+      - name: Take a picture of every braid listed
+        continue-on-error: true
+        run: |
+          chrome="$(command -v google-chrome || true)"
+          uv run --no-project --with playwright python web/snapshots.py \
+            ${chrome:+--chromium "$chrome"}
+
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@v4

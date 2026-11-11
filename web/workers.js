@@ -18,7 +18,7 @@ import { $ } from "./page.js";
 import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js";
 import { readSpec, specFromHash, writeSpec } from "./spec.js";
 
-// Started by the page itself, before its modules (index.html).
+// Started by the page itself, before its modules (make.html).
 export const worker = window.braidpy.worker;
 export let pending = 0;
 
