@@ -17,7 +17,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from braidpy.catalogue import Entry
+from braidpy.catalogue import Entry, Link
 
 if TYPE_CHECKING:
     from braidpy.horn_gear.model import BraidingMachine
@@ -68,6 +68,15 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
     "triaxial_16": Entry(
         "Triaxial braid, 16 carriers round 8 axial yarns",
         _example("triaxial_braid_16"),
+        (
+            Link(
+                "J. H. van Ravenhorst, Design tools for circular overbraiding of "
+                "complex mandrels (thesis)",
+                "article",
+                "https://ris.utwente.nl/ws/portalfiles/portal/46645249/"
+                "PhD_thesis_Johan_van_Ravenhorst.pdf",
+            ),
+        ),
     ),
     # Lines braiding several bands at once, split gears between them: the
     # smallest, two plaits on three gears, then the three-band machine of the
@@ -79,7 +88,15 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
         _multiband("twin_plait"),
     ),
     "multiband_10_15_10": Entry(
-        "Three-band machine, 10-15-10 carriers", _multiband("multiband_10_15_10")
+        "Three-band machine, 10-15-10 carriers",
+        _multiband("multiband_10_15_10"),
+        (
+            Link(
+                "L'Atelier de Tressage: la tresse plate",
+                "page",
+                "https://www.atelierdetressage.paris/tresse-plate/",
+            ),
+        ),
     ),
     "multiband_band_0": Entry(
         "Three-band machine: left band alone, gears G0-G4",
