@@ -41,9 +41,9 @@ machine's motion, the other from the shape that motion lays down.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
 
@@ -55,29 +55,6 @@ from .tracks import Position, simulation_period
 __all__ = ["AnnularWord", "annular_word", "deck_centre", "flat_word"]
 
 
-def _check_no_axials(machine: BraidingMachine) -> None:
-    """Refuse a machine whose axials would be left out of the word.
-
-    An axial is a yarn the carriers braid *around*, so it takes part in the
-    braid and belongs in its word.  The trajectories this module reads come
-    from :func:`~braidpy.horn_gear.take_off.carrier_trajectories`, which
-    follows carriers only — an axial holds no slot and is not a carrier.
-    Rather than return a word that quietly omits strands, say so.
-
-    Raises:
-        NotImplementedError: If the machine has any axial.
-    """
-    axials = tuple(getattr(machine, "axials", ()))
-    if axials:
-        names = ", ".join(repr(a.name) for a in axials)
-        raise NotImplementedError(
-            f"This machine has {len(axials)} axial yarn(s) ({names}), which the "
-            f"carriers braid around and which therefore belong in its word.  The "
-            f"trajectories read here follow carriers only, so the word would be "
-            f"missing those strands.  Give the axials a path first."
-        )
-
-
 def _trajectories(
     machine: BraidingMachine,
     carriers: dict[CarrierId, Position] | None,
@@ -85,17 +62,38 @@ def _trajectories(
     n_substeps: int,
     scale: float,
 ):
-    """Carrier positions in the deck plane, one cycle by default."""
-    _check_no_axials(machine)
+    """Carrier positions in the deck plane, one cycle by default — and each
+    axial yarn's, a strand of the braid that stands still where it rises
+    through the deck (:func:`~braidpy.horn_gear.layout.axial_position`),
+    numbered after the carriers, in the order the machine lists them.  The
+    carriers braid round it, so it belongs in the word as one strand: a
+    carrier crosses it where it passes its column."""
+    from dataclasses import replace
+
+    from .layout import axial_positions
+
     if n_steps is None:
         n_steps = simulation_period(machine)
-    return carrier_trajectories(
+    tracks = carrier_trajectories(
         machine,
         n_steps,
         carrier_positions=carriers,
         n_substeps=n_substeps,
         scale=scale,
     )
+    axials = getattr(machine, "axials", ())
+    if not axials:
+        return tracks
+    columns = axial_positions(machine, tracks.layout)
+    # Carriers are numbered; the axials after the last of them.
+    first = max((k for k in tracks.xy if isinstance(k, int)), default=-1) + 1
+    standing: dict[Hashable, np.ndarray] = {
+        first + k: np.tile(
+            np.asarray(columns[axial.name], dtype=float), (len(tracks.times), 1)
+        )
+        for k, axial in enumerate(axials)
+    }
+    return replace(tracks, xy={**tracks.xy, **standing})
 
 
 def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, float]:
@@ -153,8 +151,6 @@ def flat_word(
     Returns:
         The word, as signed generator indices.
 
-    Raises:
-        NotImplementedError: If the machine has axial yarns.
     """
     tracks = _trajectories(machine, carriers, n_steps, n_substeps, scale)
     ids = sorted(tracks.xy)
@@ -240,8 +236,6 @@ def annular_word(
     Returns:
         The crossings, and how far each carrier wound round the centre.
 
-    Raises:
-        NotImplementedError: If the machine has axial yarns.
     """
     tracks = _trajectories(machine, carriers, n_steps, n_substeps, scale)
     if around is None:
@@ -296,8 +290,9 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
         **kwargs: Passed to :func:`~braidpy.horn_gear.take_off.yarn_paths`.
 
     Returns:
-        One object per carrier, answering ``position(z)`` over a common
-        ``length``, ordered by carrier id.
+        One object per yarn, answering ``position(z)`` over a common
+        ``length``: the carriers' by id, then the axials' if the paths have
+        them (``axials=True``), in the machine's order.
     """
     from .take_off import yarn_paths
 
@@ -321,5 +316,8 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
             point = here + (nxt - here) * step
             return float(point[0]), float(point[1]), float(point[2])
 
-    ids: list = list(paths.points)
-    return [_Yarn(paths.points[cid]) for cid in sorted(ids)]
+    # Carriers by id, then the axials in the machine's order: as the words
+    # number them.
+    axials = [a.name for a in getattr(machine, "axials", ()) if a.name in paths.points]
+    carriers = sorted(cast("list[int]", [k for k in paths.points if k not in axials]))
+    return [_Yarn(paths.points[k]) for k in [*carriers, *axials]]

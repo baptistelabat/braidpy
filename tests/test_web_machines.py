@@ -21,7 +21,9 @@ def test_a_machine_braids_its_cores_in_as_yarns():
     yarns = [s for s in result["strands"] if not s["name"].startswith("Core")]
     assert [s["name"] for s in cores] == ["Core cord_A", "Core cord_B"]
     assert len(yarns) == 5
-    assert "word" not in result["info"]
+    # Each core counted in its word as a strand standing still.
+    assert result["info"]["n_strands"] == 7
+    assert max(abs(int(g)) for g in result["info"]["word"].split()) == 6
     # Half way up, each core is among the yarns, not off to one side.
     middle = len(cores[0]["points"]) // 2
     xy = np.array([s["points"][middle][:2] for s in yarns])

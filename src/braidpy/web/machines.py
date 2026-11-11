@@ -180,8 +180,6 @@ def _from_machine(spec: Spec) -> Result:
         assert loading is not None
         info["collision"] = _collision(stopped, loading)
         notes = [_stopped_note(stopped, n_steps)]
-    elif cores:
-        notes = [_core_note(rigid, len(cores))]
     elif ring_order(machine) is not None:
         # Gears in one ring: the braid is read round it.
         annular = annular_word(machine, carriers=carriers_at)
@@ -196,6 +194,8 @@ def _from_machine(spec: Spec) -> Result:
         info["made"] = cycles
         # The cycles made, not the one read.
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
+    if cores and stopped is None:
+        notes = [*notes, _core_note(rigid, len(cores))]
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     own = machine.carrier_colours(carriers_at) or {}
@@ -295,15 +295,15 @@ def _core_note(rigid: bool, n_cores: int = 1) -> str:
             else "of yarn, it gives way to the others"
         )
         return (
-            f"It braids round a core, drawn in grey: {kind}. Its word would need "
-            "the core as a strand of its own: no word is given."
+            f"It braids round a core, drawn in grey: {kind}. Its word counts "
+            "the core as a strand, standing still, after the carriers."
         )
     kind = (
         "rigid, they stay straight" if rigid else "of yarn, they give way to the others"
     )
     return (
-        f"It braids round {n_cores} cores, drawn in grey: {kind}. Its word would "
-        "need the cores as strands of their own: no word is given."
+        f"It braids round {n_cores} cores, drawn in grey: {kind}. Its word "
+        "counts each core as a strand, standing still, after the carriers."
     )
 
 

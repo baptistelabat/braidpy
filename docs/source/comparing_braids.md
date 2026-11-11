@@ -152,8 +152,9 @@ with each the ways to make it.
 
 A disk braid that creeps round the disk from cycle to cycle, as kongo gumi
 does, is fingerprinted over as many cycles as bring every strand home, not
-its first. A machine braiding round cores has no braid word of its strands
-alone, and is left out. Making every braid takes some ten seconds, so the
+its first. A machine braiding round cores counts each core as a strand of
+its word, one standing still, which the others pass in front of or behind.
+Making every braid takes some ten seconds, so the
 catalogue is built once, when first asked for.
 
 Braid Studio shows it beside every braid it makes: **Also made as**, the
