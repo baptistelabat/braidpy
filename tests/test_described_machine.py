@@ -14,8 +14,12 @@ from braidpy.horn_gear.word import annular_word, flat_word
 from braidpy.machine_catalog import CATALOGUE
 from braidpy.similarity import fingerprint, same_fingerprint
 
+# Every machine of the catalogue but the lace machines, whose gears a card
+# turns: split gears too.
 GEARED = [
-    name for name, entry in CATALOGUE.items() if type(entry.make()) is BraidingMachine
+    name
+    for name, entry in CATALOGUE.items()
+    if isinstance(entry.make(), BraidingMachine)
 ]
 
 
@@ -164,5 +168,77 @@ def test_braid_studio_draws_each_geared_machine_with_its_graph():
         "graph": "A-B B-C C-D D-A",
         "n_slots": 4,
     }
-    # A line of split gears is not written as a graph.
-    assert machine_geometry("twin_plait")["graph"] is None
+    # Split gears too, joined on their axle.
+    assert machine_geometry("twin_plait")["graph"] == {
+        "graph": "G0-G1a G1b-G2 G1a+G1b",
+        "n_slots": 3,
+    }
+    # A lace machine, its gears turned by its card, is not.
+    assert machine_geometry("lace_dutch")["graph"] is None
+
+
+# ── Split gears ───────────────────────────────────────────────────────────────
+
+
+def test_a_split_gear_is_its_parts_on_one_axle():
+    """The twin plait: its middle gear of six horns split in two parts of
+    three, both turning as one, at one centre, as large as the whole."""
+    from braidpy.horn_gear.layout import compute_layout
+
+    machine = machine_from_graph("A-B1 B2-C B1+B2", n_slots=3)
+    parts = [machine.gears["B1"], machine.gears["B2"]]
+    assert [(g.n_slots, g.size) for g in parts] == [(3, 6), (3, 6)]
+    assert parts[0].direction == parts[1].direction == -machine.gears["A"].direction
+    centres = compute_layout(machine)
+    assert centres["B1"] == centres["B2"]
+
+
+def test_a_gear_split_in_three_braids_three_plaits_round_it():
+    """Its parts' horns take turns round it, so each part's neighbour stands
+    where a horn of its own part comes round, and no two parts' carriers
+    meet: three plaits, three yarns each."""
+    from braidpy import web
+
+    made = web.build(
+        {
+            "source": "machine",
+            "name": "custom",
+            "graph": "H1-A H2-B H3-C H1+H2+H3",
+            "n_slots": 3,
+            "cycles": 1,
+        },
+        tighten=False,
+    )
+    assert len(made["strands"]) == 9
+    assert "collision" not in made["info"]
+
+
+def test_a_tree_of_gears_branches_rather_than_piling_up():
+    """A gear meshing with three others has them round it, not on top of one
+    another; a chain still runs straight along the x-axis."""
+    import math
+
+    from braidpy.horn_gear.layout import compute_layout
+
+    star = compute_layout(machine_from_graph("A-B C-B B-D", n_slots=4))
+    others = [star[g] for g in "ACD"]
+    for i, p in enumerate(others):
+        for q in others[i + 1 :]:
+            assert math.dist(p, q) > 1.0
+    chain = compute_layout(CATALOGUE["flat_9"].make())
+    assert all(y == 0.0 for _, y in chain.values())
+
+
+@pytest.mark.parametrize(
+    "text, said",
+    [
+        ("A-B1 B1+B2", "meshes with no gear"),
+        ("A-B1 A-B2 B1+B2", "twice"),
+        ("A-B1 B2-C B1+B2 B1+B3", "two axles"),
+        ("B1-B2 A-B1 B1+B2", "turn as one"),
+        ("A-B1 B2:4-C B1+B2", "as many each"),
+    ],
+)
+def test_a_split_gear_that_cannot_be_is_refused_saying_why(text, said):
+    with pytest.raises(ValueError, match=said):
+        machine_from_graph(text, n_slots=3)

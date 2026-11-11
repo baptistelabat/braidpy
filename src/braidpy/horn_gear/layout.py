@@ -193,36 +193,61 @@ def _orient(
     return {name: (x, -y) for name, (x, y) in placed.items()}
 
 
+def _spread(parent: float | None, children: int) -> list[float]:
+    """Directions out of a gear for its children: evenly round it with the
+    way back to its parent, so a single child carries straight on and two
+    branch at ±60°; round the whole of it for the first gear, the first
+    child to the right."""
+    if parent is None:
+        return [2 * math.pi * i / children for i in range(children)]
+    if children == 1:
+        # Straight on, the way it came in, to the last bit: a chain stays on
+        # the x-axis exactly.
+        return [parent - math.pi]
+    return [parent + 2 * math.pi * (i + 1) / (children + 1) for i in range(children)]
+
+
 def _layout_bfs(
     machine: BraidingMachine,
     scale: float = 1.0,
+    directions=None,
 ) -> dict[str, tuple[float, float]]:
-    """Exact tangential layout for tree (path) graphs via BFS.
+    """Exact tangential layout for tree graphs via BFS.
 
-    Places gears left-to-right along the x-axis so every adjacent pair of
-    gear circles touches exactly.  Works for any tree, including linear chains
-    and branching topologies.
+    The first gear at the origin; each gear's children round it, every
+    child's rim touching its own, in the directions :func:`_spread` gives —
+    a chain carries straight on along the x-axis, a gear with several
+    children branches.
+
+    Args:
+        machine: The machine, its gears in a tree.
+        scale: Overall scale factor.
+        directions: How to choose the directions out of a gear for its
+            children instead: called with the gear, the direction back to its
+            parent (None for the first gear) and its children, it gives a
+            direction for each.
+
+    Returns:
+        Gear name -> (x, y).
     """
     radii = gear_radii(machine, scale)
     root = next(iter(machine.gears))
+    choose = directions or (
+        lambda gear, parent, children: _spread(parent, len(children))
+    )
 
     pos: dict[str, tuple[float, float]] = {root: (0.0, 0.0)}
-    visited: set = {root}
-    queue: deque = deque([(root, 0.0)])  # (node, parent_x + parent_r)
-
+    back: dict[str, float | None] = {root: None}
+    queue: deque = deque([root])
     while queue:
-        parent, _right_edge = queue.popleft()
-        r_parent = radii[parent]
-        cx_parent = pos[parent][0]
-
-        unvisited = [n for n in machine.graph.neighbors(parent) if n not in visited]
-        for child in sorted(unvisited):
-            r_child = radii[child]
-            cx_child = cx_parent + r_parent + r_child
-            pos[child] = (cx_child, 0.0)
-            visited.add(child)
-            queue.append((child, cx_child))
-
+        parent = queue.popleft()
+        children = sorted(n for n in machine.graph.neighbors(parent) if n not in pos)
+        x, y = pos[parent]
+        for child, angle in zip(children, choose(parent, back[parent], children)):
+            reach = radii[parent] + radii[child]
+            pos[child] = (x + reach * math.cos(angle), y + reach * math.sin(angle))
+            back[child] = angle + math.pi
+            queue.append(child)
     return pos
 
 
