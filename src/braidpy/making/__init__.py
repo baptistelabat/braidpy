@@ -36,6 +36,28 @@ def _unit(info: Mapping[str, Any]):
     return Braid(unit, braid.n_strands), len(braid.generators) // len(unit)
 
 
+def _passes(source: str, repeats: int) -> int:
+    """How many times a link may ask for the unit to be made again.
+
+    As many as the braid shown repeats it, but no more than that source
+    will take: the bounds are the page's own (:mod:`braidpy.web._settings`),
+    and a link asking past them is refused rather than drawn.  Fewer passes
+    make less of the braid, which a visitor can put back up by hand.
+
+    Args:
+        source: Which source the link is for.
+        repeats: How many times the braid shown repeats its unit.
+
+    Returns:
+        The passes to ask for.
+    """
+    from braidpy.web._settings import Lace, Mobidai, Sinnet
+
+    allowed = {"mobidai": Mobidai.cycles, "lace": Lace.cycles, "sinnet": Sinnet.cycles}
+    cycles = allowed[source]
+    return max(cycles.low, min(repeats, cycles.high))
+
+
 def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
     """What Braid Studio shows of the other ways of making the braid it
     made: its repeating unit as moves on a kumihimo disk, and as a lace
@@ -60,9 +82,10 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
     shown: dict[str, Any] = {"crossings": len(unit.generators)}
     if 2 * unit.n_strands + 2 <= 32:
         moves = disk_moves(unit)
-        # Made as many times as the braid shown repeats its unit.
+        # Made as many times as the braid shown repeats its unit, as far
+        # as the disk will take (:func:`_passes`).
         shown["disk"] = {
-            "spec": {**moves.spec(), "cycles": repeats},
+            "spec": {**moves.spec(), "cycles": _passes("mobidai", repeats)},
             "moves": moves.text(),
         }
     card = lace_card(unit)
@@ -72,8 +95,9 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
         "card": card.text(),
         # Named without building the machine, which needs networkx.
         "threading": " ".join(card.notches()),
-        # Made as many times as the braid shown repeats its unit.
-        "spec": card.spec(cycles=repeats),
+        # Made as many times as the braid shown repeats its unit, as far
+        # as the machine will take (:func:`_passes`).
+        "spec": card.spec(cycles=_passes("lace", repeats)),
     }
     return shown
 
@@ -100,14 +124,16 @@ def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> dict[st
         return {"spec": None, "complete": True, "tried": 0}
     unit, repeats = found
     search = ashley_sinnet(unit, time_limit=time_limit)
-    # Made as many times as the braid shown repeats its unit.
+    # Made as many times as the braid shown repeats its unit, as far as the
+    # stand will take (:func:`_passes`).
+    passes = _passes("sinnet", repeats)
     shown: dict[str, Any] = {
-        "spec": sinnet_spec(search.sinnet, cycles=repeats) if search.sinnet else None,
+        "spec": sinnet_spec(search.sinnet, cycles=passes) if search.sinnet else None,
         "complete": search.complete,
         "tried": search.tried,
     }
     if search.sinnet is None:
-        shown["exact"] = sinnet_spec(ashley_moves(unit), cycles=repeats)
+        shown["exact"] = sinnet_spec(ashley_moves(unit), cycles=passes)
     return shown
 
 

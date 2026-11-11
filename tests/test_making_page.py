@@ -75,15 +75,19 @@ def test_ashley_s_stand_is_searched_for_when_asked():
     assert found["spec"]["cycles"] == 6  # as many as the braid shown repeats
 
 
-def test_a_sinnet_found_is_made_as_long_as_the_braid_shown():
-    """Ashley's flat sinnet of 7 (#2968), made as many times as the braid."""
+def test_a_sinnet_found_is_made_as_long_as_the_stand_takes():
+    """Ashley's flat sinnet of 7 (#2968), made as many times as the braid
+    shown repeats its unit -- fourteen -- or as near as the stand will take,
+    which is twelve.  Asking fourteen is refused when the link is followed.
+    """
     found = sinnet_for_page(
         _info(
             {"source": "word", "word": "1 2 3 -6 -5 -4", "n_strands": 7, "repeat": 14}
         )
     )
     assert found["spec"]["counts"] == "4 3"
-    assert found["spec"]["cycles"] == 14
+    assert found["spec"]["cycles"] == 12
+    build({**found["spec"], "iterations": 0}, tighten=False)
 
 
 def test_a_braid_with_no_word_has_nothing_shown():
@@ -105,3 +109,25 @@ def test_the_twin_plait_machine_is_made_on_a_lace_machine():
         return Braid(word, info["n_strands"])
 
     assert proven(braid(shown), braid(made["info"]))
+
+
+def test_a_link_asks_for_no_more_passes_than_its_source_takes():
+    """The rectangular braid of 14 repeats its unit fourteen times, where
+    Ashley's stand takes twelve: the link asks for twelve and is drawn,
+    rather than asking fourteen and being refused when it is followed.  The
+    disk and the lace machine take fourteen, so those are left alone.
+    """
+    from braidpy.braid_catalog import RECTANGULAR_14
+    from braidpy.web._settings import Sinnet
+
+    spec = {"source": "word", "word": RECTANGULAR_14, "n_strands": 14, "repeat": 14}
+    info = _info(spec)
+    shown = for_page(info)
+    assert shown["disk"]["spec"]["cycles"] == 14
+    assert shown["lace"]["spec"]["cycles"] == 14
+    offered = sinnet_for_page(info, time_limit=0.5)
+    sinnet = offered["spec"] or offered["exact"]
+    assert sinnet["cycles"] == Sinnet.cycles.high == 12
+    # Followed, it makes a braid rather than being turned away.
+    made = build({**sinnet, "iterations": 0}, tighten=False)
+    assert made["info"]["n_strands"] == 14
