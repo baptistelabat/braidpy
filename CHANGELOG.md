@@ -6,6 +6,12 @@ What changed in each release of braidpy.
 
 ### New
 
+- Each catalogued braid's links, as data: where it comes from and where it
+  is shown made, each a title, a kind (book, article, video, page, post)
+  and a web address (`catalogue.Link`, `Entry.links`; `Entry.reference` is
+  now the first link's title). The addresses that were in the catalogues'
+  docstrings and notes are there now, and go out with the topology
+  catalogue (`topology_catalog.export`), for Braid Studio to show.
 - Tightening a braid as a window on an endless one rather than a piece
   held at both ends (`take_off.Periodic`, `tighten_yarns(periodic=...)`):
   the yarn leaving the fell end of the window runs on into the top of it,

@@ -10,7 +10,7 @@ import braidpy.braid
 from braidpy import Braid
 from braidpy.artin_generators import a
 from braidpy.braid import slide_strand, weave_strand
-from braidpy.catalogue import Entry
+from braidpy.catalogue import Entry, Link, ashley
 from braidpy.utils import StrictlyPositiveInt
 
 """
@@ -80,8 +80,6 @@ def flat3(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     Ie ft strand down across its sister strand and lay it parallel to and
     below the single right strand. Repeat alternately"
 
-    https://www.animatedknots.com/three-strand-braid-knot
-
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
 
@@ -105,8 +103,6 @@ def inverted_flat3(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     to pass the strands at the back, employing only the first and second
     fingers and the thumbs"
 
-    https://www.animatedknots.com/three-strand-braid-knot-alt
-
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
 
@@ -126,8 +122,6 @@ def inverted_flat3(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
 def square4(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     Basic round braid with 4 strands
-
-    https://www.animatedknots.com/four-strand-square-sinnet-knot
 
     ABOK 2999. "SQUARE SINNET of four strands. Used for lanyards, whips, whiplashes, quirts and leashes.
     With strands of two colors, arranged as pictured, the two colors helix around the sinnet,
@@ -161,8 +155,6 @@ def asymmetric_flat4(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     Basic flat braid with 4 strands
 
-    https://www.youtube.com/watch?v=7lTFIzm9BLY
-
     ABOK 2969: "Unless for some special purpose, this method is usually
     limited to an odd number of strands, as with an even number of
     strands the sinnet is unsymmetrical. But I have seen the braid, made
@@ -189,8 +181,6 @@ def asymmetric_flat4(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
 def flat6(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     This one is probably not unique !
-
-    https://www.youtube.com/watch?v=ZHWlYBxL-mA
 
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
@@ -224,7 +214,7 @@ def flat6(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
 
 def regular_flat6(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
-    https://www.youtube.com/watch?v=J65kCzm_BtI
+    Regular flat braid with 6 strands.
 
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
@@ -309,8 +299,6 @@ def abok_2974(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
     2974. With four strands the horizon is somewhat widened.
 
-    https://www.animatedknots.com/four-strand-sinnet-knot-2974
-
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
 
@@ -328,7 +316,7 @@ def abok_2974(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
 
 def flat5(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     """
-    https://www.youtube.com/watch?v=uRy4wvJwSWA
+    Flat braid with 5 strands.
 
     Args:
         draw: Draw the braid as it is made (the default); False only builds it.
@@ -395,24 +383,14 @@ def flat_sinnet7(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
 
 def triangle_sinnet_9():
     """
-    ABOK3057
-    https://craftdesignonline.com/design/9-strand-triangle-sinnet-1/
-
-    ABOK3058
-    https://craftdesignonline.com/design/9-strand-triangle-sinnet-2/
-
-    Returns:
-
+    ABOK #3057 and #3058: made, with their links, in
+    :mod:`braidpy.solid_sinnets_catalog`.
     """
 
 
 def triangle_sinnet_10():
     """
-    ABOK3045
-    https://craftdesignonline.com/design/10-strand-triangle-sinnet/
-
-    Returns:
-
+    ABOK #3045: made, with its links, in :mod:`braidpy.solid_sinnets_catalog`.
     """
 
 
@@ -435,31 +413,10 @@ ABOK #2996
 https://www.youtube.com/watch?v=gXl5dX844sg
 """
 """
-ABOK #3021
-https://www.youtube.com/watch?v=G0BFWYYVj7M
-"""
-
-"""
 ABOK2979
 https://www.paracordguild.com/french-sinnet-abok-2979-tutorial/
 
 """
-"""
-ABOK3044
-https://craftdesignonline.com/design/8-strand-triangle-sinnet/
-"""
-
-"""
-ABOK3073
-https://craftdesignonline.com/design/20-strand-square-sinnet/
-"""
-
-"""
-17-Strand Half Round Sinnet
-ABOK3054
-https://craftdesignonline.com/design/17-strand-half-round-sinnet/
-"""
-
 """
 7 strands braid (not exactly a kumihimo) with 8 slots mobidai
 https://raft.net/wp-content/uploads/2020/08/PGS-Kumihimo.pdf
@@ -557,52 +514,113 @@ CATALOGUE: dict[str, Entry[Braid]] = {
     "flat3": Entry(
         "Plait, or flat sinnet of 3 (ABOK 2965)",
         lambda: flat3(draw=False)[0],
-        "The Ashley Book of Knots, #2965",
+        (
+            ashley(2965),
+            Link(
+                "Animated Knots: three strand braid",
+                "page",
+                "https://www.animatedknots.com/three-strand-braid-knot",
+            ),
+        ),
     ),
     "inverted_flat3": Entry(
         "Dutch braid of 3 (ABOK 2966)",
         lambda: inverted_flat3(draw=False)[0],
-        "The Ashley Book of Knots, #2966",
+        (
+            ashley(2966),
+            Link(
+                "Animated Knots: three strand braid, the other way",
+                "page",
+                "https://www.animatedknots.com/three-strand-braid-knot-alt",
+            ),
+        ),
     ),
     "weave3": Entry(
-        "Weave of 3 (ABOK 2973)",
-        lambda: weave3(draw=False)[0],
-        "The Ashley Book of Knots, #2973",
+        "Weave of 3 (ABOK 2973)", lambda: weave3(draw=False)[0], (ashley(2973),)
     ),
     "double_flat3": Entry(
         "Double flat sinnet of 3 (ABOK 2971)",
         lambda: double_flat3(draw=False)[0],
-        "The Ashley Book of Knots, #2971",
+        (ashley(2971),),
     ),
     "square4": Entry(
         "Square sinnet of 4 (ABOK 2999)",
         lambda: square4(draw=False)[0],
-        "The Ashley Book of Knots, #2999",
+        (
+            ashley(2999),
+            Link(
+                "Animated Knots: four strand square sinnet",
+                "page",
+                "https://www.animatedknots.com/four-strand-square-sinnet-knot",
+            ),
+        ),
     ),
     "asymmetric_flat4": Entry(
         "Asymmetric flat sinnet of 4 (ABOK 2969)",
         lambda: asymmetric_flat4(draw=False)[0],
-        "The Ashley Book of Knots, #2969",
+        (
+            ashley(2969),
+            Link(
+                "A flat braid of 4, made",
+                "video",
+                "https://www.youtube.com/watch?v=7lTFIzm9BLY",
+            ),
+        ),
     ),
     "abok_2974": Entry(
         "Four-strand sinnet (ABOK 2974)",
         lambda: abok_2974(draw=False)[0],
-        "The Ashley Book of Knots, #2974",
+        (
+            ashley(2974),
+            Link(
+                "Animated Knots: four strand sinnet",
+                "page",
+                "https://www.animatedknots.com/four-strand-sinnet-knot-2974",
+            ),
+        ),
     ),
-    "flat5": Entry("Flat braid of 5", lambda: flat5(draw=False)[0]),
+    "flat5": Entry(
+        "Flat braid of 5",
+        lambda: flat5(draw=False)[0],
+        (
+            Link(
+                "A flat braid of 5, made",
+                "video",
+                "https://www.youtube.com/watch?v=uRy4wvJwSWA",
+            ),
+        ),
+    ),
     "flat_sinnet5": Entry(
         "Flat sinnet of 5 (ABOK 2967)",
         lambda: flat_sinnet5(draw=False)[0],
-        "The Ashley Book of Knots, #2967",
+        (ashley(2967),),
     ),
-    "flat6": Entry("Flat braid of 6", lambda: flat6(draw=False)[0]),
+    "flat6": Entry(
+        "Flat braid of 6",
+        lambda: flat6(draw=False)[0],
+        (
+            Link(
+                "A flat braid of 6, made",
+                "video",
+                "https://www.youtube.com/watch?v=ZHWlYBxL-mA",
+            ),
+        ),
+    ),
     "regular_flat6": Entry(
-        "Regular flat braid of 6", lambda: regular_flat6(draw=False)[0]
+        "Regular flat braid of 6",
+        lambda: regular_flat6(draw=False)[0],
+        (
+            Link(
+                "A regular flat braid of 6, made",
+                "video",
+                "https://www.youtube.com/watch?v=J65kCzm_BtI",
+            ),
+        ),
     ),
     "flat_sinnet7": Entry(
         "Flat sinnet of 7 (ABOK 2968)",
         lambda: flat_sinnet7(draw=False)[0],
-        "The Ashley Book of Knots, #2968",
+        (ashley(2968),),
     ),
     "rectangular14": Entry(
         "Rectangular braid of 14", lambda: rectangular14(draw=False)[0]

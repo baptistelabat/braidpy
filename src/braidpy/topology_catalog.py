@@ -38,7 +38,7 @@ from functools import lru_cache
 from typing import Any, Optional
 
 from braidpy.braid import Braid
-from braidpy.catalogue import Entry
+from braidpy.catalogue import Entry, Link
 from braidpy.similarity import Fingerprint, distance, fingerprint, same_fingerprint
 
 __all__ = [
@@ -57,6 +57,14 @@ __all__ = [
 # What says how much of a braid is made, not which braid it is.
 _HOW_MUCH = ("cycles", "repeat")
 
+# The catalogue each source's braids are listed in, by braidpy.web's names.
+_CATALOGUES = {
+    "word": "braidpy.braid_catalog",
+    "mobidai": "braidpy.mobidai_catalog",
+    "sinnet": "braidpy.solid_sinnets_catalog",
+    "machine": "braidpy.machine_catalog",
+}
+
 
 @dataclass(frozen=True)
 class Method:
@@ -68,12 +76,15 @@ class Method:
         name: The braid's name in that catalogue.
         title: What it is called, to show.
         spec: What :func:`braidpy.web.build` makes it from.
+        links: Where it comes from and is shown: its catalogue entry's
+            (:class:`braidpy.catalogue.Link`).
     """
 
     source: str
     name: str
     title: str
     spec: tuple[tuple[str, Any], ...]
+    links: tuple[Link, ...] = ()
 
     @property
     def key(self) -> str:
@@ -115,6 +126,18 @@ def _spec(**items: Any) -> tuple[tuple[str, Any], ...]:
     return tuple(items.items())
 
 
+def _links(source: str, name: str) -> tuple[Link, ...]:
+    """A catalogued braid's links, by the source that makes it and its name
+    there; none for one no catalogue lists."""
+    from importlib import import_module
+
+    module = _CATALOGUES.get(source)
+    if module is None:
+        return ()
+    entry = import_module(module).CATALOGUE.get(name)
+    return entry.links if entry is not None else ()
+
+
 def methods() -> list[Method]:
     """Every way of making a braid the catalogues list, in their order:
     braid words, kumihimo, kumihimo disks, sinnets, machines.
@@ -135,7 +158,13 @@ def methods() -> list[Method]:
     for name, example in zip(names, word_examples()):
         rest = {k: v for k, v in example.items() if k != "title"}
         found.append(
-            Method("word", name, example["title"], _spec(source="word", **rest))
+            Method(
+                "word",
+                name,
+                example["title"],
+                _spec(source="word", **rest),
+                _links("word", name),
+            )
         )
     pattern = listed["kumihimo"]["defaults"]
     found.append(
@@ -161,6 +190,7 @@ def methods() -> list[Method]:
                     entry["name"],
                     entry["title"],
                     _spec(source=source, name=entry["name"], cycles=1),
+                    _links(source, entry["name"]),
                 )
             )
     return found
@@ -241,11 +271,9 @@ def catalogue() -> dict[str, Entry[Topology]]:
     """
 
     def entry(topology: Topology) -> Entry[Topology]:
-        return Entry(
-            topology.title,
-            lambda: topology,
-            ", ".join(f"{m.source}: {m.title}" for m in topology.methods),
-        )
+        # Its links are those of every way of making it, each once.
+        links = tuple(dict.fromkeys(link for m in topology.methods for link in m.links))
+        return Entry(topology.title, lambda: topology, links)
 
     return {topology.name: entry(topology) for topology in _topologies()}
 
@@ -325,6 +353,7 @@ def export() -> list[dict[str, Any]]:
                     "name": m.name,
                     "title": m.title,
                     "spec": m.description(),
+                    "links": [asdict(link) for link in m.links],
                 }
                 for m in t.methods
             ],
@@ -358,7 +387,13 @@ def load(data: Sequence[Mapping[str, Any]]) -> tuple[Topology, ...]:
                     burau=tuple(mark.get("burau", ())),
                 ),
                 tuple(
-                    Method(m["source"], m["name"], m["title"], tuple(m["spec"].items()))
+                    Method(
+                        m["source"],
+                        m["name"],
+                        m["title"],
+                        tuple(m["spec"].items()),
+                        tuple(Link(**link) for link in m.get("links", ())),
+                    )
                     for m in t["methods"]
                 ),
             )

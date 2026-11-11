@@ -21,9 +21,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from braidpy.catalogue import Entry
+from braidpy.catalogue import Entry, Link
 
 __all__ = ["CATALOGUE", "CataloguedBraid", "CataloguedMobidai"]
+
+
+# The book most of these braids come from.
+DELAGE_CALVET = "Delage-Calvet, Bracelets Kumihimo"
 
 
 @dataclass(frozen=True)
@@ -46,7 +50,7 @@ class CataloguedMobidai:
     initial_slots: tuple[tuple[int, str], ...]
     moves: tuple[tuple[int, int], ...]
     n_shift_after_cycle: int = 0
-    source: str = "Delage-Calvet, Bracelets Kumihimo"
+    source: str = DELAGE_CALVET
 
     @property
     def n_strands(self) -> int:
@@ -370,7 +374,9 @@ def _entry(braid: CataloguedMobidai) -> Entry[CataloguedMobidai]:
     return Entry(
         title=braid.name[0].upper() + braid.name[1:],
         make=lambda: braid,
-        reference=braid.source,
+        links=(
+            Link(braid.source, "book" if braid.source == DELAGE_CALVET else "post"),
+        ),
     )
 
 
