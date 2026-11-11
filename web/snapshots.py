@@ -54,7 +54,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--pyodide", help="Where Pyodide is; its CDN if not given.")
     parser.add_argument("--chromium", help="A Chromium to use instead of Playwright's.")
-    parser.add_argument("--timeout", type=float, default=120, help="Seconds per braid.")
+    # Seconds per braid: a braid word waits for Python, and the biggest, of
+    # 20 strands, takes minutes.
+    parser.add_argument("--timeout", type=float, default=300, help="Seconds per braid.")
     args = parser.parse_args()
 
     from playwright.sync_api import TimeoutError as PlaywrightTimeout
