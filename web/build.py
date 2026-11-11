@@ -61,7 +61,11 @@ SETTLED_CACHE = Path(os.environ.get("BRAID_STUDIO_SETTLED", WEB / ".settled"))
 # as it costs only the build; a browser unpacks any level as fast.
 GZIP_LEVEL = 9
 PAGE = [
+    # The front page: the braids to look up, each to open in the studio.
     "index.html",
+    "home.js",
+    # The studio.
+    "make.html",
     "style.css",
     # The page, in modules (app.js says what each is).
     "app.js",
@@ -253,13 +257,16 @@ def _compressed(site: Path) -> None:
 
 def _data(site: Path) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
-    catalogue — what it can make, offered before Python has started — and
-    the catalogue of braids by topology.  Made by braidpy with all it
+    catalogue — what it can make, offered before Python has started — the
+    catalogue of braids by topology, and the table of braids the front
+    page lists (``braids.json``).  Made by braidpy with all it
     needs, in the project's own environment."""
     script = (
         "import json, sys; from braidpy import web; "
         "from braidpy.topology_catalog import export; "
-        "json.dump({'catalogue': web.catalogue(), 'topologies': export()}, sys.stdout)"
+        "topologies = export(); "
+        "json.dump({'catalogue': web.catalogue(), 'topologies': topologies, "
+        "'braids': web.braids(topologies)}, sys.stdout)"
     )
     data = json.loads(_braidpy(script).stdout)
     for name, value in data.items():

@@ -14,6 +14,13 @@ What changed in each release of braidpy.
   machine…**, starting from the machine chosen before. Studio now reads a
   machine's braid round its ring whenever its gears make one, not by its
   name.
+- Braid Studio's front page: every braid it offers as it comes, in a table
+  to filter by name, by what makes it, by strands, by the loops it closes
+  into and by writhe, each with a picture of it settled, its links (the
+  book, videos, pages) and what else makes the same braid, and opened in
+  the studio at once (`braidpy.web.braids`, `web/home.js`,
+  `web/snapshots.py`). The studio itself is now `make.html`; old addresses
+  naming a braid go on there.
 - Each catalogued braid's links, as data: where it comes from and where it
   is shown made, each a title, a kind (book, article, video, page, post)
   and a web address (`catalogue.Link`, `Entry.links`; `Entry.reference` is
