@@ -100,7 +100,7 @@ export function showKin(kin) {
     [
       "Also made as",
       kin.same,
-      "The same braid, made another way: nothing braidpy measures tells them apart",
+      "The same braid, made another way: nothing measured here tells them apart",
     ],
     [
       "Nearest braids",

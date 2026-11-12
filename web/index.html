@@ -3,10 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Braid Studio — braidpy</title>
+    <!-- if not indexed -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- end if -->
+    <title>{{name}}<!-- if by --> — {{by}}<!-- end if --></title>
     <meta
       name="description"
-      content="Braids from books, videos and machines, to look up by what they are — strands, loops, writhe — each shown settled, and opened in 3D in Braid Studio, computed by braidpy in your browser."
+      content="Braids from books, videos and machines, to look up by what they are — strands, loops, writhe — each shown settled, and opened in 3D in {{name}}, computed <!-- if by -->by {{by}} <!-- end if -->in your browser."
     />
     <link rel="icon" href="data:," />
     <script>
@@ -26,11 +29,11 @@
   <body class="home">
     <header class="home-head">
       <div>
-        <h1>Braid Studio</h1>
+        <h1>{{name}}</h1>
         <p class="lede">
           Braids from books, videos and machines, to look up by what they
-          are. Open any of them to see it made and settled in 3D, computed by
-          <a href="https://github.com/baptistelabat/braidpy">braidpy</a> in
+          are. Open any of them to see it made and settled in 3D, computed<!-- if by --> by
+          <a href="{{by_url}}">{{by}}</a><!-- end if --> in
           your browser — or <a href="make.html">make your own</a>.
         </p>
       </div>
@@ -99,11 +102,11 @@
 
     <footer class="home-foot">
       <p>
-        Pictures and figures are braidpy's, made with the site; a dash is
+        Pictures and figures are <!-- if by -->{{by}}'s, <!-- end if -->made with the site; a dash is
         what it cannot say yet: for a braid made round cores, whose yarns'
         crossings leave out how they pass the cores, and for a lace
         machine's, not yet in the catalogue of braids by topology.
-        <a href="../">braidpy's documentation</a>.
+        <!-- if documentation --><a href="{{documentation}}">{{documentation_title}}</a>.<!-- end if -->
       </p>
     </footer>
   </body>

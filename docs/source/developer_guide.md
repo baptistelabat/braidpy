@@ -8,6 +8,7 @@ page of its own: [Braid Studio's internals](braid_studio_internals.md).
 :maxdepth: 1
 
 braid_studio_internals.md
+private_sites.md
 ```
 
 ## Setting up

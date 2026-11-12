@@ -145,6 +145,9 @@ python -m http.server -d web/site    # then open http://localhost:8000
 or `make studio` and `make studio-serve`. To use a Pyodide of your own rather than its CDN, add
 `?pyodide=<url of its full/ directory>` to the address.
 
+Under another name, crediting and linking otherwise: `--profile`, see
+[A site of your own](private_sites.md).
+
 ## What comes next
 
 Done so far, beyond making and drawing a braid: watching it being made with

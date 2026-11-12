@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import html
 import json
 import os
 import re
@@ -93,6 +94,9 @@ PAGE = [
     "marudai.js",
     "b3d.js",
 ]
+# What the site calls itself, whom it credits and where it links: this
+# repository's Braid Studio, unless another profile is given (--profile).
+PROFILE = WEB / "profile.toml"
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
 
@@ -128,20 +132,65 @@ def _math_braid_sdist(into: Path) -> Path:
 # worker, importScripts and the page's stylesheet and script name them:
 # "name.js", "./name.js".
 _NAMED = re.compile(r'"(\./)?([\w.-]+\.(?:js|css))"')
+# A page's parts kept only when a key of the profile is set (or, with
+# "not", only when it is not): a whole line or more, markers on lines of
+# their own, or a few words.
+_IF = r"<!-- if (not )?(\w+) -->"
+_END = r"<!-- end if -->"
+_LINES = re.compile(rf"^[ \t]*{_IF}\n(.*?)^[ \t]*{_END}\n", re.MULTILINE | re.DOTALL)
+_WORDS = re.compile(rf"{_IF}(.*?){_END}", re.DOTALL)
+_FILLED = re.compile(r"\{\{(\w+)\}\}")
 
 
-def _copy_page(site: Path) -> None:
-    """The page's own files, each naming the others with the page's version.
+def profile(path: Path = PROFILE) -> dict[str, str | bool]:
+    """A site's profile: what it calls itself, whom it credits and where it
+    links.  It gives every key this repository's own profile gives, and no
+    other: a site built from braidpy decides each, a key added here
+    included, rather than taking this one's."""
+    given = tomllib.loads(path.read_text())
+    expected = tomllib.loads(PROFILE.read_text())
+    if given.keys() != expected.keys():
+        raise SystemExit(
+            f"{path} gives {sorted(given)}; a profile gives {sorted(expected)}."
+        )
+    return given
+
+
+def _rendered(text: str, site: dict[str, str | bool]) -> str:
+    """A page filled with its site's profile: ``{{key}}`` by its value, a
+    part kept or left out as its key is set or not."""
+
+    def value(key: str) -> str | bool:
+        if key not in site:
+            raise RuntimeError(f"The page asks for {key!r}, which no profile gives.")
+        return site[key]
+
+    def kept(block: re.Match) -> str:
+        negated, key, body = block.groups()
+        return body if bool(value(key)) != bool(negated) else ""
+
+    def filled(named: re.Match) -> str:
+        escaped = html.escape(str(value(named.group(1))), quote=False)
+        return escaped.replace('"', "&quot;")
+
+    return _FILLED.sub(filled, _WORDS.sub(kept, _LINES.sub(kept, text)))
+
+
+def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
+    """The page's own files, each naming the others with the page's version,
+    its HTML filled with the site's profile (``about``).
 
     The version is a fingerprint of all of them: a browser holding an old
     copy of any file fetches the new one, and never mixes old modules with
     new ones.  Modules import each other both ways, so a file's own
     fingerprint could not go into the files that name it."""
-    import hashlib
-
+    texts = {}
+    for name in PAGE:
+        text = (WEB / name).read_text()
+        texts[name] = _rendered(text, about) if name.endswith(".html") else text
     digest = hashlib.sha256()
     for name in PAGE:
-        digest.update(name.encode() + b"\0" + (WEB / name).read_bytes())
+        digest.update(name.encode() + b"\0" + texts[name].encode())
     version = digest.hexdigest()[:10]
 
     def stamp(named: re.Match) -> str:
@@ -150,8 +199,7 @@ def _copy_page(site: Path) -> None:
             return named.group(0)
         return f'"{here or ""}{name}?v={version}"'
 
-    for name in PAGE:
-        text = (WEB / name).read_text()
+    for name, text in texts.items():
         for module in re.findall(r'(?:from|import) "\./([^"]+)"', text):
             if module not in PAGE:
                 raise RuntimeError(f"{name} imports {module}, which is not in PAGE.")
@@ -273,14 +321,18 @@ def _data(site: Path) -> None:
         (site / f"{name}.json").write_text(json.dumps(value))
 
 
-def build(site: Path, premade: bool = True) -> None:
+def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:
     if not (THREE / "build" / "three.module.js").exists():
         raise SystemExit("three.js is missing: run `npm install` in web/ first.")
     if site.exists():
         shutil.rmtree(site)
     site.mkdir(parents=True)
 
-    _copy_page(site)
+    described = profile(about)
+    _copy_page(site, described)
+    if not described["indexed"]:
+        # Search engines read it only at a host's root: a site served there.
+        (site / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
     _data(site)
     if premade:
         _premade(site)
@@ -330,8 +382,14 @@ def main() -> None:
         action="store_true",
         help="Leave out the braids made with the site: quicker, for trying the page.",
     )
+    parser.add_argument(
+        "--profile",
+        type=Path,
+        default=PROFILE,
+        help="What the site calls itself, whom it credits and where it links.",
+    )
     args = parser.parse_args()
-    build(args.out, premade=not args.no_premade)
+    build(args.out, premade=not args.no_premade, about=args.profile)
 
 
 if __name__ == "__main__":
