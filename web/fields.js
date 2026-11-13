@@ -133,6 +133,12 @@ const FIELDS = {
       kind: "text",
       hint: "Each as gear:slot, slots numbered from each gear's first. Click a slot on the machine to put a carrier on it or take it off: carriers that meet stop the braiding there.",
     },
+    {
+      name: "axials",
+      label: "Axial yarns",
+      kind: "text",
+      hint: "Where straight yarns are fed up through the braid, the carriers braiding round them: a gear, as B, up its hollow spindle; the ring of gears round a hole, as A-B-C-D, down it. Every place there is room for one is marked on the machine: click one to load a spool there or take it off.",
+    },
     CORE,
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
   ],

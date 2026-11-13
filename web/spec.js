@@ -10,21 +10,25 @@ import { CHOICES, guessChoices } from "./defaults.js";
 import { catalogue, renderFields } from "./fields.js";
 import { $ } from "./page.js";
 
+// Fields filled with what the machine does itself -- its loading, its
+// axial yarns -- which the link leaves to it while they are left so.
+const MACHINE_OWN = new Set(["carriers", "axials"]);
+
 export function readSpec() {
   const spec = { source: $("source").value };
   // A catalogued braid is named; what it is made of is the catalogue's.
   const named = $("form").querySelector("select[name=name]")?.value !== "custom";
   for (const element of $("form").elements) {
     if (!element.name || element.name === "source") continue;
-    // Every carrier taken off is no carriers, not the machine's own.
-    if (element.name === "carriers" && !element.value.trim() && element.dataset.default) {
-      spec.carriers = "none";
+    // Every carrier or axial taken off is none, not the machine's own.
+    if (MACHINE_OWN.has(element.name) && !element.value.trim() && element.dataset.default) {
+      spec[element.name] = "none";
       continue;
     }
     if (element.value === "" || element.closest("[hidden]")) continue;
     if (named && element.closest("[data-custom]")) continue;
-    // A machine's own loading is the machine's to make.
-    if (element.name === "carriers" && element.value === element.dataset.default) continue;
+    // A machine's own loading and axials are the machine's to make.
+    if (MACHINE_OWN.has(element.name) && element.value === element.dataset.default) continue;
     // A choice left as the braid's own default is the braid's to make.
     if (element.name in CHOICES && element.dataset.chosen !== "1") continue;
     spec[element.name] =

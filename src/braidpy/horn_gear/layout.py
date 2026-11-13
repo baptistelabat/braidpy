@@ -653,6 +653,49 @@ def tube_axials(
     return axials
 
 
+# Gear centres as many decimals alike as this are one axle: a split gear's
+# parts, placed on it by the same sums.
+_CENTRE_DIGITS = 9
+
+
+def _axle(layout: dict[str, tuple[float, float]], name: str) -> tuple[float, float]:
+    """The axle a gear turns on, the same for a split gear's parts."""
+    x, y = layout[name]
+    return round(x, _CENTRE_DIGITS), round(y, _CENTRE_DIGITS)
+
+
+def axial_spots(
+    machine: BraidingMachine,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
+) -> list[Axial]:
+    """Every place the machine could feed an axial yarn, loaded or not.
+
+    Up each gear's hollow spindle, at its centre — once for the parts of a
+    split gear, which share an axle, named by its first part — and down the
+    hole of each ring of gears that leaves room for one (:func:`tube_axials`).
+    Which of them a machine braids round is its :attr:`~braidpy.horn_gear
+    .model.BraidingMachine.axials`.
+
+    Args:
+        machine: The machine to inspect.
+        layout: Gear centre positions (computed if None).
+
+    Returns:
+        The gears' spots, in the machine's order, then the rings'.
+    """
+    if layout is None:
+        layout = compute_layout(machine)
+    spots: list[Axial] = []
+    centres: set[tuple[float, float]] = set()
+    for name in machine.gears:
+        centre = _axle(layout, name)
+        if centre in centres:
+            continue
+        centres.add(centre)
+        spots.append(Axial(f"axial_{name}", (name,)))
+    return spots + tube_axials(machine, layout)
+
+
 def ring_core(
     machine: BraidingMachine,
     layout: Optional[dict[str, tuple[float, float]]] = None,

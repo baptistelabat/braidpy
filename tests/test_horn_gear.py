@@ -536,7 +536,7 @@ def test_princess_carries_eight_carriers_around_a_cord():
     simulate(m, simulation_period(m), cp)  # raises on any collision
 
     cord = m.axials[0]
-    assert cord.name == "cord"
+    assert cord.name == "axial_B"
     assert cord.anchor == ("B",)
 
     # The cord stands at the centre gear, so it clears that gear's radius.
@@ -2076,7 +2076,7 @@ def test_a_machine_lays_its_cores_only_when_asked():
     machine = soutache_braid()
     plain = yarn_paths(machine, n_cycles=1, yarn_diameter=0.2).points
     cored = yarn_paths(machine, n_cycles=1, yarn_diameter=0.2, axials=True).points
-    assert set(cored) - set(plain) == {"cord_A", "cord_B"}
+    assert set(cored) - set(plain) == {"axial_A", "axial_B"}
 
 
 def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
@@ -2089,7 +2089,7 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
     paths = yarn_paths(
         machine, n_cycles=2, yarn_diameter=0.2, fell_radius=0.0, axials=True
     )
-    cores = ["cord_A", "cord_B"]
+    cores = ["axial_A", "axial_B"]
     rigid, _ = tighten_yarns(paths, 0.2, iterations=60, rigid=cores)
     free, _ = tighten_yarns(paths, 0.2, iterations=60)
     for name in cores:

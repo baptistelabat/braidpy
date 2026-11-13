@@ -34,6 +34,7 @@ from .layout import (
     axial_clearance,
     axial_position,
     axial_positions,
+    axial_spots,
     carrier_radius,
     carrier_xy,
     compute_layout,
@@ -116,6 +117,7 @@ __all__ = [
     # axial columns and tube cores
     "axial_position",
     "axial_positions",
+    "axial_spots",
     "bands_of",
     "carrier_places",
     "carrier_radius",

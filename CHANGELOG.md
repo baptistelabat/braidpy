@@ -6,6 +6,26 @@ What changed in each release of braidpy.
 
 ### New
 
+- The catalogue's horn gear machines written as their graphs, as a machine
+  of your own is (`machine_catalog`): the gears that mesh, where they feed
+  axial yarns, and, should it be given one, the carriers it starts with
+  (`machine_from_graph(..., axials=, loading=)`,
+  `described.read_axials`, `read_loading`, `BraidingMachine.with_loading`).
+  `horn_gear.examples` builds them so. Each is the machine it was, with as
+  many carriers, but its slots may be numbered from another one round and
+  it loads itself: the tubular braids of 12 and 16 now start on other
+  slots, and a loading written for a machine as it was may load it
+  otherwise. The machines braiding
+  several bands at once are built as before. A soutache's or princess
+  braid's cords are named after their gear (`axial_A`).
+- A machine written as its graph puts a gear's contacts where the layout
+  has them whenever whole slots can say so exactly, and only otherwise as
+  evenly as its slots allow: the ring of four gears now has each gear's
+  contacts a slot apart, as they are, rather than two.
+- Every place a horn gear machine could feed an axial yarn
+  (`layout.axial_spots`: up each gear, down each ring of gears with room),
+  drawn in Braid Studio on the machine: a click loads a spool there or
+  takes it off (**Axial yarns**, `axials` in a link, `none` for none).
 - Split gears in a machine of your own: a gear split into parts on one
   axle, written `A-B1 B2-C B1+B2`, in two parts or more (`H1+H2+H3`),
   anywhere in the graph; each part's neighbour stands where that part's

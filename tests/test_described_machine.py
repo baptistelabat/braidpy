@@ -105,18 +105,10 @@ def test_a_graph_that_is_no_machine_is_refused_saying_why(text, said):
 def test_a_catalogued_machine_written_as_its_graph_is_the_same_machine(name):
     """Read back, the gears, their directions and how far apart their
     contacts are are the catalogue's: the same machine, its slots perhaps
-    named from another one round.  But for the ring of four, whose contacts
-    the catalogue puts side by side where its geometry has them, and the
-    graph as far apart as they go: another machine, the same braid."""
+    named from another one round."""
     machine = CATALOGUE[name].make()
     back = machine_from_graph(*graph_of(machine))
-    if name == "tubular_8":
-        assert same_fingerprint(
-            fingerprint(_ring_braid(machine, machine.default_carriers())),
-            fingerprint(_ring_braid(back, back.default_carriers())),
-        )
-    else:
-        assert _renaming(machine, back) is not None
+    assert _renaming(machine, back) is not None
 
 
 @pytest.mark.parametrize("name", ["tubular_12", "flat_3"])
@@ -242,3 +234,128 @@ def test_a_tree_of_gears_branches_rather_than_piling_up():
 def test_a_split_gear_that_cannot_be_is_refused_saying_why(text, said):
     with pytest.raises(ValueError, match=said):
         machine_from_graph(text, n_slots=3)
+
+
+# The catalogue's machines as they were built gear by gear, before they were
+# written as graphs: each gear's slots and direction, each contact's slots,
+# and the gears fed an axial yarn.
+_BUILT = {
+    "flat_3": ({"A": (3, 1), "B": (3, -1)}, [("A", "B", 0, 0)], ""),
+    "flat_4": ({"A": (4, 1), "B": (4, -1)}, [("A", "B", 0, 0)], ""),
+    "flat_9": (
+        {"A": (5, 1), "B": (4, -1), "C": (4, 1), "D": (5, -1)},
+        [("A", "B", 0, 2), ("B", "C", 0, 2), ("C", "D", 0, 0)],
+        "",
+    ),
+    "soutache_5": ({"A": (5, 1), "B": (5, -1)}, [("A", "B", 0, 0)], "AB"),
+    "soutache_7": ({"A": (7, 1), "B": (7, -1)}, [("A", "B", 0, 0)], "AB"),
+    "princess": (
+        {"A": (5, 1), "B": (6, -1), "C": (5, 1)},
+        [("A", "B", 0, 0), ("B", "C", 3, 0)],
+        "B",
+    ),
+    "tubular_8": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCD")},
+        [("A", "B", 1, 3), ("B", "C", 0, 3), ("C", "D", 0, 3), ("D", "A", 0, 0)],
+        "",
+    ),
+    "tubular_12": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCDEF")},
+        [(a, b, 1, 3) for a, b in zip("ABCDEF", "BCDEFA")],
+        "",
+    ),
+    "tubular_16": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCDEFGH")},
+        [(a, b, 1, 3) for a, b in zip("ABCDEFGH", "BCDEFGHA")],
+        "",
+    ),
+    "triaxial_16": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCDEFGH")},
+        [(a, b, 1, 3) for a, b in zip("ABCDEFGH", "BCDEFGHA")],
+        "ABCDEFGH",
+    ),
+}
+
+
+def _built(name):
+    from braidpy.horn_gear import Axial, Connection, HornGear
+
+    gears, contacts, fed = _BUILT[name]
+    return BraidingMachine(
+        [HornGear(g, n, direction=d) for g, (n, d) in gears.items()],
+        [Connection(a, b, sa, sb, name=f"{a}-{b}") for a, b, sa, sb in contacts],
+        axials=[Axial(f"axial_{g}", (g,)) for g in fed],
+    )
+
+
+@pytest.mark.parametrize("name", list(_BUILT))
+def test_a_catalogued_machine_written_as_its_graph_is_the_one_built(name):
+    """Written as its graph, each catalogued machine is the one built gear by
+    gear, its slots perhaps numbered from another one round: it feeds its
+    axials where that one did, and loads itself with as many carriers."""
+    built = _built(name)
+    machine = CATALOGUE[name].make()
+    assert _renaming(built, machine) is not None
+    assert [a.anchor for a in machine.axials] == [a.anchor for a in built.axials]
+    assert len(machine.default_carriers()) == len(built.default_carriers())
+
+
+def test_axials_are_fed_up_a_gear_or_down_a_ring_written_either_way():
+    from braidpy.horn_gear import axial_spots
+    from braidpy.horn_gear.described import axial_text, axials_of
+
+    ring = "A-B B-C C-D D-E E-F F-G G-H H-A"
+    machine = machine_from_graph(ring, axials="C A H-G-F-E-D-C-B-A")
+    assert axials_of(machine) == "C A A-B-C-D-E-F-G-H"
+    assert [axial_text(s) for s in axial_spots(machine)] == [
+        *"ABCDEFGH",
+        "A-B-C-D-E-F-G-H",
+    ]
+    # A split gear's parts share an axle, and so one place for an axial.
+    split = machine_from_graph("G0-G1a G1b-G2 G1a+G1b", 3, axials="G1b")
+    assert [axial_text(s) for s in axial_spots(split)] == ["G0", "G1a", "G2"]
+    assert axials_of(split) == "G1a"
+
+
+@pytest.mark.parametrize(
+    "graph, axials, said",
+    [
+        ("A-B", "C", "No place for an axial at C"),
+        ("A-B B-C", "A-B-C", "No place"),
+        ("A-B", "A A", "twice"),
+    ],
+)
+def test_an_axial_where_there_is_no_room_is_refused(graph, axials, said):
+    with pytest.raises(ValueError, match=said):
+        machine_from_graph(graph, axials=axials)
+
+
+def test_a_machine_starts_with_the_carriers_it_is_given():
+    from braidpy.horn_gear.described import loading_of
+
+    machine = machine_from_graph("A-B B-C C-D D-A", loading="A:1 C:3")
+    assert machine.default_carriers() == {0: ("A", 1), 1: ("C", 3)}
+    assert loading_of(machine.default_carriers()) == "A:1 C:3"
+    for loading, said in [("A:4", "slots 0 to 3"), ("A:1 A:1", "same slot")]:
+        with pytest.raises(ValueError, match=said):
+            machine_from_graph("A-B", loading=loading)
+
+
+def test_braid_studio_shows_where_axials_go_and_braids_round_those_loaded():
+    from braidpy import web
+    from braidpy.web.machines import machine_geometry
+
+    drawn = machine_geometry("tubular_8")
+    assert [s["at"] for s in drawn["axials"]] == [*"ABCD", "A-B-C-D"]
+    assert drawn["own_axials"] == []
+    assert machine_geometry("princess")["own_axials"] == ["B"]
+    spec = {"source": "machine", "name": "tubular_8", "cycles": 1}
+    made = web.build({**spec, "axials": "A C A-B-C-D"}, tighten=False)
+    assert [s["name"] for s in made["strands"]][-3:] == [
+        "Core axial_A",
+        "Core axial_C",
+        "Core core",
+    ]
+    # Every axial taken off: none, not the machine's own.
+    bare = web.build({**spec, "name": "triaxial_16", "axials": "none"}, tighten=False)
+    assert not any(s["name"].startswith("Core") for s in bare["strands"])

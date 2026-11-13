@@ -40,13 +40,20 @@ The rest follows from the graph:
   gears' sizes alone, a split gear's parts at one centre, as large as the
   whole); in a tree of gears, each neighbour of a split gear's part where a
   horn of that part comes round.
-- Each gear's contacts are spread round it as evenly as its slots allow, in
-  the order the layout puts them, its first contact named at slot 0.
+- Each gear's contacts are where the layout puts them, if whole slots can
+  say so, and otherwise as evenly spread as its slots allow, in the order
+  the layout puts them, its first contact named at slot 0.
 
-:func:`graph_of` writes a machine back as its graph.  A machine of the
-catalogue written so and read again is the same machine, its slots perhaps
-numbered from another one round; the ring of four gears is the exception,
-another machine making the same braid.
+Where it feeds axial yarns is written as the places, ``B`` up a gear's
+spindle or ``A-B-C-D`` down the hole of a ring of gears
+(:func:`read_axials`); the carriers it starts with, if it is not to load
+itself, as ``A:0 B:2`` (:func:`read_loading`).  The catalogue's machines
+are written so (:mod:`braidpy.horn_gear.examples`).
+
+:func:`graph_of` writes a machine back as its graph, :func:`axials_of` and
+:func:`loading_of` its axials and a loading.  A machine written so and read
+again is the same machine, its slots perhaps numbered from another one
+round.
 """
 
 from __future__ import annotations
@@ -57,9 +64,17 @@ from collections import Counter
 
 import networkx as nx
 
-from .model import BraidingMachine, Connection, HornGear
+from .model import Axial, BraidingMachine, Connection, HornGear
 
-__all__ = ["graph_of", "machine_from_graph"]
+__all__ = [
+    "axial_text",
+    "axials_of",
+    "graph_of",
+    "loading_of",
+    "machine_from_graph",
+    "read_axials",
+    "read_loading",
+]
 
 # A gear's name, and its own number of slots if given: A, B2, left:6.
 _GEAR = r"([A-Za-z0-9_]+)(?::(\d+))?"
@@ -119,7 +134,9 @@ def _read(
     return pairs, axles, slots
 
 
-def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
+def machine_from_graph(
+    text: str, n_slots: int = 4, axials: str = "", loading: str = ""
+) -> BraidingMachine:
     """The machine whose gears mesh as written.
 
     Args:
@@ -129,6 +146,11 @@ def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
             more parts), each part a gear of its own in the pairs.
         n_slots: How many slots a gear, or a part, has when the text does
             not say.
+        axials: Where it feeds axial yarns (:func:`read_axials`): none if
+            empty.
+        loading: The carriers it starts with when not told otherwise
+            (:func:`read_loading`); if empty, as it loads itself
+            (:meth:`~braidpy.horn_gear.model.BraidingMachine.default_carriers`).
 
     Returns:
         The machine, its gears' directions and contacts worked out.
@@ -137,8 +159,20 @@ def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
         ValueError: If the text cannot be read, names a pair twice, falls
             into separate machines, has a ring of an odd number of gears, or
             a split gear whose parts mesh with one another, with the same
-            gear, or with none.
+            gear, or with none; or if an axial or a carrier cannot be where
+            it is given.
     """
+    machine = _meshed(text, n_slots)
+    if axials.strip():
+        machine = machine.with_axials(read_axials(machine, axials))
+    if loading.strip():
+        machine = machine.with_loading(read_loading(loading, machine))
+    return machine
+
+
+def _meshed(text: str, n_slots: int) -> BraidingMachine:
+    """The machine whose gears mesh as written, without axials, loaded as
+    it loads itself (:func:`machine_from_graph`)."""
     from .layout import _layout_bfs, compute_layout
 
     pairs, axles, own = _read(text)
@@ -324,6 +358,10 @@ class DescribedMachine(BraidingMachine):
 # gears puts a gear's two contacts one and a half slots apart, which is a
 # tie to be broken the same way on every gear, not by rounding error.
 _SAME = 1e-6
+# A contact this many degrees or less from a slot is on it: a ring is laid
+# out numerically, its contacts a hundredth of a degree from where they
+# would be exactly.
+_FITS = 1.0
 
 
 def _contact_slots(
@@ -333,9 +371,12 @@ def _contact_slots(
 
     Its first contact named is its slot 0; the others follow anticlockwise,
     each a whole number of slots on from the one before, those numbers
-    together the gear's slots, as close as they can be to where the layout
-    puts the contacts, and as even as they can be where that does not
-    decide.
+    together the gear's slots: where the layout puts the contacts, if whole
+    numbers of slots can say that exactly; otherwise as even as they can
+    be, and of those, as close as they can be to where the layout puts
+    them.  So a ring of four gears, whose contacts are a slot apart on each
+    gear, has them a slot apart; a ring of six or eight, where no whole
+    number of slots is right, has them as far apart as the slots allow.
 
     Raises:
         ValueError: If the gear has more contacts than slots.
@@ -364,11 +405,16 @@ def _contact_slots(
         round(((ahead[(i + 1) % k][0] - ahead[i][0]) % n) / _SAME) * _SAME
         for i in range(k)
     ]
+
+    def off(gaps: tuple[int, ...]) -> float:
+        return sum(abs(g - w) for g, w in zip(gaps, wanted))
+
     best = min(
         _gaps(n, k),
         key=lambda gaps: (
+            off(gaps) > k * n * _FITS / 360,
             sum((g - n / k) ** 2 for g in gaps),
-            sum(abs(g - w) for g, w in zip(gaps, wanted)),
+            off(gaps),
         ),
     )
     slots, at_slot = {}, 0
@@ -387,6 +433,115 @@ def _gaps(n: int, k: int):
     for first in range(1, n - k + 2):
         for rest in _gaps(n - first, k - 1):
             yield (first, *rest)
+
+
+def axial_text(axial: Axial) -> str:
+    """Where an axial is fed, as written: its gear, ``B``, or the ring of
+    gears round its hole, ``A-B-C-D``."""
+    return "-".join(axial.anchor)
+
+
+def read_axials(machine: BraidingMachine, text: str) -> list[Axial]:
+    """The axials fed where written, each one of the machine's
+    :func:`~braidpy.horn_gear.layout.axial_spots`.
+
+    Args:
+        machine: The machine.
+        text: The places, separated by spaces, commas or semicolons: a gear,
+            ``B``, up its spindle (a split gear by any of its parts); or the
+            ring of gears round a hole, ``A-B-C-D``, in any order, down it.
+
+    Returns:
+        The axials, in the order written.
+
+    Raises:
+        ValueError: For a place the machine has no room for an axial at, or
+            one given twice.
+    """
+    from .layout import _axle, axial_spots, compute_layout
+
+    layout = compute_layout(machine)
+    spots = axial_spots(machine, layout)
+    by_gears = {frozenset(spot.anchor): spot for spot in spots}
+    # A part of a split gear is fed through its axle's spot.
+    up_axle = {_axle(layout, s.anchor[0]): s for s in spots if len(s.anchor) == 1}
+    for name in machine.gears:
+        by_gears.setdefault(frozenset((name,)), up_axle[_axle(layout, name)])
+    chosen: list[Axial] = []
+    for token in re.split(r"[\s,;]+", text.strip()):
+        if not token:
+            continue
+        spot = by_gears.get(frozenset(token.split("-")))
+        if spot is None:
+            places = ", ".join(axial_text(s) for s in spots) or "none"
+            raise ValueError(
+                f"No place for an axial at {token}: up a gear, or down a ring of "
+                f"gears that leaves room for it ({places})."
+            )
+        if spot in chosen:
+            raise ValueError(f"An axial is given twice at {token}.")
+        chosen.append(spot)
+    return chosen
+
+
+def axials_of(machine: BraidingMachine) -> str:
+    """Where a machine feeds its axials, as :func:`read_axials` reads it."""
+    return " ".join(axial_text(axial) for axial in machine.axials)
+
+
+def read_loading(
+    text: str,
+    machine: BraidingMachine,
+    named: dict[str, tuple[str, int]] | None = None,
+) -> list[tuple[str, int]]:
+    """Carriers as written, ``A:0 B:2``: each its gear and slot, once.
+
+    Args:
+        text: The carriers, separated by spaces, commas or semicolons.
+        machine: The machine they are on.
+        named: Other names a carrier's place may go by, with its gear and
+            slot: a lace machine's notches.
+
+    Returns:
+        Each carrier's (gear, slot), in the order written.
+
+    Raises:
+        ValueError: For a carrier that cannot be read or is not on the
+            machine, two on one slot, or none at all.
+    """
+    named = named or {}
+    loading: list[tuple[str, int]] = []
+    for token in re.split(r"[\s,;]+", text.strip()):
+        if not token:
+            continue
+        if token in named:
+            place = named[token]
+        else:
+            matched = re.fullmatch(r"([^:\s]+):(\d+)", token)
+            if not matched:
+                raise ValueError(
+                    f"Cannot read {token!r}: give each carrier as gear:slot."
+                )
+            place = (matched.group(1), int(matched.group(2)))
+            gear, slot = place
+            if gear not in machine.gears:
+                raise ValueError(f"No gear {gear!r}: one of {sorted(machine.gears)}.")
+            n = machine.gears[gear].n_slots
+            if slot >= n:
+                raise ValueError(f"Gear {gear} has slots 0 to {n - 1}.")
+        if place in loading:
+            if token in named:
+                raise ValueError(f"Two bobbins in the same notch, {token}.")
+            raise ValueError(f"Two carriers on the same slot, {token}.")
+        loading.append(place)
+    if not loading:
+        raise ValueError("Give at least one carrier.")
+    return loading
+
+
+def loading_of(loading: dict[int, tuple[str, int]]) -> str:
+    """A loading as :func:`read_loading` reads it, carrier after carrier."""
+    return " ".join(f"{gear}:{slot}" for _, (gear, slot) in sorted(loading.items()))
 
 
 def graph_of(machine: BraidingMachine) -> tuple[str, int]:

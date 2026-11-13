@@ -129,6 +129,10 @@ class Machine:
     # the graph does not give its own (braidpy.horn_gear.described).
     graph = Text("graph", "")
     n_slots = Count("n_slots", 4, low=2, high=24)
+    # Where it feeds axial yarns, as B or A-B-C-D: its own if not given,
+    # none if "none" (braidpy.horn_gear.described.read_axials).
+    axials = Text("axials", "")
+    no_axials = "none"
     shown = (name, core, cycles)
 
 
