@@ -11,13 +11,16 @@ What changed in each release of braidpy.
   axial yarns, and, where a machine does not load itself so, the carriers
   it starts with (`machine_from_graph(..., axials=, loading=)`,
   `described.read_axials`, `read_loading`, `BraidingMachine.with_loading`).
-  Each lays its carriers on the same paths as before, but its slots may be
-  numbered from another one round: a loading written for the machine as
-  it was may load it otherwise. The tubular braid of 8 is now its ring of
-  four gears with their contacts spread round each, another machine making
-  the same braid. The machines braiding several bands at once are built as
-  before. A soutache's or princess braid's cords are named after their
-  gear (`axial_A`).
+  `horn_gear.examples` builds them so. Each is the machine it was and lays
+  its carriers on the same paths, but its slots may be numbered from
+  another one round, and its carriers in another order: a loading written
+  for the machine as it was may load it otherwise. The machines braiding
+  several bands at once are built as before. A soutache's or princess
+  braid's cords are named after their gear (`axial_A`).
+- A machine written as its graph puts a gear's contacts where the layout
+  has them whenever whole slots can say so exactly, and only otherwise as
+  evenly as its slots allow: the ring of four gears now has each gear's
+  contacts a slot apart, as they are, rather than two.
 - Every place a horn gear machine could feed an axial yarn
   (`layout.axial_spots`: up each gear, down each ring of gears with room),
   drawn in Braid Studio on the machine: a click loads a spool there or

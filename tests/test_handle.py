@@ -32,9 +32,9 @@ def test_turning_the_handle_is_the_machine_running(make):
 def test_the_handle_stops_where_carriers_meet():
     """Two carriers either side of a contact are on one point already."""
     machine = flat_braid_9()
-    turned = turn(machine, [("A", 0), ("B", 2)], 10)
+    turned = turn(machine, [("A", 0), ("B", 0)], 10)
     assert turned.time == 0
-    assert set(turned.met) == {("A", 0), ("B", 2)}
+    assert set(turned.met) == {("A", 0), ("B", 0)}
 
 
 def test_two_carriers_on_one_slot_have_met_before_anything_moves():
@@ -93,7 +93,7 @@ def test_the_handle_draws_with_plotly():
 
 
 def test_where_carriers_met_is_ringed_in_plotly():
-    figure = Handle(flat_braid_9(), [("A", 0), ("B", 2)]).figure()
+    figure = Handle(flat_braid_9(), [("A", 0), ("B", 0)]).figure()
     rings = [t for t in figure.data if t.name == "Met"]
     assert len(rings) == 1 and len(rings[0].x) == 2
 

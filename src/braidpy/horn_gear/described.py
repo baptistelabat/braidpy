@@ -346,6 +346,10 @@ class DescribedMachine(BraidingMachine):
 # gears puts a gear's two contacts one and a half slots apart, which is a
 # tie to be broken the same way on every gear, not by rounding error.
 _SAME = 1e-6
+# A contact this many degrees or less from a slot is on it: a ring is laid
+# out numerically, its contacts a hundredth of a degree from where they
+# would be exactly.
+_FITS = 1.0
 
 
 def _contact_slots(
@@ -355,9 +359,12 @@ def _contact_slots(
 
     Its first contact named is its slot 0; the others follow anticlockwise,
     each a whole number of slots on from the one before, those numbers
-    together the gear's slots, as close as they can be to where the layout
-    puts the contacts, and as even as they can be where that does not
-    decide.
+    together the gear's slots: where the layout puts the contacts, if whole
+    numbers of slots can say that exactly; otherwise as even as they can
+    be, and of those, as close as they can be to where the layout puts
+    them.  So a ring of four gears, whose contacts are a slot apart on each
+    gear, has them a slot apart; a ring of six or eight, where no whole
+    number of slots is right, has them as far apart as the slots allow.
 
     Raises:
         ValueError: If the gear has more contacts than slots.
@@ -386,11 +393,16 @@ def _contact_slots(
         round(((ahead[(i + 1) % k][0] - ahead[i][0]) % n) / _SAME) * _SAME
         for i in range(k)
     ]
+
+    def off(gaps: tuple[int, ...]) -> float:
+        return sum(abs(g - w) for g, w in zip(gaps, wanted))
+
     best = min(
         _gaps(n, k),
         key=lambda gaps: (
+            off(gaps) > k * n * _FITS / 360,
             sum((g - n / k) ** 2 for g in gaps),
-            sum(abs(g - w) for g, w in zip(gaps, wanted)),
+            off(gaps),
         ),
     )
     slots, at_slot = {}, 0

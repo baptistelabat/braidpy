@@ -236,24 +236,61 @@ def test_a_split_gear_that_cannot_be_is_refused_saying_why(text, said):
         machine_from_graph(text, n_slots=3)
 
 
-# The machines of braidpy.horn_gear.examples the catalogue now writes as
-# graphs, by catalogue name.
+# The catalogue's machines as they were built gear by gear, before they were
+# written as graphs: each gear's slots and direction, each contact's slots,
+# and the gears fed an axial yarn.
 _BUILT = {
-    "flat_3": ("flat_braid_3", {}),
-    "flat_4": ("flat_braid_4", {}),
-    "flat_9": ("flat_braid_9", {}),
-    "soutache_5": ("soutache_braid", {}),
-    "soutache_7": ("soutache_braid", {"n_slots": 7}),
-    "princess": ("princess_braid", {}),
-    "tubular_8": ("tubular_braid_8", {}),
-    "tubular_12": ("tubular_braid_12", {}),
-    "tubular_16": ("tubular_braid_16", {}),
-    "triaxial_16": ("triaxial_braid_16", {}),
+    "flat_3": ({"A": (3, 1), "B": (3, -1)}, [("A", "B", 0, 0)], ""),
+    "flat_4": ({"A": (4, 1), "B": (4, -1)}, [("A", "B", 0, 0)], ""),
+    "flat_9": (
+        {"A": (5, 1), "B": (4, -1), "C": (4, 1), "D": (5, -1)},
+        [("A", "B", 0, 2), ("B", "C", 0, 2), ("C", "D", 0, 0)],
+        "",
+    ),
+    "soutache_5": ({"A": (5, 1), "B": (5, -1)}, [("A", "B", 0, 0)], "AB"),
+    "soutache_7": ({"A": (7, 1), "B": (7, -1)}, [("A", "B", 0, 0)], "AB"),
+    "princess": (
+        {"A": (5, 1), "B": (6, -1), "C": (5, 1)},
+        [("A", "B", 0, 0), ("B", "C", 3, 0)],
+        "B",
+    ),
+    "tubular_8": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCD")},
+        [("A", "B", 1, 3), ("B", "C", 0, 3), ("C", "D", 0, 3), ("D", "A", 0, 0)],
+        "",
+    ),
+    "tubular_12": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCDEF")},
+        [(a, b, 1, 3) for a, b in zip("ABCDEF", "BCDEFA")],
+        "",
+    ),
+    "tubular_16": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCDEFGH")},
+        [(a, b, 1, 3) for a, b in zip("ABCDEFGH", "BCDEFGHA")],
+        "",
+    ),
+    "triaxial_16": (
+        {g: (4, (-1) ** i) for i, g in enumerate("ABCDEFGH")},
+        [(a, b, 1, 3) for a, b in zip("ABCDEFGH", "BCDEFGHA")],
+        "ABCDEFGH",
+    ),
 }
 
 
+def _built(name):
+    from braidpy.horn_gear import Axial, Connection, HornGear
+
+    gears, contacts, fed = _BUILT[name]
+    return BraidingMachine(
+        [HornGear(g, n, direction=d) for g, (n, d) in gears.items()],
+        [Connection(a, b, sa, sb, name=f"{a}-{b}") for a, b, sa, sb in contacts],
+        axials=[Axial(f"axial_{g}", (g,)) for g in fed],
+    )
+
+
 def _carried(machine):
-    """Where each carrier goes over a cycle, as it loads itself."""
+    """Where each carrier goes over a cycle, as it loads itself, carrier
+    after carrier in no particular order."""
     import numpy as np
 
     from braidpy.horn_gear import carrier_trajectories
@@ -265,31 +302,23 @@ def _carried(machine):
         carrier_positions=machine.default_carriers(),
         n_substeps=4,
     )
-    return np.stack([np.asarray(made.xy[k]) for k in sorted(made.xy)])
+    paths = [np.round(np.asarray(made.xy[k]), 9) for k in made.xy]
+    return np.stack(sorted(paths, key=lambda path: path.tobytes()))
 
 
 @pytest.mark.parametrize("name", list(_BUILT))
 def test_a_catalogued_machine_written_as_its_graph_braids_as_built(name):
     """Written as its graph, with its axials and, where it does not load
-    itself so, its loading, each catalogued machine feeds its axials where
-    the one built gear by gear did and lays every carrier on the same path,
-    carrier for carrier.  The ring of four gears is another machine, its
-    contacts spread round each gear: it makes the same braid."""
+    itself so, its loading, each catalogued machine is the one built gear by
+    gear, its slots perhaps numbered from another one round: it feeds its
+    axials where that one did, and lays its carriers on the same paths."""
     import numpy as np
 
-    from braidpy.horn_gear import examples
-
-    function, settings = _BUILT[name]
-    built = getattr(examples, function)(**settings)
+    built = _built(name)
     machine = CATALOGUE[name].make()
+    assert _renaming(built, machine) is not None
     assert [a.anchor for a in machine.axials] == [a.anchor for a in built.axials]
-    if name == "tubular_8":
-        assert same_fingerprint(
-            fingerprint(_ring_braid(built, built.default_carriers())),
-            fingerprint(_ring_braid(machine, machine.default_carriers())),
-        )
-    else:
-        assert np.allclose(_carried(machine), _carried(built), atol=1e-9)
+    assert np.allclose(_carried(machine), _carried(built), atol=1e-6)
 
 
 def test_axials_are_fed_up_a_gear_or_down_a_ring_written_either_way():

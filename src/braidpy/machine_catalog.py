@@ -6,12 +6,12 @@
 machines (:mod:`braidpy.horn_gear.jacquard`), as every catalogue lists its
 braids (:mod:`braidpy.catalogue`).
 
-A horn gear machine is written as its graph, as a machine of your own is
-(:func:`~braidpy.horn_gear.described.machine_from_graph`): the gears that
-mesh, where it feeds axial yarns, and the carriers it starts with where it
-does not load itself.  The machines that braid several bands at once are
-still built by :mod:`braidpy.horn_gear.multiband`, as their line folds
-round and their bands' colours are more than a graph says yet.
+A horn gear machine is one of :mod:`braidpy.horn_gear.examples`, written
+there as its graph, as a machine of your own is
+(:func:`~braidpy.horn_gear.described.machine_from_graph`).  The machines
+that braid several bands at once are built by
+:mod:`braidpy.horn_gear.multiband`, as their line folds round and their
+bands' colours are more than a graph says yet.
 
 Listing them loads nothing: a machine is only made, and the simulator and
 networkx with it, when it is asked for.
@@ -42,57 +42,39 @@ def _multiband(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
     return make
 
 
-def _graph(
-    graph: str, n_slots: int = 4, axials: str = "", loading: str = ""
-) -> Callable[[], BraidingMachine]:
-    """Makes the machine its graph describes
-    (:func:`~braidpy.horn_gear.described.machine_from_graph`)."""
+def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
+    """Makes the machine :mod:`braidpy.horn_gear.examples` names, written
+    there as its graph."""
 
     def make() -> BraidingMachine:
-        from braidpy.horn_gear.described import machine_from_graph
+        from braidpy.horn_gear import examples
 
-        return machine_from_graph(graph, n_slots, axials=axials, loading=loading)
+        return getattr(examples, name)(**settings)
 
     return make
 
 
-# The tubular braid of 16 carriers, two to a gear on alternate slots.
-_RING_8 = "A-B B-C C-D D-E E-F F-G G-H H-A"
-_RING_8_LOADING = "A:3 C:1 E:1 G:1 H:0 F:0 D:0 B:0 A:1 G:3 E:3 C:3 B:2 D:2 F:2 H:2"
-
-# In the order to offer them.  Each is the machine of
-# braidpy.horn_gear.examples of the same name, written as its graph, laying
-# its carriers where that one does; but for the ring of four gears, whose
-# contacts the graph spreads round each gear where that one puts them side
-# by side: another machine, making the same braid.
+# In the order to offer them; not the diamond braid, which is the tubular
+# braid of 8 again, nor the mixed gears, which only show that gears may
+# differ.
 CATALOGUE: dict[str, Entry[BraidingMachine]] = {
-    "flat_3": Entry("Flat braid, 3 carriers", _graph("A-B", 3)),
-    "flat_4": Entry("Flat braid, 4 carriers", _graph("A-B")),
+    "flat_3": Entry("Flat braid, 3 carriers", _example("flat_braid_3")),
+    "flat_4": Entry("Flat braid, 4 carriers", _example("flat_braid_4")),
     "flat_9": Entry(
-        "Flat braid, 9 carriers on a single track",
-        _graph("A-B:4 B-C:4 C-D", 5, loading="A:0 A:2 A:4 B:2 B:3 C:2 C:1 D:2 D:4"),
+        "Flat braid, 9 carriers on a single track", _example("flat_braid_9")
     ),
-    # The cord of a soutache, an axial yarn up each gear.
-    "soutache_5": Entry("Soutache, 2 gears of 5", _graph("A-B", 5, axials="A B")),
-    "soutache_7": Entry("Soutache, 2 gears of 7", _graph("A-B", 7, axials="A B")),
-    "princess": Entry(
-        "Princess, 5/6/5 gears, 8 carriers", _graph("A-B:6 B-C", 5, axials="B")
+    "soutache_5": Entry("Soutache, 2 gears of 5", _example("soutache_braid")),
+    "soutache_7": Entry(
+        "Soutache, 2 gears of 7", _example("soutache_braid", n_slots=7)
     ),
-    "tubular_8": Entry("Tubular braid, 8 carriers", _graph("A-B B-C C-D D-A")),
-    "tubular_12": Entry(
-        "Tubular braid, 12 carriers",
-        _graph(
-            "A-B B-C C-D D-E E-F F-A",
-            loading="A:3 C:1 E:1 F:0 D:0 B:0 A:1 E:3 C:3 B:2 D:2 F:2",
-        ),
-    ),
-    "tubular_16": Entry(
-        "Tubular braid, 16 carriers", _graph(_RING_8, loading=_RING_8_LOADING)
-    ),
+    "princess": Entry("Princess, 5/6/5 gears, 8 carriers", _example("princess_braid")),
+    "tubular_8": Entry("Tubular braid, 8 carriers", _example("tubular_braid_8")),
+    "tubular_12": Entry("Tubular braid, 12 carriers", _example("tubular_braid_12")),
+    "tubular_16": Entry("Tubular braid, 16 carriers", _example("tubular_braid_16")),
     # The tubular braid of 16 again, round an axial yarn up each gear.
     "triaxial_16": Entry(
         "Triaxial braid, 16 carriers round 8 axial yarns",
-        _graph(_RING_8, axials="A B C D E F G H", loading=_RING_8_LOADING),
+        _example("triaxial_braid_16"),
         (
             Link(
                 "J. H. van Ravenhorst, Design tools for circular overbraiding of "
