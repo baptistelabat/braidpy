@@ -155,8 +155,9 @@ what made it seen from above, the braid turning with its disk; your own disk
 braids and sinnets, typed or clicked; the braid's closure, normal form and
 full twists; a cache of recent braids; STL, OBJ and JSON export.
 
-1. **Your own machines.** Gears and carriers placed by clicking, as a
-   disk's moves are now.
+1. **Your own machines, drawn.** A machine of your own is written as the
+   gears that mesh; drawing it, gears placed by clicking, would be the
+   next step.
 2. **More about the braid.** Its Alexander polynomial — once braidpy's is
    mended: it fails on negative crossings, and takes the determinant of the
    Burau matrix rather than of the identity less it — and its closure drawn

@@ -50,15 +50,10 @@ def test_each_way_points_back_to_its_topology():
 def test_every_braid_word_is_in_exactly_one_topology():
     listed = [m.key for entry in catalogue().values() for m in entry.make().methods]
     assert len(listed) == len(set(listed))
-    # Machines braiding round cores have no braid word of their strands.
-    assert topology_of("machine", "soutache_5") is None
-    left_out = {m.key for m in methods()} - set(listed)
-    assert left_out == {
-        "machine:soutache_5",
-        "machine:soutache_7",
-        "machine:princess",
-        "machine:triaxial_16",
-    }
+    # Every way of making a braid is in: machines braiding round cores too,
+    # each core a strand of the word.
+    assert {m.key for m in methods()} == set(listed)
+    assert topology_of("machine", "soutache_5").fingerprint.n_strands == 7
 
 
 def test_every_source_is_in_the_catalogue():
@@ -126,7 +121,17 @@ def test_a_creeping_disk_braid_is_known_by_its_name():
 
 
 def test_a_braid_with_no_word_has_nothing_shown():
-    assert _page({"source": "machine", "name": "soutache_5"}) == {
+    # A machine of your own, its carriers meeting two steps in: it stops,
+    # and reads no word.  (A catalogued one is known by its name, whatever
+    # its loading.)
+    stopped = {
+        "source": "machine",
+        "name": "custom",
+        "graph": "A-B",
+        "n_slots": 3,
+        "carriers": "A:1 B:2",
+    }
+    assert _page(stopped) == {
         "same": [],
         "near": [],
     }

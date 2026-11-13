@@ -8,6 +8,7 @@ draws it from above, to load it by hand."""
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Callable, Collection, Hashable
 from functools import lru_cache
@@ -16,6 +17,8 @@ from typing import (
     Any,
     cast,
 )
+
+import numpy as np
 
 from braidpy.web._info import _braid_info
 
@@ -65,13 +68,24 @@ def _machines():
 # the page to draw it and turn it by hand as a catalogued one:
 # "lace:6:100000 010000 ...".
 OWN_LACE = "lace:"
+# A horn gear machine of your own, likewise, by its slots and graph:
+# "gears:4:A-B B-C C-D D-A".
+OWN_GEARS = "gears:"
+
+# The most points a track is drawn with, seen from above: a long track, as
+# the flat braid of nine's round every gear, is thousands of arc points.
+_TRACK_POINTS = 600
 
 
 def _machine(name: str) -> Any:
-    """A machine by name: catalogued, or a lace machine of your own."""
+    """A machine by name: catalogued, or a lace or horn gear machine of
+    your own."""
     if name.startswith(OWN_LACE):
         n_gears, _, card = name[len(OWN_LACE) :].partition(":")
         return _own_lace({"n_gears": n_gears, "card": card})
+    if name.startswith(OWN_GEARS):
+        n_slots, _, graph = name[len(OWN_GEARS) :].partition(":")
+        return _own_machine({"n_slots": n_slots, "graph": graph})
     from braidpy.machine_catalog import LaceRing
 
     machines = _machines()
@@ -116,6 +130,14 @@ def _own_lace(spec: Spec) -> Any:
     return jacquard_lace_ring(n_gears, _read_card(Lace.card.read(spec), n_gears))
 
 
+def _own_machine(spec: Spec) -> Any:
+    """A horn gear machine of your own: the gears that mesh, and their
+    slots (:func:`~braidpy.horn_gear.described.machine_from_graph`)."""
+    from braidpy.horn_gear.described import machine_from_graph
+
+    return machine_from_graph(Machine.graph.read(spec), Machine.n_slots.read(spec))
+
+
 def _own_gears(spec: Spec) -> int:
     """How many gears your own lace ring has: an even number."""
     n_gears = Lace.n_gears.read(spec)
@@ -129,13 +151,19 @@ def _own_gears(spec: Spec) -> int:
 
 def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import gear_radii
+    from braidpy.horn_gear.tracks import ring_order
     from braidpy.horn_gear.word import annular_word, flat_word
     from braidpy.machine_catalog import CATALOGUE as machines
 
     name = Machine.name.read(spec)
-    if name not in machines:
+    if name == OWN:
+        machine = _own_machine(spec)
+        title = f"Your own machine, {len(machine.gears)} gears"
+    elif name in machines:
+        machine = machines[name].make()
+        title = machines[name].title
+    else:
         raise ValueError(f"No machine {name!r}: one of {sorted(machines)}.")
-    machine = machines[name].make()
     cycles = Machine.cycles.read(spec)
     radii = gear_radii(machine)
     default = Machine.of_gear_radius * sum(radii.values()) / len(radii)
@@ -159,9 +187,8 @@ def _from_machine(spec: Spec) -> Result:
         assert loading is not None
         info["collision"] = _collision(stopped, loading)
         notes = [_stopped_note(stopped, n_steps)]
-    elif cores:
-        notes = [_core_note(rigid, len(cores))]
-    elif name.startswith("tubular"):
+    elif ring_order(machine) is not None:
+        # Gears in one ring: the braid is read round it.
         annular = annular_word(machine, carriers=carriers_at)
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
         info["crossings"] = len(annular.generators)
@@ -174,20 +201,22 @@ def _from_machine(spec: Spec) -> Result:
         info["made"] = cycles
         # The cycles made, not the one read.
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
+    if cores and stopped is None:
+        notes = [*notes, _core_note(rigid, len(cores))]
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     own = machine.carrier_colours(carriers_at) or {}
     colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
     colour.update({k: CORE_COLOUR for k in cores})
     result = _result(
-        machines[name].title + f", {cycles} cycles",
+        title + f", {cycles} cycles",
         paths,
         diameter,
         colours=[colour[k] for k in keys],
         names=[f"Core {k}" if k in cores else f"Yarn {k}" for k in keys],
         info=info,
         notes=notes,
-        timeline=_timeline(paths.trajectories, keys, "machine"),
+        timeline=_timeline(paths.trajectories, keys, "machine", tracks=tracks(machine)),
     )
     if Machine.settle.read(spec) == Carried.settle:
         if n_steps is None:
@@ -226,8 +255,10 @@ def _by_carriers(
 
 def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
     """The machine braiding round the core asked for (``CORE``): its own
-    cores, none, or — for a machine with none of its own that is one ring
-    of gears — one down the hole of the ring
+    cores — or those fed where ``axials`` says
+    (:func:`~braidpy.horn_gear.described.read_axials`), none if it says
+    ``none`` — none at all, or, for a machine with none that is one ring of
+    gears, one down the hole of the ring
     (:func:`~braidpy.horn_gear.ring_core`).
 
     The cores run up the braid, each in its own place, where the machine
@@ -251,6 +282,13 @@ def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
         asked = "rigid" if OLD_CORES.read(spec) == "rigid" and machine.axials else "own"
     if asked not in CORE_KINDS:
         raise ValueError(f"A core is one of {', '.join(CORE_KINDS)}.")
+    fed = str(Machine.axials.read(spec)).strip()
+    if fed.lower() == Machine.no_axials:
+        machine = machine.with_axials([])
+    elif fed:
+        from braidpy.horn_gear.described import read_axials
+
+        machine = machine.with_axials(read_axials(machine, fed))
     layout = compute_layout(machine)
     if asked == "none":
         machine = machine.with_axials([])
@@ -273,15 +311,15 @@ def _core_note(rigid: bool, n_cores: int = 1) -> str:
             else "of yarn, it gives way to the others"
         )
         return (
-            f"It braids round a core, drawn in grey: {kind}. Its word would need "
-            "the core as a strand of its own: no word is given."
+            f"It braids round a core, drawn in grey: {kind}. Its word counts "
+            "the core as a strand, standing still, after the carriers."
         )
     kind = (
         "rigid, they stay straight" if rigid else "of yarn, they give way to the others"
     )
     return (
-        f"It braids round {n_cores} cores, drawn in grey: {kind}. Its word would "
-        "need the cores as strands of their own: no word is given."
+        f"It braids round {n_cores} cores, drawn in grey: {kind}. Its word "
+        "counts each core as a strand, standing still, after the carriers."
     )
 
 
@@ -575,42 +613,22 @@ def _from_lace(spec: Spec) -> Result:
 
 
 def _loading(text: Any, machine: Any) -> list[tuple[str, int]] | None:
-    """Carriers given as ``gear:slot``, each once; None if not given."""
+    """Carriers given as ``gear:slot``, each once
+    (:func:`~braidpy.horn_gear.described.read_loading`); None if not given."""
+    from braidpy.horn_gear.described import read_loading
+    from braidpy.horn_gear.jacquard import JacquardLaceMachine, notch_positions
+
     if text is None or not str(text).strip():
         return None
     if str(text).strip().lower() == "none":
         raise ValueError("Give at least one carrier.")
-    loading: list[tuple[str, int]] = []
     # A lace machine's bobbins may be named by their notch, "A-B", as its
     # card names them: the notch the two gears' circles cut.
-    from braidpy.horn_gear.jacquard import JacquardLaceMachine, notch_positions
-
     notches = {}
     if isinstance(machine, JacquardLaceMachine):
         at = notch_positions(machine)
         notches = {name: at[k] for name, k in _notch_names(len(machine.gears)).items()}
-    for token in re.split(r"[\s,;]+", str(text).strip()):
-        if token in notches:
-            gear, slot = notches[token]
-            if (gear, slot) in loading:
-                raise ValueError(f"Two bobbins in the same notch, {token}.")
-            loading.append((gear, slot))
-            continue
-        match = re.fullmatch(r"([^:\s]+):(\d+)", token)
-        if not match:
-            raise ValueError(f"Cannot read {token!r}: give each carrier as gear:slot.")
-        gear, slot = match.group(1), int(match.group(2))
-        if gear not in machine.gears:
-            raise ValueError(f"No gear {gear!r}: one of {sorted(machine.gears)}.")
-        n = machine.gears[gear].n_slots
-        if slot >= n:
-            raise ValueError(f"Gear {gear} has slots 0 to {n - 1}.")
-        if (gear, slot) in loading:
-            raise ValueError(f"Two carriers on the same slot, {gear}:{slot}.")
-        loading.append((gear, slot))
-    if not loading:
-        raise ValueError("Give at least one carrier.")
-    return loading
+    return read_loading(str(text), machine, named=notches)
 
 
 def _met(error: Any) -> str:
@@ -623,8 +641,16 @@ def machine_geometry(name: str) -> MachineGeometry:
     gears — where, how big, the circle their carriers ride, their slots, the
     way they turn and where each slot is at step 0, drawn as braidpy draws it
     (:class:`~braidpy.horn_gear.layout.GearAngles`) — the contacts between
-    them, and the machine's own loading."""
+    them, the machine's own loading, every place it could feed an axial
+    yarn (:func:`~braidpy.horn_gear.layout.axial_spots`), those it does, in
+    the colour cores are drawn in, and, for a machine of gears geared
+    together, the machine written as the gears that mesh
+    (:func:`~braidpy.horn_gear.described.graph_of`), for your own to start
+    from."""
+    from braidpy.horn_gear.described import axial_text
     from braidpy.horn_gear.layout import (
+        axial_position,
+        axial_spots,
         carrier_radius,
         compute_layout,
         contact_point,
@@ -666,7 +692,59 @@ def machine_geometry(name: str) -> MachineGeometry:
             for point in [contact_point(machine, layout, conn.gear_a, conn.gear_b)]
         ],
         "loading": [[own[k][0], int(own[k][1])] for k in sorted(own)],
+        # A lace machine, turned by its card, feeds no axial.
+        "axials": [
+            {"at": axial_text(spot), "x": float(x), "y": float(y)}
+            for spot in (
+                axial_spots(machine, layout) if machine.has_fixed_tracks else []
+            )
+            for x, y in [axial_position(machine, layout, spot)]
+        ],
+        "own_axials": [axial_text(axial) for axial in machine.axials],
+        "core_colour": CORE_COLOUR,
+        # A lace machine, turned by its card, is not written as a graph.
+        "graph": _graph(machine) if machine.has_fixed_tracks else None,
+        "tracks": [
+            {"colour": colour, "points": np.round(points, 4).tolist()}
+            for colour, points in tracks(machine, layout)
+        ],
     }
+
+
+def _graph(machine: Any) -> dict[str, Any]:
+    """A machine as the fields of your own: the gears that mesh, and the
+    slots most of its gears have."""
+    from braidpy.horn_gear.described import graph_of
+
+    graph, n_slots = graph_of(machine)
+    return {"graph": graph, "n_slots": n_slots}
+
+
+def tracks(machine: Any, layout: Any = None) -> list[tuple[str, Any]]:
+    """A machine's carrier tracks, seen from above as the demo draws them
+    (:func:`~braidpy.horn_gear.visualization.coloured_tracks`), each in its
+    colour, with fewer points: none for a machine driven by a programme.
+
+    Args:
+        machine: The machine.
+        layout: Where its gears are; worked out if None.
+
+    Returns:
+        Per track, its colour and its points, shape ``(n, 2)``, in the
+        layout's plane — the carriers' too.
+    """
+    from braidpy.horn_gear.layout import compute_layout
+    from braidpy.horn_gear.visualization import coloured_tracks
+
+    if layout is None:
+        layout = compute_layout(machine)
+    found = []
+    for _, colour, points in coloured_tracks(machine, layout):
+        # One point in so many, the last kept: the track stays closed.
+        every = max(1, math.ceil(len(points) / _TRACK_POINTS))
+        kept = np.vstack([points[:-1:every], points[-1:]])
+        found.append((colour, kept))
+    return found
 
 
 @lru_cache(maxsize=4)
@@ -740,12 +818,16 @@ def machine_origin(name: str, place: list[Any], time: int) -> list[Any] | None:
 def _machine_entry() -> Source:
     from braidpy.machine_catalog import CATALOGUE
 
+    # Your own starts from the machine drawn before, written as its graph
+    # (machine_geometry): the catalogue makes no machine, which would load
+    # networkx before one is asked for.
+    entries: list[Any] = [
+        {"name": name, "title": entry.title} for name, entry in CATALOGUE.items()
+    ]
     return {
         "title": "Horn gear braiding machine",
         "defaults": defaults(*Machine.shown),
-        "entries": [
-            {"name": name, "title": entry.title} for name, entry in CATALOGUE.items()
-        ],
+        "entries": entries + [{"name": OWN, "title": "Your own machine…"}],
     }
 
 

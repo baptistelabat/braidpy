@@ -13,6 +13,56 @@ What changed in each release of braidpy.
   own, the pages are as before. How a private site would build on braidpy
   without forking it: *A site of your own* in the developer guide. The
   studio no longer names braidpy while loading, nor in *Also made as*.
+- The catalogue's horn gear machines written as their graphs, as a machine
+  of your own is (`machine_catalog`): the gears that mesh, where they feed
+  axial yarns, and, should it be given one, the carriers it starts with
+  (`machine_from_graph(..., axials=, loading=)`,
+  `described.read_axials`, `read_loading`, `BraidingMachine.with_loading`).
+  `horn_gear.examples` builds them so. Each is the machine it was, with as
+  many carriers, but its slots may be numbered from another one round and
+  it loads itself: the tubular braids of 12 and 16 now start on other
+  slots, and a loading written for a machine as it was may load it
+  otherwise. The machines braiding
+  several bands at once are built as before. A soutache's or princess
+  braid's cords are named after their gear (`axial_A`).
+- A machine written as its graph puts a gear's contacts where the layout
+  has them whenever whole slots can say so exactly, and only otherwise as
+  evenly as its slots allow: the ring of four gears now has each gear's
+  contacts a slot apart, as they are, rather than two.
+- Every place a horn gear machine could feed an axial yarn
+  (`layout.axial_spots`: up each gear, down each ring of gears with room),
+  drawn in Braid Studio on the machine: a click loads a spool there or
+  takes it off (**Axial yarns**, `axials` in a link, `none` for none).
+- Split gears in a machine of your own: a gear split into parts on one
+  axle, written `A-B1 B2-C B1+B2`, in two parts or more (`H1+H2+H3`),
+  anywhere in the graph; each part's neighbour stands where that part's
+  horns come round. Every catalogued machine, the twin plait and the
+  three-band machine among them, is written as its graph, and "Your own
+  machine…" starts from any. A tree of gears now branches round a gear
+  meshing with three or more, rather than piling them on one another; and
+  a machine's yarns are drawn off fast enough that two passing the same
+  point, as a split gear's parts' carriers do, are a diameter apart.
+- A machine braiding round cores has a braid word: each core is a strand
+  of it, standing still where it rises through the deck, which the
+  carriers pass in front of or behind (`horn_gear.word.flat_word`,
+  `annular_word`; they refused such machines). Soutache, princess and the
+  triaxial braid now have their word, crossings and permutation in Braid
+  Studio, and join the catalogue of braids by topology. Soutache's word
+  read off the machine is the one read off its yarns hanging in space,
+  cords and all.
+- Any horn gear machine, written as the gears that mesh: `A-B B-C C-D D-A`,
+  a gear with its own slots `A:6` (`horn_gear.described.machine_from_graph`;
+  `graph_of` writes a machine back so). Each gear's direction and contacts
+  are worked out from the graph; a ring of an odd number of gears, or gears
+  in separate machines, are refused saying why. In Braid Studio, **Your own
+  machine…**, starting from the machine chosen before. Studio now reads a
+  machine's braid round its ring whenever its gears make one, not by its
+  name.
+- A machine's carrier tracks in Braid Studio, as the demo draws them: on
+  the machine to load, and in the view of it turning, each track in a
+  colour of its own (`horn_gear.visualization.track_curves`, which the
+  demo now draws its tracks with too). A machine's braid gives them in its
+  timeline (`tracks`); otherwise every build is as before.
 - Braid Studio's front page: every braid it offers as it comes, in a table
   to filter by name, by what makes it, by strands, by the loops it closes
   into and by writhe, each with a picture of it settled, its links (the

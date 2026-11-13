@@ -2,10 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""The braids the horn gear braiding machines of
-:mod:`braidpy.horn_gear.examples` make, and the Jacquard lace machines
-(:mod:`braidpy.horn_gear.jacquard`), as every catalogue lists its braids
-(:mod:`braidpy.catalogue`).
+"""The braids horn gear braiding machines make, and the Jacquard lace
+machines (:mod:`braidpy.horn_gear.jacquard`), as every catalogue lists its
+braids (:mod:`braidpy.catalogue`).
+
+A horn gear machine is one of :mod:`braidpy.horn_gear.examples`, written
+there as its graph, as a machine of your own is
+(:func:`~braidpy.horn_gear.described.machine_from_graph`).  The machines
+that braid several bands at once are built by
+:mod:`braidpy.horn_gear.multiband`, as their line folds round and their
+bands' colours are more than a graph says yet.
 
 Listing them loads nothing: a machine is only made, and the simulator and
 networkx with it, when it is asked for.
@@ -37,7 +43,8 @@ def _multiband(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
 
 
 def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
-    """Makes the machine :mod:`braidpy.horn_gear.examples` names."""
+    """Makes the machine :mod:`braidpy.horn_gear.examples` names, written
+    there as its graph."""
 
     def make() -> BraidingMachine:
         from braidpy.horn_gear import examples

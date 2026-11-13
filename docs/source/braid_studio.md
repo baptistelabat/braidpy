@@ -21,14 +21,12 @@ what else makes the same braid (the catalogue of braids by topology,
 shown made: the book, videos, pages ({class}`braidpy.catalogue.Link`).
 Clicking a braid opens it in the studio, at once.
 
-Two kinds of braid have no figures yet. A braid made round cores — a
-machine's axial yarns, held straight up through it, as soutache's two
-cords or a triaxial braid's eight — is its yarns wrapped round the cores:
-the crossings of the yarns among themselves leave out how they pass the
-cores, so they are not the braid's word, and braidpy does not yet read one
-with the cores in it. A lace machine's braid has a word, but the catalogue
-of braids by topology ({mod}`braidpy.topology_catalog`) does not take
-lace machines yet.
+A braid made round cores — a machine's axial yarns, held straight up
+through it, as soutache's two cords or a triaxial braid's eight — counts
+each core as a strand standing still, which the other yarns pass in front
+of or behind. A lace machine's braid has no figures yet: it has a word,
+but the catalogue of braids by topology ({mod}`braidpy.topology_catalog`)
+does not take lace machines yet.
 
 ## What it does
 
@@ -63,8 +61,24 @@ The studio has a form and a 3D view.
   and made on the marudai move by move as written. A turn carries every
   bobbin round together, passing nobody, the braid held: the yarns twist
   into a rope, each as far from its axis as the others.
+- **Your own machine…** is any horn gear machine, written as the gears that
+  mesh: `A-B B-C C-D D-A` is four gears in a ring, a gear with its own
+  number of slots `A:6`, the others with *Slots per gear* (4 to start
+  with), a split gear as its parts joined on their axle, `A-B1 B2-C B1+B2`
+  (two plaits side by side), in as many parts as wanted. Gears may be named
+  as you like. The first gear named turns anticlockwise, its neighbours the
+  other way; a ring goes clockwise from the gear whose name sorts first,
+  whichever way the pairs are written. It starts from the machine chosen
+  before, written so. braidpy works out the rest — which way each gear turns, where they
+  meet, how it loads — as {mod}`braidpy.horn_gear.described` says, and
+  says why a graph cannot be a machine: a ring of an odd number of gears,
+  gears in two separate machines.
 - A braiding machine is drawn from above in the panel, as it starts: its
-  gears, the contacts between them and every slot, its carriers on them.
+  gears, the contacts between them and every slot, its carriers on them,
+  and its tracks, each in a colour of its own: the closed paths its
+  carriers follow, as the demo draws them
+  ({func}`~braidpy.horn_gear.visualization.track_curves`). A lace machine,
+  its gears turned by its card, has none.
   Click a slot to put a carrier on it or take it off, or type them in as
   `gear:slot`; **Its own loading** puts back the machine's. Two carriers on
   the same point are ringed at once. Carriers that meet as the machine turns
@@ -106,7 +120,13 @@ The studio has a form and a 3D view.
   yarns pressing on it, or rigid, straight. Either way each core keeps its
   own place, where the machine lays it, and no yarn or other core ever
   passes through it. A machine with nowhere for a core — a flat one, or a
-  ring of four lace gears, whose bobbins cross its middle — says so. A
+  ring of four lace gears, whose bobbins cross its middle — says so.
+  **Axial yarns** says where a horn gear machine's cores are fed: up a
+  gear's hollow spindle, `B`, or down the hole of a ring of gears,
+  `A-B-C-D` ({func}`~braidpy.horn_gear.described.read_axials`). Every place
+  there is room for one is drawn on the machine as a dashed ring; click one
+  to load a spool there, filled grey, or take it off. Left as it is, the
+  machine feeds its own. A
   kumihimo or mobidai braid can be made round a core too, down the disk's
   middle, of yarn or rigid as a machine's; its word is the yarns' own. On
   a marudai, the core rises up the braid's axis and the yarns are carried
@@ -187,7 +207,7 @@ The studio has a form and a 3D view.
   and spun. **Grow** replays it being made, by the clock of whatever made
   it: the oldest rows first, carried up as the newest form at the fell. An
   inset shows what made it, seen from above, at the same instant — the disk
-  with its strands as spokes, the machine's gears and carriers — and a
+  with its strands as spokes, the machine's gears, tracks and carriers — and a
   disk's braid turns with the disk, each strand at the fell nearest its
   carrier. The slider beside it goes through the making a sub-step at a
   time, an eighth of a machine's step or a disk's move: the arrow keys a

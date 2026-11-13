@@ -8,8 +8,10 @@ horn_gear/examples.py
 
 Classic braiding machine configurations as factory functions.
 
-Each function returns a ready-to-use BraidingMachine;
-:mod:`braidpy.machine_catalog` lists the braids they make.
+Each function returns a ready-to-use BraidingMachine, written as its graph
+(:func:`~braidpy.horn_gear.described.machine_from_graph`): the gears that
+mesh and where it feeds axial yarns.  Each loads itself.  :mod:`braidpy.machine_catalog` lists the braids
+they make.
 
 References
 ----------
@@ -19,7 +21,11 @@ References
 
 from __future__ import annotations
 
-from .model import Axial, BraidingMachine, Connection, HornGear
+from .described import machine_from_graph
+from .model import BraidingMachine
+
+# Eight gears in a ring.
+_RING_8 = "A-B B-C C-D D-E E-F F-G G-H H-A"
 
 
 def flat_braid_3() -> BraidingMachine:
@@ -62,14 +68,7 @@ def flat_braid_4(n_slots: int = 4) -> BraidingMachine:
     Returns:
         BraidingMachine for a 2-gear flat braid.
     """
-    gears = [
-        HornGear("A", n_slots, direction=+1),
-        HornGear("B", n_slots, direction=-1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=0, slot_b0=0, name="A-B"),
-    ]
-    return BraidingMachine(gears, connections)
+    return machine_from_graph("A-B", n_slots)
 
 
 def soutache_braid(n_slots: int = 5) -> BraidingMachine:
@@ -101,15 +100,7 @@ def soutache_braid(n_slots: int = 5) -> BraidingMachine:
     Returns:
         BraidingMachine for a 2-gear soutache braid with two cords.
     """
-    gears = [
-        HornGear("A", n_slots, direction=+1),
-        HornGear("B", n_slots, direction=-1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=0, slot_b0=0, name="A-B"),
-    ]
-    axials = [Axial("cord_A", ("A",)), Axial("cord_B", ("B",))]
-    return BraidingMachine(gears, connections, axials=axials)
+    return machine_from_graph("A-B", n_slots, axials="A B")
 
 
 def princess_braid() -> BraidingMachine:
@@ -139,16 +130,7 @@ def princess_braid() -> BraidingMachine:
     Returns:
         BraidingMachine for a 3-gear princess braid with a cord core.
     """
-    gears = [
-        HornGear("A", 5, direction=+1),
-        HornGear("B", 6, direction=-1),
-        HornGear("C", 5, direction=+1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=0, slot_b0=0, name="A-B"),
-        Connection("B", "C", slot_a0=3, slot_b0=0, name="B-C"),
-    ]
-    return BraidingMachine(gears, connections, axials=[Axial("cord", ("B",))])
+    return machine_from_graph("A-B:6 B-C", 5, axials="B")
 
 
 def flat_braid_9(n_end: int = 5) -> BraidingMachine:
@@ -197,18 +179,7 @@ def flat_braid_9(n_end: int = 5) -> BraidingMachine:
     Returns:
         BraidingMachine for a 4-gear flat braid.
     """
-    gears = [
-        HornGear("A", n_end, direction=+1),
-        HornGear("B", 4, direction=-1),
-        HornGear("C", 4, direction=+1),
-        HornGear("D", n_end, direction=-1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=0, slot_b0=2, name="A-B"),
-        Connection("B", "C", slot_a0=0, slot_b0=2, name="B-C"),
-        Connection("C", "D", slot_a0=0, slot_b0=0, name="C-D"),
-    ]
-    return BraidingMachine(gears, connections)
+    return machine_from_graph("A-B:4 B-C:4 C-D", n_end)
 
 
 def tubular_braid_8() -> BraidingMachine:
@@ -224,27 +195,15 @@ def tubular_braid_8() -> BraidingMachine:
 
     All gears have 4 slots; rotations alternate around the ring.
 
-    Four equal circles in a ring meet at contacts 90° apart on each gear, which
-    is exactly one 4-slot pitch.  The connection slots below are chosen so each
-    gear's two contact slots are adjacent (differ by 1), matching that geometry:
-    carriers then sweep in step with the gear instead of drifting against it.
+    Four equal circles in a ring meet at contacts 90° apart on each gear,
+    which is exactly one 4-slot pitch, so each gear's two contact slots are
+    side by side: carriers then sweep in step with the gear instead of
+    drifting against it.
 
     Returns:
         BraidingMachine for a 4-gear ring braid.
     """
-    gears = [
-        HornGear("A", 4, direction=+1),
-        HornGear("B", 4, direction=-1),
-        HornGear("C", 4, direction=+1),
-        HornGear("D", 4, direction=-1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=1, slot_b0=3, name="A-B"),
-        Connection("B", "C", slot_a0=0, slot_b0=3, name="B-C"),
-        Connection("C", "D", slot_a0=0, slot_b0=3, name="C-D"),
-        Connection("D", "A", slot_a0=0, slot_b0=0, name="D-A"),
-    ]
-    return BraidingMachine(gears, connections)
+    return machine_from_graph("A-B B-C C-D D-A")
 
 
 def tubular_braid_12() -> BraidingMachine:
@@ -256,23 +215,7 @@ def tubular_braid_12() -> BraidingMachine:
     Returns:
         BraidingMachine for a 6-gear hexagonal ring braid.
     """
-    n = 6
-    names = [chr(ord("A") + i) for i in range(n)]
-    gears = [
-        HornGear(name, 4, direction=+1 if i % 2 == 0 else -1)
-        for i, name in enumerate(names)
-    ]
-    connections = [
-        Connection(
-            names[i],
-            names[(i + 1) % n],
-            slot_a0=1,
-            slot_b0=3,
-            name=f"{names[i]}-{names[(i + 1) % n]}",
-        )
-        for i in range(n)
-    ]
-    return BraidingMachine(gears, connections)
+    return machine_from_graph("A-B B-C C-D D-E E-F F-A")
 
 
 def tubular_braid_16() -> BraidingMachine:
@@ -284,23 +227,7 @@ def tubular_braid_16() -> BraidingMachine:
     Returns:
         BraidingMachine for an 8-gear ring braid.
     """
-    n = 8
-    names = [chr(ord("A") + i) for i in range(n)]
-    gears = [
-        HornGear(name, 4, direction=+1 if i % 2 == 0 else -1)
-        for i, name in enumerate(names)
-    ]
-    connections = [
-        Connection(
-            names[i],
-            names[(i + 1) % n],
-            slot_a0=1,
-            slot_b0=3,
-            name=f"{names[i]}-{names[(i + 1) % n]}",
-        )
-        for i in range(n)
-    ]
-    return BraidingMachine(gears, connections)
+    return machine_from_graph(_RING_8)
 
 
 def triaxial_braid_16() -> BraidingMachine:
@@ -322,10 +249,7 @@ def triaxial_braid_16() -> BraidingMachine:
         BraidingMachine for an 8-gear ring braid with an axial yarn up each
         gear.
     """
-    machine = tubular_braid_16()
-    return machine.with_axials(
-        Axial(f"axial_{name}", (name,)) for name in machine.gears
-    )
+    return machine_from_graph(_RING_8, axials="A B C D E F G H")
 
 
 def diamond_braid() -> BraidingMachine:
@@ -362,13 +286,4 @@ def mixed_gear_machine() -> BraidingMachine:
     Returns:
         BraidingMachine with mixed slot counts.
     """
-    gears = [
-        HornGear("A", 6, direction=+1),
-        HornGear("B", 4, direction=-1),
-        HornGear("C", 6, direction=+1),
-    ]
-    connections = [
-        Connection("A", "B", slot_a0=0, slot_b0=2, name="A-B"),
-        Connection("B", "C", slot_a0=0, slot_b0=3, name="B-C"),
-    ]
-    return BraidingMachine(gears, connections)
+    return machine_from_graph("A:6-B B-C:6")

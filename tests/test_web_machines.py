@@ -19,9 +19,11 @@ def test_a_machine_braids_its_cores_in_as_yarns():
     result = build({"source": "machine", "name": "soutache_5", "cycles": 2})
     cores = [s for s in result["strands"] if s["name"].startswith("Core")]
     yarns = [s for s in result["strands"] if not s["name"].startswith("Core")]
-    assert [s["name"] for s in cores] == ["Core cord_A", "Core cord_B"]
+    assert [s["name"] for s in cores] == ["Core axial_A", "Core axial_B"]
     assert len(yarns) == 5
-    assert "word" not in result["info"]
+    # Each core counted in its word as a strand standing still.
+    assert result["info"]["n_strands"] == 7
+    assert max(abs(int(g)) for g in result["info"]["word"].split()) == 6
     # Half way up, each core is among the yarns, not off to one side.
     middle = len(cores[0]["points"]) // 2
     xy = np.array([s["points"][middle][:2] for s in yarns])
@@ -231,7 +233,7 @@ def test_carriers_that_meet_stop_the_braiding():
 def test_carriers_that_meet_at_once_cannot_be_braided():
     with pytest.raises(ValueError, match="meet as soon as"):
         build(
-            {"source": "machine", "name": "tubular_8", "carriers": "A:0 D:0"},
+            {"source": "machine", "name": "tubular_8", "carriers": "A:0 B:0"},
             tighten=False,
         )
 

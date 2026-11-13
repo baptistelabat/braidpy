@@ -152,6 +152,11 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.horn_gear.described
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.horn_gear.layout
    :members:
    :undoc-members:

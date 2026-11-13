@@ -170,9 +170,9 @@ def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
         :class:`braidpy.catalogue.Link` has them; and, if its topology is
         known, ``topology``, its name, ``n_strands``, ``loops``, the sizes
         of the loops its closure makes, ``writhe``, and ``same``, the
-        titles of the other braids of the catalogue it is.  A braid with no
-        braid word of its strands alone, as one round cores, has no
-        topology.
+        titles of the other braids of the catalogue it is.  A braid the
+        catalogue of braids by topology does not take, as a lace
+        machine's, has no topology.
     """
     from dataclasses import asdict
 
