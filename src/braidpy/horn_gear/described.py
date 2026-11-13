@@ -40,14 +40,15 @@ The rest follows from the graph:
   gears' sizes alone, a split gear's parts at one centre, as large as the
   whole); in a tree of gears, each neighbour of a split gear's part where a
   horn of that part comes round.
-- Each gear's contacts are spread round it as evenly as its slots allow, in
-  the order the layout puts them, its first contact named at slot 0.
+- Each gear's contacts are where the layout puts them, if whole slots can
+  say so, and otherwise as evenly spread as its slots allow, in the order
+  the layout puts them, its first contact named at slot 0.
 
 Where it feeds axial yarns is written as the places, ``B`` up a gear's
 spindle or ``A-B-C-D`` down the hole of a ring of gears
-(:func:`read_axials`); the carriers it starts with, where it does not load
+(:func:`read_axials`); the carriers it starts with, if it is not to load
 itself, as ``A:0 B:2`` (:func:`read_loading`).  The catalogue's machines
-are written so (:mod:`braidpy.machine_catalog`).
+are written so (:mod:`braidpy.horn_gear.examples`).
 
 :func:`graph_of` writes a machine back as its graph, :func:`axials_of` and
 :func:`loading_of` its axials and a loading.  A machine written so and read
