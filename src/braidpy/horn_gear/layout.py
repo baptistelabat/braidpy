@@ -193,18 +193,22 @@ def _orient(
     return {name: (x, -y) for name, (x, y) in placed.items()}
 
 
-def _spread(parent: float | None, children: int) -> list[float]:
-    """Directions out of a gear for its children: evenly round it with the
-    way back to its parent, so a single child carries straight on and two
-    branch at ±60°; round the whole of it for the first gear, the first
-    child to the right."""
-    if parent is None:
-        return [2 * math.pi * i / children for i in range(children)]
-    if children == 1:
+def _spread(back: float | None, n_onward: int) -> list[float]:
+    """Directions out of a gear for the gears placed from it.
+
+    The layout grows out from the first gear (:func:`_layout_bfs`): each
+    other gear is placed from a neighbour already placed, and ``back`` is
+    the direction from the gear to that neighbour, None for the first gear.
+    The ``n_onward`` gears placed from it go evenly round it with the way
+    back, so one carries straight on and two branch at ±60°; round the
+    whole of the first gear, the first to the right."""
+    if back is None:
+        return [2 * math.pi * i / n_onward for i in range(n_onward)]
+    if n_onward == 1:
         # Straight on, the way it came in, to the last bit: a chain stays on
         # the x-axis exactly.
-        return [parent - math.pi]
-    return [parent + 2 * math.pi * (i + 1) / (children + 1) for i in range(children)]
+        return [back - math.pi]
+    return [back + 2 * math.pi * (i + 1) / (n_onward + 1) for i in range(n_onward)]
 
 
 def _layout_bfs(
@@ -214,40 +218,39 @@ def _layout_bfs(
 ) -> dict[str, tuple[float, float]]:
     """Exact tangential layout for tree graphs via BFS.
 
-    The first gear at the origin; each gear's children round it, every
-    child's rim touching its own, in the directions :func:`_spread` gives —
-    a chain carries straight on along the x-axis, a gear with several
-    children branches.
+    The first gear at the origin; then, gear by gear, outwards, each gear's
+    neighbours not yet placed round it, each rim touching its own, in the
+    directions :func:`_spread` gives — a chain carries straight on along the
+    x-axis, a gear with several neighbours onward branches.
 
     Args:
         machine: The machine, its gears in a tree.
         scale: Overall scale factor.
         directions: How to choose the directions out of a gear for its
-            children instead: called with the gear, the direction back to its
-            parent (None for the first gear) and its children, it gives a
-            direction for each.
+            gears placed from it instead: called with the gear, the direction
+            back to the neighbour it was placed from (None for the first
+            gear) and the neighbours to place from it, it gives a direction
+            for each.
 
     Returns:
         Gear name -> (x, y).
     """
     radii = gear_radii(machine, scale)
     root = next(iter(machine.gears))
-    choose = directions or (
-        lambda gear, parent, children: _spread(parent, len(children))
-    )
+    choose = directions or (lambda gear, back, onward: _spread(back, len(onward)))
 
     pos: dict[str, tuple[float, float]] = {root: (0.0, 0.0)}
     back: dict[str, float | None] = {root: None}
     queue: deque = deque([root])
     while queue:
-        parent = queue.popleft()
-        children = sorted(n for n in machine.graph.neighbors(parent) if n not in pos)
-        x, y = pos[parent]
-        for child, angle in zip(children, choose(parent, back[parent], children)):
-            reach = radii[parent] + radii[child]
-            pos[child] = (x + reach * math.cos(angle), y + reach * math.sin(angle))
-            back[child] = angle + math.pi
-            queue.append(child)
+        gear = queue.popleft()
+        onward = sorted(n for n in machine.graph.neighbors(gear) if n not in pos)
+        x, y = pos[gear]
+        for placed, angle in zip(onward, choose(gear, back[gear], onward)):
+            reach = radii[gear] + radii[placed]
+            pos[placed] = (x + reach * math.cos(angle), y + reach * math.sin(angle))
+            back[placed] = angle + math.pi
+            queue.append(placed)
     return pos
 
 

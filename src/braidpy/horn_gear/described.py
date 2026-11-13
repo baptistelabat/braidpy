@@ -221,8 +221,8 @@ def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
 
 
 def _interleaved(axles, meets, slots, axle_of):
-    """How a tree of gears with split gears is laid out: each child of a
-    split gear where a horn of its own part stands.
+    """How a tree of gears with split gears is laid out: each gear placed
+    from a split gear where a horn of the part it meets stands.
 
     A split gear's ``k`` parts of ``s`` slots take turns round it, part
     ``j``'s horns ``j`` of the whole gear's ``k s`` pitches on from part 0's,
@@ -239,23 +239,24 @@ def _interleaved(axles, meets, slots, axle_of):
 
     split = {"+".join(parts): parts for parts in axles}
 
-    def directions(gear, parent, children):
-        wanted = _spread(parent, len(children))
+    def directions(gear, back, onward):
+        wanted = _spread(back, len(onward))
         if gear not in split:
             return wanted
         parts = split[gear]
         k, s = len(parts), slots[parts[0]]
         pitch = 2 * math.pi / (k * s)
-        # The whole gear's horns turned so the parent's part meets it.
+        # The whole gear's horns turned so that the part meeting the gear it
+        # was placed from faces it.
         base = 0.0
         taken = set()
-        if parent is not None:
-            via = parts.index(meets[(gear, _parent_of[gear])])
-            base = parent - via * pitch
+        if back is not None:
+            via = parts.index(meets[(gear, _placed_from[gear])])
+            base = back - via * pitch
             taken.add(via)
         chosen = []
-        for child, target in zip(children, wanted):
-            j = parts.index(meets[(gear, child)])
+        for next_gear, target in zip(onward, wanted):
+            j = parts.index(meets[(gear, next_gear)])
             horns = [
                 base + (j + k * m) * pitch
                 for m in range(s)
@@ -268,14 +269,14 @@ def _interleaved(axles, meets, slots, axle_of):
             chosen.append(angle)
         return chosen
 
-    # The parent each gear is reached from, which the layout does not say:
-    # filled in as it goes, from the child's side.
-    _parent_of: dict[str, str] = {}
+    # The gear each gear is placed from, which the layout does not say:
+    # noted as it places them.
+    _placed_from: dict[str, str] = {}
 
-    def recording(gear, parent, children):
-        for child in children:
-            _parent_of[child] = gear
-        return directions(gear, parent, children)
+    def recording(gear, back, onward):
+        for next_gear in onward:
+            _placed_from[next_gear] = gear
+        return directions(gear, back, onward)
 
     return recording
 
