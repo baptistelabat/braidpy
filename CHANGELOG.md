@@ -15,6 +15,14 @@ What changed in each release of braidpy.
   meshing with three or more, rather than piling them on one another; and
   a machine's yarns are drawn off fast enough that two passing the same
   point, as a split gear's parts' carriers do, are a diameter apart.
+- A machine braiding round cores has a braid word: each core is a strand
+  of it, standing still where it rises through the deck, which the
+  carriers pass in front of or behind (`horn_gear.word.flat_word`,
+  `annular_word`; they refused such machines). Soutache, princess and the
+  triaxial braid now have their word, crossings and permutation in Braid
+  Studio, and join the catalogue of braids by topology. Soutache's word
+  read off the machine is the one read off its yarns hanging in space,
+  cords and all.
 - Any horn gear machine, written as the gears that mesh: `A-B B-C C-D D-A`,
   a gear with its own slots `A:6` (`horn_gear.described.machine_from_graph`;
   `graph_of` writes a machine back so). Each gear's direction and contacts

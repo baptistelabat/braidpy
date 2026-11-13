@@ -57,9 +57,9 @@ What is known and left for later, each with enough said to pick it up.
     (1995): the other way, flipper's.
 
   Then Braid Studio's card can say which of the three a braid is.
-- **Lace and cored braids on the front page**: they have no topology, so
-  their strands, loops and writhe are not shown. A lace machine's braid has
-  a braid word: adding lace to the topology catalogue's methods would give
+- **Lace braids on the front page**: they have no topology, so their
+  strands, loops and writhe are not shown. A lace machine's braid has a
+  braid word: adding lace to the topology catalogue's methods would give
   them.
 - **An axial that stays straight but moves**: a triaxial braid's axials are
   tensioned yarns, straight, yet free to shift sideways as the braid closes

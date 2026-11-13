@@ -20,8 +20,8 @@ catalogue, with the description Braid Studio makes it from
 (:func:`braidpy.web.build`).  Its braid word is the one braidpy reads off
 it, over a whole period: for a disk braid that creeps round the disk from
 cycle to cycle, as kongo gumi does, as many cycles as bring every strand
-home.  A machine braiding round cores has no braid word of its strands
-alone, and is left out.
+home.  A machine braiding round cores has its cores in its word, each a
+strand standing still (:mod:`braidpy.horn_gear.word`).
 
 Building the catalogue makes every braid of every catalogue — some ten
 seconds — so it is built once, when first asked for (:func:`catalogue`).
