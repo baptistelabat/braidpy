@@ -63,13 +63,20 @@ The studio has a form and a 3D view.
   into a rope, each as far from its axis as the others.
 - **Your own machine…** is any horn gear machine, written as the gears that
   mesh: `A-B B-C C-D D-A` is four gears in a ring, a gear with its own
-  number of slots `A:6`. It starts from the machine chosen before, written
-  so. braidpy works out the rest — which way each gear turns, where they
+  number of slots `A:6`, the others with *Slots per gear* (4 to start
+  with). Gears may be named as you like. The first gear named turns
+  anticlockwise, its neighbours the other way; a ring goes clockwise from
+  the gear whose name sorts first, whichever way the pairs are written. It
+  starts from the machine chosen before, written so. braidpy works out the rest — which way each gear turns, where they
   meet, how it loads — as {mod}`braidpy.horn_gear.described` says, and
   says why a graph cannot be a machine: a ring of an odd number of gears,
   gears in two separate machines.
 - A braiding machine is drawn from above in the panel, as it starts: its
-  gears, the contacts between them and every slot, its carriers on them.
+  gears, the contacts between them and every slot, its carriers on them,
+  and its tracks, each in a colour of its own: the closed paths its
+  carriers follow, as the demo draws them
+  ({func}`~braidpy.horn_gear.visualization.track_curves`). A lace machine,
+  its gears turned by its card, has none.
   Click a slot to put a carrier on it or take it off, or type them in as
   `gear:slot`; **Its own loading** puts back the machine's. Two carriers on
   the same point are ringed at once. Carriers that meet as the machine turns
@@ -192,7 +199,7 @@ The studio has a form and a 3D view.
   and spun. **Grow** replays it being made, by the clock of whatever made
   it: the oldest rows first, carried up as the newest form at the fell. An
   inset shows what made it, seen from above, at the same instant — the disk
-  with its strands as spokes, the machine's gears and carriers — and a
+  with its strands as spokes, the machine's gears, tracks and carriers — and a
   disk's braid turns with the disk, each strand at the fell nearest its
   carrier. The slider beside it goes through the making a sub-step at a
   time, an eighth of a machine's step or a disk's move: the arrow keys a

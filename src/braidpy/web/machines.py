@@ -8,6 +8,7 @@ draws it from above, to load it by hand."""
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Callable, Collection, Hashable
 from functools import lru_cache
@@ -16,6 +17,8 @@ from typing import (
     Any,
     cast,
 )
+
+import numpy as np
 
 from braidpy.web._info import _braid_info
 
@@ -68,6 +71,10 @@ OWN_LACE = "lace:"
 # A horn gear machine of your own, likewise, by its slots and graph:
 # "gears:4:A-B B-C C-D D-A".
 OWN_GEARS = "gears:"
+
+# The most points a track is drawn with, seen from above: a long track, as
+# the flat braid of nine's round every gear, is thousands of arc points.
+_TRACK_POINTS = 600
 
 
 def _machine(name: str) -> Any:
@@ -209,7 +216,7 @@ def _from_machine(spec: Spec) -> Result:
         names=[f"Core {k}" if k in cores else f"Yarn {k}" for k in keys],
         info=info,
         notes=notes,
-        timeline=_timeline(paths.trajectories, keys, "machine"),
+        timeline=_timeline(paths.trajectories, keys, "machine", tracks=tracks(machine)),
     )
     if Machine.settle.read(spec) == Carried.settle:
         if n_steps is None:
@@ -693,6 +700,10 @@ def machine_geometry(name: str) -> MachineGeometry:
         ],
         "loading": [[own[k][0], int(own[k][1])] for k in sorted(own)],
         "graph": _graph(machine) if type(machine) is BraidingMachine else None,
+        "tracks": [
+            {"colour": colour, "points": np.round(points, 4).tolist()}
+            for colour, points in tracks(machine, layout)
+        ],
     }
 
 
@@ -703,6 +714,33 @@ def _graph(machine: Any) -> dict[str, Any]:
 
     graph, n_slots = graph_of(machine)
     return {"graph": graph, "n_slots": n_slots}
+
+
+def tracks(machine: Any, layout: Any = None) -> list[tuple[str, Any]]:
+    """A machine's carrier tracks, seen from above as the demo draws them
+    (:func:`~braidpy.horn_gear.visualization.coloured_tracks`), each in its
+    colour, with fewer points: none for a machine driven by a programme.
+
+    Args:
+        machine: The machine.
+        layout: Where its gears are; worked out if None.
+
+    Returns:
+        Per track, its colour and its points, shape ``(n, 2)``, in the
+        layout's plane — the carriers' too.
+    """
+    from braidpy.horn_gear.layout import compute_layout
+    from braidpy.horn_gear.visualization import coloured_tracks
+
+    if layout is None:
+        layout = compute_layout(machine)
+    found = []
+    for _, colour, points in coloured_tracks(machine, layout):
+        # One point in so many, the last kept: the track stays closed.
+        every = max(1, math.ceil(len(points) / _TRACK_POINTS))
+        kept = np.vstack([points[:-1:every], points[-1:]])
+        found.append((colour, kept))
+    return found
 
 
 @lru_cache(maxsize=4)
