@@ -117,6 +117,14 @@ class Clock(TypedDict):
     braid: list[float]
 
 
+class Track(TypedDict):
+    """A carrier track, seen from above: the closed curve the carriers on it
+    follow, and the colour braidpy draws it in."""
+
+    colour: str
+    points: list[Point]
+
+
 class _Timeline(TypedDict):
     kind: str
     times: list[float]
@@ -130,9 +138,10 @@ class _Timeline(TypedDict):
 class Timeline(_Timeline, total=False):
     """What made the braid, seen from above, over time: each carrier's path,
     the outlines under them and the slots, named; for a disk, how far its
-    braid turns with it."""
+    braid turns with it; for a machine of fixed tracks, its tracks."""
 
     turn: list[float]
+    tracks: list[Track]
 
 
 class Tightening(TypedDict):
@@ -286,3 +295,5 @@ class MachineGeometry(TypedDict):
     gears: list[Gear]
     contacts: list[Contact]
     loading: list[list[str | int]]
+    # The carriers' tracks; none for a machine driven by a programme.
+    tracks: list[Track]

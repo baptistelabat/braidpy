@@ -213,6 +213,7 @@ def _timeline(
     kind: str,
     clock: Optional[Clock] = None,
     ring=None,
+    tracks: Sequence[tuple[str, Any]] = (),
 ) -> Timeline:
     """What made the braid, seen from above, over time: for the page to
     animate in step with the braid.
@@ -229,6 +230,9 @@ def _timeline(
             at the fell is nearest its carrier — see
             :meth:`~braidpy.disk_animation.BraidGrowth.turn_at` — and how
             far it is turned is given at each instant, as ``turn``.
+        tracks: For a machine, its tracks, each a colour and its points
+            (:func:`braidpy.web.machines.tracks`), in the trajectories'
+            plane.
     """
     times = np.asarray(trajectories.times, dtype=float)
     stride = max(1, math.ceil(len(times) / _MAX_TIMES))
@@ -287,6 +291,10 @@ def _timeline(
     }
     if turn is not None:
         timeline["turn"] = turn
+    if tracks:
+        timeline["tracks"] = [
+            {"colour": colour, "points": plane(points)} for colour, points in tracks
+        ]
     return timeline
 
 
