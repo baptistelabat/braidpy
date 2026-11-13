@@ -114,7 +114,13 @@ The studio has a form and a 3D view.
   yarns pressing on it, or rigid, straight. Either way each core keeps its
   own place, where the machine lays it, and no yarn or other core ever
   passes through it. A machine with nowhere for a core — a flat one, or a
-  ring of four lace gears, whose bobbins cross its middle — says so. A
+  ring of four lace gears, whose bobbins cross its middle — says so.
+  **Axial yarns** says where a horn gear machine's cores are fed: up a
+  gear's hollow spindle, `B`, or down the hole of a ring of gears,
+  `A-B-C-D` ({func}`~braidpy.horn_gear.described.read_axials`). Every place
+  there is room for one is drawn on the machine as a dashed ring; click one
+  to load a spool there, filled grey, or take it off. Left as it is, the
+  machine feeds its own. A
   kumihimo or mobidai braid can be made round a core too, down the disk's
   middle, of yarn or rigid as a machine's; its word is the yarns' own. On
   a marudai, the core rises up the braid's axis and the yarns are carried

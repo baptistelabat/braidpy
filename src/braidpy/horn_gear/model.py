@@ -169,6 +169,11 @@ class BraidingMachine:
     #: takes is whatever the programme dictates and need never come back.
     has_fixed_tracks: bool = True
 
+    #: The carriers it starts with when the caller does not say, as (gear,
+    #: slot) carrier after carrier (:meth:`with_loading`); None to work them
+    #: out (:meth:`default_carriers`).
+    _loading: tuple[tuple[str, int], ...] | None = None
+
     def __init__(
         self,
         gears: list[HornGear],
@@ -188,6 +193,28 @@ class BraidingMachine:
         machine = copy.copy(self)
         machine.axials = list(axials)
         machine._validate()
+        return machine
+
+    def with_loading(self, loading: Iterable[tuple[str, int]]) -> BraidingMachine:
+        """The same machine, starting with these carriers when the caller
+        does not say otherwise (:meth:`default_carriers`).
+
+        Args:
+            loading: Each carrier's (gear, slot), carrier after carrier.
+
+        Raises:
+            ValueError: If a slot is not the machine's, or holds two carriers.
+        """
+        import copy
+
+        given = tuple((gear, int(slot)) for gear, slot in loading)
+        for gear, slot in given:
+            if gear not in self.gears or not 0 <= slot < self.gears[gear].n_slots:
+                raise ValueError(f"No slot {gear}:{slot} on this machine.")
+        if len(set(given)) < len(given):
+            raise ValueError("Two carriers on the same slot.")
+        machine = copy.copy(self)
+        machine._loading = given
         return machine
 
     def _build_graph(self) -> nx.Graph:
@@ -329,15 +356,18 @@ class BraidingMachine:
         return pos
 
     def default_carriers(self) -> dict[int, tuple[str, int]]:
-        """How to thread this machine when the caller does not say.
+        """How to thread this machine when the caller does not say: as it
+        was given (:meth:`with_loading`), if it was.
 
-        A wired machine is loaded along its tracks, as far as it will go.  A
-        machine without tracks overrides this — see
+        Otherwise a wired machine is loaded along its tracks, as far as it
+        will go.  A machine without tracks overrides this — see
         :func:`~braidpy.horn_gear.jacquard.notch_positions`.
 
         Returns:
             Dict mapping carrier_id → (gear_name, slot).
         """
+        if self._loading is not None:
+            return dict(enumerate(self._loading))
         from .loading import load_carriers
 
         return load_carriers(self)

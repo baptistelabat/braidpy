@@ -248,8 +248,10 @@ def _by_carriers(
 
 def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
     """The machine braiding round the core asked for (``CORE``): its own
-    cores, none, or — for a machine with none of its own that is one ring
-    of gears — one down the hole of the ring
+    cores — or those fed where ``axials`` says
+    (:func:`~braidpy.horn_gear.described.read_axials`), none if it says
+    ``none`` — none at all, or, for a machine with none that is one ring of
+    gears, one down the hole of the ring
     (:func:`~braidpy.horn_gear.ring_core`).
 
     The cores run up the braid, each in its own place, where the machine
@@ -273,6 +275,13 @@ def _cored(machine: Any, spec: Spec) -> tuple[Any, dict[str, Any], bool]:
         asked = "rigid" if OLD_CORES.read(spec) == "rigid" and machine.axials else "own"
     if asked not in CORE_KINDS:
         raise ValueError(f"A core is one of {', '.join(CORE_KINDS)}.")
+    fed = str(Machine.axials.read(spec)).strip()
+    if fed.lower() == Machine.no_axials:
+        machine = machine.with_axials([])
+    elif fed:
+        from braidpy.horn_gear.described import read_axials
+
+        machine = machine.with_axials(read_axials(machine, fed))
     layout = compute_layout(machine)
     if asked == "none":
         machine = machine.with_axials([])
@@ -597,42 +606,22 @@ def _from_lace(spec: Spec) -> Result:
 
 
 def _loading(text: Any, machine: Any) -> list[tuple[str, int]] | None:
-    """Carriers given as ``gear:slot``, each once; None if not given."""
+    """Carriers given as ``gear:slot``, each once
+    (:func:`~braidpy.horn_gear.described.read_loading`); None if not given."""
+    from braidpy.horn_gear.described import read_loading
+    from braidpy.horn_gear.jacquard import JacquardLaceMachine, notch_positions
+
     if text is None or not str(text).strip():
         return None
     if str(text).strip().lower() == "none":
         raise ValueError("Give at least one carrier.")
-    loading: list[tuple[str, int]] = []
     # A lace machine's bobbins may be named by their notch, "A-B", as its
     # card names them: the notch the two gears' circles cut.
-    from braidpy.horn_gear.jacquard import JacquardLaceMachine, notch_positions
-
     notches = {}
     if isinstance(machine, JacquardLaceMachine):
         at = notch_positions(machine)
         notches = {name: at[k] for name, k in _notch_names(len(machine.gears)).items()}
-    for token in re.split(r"[\s,;]+", str(text).strip()):
-        if token in notches:
-            gear, slot = notches[token]
-            if (gear, slot) in loading:
-                raise ValueError(f"Two bobbins in the same notch, {token}.")
-            loading.append((gear, slot))
-            continue
-        match = re.fullmatch(r"([^:\s]+):(\d+)", token)
-        if not match:
-            raise ValueError(f"Cannot read {token!r}: give each carrier as gear:slot.")
-        gear, slot = match.group(1), int(match.group(2))
-        if gear not in machine.gears:
-            raise ValueError(f"No gear {gear!r}: one of {sorted(machine.gears)}.")
-        n = machine.gears[gear].n_slots
-        if slot >= n:
-            raise ValueError(f"Gear {gear} has slots 0 to {n - 1}.")
-        if (gear, slot) in loading:
-            raise ValueError(f"Two carriers on the same slot, {gear}:{slot}.")
-        loading.append((gear, slot))
-    if not loading:
-        raise ValueError("Give at least one carrier.")
-    return loading
+    return read_loading(str(text), machine, named=notches)
 
 
 def _met(error: Any) -> str:
@@ -645,11 +634,16 @@ def machine_geometry(name: str) -> MachineGeometry:
     gears — where, how big, the circle their carriers ride, their slots, the
     way they turn and where each slot is at step 0, drawn as braidpy draws it
     (:class:`~braidpy.horn_gear.layout.GearAngles`) — the contacts between
-    them, the machine's own loading, and, for a machine of gears geared
+    them, the machine's own loading, every place it could feed an axial
+    yarn (:func:`~braidpy.horn_gear.layout.axial_spots`), those it does, in
+    the colour cores are drawn in, and, for a machine of gears geared
     together, the machine written as the gears that mesh
     (:func:`~braidpy.horn_gear.described.graph_of`), for your own to start
     from."""
+    from braidpy.horn_gear.described import axial_text
     from braidpy.horn_gear.layout import (
+        axial_position,
+        axial_spots,
         carrier_radius,
         compute_layout,
         contact_point,
@@ -691,6 +685,16 @@ def machine_geometry(name: str) -> MachineGeometry:
             for point in [contact_point(machine, layout, conn.gear_a, conn.gear_b)]
         ],
         "loading": [[own[k][0], int(own[k][1])] for k in sorted(own)],
+        # A lace machine, turned by its card, feeds no axial.
+        "axials": [
+            {"at": axial_text(spot), "x": float(x), "y": float(y)}
+            for spot in (
+                axial_spots(machine, layout) if machine.has_fixed_tracks else []
+            )
+            for x, y in [axial_position(machine, layout, spot)]
+        ],
+        "own_axials": [axial_text(axial) for axial in machine.axials],
+        "core_colour": CORE_COLOUR,
         # A lace machine, turned by its card, is not written as a graph.
         "graph": _graph(machine) if machine.has_fixed_tracks else None,
     }

@@ -109,5 +109,5 @@ def test_braid_studio_turns_a_catalogued_machine():
     assert all(len(f["slots"]) == len(turned["slots"]) for f in turned["frames"])
     first = turned["carriers"][0]
     assert machine_origin("flat_9", first, 5) == loading[0]
-    met = machine_turned("flat_9", [["A", 0], ["B", 2]], 5)
-    assert met["time"] == 0 and sorted(met["met"]) == [["A", 0], ["B", 2]]
+    met = machine_turned("flat_9", [["A", 0], ["B", 0]], 5)
+    assert met["time"] == 0 and sorted(met["met"]) == [["A", 0], ["B", 0]]

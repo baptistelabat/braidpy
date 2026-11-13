@@ -272,16 +272,6 @@ class MultibandLine(BraidingMachine):
             for k, (gear, _) in carriers.items()
         }
 
-    def default_carriers(self) -> dict[int, tuple[str, int]]:
-        """The loading given, or one found by the loading search.
-
-        Returns:
-            Carrier number -> (gear, slot).
-        """
-        if self._loading is not None:
-            return dict(enumerate(self._loading))
-        return super().default_carriers()
-
     def preferred_layout(
         self, scale: float = 1.0
     ) -> dict[str, tuple[float, float]] | None:

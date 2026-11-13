@@ -105,18 +105,10 @@ def test_a_graph_that_is_no_machine_is_refused_saying_why(text, said):
 def test_a_catalogued_machine_written_as_its_graph_is_the_same_machine(name):
     """Read back, the gears, their directions and how far apart their
     contacts are are the catalogue's: the same machine, its slots perhaps
-    named from another one round.  But for the ring of four, whose contacts
-    the catalogue puts side by side where its geometry has them, and the
-    graph as far apart as they go: another machine, the same braid."""
+    named from another one round."""
     machine = CATALOGUE[name].make()
     back = machine_from_graph(*graph_of(machine))
-    if name == "tubular_8":
-        assert same_fingerprint(
-            fingerprint(_ring_braid(machine, machine.default_carriers())),
-            fingerprint(_ring_braid(back, back.default_carriers())),
-        )
-    else:
-        assert _renaming(machine, back) is not None
+    assert _renaming(machine, back) is not None
 
 
 @pytest.mark.parametrize("name", ["tubular_12", "flat_3"])
@@ -242,3 +234,120 @@ def test_a_tree_of_gears_branches_rather_than_piling_up():
 def test_a_split_gear_that_cannot_be_is_refused_saying_why(text, said):
     with pytest.raises(ValueError, match=said):
         machine_from_graph(text, n_slots=3)
+
+
+# The machines of braidpy.horn_gear.examples the catalogue now writes as
+# graphs, by catalogue name.
+_BUILT = {
+    "flat_3": ("flat_braid_3", {}),
+    "flat_4": ("flat_braid_4", {}),
+    "flat_9": ("flat_braid_9", {}),
+    "soutache_5": ("soutache_braid", {}),
+    "soutache_7": ("soutache_braid", {"n_slots": 7}),
+    "princess": ("princess_braid", {}),
+    "tubular_8": ("tubular_braid_8", {}),
+    "tubular_12": ("tubular_braid_12", {}),
+    "tubular_16": ("tubular_braid_16", {}),
+    "triaxial_16": ("triaxial_braid_16", {}),
+}
+
+
+def _carried(machine):
+    """Where each carrier goes over a cycle, as it loads itself."""
+    import numpy as np
+
+    from braidpy.horn_gear import carrier_trajectories
+    from braidpy.horn_gear.tracks import simulation_period
+
+    made = carrier_trajectories(
+        machine,
+        simulation_period(machine),
+        carrier_positions=machine.default_carriers(),
+        n_substeps=4,
+    )
+    return np.stack([np.asarray(made.xy[k]) for k in sorted(made.xy)])
+
+
+@pytest.mark.parametrize("name", list(_BUILT))
+def test_a_catalogued_machine_written_as_its_graph_braids_as_built(name):
+    """Written as its graph, with its axials and, where it does not load
+    itself so, its loading, each catalogued machine feeds its axials where
+    the one built gear by gear did and lays every carrier on the same path,
+    carrier for carrier.  The ring of four gears is another machine, its
+    contacts spread round each gear: it makes the same braid."""
+    import numpy as np
+
+    from braidpy.horn_gear import examples
+
+    function, settings = _BUILT[name]
+    built = getattr(examples, function)(**settings)
+    machine = CATALOGUE[name].make()
+    assert [a.anchor for a in machine.axials] == [a.anchor for a in built.axials]
+    if name == "tubular_8":
+        assert same_fingerprint(
+            fingerprint(_ring_braid(built, built.default_carriers())),
+            fingerprint(_ring_braid(machine, machine.default_carriers())),
+        )
+    else:
+        assert np.allclose(_carried(machine), _carried(built), atol=1e-9)
+
+
+def test_axials_are_fed_up_a_gear_or_down_a_ring_written_either_way():
+    from braidpy.horn_gear import axial_spots
+    from braidpy.horn_gear.described import axial_text, axials_of
+
+    ring = "A-B B-C C-D D-E E-F F-G G-H H-A"
+    machine = machine_from_graph(ring, axials="C A H-G-F-E-D-C-B-A")
+    assert axials_of(machine) == "C A A-B-C-D-E-F-G-H"
+    assert [axial_text(s) for s in axial_spots(machine)] == [
+        *"ABCDEFGH",
+        "A-B-C-D-E-F-G-H",
+    ]
+    # A split gear's parts share an axle, and so one place for an axial.
+    split = machine_from_graph("G0-G1a G1b-G2 G1a+G1b", 3, axials="G1b")
+    assert [axial_text(s) for s in axial_spots(split)] == ["G0", "G1a", "G2"]
+    assert axials_of(split) == "G1a"
+
+
+@pytest.mark.parametrize(
+    "graph, axials, said",
+    [
+        ("A-B", "C", "No place for an axial at C"),
+        ("A-B B-C", "A-B-C", "No place"),
+        ("A-B", "A A", "twice"),
+    ],
+)
+def test_an_axial_where_there_is_no_room_is_refused(graph, axials, said):
+    with pytest.raises(ValueError, match=said):
+        machine_from_graph(graph, axials=axials)
+
+
+def test_a_machine_starts_with_the_carriers_it_is_given():
+    from braidpy.horn_gear.described import loading_of
+
+    machine = machine_from_graph("A-B B-C C-D D-A", loading="A:1 C:3")
+    assert machine.default_carriers() == {0: ("A", 1), 1: ("C", 3)}
+    assert loading_of(machine.default_carriers()) == "A:1 C:3"
+    for loading, said in [("A:4", "slots 0 to 3"), ("A:1 A:1", "same slot")]:
+        with pytest.raises(ValueError, match=said):
+            machine_from_graph("A-B", loading=loading)
+
+
+def test_braid_studio_shows_where_axials_go_and_braids_round_those_loaded():
+    from braidpy import web
+    from braidpy.web.machines import machine_geometry
+
+    drawn = machine_geometry("tubular_8")
+    assert [s["at"] for s in drawn["axials"]] == [*"ABCD", "A-B-C-D"]
+    assert drawn["own_axials"] == []
+    assert machine_geometry("princess")["own_axials"] == ["B"]
+    spec = {"source": "machine", "name": "tubular_8", "cycles": 1}
+    made = web.build({**spec, "axials": "A C A-B-C-D"}, tighten=False)
+    assert [s["name"] for s in made["strands"]][-3:] == [
+        "Core axial_A",
+        "Core axial_C",
+        "Core core",
+    ]
+    # Every axial taken off: none, not the machine's own.
+    bare = web.build({**spec, "name": "triaxial_16", "axials": "none"}, tighten=False)
+    assert not any(s["name"].startswith("Core") for s in bare["strands"])

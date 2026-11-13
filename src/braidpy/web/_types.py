@@ -288,6 +288,11 @@ class MachineGeometry(TypedDict):
     gears: list[Gear]
     contacts: list[Contact]
     loading: list[list[str | int]]
+    # Every place it could feed an axial yarn, as written and where; those
+    # it feeds; and the colour cores are drawn in.
+    axials: list[dict[str, Any]]
+    own_axials: list[str]
+    core_colour: str
     # The gears that mesh, and the slots most have; None for a machine of
     # split gears, or a lace machine.
     graph: dict[str, Any] | None

@@ -42,6 +42,22 @@ function readLoading(text) {
     .map((m) => [m[1], Number(m[2])]);
 }
 
+// Where axial yarns are fed, as written (braidpy.horn_gear.described
+// .read_axials): a gear, or a ring of gears in any order.
+function readAxials(text) {
+  return String(text)
+    .split(/[\s,;]+/)
+    .filter((token) => token && token !== "none");
+}
+const axialKey = (at) => at.split("-").sort().join("-");
+
+// A place for an axial yarn: a ring round the gear's name, in carriers'
+// sizes, dashed when no spool is loaded there; a click this many of its
+// sizes from it reaches it.
+const AXIAL_SIZE = 1.6;
+const AXIAL_DASH = [3, 3];
+const AXIAL_REACH = 1.2;
+
 // A step, turned smoothly: how long it takes, and how long Run waits
 // between steps.
 const SWEEP_MS = 360;
@@ -50,6 +66,8 @@ const RUN_PAUSE_MS = 60;
 export function attachMachine(holder) {
   const names = holder.querySelector("select[name=name]");
   const field = holder.querySelector("[name=carriers]");
+  // Not on a lace machine, which feeds none.
+  const axialField = holder.querySelector("[name=axials]");
   const label = field.closest("label");
   const box = document.createElement("div");
   box.className = "editor machine";
@@ -157,6 +175,11 @@ export function attachMachine(holder) {
     const mine = loadingText(known.loading);
     if (!field.value.trim() || field.value === field.dataset.default) field.value = mine;
     field.dataset.default = mine;
+    if (axialField) {
+      const fed = known.own_axials.join(" ");
+      if (!axialField.value.trim() || axialField.value === axialField.dataset.default) axialField.value = fed;
+      axialField.dataset.default = fed;
+    }
     fresh();
     draw();
   };
@@ -174,8 +197,10 @@ export function attachMachine(holder) {
     fresh();
     draw();
   });
+  axialField?.addEventListener("input", () => draw());
   const another = () => {
     field.value = "";
+    if (axialField) axialField.value = "";
     met = [];
     time = 0;
     part = 0;
@@ -395,17 +420,42 @@ export function attachMachine(holder) {
       ctx.beginPath();
       ctx.arc(X(g.x), Y(g.y), g.radius * scale, 0, 2 * Math.PI);
       ctx.stroke();
-      ctx.fillStyle = muted;
-      ctx.font = "11px system-ui, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(g.name, X(g.x), Y(g.y));
     }
     for (const c of known.contacts) {
       ctx.fillStyle = line;
       ctx.beginPath();
       ctx.arc(X(c.x), Y(c.y), 2, 0, 2 * Math.PI);
       ctx.fill();
+    }
+    // Where axial yarns may be fed: a spool, in the cores' colour, where one
+    // is loaded.
+    const fed = new Set(readAxials(axialField?.value ?? "").map(axialKey));
+    const spots = axialField
+      ? known.axials.map((s) => ({ ...s, x: X(s.x), y: Y(s.y), loaded: fed.has(axialKey(s.at)) }))
+      : [];
+    for (const s of spots) {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, dot * AXIAL_SIZE, 0, 2 * Math.PI);
+      if (s.loaded) {
+        // Ringed, so as not to be taken for a carrier of the same grey.
+        ctx.fillStyle = known.core_colour;
+        ctx.fill();
+        ctx.strokeStyle = muted;
+        ctx.stroke();
+      } else {
+        ctx.setLineDash(AXIAL_DASH);
+        ctx.strokeStyle = known.core_colour;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    // The gears' names, over a spool at their centre.
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const g of known.gears) {
+      ctx.fillStyle = muted;
+      ctx.fillText(g.name, X(g.x), Y(g.y));
     }
     const placed = places(known);
     const slots = placed.slots.map((p) => ({ ...p, x: X(p.x), y: Y(p.y) }));
@@ -447,7 +497,7 @@ export function attachMachine(holder) {
       ctx.arc(p.x, p.y, dot * 1.9, 0, 2 * Math.PI);
       ctx.stroke();
     }
-    view = { slots, dot };
+    view = { slots, spots, dot };
 
     const count = carriers.length;
     const stopped = placed.met.length > 0;
@@ -474,13 +524,22 @@ export function attachMachine(holder) {
           ? "Ringed: where carriers met, and the braiding stopped."
           : time > 0
             ? `Step ${time}: ${carried}. Click a slot to put a carrier on it or take one off: it is loaded where it would have come from.`
-            : `${carried} on ${known.gears.length} gears. Click a slot to put a carrier on it or take it off.`;
+            : `${carried} on ${known.gears.length} gears. Click a slot to put a carrier on it or take it off${spots.length ? ", a dashed ring to load an axial yarn there or take it off" : ""}.`;
   }
 
   canvas.addEventListener("click", async (event) => {
     if (!view || sweeping || running) return;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left, y = event.clientY - rect.top;
+    // A spool for an axial yarn, put on or taken off.
+    const spot = view.spots.find((s) => Math.hypot(s.x - x, s.y - y) < view.dot * AXIAL_SIZE * AXIAL_REACH);
+    if (spot) {
+      const fed = readAxials(axialField.value).filter((at) => axialKey(at) !== axialKey(spot.at));
+      if (!spot.loaded) fed.push(spot.at);
+      axialField.value = fed.join(" ");
+      axialField.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
     let best = null;
     for (const p of view.slots) {
       const d = Math.hypot(p.x - x, p.y - y);
