@@ -10,8 +10,7 @@ Classic braiding machine configurations as factory functions.
 
 Each function returns a ready-to-use BraidingMachine, written as its graph
 (:func:`~braidpy.horn_gear.described.machine_from_graph`): the gears that
-mesh, where it feeds axial yarns, and the carriers it starts with where it
-does not load itself so.  :mod:`braidpy.machine_catalog` lists the braids
+mesh and where it feeds axial yarns.  Each loads itself.  :mod:`braidpy.machine_catalog` lists the braids
 they make.
 
 References
@@ -25,10 +24,8 @@ from __future__ import annotations
 from .described import machine_from_graph
 from .model import BraidingMachine
 
-# Eight gears in a ring, and the loading of its tubular braid of 16
-# carriers: two to a gear, on alternate slots, as the classic braid has them.
+# Eight gears in a ring.
 _RING_8 = "A-B B-C C-D D-E E-F F-G G-H H-A"
-_RING_8_LOADING = "A:3 C:1 E:1 G:1 H:0 F:0 D:0 B:0 A:1 G:3 E:3 C:3 B:2 D:2 F:2 H:2"
 
 
 def flat_braid_3() -> BraidingMachine:
@@ -218,10 +215,7 @@ def tubular_braid_12() -> BraidingMachine:
     Returns:
         BraidingMachine for a 6-gear hexagonal ring braid.
     """
-    return machine_from_graph(
-        "A-B B-C C-D D-E E-F F-A",
-        loading="A:3 C:1 E:1 F:0 D:0 B:0 A:1 E:3 C:3 B:2 D:2 F:2",
-    )
+    return machine_from_graph("A-B B-C C-D D-E E-F F-A")
 
 
 def tubular_braid_16() -> BraidingMachine:
@@ -233,7 +227,7 @@ def tubular_braid_16() -> BraidingMachine:
     Returns:
         BraidingMachine for an 8-gear ring braid.
     """
-    return machine_from_graph(_RING_8, loading=_RING_8_LOADING)
+    return machine_from_graph(_RING_8)
 
 
 def triaxial_braid_16() -> BraidingMachine:
@@ -255,9 +249,7 @@ def triaxial_braid_16() -> BraidingMachine:
         BraidingMachine for an 8-gear ring braid with an axial yarn up each
         gear.
     """
-    return machine_from_graph(
-        _RING_8, axials="A B C D E F G H", loading=_RING_8_LOADING
-    )
+    return machine_from_graph(_RING_8, axials="A B C D E F G H")
 
 
 def diamond_braid() -> BraidingMachine:
