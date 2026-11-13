@@ -682,8 +682,8 @@ def machine_geometry(name: str) -> MachineGeometry:
 
 def tracks(machine: Any, layout: Any = None) -> list[tuple[str, Any]]:
     """A machine's carrier tracks, seen from above as the demo draws them
-    (:func:`~braidpy.horn_gear.visualization.track_curves`), each in its
-    colour: none for a machine driven by a programme.
+    (:func:`~braidpy.horn_gear.visualization.coloured_tracks`), each in its
+    colour, with fewer points: none for a machine driven by a programme.
 
     Args:
         machine: The machine.
@@ -694,16 +694,16 @@ def tracks(machine: Any, layout: Any = None) -> list[tuple[str, Any]]:
         layout's plane — the carriers' too.
     """
     from braidpy.horn_gear.layout import compute_layout
-    from braidpy.horn_gear.visualization import track_curves
+    from braidpy.horn_gear.visualization import coloured_tracks
 
     if layout is None:
         layout = compute_layout(machine)
     found = []
-    for index, (_, points) in enumerate(track_curves(machine, layout)):
+    for _, colour, points in coloured_tracks(machine, layout):
         # One point in so many, the last kept: the track stays closed.
         every = max(1, math.ceil(len(points) / _TRACK_POINTS))
         kept = np.vstack([points[:-1:every], points[-1:]])
-        found.append((PALETTE[index % len(PALETTE)], kept))
+        found.append((colour, kept))
     return found
 
 

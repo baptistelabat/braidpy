@@ -388,6 +388,26 @@ def track_curves(
     return curves
 
 
+def coloured_tracks(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+    tracks: Optional[list[Track]] = None,
+    scale: float = 1.0,
+) -> list[tuple[str, str, np.ndarray]]:
+    """Each carrier track (:func:`track_curves`) in its colour: the
+    palette's, one after another, wherever the tracks are drawn.
+
+    Returns:
+        Per track, its name, its colour and its points.
+    """
+    return [
+        (label, PALETTE[index % len(PALETTE)], points)
+        for index, (label, points) in enumerate(
+            track_curves(machine, layout, tracks, scale)
+        )
+    ]
+
+
 def _track_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
@@ -396,21 +416,18 @@ def _track_traces(
     width: float = 2.5,
     opacity: float = 1.0,
 ) -> list[go.BaseTraceType]:
-    """Each carrier track (:func:`track_curves`) as a Plotly trace, in the
-    palette's colours, one after another."""
+    """Each carrier track (:func:`coloured_tracks`) as a Plotly trace."""
     return [
         go.Scatter(
             x=points[:, 0].tolist(),
             y=points[:, 1].tolist(),
             mode="lines",
-            line=dict(color=PALETTE[index % len(PALETTE)], width=width),
+            line=dict(color=colour, width=width),
             opacity=opacity,
             name=label,
             hoverinfo="skip",
         )
-        for index, (label, points) in enumerate(
-            track_curves(machine, layout, tracks, scale)
-        )
+        for label, colour, points in coloured_tracks(machine, layout, tracks, scale)
     ]
 
 
