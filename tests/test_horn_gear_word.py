@@ -130,18 +130,27 @@ def test_a_tube_read_flat_is_not_the_same_braid_as_a_tube_read_round():
 # ── What it refuses to do ─────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("name", ["princess_braid", "soutache_braid"])
-def test_a_machine_with_axials_is_refused_rather_than_answered_wrongly(name):
-    """Carriers braid around an axial, so it belongs in the word.
+def test_a_machine_with_axials_counts_each_as_a_strand():
+    """Carriers braid around an axial, so it belongs in the word: a strand
+    standing still where it rises through the deck, after the carriers.
+    Read so, soutache's two cords are in its word, and the mechanism and the
+    yarns hanging in space, cords and all, give the same word."""
+    machine = ex.soutache_braid()
+    period = simulation_period(machine)
+    from_mechanism = flat_word(machine)
+    strands = strands_for_checking(machine, n_cycles=1, n_steps=period, axials=True)
+    assert len(strands) == len(machine.default_carriers()) + len(machine.axials)
+    assert from_mechanism == braid_word(strands, n_samples=20000)
+    assert max(abs(g) for g in from_mechanism) == len(strands) - 1
 
-    Carrier trajectories do not include axials, so a word read from them would
-    silently be missing strands.  Better to refuse.
-    """
-    machine = getattr(ex, name)()
-    with pytest.raises(NotImplementedError, match="axial"):
-        flat_word(machine)
-    with pytest.raises(NotImplementedError, match="axial"):
-        annular_word(machine)
+
+def test_a_ring_with_axials_counts_each_in_its_word_round_the_ring():
+    machine = ex.triaxial_braid_16()
+    word = annular_word(machine)
+    assert word.n_strands == len(machine.default_carriers()) + len(machine.axials)
+    # An axial stands still: it winds round the centre not at all.
+    for k in range(len(machine.default_carriers()), word.n_strands):
+        assert word.winding[k] == 0
 
 
 # ── The loading is part of the question ───────────────────────────────────────
