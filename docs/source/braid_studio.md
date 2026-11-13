@@ -65,8 +65,11 @@ The studio has a form and a 3D view.
   into a rope, each as far from its axis as the others.
 - **Your own machine…** is any horn gear machine, written as the gears that
   mesh: `A-B B-C C-D D-A` is four gears in a ring, a gear with its own
-  number of slots `A:6`. It starts from the machine chosen before, written
-  so. braidpy works out the rest — which way each gear turns, where they
+  number of slots `A:6`, the others with *Slots per gear* (4 to start
+  with). Gears may be named as you like. The first gear named turns
+  anticlockwise, its neighbours the other way; a ring goes clockwise from
+  the gear whose name sorts first, whichever way the pairs are written. It
+  starts from the machine chosen before, written so. braidpy works out the rest — which way each gear turns, where they
   meet, how it loads — as {mod}`braidpy.horn_gear.described` says, and
   says why a graph cannot be a machine: a ring of an odd number of gears,
   gears in two separate machines.
