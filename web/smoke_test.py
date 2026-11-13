@@ -43,6 +43,17 @@ CASES = [
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
     # Tightened as a length of an endless braid.
     ({"source": "machine", "name": "tubular_8", "cycles": 1, "settle": "endless"}, 8),
+    # A machine of your own, written as the gears that mesh.
+    (
+        {
+            "source": "machine",
+            "name": "custom",
+            "graph": "A-B B-C C-D D-A",
+            "n_slots": 4,
+            "cycles": 1,
+        },
+        8,
+    ),
     # And made by its carriers going round.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "carriers"}, 3),
     # A lace machine, its card turning the gears; its handle too.

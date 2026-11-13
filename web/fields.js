@@ -120,6 +120,14 @@ const FIELDS = {
   machine: [
     { name: "name", label: "Machine", kind: "entries" },
     {
+      name: "graph",
+      label: "Gears that mesh",
+      kind: "textarea",
+      custom: true,
+      hint: "Each pair of gears that mesh, as A-B: A-B B-C C-D D-A is four gears in a ring. A gear with its own number of slots is written A:6 wherever it is named. Neighbours turn opposite ways, so a ring of an odd number of gears cannot turn. Starts from the machine chosen before.",
+    },
+    { name: "n_slots", label: "Slots per gear", kind: "number", min: 2, max: 24, custom: true },
+    {
       name: "carriers",
       label: "Carriers",
       kind: "text",
