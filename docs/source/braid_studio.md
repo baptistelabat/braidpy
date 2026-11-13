@@ -74,7 +74,11 @@ The studio has a form and a 3D view.
   says why a graph cannot be a machine: a ring of an odd number of gears,
   gears in two separate machines.
 - A braiding machine is drawn from above in the panel, as it starts: its
-  gears, the contacts between them and every slot, its carriers on them.
+  gears, the contacts between them and every slot, its carriers on them,
+  and its tracks, each in a colour of its own: the closed paths its
+  carriers follow, as the demo draws them
+  ({func}`~braidpy.horn_gear.visualization.track_curves`). A lace machine,
+  its gears turned by its card, has none.
   Click a slot to put a carrier on it or take it off, or type them in as
   `gear:slot`; **Its own loading** puts back the machine's. Two carriers on
   the same point are ringed at once. Carriers that meet as the machine turns
@@ -197,7 +201,7 @@ The studio has a form and a 3D view.
   and spun. **Grow** replays it being made, by the clock of whatever made
   it: the oldest rows first, carried up as the newest form at the fell. An
   inset shows what made it, seen from above, at the same instant — the disk
-  with its strands as spokes, the machine's gears and carriers — and a
+  with its strands as spokes, the machine's gears, tracks and carriers — and a
   disk's braid turns with the disk, each strand at the fell nearest its
   carrier. The slider beside it goes through the making a sub-step at a
   time, an eighth of a machine's step or a disk's move: the arrow keys a
