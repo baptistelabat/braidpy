@@ -8,9 +8,9 @@
 import * as THREE from "three";
 import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import { copyText } from "./info.js?v=511921bdce";
-import { drawSection, section, top } from "./insets.js?v=511921bdce";
-import { $ } from "./page.js?v=511921bdce";
+import { copyText } from "./info.js?v=253ab187fb";
+import { drawSection, section, top } from "./insets.js?v=253ab187fb";
+import { $ } from "./page.js?v=253ab187fb";
 import {
   awake,
   braid,
@@ -20,12 +20,13 @@ import {
   hangs,
   lastResult,
   made,
+  portrait,
   renderer,
   SUBSTEPS,
   scene,
   showTubes,
-} from "./scene.js?v=511921bdce";
-import { b3dOf } from "./workers.js?v=511921bdce";
+} from "./scene.js?v=253ab187fb";
+import { b3dOf } from "./workers.js?v=253ab187fb";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {
@@ -179,8 +180,10 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-// For tests: what the page holds.
+// For tests, and for the front page's pictures: what the page holds, and
+// the braid alone, framed close.
 window.braidStudio = {
+  portrait,
   get result() {
     return lastResult;
   },
