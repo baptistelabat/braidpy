@@ -7,6 +7,7 @@
 // step at a time, forwards or back, and carriers that meet are ringed.
 
 import { PALETTE, strandColour, trueColour } from "./colours.js";
+import { drawTracks } from "./insets.js";
 import { inTime } from "./page.js";
 import { worker } from "./workers.js";
 
@@ -421,6 +422,8 @@ export function attachMachine(holder) {
       ctx.arc(X(g.x), Y(g.y), g.radius * scale, 0, 2 * Math.PI);
       ctx.stroke();
     }
+    // The carriers' tracks, under the slots, each in braidpy's colour for it.
+    drawTracks(ctx, known.tracks, (p) => [X(p[0]), Y(p[1])]);
     for (const c of known.contacts) {
       ctx.fillStyle = line;
       ctx.beginPath();
