@@ -91,7 +91,8 @@ def test_a_sinnet_found_is_made_as_long_as_the_stand_takes():
 
 
 def test_a_braid_with_no_word_has_nothing_shown():
-    info = _info({"source": "machine", "name": "soutache_5"})
+    # Its carriers meet two steps in: the machine stops, and reads no word.
+    info = _info({"source": "machine", "name": "flat_3", "carriers": "A:1 B:2"})
     assert for_page(info) == {}
     assert sinnet_for_page(info)["spec"] is None
 
