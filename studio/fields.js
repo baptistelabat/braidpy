@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=253ab187fb";
-import { attachEditor } from "./editor.js?v=253ab187fb";
-import { attachMachine } from "./machine.js?v=253ab187fb";
-import { $ } from "./page.js?v=253ab187fb";
-import { submit } from "./workers.js?v=253ab187fb";
+import { attachDiagram } from "./diagram.js?v=c1dcfa6db7";
+import { attachEditor } from "./editor.js?v=c1dcfa6db7";
+import { attachMachine } from "./machine.js?v=c1dcfa6db7";
+import { $ } from "./page.js?v=c1dcfa6db7";
+import { submit } from "./workers.js?v=c1dcfa6db7";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -120,10 +120,24 @@ const FIELDS = {
   machine: [
     { name: "name", label: "Machine", kind: "entries" },
     {
+      name: "graph",
+      label: "Gears that mesh",
+      kind: "textarea",
+      custom: true,
+      hint: "Each pair of gears that mesh, as A-B: A-B B-C C-D D-A is four gears in a ring. A gear with its own number of slots is written A:6 wherever it is named. A split gear is written as its parts, each meshing with its own neighbours, joined on their axle: A-B1 B2-C B1+B2 is two plaits side by side, B split in two; a gear may be split in more parts, as H1+H2+H3. Neighbours turn opposite ways, so a ring of an odd number of gears cannot turn. Starts from the machine chosen before.",
+    },
+    { name: "n_slots", label: "Slots per gear", kind: "number", min: 2, max: 24, custom: true },
+    {
       name: "carriers",
       label: "Carriers",
       kind: "text",
       hint: "Each as gear:slot, slots numbered from each gear's first. Click a slot on the machine to put a carrier on it or take it off: carriers that meet stop the braiding there.",
+    },
+    {
+      name: "axials",
+      label: "Axial yarns",
+      kind: "text",
+      hint: "Where straight yarns are fed up through the braid, the carriers braiding round them: a gear, as B, up its hollow spindle; the ring of gears round a hole, as A-B-C-D, down it. Every place there is room for one is marked on the machine: click one to load a spool there or take it off.",
     },
     CORE,
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },

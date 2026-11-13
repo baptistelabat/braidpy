@@ -5,10 +5,14 @@
 // The braid asked for, read from the form, written into the address, and
 // read back from it: a link makes the same braid.
 
-import { chosenColours, useColours } from "./colours.js?v=253ab187fb";
-import { CHOICES, guessChoices } from "./defaults.js?v=253ab187fb";
-import { catalogue, renderFields } from "./fields.js?v=253ab187fb";
-import { $ } from "./page.js?v=253ab187fb";
+import { chosenColours, useColours } from "./colours.js?v=c1dcfa6db7";
+import { CHOICES, guessChoices } from "./defaults.js?v=c1dcfa6db7";
+import { catalogue, renderFields } from "./fields.js?v=c1dcfa6db7";
+import { $ } from "./page.js?v=c1dcfa6db7";
+
+// Fields filled with what the machine does itself -- its loading, its
+// axial yarns -- which the link leaves to it while they are left so.
+const MACHINE_OWN = new Set(["carriers", "axials"]);
 
 export function readSpec() {
   const spec = { source: $("source").value };
@@ -16,15 +20,15 @@ export function readSpec() {
   const named = $("form").querySelector("select[name=name]")?.value !== "custom";
   for (const element of $("form").elements) {
     if (!element.name || element.name === "source") continue;
-    // Every carrier taken off is no carriers, not the machine's own.
-    if (element.name === "carriers" && !element.value.trim() && element.dataset.default) {
-      spec.carriers = "none";
+    // Every carrier or axial taken off is none, not the machine's own.
+    if (MACHINE_OWN.has(element.name) && !element.value.trim() && element.dataset.default) {
+      spec[element.name] = "none";
       continue;
     }
     if (element.value === "" || element.closest("[hidden]")) continue;
     if (named && element.closest("[data-custom]")) continue;
-    // A machine's own loading is the machine's to make.
-    if (element.name === "carriers" && element.value === element.dataset.default) continue;
+    // A machine's own loading and axials are the machine's to make.
+    if (MACHINE_OWN.has(element.name) && element.value === element.dataset.default) continue;
     // A choice left as the braid's own default is the braid's to make.
     if (element.name in CHOICES && element.dataset.chosen !== "1") continue;
     spec[element.name] =

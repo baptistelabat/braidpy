@@ -72,7 +72,7 @@ async function init(pyodideUrl) {
   importScripts(pyodideUrl + "pyodide.js");
   pyodide = await loadPyodide({ indexURL: pyodideUrl });
 
-  status("Loading braidpy…");
+  status("Loading the braid engine…");
   // Installed as they are, without resolving what they ask for: braidpy's
   // other dependencies are for drawing, which the page does itself, or for
   // what the page does not ask of it (sympy, for Burau matrices).
