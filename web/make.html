@@ -3,10 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Braid Studio — braidpy</title>
+    <!-- if not indexed -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- end if -->
+    <title>{{name}}<!-- if by --> — {{by}}<!-- end if --></title>
     <meta
       name="description"
-      content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet, a braiding machine or a lace machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
+      content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet, a braiding machine or a lace machine — and see it laid and tightened in 3D, computed <!-- if by -->by {{by}} <!-- end if -->in your browser."
     />
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="style.css" />
@@ -43,10 +46,10 @@
   <body>
     <aside class="panel">
       <header>
-        <h1>Braid Studio</h1>
+        <h1>{{name}}</h1>
         <p class="lede">
-          Describe a braid and see it laid and tightened in 3D, computed by
-          <a href="https://github.com/baptistelabat/braidpy">braidpy</a> in
+          Describe a braid and see it laid and tightened in 3D, computed<!-- if by --> by
+          <a href="{{by_url}}">{{by}}</a><!-- end if --> in
           your browser. <a href="./">Look braids up</a> by what they are.
         </p>
       </header>
@@ -140,12 +143,14 @@
       </section>
 
       <footer>
+        <!-- if sponsor -->
         <p class="support">
-          <a class="support-button" href="https://github.com/sponsors/baptistelabat" target="_blank" rel="noopener"
+          <a class="support-button" href="{{sponsor}}" target="_blank" rel="noopener"
             >Sponsor braidpy</a
           >
           braidpy is built with Claude Code: sponsoring it helps pay for that.
         </p>
+        <!-- end if -->
         <p>
           Everything is computed here, in your browser: Python runs through
           <a href="https://pyodide.org">Pyodide</a>, drawing through

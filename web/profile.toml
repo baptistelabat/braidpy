@@ -1,0 +1,19 @@
+# Braid Studio as this repository publishes it: what the site calls itself,
+# whom it credits and where it links.  web/build.py fills the pages with it
+# (`{{name}}`, and `<!-- if key -->…<!-- end if -->` kept only when the key
+# is set); another site built from braidpy gives its own, as
+# `python web/build.py --profile its_profile.toml`.  An empty string leaves
+# out what it would fill.  See docs/source/private_sites.md.
+
+# The site's name, in its titles and headings.
+name = "Braid Studio"
+# What computes it, named in its titles and credits, and where that lives.
+by = "braidpy"
+by_url = "https://github.com/baptistelabat/braidpy"
+# The documentation, linked from the front page's foot.
+documentation = "../"
+documentation_title = "braidpy's documentation"
+# Where to sponsor braidpy, from the studio's foot.
+sponsor = "https://github.com/sponsors/baptistelabat"
+# Whether search engines are welcome: false asks them to leave the site out.
+indexed = true

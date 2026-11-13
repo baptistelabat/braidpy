@@ -7,7 +7,10 @@
 import gzip
 import importlib.util
 import json
+import re
 from pathlib import Path
+
+import pytest
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 
@@ -57,3 +60,61 @@ def test_the_braids_made_with_the_site_are_kept_gzipped(tmp_path):
     assert gzip.decompress((made / "0.settled.json.gz").read_bytes()) == settled
     assert (made / "0.json.gz").read_bytes() == (made / "1.json.gz").read_bytes()
     assert len((made / "0.json.gz").read_bytes()) < len(laid) / 10
+
+
+# A site of its own, built from braidpy: named otherwise, crediting and
+# linking nothing, kept from search engines (docs/source/private_sites.md).
+PRIVATE = """
+name = "Braid Designer"
+by = ""
+by_url = ""
+documentation = ""
+documentation_title = ""
+sponsor = ""
+indexed = false
+"""
+
+
+def _pages(build, about):
+    return {
+        name: build._rendered((WEB / name).read_text(), about)
+        for name in build.PAGE
+        if name.endswith(".html")
+    }
+
+
+def test_this_repositorys_profile_fills_every_page():
+    """With this repository's profile, nothing of the profile's own markup
+    is left on a page, and the site is open to search engines."""
+    build = _build()
+    for name, page in _pages(build, build.profile()).items():
+        assert (
+            "{{" not in page and "<!-- if" not in page and "<!-- end if" not in page
+        ), name
+        assert "Braid Studio" in page and "noindex" not in page, name
+
+
+def test_a_site_of_its_own_names_neither_braidpy_nor_its_links(tmp_path):
+    """A profile crediting nothing leaves braidpy, its repository and its
+    sponsoring off every page's visible text, names the site its own way,
+    and asks search engines to leave it out."""
+    build = _build()
+    given = tmp_path / "private.toml"
+    given.write_text(PRIVATE)
+    for name, page in _pages(build, build.profile(given)).items():
+        # What a visitor reads: the page less its scripts and comments.
+        shown = re.sub(r"<script.*?</script>|<!--.*?-->", "", page, flags=re.DOTALL)
+        for told in ("braidpy", "github", "sponsor", "Braid Studio"):
+            assert told.lower() not in shown.lower(), (name, told)
+        assert "<title>Braid Designer</title>" in page, name
+        assert '<meta name="robots" content="noindex, nofollow" />' in page, name
+
+
+def test_a_profile_decides_every_key(tmp_path):
+    """A profile leaving a key out is refused: a key added to this
+    repository's profile is one every site built from braidpy decides."""
+    build = _build()
+    given = tmp_path / "short.toml"
+    given.write_text(PRIVATE.replace('sponsor = ""\n', ""))
+    with pytest.raises(SystemExit, match="sponsor"):
+        build.profile(given)

@@ -6,6 +6,13 @@ What changed in each release of braidpy.
 
 ### New
 
+- Braid Studio built under another name, crediting and linking otherwise:
+  what the site calls itself, whom it credits, where it links and whether
+  search engines are welcome are a profile (`web/profile.toml`), and
+  `web/build.py --profile` builds the site with another. With braidpy's
+  own, the pages are as before. How a private site would build on braidpy
+  without forking it: *A site of your own* in the developer guide. The
+  studio no longer names braidpy while loading, nor in *Also made as*.
 - The catalogue's horn gear machines written as their graphs, as a machine
   of your own is (`machine_catalog`): the gears that mesh, where they feed
   axial yarns, and, should it be given one, the carriers it starts with
