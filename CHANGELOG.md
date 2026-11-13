@@ -6,6 +6,15 @@ What changed in each release of braidpy.
 
 ### New
 
+- Split gears in a machine of your own: a gear split into parts on one
+  axle, written `A-B1 B2-C B1+B2`, in two parts or more (`H1+H2+H3`),
+  anywhere in the graph; each part's neighbour stands where that part's
+  horns come round. Every catalogued machine, the twin plait and the
+  three-band machine among them, is written as its graph, and "Your own
+  machine…" starts from any. A tree of gears now branches round a gear
+  meshing with three or more, rather than piling them on one another; and
+  a machine's yarns are drawn off fast enough that two passing the same
+  point, as a split gear's parts' carriers do, are a diameter apart.
 - A machine braiding round cores has a braid word: each core is a strand
   of it, standing still where it rises through the deck, which the
   carriers pass in front of or behind (`horn_gear.word.flat_word`,

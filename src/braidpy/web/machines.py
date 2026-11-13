@@ -656,7 +656,6 @@ def machine_geometry(name: str) -> MachineGeometry:
     together, the machine written as the gears that mesh
     (:func:`~braidpy.horn_gear.described.graph_of`), for your own to start
     from."""
-    from braidpy.horn_gear import BraidingMachine
     from braidpy.horn_gear.layout import (
         carrier_radius,
         compute_layout,
@@ -699,7 +698,8 @@ def machine_geometry(name: str) -> MachineGeometry:
             for point in [contact_point(machine, layout, conn.gear_a, conn.gear_b)]
         ],
         "loading": [[own[k][0], int(own[k][1])] for k in sorted(own)],
-        "graph": _graph(machine) if type(machine) is BraidingMachine else None,
+        # A lace machine, turned by its card, is not written as a graph.
+        "graph": _graph(machine) if machine.has_fixed_tracks else None,
         "tracks": [
             {"colour": colour, "points": np.round(points, 4).tolist()}
             for colour, points in tracks(machine, layout)

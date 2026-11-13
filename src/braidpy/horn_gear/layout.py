@@ -193,36 +193,64 @@ def _orient(
     return {name: (x, -y) for name, (x, y) in placed.items()}
 
 
+def _spread(back: float | None, n_onward: int) -> list[float]:
+    """Directions out of a gear for the gears placed from it.
+
+    The layout grows out from the first gear (:func:`_layout_bfs`): each
+    other gear is placed from a neighbour already placed, and ``back`` is
+    the direction from the gear to that neighbour, None for the first gear.
+    The ``n_onward`` gears placed from it go evenly round it with the way
+    back, so one carries straight on and two branch at ±60°; round the
+    whole of the first gear, the first to the right."""
+    if back is None:
+        return [2 * math.pi * i / n_onward for i in range(n_onward)]
+    if n_onward == 1:
+        # Straight on, the way it came in, to the last bit: a chain stays on
+        # the x-axis exactly.
+        return [back - math.pi]
+    return [back + 2 * math.pi * (i + 1) / (n_onward + 1) for i in range(n_onward)]
+
+
 def _layout_bfs(
     machine: BraidingMachine,
     scale: float = 1.0,
+    directions=None,
 ) -> dict[str, tuple[float, float]]:
-    """Exact tangential layout for tree (path) graphs via BFS.
+    """Exact tangential layout for tree graphs via BFS.
 
-    Places gears left-to-right along the x-axis so every adjacent pair of
-    gear circles touches exactly.  Works for any tree, including linear chains
-    and branching topologies.
+    The first gear at the origin; then, gear by gear, outwards, each gear's
+    neighbours not yet placed round it, each rim touching its own, in the
+    directions :func:`_spread` gives — a chain carries straight on along the
+    x-axis, a gear with several neighbours onward branches.
+
+    Args:
+        machine: The machine, its gears in a tree.
+        scale: Overall scale factor.
+        directions: How to choose the directions out of a gear for its
+            gears placed from it instead: called with the gear, the direction
+            back to the neighbour it was placed from (None for the first
+            gear) and the neighbours to place from it, it gives a direction
+            for each.
+
+    Returns:
+        Gear name -> (x, y).
     """
     radii = gear_radii(machine, scale)
     root = next(iter(machine.gears))
+    choose = directions or (lambda gear, back, onward: _spread(back, len(onward)))
 
     pos: dict[str, tuple[float, float]] = {root: (0.0, 0.0)}
-    visited: set = {root}
-    queue: deque = deque([(root, 0.0)])  # (node, parent_x + parent_r)
-
+    back: dict[str, float | None] = {root: None}
+    queue: deque = deque([root])
     while queue:
-        parent, _right_edge = queue.popleft()
-        r_parent = radii[parent]
-        cx_parent = pos[parent][0]
-
-        unvisited = [n for n in machine.graph.neighbors(parent) if n not in visited]
-        for child in sorted(unvisited):
-            r_child = radii[child]
-            cx_child = cx_parent + r_parent + r_child
-            pos[child] = (cx_child, 0.0)
-            visited.add(child)
-            queue.append((child, cx_child))
-
+        gear = queue.popleft()
+        onward = sorted(n for n in machine.graph.neighbors(gear) if n not in pos)
+        x, y = pos[gear]
+        for placed, angle in zip(onward, choose(gear, back[gear], onward)):
+            reach = radii[gear] + radii[placed]
+            pos[placed] = (x + reach * math.cos(angle), y + reach * math.sin(angle))
+            back[placed] = angle + math.pi
+            queue.append(placed)
     return pos
 
 

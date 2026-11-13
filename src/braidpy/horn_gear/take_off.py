@@ -37,6 +37,7 @@ from braidpy.take_off import (
     YarnPaths,
     jammed_contraction,
     lay_yarns,
+    least_take_off,
     tighten_yarns,
 )
 from braidpy.take_off import visualize_yarns as _visualize_yarns
@@ -215,11 +216,16 @@ def yarn_paths(
         if cycle is None:
             cycle = machine.contact_period()
         n_steps = n_cycles * cycle
-    if take_off is None:
-        take_off = default_take_off(machine, scale)
     traj = carrier_trajectories(
         machine, n_steps, carrier_positions, n_substeps=n_substeps, scale=scale
     )
+    if take_off is None:
+        take_off = default_take_off(machine, scale)
+        # Fast enough that yarns passing the same point — on a split gear,
+        # its parts' carriers ride one circle, a fraction of a step apart —
+        # are a diameter apart in height, as lay_yarns makes its own.
+        if lay.get("yarn_diameter") is not None:
+            take_off = least_take_off(traj, lay["yarn_diameter"], take_off)
     if axials and machine.axials:
         standing: dict[Hashable, np.ndarray] = {
             name: np.tile(np.asarray(position, dtype=float), (len(traj.times), 1))

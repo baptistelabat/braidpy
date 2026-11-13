@@ -12,27 +12,41 @@ of slots, ``A:6``, anywhere it is named; the others have as many as
 :func:`machine_from_graph`'s ``n_slots``, 4 unless given (Braid Studio's
 *Slots per gear*).
 
+A **split gear** — gears on one axle, turning as one, their horns taking
+turns round it, each meeting only its own neighbours, so that the bands
+they serve never exchange a carrier
+(:mod:`~braidpy.horn_gear.multiband`) — is written as its parts, each a
+gear in the pairs, joined on their axle: ``A-B1 B2-C B1+B2`` is the twin
+plait, its middle gear of six horns split in two.  A gear may be split in
+more parts, ``H1+H2+H3``, its parts as many slots each; and split gears
+may be anywhere in the graph.
+
 The rest follows from the graph:
 
 - Two gears that mesh turn opposite ways, so each gear's direction is the
-  graph's two colours, the first gear named turning anticlockwise.  A ring
-  of an odd number of gears cannot turn at all, and is refused.  Which gear
-  is named first is all the order of the pairs says: ``A-B B-C`` and
-  ``B-C A-B`` turn their gears opposite ways.
+  graph's two colours, the first gear named turning anticlockwise, a split
+  gear's parts all one way.  A ring of an odd number of gears cannot turn
+  at all, and is refused.  Which gear is named first is all the order of
+  the pairs says: ``A-B B-C`` and ``B-C A-B`` turn their gears opposite
+  ways.
 - A ring is laid out clockwise, seen from above, from the gear whose name
   sorts first towards its neighbour whose name sorts first
   (:func:`~braidpy.horn_gear.layout.compute_layout`): ``A-B B-C C-D D-A``
   and ``A-D D-C C-B B-A`` are one machine, A, B, C and D clockwise round
   it, whichever way the pairs are written.  Names that sort otherwise lay
   it the other way round.
-- Where two gears meet is where the layout puts them
+- Where the gears stand is where the layout puts them
   (:func:`~braidpy.horn_gear.layout.compute_layout`, from the graph and the
-  gears' sizes alone), and the slot of each gear at a contact at the start
-  is the one nearest it.
+  gears' sizes alone, a split gear's parts at one centre, as large as the
+  whole); in a tree of gears, each neighbour of a split gear's part where a
+  horn of that part comes round.
+- Each gear's contacts are spread round it as evenly as its slots allow, in
+  the order the layout puts them, its first contact named at slot 0.
 
 :func:`graph_of` writes a machine back as its graph.  A machine of the
-catalogue written so and read again makes the same braid, though its
-gears may start a slot round from where the catalogue starts them.
+catalogue written so and read again is the same machine, its slots perhaps
+numbered from another one round; the ring of four gears is the exception,
+another machine making the same braid.
 """
 
 from __future__ import annotations
@@ -50,37 +64,59 @@ __all__ = ["graph_of", "machine_from_graph"]
 # A gear's name, and its own number of slots if given: A, B2, left:6.
 _GEAR = r"([A-Za-z0-9_]+)(?::(\d+))?"
 _PAIR = re.compile(rf"{_GEAR}-{_GEAR}")
+# The parts of a split gear, on one axle: B1+B2, or more.
+_AXLE = re.compile(rf"{_GEAR}(?:\+{_GEAR})+")
 
 
-def _read(text: str) -> tuple[list[tuple[str, str]], dict[str, int]]:
-    """The pairs of gears that mesh, in order, and the gears given their
-    own number of slots."""
+def _read(
+    text: str,
+) -> tuple[list[tuple[str, str]], list[tuple[str, ...]], dict[str, int]]:
+    """The pairs of gears that mesh, in order; the gears split into parts on
+    one axle, each as its parts; and the gears given their own number of
+    slots."""
     pairs: list[tuple[str, str]] = []
+    axles: list[tuple[str, ...]] = []
     slots: dict[str, int] = {}
+
+    def given(gear: str, count: str | None) -> None:
+        if count is None:
+            return
+        if slots.get(gear, int(count)) != int(count):
+            raise ValueError(
+                f"Gear {gear} is given {slots[gear]} slots and {count}: give one."
+            )
+        slots[gear] = int(count)
+
     for token in re.split(r"[\s,;]+", text.strip()):
         if not token:
             continue
-        matched = _PAIR.fullmatch(token)
-        if matched is None:
+        pair = _PAIR.fullmatch(token)
+        axle = _AXLE.fullmatch(token)
+        if pair is not None:
+            a, a_slots, b, b_slots = pair.groups()
+            if a == b:
+                raise ValueError(f"{token!r}: a gear cannot mesh with itself.")
+            given(a, a_slots)
+            given(b, b_slots)
+            pairs.append((a, b))
+        elif axle is not None:
+            parts = []
+            for part in token.split("+"):
+                name, _, count = part.partition(":")
+                given(name, count or None)
+                parts.append(name)
+            if len(set(parts)) != len(parts):
+                raise ValueError(f"{token!r} names a part twice.")
+            axles.append(tuple(parts))
+        else:
             raise ValueError(
                 f"Cannot read {token!r}: give two gears that mesh as A-B, a gear "
-                "with its own number of slots as A:6."
+                "with its own number of slots as A:6, the parts of a split gear "
+                "as B1+B2."
             )
-        a, a_slots, b, b_slots = matched.groups()
-        if a == b:
-            raise ValueError(f"{token!r}: a gear cannot mesh with itself.")
-        for gear, given in ((a, a_slots), (b, b_slots)):
-            if given is None:
-                continue
-            if slots.get(gear, int(given)) != int(given):
-                raise ValueError(
-                    f"Gear {gear} is given {slots[gear]} slots and {given}: give one."
-                )
-            slots[gear] = int(given)
-        pairs.append((a, b))
     if not pairs:
         raise ValueError("Give the gears that mesh, as A-B B-C C-D D-A.")
-    return pairs, slots
+    return pairs, axles, slots
 
 
 def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
@@ -89,28 +125,48 @@ def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
     Args:
         text: The pairs of gears that mesh, as ``A-B B-C``, separated by
             spaces, commas or semicolons; a gear's own number of slots as
-            ``A:6``.
-        n_slots: How many slots a gear has when the text does not say.
+            ``A:6``; a gear split into parts on one axle as ``B1+B2`` (or
+            more parts), each part a gear of its own in the pairs.
+        n_slots: How many slots a gear, or a part, has when the text does
+            not say.
 
     Returns:
         The machine, its gears' directions and contacts worked out.
 
     Raises:
         ValueError: If the text cannot be read, names a pair twice, falls
-            into separate machines, or has a ring of an odd number of gears.
+            into separate machines, has a ring of an odd number of gears, or
+            a split gear whose parts mesh with one another, with the same
+            gear, or with none.
     """
-    from .layout import compute_layout
+    from .layout import _layout_bfs, compute_layout
 
-    pairs, own = _read(text)
+    pairs, axles, own = _read(text)
+    named = list(dict.fromkeys(gear for pair in pairs for gear in pair))
+    # Each gear's axle: its own, or the split gear it is a part of.
+    axle_of = {gear: gear for gear in named}
+    for parts in axles:
+        whole = "+".join(parts)
+        for part in parts:
+            if part not in axle_of:
+                raise ValueError(f"Part {part} of {whole} meshes with no gear.")
+            if axle_of[part] != part:
+                raise ValueError(f"Gear {part} is on two axles: give it one.")
+            axle_of[part] = whole
+    # The machine as its axles: what meshes, which way each turns, where.
     graph = nx.Graph()
+    graph.add_nodes_from(dict.fromkeys(axle_of[g] for g in named))
     for a, b in pairs:
-        if graph.has_edge(a, b):
-            raise ValueError(f"Gears {a} and {b} are named as meshing twice.")
-        graph.add_edge(a, b)
+        u, v = axle_of[a], axle_of[b]
+        if u == v:
+            raise ValueError(f"Parts {a} and {b} of {u} cannot mesh: they turn as one.")
+        if graph.has_edge(u, v):
+            raise ValueError(f"Gears {u} and {v} are named as meshing twice.")
+        graph.add_edge(u, v)
     if not nx.is_connected(graph):
-        parts = [" ".join(sorted(part)) for part in nx.connected_components(graph)]
+        groups = [" ".join(sorted(part)) for part in nx.connected_components(graph)]
         raise ValueError(
-            "These gears make separate machines: " + "; ".join(parts) + "."
+            "These gears make separate machines: " + "; ".join(groups) + "."
         )
     colours = nx.bipartite.color(graph) if nx.is_bipartite(graph) else None
     if colours is None:
@@ -119,20 +175,46 @@ def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
             f"Gears {'-'.join(cycle)} make a ring of {len(cycle)}: neighbours turn "
             "opposite ways, so a ring of an odd number cannot turn."
         )
-    order = list(dict.fromkeys(gear for pair in pairs for gear in pair))
-    first = colours[order[0]]
+    first = colours[axle_of[named[0]]]
+    slots = {gear: own.get(gear, n_slots) for gear in named}
+    # A split gear is as large as all its parts' slots together.
+    size = {axle: 0 for axle in graph}
+    for gear in named:
+        size[axle_of[gear]] += slots[gear]
     gears = [
         HornGear(
             name,
-            own.get(name, n_slots),
-            direction=1 if colours[name] == first else -1,
+            slots[name],
+            direction=1 if colours[axle_of[name]] == first else -1,
+            size=None if axle_of[name] == name else size[axle_of[name]],
         )
-        for name in order
+        for name in named
     ]
-    # Laid out from the graph and the gears' sizes, which is all the layout
-    # reads: the contacts' slots, not known yet, are left at 0.
-    sketch = BraidingMachine(gears, [Connection(a, b, 0, 0) for a, b in pairs])
-    at = compute_layout(sketch)
+    for parts in axles:
+        if len({slots[part] for part in parts}) > 1:
+            counts = ", ".join(f"{part}:{slots[part]}" for part in parts)
+            raise ValueError(
+                f"The parts of {'+'.join(parts)} have {counts} slots: a split "
+                "gear's parts take turns round it, so give them as many each."
+            )
+    # Laid out from the axles and their sizes, which is all the layout reads:
+    # the contacts' slots, not known yet, are left at 0.
+    sketch = BraidingMachine(
+        [HornGear(axle, size[axle]) for axle in graph],
+        [Connection(axle_of[a], axle_of[b], 0, 0) for a, b in pairs],
+    )
+    # Which part of a split gear meets each of its neighbours.
+    meets = {}
+    for a, b in pairs:
+        meets[(axle_of[a], axle_of[b])] = a
+        meets[(axle_of[b], axle_of[a])] = b
+    if axles and nx.is_forest(graph):
+        centres = _layout_bfs(
+            sketch, directions=_interleaved(axles, meets, slots, axle_of)
+        )
+    else:
+        centres = compute_layout(sketch)
+    at = {gear: centres[axle_of[gear]] for gear in named}
     slot = {
         gear.name: _contact_slots(
             gear,
@@ -144,7 +226,98 @@ def machine_from_graph(text: str, n_slots: int = 4) -> BraidingMachine:
     connections = [
         Connection(a, b, slot[a][b], slot[b][a], name=f"{a}-{b}") for a, b in pairs
     ]
-    return BraidingMachine(gears, connections)
+    if not axles:
+        return BraidingMachine(gears, connections)
+    return DescribedMachine(gears, connections, at)
+
+
+def _interleaved(axles, meets, slots, axle_of):
+    """How a tree of gears with split gears is laid out: each gear placed
+    from a split gear where a horn of the part it meets stands.
+
+    A split gear's ``k`` parts of ``s`` slots take turns round it, part
+    ``j``'s horns ``j`` of the whole gear's ``k s`` pitches on from part 0's,
+    each part meeting its own neighbours.  So a neighbour of part ``j`` can
+    only be where one of part ``j``'s horns comes round: of those, the one
+    nearest where the tree would spread it (:func:`~braidpy.horn_gear.layout
+    ._spread`), and not one taken.  Other gears are spread as the tree
+    spreads them.
+
+    Returns:
+        The ``directions`` for :func:`~braidpy.horn_gear.layout._layout_bfs`.
+    """
+    from .layout import _spread
+
+    split = {"+".join(parts): parts for parts in axles}
+
+    def directions(gear, back, onward):
+        wanted = _spread(back, len(onward))
+        if gear not in split:
+            return wanted
+        parts = split[gear]
+        k, s = len(parts), slots[parts[0]]
+        pitch = 2 * math.pi / (k * s)
+        # The whole gear's horns turned so that the part meeting the gear it
+        # was placed from faces it.
+        base = 0.0
+        taken = set()
+        if back is not None:
+            via = parts.index(meets[(gear, _placed_from[gear])])
+            base = back - via * pitch
+            taken.add(via)
+        chosen = []
+        for next_gear, target in zip(onward, wanted):
+            j = parts.index(meets[(gear, next_gear)])
+            horns = [
+                base + (j + k * m) * pitch
+                for m in range(s)
+                if (j + k * m) % (k * s) not in taken
+            ]
+            angle = min(
+                horns, key=lambda h: abs(math.remainder(h - target, 2 * math.pi))
+            )
+            taken.add(round((angle - base) / pitch) % (k * s))
+            chosen.append(angle)
+        return chosen
+
+    # The gear each gear is placed from, which the layout does not say:
+    # noted as it places them.
+    _placed_from: dict[str, str] = {}
+
+    def recording(gear, back, onward):
+        for next_gear in onward:
+            _placed_from[next_gear] = gear
+        return directions(gear, back, onward)
+
+    return recording
+
+
+class DescribedMachine(BraidingMachine):
+    """A machine read from its graph with split gears: its gears placed as
+    the graph lays them out, each part of a split gear on its axle, at the
+    split gear's centre, where the layout of the parts alone would not put
+    them.
+
+    Args:
+        gears: The gears, parts of split gears among them.
+        connections: The contacts.
+        centres: Each gear's centre, at scale 1.
+    """
+
+    def __init__(
+        self,
+        gears: list[HornGear],
+        connections: list[Connection],
+        centres: dict[str, tuple[float, float]],
+    ) -> None:
+        self.centres = dict(centres)
+        super().__init__(gears, connections)
+
+    def preferred_layout(
+        self, scale: float = 1.0
+    ) -> dict[str, tuple[float, float]] | None:
+        """The centres the graph laid out, at this scale."""
+        return {g: (x * scale, y * scale) for g, (x, y) in self.centres.items()}
 
 
 # Angles closer than this, in slots, are taken as equal: a ring of eight
@@ -219,6 +392,10 @@ def _gaps(n: int, k: int):
 def graph_of(machine: BraidingMachine) -> tuple[str, int]:
     """A machine written as its graph, for :func:`machine_from_graph`.
 
+    Gears on one axle — the parts of a split gear, drawn as large as the
+    whole (:attr:`HornGear.size`) and at one centre — are written as one,
+    ``B1+B2``.
+
     Args:
         machine: The machine.
 
@@ -226,6 +403,8 @@ def graph_of(machine: BraidingMachine) -> tuple[str, int]:
         The pairs of gears that mesh, and the number of slots most of its
         gears have: a gear with another number is written with its own.
     """
+    from .layout import compute_layout
+
     common = Counter(g.n_slots for g in machine.gears.values()).most_common(1)[0][0]
     named: set[str] = set()
 
@@ -235,5 +414,19 @@ def graph_of(machine: BraidingMachine) -> tuple[str, int]:
         named.add(name)
         return written
 
-    pairs = [f"{gear(c.gear_a)}-{gear(c.gear_b)}" for c in machine.connections]
-    return " ".join(pairs), common
+    # The first gear named turns anticlockwise when read back: named first,
+    # of the first pair, the one of the two that does.
+    meshing = [(c.gear_a, c.gear_b) for c in machine.connections]
+    a, b = meshing[0]
+    if machine.gears[a].direction < 0:
+        meshing[0] = (b, a)
+    pairs = [f"{gear(a)}-{gear(b)}" for a, b in meshing]
+    split = [g for g in machine.gears.values() if g.size not in (None, g.n_slots)]
+    axles: dict[tuple[float, float], list[str]] = {}
+    if split:
+        centres = compute_layout(machine)
+        for g in split:
+            x, y = centres[g.name]
+            axles.setdefault((round(x, 6), round(y, 6)), []).append(g.name)
+    together = ["+".join(parts) for parts in axles.values() if len(parts) > 1]
+    return " ".join(pairs + together), common

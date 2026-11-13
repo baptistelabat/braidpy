@@ -54,6 +54,17 @@ CASES = [
         },
         8,
     ),
+    # And one of split gears: three plaits round a gear split in three.
+    (
+        {
+            "source": "machine",
+            "name": "custom",
+            "graph": "H1-A H2-B H3-C H1+H2+H3",
+            "n_slots": 3,
+            "cycles": 1,
+        },
+        9,
+    ),
     # And made by its carriers going round.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "carriers"}, 3),
     # A lace machine, its card turning the gears; its handle too.
