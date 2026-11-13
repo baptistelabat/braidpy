@@ -6,8 +6,11 @@
 
 A machine is gears that mesh, so it can be written as the pairs that do:
 ``A-B B-C C-D D-A`` is four gears in a ring, ``A-B`` two side by side.  A
-gear may be given its own number of slots, ``A:6``, anywhere it is named;
-the others have as many as the machine's default.
+gear's name is any run of letters, digits and underscores (``B``, ``g2``,
+``left``): no name has to come first.  A gear may be given its own number
+of slots, ``A:6``, anywhere it is named; the others have as many as
+:func:`machine_from_graph`'s ``n_slots``, 4 unless given (Braid Studio's
+*Slots per gear*).
 
 A **split gear** — gears on one axle, turning as one, their horns taking
 turns round it, each meeting only its own neighbours, so that the bands
@@ -23,7 +26,15 @@ The rest follows from the graph:
 - Two gears that mesh turn opposite ways, so each gear's direction is the
   graph's two colours, the first gear named turning anticlockwise, a split
   gear's parts all one way.  A ring of an odd number of gears cannot turn
-  at all, and is refused.
+  at all, and is refused.  Which gear is named first is all the order of
+  the pairs says: ``A-B B-C`` and ``B-C A-B`` turn their gears opposite
+  ways.
+- A ring is laid out clockwise, seen from above, from the gear whose name
+  sorts first towards its neighbour whose name sorts first
+  (:func:`~braidpy.horn_gear.layout.compute_layout`): ``A-B B-C C-D D-A``
+  and ``A-D D-C C-B B-A`` are one machine, A, B, C and D clockwise round
+  it, whichever way the pairs are written.  Names that sort otherwise lay
+  it the other way round.
 - Where the gears stand is where the layout puts them
   (:func:`~braidpy.horn_gear.layout.compute_layout`, from the graph and the
   gears' sizes alone, a split gear's parts at one centre, as large as the

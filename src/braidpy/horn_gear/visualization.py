@@ -301,24 +301,31 @@ def _carrier_marker_sizes(
     }
 
 
-def _track_traces(
+def track_curves(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     tracks: Optional[list[Track]] = None,
     scale: float = 1.0,
-    width: float = 2.5,
-    opacity: float = 1.0,
-) -> list[go.BaseTraceType]:
-    """Each carrier track as a closed run of arcs, one trace per track.
+) -> list[tuple[str, np.ndarray]]:
+    """Each carrier track as a closed run of arcs, seen from above.
 
     A run of positions on the same gear is drawn as a single arc from the notch
     the carrier came in by to the one it leaves by, following the gear's
     rotation, at the radius the carriers actually ride at — so the tracks lie
     under the carriers rather than beside them.
 
-    Tracks belong to the wiring, so they are the same at every step and can be
-    drawn once and left alone.  A machine driven by a programme has none, and
-    gets an empty list.
+    Tracks belong to the wiring, so they are the same at every step.  A
+    machine driven by a programme has none.
+
+    Args:
+        machine: The machine.
+        layout: Where its gears are (:func:`compute_layout`).
+        tracks: Its tracks, if already worked out.
+        scale: The layout's scale.
+
+    Returns:
+        Per distinct closed curve, a name — the loop of gears it runs round —
+        and its points, shape ``(n, 2)``, the first repeated at the end.
     """
     if not machine.has_fixed_tracks:
         return []
@@ -347,8 +354,8 @@ def _track_traces(
         # Same loop entered at a different gear is still the same loop.
         paths.setdefault(min(runs[i:] + runs[:i] for i in range(len(runs))), None)
 
-    traces: list[go.BaseTraceType] = []
-    for index, runs in enumerate(paths):
+    curves: list[tuple[str, np.ndarray]] = []
+    for runs in paths:
         xs_all: list = []
         ys_all: list = []
         for gear_name, prev_gear, next_gear in runs:
@@ -363,7 +370,6 @@ def _track_traces(
             )
             xs_all.extend(xs.tolist())
             ys_all.extend(ys.tolist())
-
         xs_all.append(xs_all[0])  # close the loop
         ys_all.append(ys_all[0])
 
@@ -378,18 +384,51 @@ def _track_traces(
             label = f"Track {shown}… ({len(visited)} crossings)"
         else:
             label = "Track " + "-".join(visited)
-        traces.append(
-            go.Scatter(
-                x=xs_all,
-                y=ys_all,
-                mode="lines",
-                line=dict(color=PALETTE[index % len(PALETTE)], width=width),
-                opacity=opacity,
-                name=label,
-                hoverinfo="skip",
-            )
+        curves.append((label, np.column_stack([xs_all, ys_all])))
+    return curves
+
+
+def coloured_tracks(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+    tracks: Optional[list[Track]] = None,
+    scale: float = 1.0,
+) -> list[tuple[str, str, np.ndarray]]:
+    """Each carrier track (:func:`track_curves`) in its colour: the
+    palette's, one after another, wherever the tracks are drawn.
+
+    Returns:
+        Per track, its name, its colour and its points.
+    """
+    return [
+        (label, PALETTE[index % len(PALETTE)], points)
+        for index, (label, points) in enumerate(
+            track_curves(machine, layout, tracks, scale)
         )
-    return traces
+    ]
+
+
+def _track_traces(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+    tracks: Optional[list[Track]] = None,
+    scale: float = 1.0,
+    width: float = 2.5,
+    opacity: float = 1.0,
+) -> list[go.BaseTraceType]:
+    """Each carrier track (:func:`coloured_tracks`) as a Plotly trace."""
+    return [
+        go.Scatter(
+            x=points[:, 0].tolist(),
+            y=points[:, 1].tolist(),
+            mode="lines",
+            line=dict(color=colour, width=width),
+            opacity=opacity,
+            name=label,
+            hoverinfo="skip",
+        )
+        for label, colour, points in coloured_tracks(machine, layout, tracks, scale)
+    ]
 
 
 def _disc_traces(
