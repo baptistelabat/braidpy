@@ -21,6 +21,19 @@ plait, its middle gear of six horns split in two.  A gear may be split in
 more parts, ``H1+H2+H3``, its parts as many slots each; and split gears
 may be anywhere in the graph.
 
+Two split gears may mesh **more than once**, a band to each pairing of
+their parts: ``A1-B1 A2-B2 A1+A2 B1+B2`` is two bands side by side, each
+on its own pair of halves, and neither can reach the other.  What may not
+happen is one part meeting one axle twice -- a carrier of that band could
+then leave by either contact, which is the split undone -- so a whole gear
+meshing with both parts of a split one (``A-B1 A-B2 B1+B2``) is refused.
+Where two parts do meet one axle, the drawing puts both contacts on the
+line between the two centres, so they land on the same point: the machine
+runs regardless, since a carrier is stepped by slot and rotation and never
+by an angle, but a true drawing would put each at its own crossing of the
+two notch circles, which wants the two wheels to interpenetrate by a
+measured amount rather than merely touch.
+
 The rest follows from the graph:
 
 - Two gears that mesh turn opposite ways, so each gear's direction is the
@@ -190,12 +203,21 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
     # The machine as its axles: what meshes, which way each turns, where.
     graph = nx.Graph()
     graph.add_nodes_from(dict.fromkeys(axle_of[g] for g in named))
+    # What meshes with what, by the part rather than the axle: two axles may
+    # mesh once for each pairing of their parts -- a band to each -- but a
+    # part meeting one axle twice would be a carrier of its band leaving by
+    # either contact, which is the split undone.
+    met: set[tuple[str, str]] = set()
     for a, b in pairs:
         u, v = axle_of[a], axle_of[b]
         if u == v:
             raise ValueError(f"Parts {a} and {b} of {u} cannot mesh: they turn as one.")
-        if graph.has_edge(u, v):
-            raise ValueError(f"Gears {u} and {v} are named as meshing twice.")
+        for part, other in ((a, v), (b, u)):
+            if (part, other) in met:
+                raise ValueError(
+                    f"Gears {part} and {other} are named as meshing twice."
+                )
+            met.add((part, other))
         graph.add_edge(u, v)
     if not nx.is_connected(graph):
         groups = [" ".join(sorted(part)) for part in nx.connected_components(graph)]
@@ -235,13 +257,18 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
     # the contacts' slots, not known yet, are left at 0.
     sketch = BraidingMachine(
         [HornGear(axle, size[axle]) for axle in graph],
-        [Connection(axle_of[a], axle_of[b], 0, 0) for a, b in pairs],
+        [
+            Connection(u, v, 0, 0)
+            for u, v in dict.fromkeys((axle_of[a], axle_of[b]) for a, b in pairs)
+        ],
     )
-    # Which part of a split gear meets each of its neighbours.
-    meets = {}
+    # Which part of a split gear meets each of its neighbouring axles; where
+    # two of its parts meet one axle, the first named, which is the part the
+    # layout then faces towards it.
+    meets: dict[tuple[str, str], str] = {}
     for a, b in pairs:
-        meets[(axle_of[a], axle_of[b])] = a
-        meets[(axle_of[b], axle_of[a])] = b
+        meets.setdefault((axle_of[a], axle_of[b]), a)
+        meets.setdefault((axle_of[b], axle_of[a]), b)
     if axles and nx.is_forest(graph):
         centres = _layout_bfs(
             sketch, directions=_interleaved(axles, meets, slots, axle_of)

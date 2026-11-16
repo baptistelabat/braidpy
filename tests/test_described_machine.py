@@ -359,3 +359,63 @@ def test_braid_studio_shows_where_axials_go_and_braids_round_those_loaded():
     # Every axial taken off: none, not the machine's own.
     bare = web.build({**spec, "name": "triaxial_16", "axials": "none"}, tighten=False)
     assert not any(s["name"].startswith("Core") for s in bare["strands"])
+
+
+def test_two_split_gears_may_mesh_once_for_each_pairing_of_their_parts():
+    """Two bands side by side on one pair of axles, neither reaching the other.
+
+    Each axle is split in two, and each band has a pair of halves to itself.
+    The halves of one axle meet the other axle once each, which is what keeps
+    the bands apart: a part meeting one axle twice would let a carrier leave
+    by either contact.
+    """
+    from braidpy.horn_gear.loading import load_carriers
+    from braidpy.horn_gear.simulation import simulate
+    from braidpy.horn_gear.tracks import compute_tracks, simulation_period
+
+    machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", n_slots=4)
+    assert sorted(machine.gears) == ["A1", "A2", "B1", "B2"]
+    assert [(g.n_slots, g.size) for g in machine.gears.values()] == [(4, 8)] * 4
+    assert len(machine.connections) == 2
+    # Parts of one axle turn as one, and meshing axles turn opposite ways.
+    assert machine.gears["A1"].direction == machine.gears["A2"].direction
+    assert machine.gears["B1"].direction == -machine.gears["A1"].direction
+
+    # Every track stays within one band: two gears meeting at one contact
+    # shuttle a carrier between one pair of slots, so there are eight of them.
+    tracks = compute_tracks(machine)
+    assert sorted(len(t) for t in tracks) == [2] * 8
+    for track in tracks:
+        gears = {gear for gear, _ in track}
+        assert gears in ({"A1", "B1"}, {"A2", "B2"})
+    loading = load_carriers(machine)
+    period = simulation_period(machine)
+    history = simulate(machine, period, loading)
+    first = {c.carrier_id: c.position for c in history[0].carriers}
+    assert first == {c.carrier_id: c.position for c in history[-1].carriers}
+    band = {"A1", "B1"}
+    inside = {
+        c.carrier_id for s in history for c in s.carriers if c.position[0] in band
+    }
+    outside = {
+        c.carrier_id for s in history for c in s.carriers if c.position[0] not in band
+    }
+    assert not inside & outside
+
+
+def test_a_part_meeting_one_axle_twice_is_refused():
+    """Which is the split undone: the carrier could leave by either contact."""
+    with pytest.raises(ValueError, match="A1 and B1\\+B2 are named as meshing twice"):
+        machine_from_graph("A1-B1 A1-B2 A2-C A1+A2 B1+B2", n_slots=4)
+
+
+def test_two_split_gears_meshing_twice_are_written_back_as_they_were():
+    """So a machine of your own can be read from the page and written to it."""
+    graph = "A1-B1 A2-B2 A1+A2 B1+B2"
+    machine = machine_from_graph(graph, n_slots=4)
+    written, slots = graph_of(machine)
+    again = machine_from_graph(written, slots)
+    assert sorted(again.gears) == sorted(machine.gears)
+    assert {(c.gear_a, c.gear_b) for c in again.connections} == {
+        (c.gear_a, c.gear_b) for c in machine.connections
+    }
