@@ -6,6 +6,23 @@ What changed in each release of braidpy.
 
 ### New
 
+- A design saved by braid3d (`.b3d`) read as a mobidai braid
+  (`braidpy.b3d.mobidai_from_b3d`, `braidpy.web.from_b3d`): its yarns in
+  their colours, its moves and its repeat, on a disk of as few slots as
+  hold its yarns. In Braid Studio, **Import a braid3d design** under the
+  mobidai braids fills your own with it and makes it. Ashley's #3054, as
+  designed in braid3d, is the sinnet the catalogue has from his drawing;
+  disk braids and sinnets saved for braid3d read back as the same braid.
+  `braidpy.b3d` is braidpy's one reader of the format (`read_b3d`,
+  `write_b3d`): `braidpy.craft_design_online` and its `BraidModel` are
+  gone, and with them the dependency on `dataclasses-json`.
+- A braid saved for braid3dmin writes, with each step, where the yarns are
+  before it, as braid3dmin's own files do; and a strand moved half a turn
+  or more, as kumihimo takes one across the disk, as two steps each less
+  than half a turn, since a move's angles say only the short way round: it
+  was written going the other way round. The angle of a disk's slot is
+  one rule, `slotAngle` in `web/marudai.js` (`braidpy.marudai.slot_angle`),
+  which `web/b3d.js` and `braidpy.b3d` use.
 - Braid Studio built under another name, crediting and linking otherwise:
   what the site calls itself, whom it credits, where it links and whether
   search engines are welcome are a profile (`web/profile.toml`), and

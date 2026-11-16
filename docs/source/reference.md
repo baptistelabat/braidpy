@@ -243,9 +243,8 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.craft_design_online
+.. automodule:: braidpy.b3d
    :members:
-   :undoc-members:
    :show-inheritance:
 ```
 

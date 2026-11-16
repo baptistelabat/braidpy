@@ -118,6 +118,10 @@ function heard(data) {
       if (makingOf.size > KEEP) makingOf.delete(makingOf.keys().next().value);
     }
     showMaking(data.making);
+  } else if (data.type === "b3d") {
+    // A braid3d design read: the form filled with it, and made.
+    writeSpec(data.spec);
+    submit();
   } else if (data.type === "sinnet") {
     document.dispatchEvent(new CustomEvent("braid-sinnet", { detail: data }));
   } else if (data.type === "kin") {

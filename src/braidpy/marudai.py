@@ -844,6 +844,14 @@ def make(job: dict[str, Any]) -> dict[str, Any]:
     return making["result"]()
 
 
+def slot_angle(slot: float, n_slots: int, clockwise: bool = False) -> float:
+    """The angle a disk's slot is at, as braid3dmin turns its angles: the
+    other way round from ours, slot 1 at 0 (``slotAngle`` in
+    ``web/marudai.js``; :mod:`braidpy.b3d` reads them so)."""
+    sense = -1 if clockwise else 1
+    return -(sense * 2 * math.pi * (slot - 1)) / n_slots
+
+
 def begin(job: dict[str, Any]) -> dict[str, Any]:
     """A braid being made: the marudai set up, its moves made one by one
     with ``step(moves, number)``, the braid as it is so far with
@@ -853,8 +861,7 @@ def begin(job: dict[str, Any]) -> dict[str, Any]:
     n_slots = job["n_slots"]
 
     def angle_of(slot: float) -> float:
-        # braid3dmin's angles turn the other way round from ours.
-        return -(sense * 2 * math.pi * (slot - 1)) / n_slots
+        return slot_angle(slot, n_slots, bool(job.get("clockwise")))
 
     split = job.get("split", True)
     twists = job["twists"] if job.get("twists") is not None else bool(job.get("held"))
