@@ -13,30 +13,50 @@ if TYPE_CHECKING:
     from sympy import Poly
 
 
-def _burau_product(braid: Braid, t, one, zero) -> list[list]:
-    """The braid's reduced Burau matrix, as rows, in whatever ring ``t``,
-    ``one`` and ``zero`` are of.
+def _burau_product(braid: Braid, t, one, zero, modulus: Optional[int] = None):
+    """The braid's reduced Burau matrix, as a numpy array, in whatever ring
+    ``t``, ``one`` and ``zero`` are of: complex numbers, elements of a
+    sympy field (an array of objects), or integers modulo ``modulus``.
 
     A generator's matrix is the identity but for one row
     (:func:`~braidpy.braid.reduced_burau_generator`), so multiplying by it
-    changes three columns at most: a generator at a time, that is a few
-    multiplications per row, where a whole matrix product is one per entry.
+    changes three columns at most: a generator at a time, that is three
+    columns updated, where a whole matrix product is one multiplication per
+    entry.  Each generator's row is made once, however often it comes.
+
+    Args:
+        braid: The braid.
+        t: The Burau variable.
+        one: The ring's one.
+        zero: The ring's zero.
+        modulus: For integers modulo it: then ``t``, ``one`` and ``zero``
+            are elements of the field of that many elements (sympy's
+            ``GF``), and the matrix is of plain integers, each below it.
     """
+    import numpy as np
+
     m = braid.n_strands - 1
-    matrix = [[one if r == c else zero for c in range(m)] for r in range(m)]
+    rows: dict[int, list] = {}
+    if modulus is None:
+        matrix = np.array(
+            [[one if r == c else zero for c in range(m)] for r in range(m)]
+        ).reshape(m, m)
+    else:
+        matrix = np.eye(m, dtype=np.int64)
     for generator in braid.generators:
         i = abs(generator) - 1
-        row = reduced_burau_generator(generator, braid.n_strands, t, one, zero)[i]
-        columns = [c for c in (i - 1, i, i + 1) if 0 <= c < m]
-        for r in range(m):
-            here = matrix[r][i]
-            if here == zero:
+        if generator not in rows:
+            row = reduced_burau_generator(generator, braid.n_strands, t, one, zero)[i]
+            rows[generator] = (
+                row if modulus is None else [int(c) % modulus for c in row]
+            )
+        row = rows[generator]
+        here = matrix[:, i].copy()
+        for c in (i - 1, i, i + 1):
+            if not 0 <= c < m:
                 continue
-            for c in columns:
-                if c == i:
-                    matrix[r][c] = here * row[c]
-                else:
-                    matrix[r][c] = matrix[r][c] + here * row[c]
+            column = here * row[c] if c == i else matrix[:, c] + here * row[c]
+            matrix[:, c] = column if modulus is None else column % modulus
     return matrix
 
 
@@ -81,9 +101,8 @@ def alexander_polynomial(braid: Braid) -> "Poly":
         return Poly(Integer(1), t)
     field = QQ.frac_field(t)
     m = n - 1
-    burau = DomainMatrix(
-        _burau_product(braid, field.convert(t), field.one, field.zero), (m, m), field
-    )
+    rows = _burau_product(braid, field.convert(t), field.one, field.zero).tolist()
+    burau = DomainMatrix(rows, (m, m), field)
     determinant = field.to_sympy((DomainMatrix.eye(m, field) - burau).det())
     numerator, _ = fraction((determinant * (1 - t) / (1 - t**n)).cancel())
     poly = Poly(numerator, t)
@@ -143,8 +162,7 @@ def _burau_on_circle(braid: Braid, theta: float):
     numpy array."""
     import numpy as np
 
-    rows = _burau_product(braid, complex(np.exp(1j * theta)), 1.0 + 0j, 0j)
-    return np.array(rows, dtype=complex).reshape(braid.n_strands - 1, -1)
+    return _burau_product(braid, complex(np.exp(1j * theta)), 1.0 + 0j, 0j)
 
 
 def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> float:
@@ -209,6 +227,61 @@ def burau_polynomial_on_circle(
         for theta in angles
     ]
     return tuple(values)
+
+
+# The prime :func:`burau_polynomial_mod` computes modulo: the largest below
+# 2²⁶, so that a matrix product of plain 64-bit integers, each entry a sum
+# of products below PRIME², overflows for no braid on fewer than
+# 2⁶³ / PRIME² = 2048 strands; and large enough that sampling at a fixed t
+# confuses two different polynomials about once in sixty million.
+PRIME = 67108859
+
+
+def burau_polynomial_mod(braid: Braid, t: int, repeats: int = 1) -> tuple[int, ...]:
+    """The characteristic polynomial ``det(x − Bᵏ)`` of the braid's reduced
+    Burau matrix ``B``, the braid repeated ``k = repeats`` times, at an
+    integer ``t``, exactly, modulo :data:`PRIME`.
+
+    :func:`burau_polynomial_on_circle` takes the same polynomial in floating
+    point, which for a long braid loses digits: two words for the same braid
+    can then disagree in its third.  Modulo a prime nothing is rounded, so
+    the same braid gives the same coefficients however written, and a
+    braid read from another starting point (conjugated) too.  Two different
+    polynomials, in ``t`` and ``x``, agree at a given ``t`` modulo the prime
+    only by rare chance.  The Alexander polynomial of the closure is in it as
+    well: ``det(1 − Bᵏ)`` is its value at ``x = 1``.
+
+    Args:
+        braid: The braid.
+        t: The Burau variable's value; not a multiple of :data:`PRIME`.
+        repeats: How many times the braid is repeated; a power taken by
+            squaring, so millions of repeats cost a few dozen products.
+
+    Returns:
+        The coefficients, from ``xⁿ⁻¹``'s (1) down, each in ``[0, PRIME)``.
+    """
+    import numpy as np
+    from sympy.polys.domains import GF
+
+    m = braid.n_strands - 1
+    field = GF(PRIME)
+    burau = _burau_product(braid, field(t), field.one, field.zero, PRIME)
+    power = np.eye(m, dtype=np.int64)
+    k = repeats
+    while k:
+        if k & 1:
+            power = power @ burau % PRIME
+        burau = burau @ burau % PRIME
+        k >>= 1
+    # Faddeev and LeVerrier: Mₖ = A Mₖ₋₁ + cₖ₋₁ I, cₖ = −tr(A Mₖ) / k.
+    coefficients = [1]
+    product = np.zeros((m, m), dtype=np.int64)
+    for k in range(1, m + 1):
+        step = product + coefficients[-1] * np.eye(m, dtype=np.int64)
+        product = power @ step % PRIME
+        trace = int(np.trace(product)) % PRIME
+        coefficients.append(-trace * pow(k, -1, PRIME) % PRIME)
+    return tuple(coefficients)
 
 
 def conjugacy_class(

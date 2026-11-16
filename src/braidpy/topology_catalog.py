@@ -385,7 +385,8 @@ def load(data: Sequence[Mapping[str, Any]]) -> tuple[Topology, ...]:
                     writhe=int(mark["writhe"]),
                     linking=tuple(mark["linking"]),
                     alexander=tuple(mark["alexander"]),
-                    burau=tuple(mark.get("burau", ())),
+                    burau=tuple(mark["burau"]),
+                    burau_mod=tuple(tuple(c) for c in mark["burau_mod"]),
                 ),
                 tuple(
                     Method(
