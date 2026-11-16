@@ -196,8 +196,10 @@ The studio has a form and a 3D view.
   colours, its moves, and its repeat as cycles, on a disk of as few slots
   as hold its yarns ({mod}`braidpy.b3d` says how). It is the braid the
   design makes, crossing for crossing; only the spacing round the disk may
-  differ. A move of exactly half a turn, whose way round the file does not
-  say, goes up the slots, as any mobidai move of half a turn does.
+  differ. A move of exactly half a turn, whose way round a file from
+  braid3d does not say, goes up the slots, as any mobidai move of half a
+  turn does. A braid saved here reads back as it was made, but for the
+  disk's turns, which the file leaves out.
 - The yarn diameter and the tightening steps, left empty, take the braid's
   own defaults, shown greyed with "default" once it is made; going into the
   field puts the default in, so that its arrows step from there. The
@@ -270,9 +272,12 @@ The studio has a form and a 3D view.
   an OBJ model, or their points as JSON. A braid made on a disk can also be
   saved **for braid3dmin** (B3D): the braid as made move by move on the
   marudai, each yarn bead by bead, with its moves listed as braid3dmin
-  lists them. When the disk turns with the braid on it, nothing moves
-  against anything else, so braid3dmin has no step for it, and the angles
-  that follow are counted from the braid. A braid whose cycle comes round
+  lists them, and with each step where the yarns are before it, as
+  braid3dmin writes them. When the disk turns with the braid on it, nothing
+  moves against anything else, so braid3dmin has no step for it, and the
+  angles that follow are counted from the braid. A move's angles go the
+  short way round, so a strand moved half a turn or more, as kumihimo takes
+  one across the disk, is two steps, each less than half a turn. A braid whose cycle comes round
   exactly, as a sinnet's does, is saved as one cycle and braid3dmin's
   repeat; any other, move by move, as braid3dmin's repeat would move its
   yarns back its own way.

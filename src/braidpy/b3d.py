@@ -10,16 +10,17 @@ slots, where each yarn starts, and the moves of a cycle
 The file (``.b3d``) is URL-encoded JSON: each yarn's colour, and the steps
 the braid was designed by, each a group of moves of yarns from one angle
 round the disk to another, or a repeat of earlier steps.  ``web/b3d.js``
-writes one for a braid made here, and :mod:`braidpy.craft_design_online`
-reads one as dataclasses.  This reads only the file's JSON, with the standard
-library alone, so that Braid Studio can read one in the browser too.
+writes one for a braid made on the marudai here (:func:`write_b3d` writes
+any design's JSON so, :func:`read_b3d` reads it).  This needs only the
+standard library, so that Braid Studio can read a design in the browser too.
 
 How a file is read:
 
 - **Where the yarns start**: the first list of where the yarns are that
-  names each yarn once.  braid3d writes with each step where the yarns are
-  before it, the first step's left as it was; braidpy writes them after it,
-  and the first step's where they start.  Either way, that list is the start.
+  names each yarn once.  braid3d, and braidpy after it, write with each step
+  where the yarns are before it, the first step's list left as it was by
+  braid3d and where they start by braidpy: either way, that list is the
+  start.
 - **A step** moves the yarns standing at its moves' first angles, as braid3d
   does, each to its second angle, the short way round, one after another in
   the order given, but for a yarn going where another of the step is
@@ -34,7 +35,9 @@ How a file is read:
   few as keep every yarn in its order round the disk and every move going
   the same way round.  The braid is the same; only the spacing differs.  A
   move of exactly half a turn, which the file cannot say the way round of,
-  goes round as a mobidai's does.
+  goes round as a mobidai's does.  braidpy writes a move of half a turn or
+  more as two steps, each less than half a turn, so it is read going round
+  as it went.
 - **The cycle**: a design that is one cycle and a repeat of it is that
   cycle, made as many times; any other is all its moves, made once.
 """
@@ -51,13 +54,16 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from braidpy.mobidai_catalog import CataloguedMobidai
 
-__all__ = ["MOST_SLOTS", "Design", "mobidai_from_b3d", "read_b3d"]
+__all__ = ["MOST_SLOTS", "Design", "mobidai_from_b3d", "read_b3d", "write_b3d"]
 
 # The most slots a disk is given: a mobidai's most, in Braid Studio.
 MOST_SLOTS = 128
 # Angles this close, in radians, are one place: a move's first angle and the
 # yarn standing there, or an angle and the slot it falls on exactly.
 _SAME_ANGLE = 1e-6
+# A move this close to half a turn, in radians, is half a turn, its way round
+# unsaid: rounding.
+_HALF = 1e-9
 _TURN = 2 * math.pi
 # The colour of a yarn the file gives none: a light grey.
 _NO_COLOUR = "#cccccc"
@@ -66,6 +72,12 @@ _NO_COLOUR = "#cccccc"
 def _wrap(angle: float) -> float:
     """An angle in [-π, π)."""
     return (angle + math.pi) % _TURN - math.pi
+
+
+def write_b3d(data: dict[str, Any]) -> str:
+    """A braid3d design's JSON as its file holds it, URL-encoded
+    (:func:`read_b3d` reads it back)."""
+    return urllib.parse.quote(json.dumps(data, separators=(",", ":")))
 
 
 def read_b3d(text: str) -> dict[str, Any]:
@@ -233,8 +245,9 @@ def _same_places(these, those) -> bool:
 
 
 def _slot_of(angle: float, n_slots: int) -> int:
-    """The slot an angle falls on, braid3d's angles going round the way the
-    slots do (``web/b3d.js``)."""
+    """The slot of a mobidai's disk an angle falls on: the inverse of
+    :func:`~braidpy.marudai.slot_angle` for a clockwise disk, a mobidai's,
+    whose slots go round the way braid3d's angles do."""
     return round(_wrap(angle) % _TURN / _TURN * n_slots) % n_slots + 1
 
 
@@ -248,7 +261,7 @@ def _fits(angles: Sequence[float], turns, n: int) -> bool:
         steps = (_slot_of(end, n) - _slot_of(start, n)) % n
         if abs(turn) < _SAME_ANGLE:
             continue
-        if abs(abs(turn) - math.pi) < _SAME_ANGLE:
+        if abs(abs(turn) - math.pi) < _HALF:
             # Half a turn: no way round to keep.
             if 2 * steps != n:
                 return False
@@ -259,8 +272,11 @@ def _fits(angles: Sequence[float], turns, n: int) -> bool:
 
 def _exact(angles: Sequence[float], n: int) -> bool:
     """Whether every angle falls on a slot of a disk of ``n``."""
+    from braidpy.marudai import slot_angle
+
     return all(
-        abs(_wrap(angle - (_slot_of(angle, n) - 1) * _TURN / n)) < _SAME_ANGLE
+        abs(_wrap(angle - slot_angle(_slot_of(angle, n), n, clockwise=True)))
+        < _SAME_ANGLE
         for angle in angles
     )
 

@@ -71,6 +71,14 @@ def test_a_braid_designed_in_braid3d_is_the_braid_ashley_draws():
     assert same_fingerprint(fingerprint(once), fingerprint(ashley))
 
 
+def test_a_design_is_written_as_it_was_read():
+    """Read and written again, a braid3d file holds the same design."""
+    from braidpy.b3d import read_b3d, write_b3d
+
+    data = read_b3d(ABOK_3054.read_text())
+    assert read_b3d(write_b3d(data)) == data
+
+
 def test_angles_on_a_regular_disk_are_its_slots():
     """Yarns a quarter turn apart, one moving a quarter round: a disk of
     four slots, the move from slot to slot, the short way."""
@@ -93,6 +101,18 @@ def test_a_half_turn_goes_round_as_a_mobidai_move_does():
     goes the way a mobidai's own does, up the slots."""
     entry, _ = mobidai_from_b3d(_design([0, 90], [_moves((0, 180))]))
     assert entry.moves == ((1, 3),)
+
+
+def test_a_long_move_written_as_two_steps_goes_the_long_way_round():
+    """A move of more than half a turn, written as braidpy writes one —
+    two steps each less than half a turn, the same way round, breaking
+    between two slots — passes the yarns it passed."""
+    entry, _ = mobidai_from_b3d(
+        _design([0, 90, 180, 270], [_moves((0, -112.5)), _moves((-112.5, -225))])
+    )
+    n = entry.n_slots
+    steps = [(end - start) % n for start, end in entry.moves]
+    assert all(n / 2 < step < n for step in steps), "both down the slots"
 
 
 @pytest.mark.parametrize(
