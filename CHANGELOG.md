@@ -6,6 +6,13 @@ What changed in each release of braidpy.
 
 ### New
 
+- A design saved by braid3d (`.b3d`) read as a mobidai braid
+  (`braidpy.b3d.mobidai_from_b3d`, `braidpy.web.from_b3d`): its yarns in
+  their colours, its moves and its repeat, on a disk of as few slots as
+  hold its yarns. In Braid Studio, **Import a braid3d design** under the
+  mobidai braids fills your own with it and makes it. Ashley's #3054, as
+  designed in braid3d, is the sinnet the catalogue has from his drawing;
+  disk braids and sinnets saved for braid3d read back as the same braid.
 - Braid Studio built under another name, crediting and linking otherwise:
   what the site calls itself, whom it credits, where it links and whether
   search engines are welcome are a profile (`web/profile.toml`), and

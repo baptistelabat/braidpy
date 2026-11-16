@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Hashable, Sequence
+from typing import cast
 
 import numpy as np
 
@@ -274,6 +275,43 @@ def _from_mobidai(spec: Spec) -> Result:
     )
     result["info"]["made"] = cycles
     return result
+
+
+def from_b3d(text: str) -> Spec:
+    """A design saved by braid3d, as your own mobidai braid's description
+    (:func:`~braidpy.b3d.mobidai_from_b3d`): its disk, where each yarn
+    starts, in its colour, a cycle's moves and how many cycles.
+
+    Args:
+        text: The ``.b3d`` file's text.
+
+    Returns:
+        The description, for the page to fill its fields with and make.
+
+    Raises:
+        ValueError: If the file holds no design, or one not read here.
+    """
+    from braidpy.b3d import mobidai_from_b3d
+
+    entry, cycles = mobidai_from_b3d(text, most_slots=Mobidai.n_slots.high)
+    if cycles > Mobidai.cycles.high:
+        raise ValueError(
+            f"It repeats {cycles} times: a mobidai braid is made at most "
+            f"{Mobidai.cycles.high} times."
+        )
+    return cast(
+        Spec,
+        {
+            "source": "mobidai",
+            "name": OWN,
+            "n_slots": entry.n_slots,
+            "slots": " ".join(str(slot) for slot, _ in entry.initial_slots),
+            "moves": _moves_text(entry.moves),
+            "shift": 0,
+            "cycles": cycles,
+            "colours": ",".join(colour for _, colour in entry.initial_slots),
+        },
+    )
 
 
 def _from_sinnet(spec: Spec) -> Result:

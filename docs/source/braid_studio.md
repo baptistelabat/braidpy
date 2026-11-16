@@ -191,6 +191,13 @@ The studio has a form and a 3D view.
   always, ready to change there: changing a move, its slots, its counts or
   its turn makes it your own, and the catalogued braid stays as it was, to
   choose again.
+- **Import a braid3d design** reads a `.b3d` file saved by braid3d (the
+  designer braid3dmin runs) as your own mobidai braid: its yarns in their
+  colours, its moves, and its repeat as cycles, on a disk of as few slots
+  as hold its yarns ({mod}`braidpy.b3d` says how). It is the braid the
+  design makes, crossing for crossing; only the spacing round the disk may
+  differ. A move of exactly half a turn, whose way round the file does not
+  say, goes up the slots, as any mobidai move of half a turn does.
 - The yarn diameter and the tightening steps, left empty, take the braid's
   own defaults, shown greyed with "default" once it is made; going into the
   field puts the default in, so that its arrows step from there. The

@@ -104,3 +104,25 @@ def test_a_sinnet_comes_round_and_is_saved_as_one_cycle_and_a_repeat(tmp_path):
     assert repeat["repeatTimes"] == 2
     assert repeat["moves"] == []
     assert repeat["rotate"] == 0
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "mobidai", "name": "KONGO_8", "cycles": 3},
+        {"source": "mobidai", "name": "EDO_YATSU", "cycles": 2},
+        {"source": "sinnet", "name": "abok_3044", "cycles": 3},
+        {"source": "sinnet", "name": "abok_3073", "cycles": 1},
+    ],
+)
+def test_a_braid_saved_for_braid3d_reads_back_as_the_same_braid(tmp_path, spec):
+    """Saved for braid3d and read back (braidpy.b3d), a disk braid or a
+    sinnet is the same braid, crossing for crossing: its yarns sliding
+    along together in a step, and a sinnet's repeat, read as made."""
+    from braidpy.topology_catalog import braid_of
+    from braidpy.web import from_b3d
+
+    laid, _, saved = _saved(tmp_path, spec)
+    back = build(from_b3d(urllib.parse.quote(json.dumps(saved))), tighten=False)
+    assert braid_of(back["info"]) == braid_of(laid["info"])

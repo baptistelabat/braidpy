@@ -247,6 +247,10 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. automodule:: braidpy.b3d
+   :members:
+   :show-inheritance:
 ```
 
 ## The shape of a braid
