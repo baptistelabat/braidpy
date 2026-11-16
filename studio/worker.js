@@ -15,6 +15,8 @@
 //                {type: "sinnet", id}
 //                {type: "turn", id, name, loading, time}
 //                {type: "origin", name, place, time}
+//                {type: "b3d", text}
+//                  a design saved by braid3d, to read as your own mobidai
 // Messages out:  {type: "status", text}
 //                {type: "ready", catalogue, version}
 //                {type: "laid", id, result, job, settle, twist}
@@ -28,6 +30,8 @@
 //                  the braid's other ways of being made, and the braids
 //                  nearest it (braidpy.topology_catalog.for_page)
 //                {type: "geometry", name, shape}
+//                {type: "b3d", spec}
+//                  the design read, as a description to make
 //                {type: "turned", id, turned}
 //                  a machine's handle turned by hand (web.machine_turned)
 //                {type: "origin", origin}
@@ -258,6 +262,13 @@ json.dumps(web.machine_turned(job["name"], job["loading"], job["time"]))
   self.postMessage({ type: "turned", id: message.id, turned });
 }
 
+// A design saved by braid3d, as your own mobidai braid (braidpy.web.from_b3d).
+async function b3d(text) {
+  pyodide.globals.set("b3d_text", text);
+  const spec = JSON.parse(await pyodide.runPythonAsync("json.dumps(web.from_b3d(b3d_text))"));
+  self.postMessage({ type: "b3d", spec });
+}
+
 async function origin(message) {
   await machinery();
   pyodide.globals.set("origin_job", JSON.stringify(message));
@@ -307,6 +318,7 @@ self.onmessage = (event) => {
       else if (message.type === "turn") await turn(message);
       else if (message.type === "sinnet") await sinnet(message.id);
       else if (message.type === "origin") await origin(message);
+      else if (message.type === "b3d") await b3d(message.text);
     } catch (error) {
       self.postMessage({
         type: "error",

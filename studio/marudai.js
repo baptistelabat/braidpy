@@ -714,6 +714,14 @@
     return making.result();
   }
 
+  // The angle a disk's slot is at, as braid3dmin turns its angles: the
+  // other way round from ours, slot 1 at 0.  braidpy.marudai.slot_angle is
+  // this; web/b3d.js writes its angles with it.
+  function slotAngle(slot, nSlots, clockwise) {
+    const sense = clockwise ? -1 : 1;
+    return -(sense * 2 * Math.PI * (slot - 1)) / nSlots;
+  }
+
   // A braid being made: the marudai set up, its moves made one by one with
   // step(), and the braid as it is so far with result().  Kept, it can be
   // made on with more moves; watch, progress and the number of steps there
@@ -721,8 +729,7 @@
   function begin(job) {
     const n = job.start.length;
     const sense = job.clockwise ? -1 : 1;
-    // braid3dmin's angles turn the other way round from ours.
-    const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
+    const angleOf = (slot) => slotAngle(slot, job.n_slots, job.clockwise);
     const split = job.split ?? true;
     const twists = job.twists ?? !!job.held;
     const machine = Machine(n, job.turning ?? !job.held, job.core ?? null);
@@ -831,5 +838,6 @@
 
   root.makeOnMarudai = make;
   root.beginOnMarudai = begin;
-  if (typeof module !== "undefined" && module.exports) module.exports = { make, begin, Machine };
+  root.slotAngleOnMarudai = slotAngle;
+  if (typeof module !== "undefined" && module.exports) module.exports = { make, begin, Machine, slotAngle };
 })(typeof self !== "undefined" ? self : globalThis);
