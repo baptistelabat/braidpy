@@ -966,6 +966,312 @@ def rope_results(png_dir: Path | None) -> None:
     )
 
 
+# The ladder of horn gears, two of its gears split, that horn_gear_layout.md
+# is about: the graph as Braid Studio's "Your own machine" takes it.
+SPLIT_LADDER = (
+    "A0-A1:3 A0-B0 A1-A2:3 A1-B1:3 A2-A3a A2-B2:3 A3a-B3a B0-B1 B1-B2 B2-B3a "
+    "A3b-A4:3 A3b-B3b A4-A5:3 A4-B4:3 A5-A6 A5-B5:3 A6-B6 B3b-B4 B4-B5 B5-B6 "
+    "A3a+A3b B3a+B3b"
+)
+
+
+def _wrapped(note: str) -> str:
+    """A figure's note in lines, not one as wide as its words: the horn
+    gear figures' notes are long."""
+    import textwrap
+
+    return textwrap.fill(note, 120)
+
+
+def _axles(machine) -> tuple[dict, dict, list]:
+    """A machine's axles: each centre once, its radius, and the pairs of axles
+    that mesh, the parts of a split gear being one axle."""
+    from braidpy.horn_gear.layout import compute_layout, gear_radii
+
+    centres, radii = compute_layout(machine), gear_radii(machine)
+    axle = {name: name.rstrip("ab") if name[-1] in "ab" else name for name in centres}
+    at = {axle[n]: centres[n] for n in centres}
+    size = {axle[n]: radii[n] for n in centres}
+    meshes = sorted(
+        {tuple(sorted((axle[c.gear_a], axle[c.gear_b]))) for c in machine.connections}
+    )
+    return at, size, meshes
+
+
+def _draw_gears(ax, at, size, meshes, shared=()) -> tuple[float, float]:
+    """Gears as circles, each mesh a line between centres: green if the two
+    touch, within 1%, red if not; two gears that do not mesh but overlap are
+    joined in red too.  Returns the worst mesh error and the worst overlap,
+    as shares of the two radii."""
+    worst_mesh = worst_overlap = 0.0
+    for name, (x, y) in at.items():
+        ax.add_patch(plt.Circle((x, y), size[name], fill=False, color=INK, lw=0.8))
+        ax.text(x, y, name, ha="center", va="center", fontsize=7, color=MUTED)
+    names = sorted(at)
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            touching = size[a] + size[b]
+            apart = math.dist(at[a], at[b])
+            if (a, b) in meshes:
+                wanted = touching * (math.cos(math.pi / 8) if (a, b) in shared else 1)
+                error = abs(apart - wanted) / wanted
+                worst_mesh = max(worst_mesh, error)
+                colour = MARK if error < 0.01 else LIMIT
+            elif apart < touching:
+                worst_overlap = max(worst_overlap, (touching - apart) / touching)
+                colour = LIMIT
+            else:
+                continue
+            ax.plot(*zip(at[a], at[b]), color=colour, lw=1.4)
+    ax.set_aspect("equal")
+    ax.autoscale_view()
+    ax.axis("off")
+    return worst_mesh, worst_overlap
+
+
+def gear_layout_ladder(png_dir: Path | None) -> None:
+    """The split ladder laid out as Kamada-Kawai shrunk left it, and relaxed."""
+    import networkx as nx
+
+    from braidpy.horn_gear.described import machine_from_graph
+
+    machine = machine_from_graph(SPLIT_LADDER, 4)
+    at, size, meshes = _axles(machine)
+    # Before: the graph laid out, each mesh as long as its two radii at the
+    # convention (radius sqrt(horns)), then shrunk till no mesh was longer,
+    # as compute_layout did.
+    horns = {name: 4 for name in at}
+    for part in SPLIT_LADDER.split():
+        if ":3" in part:
+            horns[part.split("-")[1].split(":")[0]] = 3
+    horns.update({"A3": 8, "B3": 8})
+    convention = {name: math.sqrt(h) for name, h in horns.items()}
+    graph = nx.Graph()
+    for a, b in meshes:
+        graph.add_edge(a, b, len=convention[a] + convention[b])
+    try:
+        raw = nx.kamada_kawai_layout(graph, weight="len")
+    except ImportError:  # without SciPy, the spring layout, as compute_layout did
+        raw = nx.spring_layout(graph, seed=42, iterations=500)
+    shrink = min(
+        graph[a][b]["len"] / math.dist(raw[a], raw[b]) for a, b in graph.edges()
+    )
+    before = {name: tuple(shrink * np.asarray(xy)) for name, xy in raw.items()}
+
+    fig, (left, right) = plt.subplots(1, 2, figsize=(9.5, 4.6))
+    mesh_before, overlap_before = _draw_gears(left, before, convention, meshes)
+    left.set_title("before: laid out, then shrunk till no mesh is too long")
+    shared = {("A3", "B3")}
+    mesh_after, overlap_after = _draw_gears(right, at, size, meshes, shared)
+    right.set_title("after: relaxed (ring_geometry)")
+    # The claims horn_gear_layout.md makes of these two pictures.
+    assert mesh_before > 0.5 and overlap_before > 0.2
+    assert mesh_after < 0.01 and overlap_after == 0.0
+    _save(
+        fig,
+        "gear_layout_ladder",
+        png_dir,
+        _wrapped(
+            f"Green: two gears that mesh and touch (within 1%). Red: a mesh too short "
+            f"or too long, or two gears that do not mesh but overlap. Before, the "
+            f"worst mesh is {mesh_before:.0%} off; after, {mesh_after:.1%}, every gear "
+            f"its own size within 0.75 to 1.3 of sqrt(horns), the split axles A3 and "
+            f"B3 interpenetrating by design."
+        ),
+    )
+
+
+def gear_layout_relax(png_dir: Path | None) -> None:
+    """One round of the relaxation, for a mesh and for two gears apart."""
+    fig, (left, right) = plt.subplots(1, 2, figsize=(9.5, 3.2))
+    for ax, (ri, rj, d, title, meshing) in zip(
+        (left, right),
+        (
+            (1.0, 0.8, 2.6, "two gears that mesh: drawn to touch", True),
+            (1.0, 0.8, 1.5, "two gears that do not: pushed apart", False),
+        ),
+    ):
+        pi, pj = np.array([0.0, 0.0]), np.array([d, 0.0])
+        ax.add_patch(plt.Circle(pi, ri, fill=False, color=INK))
+        ax.add_patch(plt.Circle(pj, rj, fill=False, color=INK))
+        ax.plot([0, d], [0, 0], color=MUTED, lw=0.8)
+        ax.text(0, 0.08, "$p_i$", ha="center")
+        ax.text(d, 0.08, "$p_j$", ha="center")
+        ax.text(-ri / 2, -0.25, "$r_i$", ha="center", color=MUTED)
+        ax.text(d + rj / 2, -0.25, "$r_j$", ha="center", color=MUTED)
+        ax.annotate(
+            "", (d, -1.25), (0, -1.25), arrowprops={"arrowstyle": "<->", "color": INK}
+        )
+        ax.text(d / 2, -1.45, "$d_{ij}$", ha="center")
+        if meshing:
+            error = d - (ri + rj)
+            ax.annotate(
+                "",
+                (error / 2, 0.55),
+                (0, 0.55),
+                arrowprops={"arrowstyle": "->", "color": MARK},
+            )
+            ax.annotate(
+                "",
+                (d - error / 2, 0.55),
+                (d, 0.55),
+                arrowprops={"arrowstyle": "->", "color": MARK},
+            )
+            ax.text(
+                d / 2,
+                1.05,
+                "$e = d_{ij} - (r_i + r_j) > 0$: closer, and larger",
+                ha="center",
+                color=MARK,
+            )
+        else:
+            short = 1.1 * (ri + rj) - d
+            ax.annotate(
+                "",
+                (-short / 2, 0.55),
+                (0, 0.55),
+                arrowprops={"arrowstyle": "->", "color": LIMIT},
+            )
+            ax.annotate(
+                "",
+                (d + short / 2, 0.55),
+                (d, 0.55),
+                arrowprops={"arrowstyle": "->", "color": LIMIT},
+            )
+            ax.text(
+                d / 2,
+                1.05,
+                "$s = (1 + c)(r_i + r_j) - d_{ij} > 0$: apart",
+                ha="center",
+                color=LIMIT,
+            )
+        ax.set_title(title)
+        ax.set_aspect("equal")
+        ax.set_xlim(-1.4, d + 1.2)
+        ax.set_ylim(-1.7, 1.4)
+        ax.axis("off")
+    _save(fig, "gear_layout_relax", png_dir)
+
+
+def split_axles_meet(png_dir: Path | None) -> None:
+    """Two split axles sharing two bobbins: at each crossing, the other
+    band's horns meet halfway through a step."""
+    from braidpy.horn_gear.layout import sharing_two_bobbins
+
+    horns = 8
+    pitch = 2 * math.pi / horns
+    ra, rb, apart = sharing_two_bobbins(horns, horns)
+    ca, cb = np.array([-apart / 2, 0.0]), np.array([apart / 2, 0.0])
+    half = math.pi / horns  # where each crossing is, off the line of centres
+
+    def horn(centre, radius, angle):
+        return centre + radius * np.array([math.cos(angle), math.sin(angle)])
+
+    crossing_x = horn(ca, ra, half)
+    crossing_y = horn(ca, ra, -half)
+    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.0))
+    for ax, t in zip(axes, (0.0, 0.5)):
+        # A step turns each part one of its slots: two pitches of the axle.
+        # A turns anticlockwise, B clockwise; at t = 0 a horn of each part
+        # "a" is at crossing X, of each part "b" at crossing Y.
+        at_x = []
+        for centre, radius, start, turn in (
+            (ca, ra, half, 1),
+            (cb, rb, math.pi - half, -1),
+        ):
+            ax.add_patch(plt.Circle(centre, radius, fill=False, color=MUTED, lw=0.8))
+            for k in range(horns):
+                angle = start + turn * (k * pitch + t * 2 * pitch)
+                point = horn(centre, radius, angle)
+                part = "a" if k % 2 == 0 else "b"
+                ax.plot(*point, "o", color=OUT if part == "a" else IN, ms=6)
+                if math.dist(point, crossing_x) < 1e-9:
+                    at_x.append(part)
+        if t == 0.0:
+            assert at_x == ["a", "a"]  # band a hands over at its bobbin
+        else:
+            assert at_x == ["b", "b"]  # band b's horns meet at band a's bobbin
+        for name, point in (("X", crossing_x), ("Y", crossing_y)):
+            ax.plot(*point, "s", mfc="none", mec=INK, ms=11)
+            ax.text(point[0] + 0.07, point[1] + (0.1 if name == "X" else -0.2), name)
+        ax.text(*(ca + [0, -0.12]), "A", ha="center", color=MUTED)
+        ax.text(*(cb + [0, -0.12]), "B", ha="center", color=MUTED)
+        ax.set_title(
+            "step begins: the a horns meet at X, and hand over"
+            if t == 0.0
+            else "half a step on: the b horns meet at X"
+        )
+        ax.set_aspect("equal")
+        ax.axis("off")
+    _save(
+        fig,
+        "split_axles_meet",
+        png_dir,
+        _wrapped(
+            "Two split axles of eight horns, parts a (blue) and b (orange) taking turns, "
+            "sharing two bobbins: X for band a, Y for band b. A turns anticlockwise, "
+            "B clockwise, a step being two pitches. Both circles pass through both "
+            "crossings, so the b horns meet at X halfway through every step."
+        ),
+    )
+
+
+def too_close_survey(png_dir: Path | None) -> None:
+    """How close every machine's carriers come, against the limit."""
+    from braidpy.horn_gear.described import machine_from_graph
+    from braidpy.horn_gear.layout import gear_radii
+    from braidpy.horn_gear.simulation import state_period
+    from braidpy.horn_gear.take_off import CLOSEST, carrier_trajectories
+    from braidpy.machine_catalog import CATALOGUE
+
+    machines = {name: entry.make for name, entry in sorted(CATALOGUE.items())}
+    machines.update(
+        {
+            "split in three": lambda: machine_from_graph("H1-A H2-B H3-C H1+H2+H3", 3),
+            "split pair, neighbours": lambda: machine_from_graph(
+                "X-A1 A1-B1 A2-B2 B2-Y A1+A2 B1+B2", 4
+            ),
+            "split ladder": lambda: machine_from_graph(SPLIT_LADDER, 4),
+        }
+    )
+    names, shares = [], []
+    for name, make in machines.items():
+        machine = make()
+        loading = machine.default_carriers()
+        steps = min(state_period(machine, loading) or 1, 600)
+        paths = carrier_trajectories(machine, steps, loading, n_substeps=24)
+        xy = np.stack([paths.xy[k] for k in paths.xy])
+        closest = min(
+            float(np.linalg.norm(xy[i + 1 :] - xy[i], axis=-1).min())
+            for i in range(len(xy) - 1)
+        )
+        radii = gear_radii(machine)
+        gap = min(
+            2 * radii[n] * math.sin(math.pi / (g.size or g.n_slots))
+            for n, g in machine.gears.items()
+        )
+        names.append(name)
+        shares.append(closest / gap)
+    catalogued = shares[: len(CATALOGUE)]
+    assert min(catalogued) > CLOSEST and max(shares[len(CATALOGUE) :]) < CLOSEST
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    colours = [MUTED if s > CLOSEST else LIMIT for s in shares]
+    ax.barh(names, shares, color=colours)
+    ax.axvline(CLOSEST, color=LIMIT, lw=1)
+    ax.text(CLOSEST + 0.01, len(names) - 0.6, f"CLOSEST = {CLOSEST}", color=LIMIT)
+    ax.invert_yaxis()
+    ax.set_xlabel("closest two carriers come, as a share of the smallest horn gap")
+    _save(
+        fig,
+        "too_close_survey",
+        png_dir,
+        _wrapped(
+            f"Every catalogued machine keeps its carriers {min(catalogued):.2f} of a "
+            f"horn's gap apart or more; the three in red are stopped."
+        ),
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--png", type=Path, default=None, help="also write PNG copies")
@@ -985,7 +1291,12 @@ def main() -> int:
     rope_model(args.png)
     rope_ends(args.png)
     rope_results(args.png)
-    print("\n10 figures written to docs/source/")
+    print("the horn gear machine:")
+    gear_layout_ladder(args.png)
+    gear_layout_relax(args.png)
+    split_axles_meet(args.png)
+    too_close_survey(args.png)
+    print("\n14 figures written to docs/source/")
     return 0
 
 
