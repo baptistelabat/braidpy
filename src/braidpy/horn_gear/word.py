@@ -123,6 +123,11 @@ def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, fl
     )
 
 
+# Carriers less than this far apart across the deck are level: the
+# difference is rounding, so they have not crossed.
+_LEVEL = 1e-9
+
+
 def flat_word(
     machine: BraidingMachine,
     carriers: Optional[dict[CarrierId, Position]] = None,
@@ -160,22 +165,30 @@ def flat_word(
     across = np.column_stack([tracks.xy[cid][:, 0] for cid in ids])
     depth = np.column_stack([tracks.xy[cid][:, 1] for cid in ids])
 
-    order = sorted(range(len(ids)), key=lambda k: across[0, k])
+    # Carriers level at the start, one behind the other, are in the order
+    # they came there in: read over a whole period, the machine back as it
+    # started, that is how it ended the period before, so that two carriers
+    # crossing just as it starts are counted once, here, and not again as
+    # they draw level at the end.  Read over less, in the order they part in.
+    periodic = np.allclose(across[0], across[-1]) and np.allclose(depth[0], depth[-1])
+    tiebreak = across[-2::-1] if periodic else across[1:]
+    level = np.round(across[0] / _LEVEL)
+    order = sorted(range(len(ids)), key=lambda k: (level[k], *tiebreak[:, k]))
     word: list[int] = []
     for sample in range(1, len(tracks.times)):
         # Passes until no neighbours are left to exchange: in one pass a
         # carrier going right can pass several others, one going left only
         # one, and a missed exchange would leave the order wrong for good.
         # Within a sample each carrier keeps its depth, so the order the
-        # exchanges are written in does not change the braid.
+        # exchanges are written in does not change the braid.  Two carriers
+        # have crossed only once one is past the other: drawing level is
+        # not crossing, as two carriers back where they started level are.
         exchanged = True
         while exchanged:
             exchanged = False
             for slot in range(len(ids) - 1):
                 first, second = order[slot], order[slot + 1]
-                before = across[sample - 1, first] - across[sample - 1, second]
-                after = across[sample, first] - across[sample, second]
-                if before < 0 <= after:
+                if across[sample, first] - across[sample, second] > _LEVEL:
                     in_front = depth[sample, first] > depth[sample, second]
                     word.append(slot + 1 if in_front else -(slot + 1))
                     order[slot], order[slot + 1] = second, first
