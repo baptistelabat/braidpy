@@ -14,6 +14,25 @@ if TYPE_CHECKING:
 
 
 def _burau_product(braid: Braid, t, one, zero, modulus: Optional[int] = None):
+    """The braid's reduced Burau matrix: :func:`_scaled_burau_product`,
+    never scaled."""
+    return _scaled_burau_product(braid, t, one, zero, modulus)[0]
+
+
+# Entries of a floating-point Burau matrix above this are scaled down
+# (:func:`_scaled_burau_product`): far from overflowing a float (1e308),
+# however many crossings follow before the next look.
+_LARGEST = 1e100
+
+
+def _scaled_burau_product(
+    braid: Braid,
+    t,
+    one,
+    zero,
+    modulus: Optional[int] = None,
+    largest: float | None = None,
+):
     """The braid's reduced Burau matrix, as a numpy array, in whatever ring
     ``t``, ``one`` and ``zero`` are of: complex numbers, elements of a
     sympy field (an array of objects), or integers modulo ``modulus``.
@@ -32,9 +51,18 @@ def _burau_product(braid: Braid, t, one, zero, modulus: Optional[int] = None):
         modulus: For integers modulo it: then ``t``, ``one`` and ``zero``
             are elements of the field of that many elements (sympy's
             ``GF``), and the matrix is of plain integers, each below it.
+        largest: For floating point: whenever an entry grows past it, the
+            matrix is divided by its largest entry, so that a long braid,
+            its entries growing with every crossing, overflows nothing.
+            None never scales.
+
+    Returns:
+        The matrix, and the natural logarithm of all it was divided by, 0 if
+        never: the braid's matrix is the first times ``e`` to the second.
     """
     import numpy as np
 
+    log_scale = 0.0
     m = braid.n_strands - 1
     rows: dict[int, list] = {}
     if modulus is None:
@@ -57,7 +85,12 @@ def _burau_product(braid: Braid, t, one, zero, modulus: Optional[int] = None):
                 continue
             column = here * row[c] if c == i else matrix[:, c] + here * row[c]
             matrix[:, c] = column if modulus is None else column % modulus
-    return matrix
+        if largest is not None:
+            biggest = float(np.max(np.abs(matrix[:, max(i - 1, 0) : i + 2])))
+            if biggest > largest:
+                matrix = matrix / biggest
+                log_scale += float(np.log(biggest))
+    return matrix, log_scale
 
 
 def alexander_polynomial(braid: Braid) -> "Poly":
@@ -159,10 +192,12 @@ def alexander_on_circle(
 
 def _burau_on_circle(braid: Braid, theta: float):
     """The braid's reduced Burau matrix at t = e^{iθ}, numerically, as a
-    numpy array."""
+    numpy array scaled down where it grows large, and the logarithm of the
+    scale (:func:`_scaled_burau_product`)."""
     import numpy as np
 
-    return _burau_product(braid, complex(np.exp(1j * theta)), 1.0 + 0j, 0j)
+    t = complex(np.exp(1j * theta))
+    return _scaled_burau_product(braid, t, 1.0 + 0j, 0j, largest=_LARGEST)
 
 
 def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> float:
@@ -174,18 +209,22 @@ def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> 
     with ``k``, and ``det(x − Bᵏ)`` taken from them loses the digits the
     subtraction cancels, so that a braid read from another starting point
     seemed another braid.  And a braid repeated a thousand times overflows
-    nothing.
+    nothing, nor a braid of tens of thousands of crossings, its matrix
+    scaled down as it is made, its eigenvalues scaled back up in logarithms.
     """
     import numpy as np
 
     total = 0.0
+    burau, log_scale = _burau_on_circle(braid, theta)
     # A factor exactly zero gives -inf: the determinant vanishes, which the
     # callers read as such (the Alexander polynomial of a split link).
-    with np.errstate(divide="ignore"):
-        for eigen in np.linalg.eigvals(_burau_on_circle(braid, theta)):
-            grows = repeats * np.log(abs(eigen)) if eigen else -np.inf
+    with np.errstate(divide="ignore", under="ignore"):
+        for eigen in np.linalg.eigvals(burau):
+            grows = repeats * (np.log(abs(eigen)) + log_scale) if eigen else -np.inf
             if grows > 30:
                 total += grows
+            elif log_scale:
+                total += np.log(abs(x - np.exp(repeats * (np.log(eigen) + log_scale))))
             else:
                 total += np.log(abs(x - eigen**repeats))
     return float(total)

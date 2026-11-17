@@ -100,3 +100,34 @@ def test_burau_polynomial_mod_is_the_exact_one_reduced(word, n_strands, repeats)
         for c in (burau**repeats).charpoly()
     ]
     assert burau_polynomial_mod(braid, 3, repeats) == tuple(exact)
+
+
+def test_a_long_word_overflows_nothing():
+    """A unit whose Burau matrix grows, written out two thousand times: its
+    entries went past a float's range, its eigenvalues came out as NaN and
+    the fingerprint failed.  Scaled down as it is made, it overflows
+    nothing.  (Its samples are rounding all the same, so long a product:
+    :func:`~braidpy.properties.burau_polynomial_mod` is what is exact.)"""
+    import math
+
+    from braidpy.properties import alexander_on_circle, burau_polynomial_on_circle
+
+    written = Braid([1, -2, 3, -4, 5, -6, 7] * 2000, 8)
+    angles = (1.0, 2.0)
+    assert all(math.isfinite(v) for v in burau_polynomial_on_circle(written, angles))
+    alexander = alexander_on_circle(written, angles)
+    assert all(v is None or math.isfinite(v) for v in alexander)
+
+
+def test_a_braid_that_stays_small_is_never_scaled():
+    """Scaling starts only past ``_LARGEST``: below it the matrix is made
+    exactly as it was."""
+    import numpy as np
+
+    from braidpy.properties import _LARGEST, _burau_product, _scaled_burau_product
+
+    braid = Braid([1, -2, 3, -4, 5, -6, 7] * 20, 8)
+    t = complex(np.exp(1j))
+    scaled, log_scale = _scaled_burau_product(braid, t, 1 + 0j, 0j, largest=_LARGEST)
+    assert log_scale == 0.0
+    assert np.array_equal(scaled, _burau_product(braid, t, 1 + 0j, 0j))
