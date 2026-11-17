@@ -13,6 +13,7 @@ import math
 
 import pytest
 
+from braidpy.braid import Braid
 from braidpy.horn_gear import examples as ex
 from braidpy.horn_gear.tracks import simulation_period
 from braidpy.horn_gear.word import (
@@ -26,12 +27,15 @@ from braidpy.symmetric_braid import braid_word
 # ── A flat braider, read two ways ─────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("name", ["flat_braid_3", "flat_braid_4"])
-def test_the_mechanism_and_the_shape_give_the_same_word(name):
+@pytest.mark.parametrize("name, at_start", [("flat_braid_3", 0), ("flat_braid_4", 1)])
+def test_the_mechanism_and_the_shape_give_the_same_braid(name, at_start):
     """The strongest check available: two derivations that share no code.
 
     One follows the carriers round the gears; the other reads crossings off
-    the yarn hanging in space.  Neither is the other's implementation.
+    the yarn hanging in space.  Neither is the other's implementation.  The
+    square braid's two carriers cross just as the period starts: the yarn
+    cut there, level, leaves that crossing out, which the mechanism counts
+    first (``at_start``).
     """
     machine = getattr(ex, name)()
     period = simulation_period(machine)
@@ -39,7 +43,10 @@ def test_the_mechanism_and_the_shape_give_the_same_word(name):
     from_shape = braid_word(
         strands_for_checking(machine, n_cycles=1, n_steps=period), n_samples=20000
     )
-    assert from_mechanism == from_shape
+    n = len(machine.default_carriers())
+    assert Braid(tuple(from_mechanism), n) == Braid(
+        tuple(from_mechanism[:at_start] + from_shape), n
+    )
 
 
 def test_the_three_strand_flat_braid_is_the_braid_everybody_plaits():
@@ -134,13 +141,15 @@ def test_a_machine_with_axials_counts_each_as_a_strand():
     """Carriers braid around an axial, so it belongs in the word: a strand
     standing still where it rises through the deck, after the carriers.
     Read so, soutache's two cords are in its word, and the mechanism and the
-    yarns hanging in space, cords and all, give the same word."""
+    yarns hanging in space, cords and all, give the same braid."""
     machine = ex.soutache_braid()
     period = simulation_period(machine)
     from_mechanism = flat_word(machine)
     strands = strands_for_checking(machine, n_cycles=1, n_steps=period, axials=True)
     assert len(strands) == len(machine.default_carriers()) + len(machine.axials)
-    assert from_mechanism == braid_word(strands, n_samples=20000)
+    from_shape = braid_word(strands, n_samples=20000)
+    n = len(strands)
+    assert Braid(tuple(from_mechanism), n) == Braid(tuple(from_shape), n)
     assert max(abs(g) for g in from_mechanism) == len(strands) - 1
 
 
@@ -194,7 +203,6 @@ def test_a_carrier_passing_two_others_at_once_is_followed(name):
     strands was wrong from there on.  Read over the loading's period, every
     carrier back where it started, the word is a pure braid, and the same
     braid sampled four times as finely."""
-    from braidpy.braid import Braid
     from braidpy.pure_braid import cycles
 
     machine = getattr(ex, name)()
@@ -203,3 +211,20 @@ def test_a_carrier_passing_two_others_at_once_is_followed(name):
     finer = Braid(tuple(flat_word(machine, n_substeps=256)), n_strands)
     assert all(len(cycle) == 1 for cycle in cycles(word))
     assert word == finer
+
+
+def test_carriers_crossing_as_the_period_starts_are_counted_once():
+    """Two carriers of the square braid's second gear, opposite each other,
+    cross just as the machine starts and draw level again as it ends: the
+    word counted that crossing neither at the start nor at the end, one
+    period's word was eleven crossings and seemed to swap two strands.  It
+    is twelve, a pure braid, and two periods' twice that."""
+    from braidpy.pure_braid import cycles
+
+    machine = ex.flat_braid_4()
+    period = 8
+    once = flat_word(machine, n_steps=period)
+    twice = flat_word(machine, n_steps=2 * period)
+    assert len(once) == 12
+    assert len(twice) == 2 * len(once)
+    assert all(len(cycle) == 1 for cycle in cycles(Braid(tuple(once), 4)))
