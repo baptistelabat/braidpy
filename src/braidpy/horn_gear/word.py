@@ -48,7 +48,7 @@ from typing import Optional, cast
 import numpy as np
 
 from .model import BraidingMachine
-from .simulation import CarrierId
+from .simulation import CarrierId, state_period
 from .take_off import carrier_trajectories
 from .tracks import Position, simulation_period
 
@@ -62,7 +62,10 @@ def _trajectories(
     n_substeps: int,
     scale: float,
 ):
-    """Carrier positions in the deck plane, one cycle by default — and each
+    """Carrier positions in the deck plane, one cycle by default — as long as
+    this loading takes to be back as it started
+    (:func:`~braidpy.horn_gear.simulation.state_period`), or, for a machine
+    that never is, until every slot is (:func:`simulation_period`) — and each
     axial yarn's, a strand of the braid that stands still where it rises
     through the deck (:func:`~braidpy.horn_gear.layout.axial_position`),
     numbered after the carriers, in the order the machine lists them.  The
@@ -73,7 +76,7 @@ def _trajectories(
     from .layout import axial_positions
 
     if n_steps is None:
-        n_steps = simulation_period(machine)
+        n_steps = state_period(machine, carriers) or simulation_period(machine)
     tracks = carrier_trajectories(
         machine,
         n_steps,
@@ -160,14 +163,23 @@ def flat_word(
     order = sorted(range(len(ids)), key=lambda k: across[0, k])
     word: list[int] = []
     for sample in range(1, len(tracks.times)):
-        for slot in range(len(ids) - 1):
-            first, second = order[slot], order[slot + 1]
-            before = across[sample - 1, first] - across[sample - 1, second]
-            after = across[sample, first] - across[sample, second]
-            if before < 0 <= after:
-                in_front = depth[sample, first] > depth[sample, second]
-                word.append(slot + 1 if in_front else -(slot + 1))
-                order[slot], order[slot + 1] = second, first
+        # Passes until no neighbours are left to exchange: in one pass a
+        # carrier going right can pass several others, one going left only
+        # one, and a missed exchange would leave the order wrong for good.
+        # Within a sample each carrier keeps its depth, so the order the
+        # exchanges are written in does not change the braid.
+        exchanged = True
+        while exchanged:
+            exchanged = False
+            for slot in range(len(ids) - 1):
+                first, second = order[slot], order[slot + 1]
+                before = across[sample - 1, first] - across[sample - 1, second]
+                after = across[sample, first] - across[sample, second]
+                if before < 0 <= after:
+                    in_front = depth[sample, first] > depth[sample, second]
+                    word.append(slot + 1 if in_front else -(slot + 1))
+                    order[slot], order[slot + 1] = second, first
+                    exchanged = True
     return word
 
 
