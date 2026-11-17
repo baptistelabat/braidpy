@@ -567,3 +567,24 @@ def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top, h):
     # Both solve exactly but for rounding, a few units in the last place of
     # numbers of order one.
     assert np.allclose(_tension_solver(n, h, hold_top)(b), expected, atol=1e-12)
+
+
+def test_yarns_passing_nearly_the_same_point_are_lifted_to_fit():
+    """One yarn passes a point, the next a hundredth of a diameter beside
+    it a sample later: the take-off only lifted yarns passing the very same
+    point, and drawing in had to blow the braid up a hundredfold to part
+    them.  Now the take-off lifts them till they fit undrawn."""
+    from braidpy.take_off.contact import jammed_contraction, least_take_off
+
+    times = np.arange(4.0)
+    near = 0.01
+    xy = {
+        0: np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0], [6.0, 0.0]]),
+        1: np.array([[-1.0, 1.0], [near, 0.0], [1.0, -1.0], [2.0, -2.0]]),
+    }
+    trajectories = StrandTrajectories(times, xy)
+    take_off = least_take_off(trajectories, yarn_diameter=1.0, take_off=0.1)
+    assert take_off == pytest.approx(np.sqrt(1 - near**2), rel=0.02)
+    centre = np.asarray(trajectories.centre())
+    rel = np.stack([p - centre for p in xy.values()])
+    assert jammed_contraction(rel, take_off, 1.0) <= 1.0

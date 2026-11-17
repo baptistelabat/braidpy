@@ -16,6 +16,10 @@ import numpy as np
 if TYPE_CHECKING:
     from .paths import StrandTrajectories
 
+# How much faster than the least take-off that fits two yarns
+# :func:`least_take_off` gives: a little, so that rounding cannot leave
+# them touching after all.
+_MARGIN = 1.01
 
 # Every yarn is sampled at the same heights, so two samples can be closer than
 # a diameter only if they are fewer than ``diameter / spacing`` levels apart.
@@ -88,8 +92,8 @@ def _closest_approach(formed: np.ndarray, spacing: float) -> float:
 def least_take_off(
     trajectories: StrandTrajectories, yarn_diameter: float, take_off: float
 ) -> float:
-    """The slowest take-off that lifts yarns passing the same point a diameter
-    apart, at least ``take_off``.
+    """The slowest take-off that lifts yarns passing the same point, or
+    nearly, far enough apart to fit, at least ``take_off``.
 
     Where one strand leaves a place and another comes to the very same point
     later — as each crossing of a braid word does, one strand arriving where
@@ -98,28 +102,41 @@ def least_take_off(
     them can.  The fewer strands move at a time, the slower the default
     take-off, and the closer in height they come.
 
+    Nearly the same point is as bad: two yarns a sideways distance ``s``
+    apart touch, ``dz`` apart in height, unless the braid is drawn out by
+    ``sqrt(d² − dz²) / s``, a hundredfold for carriers on one split axle
+    that pass a hundredth of a diameter apart between two samples.  So the
+    take-off is raised until every pair fits undrawn, ``dz`` at least
+    ``sqrt(d² − s²)``; a braid whose yarns already do is left as it was.
+
     Args:
         trajectories: Where the strands went, sampled evenly in time.
         yarn_diameter: Yarn diameter.
         take_off: The take-off to start from.
 
     Returns:
-        ``take_off``, or a little faster than the least take-off that keeps
-        the closest such pair a diameter apart.
+        ``take_off``, or a little faster than the least take-off that lets
+        the closest such pair fit.
     """
     centre = np.asarray(trajectories.centre(), dtype=float)
     rel = np.stack([xy - centre for xy in trajectories.xy.values()])
     n_yarns, n, _ = rel.shape
     dt = float(trajectories.times[1] - trajectories.times[0])
-    scale = float(np.max(np.abs(rel))) or 1.0
+    least = take_off
     for offset in _offsets(take_off * dt, yarn_diameter, n):
         if offset == 0:
             continue  # at the same time: no take-off can part them
         a, b = _level_pairs(n_yarns, offset)
+        if len(a) == 0:
+            break
         sideways = np.linalg.norm(rel[a, : n - offset] - rel[b, offset:], axis=-1)
-        if np.any(sideways <= 1e-12 * scale):
-            return max(take_off, 1.01 * yarn_diameter / (offset * dt))
-    return take_off
+        closest = float(np.min(sideways))
+        if closest < yarn_diameter:
+            room = math.sqrt(yarn_diameter**2 - closest**2)
+            # Already that far apart in height: drawing in fits them.
+            if offset * dt * take_off < room:
+                least = max(least, _MARGIN * room / (offset * dt))
+    return least
 
 
 def jammed_contraction(rel: np.ndarray, spacing: float, diameter: float) -> float:
