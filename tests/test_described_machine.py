@@ -419,3 +419,58 @@ def test_two_split_gears_meshing_twice_are_written_back_as_they_were():
     assert {(c.gear_a, c.gear_b) for c in again.connections} == {
         (c.gear_a, c.gear_b) for c in machine.connections
     }
+
+
+def test_a_pair_sharing_two_bobbins_is_drawn_exactly():
+    """Two alike wheels share two bobbins only by interpenetrating.
+
+    Each bobbin sits at a crossing of the two notch circles, and a crossing
+    has to be a horn of the wheel it is on, which puts the two bobbins one
+    horn pitch apart as seen from either centre.  That fixes the spacing:
+    ``2 cos(pi / horns)`` radii, an overlap of 15.2% of a rim for the eight
+    horns of two gears split in two.  Every contact then lands on a notch.
+    """
+    import math
+
+    from braidpy.horn_gear.layout import (
+        compute_layout,
+        contact_point,
+        gear_radii,
+        offset_residuals,
+    )
+
+    machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", n_slots=4)
+    layout, radii = compute_layout(machine), gear_radii(machine)
+    apart = math.dist(layout["A1"], layout["B1"])
+    assert radii["A1"] == pytest.approx(radii["B1"])
+    assert apart / radii["A1"] == pytest.approx(2 * math.cos(math.pi / 8))
+    overlap = (radii["A1"] + radii["B1"] - apart) / radii["A1"]
+    assert overlap == pytest.approx(0.152, abs=0.001)
+
+    # One bobbin at each crossing, not both at the middle of one notch.
+    one = contact_point(machine, layout, "A1", "B1")
+    two = contact_point(machine, layout, "A2", "B2")
+    assert math.dist(one, two) > radii["A1"] / 2
+    for point in (one, two):
+        assert math.dist(point, layout["A1"]) == pytest.approx(radii["A1"])
+        assert math.dist(point, layout["B1"]) == pytest.approx(radii["B1"])
+    # A horn of each wheel at each crossing.
+    assert math.degrees(max(offset_residuals(machine, layout).values())) < 0.01
+
+
+def test_the_closed_form_for_a_pair_sharing_two_bobbins():
+    """The sine rule in the triangle of the two centres and a bobbin."""
+    import math
+
+    from braidpy.horn_gear.layout import sharing_two_bobbins
+
+    for horns in (4, 6, 8, 12):
+        first, second, apart = sharing_two_bobbins(horns, horns)
+        assert first == pytest.approx(second)
+        assert apart / first == pytest.approx(2 * math.cos(math.pi / horns))
+    # Unalike wheels take the radii the angles ask for, in proportion.
+    first, second, apart = sharing_two_bobbins(8, 6)
+    assert second / first == pytest.approx(
+        math.sin(math.pi / 8) / math.sin(math.pi / 6)
+    )
+    assert apart == pytest.approx(math.sin(math.pi / 8 + math.pi / 6))

@@ -27,12 +27,18 @@ on its own pair of halves, and neither can reach the other.  What may not
 happen is one part meeting one axle twice -- a carrier of that band could
 then leave by either contact, which is the split undone -- so a whole gear
 meshing with both parts of a split one (``A-B1 A-B2 B1+B2``) is refused.
-Where two parts do meet one axle, the drawing puts both contacts on the
-line between the two centres, so they land on the same point: the machine
-runs regardless, since a carrier is stepped by slot and rotation and never
-by an angle, but a true drawing would put each at its own crossing of the
-two notch circles, which wants the two wheels to interpenetrate by a
-measured amount rather than merely touch.
+Two axles that share two bobbins cannot have both at the middle of one
+notch, so each sits at its own crossing of the two notch circles, and the
+pair has to interpenetrate by the amount that puts a horn of each wheel at
+each crossing -- for two alike wheels, centres ``2 cos(pi / horns)`` radii
+apart, an overlap of 15.2% of a rim for eight horns
+(:func:`~braidpy.horn_gear.layout.sharing_two_bobbins`).  In a tree of
+gears that spacing is the walk's to give, so the drawing comes out exact.
+Round a ring it is not: the ring's own spacing stands, the two bobbins are
+the crossings it happens to leave -- or the one middle, where it leaves the
+rims too far apart to cross -- and the contacts fall as near their horns as
+whole slots allow, as they do on any ring.  The machine runs either way,
+since a carrier is stepped by slot and rotation and never by an angle.
 
 The rest follows from the graph:
 
@@ -186,7 +192,13 @@ def machine_from_graph(
 def _meshed(text: str, n_slots: int) -> BraidingMachine:
     """The machine whose gears mesh as written, without axials, loaded as
     it loads itself (:func:`machine_from_graph`)."""
-    from .layout import _layout_bfs, compute_layout
+    from .layout import (
+        _gear_radius,
+        _layout_bfs,
+        compute_layout,
+        shared_bobbins,
+        sharing_two_bobbins,
+    )
 
     pairs, axles, own = _read(text)
     named = list(dict.fromkeys(gear for pair in pairs for gear in pair))
@@ -269,18 +281,63 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
     for a, b in pairs:
         meets.setdefault((axle_of[a], axle_of[b]), a)
         meets.setdefault((axle_of[b], axle_of[a]), b)
+    # Pairs of axles that share two bobbins, which have to interpenetrate by
+    # the amount that puts a horn of each at each crossing: their radii and
+    # how far apart they stand are the closed form's, not the convention's.
+    sharing: dict[tuple[str, str], list[tuple[str, str]]] = {}
+    for a, b in pairs:
+        sharing.setdefault((axle_of[a], axle_of[b]), []).append((a, b))
+    sharing = {axles_: shared for axles_, shared in sharing.items() if len(shared) > 1}
+    radius = {axle: _gear_radius(size[axle]) for axle in graph}
+    apart: dict[tuple[str, str], float] = {}
+    for u, v in sharing:
+        wants_u, wants_v, wants_apart = sharing_two_bobbins(size[u], size[v])
+        # Sized to stand where the two wheels would anyway, between them.
+        scale = (radius[u] + radius[v]) / (wants_u + wants_v)
+        radius[u], radius[v] = scale * wants_u, scale * wants_v
+        apart[(u, v)] = apart[(v, u)] = scale * wants_apart
+
+    def reach(u: str, v: str) -> float | None:
+        return apart.get((u, v))
+
+    sketch = BraidingMachine(
+        [HornGear(axle, size[axle]) for axle in graph],
+        sketch.connections,
+    )
     if axles and nx.is_forest(graph):
         centres = _layout_bfs(
-            sketch, directions=_interleaved(axles, meets, slots, axle_of)
+            sketch,
+            directions=_interleaved(axles, meets, slots, axle_of),
+            reach=reach if sharing else None,
         )
     else:
         centres = compute_layout(sketch)
     at = {gear: centres[axle_of[gear]] for gear in named}
+    # Which bobbin of a pair sharing two is which: the crossings in order,
+    # taken by the pairings of parts in the order they are named.
+    bobbins: dict[tuple[str, str], tuple[float, float]] = {}
+    for (u, v), shared in sharing.items():
+        crossings = shared_bobbins(centres[u], radius[u], centres[v], radius[v])
+        if crossings is None:
+            # The layout could not put them near enough to cross: the
+            # contacts stay where the layout says, both at the one middle.
+            continue
+        for (a, b), point in zip(sorted(shared), crossings):
+            bobbins[(a, b)] = bobbins[(b, a)] = point
+    aiming = {
+        gear: {
+            other: bobbins[(gear, other)]
+            for other in (b if a == gear else a for a, b in pairs if gear in (a, b))
+            if (gear, other) in bobbins
+        }
+        for gear in named
+    }
     slot = {
         gear.name: _contact_slots(
             gear,
             [b if a == gear.name else a for a, b in pairs if gear.name in (a, b)],
             at,
+            aiming[gear.name],
         )
         for gear in gears
     }
@@ -289,7 +346,13 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
     ]
     if not axles:
         return BraidingMachine(gears, connections)
-    return DescribedMachine(gears, connections, at)
+    return DescribedMachine(
+        gears,
+        connections,
+        at,
+        radii={gear: radius[axle_of[gear]] for gear in named} if sharing else None,
+        bobbins=bobbins,
+    )
 
 
 def _interleaved(axles, meets, slots, axle_of):
@@ -359,10 +422,20 @@ class DescribedMachine(BraidingMachine):
     split gear's centre, where the layout of the parts alone would not put
     them.
 
+    Where two of its axles share two bobbins it carries its own radii and
+    those bobbins too: such a pair interpenetrates by a measured amount
+    (:func:`~braidpy.horn_gear.layout.sharing_two_bobbins`) and has one
+    bobbin at each crossing of the two notch circles, neither of which the
+    layout would find on its own.
+
     Args:
         gears: The gears, parts of split gears among them.
         connections: The contacts.
         centres: Each gear's centre, at scale 1.
+        radii: Each gear's radius at scale 1, where the convention's is not
+            the one the geometry asks for; None to leave every gear to it.
+        bobbins: Where the gears of a pair sharing two bobbins meet, by the
+            two gears either way round, at scale 1.
     """
 
     def __init__(
@@ -370,15 +443,37 @@ class DescribedMachine(BraidingMachine):
         gears: list[HornGear],
         connections: list[Connection],
         centres: dict[str, tuple[float, float]],
+        radii: dict[str, float] | None = None,
+        bobbins: dict[tuple[str, str], tuple[float, float]] | None = None,
     ) -> None:
         self.centres = dict(centres)
+        self.radii = dict(radii) if radii else None
+        self.bobbins = dict(bobbins) if bobbins else {}
         super().__init__(gears, connections)
+        # Wheels this close share a bobbin cut back inside the rim, which is
+        # what a carrier rides on (layout.carrier_radius).
+        self.gears_interpenetrate = bool(self.bobbins)
 
     def preferred_layout(
         self, scale: float = 1.0
     ) -> dict[str, tuple[float, float]] | None:
         """The centres the graph laid out, at this scale."""
         return {g: (x * scale, y * scale) for g, (x, y) in self.centres.items()}
+
+    def preferred_gear_radii(self, scale: float = 1.0) -> dict[str, float] | None:
+        """The radii a pair sharing two bobbins has to have, at this scale."""
+        if self.radii is None:
+            return None
+        return {gear: r * scale for gear, r in self.radii.items()}
+
+    def preferred_contact_point(
+        self, gear: str, neighbor: str, scale: float = 1.0
+    ) -> tuple[float, float] | None:
+        """The crossing this contact sits at, where the pair shares two."""
+        point = self.bobbins.get((gear, neighbor))
+        if point is None:
+            return None
+        return point[0] * scale, point[1] * scale
 
 
 # Angles closer than this, in slots, are taken as equal: a ring of eight
@@ -392,7 +487,10 @@ _FITS = 1.0
 
 
 def _contact_slots(
-    gear: HornGear, neighbours: list[str], at: dict[str, tuple[float, float]]
+    gear: HornGear,
+    neighbours: list[str],
+    at: dict[str, tuple[float, float]],
+    towards: dict[str, tuple[float, float]] | None = None,
 ) -> dict[str, int]:
     """The slot of a gear at each of its contacts at the start.
 
@@ -419,7 +517,9 @@ def _contact_slots(
     x, y = at[gear.name]
 
     def turn(name: str) -> float:
-        u, v = at[name]
+        # Where this contact is, which is the neighbour's centre unless the
+        # two share two bobbins and this one is off the line of centres.
+        u, v = (towards or {}).get(name, at[name])
         return math.atan2(v - y, u - x)
 
     first = turn(neighbours[0])
