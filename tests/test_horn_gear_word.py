@@ -185,3 +185,21 @@ def test_the_centre_defaults_to_the_axis_of_the_tube():
     word = annular_word(machine)
     assert word.centre == pytest.approx(centre)
     assert math.hypot(*centre) == pytest.approx(math.hypot(*word.centre))
+
+
+@pytest.mark.parametrize("name", ["soutache_braid", "princess_braid", "flat_braid_9"])
+def test_a_carrier_passing_two_others_at_once_is_followed(name):
+    """A carrier going left past two others within one sample: one pass of
+    the neighbours exchanged one of them only, and the word's order of the
+    strands was wrong from there on.  Read over the loading's period, every
+    carrier back where it started, the word is a pure braid, and the same
+    braid sampled four times as finely."""
+    from braidpy.braid import Braid
+    from braidpy.pure_braid import cycles
+
+    machine = getattr(ex, name)()
+    n_strands = len(machine.default_carriers()) + len(machine.axials)
+    word = Braid(tuple(flat_word(machine)), n_strands)
+    finer = Braid(tuple(flat_word(machine, n_substeps=256)), n_strands)
+    assert all(len(cycle) == 1 for cycle in cycles(word))
+    assert word == finer
