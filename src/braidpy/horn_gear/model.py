@@ -333,6 +333,46 @@ class BraidingMachine:
         """
         return None
 
+    def preferred_gear_radii(self, scale: float = 1.0) -> dict[str, float] | None:
+        """The radii to draw gears at, where the machine knows better.
+
+        :func:`~braidpy.horn_gear.layout.gear_radii` draws a gear as large as
+        the square root of its horn count, which is a convention and no more:
+        horn gears do not roll on one another -- each is driven from below --
+        so a radius is free where a slot count is not.  A machine that has
+        solved its own geometry says so here, for the gears it has solved; the
+        rest keep the convention.
+
+        Returns:
+            Gear name -> radius, at this scale, or None to leave every gear
+            to the convention.
+        """
+        return None
+
+    def preferred_contact_point(
+        self, gear: str, neighbor: str, scale: float = 1.0
+    ) -> tuple[float, float] | None:
+        """Where the bobbin two gears share sits, where the machine knows better.
+
+        :func:`~braidpy.horn_gear.layout.contact_point` takes the middle of
+        the notch the two share, which is on the line between their centres.
+        That is one bobbin: two gears that share *two* of them -- a band to
+        each pairing of their parts, see
+        :mod:`~braidpy.horn_gear.described` -- cannot have both at that one
+        middle, and each sits at its own crossing of the two notch circles
+        instead.  A machine that knows which crossing is which says so here.
+
+        Args:
+            gear: One of the two gears.
+            neighbor: The other.
+            scale: Overall scale factor.
+
+        Returns:
+            (x, y) of the bobbin they share, at this scale, or None to leave
+            it to the layout.
+        """
+        return None
+
     def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Which (gear, slot) sweeps a carrier through the step at ``time``.
 

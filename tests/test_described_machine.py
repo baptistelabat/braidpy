@@ -359,3 +359,118 @@ def test_braid_studio_shows_where_axials_go_and_braids_round_those_loaded():
     # Every axial taken off: none, not the machine's own.
     bare = web.build({**spec, "name": "triaxial_16", "axials": "none"}, tighten=False)
     assert not any(s["name"].startswith("Core") for s in bare["strands"])
+
+
+def test_two_split_gears_may_mesh_once_for_each_pairing_of_their_parts():
+    """Two bands side by side on one pair of axles, neither reaching the other.
+
+    Each axle is split in two, and each band has a pair of halves to itself.
+    The halves of one axle meet the other axle once each, which is what keeps
+    the bands apart: a part meeting one axle twice would let a carrier leave
+    by either contact.
+    """
+    from braidpy.horn_gear.loading import load_carriers
+    from braidpy.horn_gear.simulation import simulate
+    from braidpy.horn_gear.tracks import compute_tracks, simulation_period
+
+    machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", n_slots=4)
+    assert sorted(machine.gears) == ["A1", "A2", "B1", "B2"]
+    assert [(g.n_slots, g.size) for g in machine.gears.values()] == [(4, 8)] * 4
+    assert len(machine.connections) == 2
+    # Parts of one axle turn as one, and meshing axles turn opposite ways.
+    assert machine.gears["A1"].direction == machine.gears["A2"].direction
+    assert machine.gears["B1"].direction == -machine.gears["A1"].direction
+
+    # Every track stays within one band: two gears meeting at one contact
+    # shuttle a carrier between one pair of slots, so there are eight of them.
+    tracks = compute_tracks(machine)
+    assert sorted(len(t) for t in tracks) == [2] * 8
+    for track in tracks:
+        gears = {gear for gear, _ in track}
+        assert gears in ({"A1", "B1"}, {"A2", "B2"})
+    loading = load_carriers(machine)
+    period = simulation_period(machine)
+    history = simulate(machine, period, loading)
+    first = {c.carrier_id: c.position for c in history[0].carriers}
+    assert first == {c.carrier_id: c.position for c in history[-1].carriers}
+    band = {"A1", "B1"}
+    inside = {
+        c.carrier_id for s in history for c in s.carriers if c.position[0] in band
+    }
+    outside = {
+        c.carrier_id for s in history for c in s.carriers if c.position[0] not in band
+    }
+    assert not inside & outside
+
+
+def test_a_part_meeting_one_axle_twice_is_refused():
+    """Which is the split undone: the carrier could leave by either contact."""
+    with pytest.raises(ValueError, match="A1 and B1\\+B2 are named as meshing twice"):
+        machine_from_graph("A1-B1 A1-B2 A2-C A1+A2 B1+B2", n_slots=4)
+
+
+def test_two_split_gears_meshing_twice_are_written_back_as_they_were():
+    """So a machine of your own can be read from the page and written to it."""
+    graph = "A1-B1 A2-B2 A1+A2 B1+B2"
+    machine = machine_from_graph(graph, n_slots=4)
+    written, slots = graph_of(machine)
+    again = machine_from_graph(written, slots)
+    assert sorted(again.gears) == sorted(machine.gears)
+    assert {(c.gear_a, c.gear_b) for c in again.connections} == {
+        (c.gear_a, c.gear_b) for c in machine.connections
+    }
+
+
+def test_a_pair_sharing_two_bobbins_is_drawn_exactly():
+    """Two alike wheels share two bobbins only by interpenetrating.
+
+    Each bobbin sits at a crossing of the two notch circles, and a crossing
+    has to be a horn of the wheel it is on, which puts the two bobbins one
+    horn pitch apart as seen from either centre.  That fixes the spacing:
+    ``2 cos(pi / horns)`` radii, an overlap of 15.2% of a rim for the eight
+    horns of two gears split in two.  Every contact then lands on a notch.
+    """
+    import math
+
+    from braidpy.horn_gear.layout import (
+        compute_layout,
+        contact_point,
+        gear_radii,
+        offset_residuals,
+    )
+
+    machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", n_slots=4)
+    layout, radii = compute_layout(machine), gear_radii(machine)
+    apart = math.dist(layout["A1"], layout["B1"])
+    assert radii["A1"] == pytest.approx(radii["B1"])
+    assert apart / radii["A1"] == pytest.approx(2 * math.cos(math.pi / 8))
+    overlap = (radii["A1"] + radii["B1"] - apart) / radii["A1"]
+    assert overlap == pytest.approx(0.152, abs=0.001)
+
+    # One bobbin at each crossing, not both at the middle of one notch.
+    one = contact_point(machine, layout, "A1", "B1")
+    two = contact_point(machine, layout, "A2", "B2")
+    assert math.dist(one, two) > radii["A1"] / 2
+    for point in (one, two):
+        assert math.dist(point, layout["A1"]) == pytest.approx(radii["A1"])
+        assert math.dist(point, layout["B1"]) == pytest.approx(radii["B1"])
+    # A horn of each wheel at each crossing.
+    assert math.degrees(max(offset_residuals(machine, layout).values())) < 0.01
+
+
+def test_the_closed_form_for_a_pair_sharing_two_bobbins():
+    """The sine rule in the triangle of the two centres and a bobbin."""
+    import math
+
+    from braidpy.horn_gear.layout import sharing_two_bobbins
+
+    for horns in (4, 6, 8, 12):
+        first, second, apart = sharing_two_bobbins(horns, horns)
+        assert first == pytest.approx(second)
+        assert apart / first == pytest.approx(2 * math.cos(math.pi / horns))
+    # Unalike wheels take the radii the angles ask for, in proportion.
+    first, second, apart = sharing_two_bobbins(8, 6)
+    assert second / first == pytest.approx(
+        math.sin(math.pi / 8) / math.sin(math.pi / 6)
+    )
+    assert apart == pytest.approx(math.sin(math.pi / 8 + math.pi / 6))
