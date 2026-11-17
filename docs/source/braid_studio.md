@@ -81,7 +81,8 @@ The studio has a form and a 3D view.
   its gears turned by its card, has none.
   Click a slot to put a carrier on it or take it off, or type them in as
   `gear:slot`; **Its own loading** puts back the machine's. Two carriers on
-  the same point are ringed at once. Carriers that meet as the machine turns
+  the same point are ringed at once. Carriers that meet as the machine turns, or
+  come too close to pass ({func}`~braidpy.horn_gear.take_off.too_close`),
   stop the braiding there: the braid is what it made until then, the note
   says at which step and where, and the carriers that met are ringed where
   they started. Left as the machine loads itself, the loading is not

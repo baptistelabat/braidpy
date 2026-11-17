@@ -184,8 +184,9 @@ def _from_machine(spec: Spec) -> Result:
     info: Info = {}
     notes = ["Words are read over one cycle of the machine."]
     if stopped is not None:
-        assert loading is not None
-        info["collision"] = _collision(stopped, loading)
+        # Loaded as it loads itself, carriers can still come too close.
+        started = loading or list(machine.default_carriers().values())
+        info["collision"] = _collision(stopped, started)
         notes = [_stopped_note(stopped, n_steps)]
     elif ring_order(machine) is not None:
         # Gears in one ring: the braid is read round it.
@@ -341,24 +342,37 @@ def _braided(
         ValueError: If carriers meet as soon as the machine turns.
     """
     from braidpy.horn_gear import yarn_paths
+    from braidpy.horn_gear.simulation import CollisionError, simulate, state_period
+    from braidpy.horn_gear.take_off import TooCloseError, too_close
 
-    stopped = None
+    stopped: Any = None
     n_steps = None
     if period is not None:
-        from braidpy.horn_gear.simulation import CollisionError, simulate
-
         n_steps = cycles * period
         try:
             simulate(machine, n_steps, carriers_at)
         except CollisionError as error:
             stopped = error
             n_steps = error.step - 1
-            if n_steps < 1:
-                raise ValueError(
-                    "Those carriers meet as soon as the machine turns: "
-                    + _met(error)
-                    + "."
-                ) from None
+    # Carriers in different slots can hit all the same: stopped there too,
+    # whichever comes first.
+    own = machine.default_carriers() if carriers_at is None else carriers_at
+    looked = n_steps
+    if looked is None:
+        looked = cycles * (state_period(machine, own) or machine.contact_period())
+    if looked >= 1:
+        close = too_close(machine, looked, carriers_at)
+        if close is not None:
+            stopped = close
+            n_steps = close.step - 1
+    if stopped is not None and n_steps is not None and n_steps < 1:
+        raise ValueError(
+            "Those carriers "
+            + ("come too close" if isinstance(stopped, TooCloseError) else "meet")
+            + " as soon as the machine turns: "
+            + _met(stopped)
+            + "."
+        ) from None
     paths = yarn_paths(
         machine,
         n_steps=n_steps,
@@ -384,10 +398,20 @@ def _collision(stopped: Any, loading: list[tuple[str, int]]) -> Collision:
 
 
 def _stopped_note(stopped: Any, n_steps: int | None) -> str:
+    from braidpy.horn_gear.take_off import CLOSEST, TooCloseError
+
+    if isinstance(stopped, TooCloseError):
+        what = (
+            f"Carriers came within {stopped.distance:.2f} of each other at step "
+            f"{stopped.step}, near {_met(stopped)}: closer than {CLOSEST:.0%} of "
+            "the smallest gap between two horns, they would hit on a real "
+            "machine."
+        )
+    else:
+        what = f"Carriers met at step {stopped.step}, on {_met(stopped)}."
     return (
-        f"Carriers met at step {stopped.step}, on {_met(stopped)}: the "
-        f"braiding stopped there, after {n_steps} steps. The carriers that "
-        "met are ringed where they started. No word is read."
+        f"{what} The braiding stopped there, after {n_steps} steps. The "
+        "carriers are ringed where they started. No word is read."
     )
 
 

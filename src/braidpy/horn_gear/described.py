@@ -34,11 +34,15 @@ each crossing -- for two alike wheels, centres ``2 cos(pi / horns)`` radii
 apart, an overlap of 15.2% of a rim for eight horns
 (:func:`~braidpy.horn_gear.layout.sharing_two_bobbins`).  In a tree of
 gears that spacing is the walk's to give, so the drawing comes out exact.
-Round a ring it is not: the ring's own spacing stands, the two bobbins are
-the crossings it happens to leave -- or the one middle, where it leaves the
-rims too far apart to cross -- and the contacts fall as near their horns as
-whole slots allow, as they do on any ring.  The machine runs either way,
-since a carrier is stepped by slot and rotation and never by an angle.
+Round a ring it is the layout's to keep as near as it can
+(:func:`~braidpy.horn_gear.layout.ring_geometry`), the two axles' radii
+held as the closed form gives them, the other gears' free to change a
+little so that each touches its neighbours, and the contacts fall as near
+their horns as whole slots allow, as they do on any ring.  The machine runs
+either way, since a carrier is stepped by slot and rotation and never by an
+angle.  But at each crossing the other band's horns meet too, halfway
+through a step, so two carriers there would hit: the machine is stopped
+where they come too close (:func:`~braidpy.horn_gear.take_off.too_close`).
 
 The rest follows from the graph:
 
@@ -196,6 +200,7 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         _gear_radius,
         _layout_bfs,
         compute_layout,
+        ring_geometry,
         shared_bobbins,
         sharing_two_bobbins,
     )
@@ -304,14 +309,28 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         [HornGear(axle, size[axle]) for axle in graph],
         sketch.connections,
     )
+    solved_radii = False
     if axles and nx.is_forest(graph):
         centres = _layout_bfs(
             sketch,
             directions=_interleaved(axles, meets, slots, axle_of),
             reach=reach if sharing else None,
         )
-    else:
+    elif nx.is_forest(graph):
         centres = compute_layout(sketch)
+    else:
+        # A ring: drawn to touch, sizes and all (ring_geometry), two axles
+        # sharing two bobbins as far apart, for their two radii, as the
+        # closed form puts them.
+        shares = {(u, v): apart[(u, v)] / (radius[u] + radius[v]) for u, v in sharing}
+        centres, radius = ring_geometry(
+            sketch,
+            reach=shares,
+            fixed={axle: radius[axle] for pair in sharing for axle in pair},
+        )
+        for u, v in sharing:
+            apart[(u, v)] = apart[(v, u)] = shares[(u, v)] * (radius[u] + radius[v])
+        solved_radii = True
     at = {gear: centres[axle_of[gear]] for gear in named}
     # Which bobbin of a pair sharing two is which: the crossings in order,
     # taken by the pairings of parts in the order they are named.
@@ -350,7 +369,11 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         gears,
         connections,
         at,
-        radii={gear: radius[axle_of[gear]] for gear in named} if sharing else None,
+        radii=(
+            {gear: radius[axle_of[gear]] for gear in named}
+            if sharing or solved_radii
+            else None
+        ),
         bobbins=bobbins,
     )
 

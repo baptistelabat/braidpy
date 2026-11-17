@@ -188,21 +188,26 @@ def test_a_split_gear_is_its_parts_on_one_axle():
 def test_a_gear_split_in_three_braids_three_plaits_round_it():
     """Its parts' horns take turns round it, so each part's neighbour stands
     where a horn of its own part comes round, and no two parts' carriers
-    meet: three plaits, three yarns each."""
+    take one slot: three plaits, three yarns each.  But a carrier leaving
+    for a neighbour runs close by the next part's horn coming round to that
+    contact, a twelfth of a horn's gap from its carrier: too close for a
+    real machine, so it stops there, ringing the two."""
     from braidpy import web
+    from braidpy.horn_gear.described import machine_from_graph
+    from braidpy.horn_gear.simulation import simulate
+    from braidpy.horn_gear.take_off import too_close
 
+    graph = "H1-A H2-B H3-C H1+H2+H3"
+    machine = machine_from_graph(graph, 3)
+    simulate(machine, 6, machine.default_carriers())
+    close = too_close(machine, 6)
+    assert close is not None and close.distance < close.limit
     made = web.build(
-        {
-            "source": "machine",
-            "name": "custom",
-            "graph": "H1-A H2-B H3-C H1+H2+H3",
-            "n_slots": 3,
-            "cycles": 1,
-        },
+        {"source": "machine", "name": "custom", "graph": graph, "n_slots": 3},
         tighten=False,
     )
+    assert made["info"]["collision"]["step"] == close.step
     assert len(made["strands"]) == 9
-    assert "collision" not in made["info"]
 
 
 def test_a_tree_of_gears_branches_rather_than_piling_up():
@@ -474,3 +479,82 @@ def test_the_closed_form_for_a_pair_sharing_two_bobbins():
         math.sin(math.pi / 8) / math.sin(math.pi / 6)
     )
     assert apart == pytest.approx(math.sin(math.pi / 8 + math.pi / 6))
+
+
+# A ladder of gears of two sizes, and the one with split gears in the middle
+# that was laid out with its rungs a third as long as they should be.
+LADDERS = [
+    "A0-A1:3 A1-A2 B0-B1:3 B1-B2 A0-B0 A1-B1 A2-B2",
+    "A0-A1 A1-A2 B0-B1 B1-B2 A0-B0 A1-B1 A2-B2",
+]
+SPLIT_LADDER = (
+    "A0-A1:3 A0-B0 A1-A2:3 A1-B1:3 A2-A3a A2-B2:3 A3a-B3a B0-B1 B1-B2 B2-B3a "
+    "A3b-A4:3 A3b-B3b A4-A5:3 A4-B4:3 A5-A6 A5-B5:3 A6-B6 B3b-B4 B4-B5 B5-B6 "
+    "A3a+A3b B3a+B3b"
+)
+
+
+@pytest.mark.parametrize("graph", LADDERS)
+def test_a_matrix_of_gears_touches_and_overlaps_nowhere(graph):
+    """Kamada-Kawai's compromise, shrunk till no mesh was too long, left
+    every other too short: gears ran through each other.  Relaxed, every
+    two gears that mesh touch, and no two others overlap."""
+    import math
+
+    from braidpy.horn_gear.layout import CLEARANCE, compute_layout, gear_radii
+
+    machine = machine_from_graph(graph, 4)
+    centres, radii = compute_layout(machine), gear_radii(machine)
+    meshes = {frozenset((c.gear_a, c.gear_b)) for c in machine.connections}
+    names = sorted(centres)
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            apart = math.dist(centres[a], centres[b])
+            touching = radii[a] + radii[b]
+            if frozenset((a, b)) in meshes:
+                assert apart == pytest.approx(touching, rel=0.01)
+            else:
+                assert apart >= touching * (1 + CLEARANCE) * 0.99
+
+
+def test_split_gears_sharing_two_bobbins_meet_each_others_carriers():
+    """Two split gears meshing twice: each crossing of their notch circles
+    is a bobbin of one band, and the other band's horns meet there too,
+    halfway through a step.  The simulation, counting slots, saw nothing;
+    two carriers come too close in the first step, and the machine stops."""
+    from braidpy.horn_gear.take_off import too_close
+
+    machine = machine_from_graph("X-A1 A1-B1 A2-B2 B2-Y A1+A2 B1+B2", 4)
+    close = too_close(machine, 8)
+    assert close is not None
+    assert close.step == 1
+    assert close.distance < close.limit
+
+
+@pytest.mark.slow
+def test_the_split_ladder_stops_where_its_carriers_would_hit():
+    """The ladder laid out anew still carries two split gears sharing two
+    bobbins: Braid Studio refuses it, saying why, rather than braid through
+    two carriers in one place."""
+    from braidpy import web
+
+    with pytest.raises(ValueError, match="come too close"):
+        web.build(
+            {"source": "machine", "name": "custom", "graph": SPLIT_LADDER},
+            tighten=False,
+        )
+
+
+@pytest.mark.parametrize(
+    "name", ["flat_9", "tubular_8", "multiband_band_1", "princess"]
+)
+def test_catalogued_machines_keep_their_carriers_apart(name):
+    """Every catalogued machine keeps its carriers more than ``CLOSEST`` of a
+    horn's gap apart: none is stopped."""
+    from braidpy.horn_gear.simulation import state_period
+    from braidpy.horn_gear.take_off import too_close
+    from braidpy.machine_catalog import CATALOGUE
+
+    machine = CATALOGUE[name].make()
+    period = state_period(machine, machine.default_carriers())
+    assert too_close(machine, period) is None
