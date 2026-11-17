@@ -135,10 +135,8 @@ RELAX_TOLERANCE = 1e-3
 def ring_geometry(
     machine: BraidingMachine,
     scale: float = 1.0,
-    reach: Optional[dict[tuple[str, str], float]] = None,
     seed: int | None = 42,
     iterations: int = 500,
-    fixed: Optional[dict[str, float]] = None,
 ) -> tuple[dict[str, tuple[float, float]], dict[str, float]]:
     """Where the gears of a machine with a ring of gears stand, and how large
     they are drawn, so that every two that mesh touch and no two others
@@ -157,32 +155,15 @@ def ring_geometry(
     Args:
         machine: The machine; its graph has a cycle.
         scale: Overall scale for the radii.
-        reach: For two gears that do not merely touch, how far apart their
-            centres stand, as a share of their two radii: two axles sharing
-            two bobbins interpenetrate
-            (:func:`sharing_two_bobbins`).  1 for every other mesh.
         seed: Random seed for the spring layout, the fallback.
         iterations: Iterations of the spring layout.
-        fixed: Gears whose radius may not change, and their radius: two
-            axles sharing two bobbins, whose radii the closed form fixes, or
-            the bobbins would not be whole horns apart and the horns of a
-            split gear's parts would meet.
-
     Returns:
         Gear name → centre, and gear name → radius.
     """
-    key = (
-        scale,
-        tuple(sorted((reach or {}).items())),
-        seed,
-        iterations,
-        tuple(sorted((fixed or {}).items())),
-    )
+    key = (scale, seed, iterations)
     solved = _RING_GEOMETRY.setdefault(machine, {})
     if key not in solved:
-        solved[key] = _ring_geometry(
-            machine, scale, reach or {}, seed, iterations, fixed or {}
-        )
+        solved[key] = _ring_geometry(machine, scale, seed, iterations)
     centres, radii = solved[key]
     return dict(centres), dict(radii)
 
@@ -192,17 +173,15 @@ def ring_geometry(
 _RING_GEOMETRY: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
 
-def _ring_geometry(machine, scale, reach, seed, iterations, fixed):
+def _ring_geometry(machine, scale, seed, iterations):
     """:func:`ring_geometry`, worked out."""
     convention = {
         name: _gear_radius(gear.size or gear.n_slots, scale)
         for name, gear in machine.gears.items()
     }
-    convention.update(fixed)
     g = machine.graph.copy()
     for u, v in g.edges():
-        share = reach.get((u, v), reach.get((v, u), 1.0))
-        g[u][v]["len"] = share * (convention[u] + convention[v])
+        g[u][v]["len"] = convention[u] + convention[v]
     try:
         raw = nx.kamada_kawai_layout(g, weight="len")
     # Without SciPy (in a browser) or for a graph it cannot lay out, the
@@ -223,21 +202,17 @@ def _ring_geometry(machine, scale, reach, seed, iterations, fixed):
     centres = np.array([pos[n] for n in names], dtype=float)
     radii = np.array([convention[n] for n in names])
     index = {n: i for i, n in enumerate(names)}
-    meshes = [
-        (index[u], index[v], g[u][v]["len"] / (convention[u] + convention[v]))
-        for u, v in g.edges()
-    ]
+    meshes = [(index[u], index[v]) for u, v in g.edges()]
     others = [
         (index[u], index[v])
         for i, u in enumerate(names)
         for v in names[i + 1 :]
         if not g.has_edge(u, v)
     ]
-    still = np.array([n in fixed for n in names])
     if _worst(centres, radii, meshes, others) > RELAX_TOLERANCE:
         centres, radii = min(
             (
-                _relax(start, radii, meshes, others, still)
+                _relax(start, radii, meshes, others)
                 for start in _starts(g, names, centres, meshes, radii, seed)
             ),
             key=lambda solved: _worst(*solved, meshes, others),
@@ -264,10 +239,9 @@ def _starts(g, names, centres, meshes, radii, seed):
     for k in range(SPRING_STARTS):
         spring = nx.spring_layout(g, seed=None if seed is None else seed + k)
         shapes.append(np.array([spring[n] for n in names], dtype=float))
-    wanted = np.array([m[2] for m in meshes])
     for shape in shapes:
         a, b, _, distance = _pairs(shape, meshes)
-        ratio = wanted * (radii[a] + radii[b]) / np.maximum(distance, 1e-12)
+        ratio = (radii[a] + radii[b]) / np.maximum(distance, 1e-12)
         yield shape * float(np.median(ratio))
 
 
@@ -288,8 +262,7 @@ def _worst(centres, radii, meshes, others) -> float:
     worst = 0.0
     if meshes:
         a, b, _, distance = _pairs(centres, meshes)
-        reach = np.array([m[2] for m in meshes])
-        wanted = reach * (radii[a] + radii[b])
+        wanted = radii[a] + radii[b]
         worst = float(np.max(np.abs(distance - wanted) / wanted))
     if others:
         a, b, _, distance = _pairs(centres, others)
@@ -298,19 +271,17 @@ def _worst(centres, radii, meshes, others) -> float:
     return worst
 
 
-def _relax(centres, radii, meshes, others, still):
+def _relax(centres, radii, meshes, others):
     """Draw gears that mesh to touch and push the others apart, a round at a
     time, every constraint at once and each gear moved by the mean of what
     its constraints ask, till the worst is within ``RELAX_TOLERANCE`` or
     ``RELAX_ROUNDS`` have passed.  A mesh's error goes to its centres and,
     ``RADIUS_GIVE`` of it, to the radii, kept within ``RADIUS_RANGE`` of
-    where they started, but for those ``still``."""
+    where they started."""
     centres = centres.copy()
-    least = np.where(still, radii, radii * RADIUS_RANGE[0])
-    most = np.where(still, radii, radii * RADIUS_RANGE[1])
+    least, most = radii * RADIUS_RANGE[0], radii * RADIUS_RANGE[1]
     radii = radii.copy()
     n = len(radii)
-    reach = np.array([m[2] for m in meshes])
     for _ in range(RELAX_ROUNDS):
         if _worst(centres, radii, meshes, others) <= RELAX_TOLERANCE:
             break
@@ -318,14 +289,14 @@ def _relax(centres, radii, meshes, others, still):
         counts = np.zeros(n)
         grows = np.zeros(n)
         a, b, unit, distance = _pairs(centres, meshes)
-        error = distance - reach * (radii[a] + radii[b])
+        error = distance - (radii[a] + radii[b])
         push = unit * (error * (1 - RADIUS_GIVE) / 2)[:, None]
         np.add.at(moves, a, push)
         np.add.at(moves, b, -push)
         np.add.at(counts, a, 1)
         np.add.at(counts, b, 1)
-        np.add.at(grows, a, error * RADIUS_GIVE / (2 * reach))
-        np.add.at(grows, b, error * RADIUS_GIVE / (2 * reach))
+        np.add.at(grows, a, error * RADIUS_GIVE / 2)
+        np.add.at(grows, b, error * RADIUS_GIVE / 2)
         if others:
             a, b, unit, distance = _pairs(centres, others)
             short = np.maximum((radii[a] + radii[b]) * (1 + CLEARANCE) - distance, 0)
@@ -415,7 +386,6 @@ def _layout_bfs(
     machine: BraidingMachine,
     scale: float = 1.0,
     directions=None,
-    reach=None,
 ) -> dict[str, tuple[float, float]]:
     """Exact tangential layout for tree graphs via BFS.
 
@@ -432,11 +402,6 @@ def _layout_bfs(
             back to the neighbour it was placed from (None for the first
             gear) and the neighbours to place from it, it gives a direction
             for each.
-        reach: How far apart to put a pair instead of rim to rim: called with
-            the two gears, it gives the distance between their centres, or
-            None to have them touch.  Two gears sharing two bobbins have to
-            overlap by a measured amount (:func:`sharing_two_bobbins`).
-
     Returns:
         Gear name -> (x, y).
     """
@@ -452,7 +417,7 @@ def _layout_bfs(
         onward = sorted(n for n in machine.graph.neighbors(gear) if n not in pos)
         x, y = pos[gear]
         for placed, angle in zip(onward, choose(gear, back[gear], onward)):
-            apart = (reach and reach(gear, placed)) or radii[gear] + radii[placed]
+            apart = radii[gear] + radii[placed]
             pos[placed] = (x + apart * math.cos(angle), y + apart * math.sin(angle))
             back[placed] = angle + math.pi
             queue.append(placed)
@@ -539,17 +504,7 @@ def contact_point(
     and the bobbin sits at its middle — which lies on the line between the two
     centres.  Where the circles merely touch, the two crossings coincide and
     that middle is the tangent point, so one construction serves both.
-
-    Two gears sharing *two* bobbins have one each at the crossings rather than
-    both at that middle, which no construction from the two circles alone can
-    tell apart: the machine says which is which through
-    :meth:`~braidpy.horn_gear.model.BraidingMachine.preferred_contact_point`,
-    and that answer wins here.
     """
-    pinned = machine.preferred_contact_point(gear, neighbor, scale)
-    if pinned is not None:
-        return pinned
-
     cx, cy = layout[gear]
     nx_, ny_ = layout[neighbor]
     dx, dy = nx_ - cx, ny_ - cy
@@ -615,8 +570,10 @@ def _contacts(
     layout: dict[str, tuple[float, float]],
 ) -> dict[str, list[tuple[float, float]]]:
     """Per gear, each of its contacts: the angle on the gear of the slot that
-    is there at every step, ``2π*slot0/N``, and the contact's angle on the
-    deck, seen from the gear's centre."""
+    is there at every step, ``2π*slot0/N`` — or, for a contact handing over
+    ``phase`` of the way through a step, the angle at the step's start of
+    the slot there then, a ``phase`` of a slot back — and the contact's
+    angle on the deck, seen from the gear's centre."""
     contacts: dict[str, list[tuple[float, float]]] = {
         name: [] for name in machine.gears
     }
@@ -628,7 +585,7 @@ def _contacts(
             gear = machine.gears[gname]
             contacts[gname].append(
                 (
-                    2 * math.pi * slot0 / gear.n_slots,
+                    2 * math.pi * (slot0 + gear.direction * conn.phase) / gear.n_slots,
                     contact_angle(machine, layout, gname, other),
                 )
             )
@@ -936,79 +893,6 @@ def ring_core(
     return None
 
 
-def shared_bobbins(
-    centre_a: tuple[float, float],
-    radius_a: float,
-    centre_b: tuple[float, float],
-    radius_b: float,
-) -> tuple[tuple[float, float], tuple[float, float]] | None:
-    """Where a bobbin can sit on both of two rims: their two crossings.
-
-    A bobbin rides at its gear's own notch radius, so to be on two gears at
-    once it must be that far from each — a crossing of the two notch circles.
-    Rims that merely touch cross once and rims that miss not at all, and
-    neither case has two bobbins to place.
-
-    Args:
-        centre_a: Where the first gear stands.
-        radius_a: Its notch radius.
-        centre_b: Where the second stands.
-        radius_b: Its notch radius.
-
-    Returns:
-        The two crossings, the one anticlockwise of the line of centres
-        first, or None where the rims do not cross twice.
-    """
-    (ax, ay), (bx, by) = centre_a, centre_b
-    apart = math.hypot(bx - ax, by - ay)
-    if apart <= abs(radius_a - radius_b) or apart >= radius_a + radius_b:
-        return None
-    along = (apart**2 + radius_a**2 - radius_b**2) / (2 * apart)
-    across = math.sqrt(max(radius_a**2 - along**2, 0.0))
-    ux, uy = (bx - ax) / apart, (by - ay) / apart
-    middle = (ax + along * ux, ay + along * uy)
-    return (
-        (middle[0] - across * uy, middle[1] + across * ux),
-        (middle[0] + across * uy, middle[1] - across * ux),
-    )
-
-
-def sharing_two_bobbins(horns_a: int, horns_b: int) -> tuple[float, float, float]:
-    """How two wheels sharing two bobbins must be sized and spaced.
-
-    Two wheels that share two bobbins have one at each crossing of their
-    notch circles, and each crossing has to be a horn of the wheel it is on.
-    Seen from either centre the two bobbins are then a whole number of horn
-    pitches apart, and an *odd* number of them, since the parts' horns take
-    turns round the wheel and the two bobbins belong to different parts.  One
-    pitch apart is the shallowest that works, which puts each crossing half a
-    pitch — ``pi / horns`` — off the line of centres.
-
-    The triangle of the two centres and a bobbin then has both of its angles
-    at the centres known, so the sine rule fixes its shape outright:
-
-        radius_a : radius_b : apart
-            = sin(pi / horns_b) : sin(pi / horns_a)
-            : sin(pi / horns_a + pi / horns_b)
-
-    For two alike wheels that is radii the same and centres
-    ``2 cos(pi / horns)`` radii apart: an overlap of 15.2% of a rim for eight
-    horns, and the fewer the horns the deeper it has to be — 58.6% for four,
-    where a pitch is a quarter turn.  It is the least interpenetration that
-    puts a horn of each wheel at each crossing.
-
-    Args:
-        horns_a: Horns round the whole of the first wheel.
-        horns_b: Horns round the whole of the second.
-
-    Returns:
-        A radius for each wheel and the distance between their centres, to
-        scale: multiply all three to size the pair.
-    """
-    first, second = math.pi / horns_a, math.pi / horns_b
-    return math.sin(second), math.sin(first), math.sin(first + second)
-
-
 def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]:
     """Return the visual radius for each gear.
 
@@ -1073,7 +957,7 @@ def carrier_xy(
     Returns:
         The carrier's (x, y).
     """
-    gear_name, slot = machine.riding_position(position, time)
+    gear_name, slot = machine.riding_position(position, time, frac)
     cx, cy = layout[gear_name]
     r = carrier_radii[gear_name]
     ang = angles[gear_name](machine.slot_angle(gear_name, slot, time, frac))

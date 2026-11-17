@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="556.631406pt" height="296.239688pt" viewBox="0 0 556.631406 296.239688" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="556.631406pt" height="305.919375pt" viewBox="0 0 556.631406 305.919375" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
@@ -20,8 +20,8 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 296.239688 
-L 556.631406 296.239688 
+   <path d="M 0 305.919375 
+L 556.631406 305.919375 
 L 556.631406 0 
 L 0 0 
 z
@@ -166,16 +166,16 @@ z
    </g>
    <g id="patch_19">
     <path d="M 103.031406 208.058157 
-L 103.031406 208.058157 
-L 103.031406 217.571865 
+L 528.174263 208.058157 
+L 528.174263 217.571865 
 L 103.031406 217.571865 
 z
-" clip-path="url(#pa21192316a)" style="fill: #9f1239"/>
+" clip-path="url(#pa21192316a)" style="fill: #7b8794"/>
    </g>
    <g id="patch_20">
     <path d="M 103.031406 219.950292 
-L 106.893616 219.950292 
-L 106.893616 229.464 
+L 106.566688 219.950292 
+L 106.566688 229.464 
 L 103.031406 229.464 
 z
 " clip-path="url(#pa21192316a)" style="fill: #9f1239"/>
@@ -457,7 +457,8 @@ L 549.431406 240.048
    </g>
   </g>
   <g id="text_27">
-   <text style="font-size: 8px; font-family: 'Inter', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #7b8794" x="31.031406" y="287.11" transform="rotate(-0 31.031406 287.11)">Every catalogued machine keeps its carriers 0.59 of a horn's gap apart or more; the three in red are stopped.</text>
+   <text style="font-size: 8px; font-family: 'Inter', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #7b8794" transform="translate(31.031406 287.11)">Every catalogued machine keeps its carriers 0.59 of a horn's gap apart or more, and so do two split gears meshing twice,</text>
+   <text style="font-size: 8px; font-family: 'Inter', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #7b8794" transform="translate(31.031406 296.789688)">their bands handing over in turn; the two in red are stopped.</text>
   </g>
  </g>
  <defs>

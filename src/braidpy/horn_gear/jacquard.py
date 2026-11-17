@@ -267,7 +267,9 @@ class JacquardLaceMachine(BraidingMachine):
             for i, name in enumerate(cycles[0])
         }
 
-    def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
+    def riding_position(
+        self, pos: tuple[str, int], time: int, frac: float = 0.0
+    ) -> tuple[str, int]:
         """Which gear sweeps a bobbin through this step — which may not be its own.
 
         A bobbin in a notch is swept by whichever of the two gears turns, so

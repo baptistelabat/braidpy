@@ -426,59 +426,64 @@ def test_two_split_gears_meshing_twice_are_written_back_as_they_were():
     }
 
 
-def test_a_pair_sharing_two_bobbins_is_drawn_exactly():
-    """Two alike wheels share two bobbins only by interpenetrating.
-
-    Each bobbin sits at a crossing of the two notch circles, and a crossing
-    has to be a horn of the wheel it is on, which puts the two bobbins one
-    horn pitch apart as seen from either centre.  That fixes the spacing:
-    ``2 cos(pi / horns)`` radii, an overlap of 15.2% of a rim for the eight
-    horns of two gears split in two.  Every contact then lands on a notch.
-    """
+def test_two_split_gears_meshing_twice_touch_and_hand_over_in_turn():
+    """Two split gears meshing twice touch at one contact.  A horn of each
+    comes round to it once a pitch, twice a step: the parts named first
+    hand over there at the step's end, the others half a step on, at the
+    same point.  Each contact is on a horn of each wheel, and each band's
+    carriers cross from one wheel to the other."""
     import math
 
-    from braidpy.horn_gear.layout import (
-        compute_layout,
-        contact_point,
-        gear_radii,
-        offset_residuals,
-    )
+    from braidpy.horn_gear.layout import compute_layout, gear_radii, offset_residuals
+    from braidpy.horn_gear.simulation import simulate
 
     machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", n_slots=4)
     layout, radii = compute_layout(machine), gear_radii(machine)
-    apart = math.dist(layout["A1"], layout["B1"])
-    assert radii["A1"] == pytest.approx(radii["B1"])
-    assert apart / radii["A1"] == pytest.approx(2 * math.cos(math.pi / 8))
-    overlap = (radii["A1"] + radii["B1"] - apart) / radii["A1"]
-    assert overlap == pytest.approx(0.152, abs=0.001)
-
-    # One bobbin at each crossing, not both at the middle of one notch.
-    one = contact_point(machine, layout, "A1", "B1")
-    two = contact_point(machine, layout, "A2", "B2")
-    assert math.dist(one, two) > radii["A1"] / 2
-    for point in (one, two):
-        assert math.dist(point, layout["A1"]) == pytest.approx(radii["A1"])
-        assert math.dist(point, layout["B1"]) == pytest.approx(radii["B1"])
-    # A horn of each wheel at each crossing.
-    assert math.degrees(max(offset_residuals(machine, layout).values())) < 0.01
-
-
-def test_the_closed_form_for_a_pair_sharing_two_bobbins():
-    """The sine rule in the triangle of the two centres and a bobbin."""
-    import math
-
-    from braidpy.horn_gear.layout import sharing_two_bobbins
-
-    for horns in (4, 6, 8, 12):
-        first, second, apart = sharing_two_bobbins(horns, horns)
-        assert first == pytest.approx(second)
-        assert apart / first == pytest.approx(2 * math.cos(math.pi / horns))
-    # Unalike wheels take the radii the angles ask for, in proportion.
-    first, second, apart = sharing_two_bobbins(8, 6)
-    assert second / first == pytest.approx(
-        math.sin(math.pi / 8) / math.sin(math.pi / 6)
+    assert math.dist(layout["A1"], layout["B1"]) == pytest.approx(
+        radii["A1"] + radii["B1"]
     )
-    assert apart == pytest.approx(math.sin(math.pi / 8 + math.pi / 6))
+    assert {c.name: c.phase for c in machine.connections} == {
+        "A1-B1": 0.0,
+        "A2-B2": 0.5,
+    }
+    assert max(offset_residuals(machine, layout).values()) < 1e-9
+    gears_of: dict = {}
+    for state in simulate(machine, 8, machine.default_carriers()):
+        for carrier in state.carriers:
+            gears_of.setdefault(carrier.carrier_id, set()).add(carrier.gear)
+    assert any({"A1", "B1"} <= gears for gears in gears_of.values())
+    assert any({"A2", "B2"} <= gears for gears in gears_of.values())
+
+
+def test_a_carrier_handed_over_half_a_step_in_is_drawn_without_a_jump():
+    """Handed over halfway through a step, a carrier is drawn on its new
+    wheel from then on, where the old one left it."""
+    import math
+    from itertools import pairwise
+
+    from braidpy.horn_gear.layout import (
+        carrier_radius,
+        carrier_xy,
+        compute_layout,
+        slot_angles,
+    )
+    from braidpy.horn_gear.simulation import simulate
+
+    machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", n_slots=4)
+    layout = compute_layout(machine)
+    angles = slot_angles(machine, layout)
+    riding = {name: carrier_radius(machine, layout, name) for name in machine.gears}
+    widest = 0.0
+    for state in simulate(machine, 8, machine.default_carriers())[:-1]:
+        for carrier in state.carriers:
+            points = [
+                carrier_xy(
+                    machine, layout, angles, riding, carrier.position, state.time, f
+                )
+                for f in [i / 96 for i in range(97)]
+            ]
+            widest = max(widest, *(math.dist(p, q) for p, q in pairwise(points)))
+    assert widest < 0.2
 
 
 # A ladder of gears of two sizes, and the one with split gears in the middle
@@ -517,25 +522,25 @@ def test_a_matrix_of_gears_touches_and_overlaps_nowhere(graph):
                 assert apart >= touching * (1 + CLEARANCE) * 0.99
 
 
-def test_split_gears_sharing_two_bobbins_meet_each_others_carriers():
-    """Two split gears meshing twice: each crossing of their notch circles
-    is a bobbin of one band, and the other band's horns meet there too,
-    halfway through a step.  The simulation, counting slots, saw nothing;
-    two carriers come too close in the first step, and the machine stops."""
+def test_split_gears_meshing_twice_keep_their_carriers_apart():
+    """Touching at one contact, their bands handing over there in turn, two
+    split gears meshing twice never bring two carriers together, with
+    gears of their own beside them or not."""
+    from braidpy.horn_gear.simulation import state_period
     from braidpy.horn_gear.take_off import too_close
 
-    machine = machine_from_graph("X-A1 A1-B1 A2-B2 B2-Y A1+A2 B1+B2", 4)
-    close = too_close(machine, 8)
-    assert close is not None
-    assert close.step == 1
-    assert close.distance < close.limit
+    for graph in ("A1-B1 A2-B2 A1+A2 B1+B2", "X-A1 A1-B1 A2-B2 B2-Y A1+A2 B1+B2"):
+        machine = machine_from_graph(graph, 4)
+        period = state_period(machine, machine.default_carriers())
+        assert too_close(machine, period) is None
 
 
 @pytest.mark.slow
 def test_the_split_ladder_stops_where_its_carriers_would_hit():
-    """The ladder laid out anew still carries two split gears sharing two
-    bobbins: Braid Studio refuses it, saying why, rather than braid through
-    two carriers in one place."""
+    """The split ladder's squares of 3- and 4-slot gears cannot have every
+    contact on a horn, their angles adding up to more than a turn: laid out
+    as near as least squares gets, two carriers still pass too close, and
+    Braid Studio refuses it, saying why."""
     from braidpy import web
 
     with pytest.raises(ValueError, match="come too close"):

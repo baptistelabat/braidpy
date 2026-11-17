@@ -21,11 +21,7 @@ $$
 \lVert p_i - p_j \rVert \ge (1 + c)\,(r_i + r_j) \quad \text{otherwise},
 $$
 
-with $c$ = `CLEARANCE` = 0.1, room for the carriers going by. Two split axles
-sharing two bobbins are the exception: they interpenetrate, their centres
-$2 \cos(\pi / h)$ radii apart
-({func}`~braidpy.horn_gear.layout.sharing_two_bobbins`), and that is the
-distance they are held at.
+with $c$ = `CLEARANCE` = 0.1, room for the carriers going by.
 
 A chain or a tree of gears is placed gear by gear, each mesh exact. A single
 ring of gears alike, as a tubular braider is, is a regular polygon, also
@@ -47,19 +43,18 @@ unshrunk, and relaxes it a round at a time.
 For each pair of meshing gears, the error and the unit vector between them are
 
 $$
-e_{ij} = \lVert p_j - p_i \rVert - \rho_{ij}\,(r_i + r_j),
+e_{ij} = \lVert p_j - p_i \rVert - (r_i + r_j),
 \qquad
 u_{ij} = \frac{p_j - p_i}{\lVert p_j - p_i \rVert},
 $$
 
-with $\rho_{ij} = 1$, or $\cos(\pi/h)$ for two axles sharing two bobbins. A
-share $1 - \gamma$ of the error moves the centres, half each, and $\gamma$
+A share $1 - \gamma$ of the error moves the centres, half each, and $\gamma$
 (`RADIUS_GIVE` = 0.2) grows or shrinks the radii:
 
 $$
 \Delta p_i = +\tfrac{1 - \gamma}{2}\, e_{ij}\, u_{ij}, \qquad
 \Delta p_j = -\tfrac{1 - \gamma}{2}\, e_{ij}\, u_{ij}, \qquad
-\Delta r_i = \Delta r_j = \frac{\gamma\, e_{ij}}{2 \rho_{ij}}.
+\Delta r_i = \Delta r_j = \frac{\gamma\, e_{ij}}{2}.
 $$
 
 For each pair that does not mesh but is too close,
@@ -72,9 +67,8 @@ $$
 
 All pairs are taken at once, each gear moved by the mean of what its pairs
 ask. Each radius stays within `RADIUS_RANGE`, 0.75 to 1.3 times its
-convention: sizes change only as far as needed for the gears to touch. Two
-axles sharing two bobbins keep the radii the closed form gives them, or the
-bobbins would no longer be whole horns apart. It stops when the worst error,
+convention: sizes change only as far as needed for the gears to touch. It
+stops when the worst error,
 as a share of the length it should be, is under `RELAX_TOLERANCE` (0.1%), or
 after `RELAX_ROUNDS`.
 
@@ -105,21 +99,24 @@ bobbins by passing one by the other, and are not looked at.
 
 ![How close each machine's carriers come](too_close_survey.svg)
 
-### Two split axles sharing two bobbins
+### Two split axles meshing twice
 
-Two split axles of $h$ horns each, parts $a$ and $b$ taking turns, share two
-bobbins at the two crossings of their circles, $X$ for band $a$ and $Y$ for
-band $b$, each half a pitch, $\pi/h$, off the line of centres. A step turns
-each part by one of its slots, two pitches of the axle, $4\pi/h$, the two
-axles opposite ways. Half a step on, each axle has turned one pitch,
-$2\pi/h$: the $b$ horn that was at $Y$, at $-\pi/h$, is at $+\pi/h$, which is
-$X$, on both axles at once. Both circles pass through both crossings, so the
-other band's horns meet at each bobbin halfway through every step, and two
-carriers on them meet.
+Two split axles of $h$ horns each, parts $a$ and $b$ taking turns round each,
+meshing twice (`A1-B1 A2-B2 A1+A2 B1+B2`), touch at one contact. A step turns
+each part one of its slots, two pitches $2\pi/h$ of the axle, the two axles
+opposite ways, so a horn of each comes round to the contact every half step,
+the parts in turn. A step is then two ticks, a pitch each: the $a$ horns meet
+at the contact and hand over at the end of the step, the $b$ horns half a
+step on, at the same point
+({class}`~braidpy.horn_gear.model.Connection`'s `phase`). The two bands share
+the contact, never there at the same time. With $k$ parts a step is $k$
+ticks.
 
-![The b horns meet at X halfway through a step](split_axles_meet.svg)
+![The a horns meet at the contact, then the b horns](split_axles_meet.svg)
 
-So such a machine stops wherever both those horns are loaded. The split
-ladder does in its first step; so does a gear split in three, more mildly,
-where a carrier leaving for a neighbour passes close by the next part's horn
-coming round to the same contact.
+A gear split in three meshing with ordinary gears still stops: a carrier
+leaving for a neighbour passes close by the next part's horn coming round to
+the same contact. So does the split ladder: its squares of 3- and 4-slot gears
+cannot have every contact on a horn, the angles at their corners, each a whole
+number of slots, adding up to $90 + 120 + 120 + 90 = 420$ degrees, not $360$,
+and where contacts miss their horns the parts' horns no longer take turns.
