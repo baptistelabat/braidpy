@@ -35,6 +35,13 @@ strand into a loop of its own.  It holds:
   braids whose Alexander polynomial vanishes, as it does for many braids
   closing into several loops: a kumihimo disk's edo yatsu from Ashley's
   8-strand square sinnet, ABOK #3070, which agree on all the rest.
+- ``burau_mod``: that characteristic polynomial again, exactly, modulo a
+  prime at a few values of t
+  (:func:`braidpy.properties.burau_polynomial_mod`).  The samples above are
+  in floating point, which a long braid rounds differently for each way it
+  is written; they say how *near* two braids are (:func:`distance`), this
+  says whether they are the *same* (:func:`same_fingerprint`).  It holds the
+  Alexander polynomial too, as its value at 1.
 
 None of these changes when a braid is read from another starting point
 (conjugation), and the loops, linking numbers and Alexander and Burau
@@ -46,7 +53,6 @@ can — but different ones prove them different.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Optional
@@ -66,6 +72,14 @@ __all__ = [
 # multiple of π.
 ANGLES = (1.0, 2.0)
 
+# Where the Burau polynomial is taken exactly, modulo
+# :data:`braidpy.properties.PRIME`: the first primitive roots of that prime
+# past a third and two thirds of it, so that no power of t short of the
+# (PRIME − 1)-th is 1, as it would be at a root of unity, and not small
+# numbers, at which polynomials with small coefficients agree more often
+# (t − 2 vanishes at 2).
+BURAU_T = (22369623, 44739239)
+
 
 @dataclass(frozen=True)
 class Fingerprint:
@@ -77,6 +91,7 @@ class Fingerprint:
     linking: tuple[int, ...]
     alexander: tuple[float | None, ...]
     burau: tuple[float, ...] = ()
+    burau_mod: tuple[tuple[int, ...], ...] = ()
 
 
 def home(braid: Braid) -> tuple[Braid, Braid]:
@@ -113,7 +128,12 @@ def fingerprint(braid: Braid) -> Fingerprint:
         Its fingerprint.
     """
     from braidpy.linking import linking_matrix
-    from braidpy.properties import alexander_on_circle, burau_polynomial_on_circle
+    from braidpy.properties import (
+        PRIME,
+        alexander_on_circle,
+        burau_polynomial_mod,
+        burau_polynomial_on_circle,
+    )
     from braidpy.pure_braid import cycles
 
     unit, repeats = _unit_and_repeats(braid)
@@ -121,13 +141,20 @@ def fingerprint(braid: Braid) -> Fingerprint:
     upper = [
         int(links[i, j]) for i in range(len(links)) for j in range(i + 1, len(links))
     ]
+    exact = tuple(burau_polynomial_mod(unit, t, repeats) for t in BURAU_T)
+    alexander = alexander_on_circle(unit, ANGLES, repeats)
+    # Where det(1 − Bᵏ), the polynomial at x = 1, is exactly 0, the Alexander
+    # polynomial vanishes, however far from 0 rounding left its samples.
+    if all(sum(coefficients) % PRIME == 0 for coefficients in exact):
+        alexander = tuple(None for _ in ANGLES)
     return Fingerprint(
         n_strands=braid.n_strands,
         loops=tuple(sorted((len(c) for c in cycles(unit)), reverse=True)),
         writhe=int(sum(1 if g > 0 else -1 for g in unit.generators)),
         linking=tuple(sorted(upper)),
-        alexander=alexander_on_circle(unit, ANGLES, repeats),
+        alexander=alexander,
         burau=burau_polynomial_on_circle(unit, ANGLES, repeats),
+        burau_mod=exact,
     )
 
 
@@ -184,9 +211,12 @@ class Match:
 
 
 def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
-    """Whether two fingerprints are the same, the Alexander and Burau
-    polynomials' samples but for rounding: nothing measured tells the braids
-    apart.
+    """Whether two fingerprints are the same: nothing measured tells the
+    braids apart.
+
+    The polynomials are compared by ``burau_mod``, exactly, not by their
+    samples in floating point: those differ in the third digit for two long
+    words of one braid, and ``burau_mod`` holds what they measure.
 
     Args:
         a: A fingerprint.
@@ -195,18 +225,13 @@ def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
     Returns:
         True if they are the same.
     """
-    if (a.n_strands, a.loops, a.writhe, a.linking) != (
+    return (a.n_strands, a.loops, a.writhe, a.linking, a.burau_mod) == (
         b.n_strands,
         b.loops,
         b.writhe,
         b.linking,
-    ):
-        return False
-    return all(
-        (x is None and y is None)
-        or (x is not None and y is not None and math.isclose(x, y, abs_tol=1e-6))
-        for x, y in zip(a.alexander, b.alexander)
-    ) and all(math.isclose(x, y, abs_tol=1e-6) for x, y in zip(a.burau, b.burau))
+        b.burau_mod,
+    )
 
 
 def catalogue_braids() -> dict[str, Braid]:

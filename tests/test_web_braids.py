@@ -18,6 +18,8 @@ TOPOLOGIES = [
             "writhe": 0,
             "linking": [],
             "alexander": [1.0],
+            "burau": [1.0],
+            "burau_mod": [[1, 2, 1]],
         },
         "methods": [
             {

@@ -126,3 +126,16 @@ def test_a_long_home_braid_keeps_its_fingerprint_read_from_anywhere():
     unit += [-2, -3, -4, -5]
     turned = unit[5:] + unit[:5]
     assert same_fingerprint(fingerprint(Braid(unit, 9)), fingerprint(Braid(turned, 9)))
+
+
+def test_two_long_words_of_one_braid_have_one_fingerprint():
+    """A braid whose Burau matrix grows fast, not a repeat of a shorter one,
+    and the same braid with a crossing and its undoing before each crossing.
+    In floating point the Burau polynomial's samples came out apart in the
+    third digit, and the two seemed different braids; modulo a prime they
+    are the same."""
+    word = [1, -2, 3, -4, 5, -6, 7, -8] * 20 + [1]
+    padded = [g for c in word for g in (9 - abs(c), abs(c) - 9, c)]
+    a, b = fingerprint(Braid(word, 9)), fingerprint(Braid(padded, 9))
+    assert max(abs(x - y) for x, y in zip(a.burau, b.burau)) > 1e-6
+    assert same_fingerprint(a, b)
