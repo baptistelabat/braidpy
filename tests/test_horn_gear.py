@@ -2160,3 +2160,26 @@ def test_one_part_is_what_an_ordinary_machine_has():
 
     for machine in (flat_braid_3(), flat_braid_9(), tubular_braid_8()):
         assert _parts(machine) == [sorted(machine.gears)]
+
+
+def test_a_carrier_handed_on_twice_in_a_step_is_stopped_where_it_meets_another():
+    """Contacts handing over during a step can hand a carrier on twice in
+    it: from A to B a quarter of a step in, from B to C three quarters in,
+    where a carrier on C is handed to B at the same moment.  The two pass
+    through each other at that contact; comparing the gears before and
+    after the step (A to C, C to B) does not see it, walking the step's
+    hand-overs in their order does."""
+    from braidpy.horn_gear.simulation import CollisionError
+
+    gears = [HornGear("A", 4, 1), HornGear("B", 4, -1), HornGear("C", 4, 1)]
+    machine = BraidingMachine(
+        gears,
+        [
+            Connection("A", "B", 0, 0, phase=0.25),
+            Connection("B", "C", 0, 0, phase=0.75),
+        ],
+    )
+    assert machine.next_position(("A", 0), 0) == ("C", 0)
+    assert machine.next_position(("C", 0), 0) == ("B", 0)
+    with pytest.raises(CollisionError, match="step 1"):
+        simulate(machine, 1, {0: ("A", 0), 1: ("C", 0)})
