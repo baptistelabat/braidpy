@@ -10,7 +10,8 @@ Where everything sits: gear centres, the notches between them, the circles a
 carrier rides on, and the columns a braid forms around.
 
 Gears are placed from the connection graph — BFS along the x-axis for a chain,
-Kamada-Kawai for anything with a cycle — unless the machine pins its own
+Kamada-Kawai relaxed till every two gears that mesh touch for anything with a
+cycle (:func:`ring_geometry`) — unless the machine pins its own
 geometry, in which case :meth:`~braidpy.horn_gear.model.BraidingMachine
 .preferred_layout` wins.  Gear radius goes as sqrt(n_slots), which is a
 drawing convention and not a mechanical one — see :func:`_gear_radius`.
@@ -28,6 +29,7 @@ from __future__ import annotations
 
 import bisect
 import math
+import weakref
 from collections import deque
 from dataclasses import dataclass
 from typing import Optional
@@ -84,9 +86,8 @@ def compute_layout(
     For tree / path graphs (flat braid): BFS-based placement along the x-axis
     guarantees every pair of adjacent gear circles touches exactly.
 
-    For cyclic graphs (tubular braid ring): Kamada-Kawai layout with edge
-    rest-lengths = r_A + r_B, post-scaled so every edge equals its rest-length
-    (valid when all gears have the same radius, i.e. same n_slots).
+    For cyclic graphs (a tubular braider's ring, a matrix of gears):
+    :func:`ring_geometry`, which also sizes the gears so that they touch.
 
     Args:
         machine: The BraidingMachine whose gears to position.
@@ -110,35 +111,205 @@ def compute_layout(
     if nx.is_forest(machine.graph):
         return _layout_bfs(machine, scale)
 
-    # ── Cyclic graph: Kamada-Kawai + per-edge exact rescaling ─────────────────
+    # ── Cyclic graph: Kamada-Kawai, relaxed till the gears touch ──────────────
+    return ring_geometry(machine, scale, seed=seed, iterations=iterations)[0]
+
+
+# How far a gear in a ring may grow or shrink from the drawing convention
+# (:func:`_gear_radius`) so that it touches its neighbours, as a factor of
+# the convention's radius: a matrix of gears of several sizes cannot always
+# be laid out with every gear its own size and touching every neighbour.
+RADIUS_RANGE = (0.75, 1.3)
+# What share of the gap between two gears that do not mesh is kept, past
+# touching, as a share of their two radii: room for the carriers going by.
+CLEARANCE = 0.1
+# How much of a mesh's error a round of :func:`_relax` gives to the radii,
+# the rest to moving the centres: the sizes change only as far as needed.
+RADIUS_GIVE = 0.2
+# Rounds of :func:`_relax`, at most, and the error at which it stops: a mesh
+# that far off, as a share of its length, is touching for any drawing.
+RELAX_ROUNDS = 3000
+RELAX_TOLERANCE = 1e-3
+
+
+def ring_geometry(
+    machine: BraidingMachine,
+    scale: float = 1.0,
+    seed: int | None = 42,
+    iterations: int = 500,
+) -> tuple[dict[str, tuple[float, float]], dict[str, float]]:
+    """Where the gears of a machine with a ring of gears stand, and how large
+    they are drawn, so that every two that mesh touch and no two others
+    overlap.
+
+    Kamada-Kawai lays the graph out with each mesh as long as the two radii,
+    which it can do exactly for one ring of gears alike, as a tubular
+    braider is.  Where it cannot, as in a matrix of gears of several sizes,
+    its compromise is relaxed (:func:`_relax`): the gears that mesh are
+    drawn to touch, moving their centres and, within ``RADIUS_RANGE``,
+    their sizes; those that do not are pushed apart, past touching.  Not an
+    exact solution, but no gear runs through another, nor does a carrier
+    through another's path.  A layout that is right already is kept as it
+    is.
+
+    Args:
+        machine: The machine; its graph has a cycle.
+        scale: Overall scale for the radii.
+        seed: Random seed for the spring layout, the fallback.
+        iterations: Iterations of the spring layout.
+    Returns:
+        Gear name → centre, and gear name → radius.
+    """
+    key = (scale, seed, iterations)
+    solved = _RING_GEOMETRY.setdefault(machine, {})
+    if key not in solved:
+        solved[key] = _ring_geometry(machine, scale, seed, iterations)
+    centres, radii = solved[key]
+    return dict(centres), dict(radii)
+
+
+# Each machine's ring geometry, worked out once: the layout and the radii
+# are asked for at every turn of a machine, and Kamada-Kawai takes time.
+_RING_GEOMETRY: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+
+
+def _ring_geometry(machine, scale, seed, iterations):
+    """:func:`ring_geometry`, worked out."""
+    convention = {
+        name: _gear_radius(gear.size or gear.n_slots, scale)
+        for name, gear in machine.gears.items()
+    }
     g = machine.graph.copy()
     for u, v in g.edges():
-        r_u = gear_radii(machine, scale)[u]
-        r_v = gear_radii(machine, scale)[v]
-        g[u][v]["len"] = r_u + r_v
-
+        g[u][v]["len"] = convention[u] + convention[v]
     try:
         raw = nx.kamada_kawai_layout(g, weight="len")
     # Without SciPy (in a browser) or for a graph it cannot lay out, the
     # spring layout instead.
     except Exception:  # noqa: BLE001
         raw = nx.spring_layout(g, seed=seed, iterations=iterations)
-
     pos = {n: np.array(xy) for n, xy in raw.items()}
-
-    # Rescale so the minimum-ratio edge is exactly its rest-length.
+    # Scaled so that no mesh is longer than its two radii: exact for a ring
+    # of gears alike, every mesh then as long as it should be.
     min_ratio = float("inf")
     for u, v in g.edges():
         actual = float(np.linalg.norm(pos[u] - pos[v]))
-        desired = g[u][v]["len"]
         if actual > 1e-9:
-            min_ratio = min(min_ratio, desired / actual)
-
+            min_ratio = min(min_ratio, g[u][v]["len"] / actual)
     if math.isfinite(min_ratio) and min_ratio > 0:
         pos = {n: xy * min_ratio for n, xy in pos.items()}
+    names = list(g.nodes)
+    centres = np.array([pos[n] for n in names], dtype=float)
+    radii = np.array([convention[n] for n in names])
+    index = {n: i for i, n in enumerate(names)}
+    meshes = [(index[u], index[v]) for u, v in g.edges()]
+    others = [
+        (index[u], index[v])
+        for i, u in enumerate(names)
+        for v in names[i + 1 :]
+        if not g.has_edge(u, v)
+    ]
+    if _worst(centres, radii, meshes, others) > RELAX_TOLERANCE:
+        centres, radii = min(
+            (
+                _relax(start, radii, meshes, others)
+                for start in _starts(g, names, centres, meshes, radii, seed)
+            ),
+            key=lambda solved: _worst(*solved, meshes, others),
+        )
+    placed = {n: (float(x), float(y)) for n, (x, y) in zip(names, centres)}
+    return _orient(machine, placed), {n: float(r) for n, r in zip(names, radii)}
 
-    placed = {n: (float(xy[0]), float(xy[1])) for n, xy in pos.items()}
-    return _orient(machine, placed)
+
+# How many spring layouts, besides Kamada-Kawai's and a planar one, a ring
+# is relaxed from (:func:`_starts`): a start can fold a ring of gears into a
+# bow-tie, which relaxing cannot undo, and another start does not.
+SPRING_STARTS = 3
+
+
+def _starts(g, names, centres, meshes, radii, seed):
+    """Layouts to relax a ring from (:func:`ring_geometry`), each scaled so
+    that its middle mesh is as long as it should be: Kamada-Kawai's, a
+    planar one where the gears can be drawn without crossing, and
+    ``SPRING_STARTS`` spring layouts."""
+    shapes = [centres]
+    if nx.check_planarity(g)[0]:
+        planar = nx.planar_layout(g)
+        shapes.append(np.array([planar[n] for n in names], dtype=float))
+    for k in range(SPRING_STARTS):
+        spring = nx.spring_layout(g, seed=None if seed is None else seed + k)
+        shapes.append(np.array([spring[n] for n in names], dtype=float))
+    for shape in shapes:
+        a, b, _, distance = _pairs(shape, meshes)
+        ratio = (radii[a] + radii[b]) / np.maximum(distance, 1e-12)
+        yield shape * float(np.median(ratio))
+
+
+def _pairs(centres: np.ndarray, pairs: list) -> tuple[np.ndarray, ...]:
+    """Two index arrays for ``pairs``, the unit vector from the first of each
+    to the second, and their distance."""
+    a = np.array([p[0] for p in pairs], dtype=int)
+    b = np.array([p[1] for p in pairs], dtype=int)
+    gap = centres[b] - centres[a]
+    distance = np.linalg.norm(gap, axis=1)
+    return a, b, gap / np.maximum(distance, 1e-12)[:, None], distance
+
+
+def _worst(centres, radii, meshes, others) -> float:
+    """The worst error of a layout, as a share of the length it should be:
+    a mesh too long or too short, or two gears that do not mesh closer than
+    touching, past ``CLEARANCE``."""
+    worst = 0.0
+    if meshes:
+        a, b, _, distance = _pairs(centres, meshes)
+        wanted = radii[a] + radii[b]
+        worst = float(np.max(np.abs(distance - wanted) / wanted))
+    if others:
+        a, b, _, distance = _pairs(centres, others)
+        wanted = (radii[a] + radii[b]) * (1 + CLEARANCE)
+        worst = max(worst, float(np.max((wanted - distance) / wanted)))
+    return worst
+
+
+def _relax(centres, radii, meshes, others):
+    """Draw gears that mesh to touch and push the others apart, a round at a
+    time, every constraint at once and each gear moved by the mean of what
+    its constraints ask, till the worst is within ``RELAX_TOLERANCE`` or
+    ``RELAX_ROUNDS`` have passed.  A mesh's error goes to its centres and,
+    ``RADIUS_GIVE`` of it, to the radii, kept within ``RADIUS_RANGE`` of
+    where they started."""
+    centres = centres.copy()
+    least, most = radii * RADIUS_RANGE[0], radii * RADIUS_RANGE[1]
+    radii = radii.copy()
+    n = len(radii)
+    for _ in range(RELAX_ROUNDS):
+        if _worst(centres, radii, meshes, others) <= RELAX_TOLERANCE:
+            break
+        moves = np.zeros_like(centres)
+        counts = np.zeros(n)
+        grows = np.zeros(n)
+        a, b, unit, distance = _pairs(centres, meshes)
+        error = distance - (radii[a] + radii[b])
+        push = unit * (error * (1 - RADIUS_GIVE) / 2)[:, None]
+        np.add.at(moves, a, push)
+        np.add.at(moves, b, -push)
+        np.add.at(counts, a, 1)
+        np.add.at(counts, b, 1)
+        np.add.at(grows, a, error * RADIUS_GIVE / 2)
+        np.add.at(grows, b, error * RADIUS_GIVE / 2)
+        if others:
+            a, b, unit, distance = _pairs(centres, others)
+            short = np.maximum((radii[a] + radii[b]) * (1 + CLEARANCE) - distance, 0)
+            push = unit * (short / 2)[:, None]
+            np.add.at(moves, a, -push)
+            np.add.at(moves, b, push)
+            pushed = (short > 0).astype(float)
+            np.add.at(counts, a, pushed)
+            np.add.at(counts, b, pushed)
+        counts = np.maximum(counts, 1)
+        centres += moves / counts[:, None]
+        radii = np.clip(radii + grows / counts, least, most)
+    return centres, radii
 
 
 def _orient(
@@ -736,10 +907,17 @@ def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]
         name: _gear_radius(gear.size or gear.n_slots, scale)
         for name, gear in machine.gears.items()
     }
-    # A machine that has solved its own geometry draws as it solved it.
+    # A machine that has solved its own geometry draws as it solved it, and
+    # gears in a ring as their layout drew them to touch (ring_geometry).
     preferred = machine.preferred_gear_radii(scale)
     if preferred:
         radii.update({name: r for name, r in preferred.items() if name in radii})
+    elif (
+        len(machine.gears) > 1
+        and machine.preferred_layout(scale) is None
+        and not nx.is_forest(machine.graph)
+    ):
+        radii.update(ring_geometry(machine, scale)[1])
     return radii
 
 
