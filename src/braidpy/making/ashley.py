@@ -94,7 +94,7 @@ def _cycles(spaces: int) -> Iterator[list[tuple[int, int]]]:
 def ashley_sinnet(
     braid: Braid,
     max_spaces: int = 6,
-    time_limit: float = 20.0,
+    time_limit_s: float = 20.0,
     spaces: Optional[Sequence[int]] = None,
 ) -> AshleySearch:
     """A sinnet on Ashley's stand that makes a braid; see the module.
@@ -102,7 +102,7 @@ def ashley_sinnet(
     Args:
         braid: The braid wanted.
         max_spaces: The most spaces round the rim to try.
-        time_limit: Seconds to search for, at most.
+        time_limit_s: Seconds to search for, at most.
         spaces: The numbers of spaces to try, in order; 2 to
             ``max_spaces`` if None.
 
@@ -121,7 +121,7 @@ def ashley_sinnet(
     for count in counts_of:
         for counts in _compositions(n, count):
             for moves in _cycles(count):
-                if time.monotonic() - started > time_limit:
+                if time.monotonic() - started > time_limit_s:
                     return AshleySearch(None, nearest, nearest_distance, tried, False)
                 sinnet = AshleySolidSinnet(list(counts), moves)
                 tried += 1

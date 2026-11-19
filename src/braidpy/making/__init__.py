@@ -102,13 +102,15 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
     return shown
 
 
-def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> dict[str, Any]:
+def sinnet_for_page(
+    info: Mapping[str, Any], time_limit_s: float = 3.0
+) -> dict[str, Any]:
     """A sinnet on Ashley's stand making the braid Braid Studio made, as
-    the page shows it: searched for, for at most ``time_limit`` seconds.
+    the page shows it: searched for, for at most ``time_limit_s`` seconds.
 
     Args:
         info: What :func:`braidpy.web.build` said of the braid.
-        time_limit: Seconds to search for.
+        time_limit_s: Seconds to search for.
 
     Returns:
         ``spec``: the sinnet, as Braid Studio makes it, or None if none was
@@ -123,7 +125,7 @@ def sinnet_for_page(info: Mapping[str, Any], time_limit: float = 3.0) -> dict[st
     if found is None:
         return {"spec": None, "complete": True, "tried": 0}
     unit, repeats = found
-    search = ashley_sinnet(unit, time_limit=time_limit)
+    search = ashley_sinnet(unit, time_limit_s=time_limit_s)
     # Made as many times as the braid shown repeats its unit, as far as the
     # stand will take (:func:`_passes`).
     passes = _passes("sinnet", repeats)

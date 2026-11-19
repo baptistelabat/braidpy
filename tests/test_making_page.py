@@ -126,7 +126,7 @@ def test_a_link_asks_for_no_more_passes_than_its_source_takes():
     shown = for_page(info)
     assert shown["disk"]["spec"]["cycles"] == 14
     assert shown["lace"]["spec"]["cycles"] == 14
-    offered = sinnet_for_page(info, time_limit=0.5)
+    offered = sinnet_for_page(info, time_limit_s=0.5)
     sinnet = offered["spec"] or offered["exact"]
     assert sinnet["cycles"] == Sinnet.cycles.high == 12
     # Followed, it makes a braid rather than being turned away.
