@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=511921bdce";
-import { attachEditor } from "./editor.js?v=511921bdce";
-import { attachMachine } from "./machine.js?v=511921bdce";
-import { $ } from "./page.js?v=511921bdce";
-import { submit } from "./workers.js?v=511921bdce";
+import { attachDiagram } from "./diagram.js?v=64503b10ed";
+import { attachEditor } from "./editor.js?v=64503b10ed";
+import { attachMachine } from "./machine.js?v=64503b10ed";
+import { $ } from "./page.js?v=64503b10ed";
+import { submit, worker } from "./workers.js?v=64503b10ed";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -98,6 +98,12 @@ const FIELDS = {
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 40 },
     DISK_CORE,
+    {
+      kind: "file",
+      label: "Import a braid3d design",
+      accept: ".b3d",
+      hint: "A .b3d file saved by braid3d, read as your own disk braid: its yarns, in their colours, and its moves, on a disk of as few slots as hold them.",
+    },
   ],
   sinnet: [
     { name: "name", label: "Sinnet", kind: "entries" },
@@ -120,10 +126,24 @@ const FIELDS = {
   machine: [
     { name: "name", label: "Machine", kind: "entries" },
     {
+      name: "graph",
+      label: "Gears that mesh",
+      kind: "textarea",
+      custom: true,
+      hint: "Each pair of gears that mesh, as A-B: A-B B-C C-D D-A is four gears in a ring. A gear with its own number of slots is written A:6 wherever it is named. A split gear is written as its parts, each meshing with its own neighbours, joined on their axle: A-B1 B2-C B1+B2 is two plaits side by side, B split in two; a gear may be split in more parts, as H1+H2+H3. Neighbours turn opposite ways, so a ring of an odd number of gears cannot turn. Starts from the machine chosen before.",
+    },
+    { name: "n_slots", label: "Slots per gear", kind: "number", min: 2, max: 24, custom: true },
+    {
       name: "carriers",
       label: "Carriers",
       kind: "text",
       hint: "Each as gear:slot, slots numbered from each gear's first. Click a slot on the machine to put a carrier on it or take it off: carriers that meet stop the braiding there.",
+    },
+    {
+      name: "axials",
+      label: "Axial yarns",
+      kind: "text",
+      hint: "Where straight yarns are fed up through the braid, the carriers braiding round them: a gear, as B, up its hollow spindle; the ring of gears round a hole, as A-B-C-D, down it. Every place there is room for one is marked on the machine: click one to load a spool there or take it off.",
     },
     CORE,
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 8 },
@@ -186,6 +206,18 @@ export function renderFields(source, values = {}) {
       input = document.createElement("textarea");
       input.rows = 2;
       input.spellcheck = false;
+    } else if (field.kind === "file") {
+      // Read by braidpy (braidpy.web.from_b3d), which fills the fields with
+      // what it holds and makes it.  Unnamed, it is no part of a link.
+      input = document.createElement("input");
+      input.type = "file";
+      input.accept = field.accept;
+      input.addEventListener("change", async () => {
+        const [file] = input.files;
+        if (!file) return;
+        worker.postMessage({ type: "b3d", text: await file.text() });
+        input.value = "";
+      });
     } else {
       input = document.createElement("input");
       input.type = field.kind;
@@ -194,8 +226,10 @@ export function renderFields(source, values = {}) {
         if (field[key] !== undefined) input[key] = field[key];
       }
     }
-    input.name = field.name;
-    input.id = `field-${field.name}`;
+    if (field.name) {
+      input.name = field.name;
+      input.id = `field-${field.name}`;
+    }
     if (defaults[field.name] !== undefined) input.value = defaults[field.name];
     label.append(input);
     if (field.hint) {

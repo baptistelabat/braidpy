@@ -6,11 +6,11 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=511921bdce";
-import { $, round } from "./page.js?v=511921bdce";
-import { lastResult } from "./scene.js?v=511921bdce";
-import { writeSpec } from "./spec.js?v=511921bdce";
-import { pending, submit, worker } from "./workers.js?v=511921bdce";
+import { catalogue } from "./fields.js?v=64503b10ed";
+import { $, round } from "./page.js?v=64503b10ed";
+import { lastResult } from "./scene.js?v=64503b10ed";
+import { writeSpec } from "./spec.js?v=64503b10ed";
+import { pending, submit, worker } from "./workers.js?v=64503b10ed";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -100,7 +100,7 @@ export function showKin(kin) {
     [
       "Also made as",
       kin.same,
-      "The same braid, made another way: nothing braidpy measures tells them apart",
+      "The same braid, made another way: nothing measured here tells them apart",
     ],
     [
       "Nearest braids",
