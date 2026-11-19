@@ -291,13 +291,65 @@ def _built(name):
 @pytest.mark.parametrize("name", list(_BUILT))
 def test_a_catalogued_machine_written_as_its_graph_is_the_one_built(name):
     """Written as its graph, each catalogued machine is the one built gear by
-    gear, its slots perhaps numbered from another one round: it feeds its
-    axials where that one did, and loads itself with as many carriers."""
+    gear, its slots perhaps numbered from another one round, or, a ring that
+    hands over between steps, its gears meshing alike: it feeds its axials
+    where that one did, and loads itself with as many carriers."""
     built = _built(name)
     machine = CATALOGUE[name].make()
-    assert _renaming(built, machine) is not None
+    if any(c.phase for c in machine.connections):
+        # A ring that whole slots cannot put on its horns hands over between
+        # steps, at other slots than the one built: the same gears turning
+        # the same ways, meshing alike.
+        assert {
+            name: (gear.n_slots, gear.direction) for name, gear in built.gears.items()
+        } == {
+            name: (gear.n_slots, gear.direction) for name, gear in machine.gears.items()
+        }
+        assert {frozenset((c.gear_a, c.gear_b)) for c in built.connections} == {
+            frozenset((c.gear_a, c.gear_b)) for c in machine.connections
+        }
+    else:
+        assert _renaming(built, machine) is not None
     assert [a.anchor for a in machine.axials] == [a.anchor for a in built.axials]
     assert len(machine.default_carriers()) == len(built.default_carriers())
+
+
+def _windings(machine):
+    """How many times each strand winds round each other over a cycle, as a
+    sorted list a strand: the same for one braid, however drawn and
+    whichever way its carriers are numbered."""
+    from collections import defaultdict
+    from itertools import combinations
+
+    import numpy as np
+
+    from braidpy.horn_gear.word import _trajectories
+
+    xy = _trajectories(machine, machine.default_carriers(), None, 64, 1.0).xy
+    around = defaultdict(list)
+    for a, b in combinations(sorted(xy), 2):
+        gap = xy[a] - xy[b]
+        angle = np.unwrap(np.arctan2(gap[:, 1], gap[:, 0]))
+        turns = round(float((angle[-1] - angle[0]) / (2 * np.pi)), 1)
+        around[a].append(turns)
+        around[b].append(turns)
+    return sorted(sorted(t) for t in around.values())
+
+
+@pytest.mark.parametrize("name", ["tubular_12", "tubular_16", "triaxial_16"])
+def test_a_ring_handing_over_between_steps_makes_the_same_braid(name):
+    """A ring of six or eight gears of four slots cannot put a horn on each
+    contact at the end of a step: built with whole steps, its contacts
+    missed their horns by a third or a quarter of a slot.  Each contact
+    hands over when the horns come round to it instead, every contact on a
+    horn, and the braid is the same: every strand winds round every other
+    as often as on the machine built with whole steps."""
+    from braidpy.horn_gear.layout import compute_layout, offset_residuals
+
+    machine, built = CATALOGUE[name].make(), _built(name)
+    assert max(offset_residuals(built, compute_layout(built)).values()) > 0.3
+    assert max(offset_residuals(machine, compute_layout(machine)).values()) < 1e-3
+    assert _windings(machine) == _windings(built)
 
 
 def test_axials_are_fed_up_a_gear_or_down_a_ring_written_either_way():
@@ -555,3 +607,71 @@ def test_a_matrix_of_gears_touches_and_overlaps_nowhere(graph):
                 assert apart == pytest.approx(touching, rel=0.01)
             else:
                 assert apart >= touching * (1 + CLEARANCE) * 0.99
+
+
+@pytest.mark.slow
+def test_the_split_ladder_puts_every_contact_on_a_horn():
+    """The split ladder's squares of 3- and 4-slot gears cannot have every
+    contact on a horn at the end of a step, their angles adding up to more
+    than a turn.  Each contact hands over when the horns come round to it
+    instead, the gears moved and sized so that they come round together:
+    every contact is on a horn, and the machine runs a whole cycle."""
+    from braidpy.horn_gear.layout import compute_layout, offset_residuals
+    from braidpy.horn_gear.simulation import simulate, state_period
+
+    machine = machine_from_graph(LADDERS[-1], 4)
+    assert max(offset_residuals(machine, compute_layout(machine)).values()) < 1e-3
+    assert len({round(c.phase, 3) for c in machine.connections}) > 2
+    carriers = machine.default_carriers()
+    simulate(machine, state_period(machine, carriers), carriers)
+
+
+def test_the_timing_takes_no_step_from_two_gears_at_one_place():
+    """Two meshing gears started at one place have no direction between
+    them: the fit's derivatives divided by their distance, gave a NaN, and
+    on some machines the linear solve raised on it.  It takes its step from
+    as far apart as SAME_PLACE, and every number stays finite."""
+    import math
+
+    import numpy as np
+
+    from braidpy.horn_gear.layout import RingContacts, time_ring
+
+    r = math.sqrt(4)
+    centres = np.array([[0.0, 0.0], [0.0, 0.0], [2 * r, 2 * r], [2 * r, 0.0]])
+    first, second = np.array([0, 1, 2, 3]), np.array([1, 2, 3, 0])
+    turns = np.array([1, -1, 1, -1]) * 4 / (2 * math.pi)
+    contacts = RingContacts(first, second, turns, np.zeros(4), np.zeros(4), np.ones(4))
+    with np.errstate(all="raise"):
+        placed, _, _, phases = time_ring(
+            centres,
+            np.full(4, r),
+            np.full(4, r),
+            [(0, 1), (1, 2), (2, 3), (0, 3)],
+            [(0, 2), (1, 3)],
+            contacts,
+        )
+    assert np.all(np.isfinite(placed)) and all(map(math.isfinite, phases))
+
+
+def test_the_timing_damps_harder_where_its_equations_are_singular(monkeypatch):
+    """Where the fit's equations are singular, as CI's BLAS once found them
+    on a ladder of two sizes, it damps harder and goes on, rather than
+    raise: the ladder still has every contact on a horn."""
+    import numpy as np
+
+    from braidpy.horn_gear import layout
+    from braidpy.horn_gear.layout import compute_layout, offset_residuals
+
+    solve, calls = np.linalg.solve, []
+
+    def singular_once(a, b):
+        calls.append(1)
+        if len(calls) == 1:
+            raise np.linalg.LinAlgError("Singular matrix")
+        return solve(a, b)
+
+    monkeypatch.setattr(layout.np.linalg, "solve", singular_once)
+    machine = machine_from_graph(LADDERS[0], 4)
+    assert len(calls) > 1
+    assert max(offset_residuals(machine, compute_layout(machine)).values()) < 1e-3

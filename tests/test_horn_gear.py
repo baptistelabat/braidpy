@@ -355,13 +355,14 @@ def test_slots_land_exactly_on_contacts(factory):
 @pytest.mark.parametrize(
     "factory,n_gears", [(tubular_braid_12, 6), (tubular_braid_16, 8)]
 )
-def test_rings_that_cannot_align_are_flagged(factory, n_gears):
-    """A ring of N 4-slot gears only aligns at N=4 — record the shortfall.
+def test_rings_that_cannot_align_hand_over_between_steps(factory, n_gears):
+    """A ring of N 4-slot gears only aligns at N=4 with whole steps.
 
     Closing a ring of N gears forces each gear's contacts to sit
-    ``180 - 360/N`` degrees apart, and a 4-slot gear can only place slots every
-    90°.  These two machines therefore cannot be made exact without changing
-    their gear count or slot count, and their carriers jump when transferring.
+    ``180 - 360/N`` degrees apart, and a 4-slot gear's horns are 90° apart,
+    so no turning puts a horn on each contact at the end of every step.
+    The horns still come round to each contact once a step, so each hands
+    over then, a fraction of a step in: every contact is on a horn.
     """
     m = factory()
     assert len(m.gears) == n_gears
@@ -369,7 +370,8 @@ def test_rings_that_cannot_align_are_flagged(factory, n_gears):
     assert separation % 90 != 0, "this ring would in fact align; update the test"
 
     worst = max(offset_residuals(m, compute_layout(m)).values())
-    assert math.degrees(worst) > 1.0
+    assert math.degrees(worst) < 1e-3
+    assert any(0 < c.phase < 1 for c in m.connections)
 
 
 @pytest.mark.parametrize("n_end,expected_slots", [(3, 14), (5, 18), (7, 22)])

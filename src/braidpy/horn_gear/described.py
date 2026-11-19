@@ -79,6 +79,7 @@ from collections import Counter
 from typing import Optional
 
 import networkx as nx
+import numpy as np
 
 from .model import Axial, BraidingMachine, Connection, HornGear
 
@@ -186,10 +187,21 @@ def machine_from_graph(
     return machine
 
 
+# How far (radians) a ring's whole-slot contacts may miss their horns and be
+# taken as on them: a layout's rounding, as a tubular braider of eight gears
+# has, and not a miss to time (:func:`_timed`).
+OFF_HORN = 1e-3
+
+
 def _meshed(text: str, n_slots: int) -> BraidingMachine:
     """The machine whose gears mesh as written, without axials, loaded as
     it loads itself (:func:`machine_from_graph`)."""
-    from .layout import _layout_bfs, compute_layout, ring_geometry
+    from .layout import (
+        _layout_bfs,
+        compute_layout,
+        offset_residuals,
+        ring_geometry,
+    )
 
     pairs, axles, own = _read(text)
     named = list(dict.fromkeys(gear for pair in pairs for gear in pair))
@@ -334,6 +346,16 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         )
         for a, b in pairs
     ]
+    if solved_radii:
+        drawn = DescribedMachine(
+            gears, connections, at, radii={g: radius[axle_of[g]] for g in named}
+        )
+        if max(offset_residuals(drawn, compute_layout(drawn)).values()) > OFF_HORN:
+            # Whole slots cannot put every contact on a horn, as round a ring
+            # of twelve gears of four slots, or in a matrix of gears: each
+            # contact hands over when the horns come round to it
+            # (layout.time_ring).
+            return _timed(gears, pairs, axle_of, order, parts_of, size, centres, radius)
     if not axles:
         return BraidingMachine(gears, connections)
     return DescribedMachine(
@@ -343,6 +365,91 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         radii=(
             {gear: radius[axle_of[gear]] for gear in named} if solved_radii else None
         ),
+    )
+
+
+def _timed(gears, pairs, axle_of, order, parts_of, size, centres, radius):
+    """A ring of gears whose contacts cannot all be whole slots apart, laid
+    out and timed so that each contact hands over when a horn of each gear
+    is at it (:func:`~braidpy.horn_gear.layout.time_ring`).
+
+    Args:
+        gears: The gears, parts of split gears each a gear.
+        pairs: The gears that mesh, as written.
+        axle_of: Each gear's axle: its own name, or its split gear's.
+        order: Each part's place among its split gear's parts.
+        parts_of: Each split gear's number of parts.
+        size: Each axle's horns, all its parts'.
+        centres: Each axle's centre, from :func:`ring_geometry`.
+        radius: Each axle's radius, from the same.
+
+    Returns:
+        The machine, its contacts on horns and handing over between steps
+        where they must.
+    """
+    from .layout import RingContacts, _gear_radius, time_ring
+
+    axles = list(centres)
+    index = {axle: i for i, axle in enumerate(axles)}
+    by_name = {gear.name: gear for gear in gears}
+    of_axle = {axle_of[gear.name]: gear for gear in gears}
+
+    def part(gear: str) -> float:
+        # Which of its axle's parts a gear is, as a share of a step.
+        return order.get(gear, 0) / parts_of.get(axle_of[gear], 1)
+
+    first = np.array([index[axle_of[a]] for a, _ in pairs])
+    second = np.array([index[axle_of[b]] for _, b in pairs])
+    turning = np.array([of_axle[axle].direction for axle in axles], dtype=float)
+    slots = np.array([of_axle[axle].n_slots for axle in axles], dtype=float)
+    horns = np.array([size[axle] for axle in axles], dtype=float)
+    meshes = sorted({tuple(sorted(pair)) for pair in zip(first, second)})
+    others = [
+        (p, q)
+        for p in range(len(axles))
+        for q in range(p + 1, len(axles))
+        if (p, q) not in set(meshes)
+    ]
+    centre, radii, turned, phases = time_ring(
+        np.array([centres[axle] for axle in axles], dtype=float),
+        np.array([radius[axle] for axle in axles], dtype=float),
+        np.array([_gear_radius(size[axle]) for axle in axles]),
+        meshes,
+        others,
+        RingContacts(
+            first,
+            second,
+            turning * slots / (2 * math.pi),
+            turning[first] * np.array([part(a) for a, _ in pairs]),
+            turning[second] * np.array([part(b) for _, b in pairs]),
+            # A miss of a step, as a share of the gap between two horns:
+            # a horn moves a part's slot, of the axle's horns, a step.
+            (2 * math.pi / slots[first]) / (2 * np.sin(math.pi / horns[first])),
+        ),
+    )
+    connections = []
+    for (a, b), phase in zip(pairs, phases):
+        slot = {}
+        for gear, other in ((a, b), (b, a)):
+            g, i = by_name[gear], index[axle_of[gear]]
+            (x, y), (u, v) = centre[i], centre[index[axle_of[other]]]
+            # The gear's slot 0 starts here: the axle's start, and its part's
+            # place round it.
+            start = (
+                2
+                * math.pi
+                * (turned[i] / (g.direction * g.n_slots) + part(gear) / g.n_slots)
+            )
+            at_contact = (math.atan2(v - y, u - x) - start) * g.n_slots / (2 * math.pi)
+            slot[gear] = round(at_contact - g.direction * phase) % g.n_slots
+        connections.append(
+            Connection(a, b, slot[a], slot[b], name=f"{a}-{b}", phase=phase)
+        )
+    return DescribedMachine(
+        gears,
+        connections,
+        {g.name: tuple(map(float, centre[index[axle_of[g.name]]])) for g in gears},
+        radii={g.name: float(radii[index[axle_of[g.name]]]) for g in gears},
     )
 
 
