@@ -312,6 +312,263 @@ def _relax(centres, radii, meshes, others):
     return centres, radii
 
 
+# Rounds of :func:`time_ring`, at most, and the error at which it stops, as
+# a share of a mesh's length or of the gap between two horns.
+TIMING_ROUNDS = 400
+TIMING_TOLERANCE = 1e-7
+# Levenberg-Marquardt's damping in time_ring to start with, how it changes
+# after a step that helps and one that does not, and the least it may be:
+# undamped, the fit's free directions (every gear turned alike, the whole
+# layout moved) leave its equations singular.
+DAMPING = 1e-2
+DAMPING_EASE = 3.0
+DAMPING_STIFFEN = 4.0
+DAMPING_LEAST = 1e-9
+# Two centres closer than this are at one place, with no direction between
+# them: a step there is taken from this far apart.
+SAME_PLACE = 1e-12
+# A contact handing over this close to a whole step hands over at its end.
+WHOLE_STEP = 1e-3
+
+
+@dataclass(frozen=True)
+class RingContacts:
+    """When a ring's contacts come round, for :func:`time_ring`: one entry a
+    contact, between gear ``first`` and gear ``second`` (indices).
+
+    A gear of ``n`` slots a part, turning ``d`` (+1 anticlockwise) and
+    turned ``psi`` to start with, brings its part ``p`` of ``k`` to a
+    contact at angle ``alpha`` at the times ``t`` with
+    ``d n (alpha - psi) / 2 pi - d p / k = t`` (mod 1).  Written with the
+    gear's start ``x = d n psi / 2 pi``, that is
+    ``turns * alpha - x - part = t``.
+
+    Attributes:
+        first: Each contact's first gear.
+        second: Its second gear.
+        turns: ``d n / 2 pi`` of each gear, by index.
+        part_first: ``d p / k`` of the first gear's part there.
+        part_second: The same of the second's.
+        weight: A miss of one step at the contact, as a share of the gap
+            between two horns of the first gear.
+    """
+
+    first: np.ndarray
+    second: np.ndarray
+    turns: np.ndarray
+    part_first: np.ndarray
+    part_second: np.ndarray
+    weight: np.ndarray
+
+
+def _wrap(x):
+    """``x`` mod 1, between -1/2 and 1/2."""
+    return (x + 0.5) % 1.0 - 0.5
+
+
+class _Timing:
+    """What :func:`time_ring` fits: the gears' centres, radii and starts,
+    packed into one vector ``z``, and the errors it drives to nothing, with
+    their derivatives."""
+
+    def __init__(self, convention, meshes, others, contacts: RingContacts):
+        self.n = len(convention)
+        self.meshes, self.others, self.contacts = meshes, others, contacts
+        c = contacts
+        # A contact asks first's start minus second's to be
+        # slope * alpha + offset, alpha its angle seen from first.
+        self.slope = c.turns[c.first] - c.turns[c.second]
+        self.offset = -c.part_first + c.part_second - c.turns[c.second] * math.pi
+        self.least = convention * RADIUS_RANGE[0]
+        self.most = convention * RADIUS_RANGE[1]
+
+    def split(self, z):
+        """The centres, radii and starts packed in ``z``."""
+        n = self.n
+        return z[: 2 * n].reshape(n, 2), z[2 * n : 3 * n], z[3 * n :]
+
+    def angle(self, centres):
+        """Each contact's angle, seen from its first gear, and the vector
+        from that gear's centre to the second's."""
+        c = self.contacts
+        gap = centres[c.second] - centres[c.first]
+        return np.arctan2(gap[:, 1], gap[:, 0]), gap
+
+    def miss(self, z):
+        """How far each contact's two horns miss each other, in steps."""
+        centres, _, turned = self.split(z)
+        alpha, _ = self.angle(centres)
+        c = self.contacts
+        wanted = self.slope * alpha + self.offset
+        return _wrap(turned[c.first] - turned[c.second] - wanted)
+
+    def residuals(self, z):
+        """Every error, as a share of what it is measured against: each mesh
+        too long or too short, each two gears that do not mesh closer than
+        ``CLEARANCE``, each contact's two horns missing each other."""
+        centres, radii, _ = self.split(z)
+        a, b, _, apart = _pairs(centres, self.meshes)
+        mesh = apart / (radii[a] + radii[b]) - 1
+        a, b, _, apart = _pairs(centres, self.others)
+        clear = (1 + CLEARANCE) * (radii[a] + radii[b])
+        overlap = np.maximum(clear - apart, 0) / clear
+        return np.concatenate([mesh, overlap, self.contacts.weight * self.miss(z)])
+
+    def jacobian(self, z):
+        """The derivative of each error of :meth:`residuals` with respect to
+        each number of ``z``, one row an error."""
+        centres, radii, _ = self.split(z)
+        n = self.n
+        rows = []
+        a, b, unit, apart = _pairs(centres, self.meshes)
+        apart = np.maximum(apart, SAME_PLACE)
+        touch = radii[a] + radii[b]
+        mesh = np.zeros((len(a), 4 * n))
+        k = np.arange(len(a))
+        for axis in (0, 1):
+            mesh[k, 2 * b + axis] += unit[:, axis] / touch
+            mesh[k, 2 * a + axis] -= unit[:, axis] / touch
+        mesh[k, 2 * n + a] = mesh[k, 2 * n + b] = -apart / touch**2
+        rows.append(mesh)
+        a, b, unit, apart = _pairs(centres, self.others)
+        apart = np.maximum(apart, SAME_PLACE)
+        clear = (1 + CLEARANCE) * (radii[a] + radii[b])
+        near = apart < clear
+        overlap = np.zeros((len(a), 4 * n))
+        k = np.arange(len(a))[near]
+        a, b, unit, apart, clear = (
+            a[near],
+            b[near],
+            unit[near],
+            apart[near],
+            clear[near],
+        )
+        for axis in (0, 1):
+            overlap[k, 2 * b + axis] -= unit[:, axis] / clear
+            overlap[k, 2 * a + axis] += unit[:, axis] / clear
+        overlap[k, 2 * n + a] = overlap[k, 2 * n + b] = (
+            apart * (1 + CLEARANCE) / clear**2
+        )
+        rows.append(overlap)
+        c = self.contacts
+        _, gap = self.angle(centres)
+        gx, gy = gap[:, 0], gap[:, 1]
+        square = np.maximum(gx * gx + gy * gy, SAME_PLACE**2)
+        turn = np.stack([-gy / square, gx / square], axis=1)
+        pull = (c.weight * self.slope)[:, None] * turn
+        timing = np.zeros((len(c.first), 4 * n))
+        k = np.arange(len(c.first))
+        for axis in (0, 1):
+            timing[k, 2 * c.second + axis] -= pull[:, axis]
+            timing[k, 2 * c.first + axis] += pull[:, axis]
+        timing[k, 3 * n + c.first] += c.weight
+        timing[k, 3 * n + c.second] -= c.weight
+        rows.append(timing)
+        return np.vstack(rows)
+
+    def clip(self, z):
+        """``z`` with each radius within ``RADIUS_RANGE`` of its
+        convention."""
+        z = z.copy()
+        n = self.n
+        z[2 * n : 3 * n] = np.clip(z[2 * n : 3 * n], self.least, self.most)
+        return z
+
+    def start(self, centres):
+        """Each gear's start from a spanning tree of its contacts, the rest
+        of the contacts left to the fit."""
+        c = self.contacts
+        turned = np.zeros(self.n)
+        alpha, _ = self.angle(centres)
+        wanted = self.slope * alpha + self.offset
+        placed = {0}
+        while len(placed) < self.n:
+            for k, (u, v) in enumerate(zip(c.first, c.second)):
+                if (u in placed) != (v in placed):
+                    if u in placed:
+                        turned[v] = turned[u] - wanted[k]
+                        placed.add(int(v))
+                    else:
+                        turned[u] = turned[v] + wanted[k]
+                        placed.add(int(u))
+                    break
+            else:
+                break  # not connected: the rest stay at 0
+        return turned
+
+
+def time_ring(
+    centres: np.ndarray,
+    radii: np.ndarray,
+    convention: np.ndarray,
+    meshes: list[tuple[int, int]],
+    others: list[tuple[int, int]],
+    contacts: RingContacts,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[float]]:
+    """Move and size the gears of a ring, from :func:`ring_geometry`'s
+    layout, so that each contact's two horns come round to it together, and
+    say when.
+
+    A contact between two gears asks their starts to differ by so much, mod
+    1 (:class:`RingContacts`): one equation a contact, and one start a
+    gear, so round each ring of gears one equation is left over, which the
+    layout has to meet.  Round a single ring of gears alike it cancels.
+    Every two gears that mesh touch, no two others come within
+    ``CLEARANCE``, each radius stays within ``RADIUS_RANGE`` of its
+    convention, and the horns arrive together: a least-squares fit of all
+    of it, by Levenberg-Marquardt with exact derivatives.
+
+    Args:
+        centres: Each gear's centre, ``(n, 2)``.
+        radii: Each gear's radius as drawn.
+        convention: Each gear's radius by the drawing convention
+            (:func:`_gear_radius`), which its radius may leave by
+            ``RADIUS_RANGE`` at most.
+        meshes: The gears that mesh, as index pairs.
+        others: Those that do not.
+        contacts: When the contacts come round.
+
+    Returns:
+        The centres, the radii, each gear's start (``x`` of
+        :class:`RingContacts`), and when each contact hands over, as a share
+        of a step.
+    """
+    fit = _Timing(convention, meshes, others, contacts)
+    z = np.concatenate([centres.ravel(), radii, fit.start(centres)])
+    damping = DAMPING
+    error = fit.residuals(z)
+    for _ in range(TIMING_ROUNDS):
+        if np.max(np.abs(error)) < TIMING_TOLERANCE:
+            break
+        jac = fit.jacobian(z)
+        normal = jac.T @ jac + damping * np.eye(len(z))
+        try:
+            step = np.linalg.solve(normal, -jac.T @ error)
+        except np.linalg.LinAlgError:
+            damping *= DAMPING_STIFFEN
+            continue
+        trial = fit.clip(z + step)
+        trial_error = fit.residuals(trial)
+        if np.all(np.isfinite(trial_error)) and np.sum(trial_error**2) < np.sum(
+            error**2
+        ):
+            z, error = trial, trial_error
+            damping = max(damping / DAMPING_EASE, DAMPING_LEAST)
+        else:
+            damping *= DAMPING_STIFFEN
+    centres, radii, turned = fit.split(z)
+    alpha, _ = fit.angle(centres)
+    c = contacts
+    # When the first gear's part comes round, the miss shared with the
+    # second's by halves.
+    own = c.turns[c.first] * alpha - turned[c.first] - c.part_first
+    phases = [
+        0.0 if min(phase, 1 - phase) < WHOLE_STEP else phase
+        for phase in ((own + fit.miss(z) / 2) % 1.0).tolist()
+    ]
+    return centres.copy(), radii.copy(), turned.copy(), phases
+
+
 def _orient(
     machine: BraidingMachine,
     placed: dict[str, tuple[float, float]],

@@ -690,20 +690,23 @@ def test_the_timing_takes_no_step_from_two_gears_at_one_place():
 
     import numpy as np
 
-    from braidpy.horn_gear.horn_timing import Axle, Meeting, time_horns
+    from braidpy.horn_gear.layout import RingContacts, time_ring
 
     r = math.sqrt(4)
-    axles = [
-        Axle((0.0, 0.0), r, r, 4, 4, 1),
-        Axle((0.0, 0.0), r, r, 4, 4, -1),
-        Axle((2 * r, 2 * r), r, r, 4, 4, 1),
-        Axle((2 * r, 0.0), r, r, 4, 4, -1),
-    ]
-    meetings = [Meeting(0, 1, 0, 0), Meeting(1, 2, 0, 0), Meeting(2, 3, 0, 0)]
-    meetings.append(Meeting(3, 0, 0, 0))
+    centres = np.array([[0.0, 0.0], [0.0, 0.0], [2 * r, 2 * r], [2 * r, 0.0]])
+    first, second = np.array([0, 1, 2, 3]), np.array([1, 2, 3, 0])
+    turns = np.array([1, -1, 1, -1]) * 4 / (2 * math.pi)
+    contacts = RingContacts(first, second, turns, np.zeros(4), np.zeros(4), np.ones(4))
     with np.errstate(all="raise"):
-        timed = time_horns(axles, meetings)
-    assert np.all(np.isfinite(timed.centres)) and math.isfinite(timed.miss)
+        placed, _, _, phases = time_ring(
+            centres,
+            np.full(4, r),
+            np.full(4, r),
+            [(0, 1), (1, 2), (2, 3), (0, 3)],
+            [(0, 2), (1, 3)],
+            contacts,
+        )
+    assert np.all(np.isfinite(placed)) and all(map(math.isfinite, phases))
 
 
 def test_the_timing_damps_harder_where_its_equations_are_singular(monkeypatch):
@@ -712,7 +715,7 @@ def test_the_timing_damps_harder_where_its_equations_are_singular(monkeypatch):
     raise: the ladder still has every contact on a horn."""
     import numpy as np
 
-    from braidpy.horn_gear import horn_timing
+    from braidpy.horn_gear import layout
     from braidpy.horn_gear.layout import compute_layout, offset_residuals
 
     solve, calls = np.linalg.solve, []
@@ -723,7 +726,7 @@ def test_the_timing_damps_harder_where_its_equations_are_singular(monkeypatch):
             raise np.linalg.LinAlgError("Singular matrix")
         return solve(a, b)
 
-    monkeypatch.setattr(horn_timing.np.linalg, "solve", singular_once)
+    monkeypatch.setattr(layout.np.linalg, "solve", singular_once)
     machine = machine_from_graph(LADDERS[0], 4)
     assert len(calls) > 1
     assert max(offset_residuals(machine, compute_layout(machine)).values()) < 1e-3
