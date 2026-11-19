@@ -26,6 +26,13 @@ solving_numerically.md
 
 ```{toctree}
 :maxdepth: 2
+:caption: Horn gear machines
+
+horn_gear_layout.md
+```
+
+```{toctree}
+:maxdepth: 2
 :caption: Settling a braid
 
 rope_physics.md
