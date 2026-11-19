@@ -189,7 +189,7 @@ def machine_from_graph(
 def _meshed(text: str, n_slots: int) -> BraidingMachine:
     """The machine whose gears mesh as written, without axials, loaded as
     it loads itself (:func:`machine_from_graph`)."""
-    from .layout import _layout_bfs, compute_layout
+    from .layout import _layout_bfs, compute_layout, ring_geometry
 
     pairs, axles, own = _read(text)
     named = list(dict.fromkeys(gear for pair in pairs for gear in pair))
@@ -307,12 +307,17 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
                     "in opposite orders, so pair them in those orders."
                 )
             phase[(a, b)] = phase[(b, a)] = tick / k
+    solved_radii = False
     if axles and nx.is_forest(graph):
         centres = _layout_bfs(
             sketch, directions=_interleaved(axles, meets, slots, axle_of)
         )
-    else:
+    elif nx.is_forest(graph):
         centres = compute_layout(sketch)
+    else:
+        # A ring: drawn to touch, sizes and all (ring_geometry).
+        centres, radius = ring_geometry(sketch)
+        solved_radii = True
     at = {gear: centres[axle_of[gear]] for gear in named}
     slot = {
         gear.name: _contact_slots(
@@ -335,6 +340,9 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         gears,
         connections,
         at,
+        radii=(
+            {gear: radius[axle_of[gear]] for gear in named} if solved_radii else None
+        ),
     )
 
 

@@ -513,3 +513,45 @@ def test_split_gears_meshing_twice_keep_their_carriers_apart(graph):
         for a, b in combinations(tracks.xy, 2)
     )
     assert closest > gap / 2
+
+
+# Ladders of gears: of two sizes, alike, and of two sizes with split gears
+# in the middle, which was laid out with its rungs a third as long as they
+# should be.
+LADDERS = [
+    "A0-A1:3 A1-A2 B0-B1:3 B1-B2 A0-B0 A1-B1 A2-B2",
+    "A0-A1 A1-A2 B0-B1 B1-B2 A0-B0 A1-B1 A2-B2",
+    (
+        "A0-A1:3 A0-B0 A1-A2:3 A1-B1:3 A2-A3a A2-B2:3 A3a-B3a B0-B1 B1-B2 B2-B3a "
+        "A3b-A4:3 A3b-B3b A4-A5:3 A4-B4:3 A5-A6 A5-B5:3 A6-B6 B3b-B4 B4-B5 B5-B6 "
+        "A3a+A3b B3a+B3b"
+    ),
+]
+
+
+@pytest.mark.parametrize("graph", LADDERS)
+def test_a_matrix_of_gears_touches_and_overlaps_nowhere(graph):
+    """Kamada-Kawai's compromise, shrunk till no mesh was too long, left
+    every other too short: gears ran through each other.  Relaxed, every
+    two axles that mesh touch, and no two others overlap.  The parts of a
+    split gear share an axle: two axles mesh if any of their parts do."""
+    import math
+
+    from braidpy.horn_gear.layout import CLEARANCE, compute_layout, gear_radii
+
+    machine = machine_from_graph(graph, 4)
+    centres, radii = compute_layout(machine), gear_radii(machine)
+    # An axle by where it stands: a split gear's parts stand on one.
+    meshes = {
+        frozenset((centres[c.gear_a], centres[c.gear_b])) for c in machine.connections
+    }
+    size = {centres[name]: radii[name] for name in centres}
+    axles = sorted(size)
+    for i, a in enumerate(axles):
+        for b in axles[i + 1 :]:
+            apart = math.dist(a, b)
+            touching = size[a] + size[b]
+            if frozenset((a, b)) in meshes:
+                assert apart == pytest.approx(touching, rel=0.01)
+            else:
+                assert apart >= touching * (1 + CLEARANCE) * 0.99
