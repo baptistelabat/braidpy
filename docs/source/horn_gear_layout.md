@@ -161,7 +161,7 @@ $$
 
 (round a split gear, all its parts' horns count), is $g \, b / d$: $g / d$
 bobbin diameters. Braid Studio sizes every machine so for bobbins of
-`bobbin_diameter` (20 mm unless the link says otherwise), and says how
+`bobbin_diameter_mm` (20 unless the link says otherwise), and says how
 large its horns, gears and deck come out.
 
 Two carriers closer than `MEET` of $g$ are at one point, as far as the
