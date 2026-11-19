@@ -87,10 +87,8 @@ The studio has a form and a 3D view.
   says at which step and where, and the carriers that met are ringed where
   they started. Left as the machine loads itself, the loading is not
   written into the link. A note says how large the machine must be for its
-  bobbins, 20 mm across or `bobbin_diameter_mm` in the link: drawn larger, a
-  machine keeps its carriers further apart in proportion, so it is sized
-  for the two coming closest to clear each other
-  ({func}`~braidpy.horn_gear.take_off.clearance`).
+  bobbins, 20 mm across or `bobbin_diameter_mm` in the link
+  ([How large a machine must be for its bobbins](horn_gear_layout.md#how-large-a-machine-must-be-for-its-bobbins)).
 - Its **handle** turns it, a step at a time: ▶ turns a step, smoothly, ◀
   turns it back, ⏮ goes back to step 0, and **Run** turns it until carriers
   meet, or until stopped. Carriers that meet stop the handle, ringed, at the
