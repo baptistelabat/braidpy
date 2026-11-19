@@ -215,7 +215,6 @@ def _layout_bfs(
     machine: BraidingMachine,
     scale: float = 1.0,
     directions=None,
-    reach=None,
 ) -> dict[str, tuple[float, float]]:
     """Exact tangential layout for tree graphs via BFS.
 
@@ -232,11 +231,6 @@ def _layout_bfs(
             back to the neighbour it was placed from (None for the first
             gear) and the neighbours to place from it, it gives a direction
             for each.
-        reach: How far apart to put a pair instead of rim to rim: called with
-            the two gears, it gives the distance between their centres, or
-            None to have them touch.  Two gears sharing two bobbins have to
-            overlap by a measured amount (:func:`sharing_two_bobbins`).
-
     Returns:
         Gear name -> (x, y).
     """
@@ -252,7 +246,7 @@ def _layout_bfs(
         onward = sorted(n for n in machine.graph.neighbors(gear) if n not in pos)
         x, y = pos[gear]
         for placed, angle in zip(onward, choose(gear, back[gear], onward)):
-            apart = (reach and reach(gear, placed)) or radii[gear] + radii[placed]
+            apart = radii[gear] + radii[placed]
             pos[placed] = (x + apart * math.cos(angle), y + apart * math.sin(angle))
             back[placed] = angle + math.pi
             queue.append(placed)
@@ -339,17 +333,7 @@ def contact_point(
     and the bobbin sits at its middle — which lies on the line between the two
     centres.  Where the circles merely touch, the two crossings coincide and
     that middle is the tangent point, so one construction serves both.
-
-    Two gears sharing *two* bobbins have one each at the crossings rather than
-    both at that middle, which no construction from the two circles alone can
-    tell apart: the machine says which is which through
-    :meth:`~braidpy.horn_gear.model.BraidingMachine.preferred_contact_point`,
-    and that answer wins here.
     """
-    pinned = machine.preferred_contact_point(gear, neighbor, scale)
-    if pinned is not None:
-        return pinned
-
     cx, cy = layout[gear]
     nx_, ny_ = layout[neighbor]
     dx, dy = nx_ - cx, ny_ - cy
@@ -415,8 +399,10 @@ def _contacts(
     layout: dict[str, tuple[float, float]],
 ) -> dict[str, list[tuple[float, float]]]:
     """Per gear, each of its contacts: the angle on the gear of the slot that
-    is there at every step, ``2π*slot0/N``, and the contact's angle on the
-    deck, seen from the gear's centre."""
+    is there at every step, ``2π*slot0/N`` — or, for a contact handing over
+    ``phase`` of the way through a step, the angle at the step's start of
+    the slot there then, a ``phase`` of a slot back — and the contact's
+    angle on the deck, seen from the gear's centre."""
     contacts: dict[str, list[tuple[float, float]]] = {
         name: [] for name in machine.gears
     }
@@ -428,7 +414,7 @@ def _contacts(
             gear = machine.gears[gname]
             contacts[gname].append(
                 (
-                    2 * math.pi * slot0 / gear.n_slots,
+                    2 * math.pi * (slot0 + gear.direction * conn.phase) / gear.n_slots,
                     contact_angle(machine, layout, gname, other),
                 )
             )
@@ -736,79 +722,6 @@ def ring_core(
     return None
 
 
-def shared_bobbins(
-    centre_a: tuple[float, float],
-    radius_a: float,
-    centre_b: tuple[float, float],
-    radius_b: float,
-) -> tuple[tuple[float, float], tuple[float, float]] | None:
-    """Where a bobbin can sit on both of two rims: their two crossings.
-
-    A bobbin rides at its gear's own notch radius, so to be on two gears at
-    once it must be that far from each — a crossing of the two notch circles.
-    Rims that merely touch cross once and rims that miss not at all, and
-    neither case has two bobbins to place.
-
-    Args:
-        centre_a: Where the first gear stands.
-        radius_a: Its notch radius.
-        centre_b: Where the second stands.
-        radius_b: Its notch radius.
-
-    Returns:
-        The two crossings, the one anticlockwise of the line of centres
-        first, or None where the rims do not cross twice.
-    """
-    (ax, ay), (bx, by) = centre_a, centre_b
-    apart = math.hypot(bx - ax, by - ay)
-    if apart <= abs(radius_a - radius_b) or apart >= radius_a + radius_b:
-        return None
-    along = (apart**2 + radius_a**2 - radius_b**2) / (2 * apart)
-    across = math.sqrt(max(radius_a**2 - along**2, 0.0))
-    ux, uy = (bx - ax) / apart, (by - ay) / apart
-    middle = (ax + along * ux, ay + along * uy)
-    return (
-        (middle[0] - across * uy, middle[1] + across * ux),
-        (middle[0] + across * uy, middle[1] - across * ux),
-    )
-
-
-def sharing_two_bobbins(horns_a: int, horns_b: int) -> tuple[float, float, float]:
-    """How two wheels sharing two bobbins must be sized and spaced.
-
-    Two wheels that share two bobbins have one at each crossing of their
-    notch circles, and each crossing has to be a horn of the wheel it is on.
-    Seen from either centre the two bobbins are then a whole number of horn
-    pitches apart, and an *odd* number of them, since the parts' horns take
-    turns round the wheel and the two bobbins belong to different parts.  One
-    pitch apart is the shallowest that works, which puts each crossing half a
-    pitch — ``pi / horns`` — off the line of centres.
-
-    The triangle of the two centres and a bobbin then has both of its angles
-    at the centres known, so the sine rule fixes its shape outright:
-
-        radius_a : radius_b : apart
-            = sin(pi / horns_b) : sin(pi / horns_a)
-            : sin(pi / horns_a + pi / horns_b)
-
-    For two alike wheels that is radii the same and centres
-    ``2 cos(pi / horns)`` radii apart: an overlap of 15.2% of a rim for eight
-    horns, and the fewer the horns the deeper it has to be — 58.6% for four,
-    where a pitch is a quarter turn.  It is the least interpenetration that
-    puts a horn of each wheel at each crossing.
-
-    Args:
-        horns_a: Horns round the whole of the first wheel.
-        horns_b: Horns round the whole of the second.
-
-    Returns:
-        A radius for each wheel and the distance between their centres, to
-        scale: multiply all three to size the pair.
-    """
-    first, second = math.pi / horns_a, math.pi / horns_b
-    return math.sin(second), math.sin(first), math.sin(first + second)
-
-
 def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]:
     """Return the visual radius for each gear.
 
@@ -866,7 +779,7 @@ def carrier_xy(
     Returns:
         The carrier's (x, y).
     """
-    gear_name, slot = machine.riding_position(position, time)
+    gear_name, slot = machine.riding_position(position, time, frac)
     cx, cy = layout[gear_name]
     r = carrier_radii[gear_name]
     ang = angles[gear_name](machine.slot_angle(gear_name, slot, time, frac))
