@@ -21,8 +21,12 @@ bring it home.  :func:`closing_repeats` says how many, from the strands'
 from collections.abc import Sequence
 from functools import reduce
 from math import lcm
+from typing import TypeVar
 
 from braidpy.braid import Braid
+
+# Whatever a sequence repeats (repeating_unit).
+T = TypeVar("T")
 
 
 def permutation(braid: Braid) -> list[int]:
@@ -111,11 +115,12 @@ def closing_repeats(braid: Braid, limit: int | None = 1000) -> int | None:
     return repeats if limit is None or repeats <= limit else None
 
 
-def repeating_unit(word: Sequence[int]) -> list[int]:
+def repeating_unit(word: Sequence[T]) -> list[T]:
     """The shortest word that, repeated, makes ``word``.
 
     Args:
-        word: Signed Artin generators.
+        word: Signed Artin generators, or any sequence: the gears a carrier
+            track runs round, say.
 
     Returns:
         The unit: ``word`` itself if it repeats nothing shorter.

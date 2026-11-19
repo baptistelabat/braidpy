@@ -8,6 +8,7 @@ import json
 
 import pytest
 
+from braidpy.machine_catalog import CATALOGUE as MACHINES
 from braidpy.web import build
 
 
@@ -254,3 +255,24 @@ def test_a_loading_that_cannot_be_braided_says_so(carriers, message):
             {"source": "machine", "name": "tubular_8", "carriers": carriers},
             tighten=False,
         )
+
+
+@pytest.mark.parametrize("name", sorted(MACHINES))
+def test_a_track_is_drawn_round_its_loop_once(name):
+    """A carrier walked over its machine's period can go round its loop many
+    times, as on the three-band machine, whose period is long.  Drawn so,
+    and thinned to the points the page keeps, a track joined points laps
+    apart by straight lines across the deck.  Each is drawn round once:
+    thinned, it still follows its gears, a step never as long as half the
+    smallest gear's radius."""
+    import math
+    from itertools import pairwise
+
+    from braidpy.horn_gear.layout import gear_radii
+    from braidpy.web.machines import tracks
+
+    machine = MACHINES[name].make()
+    smallest = min(gear_radii(machine).values())
+    for _, points in tracks(machine):
+        steps = [math.dist(p, q) for p, q in pairwise(points)]
+        assert max(steps) < smallest / 2
