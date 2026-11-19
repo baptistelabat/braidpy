@@ -46,6 +46,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy.pure_braid import repeating_unit
 from braidpy.utils import PALETTE, lazy_module, play_controls
 
 if TYPE_CHECKING:
@@ -348,7 +349,9 @@ def track_curves(
     period = simulation_period(machine)
     paths: dict[tuple[tuple[str, str, str], ...], None] = {}
     for track in tracks:
-        runs = tuple(_track_runs(walk(machine, track[0], period)))
+        # Walked over the machine's period, a carrier can go round its loop
+        # many times: drawn once.
+        runs = tuple(repeating_unit(_track_runs(walk(machine, track[0], period))))
         if not runs:
             continue
         # Same loop entered at a different gear is still the same loop.
