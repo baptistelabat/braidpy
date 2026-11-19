@@ -58,6 +58,12 @@ TIMING_TOLERANCE = 1e-7
 DAMPING = 1e-2
 DAMPING_EASE = 3.0
 DAMPING_STIFFEN = 4.0
+# The least damping: undamped, the fit's free directions (every gear turned
+# alike, the whole layout moved) leave its equations singular.
+DAMPING_LEAST = 1e-9
+# Two centres closer than this are at one place, with no direction between
+# them: a step there is taken from this far apart.
+SAME_PLACE = 1e-12
 # A contact handing over this close to a whole step hands over at its end.
 WHOLE_STEP = 1e-3
 
@@ -190,7 +196,7 @@ class _Problem:
         for p, q in self.mesh:
             row = np.zeros(4 * n)
             gap = centres[q] - centres[p]
-            apart = float(np.linalg.norm(gap))
+            apart = max(float(np.linalg.norm(gap)), SAME_PLACE)
             touch = radii[p] + radii[q]
             unit = gap / apart
             row[2 * q : 2 * q + 2] += unit / touch
@@ -200,7 +206,7 @@ class _Problem:
         for p, q in self.others:
             row = np.zeros(4 * n)
             gap = centres[q] - centres[p]
-            apart = float(np.linalg.norm(gap))
+            apart = max(float(np.linalg.norm(gap)), SAME_PLACE)
             clear = (1 + CLEARANCE) * (radii[p] + radii[q])
             if apart < clear:
                 unit = gap / apart
@@ -212,7 +218,7 @@ class _Problem:
         for k, (u, v) in enumerate(zip(self.mu, self.mv)):
             row = np.zeros(4 * n)
             gx, gy = gaps[k]
-            turn = np.array([-gy, gx]) / (gx * gx + gy * gy)
+            turn = np.array([-gy, gx]) / max(gx * gx + gy * gy, SAME_PLACE**2)
             row[2 * v : 2 * v + 2] -= self.weight[k] * self.slope[k] * turn
             row[2 * u : 2 * u + 2] += self.weight[k] * self.slope[k] * turn
             row[3 * n + u] += self.weight[k]
@@ -271,10 +277,18 @@ def time_horns(axles: list[Axle], meetings: list[Meeting]) -> Timed:
             break
         jac = problem.jacobian(z)
         normal = jac.T @ jac + damping * np.eye(len(z))
-        trial = problem.clip(z + np.linalg.solve(normal, -jac.T @ error))
+        try:
+            step = np.linalg.solve(normal, -jac.T @ error)
+        except np.linalg.LinAlgError:
+            damping *= DAMPING_STIFFEN
+            continue
+        trial = problem.clip(z + step)
         trial_error = problem.residuals(trial)
-        if np.sum(trial_error**2) < np.sum(error**2):
-            z, error, damping = trial, trial_error, damping / DAMPING_EASE
+        if np.all(np.isfinite(trial_error)) and np.sum(trial_error**2) < np.sum(
+            error**2
+        ):
+            z, error = trial, trial_error
+            damping = max(damping / DAMPING_EASE, DAMPING_LEAST)
         else:
             damping *= DAMPING_STIFFEN
     centres, radii, turned = problem.split(z)
