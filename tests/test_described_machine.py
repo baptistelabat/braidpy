@@ -679,3 +679,51 @@ def test_the_split_ladder_puts_every_contact_on_a_horn():
     assert len({round(c.phase, 3) for c in machine.connections}) > 2
     carriers = machine.default_carriers()
     simulate(machine, state_period(machine, carriers), carriers)
+
+
+def test_the_timing_takes_no_step_from_two_gears_at_one_place():
+    """Two meshing gears started at one place have no direction between
+    them: the fit's derivatives divided by their distance, gave a NaN, and
+    on some machines the linear solve raised on it.  It takes its step from
+    as far apart as SAME_PLACE, and every number stays finite."""
+    import math
+
+    import numpy as np
+
+    from braidpy.horn_gear.horn_timing import Axle, Meeting, time_horns
+
+    r = math.sqrt(4)
+    axles = [
+        Axle((0.0, 0.0), r, r, 4, 4, 1),
+        Axle((0.0, 0.0), r, r, 4, 4, -1),
+        Axle((2 * r, 2 * r), r, r, 4, 4, 1),
+        Axle((2 * r, 0.0), r, r, 4, 4, -1),
+    ]
+    meetings = [Meeting(0, 1, 0, 0), Meeting(1, 2, 0, 0), Meeting(2, 3, 0, 0)]
+    meetings.append(Meeting(3, 0, 0, 0))
+    with np.errstate(all="raise"):
+        timed = time_horns(axles, meetings)
+    assert np.all(np.isfinite(timed.centres)) and math.isfinite(timed.miss)
+
+
+def test_the_timing_damps_harder_where_its_equations_are_singular(monkeypatch):
+    """Where the fit's equations are singular, as CI's BLAS once found them
+    on a ladder of two sizes, it damps harder and goes on, rather than
+    raise: the ladder still has every contact on a horn."""
+    import numpy as np
+
+    from braidpy.horn_gear import horn_timing
+    from braidpy.horn_gear.layout import compute_layout, offset_residuals
+
+    solve, calls = np.linalg.solve, []
+
+    def singular_once(a, b):
+        calls.append(1)
+        if len(calls) == 1:
+            raise np.linalg.LinAlgError("Singular matrix")
+        return solve(a, b)
+
+    monkeypatch.setattr(horn_timing.np.linalg, "solve", singular_once)
+    machine = machine_from_graph(LADDERS[0], 4)
+    assert len(calls) > 1
+    assert max(offset_residuals(machine, compute_layout(machine)).values()) < 1e-3
