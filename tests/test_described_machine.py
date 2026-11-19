@@ -188,14 +188,22 @@ def test_a_split_gear_is_its_parts_on_one_axle():
 def test_a_gear_split_in_three_braids_three_plaits_round_it():
     """Its parts' horns take turns round it, so each part's neighbour stands
     where a horn of its own part comes round, and no two parts' carriers
-    meet: three plaits, three yarns each."""
+    take one slot: three plaits, three yarns each.  A carrier leaving for a
+    neighbour runs close by the next part's horn coming round to that
+    contact, but not to it: the machine has to be large for its bobbins,
+    and says how large."""
     from braidpy import web
+    from braidpy.horn_gear.take_off import MEET, clearance
 
+    graph = "H1-A H2-B H3-C H1+H2+H3"
+    room = clearance(machine_from_graph(graph, 3), 6)
+    assert room is not None and room.met is None
+    assert MEET < room.share < 0.1
     made = web.build(
         {
             "source": "machine",
             "name": "custom",
-            "graph": "H1-A H2-B H3-C H1+H2+H3",
+            "graph": graph,
             "n_slots": 3,
             "cycles": 1,
         },
@@ -203,6 +211,53 @@ def test_a_gear_split_in_three_braids_three_plaits_round_it():
     )
     assert len(made["strands"]) == 9
     assert "collision" not in made["info"]
+    assert any("Sized for bobbins" in note for note in made["notes"])
+
+
+def test_carriers_at_one_point_stop_a_machine_of_any_size():
+    """Two carriers in different slots can still come to one point, as on a
+    gear drawn on top of another: scaled up, they stay at one point, so the
+    machine stops there."""
+    from braidpy.horn_gear.described import DescribedMachine
+    from braidpy.horn_gear.layout import compute_layout
+    from braidpy.horn_gear.take_off import too_close
+
+    machine = machine_from_graph("A-B B-C", 4)
+    at = compute_layout(machine)
+    piled = DescribedMachine(
+        list(machine.gears.values()), machine.connections, {**at, "C": at["A"]}
+    )
+    assert too_close(machine, 8) is None
+    met = too_close(piled, 8)
+    assert met is not None and met.distance < met.limit
+
+
+def test_a_machine_drawn_larger_keeps_its_carriers_further_apart():
+    """Scaled up, every distance between carriers grows alike: bobbins of a
+    given size pass on a machine drawn ``scale_for`` times as large."""
+    from braidpy.horn_gear.take_off import clearance
+
+    machine = machine_from_graph("A-B B-C C-D D-A", 4)
+    small, large = clearance(machine, 8), clearance(machine, 8, scale=2.0)
+    assert small is not None and large is not None
+    assert large.distance == pytest.approx(2 * small.distance)
+    assert large.share == pytest.approx(small.share)
+    assert small.scale_for(small.distance * 3) == pytest.approx(3)
+
+
+@pytest.mark.parametrize("name", sorted(CATALOGUE))
+def test_no_catalogued_machine_brings_two_carriers_to_one_point(name):
+    """None is stopped: its carriers clear each other on a machine large
+    enough for its bobbins, a horn gap of at most two bobbins across."""
+    from braidpy.horn_gear.simulation import state_period
+    from braidpy.horn_gear.take_off import clearance
+
+    machine = CATALOGUE[name].make()
+    carriers = machine.default_carriers()
+    room = clearance(machine, min(state_period(machine, carriers) or 1, 64), carriers)
+    if room is not None:
+        assert room.met is None
+        assert room.share > 0.5
 
 
 def test_a_tree_of_gears_branches_rather_than_piling_up():
