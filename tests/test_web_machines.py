@@ -276,3 +276,21 @@ def test_a_track_is_drawn_round_its_loop_once(name):
     for _, points in tracks(machine):
         steps = [math.dist(p, q) for p, q in pairwise(points)]
         assert max(steps) < smallest / 2
+
+
+def test_a_machine_for_bobbins_twice_as_wide_is_twice_as_large():
+    """The size note follows ``bobbin_diameter_mm``: every size in it, in
+    mm, doubles with the bobbins."""
+    import re
+
+    def sizes(bobbin_mm):
+        spec = {"source": "machine", "name": "tubular_8", "cycles": 1}
+        if bobbin_mm is not None:
+            spec["bobbin_diameter_mm"] = bobbin_mm
+        made = build(spec, tighten=False)
+        (note,) = [n for n in made["notes"] if n.startswith("Sized for bobbins")]
+        return [float(x) for x in re.findall(r"(\d+(?:\.\d+)?) (?:to \d+ )?mm", note)]
+
+    usual, wide = sizes(None), sizes(40.0)
+    assert usual[0] == 20 and wide[0] == 40
+    assert wide[1:] == pytest.approx([2 * x for x in usual[1:]], abs=1)

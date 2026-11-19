@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -35,6 +35,7 @@ else:
 from braidpy.take_off import (
     StrandTrajectories,
     YarnPaths,
+    _level_pairs,
     jammed_contraction,
     lay_yarns,
     least_take_off,
@@ -51,15 +52,19 @@ from .layout import (
     slot_angles,
 )
 from .model import BraidingMachine
-from .simulation import CarrierId, Position, simulate, state_period
+from .simulation import CarrierId, CollisionError, Position, simulate, state_period
 
 __all__ = [
     "CarrierTrajectories",
+    "Clearance",
+    "TooCloseError",
     "YarnPaths",
     "carrier_trajectories",
+    "clearance",
     "default_take_off",
     "jammed_contraction",
     "tighten_yarns",
+    "too_close",
     "visualize_yarns",
     "yarn_paths",
 ]
@@ -155,6 +160,172 @@ def carrier_trajectories(
         layout=layout,
         radii=radii,
     )
+
+
+# Samples per step the carriers are followed at (clearance): a carrier goes
+# about a horn's gap in a step, so two passing each other are seen within a
+# twentieth of it.
+CLOSEST_SUBSTEPS = 24
+# Two carriers seen closer than this, as a share of the smallest gap between
+# two neighbouring horns of a gear, are at one point, as far as samples a
+# step apart by CLOSEST_SUBSTEPS can tell: about a sample's travel.  No
+# machine, however large, keeps their bobbins apart; the machine stops there
+# (too_close).  Carriers any further apart pass, on a machine large enough
+# for its bobbins (Clearance).
+MEET = 1 / CLOSEST_SUBSTEPS
+
+
+class TooCloseError(CollisionError):
+    """Raised for two carriers that come to one point (``MEET``), in
+    different slots: the simulation sees no collision, but they would hit on
+    a machine of any size.
+
+    Attributes:
+        step: The step during which they came that close.
+        collisions: The first carrier's place as the step began, and the
+            two carriers, as :class:`CollisionError` gives them.
+        history: The states before that step.
+        distance: How close they came.
+        limit: How close they could have come.
+    """
+
+    def __init__(
+        self,
+        step: int,
+        carriers: tuple[CarrierId, CarrierId],
+        distance: float,
+        limit: float,
+        history: list,
+    ) -> None:
+        place = history[-1].carrier_positions()[carriers[0]]
+        super().__init__(step, {place: list(carriers)}, history)
+        self.args = (
+            (
+                f"Carriers {carriers[0]} and {carriers[1]} came within "
+                f"{distance:.3f} of each other at step {step}, closer than "
+                f"{limit:.3f}."
+            ),
+        )
+        self.distance = distance
+        self.limit = limit
+
+
+@dataclass(frozen=True)
+class Clearance:
+    """How close a machine's carriers come to each other, and so how large
+    the machine has to be for its bobbins.
+
+    Scaled up, a machine keeps its carriers further apart in proportion:
+    bobbins of diameter ``b`` pass if it is drawn ``b / distance`` times as
+    large (:meth:`scale_for`), in whatever unit ``b`` is given.  Only two carriers at one point
+    (:attr:`met`) can pass on no machine.
+
+    Attributes:
+        distance: The closest two carriers come.
+        gap: The smallest gap between two neighbouring horns of a gear; round
+            a split gear, all its parts' horns count.
+        met: Where two carriers first came to one point, if they did.
+    """
+
+    distance: float
+    gap: float
+    met: TooCloseError | None
+
+    @property
+    def share(self) -> float:
+        """The closest two carriers come, as a share of :attr:`gap`."""
+        return self.distance / self.gap
+
+    def scale_for(self, bobbin_diameter: float) -> float:
+        """How large the machine must be drawn for bobbins of
+        ``bobbin_diameter`` to pass each other: so many of the bobbin's
+        units to one unit of the drawing (mm to a unit, for a diameter in
+        mm)."""
+        return bobbin_diameter / self.distance
+
+
+def clearance(
+    machine: BraidingMachine,
+    n_steps: int,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
+    scale: float = 1.0,
+) -> Clearance | None:
+    """How close the carriers come in ``n_steps``, following them as they are
+    drawn (:func:`carrier_trajectories`).
+
+    The simulation stops a machine where two carriers would take one slot
+    (:class:`~braidpy.horn_gear.simulation.CollisionError`).  Two carriers
+    in different slots can come to one point all the same, as on gears laid
+    out too close together.
+
+    Args:
+        machine: The machine definition.
+        n_steps: How many steps to look over.
+        carrier_positions: The loading; the machine's own if None.
+        scale: Layout scale.
+
+    A machine driven by a card, as a lace machine is, swaps two bobbins by
+    passing one by the other in a notch: it is not looked at.
+
+    Returns:
+        How close they come, and where two first came to one point if they
+        did; None for fewer than two carriers, or a machine driven by a card.
+    """
+    if not machine.has_fixed_tracks:
+        return None
+    if carrier_positions is None:
+        carrier_positions = machine.default_carriers()
+    trajectories = carrier_trajectories(
+        machine, n_steps, carrier_positions, CLOSEST_SUBSTEPS, scale
+    )
+    ids = list(trajectories.xy)
+    if len(ids) < 2:
+        return None
+    radii = trajectories.radii
+    # Round a split gear the horns of all its parts take turns: its size.
+    gap = min(
+        2 * radii[name] * np.sin(np.pi / (gear.size or gear.n_slots))
+        for name, gear in machine.gears.items()
+    )
+    limit = MEET * gap
+    # Every two carriers at each sample, paired as the yarns are for their
+    # contacts (take_off.contact): first come, first stopped.
+    xy = np.stack([trajectories.xy[k] for k in ids])
+    first, second = _level_pairs(len(ids), 0)
+    apart = np.linalg.norm(xy[first] - xy[second], axis=-1)
+    closest = float(apart.min())
+    met = None
+    close = np.argwhere(apart < limit)
+    if close.size:
+        pair, sample = close[np.argmin(close[:, 1])]
+        step = int(sample) // CLOSEST_SUBSTEPS + 1
+        history = simulate(machine, step - 1, carrier_positions)
+        both = (cast(CarrierId, ids[first[pair]]), cast(CarrierId, ids[second[pair]]))
+        met = TooCloseError(step, both, float(apart[pair, sample]), limit, history)
+    return Clearance(closest, float(gap), met)
+
+
+def too_close(
+    machine: BraidingMachine,
+    n_steps: int,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
+    scale: float = 1.0,
+) -> TooCloseError | None:
+    """The first time two carriers come to one point in ``n_steps``, if they
+    do (:func:`clearance`): they would hit on a machine of any size.
+
+    Args:
+        machine: The machine definition.
+        n_steps: How many steps to look over.
+        carrier_positions: The loading; the machine's own if None.
+        scale: Layout scale.
+
+    Returns:
+        The first two carriers at one point, as an error to raise or report;
+        None if no two are, or the machine is driven by a card.
+    """
+    found = clearance(machine, n_steps, carrier_positions, scale)
+    return None if found is None else found.met
 
 
 def default_take_off(machine: BraidingMachine, scale: float = 1.0) -> float:

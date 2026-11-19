@@ -178,14 +178,17 @@ def _from_machine(spec: Spec) -> Result:
         from braidpy.horn_gear.simulation import state_period
 
         period = state_period(machine, carriers_at) or machine.contact_period()
-    paths, stopped, n_steps = _braided(machine, carriers_at, cycles, period, diameter)
+    paths, stopped, n_steps, room = _braided(
+        machine, carriers_at, cycles, period, diameter
+    )
     paths = _place_cores(paths, cores)
     paths = _tighten(paths, spec, diameter, rigid=list(cores) if rigid else [])
     info: Info = {}
     notes = ["Words are read over one cycle of the machine."]
     if stopped is not None:
-        assert loading is not None
-        info["collision"] = _collision(stopped, loading)
+        # Loaded as it loads itself, carriers can still come to one point.
+        started = loading or list(machine.default_carriers().values())
+        info["collision"] = _collision(stopped, started)
         notes = [_stopped_note(stopped, n_steps)]
     elif ring_order(machine) is not None:
         # Gears in one ring: the braid is read round it.
@@ -203,6 +206,11 @@ def _from_machine(spec: Spec) -> Result:
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     if cores and stopped is None:
         notes = [*notes, _core_note(rigid, len(cores))]
+    if room is not None and stopped is None:
+        notes = [
+            *notes,
+            _size_note(machine, room, Machine.bobbin_diameter_mm.read(spec)),
+        ]
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     own = machine.carrier_colours(carriers_at) or {}
@@ -329,36 +337,50 @@ def _braided(
     cycles: int,
     period: int | None,
     diameter: float,
-) -> tuple[Any, Any, int | None]:
+) -> tuple[Any, Any, int | None, Any]:
     """The yarns a machine lays, ``cycles`` times ``period`` steps — or its
     own cycles, if no period is given — stopped where carriers meet.
 
     Returns:
         The yarn paths, the collision that stopped the machine if one did,
-        and the steps turned (None for the machine's own cycles).
+        the steps turned (None for the machine's own cycles), and how close
+        its carriers came (:func:`~braidpy.horn_gear.take_off.clearance`;
+        None for fewer than two, or a machine driven by a card).
 
     Raises:
         ValueError: If carriers meet as soon as the machine turns.
     """
     from braidpy.horn_gear import yarn_paths
+    from braidpy.horn_gear.simulation import CollisionError, simulate, state_period
+    from braidpy.horn_gear.take_off import TooCloseError, clearance
 
-    stopped = None
+    stopped: Any = None
     n_steps = None
     if period is not None:
-        from braidpy.horn_gear.simulation import CollisionError, simulate
-
         n_steps = cycles * period
         try:
             simulate(machine, n_steps, carriers_at)
         except CollisionError as error:
             stopped = error
             n_steps = error.step - 1
-            if n_steps < 1:
-                raise ValueError(
-                    "Those carriers meet as soon as the machine turns: "
-                    + _met(error)
-                    + "."
-                ) from None
+    # Carriers in different slots can come to one point all the same:
+    # stopped there too, whichever comes first.
+    own = machine.default_carriers() if carriers_at is None else carriers_at
+    looked = n_steps
+    if looked is None:
+        looked = cycles * (state_period(machine, own) or machine.contact_period())
+    room = clearance(machine, looked, carriers_at) if looked >= 1 else None
+    if room is not None and room.met is not None:
+        stopped = room.met
+        n_steps = room.met.step - 1
+    if stopped is not None and n_steps is not None and n_steps < 1:
+        raise ValueError(
+            "Those carriers "
+            + ("come to one point" if isinstance(stopped, TooCloseError) else "meet")
+            + " as soon as the machine turns: "
+            + _met(stopped)
+            + "."
+        ) from None
     paths = yarn_paths(
         machine,
         n_steps=n_steps,
@@ -367,7 +389,7 @@ def _braided(
         yarn_diameter=diameter,
         axials=True,
     )
-    return paths, stopped, n_steps
+    return paths, stopped, n_steps, room
 
 
 def _collision(stopped: Any, loading: list[tuple[str, int]]) -> Collision:
@@ -384,10 +406,38 @@ def _collision(stopped: Any, loading: list[tuple[str, int]]) -> Collision:
 
 
 def _stopped_note(stopped: Any, n_steps: int | None) -> str:
+    from braidpy.horn_gear.take_off import TooCloseError
+
+    if isinstance(stopped, TooCloseError):
+        what = (
+            f"Two carriers came to one point at step {stopped.step}, near "
+            f"{_met(stopped)}, as they would on a machine of any size"
+        )
+    else:
+        what = f"Carriers met at step {stopped.step}, on {_met(stopped)}"
     return (
-        f"Carriers met at step {stopped.step}, on {_met(stopped)}: the "
-        f"braiding stopped there, after {n_steps} steps. The carriers that "
-        "met are ringed where they started. No word is read."
+        f"{what}: the braiding stopped there, after {n_steps} steps. The "
+        "carriers that met are ringed where they started. No word is read."
+    )
+
+
+def _size_note(machine: Any, room: Any, bobbin_mm: float) -> str:
+    """How large the machine has to be for its bobbins: drawn so many times
+    larger that the two carriers coming closest pass
+    (:meth:`~braidpy.horn_gear.take_off.Clearance.scale_for`)."""
+    from braidpy.horn_gear import compute_layout, gear_radii
+
+    mm_per_unit = room.scale_for(bobbin_mm)
+    layout, radii = compute_layout(machine), gear_radii(machine)
+    xs = [layout[g][0] + side * radii[g] for g in layout for side in (-1, 1)]
+    ys = [layout[g][1] + side * radii[g] for g in layout for side in (-1, 1)]
+    return (
+        f"Sized for bobbins {bobbin_mm:g} mm across, which the two carriers coming "
+        f"closest, {room.share:.2f} of a horn gap apart, just clear: horns "
+        f"{room.gap * mm_per_unit:.0f} mm apart round its smallest gear, gears "
+        f"{2 * min(radii.values()) * mm_per_unit:.0f} to {2 * max(radii.values()) * mm_per_unit:.0f} "
+        f"mm across, the deck {(max(xs) - min(xs)) * mm_per_unit:.0f} by "
+        f"{(max(ys) - min(ys)) * mm_per_unit:.0f} mm."
     )
 
 
@@ -558,7 +608,7 @@ def _from_lace(spec: Spec) -> Result:
     own = machine.default_carriers()
     carriers_at = dict(enumerate(loading)) if loading else own
     machine, cores, rigid = _cored(machine, spec)
-    paths, stopped, n_steps = _braided(
+    paths, stopped, n_steps, _ = _braided(
         machine, carriers_at, cycles, machine.steps_per_pass, diameter
     )
     paths = _place_cores(paths, cores)
