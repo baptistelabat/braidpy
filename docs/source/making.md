@@ -168,6 +168,48 @@ made.initial_counts_per_space  # [1, 0, 1, 0, 1, 0]
 made.braid(1) == weave  # True
 ```
 
+### From the shape it is to take
+
+The book draws a solid sinnet as its cross-section, crossed by straight
+lines, each turning at the outline in a bight into the next. The bights are
+the stand's spaces and the lines its moves
+({func}`~braidpy.making.ashley.sinnet_from_shape`):
+
+- **The lines** run parallel to the shape's sides, the first half a spacing
+  in from a side, the next a spacing on, as many as fit.
+- **The bights**: two lines meeting the outline at one point turn into each
+  other there; otherwise neighbouring ends on a side, whose lines are
+  parallel or would meet beyond the outline, and round a corner the two
+  left there. They are numbered anticlockwise from the bottom left.
+- **The order**: from space 1, along the line across the first side. Each
+  next move starts beside where the last ended, one space back, then one
+  on, and so on, along the line parallel to the last while there is one,
+  so that each direction is crossed line by line, its moves alternating in
+  sense. A space that has given its strand gives none again: its line is
+  taken towards it.
+- **The strands**: each space starts with the fewest that order lets it, two
+  where a space gives before it is given; the book adds one at a corner to
+  sharpen an edge (`extra`).
+
+![Ashley's diagrams of a triangle and an oblong](ashley_shapes.svg)
+
+Drawn so, a triangle is the book's table exactly, moves, order and strands:
+#3045, #3047 and #3051, with two, four and six lines a side; #3049 is
+#3047 with a strand more at each corner. A flat chisel-edge oblong, 2 by 6
+or 10 spacings, is the book's cycle (#3071, #3072), its braid the book's
+with a strand more at each chisel edge. The square, #3070, has the book's
+two loops, but the book moves its opposite strands together.
+
+```python
+import math
+from braidpy.making.ashley import sinnet_from_shape
+
+height = 4.5  # four lines a side, in spacings
+side = height / math.sin(math.pi / 3)
+triangle = sinnet_from_shape([(0, 0), (side, 0), (side / 2, height)])
+triangle.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
+```
+
 ## In Braid Studio
 
 Beside every braid it makes, Braid Studio's card offers **Make it as…**:

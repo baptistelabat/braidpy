@@ -21,6 +21,7 @@ mistake before:
 | A braid as a punchcard for the Jacquard lace machine | `making.lace` |
 | A braid as moves on a kumihimo disk | `making.disk` |
 | A braid as a sinnet on Ashley's stand, found by searching | `making.ashley` |
+| A sinnet from the shape it takes, as Ashley draws it | `making.ashley.sinnet_from_shape` |
 | A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |
