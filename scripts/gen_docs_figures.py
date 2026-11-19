@@ -1061,7 +1061,7 @@ def gear_layout_ladder(png_dir: Path | None) -> None:
     mesh_before, overlap_before = _draw_gears(left, before, convention, meshes)
     left.set_title("before: laid out, then shrunk\ntill no mesh is too long")
     mesh_after, overlap_after = _draw_gears(right, at, size, meshes)
-    right.set_title("after: relaxed (ring_geometry),\nthen timed (time_horns)")
+    right.set_title("after: relaxed (ring_geometry),\nthen timed (time_ring)")
     # The claims horn_gear_layout.md makes of these two pictures.
     assert mesh_before > 0.5 and overlap_before > 0.2
     assert mesh_after < 0.01 and overlap_after == 0.0

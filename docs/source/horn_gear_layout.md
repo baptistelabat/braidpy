@@ -117,7 +117,7 @@ $$
 There is one $x$ a gear and one equation a contact, so round each ring of
 gears one equation is left over, and the layout has to meet it. Round a
 single ring of gears alike it cancels: no gear moves.
-{func}`~braidpy.horn_gear.horn_timing.time_horns` moves and sizes the gears
+{func}`~braidpy.horn_gear.layout.time_ring` moves and sizes the gears
 from the relaxed layout till every two that mesh touch, no two others come
 within `CLEARANCE`, and every contact's two horns arrive at once: a
 least-squares fit of all three, by Levenberg–Marquardt with exact
