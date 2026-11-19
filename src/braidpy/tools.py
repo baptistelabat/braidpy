@@ -225,7 +225,7 @@ def ways_to_make(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
         made["disk"] = {"moves": disk.text(), "studio": studio_link(disk.spec())}
     card = lace_card(braid)
     made["lace"] = {"card": card.text(), "bobbins": card.notches()}
-    search = ashley_sinnet(braid, time_limit=3.0)
+    search = ashley_sinnet(braid, time_limit_s=3.0)
     sinnet = search.sinnet or ashley_moves(braid)
     spec = sinnet_spec(sinnet)
     made["ashley"] = {

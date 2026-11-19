@@ -45,7 +45,7 @@ def test_a_braid_no_sinnet_makes_gets_the_nearest():
 
 
 def test_the_search_stops_at_its_time_limit():
-    search = ashley_sinnet(Braid((1, -2, -2, 1) * 3, 3), time_limit=0)
+    search = ashley_sinnet(Braid((1, -2, -2, 1) * 3, 3), time_limit_s=0)
     assert not search.complete and search.tried == 0
 
 

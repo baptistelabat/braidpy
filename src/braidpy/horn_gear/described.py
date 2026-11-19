@@ -562,7 +562,7 @@ _SAME = 1e-6
 # A contact this many degrees or less from a slot is on it: a ring is laid
 # out numerically, its contacts a hundredth of a degree from where they
 # would be exactly.
-_FITS = 1.0
+_FITS_DEG = 1.0
 
 
 def _contact_slots(
@@ -621,7 +621,7 @@ def _contact_slots(
     best = min(
         _gaps(n, k),
         key=lambda gaps: (
-            off(gaps) > k * n * _FITS / 360,
+            off(gaps) > k * n * _FITS_DEG / 360,
             sum((g - n / k) ** 2 for g in gaps),
             off(gaps),
         ),
