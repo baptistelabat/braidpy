@@ -207,7 +207,10 @@ def _from_machine(spec: Spec) -> Result:
     if cores and stopped is None:
         notes = [*notes, _core_note(rigid, len(cores))]
     if room is not None and stopped is None:
-        notes = [*notes, _size_note(machine, room, Machine.bobbin_diameter.read(spec))]
+        notes = [
+            *notes,
+            _size_note(machine, room, Machine.bobbin_diameter_mm.read(spec)),
+        ]
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
     own = machine.carrier_colours(carriers_at) or {}
@@ -418,23 +421,23 @@ def _stopped_note(stopped: Any, n_steps: int | None) -> str:
     )
 
 
-def _size_note(machine: Any, room: Any, bobbin: float) -> str:
+def _size_note(machine: Any, room: Any, bobbin_mm: float) -> str:
     """How large the machine has to be for its bobbins: drawn so many times
     larger that the two carriers coming closest pass
     (:meth:`~braidpy.horn_gear.take_off.Clearance.scale_for`)."""
     from braidpy.horn_gear import compute_layout, gear_radii
 
-    mm = room.scale_for(bobbin)
+    mm_per_unit = room.scale_for(bobbin_mm)
     layout, radii = compute_layout(machine), gear_radii(machine)
     xs = [layout[g][0] + side * radii[g] for g in layout for side in (-1, 1)]
     ys = [layout[g][1] + side * radii[g] for g in layout for side in (-1, 1)]
     return (
-        f"Sized for bobbins {bobbin:g} mm across, which the two carriers coming "
+        f"Sized for bobbins {bobbin_mm:g} mm across, which the two carriers coming "
         f"closest, {room.share:.2f} of a horn gap apart, just clear: horns "
-        f"{room.gap * mm:.0f} mm apart round its smallest gear, gears "
-        f"{2 * min(radii.values()) * mm:.0f} to {2 * max(radii.values()) * mm:.0f} "
-        f"mm across, the deck {(max(xs) - min(xs)) * mm:.0f} by "
-        f"{(max(ys) - min(ys)) * mm:.0f} mm."
+        f"{room.gap * mm_per_unit:.0f} mm apart round its smallest gear, gears "
+        f"{2 * min(radii.values()) * mm_per_unit:.0f} to {2 * max(radii.values()) * mm_per_unit:.0f} "
+        f"mm across, the deck {(max(xs) - min(xs)) * mm_per_unit:.0f} by "
+        f"{(max(ys) - min(ys)) * mm_per_unit:.0f} mm."
     )
 
 

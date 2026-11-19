@@ -49,6 +49,9 @@ mistake before:
   kin (`REACH`, `THICK`, `CLEAR` in `marudai`), and is written as that
   name, or derived from it, wherever it is used: `CLEAR * THICK`, never
   `2.2`.
+- **A unit in the name, unless SI.** A quantity in another unit carries it
+  as a suffix: `bobbin_diameter_mm`, `mm_per_unit`. One in the drawing's own
+  units, or in whatever unit it is given, says so in its docstring.
 - **`Optional[X]` for an optional argument, `X | None` for the rest.** A
   parameter whose default is `None`, meaning "not given", is `Optional[X]`.
   A parameter that takes `None` as a value of its own (with no default, or

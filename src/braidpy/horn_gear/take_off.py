@@ -35,6 +35,7 @@ else:
 from braidpy.take_off import (
     StrandTrajectories,
     YarnPaths,
+    _level_pairs,
     jammed_contraction,
     lay_yarns,
     least_take_off,
@@ -216,7 +217,7 @@ class Clearance:
 
     Scaled up, a machine keeps its carriers further apart in proportion:
     bobbins of diameter ``b`` pass if it is drawn ``b / distance`` times as
-    large (:meth:`scale_for`).  Only two carriers at one point
+    large (:meth:`scale_for`), in whatever unit ``b`` is given.  Only two carriers at one point
     (:attr:`met`) can pass on no machine.
 
     Attributes:
@@ -235,10 +236,12 @@ class Clearance:
         """The closest two carriers come, as a share of :attr:`gap`."""
         return self.distance / self.gap
 
-    def scale_for(self, bobbin: float) -> float:
-        """How many times as large the machine must be drawn for bobbins of
-        diameter ``bobbin`` to pass each other."""
-        return bobbin / self.distance
+    def scale_for(self, bobbin_diameter: float) -> float:
+        """How large the machine must be drawn for bobbins of
+        ``bobbin_diameter`` to pass each other: so many of the bobbin's
+        units to one unit of the drawing (mm to a unit, for a diameter in
+        mm)."""
+        return bobbin_diameter / self.distance
 
 
 def clearance(
@@ -285,24 +288,20 @@ def clearance(
         for name, gear in machine.gears.items()
     )
     limit = MEET * gap
+    # Every two carriers at each sample, paired as the yarns are for their
+    # contacts (take_off.contact): first come, first stopped.
     xy = np.stack([trajectories.xy[k] for k in ids])
-    closest = np.inf
-    first: tuple[int, int, int, float] | None = None
-    for i in range(len(ids) - 1):
-        distance = np.linalg.norm(xy[i + 1 :] - xy[i], axis=-1)
-        closest = min(closest, float(distance.min()))
-        close = np.argwhere(distance < limit)
-        if close.size:
-            j, sample = close[np.argmin(close[:, 1])]
-            if first is None or sample < first[2]:
-                first = (i, i + 1 + int(j), int(sample), float(distance[j, sample]))
+    first, second = _level_pairs(len(ids), 0)
+    apart = np.linalg.norm(xy[first] - xy[second], axis=-1)
+    closest = float(apart.min())
     met = None
-    if first is not None:
-        a, b, sample, distance = first
-        step = sample // CLOSEST_SUBSTEPS + 1
+    close = np.argwhere(apart < limit)
+    if close.size:
+        pair, sample = close[np.argmin(close[:, 1])]
+        step = int(sample) // CLOSEST_SUBSTEPS + 1
         history = simulate(machine, step - 1, carrier_positions)
-        pair = (cast(CarrierId, ids[a]), cast(CarrierId, ids[b]))
-        met = TooCloseError(step, pair, distance, limit, history)
+        both = (cast(CarrierId, ids[first[pair]]), cast(CarrierId, ids[second[pair]]))
+        met = TooCloseError(step, both, float(apart[pair, sample]), limit, history)
     return Clearance(closest, float(gap), met)
 
 

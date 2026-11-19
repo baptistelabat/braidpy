@@ -126,7 +126,7 @@ class Machine:
     # The bobbins it carries, in mm: the machine is sized so that the two
     # carriers coming closest still pass (braidpy.horn_gear.take_off
     # .Clearance), and its size said in a note.
-    bobbin_diameter = Number("bobbin_diameter", 20.0, low=1.0, high=500.0)
+    bobbin_diameter_mm = Number("bobbin_diameter_mm", 20.0, low=1.0, high=500.0)
     # How it is to be settled: by its carriers (Carried).
     settle = Text("settle", "")
     # Your own: the gears that mesh, as A-B B-C, and the slots of a gear
