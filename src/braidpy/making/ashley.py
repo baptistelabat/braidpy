@@ -37,10 +37,14 @@ A sinnet can also be had from the shape it is to take, as the book draws it
 (:func:`sinnet_from_shape`): straight lines across the shape, parallel to
 its sides, each turning at the outline in a bight into the next.  The
 bights are the spaces, the lines the moves, made in the book's order.
+And the other way, the shapes whose drawing has a sinnet's moves
+(:func:`shapes_with_moves`), or whose sinnet makes a braid
+(:func:`shapes_making`), among oblongs and triangles (:func:`ashley_shapes`).
 """
 
 from __future__ import annotations
 
+import functools
 import itertools
 import math
 import time
@@ -55,14 +59,20 @@ from braidpy.braid import Braid
 
 __all__ = [
     "AshleySearch",
+    "AshleyShape",
     "ShapeLine",
     "ashley_moves",
+    "ashley_shapes",
     "ashley_sinnet",
     "least_counts",
+    "oblong",
     "shape_diagram",
     "shape_lines",
+    "shapes_making",
+    "shapes_with_moves",
     "sinnet_from_shape",
     "sinnet_spec",
+    "triangle",
 ]
 
 
@@ -435,14 +445,72 @@ def _turn_into(outline, first: ShapeLine, second: ShapeLine) -> bool:
 
 
 def _in_order(n, joins, directions, first_side_direction) -> list[tuple[int, int]]:
-    """The lines as moves, in the book's order (:func:`sinnet_from_shape`)."""
-    left = set(range(len(joins)))
+    """The lines as moves, in the book's order (:func:`sinnet_from_shape`):
+    alternating, or space by space where that cannot be followed."""
+    try:
+        moves = _alternating(n, joins, directions, first_side_direction)
+    except ValueError:
+        return _space_by_space(n, joins, directions, first_side_direction)
+    every = list(range(1, n + 1))
+    if sorted(a for a, _ in moves) != every or sorted(b for _, b in moves) != every:
+        return _space_by_space(n, joins, directions, first_side_direction)
+    return moves
+
+
+def _first_line(at, joins, directions, first_side_direction) -> int:
+    """Space 1's line: the one across the first side, if one starts there."""
+    return min(at[1], key=lambda line: directions[line] == first_side_direction)
+
+
+def _lines_at(joins) -> dict[int, list[int]]:
+    """Each space's two lines."""
     at: dict[int, list[int]] = {}
     for line, (a, b) in enumerate(joins):
         at.setdefault(a, []).append(line)
         at.setdefault(b, []).append(line)
+    return at
+
+
+def _space_by_space(n, joins, directions, first_side_direction):
+    """The lines as moves, space 1 first, then 2, 3 and so on, each giving
+    its strand: the book's order where the alternating one cannot be
+    followed, as round a triangle of three lines a side (#3059).  Each
+    curve of lines runs one way, the first space on it giving its strand
+    along the way space 1's does, if it can."""
+    at = _lines_at(joins)
+    first = _first_line(at, joins, directions, first_side_direction)
+    direction = directions[first]
+    gives: dict[int, int] = {}
+    for space in range(1, n + 1):
+        if space in gives or any(
+            gives.get(_other(joins[i], space)) == i for i in at[space]
+        ):
+            continue
+        # The first space of a curve not yet run: run the curve from it.
+        line = (
+            first
+            if space == 1
+            else min(at[space], key=lambda i: directions[i] != direction)
+        )
+        here = space
+        while here not in gives:
+            gives[here] = line
+            here = _other(joins[line], here)
+            line = (
+                next(i for i in at[here] if i != line)
+                if len(set(at[here])) > 1
+                else line
+            )
+    return [(space, _other(joins[gives[space]], space)) for space in range(1, n + 1)]
+
+
+def _alternating(n, joins, directions, first_side_direction) -> list[tuple[int, int]]:
+    """The lines as moves, each from the space beside where the last ended
+    (:func:`sinnet_from_shape`)."""
+    left = set(range(len(joins)))
+    at = _lines_at(joins)
     # From space 1, along the line across the first side, if there is one.
-    first = min(at[1], key=lambda line: directions[line] == first_side_direction)
+    first = _first_line(at, joins, directions, first_side_direction)
     moves = [(1, _other(joins[first], 1))]
     left.discard(first)
     gave = {1}
@@ -545,3 +613,148 @@ def sinnet_from_shape(
     if extra is not None:
         counts = [c + e for c, e in zip(counts, extra)]
     return AshleySolidSinnet(counts, moves)
+
+
+# ------------------------------------------------------------- to a shape
+
+# The shapes searched for a sinnet's or a braid's (ashley_shapes): oblongs of
+# whole spacings up to this many a side, and triangles of up to this many
+# lines a side.
+OBLONG_SIDE = 12
+TRIANGLE_LINES = 8
+
+
+@dataclass(frozen=True)
+class AshleyShape:
+    """A shape, and the sinnet Ashley's method makes of it
+    (:func:`sinnet_from_shape`).
+
+    Args:
+        name: What it is: "oblong 6 by 2", "triangle of 4 lines a side".
+        outline: Its corners, anticlockwise from the bottom left, in
+            spacings between lines.
+        sinnet: Its sinnet.
+    """
+
+    name: str
+    outline: tuple[tuple[float, float], ...]
+    sinnet: AshleySolidSinnet
+
+
+def oblong(width: int, height: int) -> list[tuple[float, float]]:
+    """An oblong (a square if ``width == height``), in spacings between
+    lines, from its bottom left corner: ``height`` lines across it,
+    ``width`` up it."""
+    return [
+        (0.0, 0.0),
+        (float(width), 0.0),
+        (float(width), float(height)),
+        (0.0, float(height)),
+    ]
+
+
+def triangle(lines_per_side: int) -> list[tuple[float, float]]:
+    """A triangle standing on its base, with so many lines parallel to each
+    side, the farthest a spacing from the opposite corner, as the book's
+    #3045, #3047 and #3051 are drawn (2, 4 and 6 lines a side)."""
+    height = lines_per_side + FIRST_LINE
+    side = height / math.sin(math.pi / 3)
+    return [(0.0, 0.0), (side, 0.0), (side / 2, height)]
+
+
+@functools.cache
+def ashley_shapes() -> tuple[AshleyShape, ...]:
+    """Every shape searched for a sinnet's or a braid's: the oblongs of whole
+    spacings up to ``OBLONG_SIDE`` a side, and the triangles of up to
+    ``TRIANGLE_LINES`` lines a side, each with its sinnet.  Made once."""
+    shapes = [
+        AshleyShape(
+            f"oblong {width} by {height}",
+            tuple(oblong(width, height)),
+            sinnet_from_shape(oblong(width, height)),
+        )
+        for height in range(1, OBLONG_SIDE + 1)
+        for width in range(height, OBLONG_SIDE + 1)
+    ]
+    shapes += [
+        AshleyShape(
+            f"triangle of {lines} lines a side",
+            tuple(triangle(lines)),
+            sinnet_from_shape(triangle(lines)),
+        )
+        for lines in range(1, TRIANGLE_LINES + 1)
+    ]
+    return tuple(shapes)
+
+
+def _drawn(moves: Sequence[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
+    """The lines of a sinnet's moves, whichever way and order they are made,
+    and wherever its numbering starts or whichever way it runs round the
+    stand: the same for one drawing."""
+    n = len(moves)
+
+    def line(a: int, b: int, shift: int, sense: int) -> tuple[int, int]:
+        x, y = (sense * (a - 1) + shift) % n + 1, (sense * (b - 1) + shift) % n + 1
+        return (x, y) if x < y else (y, x)
+
+    return min(
+        tuple(sorted(line(a, b, shift, sense) for a, b in moves))
+        for shift in range(n)
+        for sense in (1, -1)
+    )
+
+
+def shapes_with_moves(moves: Sequence[tuple[int, int]]) -> list[AshleyShape]:
+    """The shapes whose drawing has these moves' lines: the same spaces
+    joined, whichever way and in whatever order the moves are made, and
+    wherever the numbering starts round the stand, or whichever way it
+    runs.
+
+    Args:
+        moves: A sinnet's moves, each space giving and receiving once.
+
+    Returns:
+        The shapes, among :func:`ashley_shapes`; none if no shape searched
+        is drawn so.
+    """
+    wanted = _drawn(moves)
+    return [
+        shape
+        for shape in ashley_shapes()
+        if len(shape.sinnet.moves) == len(moves)
+        and _drawn(shape.sinnet.moves) == wanted
+    ]
+
+
+def shapes_making(braid: Braid) -> list[AshleyShape]:
+    """The shapes whose sinnet, as the book's method makes it, makes this
+    braid: its topology, compared as :func:`ashley_sinnet` compares, the
+    braid repeated, read from any strand, however written.
+
+    A sinnet with strands added at its corners (``extra`` of
+    :func:`sinnet_from_shape`) is another braid, not looked for here: its
+    moves are its shape's (:func:`shapes_with_moves`).
+
+    Args:
+        braid: The braid.
+
+    Returns:
+        The shapes, among :func:`ashley_shapes`.
+    """
+    from braidpy.similarity import fingerprint, same_fingerprint
+
+    wanted = fingerprint(braid)
+    return [
+        shape
+        for shape, mark in zip(ashley_shapes(), _shape_fingerprints())
+        if same_fingerprint(mark, wanted)
+    ]
+
+
+@functools.cache
+def _shape_fingerprints() -> tuple:
+    """Each shape's braid's fingerprint (:func:`ashley_shapes`): worked out
+    once, a second for them all."""
+    from braidpy.similarity import fingerprint
+
+    return tuple(fingerprint(shape.sinnet.braid(1)) for shape in ashley_shapes())

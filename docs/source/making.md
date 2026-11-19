@@ -195,19 +195,40 @@ the stand's spaces and the lines its moves
 
 Drawn so, a triangle is the book's table exactly, moves, order and strands:
 #3045, #3047 and #3051, with two, four and six lines a side; #3049 is
-#3047 with a strand more at each corner. A flat chisel-edge oblong, 2 by 6
+#3047 with a strand more at each corner. With three lines a side the moves
+cannot alternate, and are made space by space, 1, 2, 3 and on, each curve
+of lines run one way: the book's #3059. A flat chisel-edge oblong, 2 by 6
 or 10 spacings, is the book's cycle (#3071, #3072), its braid the book's
 with a strand more at each chisel edge. The square, #3070, has the book's
 two loops, but the book moves its opposite strands together.
 
 ```python
-import math
-from braidpy.making.ashley import sinnet_from_shape
+from braidpy.making.ashley import oblong, sinnet_from_shape, triangle
 
-height = 4.5  # four lines a side, in spacings
-side = height / math.sin(math.pi / 3)
-triangle = sinnet_from_shape([(0, 0), (side, 0), (side / 2, height)])
-triangle.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
+made = sinnet_from_shape(triangle(4))  # four lines a side
+made.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
+sinnet_from_shape(oblong(6, 2))  # #3071's moves
+```
+
+And back: the shapes whose drawing has a sinnet's moves, the same spaces
+joined however the moves are ordered or made
+({func}`~braidpy.making.ashley.shapes_with_moves`), or whose sinnet makes a
+braid, compared by its topology
+({func}`~braidpy.making.ashley.shapes_making`). Both look among oblongs of
+whole spacings and triangles ({func}`~braidpy.making.ashley.ashley_shapes`).
+Every book triangle and oblong above is found from its moves, #3049 and
+#3072 among them; from its braid, every one made without extra strands.
+Shapes drawn otherwise, as #3073's square on its diagonals or #3052's
+hexagon, are not among those searched yet.
+
+```python
+from braidpy.making.ashley import shapes_making, shapes_with_moves
+from braidpy.solid_sinnets_catalog import abok_3047
+
+[shape.name for shape in shapes_with_moves(abok_3047.moves)]
+# ['triangle of 4 lines a side']
+[shape.name for shape in shapes_making(abok_3047.braid(1))]
+# ['triangle of 4 lines a side']
 ```
 
 ## In Braid Studio
