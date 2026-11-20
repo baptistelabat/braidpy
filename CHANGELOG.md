@@ -157,8 +157,54 @@ What changed in each release of braidpy.
   measured: `braidpy.conjugacy.same_braid` decides conjugacy by the super
   summit set. It proves edo yatsu and ABOK #3070 different, and the flat
   braid of 6 and ABOK #3021.
+- A sinnet from the shape it is to take, as Ashley draws it
+  (`braidpy.making.ashley.sinnet_from_shape`): lines across the shape
+  parallel to its sides, turning at the outline in bights, the bights the
+  stand's spaces and the lines its moves, in the book's order or space by
+  space. Triangles are the book's #3045, #3047, #3051 and #3059 exactly,
+  #3049 with a strand more at each corner (`corner_spaces`), #3057 made
+  space by space; flat oblongs, with their chisel edges, #3071 and #3072. A
+  shape may turn back, as an L or a U, its lines cut in pieces, or have a
+  hole, its bights numbered with the outline's, an inner one between two
+  outer ones, so that the sinnet goes round the hole as a tube does. Its
+  tracks (`shape_tracks`) can each be made the other way round. On a grid,
+  a shape is its cells, squares or triangles (`grid_shape`,
+  `grid_outline`).
+- And back, from a sinnet's moves to its shape, without searching: the
+  moves grouped by the direction of their lines (`move_groups`), the same
+  at any size for shapes drawn on one principle, make the shape
+  (`shapes_from_moves`).
+- In Braid Studio, **Ashley's method, from a shape**: a triangle, a
+  hexagon, an oblong, an L or a hollow square to start from, or one of ten
+  braids made so; drawn once made, its cells, tracks and spaces clicked to
+  change the shape, turn a track round or add a strand.
+- Two split gears may mesh once for each pairing of their parts
+  (`A1-B1 A2-B2 A1+A2 B1+B2`), as a matrix of split gears wants: they touch
+  at one contact, the pairing named first handing over at the end of each
+  step, the next part way through it (`Connection.phase`). A carrier handed
+  on twice in a step is stopped where it meets another.
+- A machine is sized for its bobbins: drawn larger, sizes and places
+  together, it keeps its carriers further apart in proportion
+  (`horn_gear.take_off.clearance`, `Clearance.scale_for`). Braid Studio sizes every
+  machine for bobbins of 20 mm (`Machine.bobbin_diameter_mm`) and says how
+  large its horns, gears and deck come out; it stops a machine only where
+  two carriers come to one point (`horn_gear.take_off.too_close`), which no size
+  keeps apart.
 
 ### Changed
+
+- Every contact of a horn gear machine hands over when a horn of each gear
+  comes round to it: round a ring of six or eight gears of four slots, or a
+  matrix of gears of several sizes, the gears are moved and sized so that
+  they do (`layout.time_ring`), a contact handing over part way through a
+  step where it must. tubular_12, tubular_16 and triaxial_16 build so, with
+  the same carriers, period and braid.
+- Gears in a ring are drawn to touch, those that do not mesh kept clear
+  (`layout.ring_geometry`), rather than shrunk from a spring layout till no
+  mesh was too long, which left gears of several sizes running through each
+  other.
+- A quantity not in SI units carries its unit in its name:
+  `making.ashley_sinnet` and `making.sinnet_for_page` take `time_limit_s`.
 
 - `braidpy.take_off` is a package rather than one module of 1734 lines:
   the trajectories laid and the yarns (`paths`), laying (`laying`),
@@ -232,6 +278,28 @@ What changed in each release of braidpy.
   crossings). Its linking numbers are now summed from the unit once, the
   repeats at once (`linking.linking_matrix(braid, repeats)`), and the Burau
   matrix is built a column update per crossing: five seconds.
+- Two words of one long braid could have fingerprints apart, their
+  polynomials sampled in floating point: fingerprints now compare the
+  Burau matrix's characteristic polynomial computed exactly, modulo a prime
+  (`burau_mod`).
+- A word of tens of thousands of crossings overflowed its floating-point
+  Burau matrix, and `fingerprint()` raised: the matrix is scaled down as it
+  grows.
+- A machine's flat word missed a carrier passing several others in one
+  sample, every later crossing given to the wrong strands; and carriers
+  crossing just as a period starts were counted at neither end (flat_4's
+  word is twelve crossings, pure every period). A word is read over the
+  loading's own period: flat_9's is 18 steps, not 180.
+- Yarns passing nearly the same point, as on one split axle, are lifted by
+  the take-off rather than drawn out a hundredfold to part them.
+- A machine's carrier track is drawn round its loop once: on a machine with
+  a long period, the points kept fell laps apart and were joined across the
+  deck.
+
+### Documentation
+
+- *Laying out a horn gear machine*: how gears are placed, sized and timed,
+  with figures and equations.
 
 ## 0.3.0 — 2026-10-24
 

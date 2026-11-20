@@ -15,19 +15,6 @@ What is known and left for later, each with enough said to pick it up.
   - `material_braid.py`: an early sketch, used only by its test; yarns with
     a thickness live in `take_off` and `rope` now.
   - `src/braidpy/analytic/`: no code, only a pointer to the documentation.
-- **`flat_word` misreads a folded line of gears** (the three-band machine).
-  It sorts the carriers left to right with one bubble pass a sample, a
-  crossing per swap; where a line folds round, many carriers stand at
-  nearly the same x and several swaps fall in one sample, and some are
-  missed or recorded out of order. Read the same machine straight and
-  folded, which cannot change its braid, and the traces of the powers of
-  their reduced Burau matrices differ, though every pair of carriers winds
-  round each other alike: a different braid, not another word of the same
-  one. So the three-band machine's word, crossings, exponent sum and
-  permutation in Braid Studio are not its braid's. Fix: sort each sample
-  fully, ordering the swaps by when they happen, or read the word by angle
-  round the deck as `annular_word` does; test it against the straight line,
-  by the Burau traces.
 - **Two Braid Studio braids are laid too coarsely to tighten reliably**:
   a two-strand word settled by physics (yarns move 3.7 diameters sideways
   between two levels) and a lace braid made on a marudai round a rigid core

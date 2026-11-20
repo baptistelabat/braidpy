@@ -174,6 +174,7 @@ class SinnetDisk:
 
     @property
     def n_slots(self) -> int:
+        """The disk's slots, every space's."""
         return self.n_spaces * self.slots_per_space
 
     def middle_slot(self, space: int) -> int:

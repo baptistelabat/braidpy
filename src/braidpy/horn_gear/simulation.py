@@ -80,6 +80,7 @@ class CarrierState:
 
     @property
     def position(self) -> Position:
+        """Where the carrier is: its gear and slot."""
         return self.gear, self.slot
 
 

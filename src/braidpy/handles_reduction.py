@@ -36,6 +36,10 @@ class HandleReductionMode(str, Enum):
 
 @dataclasses.dataclass
 class HandleReductionResults:
+    """What handle reduction ends with: the braid word reduced, its sign in
+    Dehornoy's order (+1 positive, -1 negative, 0 trivial), and how far it
+    went."""
+
     generators: list[SignedCrossingIndex]
     sign: int
     handle_reduction_mode: HandleReductionMode

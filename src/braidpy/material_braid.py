@@ -13,6 +13,8 @@ from braidpy.utils import PositiveFloat, StrictlyPositiveFloat, StrictlyPositive
 
 
 class MaterialStrand(ParametricStrand):
+    """A strand with a thickness: a curve and its radius."""
+
     def __init__(
         self, func: Callable[[float], tuple], radius: PositiveFloat = 0.005
     ) -> None:
@@ -27,6 +29,8 @@ class MaterialStrand(ParametricStrand):
 
 
 class MaterialBraid:
+    """Strands with a thickness, checked to keep clear of each other."""
+
     def __init__(self, strands: tuple[MaterialStrand, ...]) -> None:
         """
 
