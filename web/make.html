@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{language}}" class="untranslated">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -41,6 +41,8 @@
         }
       }
     </script>
+    <!-- First, on its own: the page is shown once its words are in the site's language. -->
+    <script type="module" src="i18n.js"></script>
     <script type="module" src="app.js"></script>
   </head>
   <body>

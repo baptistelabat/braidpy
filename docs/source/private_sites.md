@@ -68,6 +68,7 @@ braidpy's value unseen.
 | `by`, `by_url` | braidpy, its repository | What computes it, credited in titles and text, and its link |
 | `documentation`, `documentation_title` | `../`, braidpy's documentation | The documentation linked from the front page |
 | `sponsor` | GitHub Sponsors | The studio's sponsor button |
+| `language` | `en` | The language its pages are in, as `web/locales/` names it (see below) |
 | `indexed` | `true` | `false` asks search engines to leave the site out |
 
 A site naming nothing of braidpy:
@@ -79,6 +80,7 @@ by_url = ""
 documentation = ""
 documentation_title = ""
 sponsor = ""
+language = "fr"
 indexed = false
 ```
 
@@ -86,6 +88,39 @@ In the pages, `{{key}}` is replaced by its value, and
 `<!-- if key -->…<!-- end if -->` (or `if not key`) kept only when the key is
 set; `tests/test_site_build.py` checks that such a site's pages name neither
 braidpy, nor its repository, nor its sponsoring.
+
+## In another language
+
+braidpy writes English, in Python and in the page alike. A site in
+another language gives it in its profile (`language = "fr"`), and the page
+puts each text into that language as it shows it (`web/i18n.js`), from a
+catalogue of the texts by their English: `web/locales/fr.toml`, which
+`build.py` writes into the page as `locale.js`. Neither braidpy's Python
+nor its JavaScript changes: an English sentence is the key to its
+translation, wherever it is made.
+
+```toml
+"Strands" = "Brins"
+"Kongo gumi" = "Kongo gumi"
+# {} any words, themselves looked up; {#} a number.
+"{}, {#} cycles" = "{}, {} cycles"
+# {1}, {2}… where the words come in another order.
+"ABOK #{#}, {#}-strand {}" = "ABOK n° {1}, tresse {3} à {2} brins"
+```
+
+A text is looked up whole, then against the patterns, those ending in
+words of their own first, and the first whose words all translate is
+taken. What the catalogue lacks stays in English, and is listed for
+whoever completes it: in the browser's console,
+`[...untranslated].join("\n")`. An element marked `translate="no"` keeps
+its words, as a book's title among a braid's links. The page is hidden
+until its first pass is done, so nothing is seen in English first.
+
+`tests/test_i18n_js.py` runs the translator in Node: every text of the
+pages and every braid the studio offers must be in the French catalogue,
+and every translation must use the words its English leaves open. A
+sentence added to braidpy is added to the catalogue too, or stays in
+English on a French site until it is.
 
 ## What it hides, and what it cannot
 

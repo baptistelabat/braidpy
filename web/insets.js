@@ -5,6 +5,7 @@
 // The insets over the 3D view: the braid's cross-section, and what made it
 // seen from above.
 
+import { tr } from "./i18n.js";
 import { $ } from "./page.js";
 import { braid } from "./scene.js";
 
@@ -82,7 +83,7 @@ export function drawSection(result) {
   const style = getComputedStyle(document.documentElement);
   ctx.fillStyle = style.getPropertyValue("--muted").trim();
   ctx.font = "10px system-ui, sans-serif";
-  ctx.fillText("Cross-section", 8, 14);
+  ctx.fillText(tr("Cross-section"), 8, 14);
   ctx.globalAlpha = 0.55;
   ctx.lineWidth = 1;
   middle.forEach((points, i) => {

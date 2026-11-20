@@ -84,6 +84,7 @@ PAGE = [
     "info.js",
     "colours.js",
     "controls.js",
+    "i18n.js",
     # Its workers, and what they load.
     "worker.js",
     "settle.js",
@@ -97,6 +98,9 @@ PAGE = [
 # What the site calls itself, whom it credits and where it links: this
 # repository's Braid Studio, unless another profile is given (--profile).
 PROFILE = WEB / "profile.toml"
+# Each language's words, by their English (web/i18n.js): a site in English
+# needs none.
+LOCALES = WEB / "locales"
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
 
@@ -176,9 +180,28 @@ def _rendered(text: str, site: dict[str, str | bool]) -> str:
     return _FILLED.sub(filled, _WORDS.sub(kept, _LINES.sub(kept, text)))
 
 
+def locale(language: str) -> str:
+    """The page's words in ``language`` (web/i18n.js), as the module the
+    page imports: ``locales/<language>.toml``, a text by its English; none
+    in English."""
+    texts = {}
+    if language != "en":
+        source = LOCALES / f"{language}.toml"
+        if not source.exists():
+            raise SystemExit(f"No words in {language!r}: {source} is missing.")
+        texts = tomllib.loads(source.read_text())
+    return (
+        "// The page's words in the site's language, written by web/build.py\n"
+        f"// from web/locales/: see web/i18n.js.\n"
+        f"export const language = {json.dumps(language)};\n"
+        f"export const texts = {json.dumps(texts, ensure_ascii=False, indent=0)};\n"
+    )
+
+
 def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
     """The page's own files, each naming the others with the page's version,
-    its HTML filled with the site's profile (``about``).
+    its HTML filled with the site's profile (``about``), and its words in
+    the site's language (:func:`locale`).
 
     The version is a fingerprint of all of them: a browser holding an old
     copy of any file fetches the new one, and never mixes old modules with
@@ -188,20 +211,21 @@ def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
     for name in PAGE:
         text = (WEB / name).read_text()
         texts[name] = _rendered(text, about) if name.endswith(".html") else text
+    texts["locale.js"] = locale(str(about["language"]))
     digest = hashlib.sha256()
-    for name in PAGE:
+    for name in texts:
         digest.update(name.encode() + b"\0" + texts[name].encode())
     version = digest.hexdigest()[:10]
 
     def stamp(named: re.Match) -> str:
         here, name = named.groups()
-        if name not in PAGE:
+        if name not in texts:
             return named.group(0)
         return f'"{here or ""}{name}?v={version}"'
 
     for name, text in texts.items():
         for module in re.findall(r'(?:from|import) "\./([^"]+)"', text):
-            if module not in PAGE:
+            if module not in texts:
                 raise RuntimeError(f"{name} imports {module}, which is not in PAGE.")
         # A worker's own scripts, too: those named outright, not a URL
         # put together.

@@ -56,6 +56,11 @@ body {
   margin: 0;
 }
 
+/* Hidden until its words are in the site's language (web/i18n.js). */
+html.untranslated body {
+  visibility: hidden;
+}
+
 body {
   background: var(--bg);
   color: var(--ink);
@@ -360,6 +365,8 @@ button:disabled {
 .about .actions button {
   font-size: 12px;
   padding: 2px 8px;
+  /* On one line, in a language of longer words too. */
+  white-space: nowrap;
 }
 
 /* The braid's kin: other ways of making it, and braids like it. */
