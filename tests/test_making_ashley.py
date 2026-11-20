@@ -5,7 +5,6 @@
 """A braid as a sinnet on Ashley's stand, found by searching:
 braidpy.making.ashley."""
 
-import numpy as np
 import pytest
 
 from braidpy import Braid
@@ -194,21 +193,60 @@ def test_moves_group_alike_for_a_shape_of_any_size():
 
 
 def test_a_shape_comes_back_from_its_moves_at_any_size():
-    """A triangle's or an oblong's shape is made again from its moves,
-    drawing the very same lines, whatever its size."""
+    """A triangle's or an oblong's shape is made again from its moves, on
+    its grid, drawing the very same lines, whatever its size."""
     from braidpy.making.ashley import shapes_from_moves, sinnet_from_shape
 
-    for outline in [triangle(lines) for lines in (3, 4, 12)] + [
-        oblong(5, 2),
-        oblong(8, 3),
-        oblong(12, 7),
+    for outline, wanted in [
+        (triangle(3), ("triangle", "triangle", {3})),
+        (triangle(4), ("triangle", "triangle", {4})),
+        (triangle(12), ("triangle", "triangle", {12})),
+        (oblong(5, 2), ("square", "oblong", {5, 2})),
+        (oblong(8, 3), ("square", "oblong", {8, 3})),
+        (oblong(12, 7), ("square", "oblong", {12, 7})),
     ]:
-        found = shapes_from_moves(sinnet_from_shape(outline).moves)
-        assert found[0].same_lines
-        assert np.allclose(found[0].outline, outline)
+        first = shapes_from_moves(sinnet_from_shape(outline).moves)[0]
+        assert first.same_lines
+        assert first.grid == wanted[0] and first.shape == wanted[1]
+        assert first.size in wanted[2]
 
 
-@pytest.mark.parametrize("number", [3045, 3047, 3049, 3051, 3059, 3070, 3071, 3072])
+@pytest.mark.parametrize(
+    "grid, shape, size, height",
+    [
+        ("square", "L", 5, 2),
+        ("square", "U", 6, 2),
+        ("square", "frame", 6, 2),
+        ("diagonal", "square", 6, 2),
+        ("triangle", "hexagon", 3, 2),
+    ],
+)
+def test_a_shape_on_a_grid_comes_back_from_its_moves(grid, shape, size, height):
+    """An L, a U, a hollow square, a square on a corner and a hexagon come
+    back from their moves alone, as the shape they were made of."""
+    from braidpy.making.ashley import (
+        grid_lines,
+        grid_outline,
+        grid_shape,
+        shapes_from_moves,
+        sinnet_from_shape,
+    )
+
+    outline, *holes = grid_outline(grid, grid_shape(grid, shape, size, height))
+    made = sinnet_from_shape(outline, holes=holes, across=grid_lines(grid))
+    first = shapes_from_moves(made.moves)[0]
+    assert first.same_lines
+    assert (first.grid, first.shape, first.size, first.height) == (
+        grid,
+        shape,
+        size,
+        height,
+    )
+
+
+@pytest.mark.parametrize(
+    "number", [3045, 3047, 3049, 3051, 3059, 3070, 3071, 3072, 3073, 3074, 3075]
+)
 def test_the_book_s_moves_find_its_shape(number):
     """The book's triangles and oblongs drawn as the book draws them find
     the shape that draws their lines, however their moves are ordered or
@@ -357,3 +395,42 @@ def test_a_shape_on_its_corner_has_the_book_s_lines(number, shape, size, height)
     )
     made = sinnet_from_shape(outline, holes=holes, across=grid_lines("diagonal"))
     assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])
+
+
+@pytest.mark.parametrize(
+    "name",
+    sorted(__import__("braidpy.solid_sinnets_catalog", fromlist=["DRAWN"]).DRAWN),
+)
+def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
+    """Each of the book's sinnets the catalogue says a shape draws: the
+    shape draws its lines, and makes its braid where it says so."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import (
+        _drawn,
+        corner_spaces,
+        grid_lines,
+        grid_outline,
+        grid_shape,
+        sinnet_from_shape,
+    )
+
+    drawn = books.DRAWN[name]
+    book = getattr(books, name)
+    grid = str(drawn["grid"])
+    cells = grid_shape(
+        grid, str(drawn["shape"]), int(drawn["size"]), int(drawn.get("height", 2))
+    )
+    outline, *holes = grid_outline(grid, cells)
+    across = grid_lines(grid)
+    corners = corner_spaces(outline, holes, across)
+    n = len(book.initial_counts_per_space)
+    made = sinnet_from_shape(
+        outline,
+        extra=[int(drawn.get("corners", 0)) * (s in corners) for s in range(1, n + 1)],
+        order=str(drawn.get("order", "book")),
+        holes=holes,
+        across=across,
+    )
+    assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])
+    if drawn["makes"]:
+        assert same_braid(made.braid(1), book.braid(1))

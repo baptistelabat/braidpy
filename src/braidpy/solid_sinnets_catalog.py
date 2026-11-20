@@ -1090,6 +1090,73 @@ LINKS: dict[str, tuple[Link, ...]] = {
 }
 
 
+# The book's sinnets that a shape on a grid draws, as Ashley draws them
+# (braidpy.making.ashley.grid_shape, sinnet_from_shape): its grid, shape and
+# size, in lines, as Braid Studio asks for them, the order of its moves if
+# not the book's alternating one, and the strands added at its corners.
+# "makes": the sinnet so made is the book's braid; otherwise the shape draws
+# its lines, its moves made in another order.
+DRAWN: dict[str, dict[str, str | int | bool]] = {
+    "abok_3045": {"grid": "triangle", "shape": "triangle", "size": 2, "makes": True},
+    "abok_3047": {"grid": "triangle", "shape": "triangle", "size": 4, "makes": True},
+    "abok_3049": {
+        "grid": "triangle",
+        "shape": "triangle",
+        "size": 4,
+        "corners": 1,
+        "makes": True,
+    },
+    "abok_3051": {"grid": "triangle", "shape": "triangle", "size": 6, "makes": True},
+    "abok_3057": {
+        "grid": "triangle",
+        "shape": "triangle",
+        "size": 2,
+        "order": "spaces",
+        "makes": True,
+    },
+    "abok_3058": {
+        "grid": "triangle",
+        "shape": "triangle",
+        "size": 2,
+        "order": "spaces",
+        "makes": True,
+    },
+    "abok_3059": {"grid": "triangle", "shape": "triangle", "size": 3, "makes": True},
+    "abok_3070": {
+        "grid": "square",
+        "shape": "oblong",
+        "size": 2,
+        "height": 2,
+        "makes": False,
+    },
+    "abok_3071": {
+        "grid": "square",
+        "shape": "oblong",
+        "size": 6,
+        "height": 2,
+        "corners": 1,
+        "makes": True,
+    },
+    "abok_3072": {
+        "grid": "square",
+        "shape": "oblong",
+        "size": 10,
+        "height": 2,
+        "corners": 1,
+        "makes": True,
+    },
+    "abok_3073": {"grid": "diagonal", "shape": "square", "size": 6, "makes": False},
+    "abok_3074": {"grid": "diagonal", "shape": "square", "size": 8, "makes": False},
+    "abok_3075": {
+        "grid": "diagonal",
+        "shape": "oblong",
+        "size": 10,
+        "height": 2,
+        "makes": False,
+    },
+}
+
+
 def _entry(name: str, sinnet: AshleySolidSinnet) -> Entry[AshleySolidSinnet]:
     number = name.split("_")[1]
     return Entry(
