@@ -8,17 +8,13 @@ import json
 import re
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 import tomllib
+from test_site_build import PRIVATE, WEB, _build
 
-WEB = Path(__file__).parents[1] / "web"
-sys.path.insert(0, str(WEB))
-import build
-from test_site_build import PRIVATE
-
+build = _build()
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
 
 CASES = Path(__file__).parent / "js" / "i18n_cases.mjs"
