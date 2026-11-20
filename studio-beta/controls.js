@@ -8,9 +8,9 @@
 import * as THREE from "three";
 import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import { copyText } from "./info.js?v=304ab62f1f";
-import { drawSection, section, top } from "./insets.js?v=304ab62f1f";
-import { $ } from "./page.js?v=304ab62f1f";
+import { copyText } from "./info.js?v=c3ac1eda50";
+import { drawSection, section, top } from "./insets.js?v=c3ac1eda50";
+import { $ } from "./page.js?v=c3ac1eda50";
 import {
   awake,
   braid,
@@ -25,8 +25,8 @@ import {
   SUBSTEPS,
   scene,
   showTubes,
-} from "./scene.js?v=304ab62f1f";
-import { b3dOf } from "./workers.js?v=304ab62f1f";
+} from "./scene.js?v=c3ac1eda50";
+import { b3dOf } from "./workers.js?v=c3ac1eda50";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {

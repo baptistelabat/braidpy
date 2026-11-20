@@ -9,7 +9,7 @@
 // changes no move; a move clicked goes in after the cursor, and Undo takes
 // out the one at it.
 
-import { inTime } from "./page.js?v=304ab62f1f";
+import { inTime } from "./page.js?v=c3ac1eda50";
 
 function hue(i, n) {
   return `hsl(${(360 * i) / Math.max(n, 1)}, 100%, 50%)`;
@@ -342,11 +342,12 @@ export function attachEditor(source, holder) {
 }
 
 // A sinnet made from a shape, drawn as Ashley draws it once braidpy has
-// made it (braidpy.web's ashley_shape): its lines, coloured by track, each
-// with an arrow the way its move goes, and its spaces, numbered, sized by
-// the strands they start with.  Clicking a track turns it round, clicking
-// a space gives it a strand more, shift-clicking takes one off; the braid
-// is made again.
+// made it (braidpy.web's ashley_shape): its grid's cells, its lines,
+// coloured by track, each with an arrow the way its move goes, and its
+// spaces, numbered, sized by the strands they start with.  As chosen,
+// clicking a track turns it round; clicking a space gives it a strand
+// more, shift-clicking takes one off; clicking a cell adds it to the shape
+// or takes it off.  The braid is made again.
 const SVG = "http://www.w3.org/2000/svg";
 // Margin round the shape, and the radius of a space with one strand, in
 // the drawing's spacings between lines.
@@ -362,8 +363,15 @@ const ARROW_AT = 0.55;
 const LINE_WIDTH = 0.08;
 const CLICK_WIDTH = 0.4;
 const RIM_WIDTH = 0.04;
-// The outline, faint beside the lines.
+// The outline, faint beside the lines, and the grid's cells fainter still.
 const OUTLINE_OPACITY = 0.4;
+const CELL_OPACITY = 0.12;
+// What a click on a shape's drawing does.
+const CLICKS = [
+  ["tracks", "Click a track to turn it round"],
+  ["strands", "Click a space for a strand more, shift-click for one less"],
+  ["shape", "Click a cell to add it or take it off"],
+];
 // A space's number, as a share of the radius of a space of one strand.
 const NUMBER_SIZE = 1.3;
 
@@ -376,21 +384,30 @@ function svg(name, attributes = {}) {
 export function attachShape(holder) {
   const turned = holder.querySelector("[name=turned]");
   const extra = holder.querySelector("[name=extra]");
+  const cells = holder.querySelector("[name=cells]");
   const box = document.createElement("div");
   box.className = "editor";
-  box.dataset.entry = "shape";
-  box.hidden = turned.closest("label").hidden;
+  // What a click does: its own control, no part of the braid asked for.
+  const mode = document.createElement("select");
+  mode.setAttribute("aria-label", "A click on the drawing");
+  for (const [value, text] of CLICKS) mode.append(new Option(text, value));
   const drawing = svg("svg", { role: "img" });
-  drawing.setAttribute("aria-label", "The shape: click a track to turn it round, a space to add a strand");
+  drawing.setAttribute("aria-label", "The shape, its tracks and spaces, and its grid");
   drawing.style.width = "100%";
   const help = document.createElement("small");
   help.textContent = "Made, the shape is drawn here.";
-  box.append(drawing, help);
-  holder.querySelector("[name=extra]").closest("label").after(box);
-  // Shown with the shape's own fields.
-  new MutationObserver(() => {
-    box.hidden = turned.closest("label").hidden;
-  }).observe(turned.closest("label"), { attributes: true, attributeFilter: ["hidden"] });
+  box.append(mode, drawing, help);
+  holder.querySelector("[name=shape]").closest("label").after(box);
+  // A shape started from afresh, or resized, is no longer the cells changed.
+  for (const name of ["shape", "size", "height"]) {
+    holder.querySelector(`[name=${name}]`).addEventListener("change", () => {
+      cells.value = "";
+      turned.value = "";
+      extra.value = "";
+    });
+  }
+  let last = null;
+  mode.addEventListener("change", () => last && draw(last));
 
   const again = () => document.getElementById("build").click();
   const listed = (field) => (field.value.match(/\d+/g) || []).map(Number);
@@ -410,15 +427,49 @@ export function attachShape(holder) {
     again();
   };
 
+  // A cell clicked comes in, or goes out: the cells written out whole, the
+  // tracks and strands, numbered on the shape as it was, forgotten.
+  const reshape = (cell, shape) => {
+    const now = shape.cells.filter((c) => c.in).map((c) => c.name);
+    cells.value = (now.includes(cell.name) ? now.filter((n) => n !== cell.name) : [...now, cell.name]).join(" ");
+    turned.value = "";
+    extra.value = "";
+    again();
+  };
+
   function draw(shape) {
+    last = shape;
+    const clicking = mode.value;
     drawing.replaceChildren();
-    const xs = shape.outline.map(([x]) => x);
-    const ys = shape.outline.map(([, y]) => y);
+    const shown = mode.value === "shape" ? shape.cells.flatMap((c) => c.points) : [];
+    const xs = [...shape.outline, ...shown].map(([x]) => x);
+    const ys = [...shape.outline, ...shown].map(([, y]) => y);
     const [left, right] = [Math.min(...xs) - SHAPE_MARGIN, Math.max(...xs) + SHAPE_MARGIN];
     const [low, high] = [Math.min(...ys) - SHAPE_MARGIN, Math.max(...ys) + SHAPE_MARGIN];
     drawing.setAttribute("viewBox", `${left} ${-high} ${right - left} ${high - low}`);
     // Drawn with y up, as the book draws it.
     const flip = ([x, y]) => [x, -y];
+    for (const cell of shape.cells) {
+      const area = svg("polygon", {
+        points: cell.points.map((p) => flip(p).join(",")).join(" "),
+        fill: cell.in ? "currentColor" : "transparent",
+        "fill-opacity": cell.in ? CELL_OPACITY : 0,
+        stroke: "currentColor",
+        "stroke-opacity": cell.in ? CELL_OPACITY : OUTLINE_OPACITY,
+        "stroke-width": RIM_WIDTH / 2,
+        "stroke-dasharray": cell.in ? "" : `${RIM_WIDTH * 2}`,
+      });
+      if (clicking === "shape") {
+        area.style.cursor = "pointer";
+        const title = svg("title");
+        title.textContent = cell.in ? "Click to take this cell off" : "Click to add this cell";
+        area.append(title);
+        area.addEventListener("click", () => reshape(cell, shape));
+      } else if (!cell.in) {
+        continue;
+      }
+      drawing.append(area);
+    }
     drawing.append(
       svg("polygon", {
         points: shape.outline.map((p) => flip(p).join(",")).join(" "),
@@ -431,7 +482,7 @@ export function attachShape(holder) {
     for (const line of shape.lines) {
       const colour = hue(line.track - 1, shape.tracks);
       const [a, b] = [flip(line.start), flip(line.end)];
-      const group = svg("g", { cursor: "pointer" });
+      const group = svg("g", clicking === "tracks" ? { cursor: "pointer" } : { "pointer-events": "none" });
       const title = svg("title");
       title.textContent = `Track ${line.track}: click to turn it round`;
       group.append(title);
@@ -453,13 +504,13 @@ export function attachShape(holder) {
           fill: colour,
         }),
       );
-      group.addEventListener("click", () => toggle(line.track));
+      if (clicking === "tracks") group.addEventListener("click", () => toggle(line.track));
       drawing.append(group);
     }
     shape.spaces.forEach((point, k) => {
       const [x, y] = flip(point);
       const strands = shape.counts[k];
-      const group = svg("g", { cursor: "pointer" });
+      const group = svg("g", clicking === "strands" ? { cursor: "pointer" } : { "pointer-events": "none" });
       const title = svg("title");
       title.textContent = `Space ${k + 1}: ${strands} strand${strands === 1 ? "" : "s"}; click for one more, shift-click for one less`;
       group.append(
@@ -483,7 +534,7 @@ export function attachShape(holder) {
       });
       number.textContent = String(k + 1);
       group.append(number);
-      group.addEventListener("click", (event) => give(k + 1, !event.shiftKey));
+      if (clicking === "strands") group.addEventListener("click", (event) => give(k + 1, !event.shiftKey));
       drawing.append(group);
     });
     help.textContent = `${shape.tracks} track${shape.tracks === 1 ? "" : "s"}, ${shape.spaces.length} spaces, ${shape.counts.reduce((a, b) => a + b, 0)} strands.`;

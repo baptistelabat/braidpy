@@ -7,12 +7,12 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onChosen, paint } from "./colours.js?v=304ab62f1f";
-import { wholeFrame } from "./frames.js?v=304ab62f1f";
-import { describe } from "./info.js?v=304ab62f1f";
-import { drawSection, drawTop } from "./insets.js?v=304ab62f1f";
-import { $ } from "./page.js?v=304ab62f1f";
-import { pending } from "./workers.js?v=304ab62f1f";
+import { onChosen, paint } from "./colours.js?v=c3ac1eda50";
+import { wholeFrame } from "./frames.js?v=c3ac1eda50";
+import { describe } from "./info.js?v=c3ac1eda50";
+import { drawSection, drawTop } from "./insets.js?v=c3ac1eda50";
+import { $ } from "./page.js?v=c3ac1eda50";
+import { pending } from "./workers.js?v=c3ac1eda50";
 
 export let lastResult = null;
 
@@ -130,7 +130,7 @@ export let braid = null;
 // How far round the vertical the starting view is turned, per source, so
 // the braid's seam — where its numbering round the ring closes, and no
 // strand crosses — is away from the viewer.
-const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2 };
+const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2, shape: Math.PI / 2 };
 
 // Where a disk's numbering closes — between its first slot (or space) and
 // its last — as an angle seen from above, in the top view's frame.
