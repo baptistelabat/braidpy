@@ -210,25 +210,33 @@ made.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
 sinnet_from_shape(oblong(6, 2))  # #3071's moves
 ```
 
-And back: the shapes whose drawing has a sinnet's moves, the same spaces
-joined however the moves are ordered or made
-({func}`~braidpy.making.ashley.shapes_with_moves`), or whose sinnet makes a
-braid, compared by its topology
-({func}`~braidpy.making.ashley.shapes_making`). Both look among oblongs of
-whole spacings and triangles ({func}`~braidpy.making.ashley.ashley_shapes`).
-Every book triangle and oblong above is found from its moves, #3049 and
-#3072 among them; from its braid, every one made without extra strands.
-Shapes drawn otherwise, as #3073's square on its diagonals or #3052's
-hexagon, are not among those searched yet.
+And back, from a sinnet's moves to its shape, without searching. Lines of
+one direction never cross, so the moves fall into groups, one a direction
+({func}`~braidpy.making.ashley.move_groups`):
+
+- across an oblong, joining every two moves whose lines do not cross
+  leaves the directions;
+- across a triangle, whose lines of different directions miss each other
+  near its corners, moves are parallel when their spaces add up to the same
+  number round the stand: with the spaces evenly spaced, the line from
+  space *a* to space *b* runs at (*a* + *b*)π/*n*.
+
+The groups, as shares of the spaces, are the same for a shape drawn on the
+same principle at any size: every triangle has three directions a third of
+a half turn apart, each with a third of the moves. From them
+{func}`~braidpy.making.ashley.shapes_from_moves` makes the shape: a side,
+or a pair of parallel sides, to each direction, as far across as its moves
+need. Every triangle and oblong comes back so, drawing the very same lines,
+and so do the book's #3045, #3047, #3049, #3051, #3059 and #3070–#3072,
+however their moves are ordered. Shapes drawn otherwise, as #3079's
+pentagon or #3073's square on its diagonals, are not made again yet.
 
 ```python
-from braidpy.making.ashley import shapes_making, shapes_with_moves
+from braidpy.making.ashley import move_groups, shapes_from_moves
 from braidpy.solid_sinnets_catalog import abok_3047
 
-[shape.name for shape in shapes_with_moves(abok_3047.moves)]
-# ['triangle of 4 lines a side']
-[shape.name for shape in shapes_making(abok_3047.braid(1))]
-# ['triangle of 4 lines a side']
+move_groups(abok_3047.moves).family  # three directions, a third of the moves each
+shapes_from_moves(abok_3047.moves)[0].outline  # triangle(4)
 ```
 
 ## In Braid Studio

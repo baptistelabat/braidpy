@@ -5,6 +5,7 @@
 """A braid as a sinnet on Ashley's stand, found by searching:
 braidpy.making.ashley."""
 
+import numpy as np
 import pytest
 
 from braidpy import Braid
@@ -175,32 +176,53 @@ def test_the_fewest_strands_keep_every_space_filled():
     assert least_counts([(1, 3), (2, 4), (3, 1), (4, 2)], 4) == [2, 2, 1, 1]
 
 
-@pytest.mark.parametrize(
-    "number, name",
-    [
-        (3047, "triangle of 4 lines a side"),
-        (3049, "triangle of 4 lines a side"),
-        (3059, "triangle of 3 lines a side"),
-        (3070, "oblong 2 by 2"),
-        (3072, "oblong 10 by 2"),
-    ],
-)
-def test_a_sinnet_s_moves_find_its_shape(number, name):
-    """The book's moves are drawn by the shape the book draws them on,
-    however they are ordered or made, and with whatever strands."""
+def test_moves_group_alike_for_a_shape_of_any_size():
+    """Grouped by the direction of their lines, a triangle's moves are three
+    directions a third of a half turn apart, each with a third of the
+    moves, however many lines it has; an oblong's two, at right angles,
+    each with as many moves as lines fit across it."""
+    from fractions import Fraction
+
+    from braidpy.making.ashley import move_groups, sinnet_from_shape
+
+    third = Fraction(1, 3)
+    for lines in range(2, 9):
+        groups = move_groups(sinnet_from_shape(triangle(lines)).moves)
+        assert groups.family == ((0, third), (third, third), (2 * third, third))
+    groups = move_groups(sinnet_from_shape(oblong(8, 3)).moves)
+    assert groups.groups == ((0, 3), (Fraction(1, 2), 8))
+
+
+def test_a_shape_comes_back_from_its_moves_at_any_size():
+    """A triangle's or an oblong's shape is made again from its moves,
+    drawing the very same lines, whatever its size."""
+    from braidpy.making.ashley import shapes_from_moves, sinnet_from_shape
+
+    for outline in [triangle(lines) for lines in (3, 4, 12)] + [
+        oblong(5, 2),
+        oblong(8, 3),
+        oblong(12, 7),
+    ]:
+        found = shapes_from_moves(sinnet_from_shape(outline).moves)
+        assert found[0].same_lines
+        assert np.allclose(found[0].outline, outline)
+
+
+@pytest.mark.parametrize("number", [3045, 3047, 3049, 3051, 3059, 3070, 3071, 3072])
+def test_the_book_s_moves_find_its_shape(number):
+    """The book's triangles and oblongs drawn as the book draws them find
+    the shape that draws their lines, however their moves are ordered or
+    made, and with whatever strands."""
     from braidpy import solid_sinnets_catalog as books
-    from braidpy.making.ashley import shapes_with_moves
+    from braidpy.making.ashley import shapes_from_moves
 
     book = getattr(books, f"abok_{number}")
-    assert [shape.name for shape in shapes_with_moves(book.moves)] == [name]
+    assert shapes_from_moves(book.moves)[0].same_lines
 
 
-def test_a_braid_finds_the_shapes_that_make_it():
-    """The braid of a sinnet made as the book makes it finds its shape; the
-    weave of 3, no sinnet's, finds none."""
-    from braidpy.making.ashley import shapes_making
-    from braidpy.solid_sinnets_catalog import abok_3047
+def test_moves_drawn_otherwise_find_no_shape():
+    """A pentagon of four lines a side is not drawn as these shapes are."""
+    from braidpy.making.ashley import shapes_from_moves
+    from braidpy.solid_sinnets_catalog import abok_3079
 
-    found = shapes_making(abok_3047.braid(1))
-    assert [shape.name for shape in found] == ["triangle of 4 lines a side"]
-    assert shapes_making(Braid((1, -2, -2, 1), 3)) == []
+    assert shapes_from_moves(abok_3079.moves) == []
