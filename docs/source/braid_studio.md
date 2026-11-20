@@ -197,8 +197,9 @@ The studio has a form and a 3D view.
 - **Ashley's method, from a shape** makes a sinnet from the shape it is to
   take, as Ashley draws it (see
   [Making](making.md#from-the-shape-it-is-to-take)): first its **Grid**,
-  square, diamond (squares on a corner, the lines along their diagonals)
-  or hexagonal (triangles), then a **Shape** that grid offers: an oblong,
+  square (lines at 0° and 90°), diamond (the same lines, the sides free to
+  run at 45°) or triangular (lines at 0°, 60° and 120°), then a **Shape**
+  that grid offers: an oblong,
   an L, a U or a hollow square on squares; a square or an oblong on a
   corner on the diamond grid; a triangle or a hexagon on triangles, so many
   lines along a side (an oblong's width and height, an L's or a U's width
