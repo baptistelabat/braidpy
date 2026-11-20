@@ -9,15 +9,16 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 import pytest
+import tomllib
 
 WEB = Path(__file__).parents[1] / "web"
 sys.path.insert(0, str(WEB))
-import build  # noqa: E402
-from test_site_build import PRIVATE  # noqa: E402
+from test_site_build import PRIVATE
+
+import build
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
 
@@ -106,7 +107,7 @@ def test_every_translation_takes_the_words_its_english_leaves_open():
 def _page_texts(text):
     """The words a page shows: its text, its titles and its description."""
     words = re.findall(r'(?:title|placeholder|aria-label|alt|content)="([^"]*)"', text)
-    body = re.sub(r"<(script|style)\b.*?</\1>", "", text, flags=re.S)
+    body = re.sub(r"<(script|style)\b.*?</\1>", "", text, flags=re.DOTALL)
     words += re.split(r"<[^>]+>", body)
     return [w for w in words if re.search(r"[A-Za-z]{2}", w)]
 

@@ -213,8 +213,8 @@ def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
         texts[name] = _rendered(text, about) if name.endswith(".html") else text
     texts["locale.js"] = locale(str(about["language"]))
     digest = hashlib.sha256()
-    for name in texts:
-        digest.update(name.encode() + b"\0" + texts[name].encode())
+    for name, text in texts.items():
+        digest.update(name.encode() + b"\0" + text.encode())
     version = digest.hexdigest()[:10]
 
     def stamp(named: re.Match) -> str:
