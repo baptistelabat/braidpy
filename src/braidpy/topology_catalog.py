@@ -58,6 +58,15 @@ __all__ = [
 # What says how much of a braid is made, not which braid it is.
 _HOW_MUCH = ("cycles", "repeat")
 
+
+def _defining(source: str) -> tuple:
+    """The settings of a source that each make the braid what it is: for a
+    sinnet from a shape, the shape and its cells, tracks and strands."""
+    from braidpy.web._settings import Shape
+
+    return Shape.defining if source == "shape" else ()
+
+
 # The catalogue each source's braids are listed in, by braidpy.web's names.
 _CATALOGUES = {
     "word": "braidpy.braid_catalog",
@@ -98,10 +107,17 @@ class Method:
 
     def describes(self, spec: Mapping[str, Any]) -> bool:
         """Whether a description is of this method's braid, however much of
-        it is made: as a page's address has it, every value a string."""
+        it is made: as a page's address has it, every value a string.  Of a
+        source whose every setting makes the braid what it is, as a shape's
+        (:data:`_DEFINING`), every setting must agree, given or not."""
+        mine = self.description()
         return all(
             key in _HOW_MUCH or str(spec.get(key)) == str(value)
             for key, value in self.spec
+        ) and all(
+            str(spec.get(setting.key, setting.default))
+            == str(mine.get(setting.key, setting.default))
+            for setting in _defining(self.source)
         )
 
 
@@ -181,6 +197,16 @@ def methods() -> list[Method]:
             ),
         )
     )
+    for shaped in listed["shape"].get("examples", []):
+        rest = {k: v for k, v in shaped.items() if k != "title"}
+        found.append(
+            Method(
+                "shape",
+                shaped["title"].lower().replace(",", "").replace(" ", "_"),
+                shaped["title"],
+                _spec(source="shape", **rest, cycles=1),
+            )
+        )
     for source in ("mobidai", "sinnet", "machine"):
         for entry in listed[source]["entries"]:
             if entry["name"] == "custom":

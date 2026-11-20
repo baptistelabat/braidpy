@@ -34,10 +34,20 @@ from braidpy.web._settings import (
     OWN,
     Kumihimo,
     Mobidai,
+    Shape,
     Sinnet,
 )
 from braidpy.web._spec import _moves_text, _numbers, defaults, parse_moves
-from braidpy.web._types import DiskProgram, Entry, Result, Source, Spec
+from braidpy.web._types import (
+    DiskProgram,
+    DrawnLine,
+    Entry,
+    Example,
+    Result,
+    ShapeDrawing,
+    Source,
+    Spec,
+)
 
 
 def _sinnets():
@@ -314,9 +324,161 @@ def from_b3d(text: str) -> Spec:
     )
 
 
+_CELL = re.compile(r"(-?\d+),(-?\d+)([\^vbrtl]?)")
+# A diagonal grid's quarters of a square, as a link names them: below, to
+# the right, above, to the left.
+_QUARTERS = "brtl"
+
+
+def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
+    """Cells as a link gives them: ``i,j`` on the square grid; ``i,jb``,
+    ``i,jr``, ``i,jt`` or ``i,jl`` for the quarter of that square below,
+    right of, above or left of its middle on the diagonal grid; ``i,j^``
+    for the triangle pointing up from point (i, j) of the triangular grid,
+    ``i,jv`` for the one pointing down beside it."""
+    cells: list[tuple[int, ...]] = []
+    for i, j, which in _CELL.findall(text):
+        if grid == "square":
+            cells.append((int(i), int(j)))
+        elif grid == "diagonal":
+            cells.append((int(i), int(j), _QUARTERS.index(which or "b")))
+        else:
+            cells.append((int(i), int(j), int(which == "v")))
+    return cells
+
+
+def _cell_text(grid: str, cell: tuple[int, ...]) -> str:
+    """A cell as :func:`_cells` reads it."""
+    which = {"square": "", "diagonal": _QUARTERS, "triangle": "^v"}[grid]
+    return f"{cell[0]},{cell[1]}" + (which[cell[2]] if which else "")
+
+
+def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
+    """The cells sharing a side with these, not among them: those a shape
+    can grow by."""
+    from braidpy.making.ashley import _cell_points
+
+    def sides(cell):
+        points = _cell_points(grid, cell)
+        return {frozenset(side) for side in zip(points, points[1:] + points[:1])}
+
+    taken = set(cells)
+    edges = set().union(*(sides(cell) for cell in cells))
+    kinds: dict[str, list[tuple[int, ...]]] = {
+        "square": [()],
+        "diagonal": [(q,) for q in range(4)],
+        "triangle": [(0,), (1,)],
+    }
+    near = {
+        (cell[0] + di, cell[1] + dj, *which)
+        for cell in cells
+        for di in (-1, 0, 1)
+        for dj in (-1, 0, 1)
+        for which in kinds[grid]
+    }
+    return sorted(cell for cell in near - taken if sides(cell) & edges)
+
+
+def _from_shape(spec: Spec) -> Result:
+    """A sinnet from the shape it is to take, as Ashley draws it
+    (:func:`braidpy.making.ashley.sinnet_from_shape`), drawn as he draws
+    it, its grid's cells beside, to change the shape by."""
+    import dataclasses
+
+    from braidpy.making.ashley import (
+        cell_outline,
+        corner_spaces,
+        grid_lines,
+        grid_outline,
+        grid_shape,
+        shape_diagram,
+        shape_tracks,
+        sinnet_from_shape,
+    )
+
+    grid = Shape.grid.read(spec)
+    if grid not in Shape.grids:
+        raise ValueError(f"No grid {grid!r}: one of {sorted(Shape.grids)}.")
+    name = Shape.shape.read(spec)
+    if name not in Shape.shapes[grid]:
+        raise ValueError(
+            f"No shape {name!r} on that grid: one of {sorted(Shape.shapes[grid])}."
+        )
+    cells = grid_shape(grid, name, Shape.size.read(spec), Shape.height.read(spec))
+    if Shape.cells.read(spec).strip():
+        cells = _cells(grid, Shape.cells.read(spec))
+    outline, *holes = grid_outline(grid, cells)
+    across = grid_lines(grid)
+    lines, joins, bights = shape_diagram(outline, holes, across)
+    turned = sorted(set(_numbers(Shape.turned.read(spec) or "0", "tracks")) - {0})
+    extra = [0] * len(bights)
+    for space in re.findall(r"\d+", Shape.extra.read(spec)):
+        if not 1 <= int(space) <= len(bights):
+            raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
+        extra[int(space) - 1] += 1
+    for space in corner_spaces(outline, holes, across):
+        extra[space - 1] += Shape.corners.read(spec)
+    sinnet = sinnet_from_shape(
+        outline,
+        extra=extra,
+        turned=turned,
+        order=Shape.order.read(spec),
+        holes=holes,
+        across=across,
+    )
+    if sinnet.n_strands > Shape.most_strands:
+        raise ValueError(f"That is over {Shape.most_strands} strands.")
+    track_of = {
+        k: number
+        for number, track in enumerate(shape_tracks(sinnet.moves), start=1)
+        for k in track
+    }
+    # Each move along a line joining its two spaces; two lines may join the
+    # same two, as across an oblong, either taking either move.
+    free = list(range(len(lines)))
+    drawn: list[DrawnLine] = []
+    for k, (a, b) in enumerate(sinnet.moves):
+        line = next(i for i in free if sorted(joins[i]) == sorted((a, b)))
+        free.remove(line)
+        ends = lines[line].ends if joins[line][0] == a else lines[line].ends[::-1]
+        drawn.append(
+            {"start": list(ends[0]), "end": list(ends[1]), "track": track_of[k]}
+        )
+    drawing: ShapeDrawing = {
+        "outline": [list(corner) for corner in outline],
+        "holes": [[list(corner) for corner in hole] for hole in holes],
+        "lines": drawn,
+        "spaces": [list(bight) for bight in bights],
+        "counts": list(sinnet.initial_counts_per_space),
+        "tracks": len(set(track_of.values())),
+        "cells": [
+            {
+                "name": _cell_text(grid, cell),
+                "points": [list(p) for p in cell_outline(grid, cell)],
+                "in": taken,
+            }
+            for taken, group in (
+                (True, sorted(set(cells))),
+                (False, _beside(grid, cells)),
+            )
+            for cell in group
+        ],
+    }
+    # Called as the shape started from, or the shape's own cells.
+    own = bool(Shape.cells.read(spec).strip())
+    title = Shape.shapes[grid][name]
+    noun = (
+        None if own else title[0].lower() + title[1:] if title[1:2].islower() else title
+    )
+    named = dataclasses.replace(sinnet, shape=noun)
+    called = "Your own shape," if own else "From a shape,"
+    result = _sinnet_result(named, spec, Shape.cycles.read(spec), called)
+    result["ashley_shape"] = drawing
+    return result
+
+
 def _from_sinnet(spec: Spec) -> Result:
-    from braidpy.ashley_solid_sinnet import AshleySolidSinnet, strand_colours
-    from braidpy.take_off import disk_trajectories
+    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 
     sinnets = _sinnets()
     name = Sinnet.name.read(spec)
@@ -334,7 +496,15 @@ def _from_sinnet(spec: Spec) -> Result:
         sinnet = sinnets[name].make()
     else:
         raise ValueError(f"No sinnet {name!r}: one of {sorted(sinnets)}.")
-    cycles = Sinnet.cycles.read(spec)
+    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
+    return _sinnet_result(sinnet, spec, Sinnet.cycles.read(spec), called)
+
+
+def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
+    """A sinnet made on its disk, so many cycles, called so."""
+    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.take_off import disk_trajectories
+
     diameter = DISK_YARN.read(spec)
     disk = sinnet.disk(cycles)
     paths, clock, ring = _disk_in_step(
@@ -366,7 +536,6 @@ def _from_sinnet(spec: Spec) -> Result:
             "Its moves do not bring every space back to its count after a "
             "cycle: the catalogue's moves may be mistranscribed."
         )
-    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
 
     def worked(k: int):
@@ -466,9 +635,21 @@ def _sinnet_entry() -> Source:
     }
 
 
+def _shape_entry() -> Source:
+    return {
+        "title": "Ashley's method, from a shape",
+        "defaults": defaults(*Shape.shown),
+        "grids": dict(Shape.grids),
+        "shapes": {grid: dict(shapes) for grid, shapes in Shape.shapes.items()},
+        "orders": dict(Shape.orders),
+        "examples": cast(list[Example], Shape.examples),
+    }
+
+
 # Each source: its catalogue entry, and what builds it.
 SOURCES: dict[str, tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "kumihimo": (_kumihimo_entry, _from_kumihimo),
     "mobidai": (_mobidai_entry, _from_mobidai),
     "sinnet": (_sinnet_entry, _from_sinnet),
+    "shape": (_shape_entry, _from_shape),
 }

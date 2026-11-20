@@ -130,7 +130,7 @@ export let braid = null;
 // How far round the vertical the starting view is turned, per source, so
 // the braid's seam — where its numbering round the ring closes, and no
 // strand crosses — is away from the viewer.
-const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2 };
+const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2, shape: Math.PI / 2 };
 
 // Where a disk's numbering closes — between its first slot (or space) and
 // its last — as an angle seen from above, in the top view's frame.

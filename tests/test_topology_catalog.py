@@ -58,7 +58,7 @@ def test_every_braid_word_is_in_exactly_one_topology():
 
 def test_every_source_is_in_the_catalogue():
     sources = {m.source for entry in catalogue().values() for m in entry.make().methods}
-    assert sources == {"word", "kumihimo", "mobidai", "sinnet", "machine"}
+    assert sources == {"word", "kumihimo", "mobidai", "sinnet", "shape", "machine"}
 
 
 def test_your_own_braid_finds_its_topology_and_the_ways_to_make_it():
@@ -143,3 +143,14 @@ def test_a_tubular_machine_s_braid_is_its_ring_word_filled_in():
     ring = {"annular_word": "1 -2 3 4", "n_strands": 5}
     assert braid_of(ring) == Braid(tuple(solid_word([1, -2, 3, 4], 4)), 4)
     assert braid_of({"n_strands": 5}) is None
+
+
+def test_a_shape_s_example_is_known_only_as_it_is():
+    """A sinnet from a shape is the example it is described as only if
+    every setting agrees: a track turned round is another braid."""
+    from braidpy.topology_catalog import methods
+
+    triangle = next(m for m in methods() if m.title.startswith("Triangle, 4 lines"))
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": "4"}
+    assert triangle.describes(spec)
+    assert not triangle.describes({**spec, "turned": "1"})

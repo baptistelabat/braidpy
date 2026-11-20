@@ -150,6 +150,8 @@ function heard(data) {
     topAtFrame(data.frame);
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
+    // For what draws a braid's making beside the form (editor.js).
+    document.dispatchEvent(new CustomEvent("braid-laid", { detail: data.result }));
     // Settling sends the braid as it goes: the view stays put.
     if (rebase(data.result)) relink();
     show(data.result, null, shownLaid === data.id);

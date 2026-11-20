@@ -251,3 +251,86 @@ def test_a_lace_braid_made_on_a_marudai_can_have_a_core(name):
     assert result["strands"][-1]["colour"] == CORE_COLOUR
     assert result["disk"] == {**plain["disk"], "core": "rigid"}
     assert result["info"]["word"] == plain["info"]["word"]
+
+
+def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
+    """A triangle of four lines a side, from the page, is the book's #3047,
+    its strands and moves, and comes drawn: its lines, each a move on a
+    track, and its spaces."""
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
+    result = build({**spec, "cycles": 1, "iterations": 0})
+    check(result, abok_3047.n_strands)
+    drawn = result["ashley_shape"]
+    assert drawn["counts"] == abok_3047.initial_counts_per_space
+    assert len(drawn["lines"]) == len(drawn["spaces"]) == 12
+    assert drawn["tracks"] == 3
+    shapes = catalogue()["shape"]["shapes"]
+    assert set(shapes) == {"square", "diagonal", "triangle"}
+    assert set(shapes["square"]) >= {"oblong", "L", "U", "frame"}
+
+
+def test_a_shape_s_track_turned_round_and_strands_added():
+    """A track turned round runs the other way, each space still giving
+    once and taking once; a space named twice holds two strands more."""
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
+    plain = build({**spec, "cycles": 1, "iterations": 0})["ashley_shape"]
+    turned = build({**spec, "turned": "1", "cycles": 1, "iterations": 0})
+    turned = turned["ashley_shape"]
+    for before, after in zip(plain["lines"], turned["lines"]):
+        if before["track"] == 1:
+            assert after["start"] == before["end"]
+    more = build({**spec, "turned": "1", "extra": "1 1", "cycles": 1, "iterations": 0})
+    assert more["ashley_shape"]["counts"][0] == turned["counts"][0] + 2
+
+
+@pytest.mark.parametrize(
+    "spec, message",
+    [
+        ({"shape": "circle"}, "No shape"),
+        ({"cells": "0,0^ 1,1^"}, "meet at a point|more than one piece"),
+        ({"grid": "square", "shape": "triangle"}, "No shape"),
+        ({"grid": "hexagonal"}, "No grid"),
+        ({"turned": "9"}, "No track"),
+        ({"extra": "99"}, "numbered 1 to"),
+    ],
+)
+def test_a_sinnet_from_a_shape_is_checked(spec, message):
+    with pytest.raises(ValueError, match=message):
+        build({"source": "shape", "iterations": 0, **spec})
+
+
+def test_a_shape_s_corners_take_strands_more():
+    """A strand more at each corner of a triangle of four lines a side is
+    the book's #3049."""
+    from braidpy.solid_sinnets_catalog import abok_3049
+
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
+    result = build({**spec, "corners": 1, "cycles": 1, "iterations": 0})
+    assert result["ashley_shape"]["counts"] == abok_3049.initial_counts_per_space
+
+
+def test_a_shape_s_cells_are_its_own():
+    """A shape is its grid's cells: given, they make it, and it comes with
+    them and the cells beside, to add; an L is cut in two triangles' less
+    than its oblong, and its lines in pieces where it turns."""
+    spec = {
+        "source": "shape",
+        "grid": "square",
+        "shape": "oblong",
+        "size": 3,
+        "height": 3,
+    }
+    whole = build({**spec, "cycles": 1, "iterations": 0})["ashley_shape"]
+    assert sorted(c["name"] for c in whole["cells"] if c["in"]) == [
+        "0,0",
+        "0,1",
+        "1,0",
+        "1,1",
+    ]
+    notched = build({**spec, "cells": "0,0 1,0 0,1", "cycles": 1, "iterations": 0})
+    drawn = notched["ashley_shape"]
+    assert sum(c["in"] for c in drawn["cells"]) == 3
+    assert "1,1" in [c["name"] for c in drawn["cells"] if not c["in"]]
+    assert len(drawn["outline"]) == 6

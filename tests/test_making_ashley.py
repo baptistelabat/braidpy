@@ -226,3 +226,134 @@ def test_moves_drawn_otherwise_find_no_shape():
     from braidpy.solid_sinnets_catalog import abok_3079
 
     assert shapes_from_moves(abok_3079.moves) == []
+
+
+def test_a_shape_s_tracks_can_be_turned_round():
+    """A triangle of four lines a side is drawn as three tracks; turned
+    round, a track's moves go the other way, every space still giving once
+    and receiving once."""
+    from braidpy.making.ashley import shape_tracks, sinnet_from_shape
+
+    made = sinnet_from_shape(triangle(4))
+    tracks = shape_tracks(made.moves)
+    assert sorted(len(track) for track in tracks) == [3, 3, 6]
+    turned = sinnet_from_shape(triangle(4), turned=[2])
+    for k, (a, b) in enumerate(made.moves):
+        assert turned.moves[k] == ((b, a) if k in tracks[1] else (a, b))
+    every = list(range(1, 13))
+    assert sorted(a for a, _ in turned.moves) == every
+    assert sorted(b for _, b in turned.moves) == every
+    with pytest.raises(ValueError, match="No track"):
+        sinnet_from_shape(triangle(4), turned=[4])
+
+
+@pytest.mark.parametrize(
+    "number, outline",
+    [(3049, triangle(4)), (3071, oblong(6, 2)), (3072, oblong(10, 2))],
+)
+def test_the_book_s_strands_more_are_at_the_corners(number, outline):
+    """The spaces where the book adds strands are a shape's corners: its
+    bights turning a corner, or alone on a side."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import corner_spaces, sinnet_from_shape
+
+    book = getattr(books, f"abok_{number}")
+    n = len(book.initial_counts_per_space)
+    corners = corner_spaces(outline)
+    made = sinnet_from_shape(
+        outline, extra=[int(s in corners) for s in range(1, n + 1)]
+    )
+    assert sorted(made.initial_counts_per_space) == sorted(
+        book.initial_counts_per_space
+    )
+    assert same_braid(made.braid(1), book.braid(1))
+
+
+def test_a_shape_on_a_grid_is_drawn_as_the_book_draws_it():
+    """Rows of triangles on the triangular grid, outlined half a spacing
+    beyond, are the book's triangles, line for line; squares, its
+    oblongs."""
+    from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
+
+    for lines in range(2, 7):
+        (outline,) = grid_outline(
+            "triangle", grid_shape("triangle", "triangle", lines, 2)
+        )
+        on_grid = sinnet_from_shape(outline)
+        assert on_grid == sinnet_from_shape(triangle(lines))
+    (outline,) = grid_outline("square", grid_shape("square", "oblong", 10, 2))
+    on_grid = sinnet_from_shape(outline)
+    assert on_grid.moves == sinnet_from_shape(oblong(10, 2)).moves
+
+
+def test_a_line_is_cut_where_the_outline_turns_back():
+    """Across a U, a line through both arms is two lines, one an arm."""
+    from braidpy.making.ashley import grid_outline, shape_lines
+
+    u = [(i, j) for i in range(4) for j in range(3) if not (i in (1, 2) and j > 0)]
+    lines = shape_lines(*grid_outline("square", u))
+    upper = [line for line in lines if line.ends[0][1] == line.ends[1][1] > 1]
+    assert len(upper) == 4  # two rows, each cut in two
+
+
+def test_space_by_space_is_the_book_s_other_order():
+    """Made space by space, a triangle of two lines a side is the book's
+    #3057 and #3058."""
+    from braidpy.making.ashley import sinnet_from_shape
+    from braidpy.solid_sinnets_catalog import abok_3057
+
+    made = sinnet_from_shape(triangle(2), order="spaces")
+    assert made.moves == [tuple(move) for move in abok_3057.moves]
+    assert made.initial_counts_per_space == abok_3057.initial_counts_per_space
+
+
+def test_cells_must_make_one_piece():
+    from braidpy.making.ashley import grid_outline
+
+    with pytest.raises(ValueError, match="point only"):
+        grid_outline("square", [(0, 0), (1, 1)])
+    with pytest.raises(ValueError, match="more than one piece"):
+        grid_outline("square", [(0, 0), (2, 0)])
+
+
+def test_a_hollow_square_s_spaces_alternate_round_the_stand():
+    """Round a hollow square, the bights of its outline and of its hole are
+    numbered together, by the way they lie from the middle: a line across
+    a side, from the outline to the hole, joins two spaces side by side, as
+    round a tube, every space still giving once and taking once."""
+    from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
+
+    outline, hole = grid_outline("square", grid_shape("square", "frame", 6, 2))
+    made = sinnet_from_shape(outline, holes=[hole])
+    n = len(made.initial_counts_per_space)
+    every = list(range(1, n + 1))
+    assert sorted(a for a, _ in made.moves) == every
+    assert sorted(b for _, b in made.moves) == every
+    across = [(a, b) for a, b in made.moves if (a - b) % n in (1, n - 1)]
+    assert len(across) >= 8
+    assert made.braid(1).n_strands == made.n_strands
+
+
+@pytest.mark.parametrize(
+    "number, shape, size, height",
+    [(3073, "square", 6, 2), (3074, "square", 8, 2), (3075, "oblong", 10, 2)],
+)
+def test_a_shape_on_its_corner_has_the_book_s_lines(number, shape, size, height):
+    """On the diagonal grid, a square or an oblong standing on a corner,
+    its lines across and up, is drawn as the book draws #3073, #3074 and
+    #3075: the same spaces joined, if not in the same order."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import (
+        _drawn,
+        grid_lines,
+        grid_outline,
+        grid_shape,
+        sinnet_from_shape,
+    )
+
+    book = getattr(books, f"abok_{number}")
+    outline, *holes = grid_outline(
+        "diagonal", grid_shape("diagonal", shape, size, height)
+    )
+    made = sinnet_from_shape(outline, holes=holes, across=grid_lines("diagonal"))
+    assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])

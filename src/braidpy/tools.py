@@ -94,10 +94,7 @@ def list_braids(source: Optional[str] = None) -> dict[str, Any]:
                 for e in about.get("entries", [])
                 if e["name"] != "custom"
             ]
-            + [
-                {"word": e["word"], "n_strands": e["n_strands"], "title": e["title"]}
-                for e in about.get("examples", [])
-            ],
+            + [dict(e) for e in about.get("examples", [])],
         }
         for name, about in catalogue().items()
     }

@@ -194,6 +194,30 @@ The studio has a form and a 3D view.
   always, ready to change there: changing a move, its slots, its counts or
   its turn makes it your own, and the catalogued braid stays as it was, to
   choose again.
+- **Ashley's method, from a shape** makes a sinnet from the shape it is to
+  take, as Ashley draws it (see
+  [Making](making.md#from-the-shape-it-is-to-take)): first its **Grid**,
+  square (lines at 0° and 90°), diamond (the same lines, the sides free to
+  run at 45°) or triangular (lines at 0°, 60° and 120°), then a **Shape**
+  that grid offers: an oblong,
+  an L, a U or a hollow square on squares; a square or an oblong on a
+  corner on the diamond grid; a triangle or a hexagon on triangles, so many
+  lines along a side (an oblong's width and height, an L's or a U's width
+  and arms, a hollow square's width and sides). Or one of the braids its
+  **Braid** list offers on that grid and of that shape, made with the site
+  and found among the others by topology: the book's triangles, flat oblong and squares on a corner, a
+  hexagon, a square, an L, a U and hollow squares. The shape is its grid's cells,
+  squares or triangles, and is drawn once made: its cells, its lines,
+  coloured by track, each with an arrow the way its move goes, and its
+  spaces, numbered, larger with more strands. As the list above the
+  drawing says, clicking a track makes its moves the other way round;
+  clicking a space gives it a strand more from the start, shift-clicking
+  takes one off; clicking a cell adds it to the shape, or takes it off, the
+  cells then listed in **Cells**, the shape's own. **At each corner** adds
+  strands at every corner at once, as the book sharpens a shape's edges: a
+  triangle of four lines a side with one is #3049. **Order of the moves**
+  is the book's, alternating where it can, or space by space: a triangle of
+  two lines a side so is #3057.
 - **Import a braid3d design** reads a `.b3d` file saved by braid3d (the
   designer braid3dmin runs) as your own mobidai braid: its yarns in their
   colours, its moves, and its repeat as cycles, on a disk of as few slots

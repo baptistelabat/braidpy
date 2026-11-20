@@ -239,7 +239,8 @@ def test_every_kind_of_braid_can_be_recoloured(source):
 
 
 def test_every_braid_offered_as_it_comes_is_made_with_the_site():
-    """Each catalogued braid and braid word example, nothing of your own."""
+    """Each catalogued braid and each example, a braid word's or a shape's,
+    nothing of your own."""
     from braidpy.web import premade_specs
 
     specs = premade_specs()
@@ -248,11 +249,12 @@ def test_every_braid_offered_as_it_comes_is_made_with_the_site():
         for entry in about.get("entries", []):
             wanted = {"source": source, "name": entry["name"]}
             assert (wanted in specs) == (entry["name"] != "custom")
-    for example in listed["word"]["examples"]:
-        assert {
-            "source": "word",
-            **{k: v for k, v in example.items() if k != "title"},
-        } in specs
+        for example in about.get("examples", []):
+            assert {
+                "source": source,
+                **{k: v for k, v in example.items() if k != "title"},
+            } in specs
+    assert listed["shape"]["examples"]
 
 
 def test_a_braid_made_with_the_site_is_the_braid_made_for_the_page(

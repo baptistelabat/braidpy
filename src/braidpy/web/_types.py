@@ -47,6 +47,16 @@ class Spec(TypedDict, total=False):
     n_slots: Value
     shift: Value
     counts: str
+    # A sinnet from a shape.
+    grid: str
+    shape: str
+    size: Value
+    height: Value
+    cells: str
+    order: str
+    turned: str
+    extra: str
+    corners: Value
     # A machine.
     carriers: str
     core: str
@@ -189,6 +199,37 @@ class DiskProgram(_DiskProgram, total=False):
     core: str
 
 
+class DrawnLine(TypedDict):
+    """A line of Ashley's drawing of a shape: the move along it, from where
+    to where, and the track it is on, numbered from 1."""
+
+    start: Point
+    end: Point
+    track: int
+
+
+# A cell of the grid a shape is drawn on: its name, as a link gives it, its
+# corners, and whether it is in the shape or beside it, to add ("in" is a
+# keyword: hence the functional form).
+GridCell = TypedDict("GridCell", {"name": str, "points": list[Point], "in": bool})
+
+
+class ShapeDrawing(TypedDict):
+    """A sinnet's shape as Ashley draws it
+    (:func:`braidpy.making.ashley.shape_diagram`): its outline and its
+    holes', its lines,
+    each a move, its bights, space 1 first, and the strands each starts
+    with."""
+
+    outline: list[Point]
+    holes: list[list[Point]]
+    lines: list[DrawnLine]
+    spaces: list[Point]
+    counts: list[int]
+    tracks: int
+    cells: list[GridCell]
+
+
 class _Result(TypedDict):
     title: str
     strands: list[Strand]
@@ -204,6 +245,8 @@ class Result(_Result, total=False):
     timeline: Timeline
     tighten: Tightening
     disk: DiskProgram
+    # A sinnet made from a shape, drawn as Ashley draws it.
+    ashley_shape: ShapeDrawing
     # To make it by its carriers: braidpy.carried.carriers_job.
     carriers: dict[str, Any]
 
@@ -215,13 +258,21 @@ Default = str | int | float
 
 
 class Example(TypedDict, total=False):
-    """A braid word worth trying, with a title."""
+    """A braid worth trying, with a title: a braid word, or a sinnet from a
+    shape."""
 
     title: str
     word: str
     layout: str
     n_strands: int
     repeat: int
+    grid: str
+    shape: str
+    size: int
+    height: int
+    cells: str
+    order: str
+    corners: int
 
 
 class Entry(TypedDict, total=False):
@@ -243,6 +294,11 @@ class Source(_Source, total=False):
 
     entries: list[Entry]
     examples: list[Example]
+    # The grids a sinnet's shape is drawn on, the shapes on each, and the
+    # orders of its moves, by name, with their titles.
+    grids: dict[str, str]
+    shapes: dict[str, dict[str, str]]
+    orders: dict[str, str]
 
 
 # ---------------------------------------------------------------- machines

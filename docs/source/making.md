@@ -210,6 +210,34 @@ made.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
 sinnet_from_shape(oblong(6, 2))  # #3071's moves
 ```
 
+The lines, each turning at a bight into the next, make closed tracks
+({func}`~braidpy.making.ashley.shape_tracks`): three round the triangle of
+four lines a side. A track's moves can all be made the other way round
+(`turned`), every space still giving one strand and taking one, and strands
+added to any space (`extra`): the book adds them at the corners
+({func}`~braidpy.making.ashley.corner_spaces`), the bights turning a corner
+or alone on a side, making #3049 of #3047 and the chisel edges of #3071 and
+#3072. The moves can also be made space by space (`order="spaces"`), as
+the book makes them where it cannot alternate: a triangle of two lines a
+side so is #3057.
+
+A shape can be any outline that does not cross itself: a line across an L
+or a U is cut in pieces where the outline turns back, each a line of its
+own. On a grid, a shape is its cells, squares or triangles
+({func}`~braidpy.making.ashley.grid_shape`), outlined half a spacing beyond
+them ({func}`~braidpy.making.ashley.grid_outline`): rows of triangles so are
+the book's triangles, line for line. On the diagonal grid, squares cut on
+their diagonals, the outline may run on a slant while the lines run across
+and up ({func}`~braidpy.making.ashley.grid_lines`): a square standing on a
+corner so has the lines of the book's #3073 and #3074, an oblong on a
+corner those of #3075. A shape may have a hole, as a hollow
+square: its lines are cut by it, and the bights round the hole are spaces
+too, numbered with the outline's by the way they lie from the middle, an
+inner one between two outer ones. A line across the wall then joins two
+spaces side by side, and the sinnet goes round the hole as a tube does. [Braid Studio](braid_studio.md) makes
+a sinnet so, from a shape chosen, its cells, tracks and spaces clicked on
+its drawing.
+
 And back, from a sinnet's moves to its shape, without searching. Lines of
 one direction never cross, so the moves fall into groups, one a direction
 ({func}`~braidpy.making.ashley.move_groups`):
