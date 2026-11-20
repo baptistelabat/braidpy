@@ -48,6 +48,7 @@ class Spec(TypedDict, total=False):
     shift: Value
     counts: str
     # A sinnet from a shape.
+    grid: str
     shape: str
     size: Value
     height: Value
@@ -265,6 +266,7 @@ class Example(TypedDict, total=False):
     layout: str
     n_strands: int
     repeat: int
+    grid: str
     shape: str
     size: int
     height: int
@@ -292,9 +294,10 @@ class Source(_Source, total=False):
 
     entries: list[Entry]
     examples: list[Example]
-    # The shapes a sinnet can be made from, and the orders of its moves, by
-    # name, with their titles.
-    shapes: dict[str, str]
+    # The grids a sinnet's shape is drawn on, the shapes on each, and the
+    # orders of its moves, by name, with their titles.
+    grids: dict[str, str]
+    shapes: dict[str, dict[str, str]]
     orders: dict[str, str]
 
 

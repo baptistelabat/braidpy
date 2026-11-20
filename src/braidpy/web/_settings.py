@@ -111,12 +111,13 @@ class Sinnet:
 
 class Shape:
     """A sinnet from the shape it is to take, as Ashley draws it
-    (:mod:`braidpy.making.ashley`): a shape to start from and its size,
-    in lines, or its own cells on that shape's grid; the order of the
-    moves; the tracks made the other way round, by number; and the spaces
-    given a strand more, by number, a space named twice given two, and
-    the strands added at each corner."""
+    (:mod:`braidpy.making.ashley`): its grid, a shape to start from on it
+    and its size, in lines, or its own cells; the order of the moves; the
+    tracks made the other way round, by number; and the spaces given a
+    strand more, by number, a space named twice given two, and the strands
+    added at each corner."""
 
+    grid = Text("grid", "triangle")
     shape = Text("shape", "triangle")
     size = Count("size", 4, low=2, high=12)
     height = Count("height", 2, low=2, high=12)
@@ -127,70 +128,121 @@ class Shape:
     corners = Count("corners", 0, low=0, high=3)
     cycles = Count("cycles", 3, low=1, high=12)
     most_strands = Sinnet.most_strands
-    # The shapes to start from (making.ashley.grid_shape), and the orders of
-    # the moves (making.ashley.ORDERS), with their titles.
-    shapes: ClassVar[dict[str, str]] = {
-        "triangle": "Triangle",
-        "hexagon": "Hexagon",
-        "oblong": "Oblong",
-        "L": "L",
-        "frame": "Hollow square",
+    # The grids (making.ashley.GRIDS) and the shapes to start from on each
+    # (making.ashley.grid_shape), and the orders of the moves
+    # (making.ashley.ORDERS), with their titles.
+    grids: ClassVar[dict[str, str]] = {
+        "square": "Square",
+        "diagonal": "Diamond: squares on a corner",
+        "triangle": "Hexagonal: triangles",
+    }
+    shapes: ClassVar[dict[str, dict[str, str]]] = {
+        "square": {
+            "oblong": "Oblong",
+            "L": "L",
+            "U": "U",
+            "frame": "Hollow square",
+        },
+        "diagonal": {"square": "Square", "oblong": "Oblong"},
+        "triangle": {"triangle": "Triangle", "hexagon": "Hexagon"},
     }
     orders: ClassVar[dict[str, str]] = {
         "book": "The book's, alternating",
         "spaces": "Space by space",
     }
-    shown = (shape, size, height, order, corners, cycles)
+    shown = (grid, shape, size, height, order, corners, cycles)
     # What makes the braid what it is: two descriptions alike in these are
     # of one braid (braidpy.topology_catalog).
-    defining = (shape, size, height, cells, order, turned, extra, corners)
+    defining = (grid, shape, size, height, cells, order, turned, extra, corners)
     # Braids made so, offered as they come, each as it is described.
     examples: ClassVar[list[dict[str, Default]]] = [
         {
             "title": "Triangle, 4 lines a side (ABOK #3047)",
+            "grid": "triangle",
             "shape": "triangle",
             "size": 4,
         },
         {
             "title": "Triangle, a strand more at each corner (ABOK #3049)",
+            "grid": "triangle",
             "shape": "triangle",
             "size": 4,
             "corners": 1,
         },
         {
             "title": "Triangle made space by space (ABOK #3057)",
+            "grid": "triangle",
             "shape": "triangle",
             "size": 2,
             "order": "spaces",
         },
-        {"title": "Hexagon, 3 lines a side", "shape": "hexagon", "size": 3},
+        {
+            "title": "Hexagon, 3 lines a side",
+            "grid": "triangle",
+            "shape": "hexagon",
+            "size": 3,
+        },
         {
             "title": "Flat oblong, chisel edges (ABOK #3071)",
+            "grid": "square",
             "shape": "oblong",
             "size": 6,
             "height": 2,
             "corners": 1,
         },
-        {"title": "Square, 4 lines a side", "shape": "oblong", "size": 4, "height": 4},
-        {"title": "L, 5 lines, its arms 2 thick", "shape": "L", "size": 5, "height": 2},
         {
-            "title": "U, 6 by 5 lines, 2 thick",
+            "title": "Square, 4 lines a side",
+            "grid": "square",
             "shape": "oblong",
+            "size": 4,
+            "height": 4,
+        },
+        {
+            "title": "L, 5 lines, its arms 2 thick",
+            "grid": "square",
+            "shape": "L",
+            "size": 5,
+            "height": 2,
+        },
+        {
+            "title": "U, 6 lines, its arms 2 thick",
+            "grid": "square",
+            "shape": "U",
             "size": 6,
-            "height": 5,
-            "cells": "0,0 1,0 2,0 3,0 4,0 0,1 4,1 0,2 4,2 0,3 4,3",
+            "height": 2,
         },
         {
             "title": "Hollow square, 6 lines, its sides 2 thick",
+            "grid": "square",
             "shape": "frame",
             "size": 6,
             "height": 2,
         },
         {
             "title": "Hollow square, 7 lines, its sides 3 thick",
+            "grid": "square",
             "shape": "frame",
             "size": 7,
             "height": 3,
+        },
+        {
+            "title": "Square on a corner, 6 lines (ABOK #3073's lines)",
+            "grid": "diagonal",
+            "shape": "square",
+            "size": 6,
+        },
+        {
+            "title": "Square on a corner, 8 lines (ABOK #3074's lines)",
+            "grid": "diagonal",
+            "shape": "square",
+            "size": 8,
+        },
+        {
+            "title": "Oblong on a corner, 10 by 2 (ABOK #3075's lines)",
+            "grid": "diagonal",
+            "shape": "oblong",
+            "size": 10,
+            "height": 2,
         },
     ]
 
