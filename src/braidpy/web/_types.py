@@ -53,6 +53,7 @@ class Spec(TypedDict, total=False):
     height: Value
     turned: str
     extra: str
+    corners: Value
     # A machine.
     carriers: str
     core: str
@@ -261,6 +262,8 @@ class Entry(TypedDict, total=False):
     title: str
     shape: str | None
     pattern: dict[str, Default]
+    # Made from what is given, as "Your own moves…" is: no catalogued braid.
+    own: bool
 
 
 class _Source(TypedDict):

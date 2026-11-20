@@ -245,3 +245,25 @@ def test_a_shape_s_tracks_can_be_turned_round():
     assert sorted(b for _, b in turned.moves) == every
     with pytest.raises(ValueError, match="No track"):
         sinnet_from_shape(triangle(4), turned=[4])
+
+
+@pytest.mark.parametrize(
+    "number, outline",
+    [(3049, triangle(4)), (3071, oblong(6, 2)), (3072, oblong(10, 2))],
+)
+def test_the_book_s_strands_more_are_at_the_corners(number, outline):
+    """The spaces where the book adds strands are a shape's corners: its
+    bights turning a corner, or alone on a side."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import corner_spaces, sinnet_from_shape
+
+    book = getattr(books, f"abok_{number}")
+    n = len(book.initial_counts_per_space)
+    corners = corner_spaces(outline)
+    made = sinnet_from_shape(
+        outline, extra=[int(s in corners) for s in range(1, n + 1)]
+    )
+    assert sorted(made.initial_counts_per_space) == sorted(
+        book.initial_counts_per_space
+    )
+    assert same_braid(made.braid(1), book.braid(1))

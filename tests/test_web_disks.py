@@ -294,3 +294,13 @@ def test_a_shape_s_track_turned_round_and_strands_added():
 def test_a_sinnet_from_a_shape_is_checked(spec, message):
     with pytest.raises(ValueError, match=message):
         build({"source": "sinnet", "name": "shape", "iterations": 0, **spec})
+
+
+def test_a_shape_s_corners_take_strands_more():
+    """A strand more at each corner of a triangle of four lines a side is
+    the book's #3049."""
+    from braidpy.solid_sinnets_catalog import abok_3049
+
+    spec = {"source": "sinnet", "name": "shape", "shape": "triangle", "size": 4}
+    result = build({**spec, "corners": 1, "cycles": 1, "iterations": 0})
+    assert result["ashley_shape"]["counts"] == abok_3049.initial_counts_per_space

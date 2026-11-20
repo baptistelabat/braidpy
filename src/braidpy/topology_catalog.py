@@ -183,7 +183,7 @@ def methods() -> list[Method]:
     )
     for source in ("mobidai", "sinnet", "machine"):
         for entry in listed[source]["entries"]:
-            if entry["name"] == "custom":
+            if entry["name"] == "custom" or entry.get("own"):
                 continue
             found.append(
                 Method(

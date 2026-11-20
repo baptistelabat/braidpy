@@ -155,6 +155,15 @@ const FIELDS = {
       entry: "shape",
       hint: "Each space named holds a strand more from the start, twice named two: as the book adds them at corners to sharpen the edges. Click a space on the drawing to add one, shift-click to take one off.",
     },
+    {
+      name: "corners",
+      label: "At each corner",
+      kind: "number",
+      min: 0,
+      max: 3,
+      entry: "shape",
+      hint: "Strands more in each space at a corner, or alone on a side, as the book sharpens a triangle's edges (#3049) or a flat oblong's (#3072).",
+    },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
   machine: [

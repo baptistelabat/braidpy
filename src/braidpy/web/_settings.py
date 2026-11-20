@@ -117,6 +117,8 @@ class Sinnet:
     height = Count("height", 2, low=1, high=12)
     turned = Text("turned", "")
     extra = Text("extra", "")
+    # Strands added at each corner (making.ashley.corner_spaces).
+    corners = Count("corners", 0, low=0, high=3)
     # The shapes offered, and what their size is: an oblong's is its width
     # and its height, the others' the lines along each side.
     shapes: ClassVar[dict[str, str]] = {
@@ -125,7 +127,7 @@ class Sinnet:
         "pentagon": "Pentagon",
         "heptagon": "Heptagon",
     }
-    shape_shown = (shape, size, height, turned, extra)
+    shape_shown = (shape, size, height, turned, extra, corners)
 
 
 # ------------------------------------------------------------------ machines

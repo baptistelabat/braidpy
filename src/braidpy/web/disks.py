@@ -342,7 +342,12 @@ def _from_shape(spec: Spec):
     (:func:`braidpy.making.ashley.sinnet_from_shape`), and the drawing."""
     import dataclasses
 
-    from braidpy.making.ashley import shape_diagram, shape_tracks, sinnet_from_shape
+    from braidpy.making.ashley import (
+        corner_spaces,
+        shape_diagram,
+        shape_tracks,
+        sinnet_from_shape,
+    )
 
     outline = _outline(
         Sinnet.shape.read(spec), Sinnet.size.read(spec), Sinnet.height.read(spec)
@@ -354,6 +359,8 @@ def _from_shape(spec: Spec):
         if not 1 <= int(space) <= len(bights):
             raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
         extra[int(space) - 1] += 1
+    for space in corner_spaces(outline):
+        extra[space - 1] += Sinnet.corners.read(spec)
     sinnet = sinnet_from_shape(outline, extra=extra, turned=turned)
     if sinnet.n_strands > Sinnet.most_strands:
         raise ValueError(f"That is over {Sinnet.most_strands} strands.")
@@ -544,7 +551,7 @@ def _sinnet_entry() -> Source:
         "defaults": defaults(*Sinnet.shown, *Sinnet.shape_shown),
         "entries": entries
         + [
-            {"name": Sinnet.from_shape, "title": "From a shape…"},
+            {"name": Sinnet.from_shape, "title": "From a shape…", "own": True},
             {"name": OWN, "title": "Your own moves…"},
         ],
         "shapes": dict(Sinnet.shapes),

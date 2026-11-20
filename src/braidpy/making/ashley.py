@@ -64,6 +64,7 @@ __all__ = [
     "ShapeLine",
     "ashley_moves",
     "ashley_sinnet",
+    "corner_spaces",
     "least_counts",
     "move_groups",
     "oblong",
@@ -556,6 +557,33 @@ def least_counts(moves: Sequence[tuple[int, int]], n_spaces: int) -> list[int]:
     gives = {a: k for k, (a, _) in enumerate(moves)}
     receives = {b: k for k, (_, b) in enumerate(moves)}
     return [2 if gives[s] < receives[s] else 1 for s in range(1, n_spaces + 1)]
+
+
+def corner_spaces(outline: Sequence[tuple[float, float]]) -> list[int]:
+    """The spaces at a shape's corners, where the book adds strands to
+    sharpen its edges: each bight turning a corner, its two lines ending on
+    two sides, and each bight alone on its side, as at the ends of a flat
+    oblong.  Spaces 1, 5 and 9 of a triangle of four lines a side (#3049),
+    1 and 7 of an oblong of 10 by 2 (#3072).
+
+    Args:
+        outline: The shape's corners, anticlockwise, convex, in spacings.
+
+    Returns:
+        The spaces, numbered as :func:`sinnet_from_shape` numbers them.
+    """
+    lines, joins, _ = shape_diagram(outline)
+    sides: dict[int, set[int]] = {}
+    for line, spaces in enumerate(joins):
+        for end, space in enumerate(spaces):
+            point = np.asarray(lines[line].ends[end])
+            sides.setdefault(space, set()).add(_round_the_outline(outline, point)[1])
+    alone = [
+        space
+        for space, on in sides.items()
+        if len(on) == 1 and sum(other == on for other in sides.values()) == 1
+    ]
+    return sorted({space for space, on in sides.items() if len(on) > 1} | set(alone))
 
 
 def shape_tracks(moves: Sequence[tuple[int, int]]) -> list[list[int]]:
