@@ -251,22 +251,27 @@ class ShapeLine:
     direction: int
 
 
-def shape_lines(outline: Sequence[tuple[float, float]]) -> list[ShapeLine]:
+def shape_lines(
+    outline: Sequence[tuple[float, float]],
+    holes: Sequence[Sequence[tuple[float, float]]] = (),
+) -> list[ShapeLine]:
     """The lines Ashley draws across a shape: parallel to each side, the
     first ``FIRST_LINE`` in from it, the others a spacing on, as many as fit
     strictly inside.  Parallel sides share their lines.  Where the outline
-    turns back, as round the arms of an L or a U, a line is cut in pieces,
-    each a line of its own.
+    turns back, as round the arms of an L or a U, or round a hole, a line
+    is cut in pieces, each a line of its own.
 
     Args:
         outline: The shape's corners, anticlockwise, in spacings: any
             outline that does not cross itself.
+        holes: The corners of each hole in it, clockwise.
 
     Returns:
         The lines, by direction, then from the side inwards.
     """
-    corners = np.asarray(outline, dtype=float)
-    sides = list(zip(corners, np.roll(corners, -1, axis=0)))
+    loops = _loops(outline, holes)
+    corners = loops[0]
+    sides = _sides(loops)
     lines: dict[tuple[int, float, float], ShapeLine] = {}
     for a, b in sides:
         along = (b - a) / np.linalg.norm(b - a)
@@ -328,24 +333,41 @@ def _pieces(sides, point, along) -> list[tuple[np.ndarray, np.ndarray]]:
     ]
 
 
-def _round_the_outline(outline, point) -> tuple[float, int]:
-    """How far round the outline a point on it is, anticlockwise from its
-    first corner, and on which side."""
-    corners = np.asarray(outline, dtype=float)
-    travelled = 0.0
-    for index, (a, b) in enumerate(zip(corners, np.roll(corners, -1, axis=0))):
-        side = b - a
-        length = float(np.linalg.norm(side))
-        t = float(np.dot(point - a, side)) / length**2
-        off = abs(side[0] * (point - a)[1] - side[1] * (point - a)[0]) / length
-        if -SAME_POINT <= t <= 1 + SAME_POINT and off < SAME_POINT:
-            return travelled + t * length, index
-        travelled += length
+def _loops(outline, holes=()) -> list[np.ndarray]:
+    """A shape's outline and the outlines of its holes, as arrays."""
+    return [np.asarray(loop, dtype=float) for loop in [outline, *holes]]
+
+
+def _sides(loops) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Every side of a shape, round its outline, then round each hole."""
+    return [
+        (a, b)
+        for corners in loops
+        for a, b in zip(corners, np.roll(corners, -1, axis=0))
+    ]
+
+
+def _round_the_outline(loops, point) -> tuple[int, float, int]:
+    """On which of a shape's outlines a point on one is (0 its own, then its
+    holes'), how far round it, from its first corner, and on which side, the
+    sides numbered round every outline in turn."""
+    index = 0
+    for loop, corners in enumerate(loops):
+        travelled = 0.0
+        for a, b in zip(corners, np.roll(corners, -1, axis=0)):
+            side = b - a
+            length = float(np.linalg.norm(side))
+            t = float(np.dot(point - a, side)) / length**2
+            off = abs(side[0] * (point - a)[1] - side[1] * (point - a)[0]) / length
+            if -SAME_POINT <= t <= 1 + SAME_POINT and off < SAME_POINT:
+                return loop, travelled + t * length, index
+            travelled += length
+            index += 1
     raise ValueError(f"{tuple(point)} is not on the outline.")
 
 
 def _spaces(
-    outline, lines: list[ShapeLine]
+    loops, lines: list[ShapeLine]
 ) -> tuple[list[tuple[float, float]], list[tuple[int, int]]]:
     """The bights, numbered as the book numbers the spaces: where each is, in
     their order, and the two each line joins.
@@ -354,19 +376,72 @@ def _spaces(
     a bight.  The ends left over pair with their neighbours on the same side
     where they can, round a corner where they cannot.  The bights are
     numbered anticlockwise from the one nearest the first corner; of two as
-    near, from the one before it.
+    near, from the one before it.  Round a shape with a hole, its bights
+    and the hole's are numbered together, by the way they lie from the
+    middle, an inner one between two outer ones: a move across the wall
+    joins two spaces side by side, as round a tube.
     """
-    corners = np.asarray(outline, dtype=float)
-    perimeter = float(
-        sum(
-            np.linalg.norm(b - a) for a, b in zip(corners, np.roll(corners, -1, axis=0))
-        )
-    )
+    perimeters = [
+        float(sum(np.linalg.norm(b - a) for a, b in _sides([corners])))
+        for corners in loops
+    ]
     ends = sorted(
-        (*_round_the_outline(outline, np.asarray(end)), line, which)
+        (*_round_the_outline(loops, np.asarray(end)), line, which)
         for line, shape_line in enumerate(lines)
         for which, end in enumerate(shape_line.ends)
     )
+    pairs = []
+    for loop in range(len(loops)):
+        pairs += _paired(
+            loops, lines, [end[1:] for end in ends if end[0] == loop], loop
+        )
+
+    def place(pair) -> float:
+        # The middle of a bight's two ends, the short way round its outline.
+        perimeter = perimeters[pair[0][4]]
+        a, b = sorted((pair[0][0], pair[1][0]))
+        if b - a > perimeter / 2:
+            a += perimeter
+        return ((a + b) / 2) % perimeter
+
+    def middle(pair) -> np.ndarray:
+        return (
+            np.asarray(lines[pair[0][2]].ends[pair[0][3]])
+            + np.asarray(lines[pair[1][2]].ends[pair[1][3]])
+        ) / 2
+
+    if len(loops) == 1:
+        perimeter = perimeters[0]
+        placed = sorted(pairs, key=place)
+        first = min(
+            range(len(placed)),
+            key=lambda i: (
+                round(min(place(placed[i]), perimeter - place(placed[i])), 6),
+                place(placed[i]) < perimeter / 2,
+            ),
+        )
+        placed = placed[first:] + placed[:first]
+    else:
+        centre = loops[0].mean(axis=0)
+        start = math.atan2(*(loops[0][0] - centre)[::-1])
+
+        def bearing(pair) -> float:
+            y, x = (middle(pair) - centre)[::-1]
+            return round((math.atan2(y, x) - start) % (2 * math.pi), 9)
+
+        placed = sorted(pairs, key=bearing)
+    space: dict[tuple[int, int], int] = {}
+    for number, (a, b) in enumerate(placed, start=1):
+        space[(a[2], a[3])] = space[(b[2], b[3])] = number
+    where = [_point(middle(pair)) for pair in placed]
+    return where, [(space[(i, 0)], space[(i, 1)]) for i in range(len(lines))]
+
+
+def _paired(loops, lines, ends, loop):
+    """The ends round one outline paired into bights: each ``(position,
+    side, line, which)``, in order round it; each bight two of them, with
+    the outline's number after each."""
+    ends = [(*end, loop) for end in ends]
     pairs, lone = [], []
     k = 0
     while k < len(ends):
@@ -396,44 +471,18 @@ def _spaces(
             option
             for option in options
             if all(
-                _turn_into(outline, lines[a[2]], lines[b[2]])
+                _turn_into(loops, lines[a[2]], lines[b[2]])
                 for a, b in option
                 if a[1] == b[1]
             )
         ] or options
         pairs += min(options, key=lambda option: sum(a[1] != b[1] for a, b in option))
-
-    def place(pair) -> float:
-        # The middle of a bight's two ends, the short way round.
-        a, b = sorted((pair[0][0], pair[1][0]))
-        if b - a > perimeter / 2:
-            a += perimeter
-        return ((a + b) / 2) % perimeter
-
-    placed = sorted(pairs, key=place)
-    first = min(
-        range(len(placed)),
-        key=lambda i: (
-            round(min(place(placed[i]), perimeter - place(placed[i])), 6),
-            place(placed[i]) < perimeter / 2,
-        ),
-    )
-    placed = placed[first:] + placed[:first]
-    space: dict[tuple[int, int], int] = {}
-    for number, (a, b) in enumerate(placed, start=1):
-        space[(a[2], a[3])] = space[(b[2], b[3])] = number
-    where = [
-        _point(
-            (np.asarray(lines[a[2]].ends[a[3]]) + np.asarray(lines[b[2]].ends[b[3]]))
-            / 2
-        )
-        for a, b in placed
-    ]
-    return where, [(space[(i, 0)], space[(i, 1)]) for i in range(len(lines))]
+    return pairs
 
 
 def shape_diagram(
     outline: Sequence[tuple[float, float]],
+    holes: Sequence[Sequence[tuple[float, float]]] = (),
 ) -> tuple[list[ShapeLine], list[tuple[int, int]], list[tuple[float, float]]]:
     """Ashley's diagram of a shape: its lines (:func:`shape_lines`), the two
     spaces each joins, and where each bight is, space 1 first
@@ -441,16 +490,17 @@ def shape_diagram(
 
     Args:
         outline: The shape's corners, anticlockwise, in spacings.
+        holes: The corners of each hole in it, clockwise.
 
     Returns:
         The lines, the spaces each joins, and the bights.
     """
-    lines = shape_lines(outline)
-    bights, joins = _spaces(outline, lines)
+    lines = shape_lines(outline, holes)
+    bights, joins = _spaces(_loops(outline, holes), lines)
     return lines, joins, bights
 
 
-def _turn_into(outline, first: ShapeLine, second: ShapeLine) -> bool:
+def _turn_into(loops, first: ShapeLine, second: ShapeLine) -> bool:
     """Whether two lines can turn into each other at the outline: they are
     parallel, or would meet beyond the outline, or on it."""
     p, q = (np.asarray(end) for end in first.ends)
@@ -460,15 +510,14 @@ def _turn_into(outline, first: ShapeLine, second: ShapeLine) -> bool:
         return True
     along, _ = np.linalg.solve(matrix, r - p)
     meeting = p + along * (q - p)
-    return not _inside(outline, meeting)
+    return not _inside(loops, meeting)
 
 
-def _inside(outline, point) -> bool:
-    """Whether a point is strictly inside the outline, not on it: the sides
-    a ray from it crosses are odd in number."""
-    corners = np.asarray(outline, dtype=float)
+def _inside(loops, point) -> bool:
+    """Whether a point is strictly inside a shape, not on its outline nor in
+    a hole: the sides a ray from it crosses are odd in number."""
     inside = False
-    for a, b in zip(corners, np.roll(corners, -1, axis=0)):
+    for a, b in _sides(loops):
         side = b - a
         if abs(
             side[0] * (point - a)[1] - side[1] * (point - a)[0]
@@ -606,7 +655,10 @@ def least_counts(moves: Sequence[tuple[int, int]], n_spaces: int) -> list[int]:
     return [2 if gives[s] < receives[s] else 1 for s in range(1, n_spaces + 1)]
 
 
-def corner_spaces(outline: Sequence[tuple[float, float]]) -> list[int]:
+def corner_spaces(
+    outline: Sequence[tuple[float, float]],
+    holes: Sequence[Sequence[tuple[float, float]]] = (),
+) -> list[int]:
     """The spaces at a shape's corners, where the book adds strands to
     sharpen its edges: each bight turning a corner, its two lines ending on
     two sides, and each bight alone on its side, as at the ends of a flat
@@ -615,16 +667,18 @@ def corner_spaces(outline: Sequence[tuple[float, float]]) -> list[int]:
 
     Args:
         outline: The shape's corners, anticlockwise, in spacings.
+        holes: The corners of each hole in it, clockwise.
 
     Returns:
         The spaces, numbered as :func:`sinnet_from_shape` numbers them.
     """
-    lines, joins, _ = shape_diagram(outline)
+    lines, joins, _ = shape_diagram(outline, holes)
+    loops = _loops(outline, holes)
     sides: dict[int, set[int]] = {}
     for line, spaces in enumerate(joins):
         for end, space in enumerate(spaces):
             point = np.asarray(lines[line].ends[end])
-            sides.setdefault(space, set()).add(_round_the_outline(outline, point)[1])
+            sides.setdefault(space, set()).add(_round_the_outline(loops, point)[2])
     alone = [
         space
         for space, on in sides.items()
@@ -665,6 +719,7 @@ def sinnet_from_shape(
     extra: Optional[Sequence[int]] = None,
     turned: Sequence[int] = (),
     order: str = "book",
+    holes: Sequence[Sequence[tuple[float, float]]] = (),
 ) -> AshleySolidSinnet:
     """The sinnet the book's method makes of a shape.
 
@@ -695,6 +750,9 @@ def sinnet_from_shape(
             :func:`shape_tracks` lists them.
         order: "book", the book's order; or "spaces", space by space, as
             the book makes the moves where it cannot alternate them.
+        holes: The corners of each hole in the shape, clockwise: its
+            bights are numbered with the outline's, by the way they lie
+            from the middle (:func:`shape_diagram`).
 
     Returns:
         The sinnet.
@@ -702,7 +760,7 @@ def sinnet_from_shape(
     Raises:
         ValueError: If the lines cannot be made into moves in that order.
     """
-    lines, joins, bights = shape_diagram(outline)
+    lines, joins, bights = shape_diagram(outline, holes)
     n = len(bights)
     corners = np.asarray(outline, dtype=float)
     first_side = corners[1] - corners[0]
@@ -941,23 +999,26 @@ def cell_outline(grid: str, cell: Cell) -> list[tuple[float, float]]:
     return [_point(_grid_point(grid, node)) for node in _cell_points(grid, cell)]
 
 
-def grid_outline(grid: str, cells: Sequence[Cell]) -> list[tuple[float, float]]:
+def grid_outline(grid: str, cells: Sequence[Cell]) -> list[list[tuple[float, float]]]:
     """The outline of a shape made of a grid's cells: round them, half a
     spacing beyond (``FIRST_LINE``), each side of it parallel to one of
     theirs; from its bottom left corner, as the book numbers the spaces.
     Three rows of triangles, three, two and one points across, are the
-    book's triangle of three lines a side (:func:`triangle`).
+    book's triangle of three lines a side (:func:`triangle`).  Round a hole
+    in them, half a spacing in from them, the outline of the hole: a hole
+    as wide as a point of the grid left out, at least, or it closes up.
 
     Args:
         grid: One of ``GRIDS``.
         cells: The cells.
 
     Returns:
-        The outline's corners, anticlockwise, in spacings.
+        The outline's corners, anticlockwise, in spacings; then each hole's,
+        clockwise.
 
     Raises:
-        ValueError: If the cells are not in one piece without holes, or
-            meet at a point only.
+        ValueError: If the cells are not in one piece, or meet at a point
+            only.
     """
     if grid not in GRIDS:
         raise ValueError(f"No grid {grid!r}: one of {GRIDS}.")
@@ -976,16 +1037,29 @@ def grid_outline(grid: str, cells: Sequence[Cell]) -> list[tuple[float, float]]:
         if a in after:
             raise ValueError("The cells meet at a point only: join them by a side.")
         after[a] = b
-    start = min(
-        after, key=lambda node: (_grid_point(grid, node)[1], _grid_point(grid, node)[0])
-    )
-    loop = [start]
-    while after[loop[-1]] != start:
-        loop.append(after[loop[-1]])
-    if len(loop) != len(after):
-        raise ValueError("The cells are in more than one piece, or round a hole.")
-    points = [_grid_point(grid, node) for node in loop]
-    # Only where the outline turns: points along a side dropped.
+    loops = []
+    left = dict(after)
+    while left:
+        # Each outline from its bottom left point.
+        start = min(left, key=lambda node: tuple(_grid_point(grid, node)[::-1]))
+        loop = [start]
+        while after[loop[-1]] != start:
+            loop.append(after[loop[-1]])
+        for node in loop:
+            del left[node]
+        loops.append(_offset([_grid_point(grid, node) for node in loop]))
+    # Cells anticlockwise: their outline goes round anticlockwise, a hole's
+    # the other way.  A hole with every point of the grid round it, as one
+    # cell left out, closes up half a spacing in: the lines pass by it.
+    outer = [loop for loop in loops if _area(loop) > SAME_POINT]
+    if len(outer) != 1:
+        raise ValueError("The cells are in more than one piece.")
+    return outer + [loop for loop in loops if _area(loop) < -SAME_POINT]
+
+
+def _offset(points: list[np.ndarray]) -> list[tuple[float, float]]:
+    """An outline round cells, from the points round them in order: only
+    where it turns, half a spacing out to its right."""
     turns = [
         k
         for k in range(len(points))
@@ -1006,6 +1080,11 @@ def grid_outline(grid: str, cells: Sequence[Cell]) -> list[tuple[float, float]]:
         t, _ = np.linalg.solve(np.array([u, -v]).T, q - p)
         corners.append(_point(p + t * u))
     return corners
+
+
+def _area(corners) -> float:
+    """An outline's area, positive going round anticlockwise."""
+    return sum(_cross2(a, b) for a, b in _sides([np.asarray(corners)])) / 2
 
 
 def _cross2(u, v) -> float:
@@ -1053,6 +1132,15 @@ def grid_shape(name: str, size: int, height: int) -> tuple[str, list[Cell]]:
         ]
     if name == "oblong":
         return "square", [(i, j) for j in range(height - 1) for i in range(size - 1)]
+    if name == "frame":
+        if 2 * height >= size:
+            raise ValueError("A frame's sides are thinner than half across it.")
+        return "square", [
+            (i, j)
+            for j in range(size - 1)
+            for i in range(size - 1)
+            if min(i, j, size - 2 - i, size - 2 - j) < height - 1
+        ]
     if name == "L":
         if height >= size:
             raise ValueError("An L's arms are thinner than it is long.")

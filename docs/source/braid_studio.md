@@ -197,8 +197,9 @@ The studio has a form and a 3D view.
 - **Ashley's method, from a shape** makes a sinnet from the shape it is to
   take, as Ashley draws it (see
   [Making](making.md#from-the-shape-it-is-to-take)): a triangle, a hexagon,
-  an oblong or an L to start from, so many lines along a side (an oblong's
-  width and height, an L's width and arms). The shape is its grid's cells,
+  an oblong, an L or a hollow square to start from, so many lines along a
+  side (an oblong's width and height, an L's width and arms, a hollow
+  square's width and sides). The shape is its grid's cells,
   squares or triangles, and is drawn once made: its cells, its lines,
   coloured by track, each with an arrow the way its move goes, and its
   spaces, numbered, larger with more strands. As the list above the

@@ -276,9 +276,11 @@ def test_a_shape_on_a_grid_is_drawn_as_the_book_draws_it():
     from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
 
     for lines in range(2, 7):
-        on_grid = sinnet_from_shape(grid_outline(*grid_shape("triangle", lines, 2)))
+        (outline,) = grid_outline(*grid_shape("triangle", lines, 2))
+        on_grid = sinnet_from_shape(outline)
         assert on_grid == sinnet_from_shape(triangle(lines))
-    on_grid = sinnet_from_shape(grid_outline(*grid_shape("oblong", 10, 2)))
+    (outline,) = grid_outline(*grid_shape("oblong", 10, 2))
+    on_grid = sinnet_from_shape(outline)
     assert on_grid.moves == sinnet_from_shape(oblong(10, 2)).moves
 
 
@@ -287,7 +289,7 @@ def test_a_line_is_cut_where_the_outline_turns_back():
     from braidpy.making.ashley import grid_outline, shape_lines
 
     u = [(i, j) for i in range(4) for j in range(3) if not (i in (1, 2) and j > 0)]
-    lines = shape_lines(grid_outline("square", u))
+    lines = shape_lines(*grid_outline("square", u))
     upper = [line for line in lines if line.ends[0][1] == line.ends[1][1] > 1]
     assert len(upper) == 4  # two rows, each cut in two
 
@@ -310,3 +312,21 @@ def test_cells_must_make_one_piece():
         grid_outline("square", [(0, 0), (1, 1)])
     with pytest.raises(ValueError, match="more than one piece"):
         grid_outline("square", [(0, 0), (2, 0)])
+
+
+def test_a_hollow_square_s_spaces_alternate_round_the_stand():
+    """Round a hollow square, the bights of its outline and of its hole are
+    numbered together, by the way they lie from the middle: a line across
+    a side, from the outline to the hole, joins two spaces side by side, as
+    round a tube, every space still giving once and taking once."""
+    from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
+
+    outline, hole = grid_outline(*grid_shape("frame", 6, 2))
+    made = sinnet_from_shape(outline, holes=[hole])
+    n = len(made.initial_counts_per_space)
+    every = list(range(1, n + 1))
+    assert sorted(a for a, _ in made.moves) == every
+    assert sorted(b for _, b in made.moves) == every
+    across = [(a, b) for a, b in made.moves if (a - b) % n in (1, n - 1)]
+    assert len(across) >= 8
+    assert made.braid(1).n_strands == made.n_strands

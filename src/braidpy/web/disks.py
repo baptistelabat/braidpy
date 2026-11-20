@@ -387,18 +387,22 @@ def _from_shape(spec: Spec) -> Result:
     grid, cells = grid_shape(name, Shape.size.read(spec), Shape.height.read(spec))
     if Shape.cells.read(spec).strip():
         cells = _cells(grid, Shape.cells.read(spec))
-    outline = grid_outline(grid, cells)
-    lines, joins, bights = shape_diagram(outline)
+    outline, *holes = grid_outline(grid, cells)
+    lines, joins, bights = shape_diagram(outline, holes)
     turned = sorted(set(_numbers(Shape.turned.read(spec) or "0", "tracks")) - {0})
     extra = [0] * len(bights)
     for space in re.findall(r"\d+", Shape.extra.read(spec)):
         if not 1 <= int(space) <= len(bights):
             raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
         extra[int(space) - 1] += 1
-    for space in corner_spaces(outline):
+    for space in corner_spaces(outline, holes):
         extra[space - 1] += Shape.corners.read(spec)
     sinnet = sinnet_from_shape(
-        outline, extra=extra, turned=turned, order=Shape.order.read(spec)
+        outline,
+        extra=extra,
+        turned=turned,
+        order=Shape.order.read(spec),
+        holes=holes,
     )
     if sinnet.n_strands > Shape.most_strands:
         raise ValueError(f"That is over {Shape.most_strands} strands.")
@@ -420,6 +424,7 @@ def _from_shape(spec: Spec) -> Result:
         )
     drawing: ShapeDrawing = {
         "outline": [list(corner) for corner in outline],
+        "holes": [[list(corner) for corner in hole] for hole in holes],
         "lines": drawn,
         "spaces": [list(bight) for bight in bights],
         "counts": list(sinnet.initial_counts_per_space),

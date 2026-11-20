@@ -226,7 +226,11 @@ or a U is cut in pieces where the outline turns back, each a line of its
 own. On a grid, a shape is its cells, squares or triangles
 ({func}`~braidpy.making.ashley.grid_shape`), outlined half a spacing beyond
 them ({func}`~braidpy.making.ashley.grid_outline`): rows of triangles so are
-the book's triangles, line for line. [Braid Studio](braid_studio.md) makes
+the book's triangles, line for line. A shape may have a hole, as a hollow
+square: its lines are cut by it, and the bights round the hole are spaces
+too, numbered with the outline's by the way they lie from the middle, an
+inner one between two outer ones. A line across the wall then joins two
+spaces side by side, and the sinnet goes round the hole as a tube does. [Braid Studio](braid_studio.md) makes
 a sinnet so, from a shape chosen, its cells, tracks and spaces clicked on
 its drawing.
 

@@ -470,15 +470,17 @@ export function attachShape(holder) {
       }
       drawing.append(area);
     }
-    drawing.append(
-      svg("polygon", {
-        points: shape.outline.map((p) => flip(p).join(",")).join(" "),
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-opacity": OUTLINE_OPACITY,
-        "stroke-width": RIM_WIDTH,
-      }),
-    );
+    for (const loop of [shape.outline, ...(shape.holes || [])]) {
+      drawing.append(
+        svg("polygon", {
+          points: loop.map((p) => flip(p).join(",")).join(" "),
+          fill: "none",
+          stroke: "currentColor",
+          "stroke-opacity": OUTLINE_OPACITY,
+          "stroke-width": RIM_WIDTH,
+        }),
+      );
+    }
     for (const line of shape.lines) {
       const colour = hue(line.track - 1, shape.tracks);
       const [a, b] = [flip(line.start), flip(line.end)];

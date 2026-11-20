@@ -215,11 +215,13 @@ GridCell = TypedDict("GridCell", {"name": str, "points": list[Point], "in": bool
 
 class ShapeDrawing(TypedDict):
     """A sinnet's shape as Ashley draws it
-    (:func:`braidpy.making.ashley.shape_diagram`): its outline, its lines,
+    (:func:`braidpy.making.ashley.shape_diagram`): its outline and its
+    holes', its lines,
     each a move, its bights, space 1 first, and the strands each starts
     with."""
 
     outline: list[Point]
+    holes: list[list[Point]]
     lines: list[DrawnLine]
     spaces: list[Point]
     counts: list[int]

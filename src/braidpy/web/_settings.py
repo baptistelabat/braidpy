@@ -134,6 +134,7 @@ class Shape:
         "hexagon": "Hexagon",
         "oblong": "Oblong",
         "L": "L",
+        "frame": "Hollow square",
     }
     orders: ClassVar[dict[str, str]] = {
         "book": "The book's, alternating",
