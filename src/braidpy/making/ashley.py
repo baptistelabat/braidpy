@@ -33,7 +33,7 @@ empty spaces, every space holding what it held before.  It is the braid
 itself, exactly, but no longer a sinnet of the book's kind: spaces give and
 take strands unevenly, and a space can sit empty.
 
-A sinnet can also be had from the shape it is to take, as the book draws it
+A sinnet can also be made from the shape it is to take, as the book draws it
 (:func:`sinnet_from_shape`): straight lines across the shape, parallel to
 its sides, each turning at the outline in a bight into the next.  The
 bights are the spaces, the lines the moves, made in the book's order.
