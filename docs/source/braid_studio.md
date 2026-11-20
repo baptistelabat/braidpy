@@ -196,13 +196,16 @@ The studio has a form and a 3D view.
   choose again.
 - **Ashley's method, from a shape** makes a sinnet from the shape it is to
   take, as Ashley draws it (see
-  [Making](making.md#from-the-shape-it-is-to-take)): a triangle, a hexagon,
-  an oblong, an L or a hollow square to start from, so many lines along a
-  side (an oblong's width and height, an L's width and arms, a hollow
-  square's width and sides), or one of the braids its **Braid** list
-  offers, made with the site and found among the others by topology: the
-  book's triangles and flat oblong, a hexagon, a square, an L, a U and
-  hollow squares. The shape is its grid's cells,
+  [Making](making.md#from-the-shape-it-is-to-take)): first its **Grid**,
+  square, diamond (squares on a corner, the lines along their diagonals)
+  or hexagonal (triangles), then a **Shape** that grid offers: an oblong,
+  an L, a U or a hollow square on squares; a square or an oblong on a
+  corner on the diamond grid; a triangle or a hexagon on triangles, so many
+  lines along a side (an oblong's width and height, an L's or a U's width
+  and arms, a hollow square's width and sides). Or one of the braids its
+  **Braid** list offers, made with the site and found among the others by
+  topology: the book's triangles, flat oblong and squares on a corner, a
+  hexagon, a square, an L, a U and hollow squares. The shape is its grid's cells,
   squares or triangles, and is drawn once made: its cells, its lines,
   coloured by track, each with an arrow the way its move goes, and its
   spaces, numbered, larger with more strands. As the list above the

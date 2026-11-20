@@ -276,10 +276,12 @@ def test_a_shape_on_a_grid_is_drawn_as_the_book_draws_it():
     from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
 
     for lines in range(2, 7):
-        (outline,) = grid_outline(*grid_shape("triangle", lines, 2))
+        (outline,) = grid_outline(
+            "triangle", grid_shape("triangle", "triangle", lines, 2)
+        )
         on_grid = sinnet_from_shape(outline)
         assert on_grid == sinnet_from_shape(triangle(lines))
-    (outline,) = grid_outline(*grid_shape("oblong", 10, 2))
+    (outline,) = grid_outline("square", grid_shape("square", "oblong", 10, 2))
     on_grid = sinnet_from_shape(outline)
     assert on_grid.moves == sinnet_from_shape(oblong(10, 2)).moves
 
@@ -321,7 +323,7 @@ def test_a_hollow_square_s_spaces_alternate_round_the_stand():
     round a tube, every space still giving once and taking once."""
     from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
 
-    outline, hole = grid_outline(*grid_shape("frame", 6, 2))
+    outline, hole = grid_outline("square", grid_shape("square", "frame", 6, 2))
     made = sinnet_from_shape(outline, holes=[hole])
     n = len(made.initial_counts_per_space)
     every = list(range(1, n + 1))
@@ -330,3 +332,28 @@ def test_a_hollow_square_s_spaces_alternate_round_the_stand():
     across = [(a, b) for a, b in made.moves if (a - b) % n in (1, n - 1)]
     assert len(across) >= 8
     assert made.braid(1).n_strands == made.n_strands
+
+
+@pytest.mark.parametrize(
+    "number, shape, size, height",
+    [(3073, "square", 6, 2), (3074, "square", 8, 2), (3075, "oblong", 10, 2)],
+)
+def test_a_shape_on_its_corner_has_the_book_s_lines(number, shape, size, height):
+    """On the diagonal grid, a square or an oblong standing on a corner,
+    its lines across and up, is drawn as the book draws #3073, #3074 and
+    #3075: the same spaces joined, if not in the same order."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import (
+        _drawn,
+        grid_lines,
+        grid_outline,
+        grid_shape,
+        sinnet_from_shape,
+    )
+
+    book = getattr(books, f"abok_{number}")
+    outline, *holes = grid_outline(
+        "diagonal", grid_shape("diagonal", shape, size, height)
+    )
+    made = sinnet_from_shape(outline, holes=holes, across=grid_lines("diagonal"))
+    assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])

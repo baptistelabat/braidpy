@@ -66,6 +66,8 @@ __all__ = [
     "ashley_sinnet",
     "cell_outline",
     "corner_spaces",
+    "grid_across",
+    "grid_lines",
     "grid_outline",
     "grid_shape",
     "least_counts",
@@ -254,6 +256,7 @@ class ShapeLine:
 def shape_lines(
     outline: Sequence[tuple[float, float]],
     holes: Sequence[Sequence[tuple[float, float]]] = (),
+    across: Optional[Sequence[float]] = None,
 ) -> list[ShapeLine]:
     """The lines Ashley draws across a shape: parallel to each side, the
     first ``FIRST_LINE`` in from it, the others a spacing on, as many as fit
@@ -265,6 +268,9 @@ def shape_lines(
         outline: The shape's corners, anticlockwise, in spacings: any
             outline that does not cross itself.
         holes: The corners of each hole in it, clockwise.
+        across: Directions, as angles, to draw the lines in instead, a
+            spacing apart through the origin, as on a grid whose outline
+            may run on a slant (:func:`grid_lines`); none if None.
 
     Returns:
         The lines, by direction, then from the side inwards.
@@ -272,6 +278,8 @@ def shape_lines(
     loops = _loops(outline, holes)
     corners = loops[0]
     sides = _sides(loops)
+    if across is not None:
+        return _lines_across(corners, sides, across)
     lines: dict[tuple[int, float, float], ShapeLine] = {}
     for a, b in sides:
         along = (b - a) / np.linalg.norm(b - a)
@@ -283,8 +291,8 @@ def shape_lines(
         )
         width = float(np.max((corners - a) @ inward))
         reference, end = sides[direction]
-        across = np.array([-(end - reference)[1], (end - reference)[0]])
-        across /= np.linalg.norm(across)
+        off = np.array([-(end - reference)[1], (end - reference)[0]])
+        off /= np.linalg.norm(off)
         distance = FIRST_LINE
         while distance < width - SAME_POINT:
             for ends in _pieces(sides, a + inward * distance, along):
@@ -294,7 +302,7 @@ def shape_lines(
                 middle = (ends[0] + ends[1]) / 2 - reference
                 key = (
                     direction,
-                    abs(round(float(np.dot(middle, across)), 6)),
+                    abs(round(float(np.dot(middle, off)), 6)),
                     round(float(np.dot(middle, end - reference)), 3),
                 )
                 lines.setdefault(
@@ -307,6 +315,20 @@ def shape_lines(
 def _point(xy) -> tuple[float, float]:
     """A point as two floats."""
     return float(xy[0]), float(xy[1])
+
+
+def _lines_across(corners, sides, across) -> list[ShapeLine]:
+    """The lines in each direction ``across``, a spacing apart through the
+    origin, as far as they cross the shape (:func:`shape_lines`)."""
+    lines = []
+    for direction, angle in enumerate(across):
+        along = np.array([math.cos(angle), math.sin(angle)])
+        normal = np.array([-along[1], along[0]])
+        reach = corners @ normal
+        for offset in range(math.floor(reach.min()), math.ceil(reach.max()) + 1):
+            for ends in _pieces(sides, normal * offset, along):
+                lines.append(ShapeLine((_point(ends[0]), _point(ends[1])), direction))
+    return lines
 
 
 def _pieces(sides, point, along) -> list[tuple[np.ndarray, np.ndarray]]:
@@ -483,6 +505,7 @@ def _paired(loops, lines, ends, loop):
 def shape_diagram(
     outline: Sequence[tuple[float, float]],
     holes: Sequence[Sequence[tuple[float, float]]] = (),
+    across: Optional[Sequence[float]] = None,
 ) -> tuple[list[ShapeLine], list[tuple[int, int]], list[tuple[float, float]]]:
     """Ashley's diagram of a shape: its lines (:func:`shape_lines`), the two
     spaces each joins, and where each bight is, space 1 first
@@ -491,11 +514,12 @@ def shape_diagram(
     Args:
         outline: The shape's corners, anticlockwise, in spacings.
         holes: The corners of each hole in it, clockwise.
+        across: The lines' directions, if not the sides' (:func:`shape_lines`).
 
     Returns:
         The lines, the spaces each joins, and the bights.
     """
-    lines = shape_lines(outline, holes)
+    lines = shape_lines(outline, holes, across)
     bights, joins = _spaces(_loops(outline, holes), lines)
     return lines, joins, bights
 
@@ -658,6 +682,7 @@ def least_counts(moves: Sequence[tuple[int, int]], n_spaces: int) -> list[int]:
 def corner_spaces(
     outline: Sequence[tuple[float, float]],
     holes: Sequence[Sequence[tuple[float, float]]] = (),
+    across: Optional[Sequence[float]] = None,
 ) -> list[int]:
     """The spaces at a shape's corners, where the book adds strands to
     sharpen its edges: each bight turning a corner, its two lines ending on
@@ -668,11 +693,12 @@ def corner_spaces(
     Args:
         outline: The shape's corners, anticlockwise, in spacings.
         holes: The corners of each hole in it, clockwise.
+        across: The lines' directions, if not the sides' (:func:`shape_lines`).
 
     Returns:
         The spaces, numbered as :func:`sinnet_from_shape` numbers them.
     """
-    lines, joins, _ = shape_diagram(outline, holes)
+    lines, joins, _ = shape_diagram(outline, holes, across)
     loops = _loops(outline, holes)
     sides: dict[int, set[int]] = {}
     for line, spaces in enumerate(joins):
@@ -720,6 +746,7 @@ def sinnet_from_shape(
     turned: Sequence[int] = (),
     order: str = "book",
     holes: Sequence[Sequence[tuple[float, float]]] = (),
+    across: Optional[Sequence[float]] = None,
 ) -> AshleySolidSinnet:
     """The sinnet the book's method makes of a shape.
 
@@ -753,6 +780,8 @@ def sinnet_from_shape(
         holes: The corners of each hole in the shape, clockwise: its
             bights are numbered with the outline's, by the way they lie
             from the middle (:func:`shape_diagram`).
+        across: The lines' directions, if not the sides', as on the
+            diagonal grid (:func:`shape_lines`).
 
     Returns:
         The sinnet.
@@ -760,7 +789,7 @@ def sinnet_from_shape(
     Raises:
         ValueError: If the lines cannot be made into moves in that order.
     """
-    lines, joins, bights = shape_diagram(outline, holes)
+    lines, joins, bights = shape_diagram(outline, holes, across)
     n = len(bights)
     corners = np.asarray(outline, dtype=float)
     first_side = corners[1] - corners[0]
@@ -962,25 +991,48 @@ def triangle(lines_per_side: int) -> list[tuple[float, float]]:
 # ------------------------------------------------------------- on a grid
 
 # The grids a shape is drawn on, its cells: squares, Ashley's lines running
-# across and up; or triangles, his lines in three directions a third of a
-# half turn apart.  Either way the lines run a spacing apart, through the
+# across and up; squares cut on their diagonals, his lines across and up
+# but the outline free to run on a slant, as round a square standing on a
+# corner (#3073); or triangles, his lines in three directions a third of a
+# half turn apart.  Each way the lines run a spacing apart, through the
 # grid's points, and the outline half a spacing beyond the cells.
-GRIDS = ("square", "triangle")
+GRIDS = ("square", "diagonal", "triangle")
 # The height of a row of triangles, a spacing, and so the side of one.
 TRIANGLE_SIDE = 2 / math.sqrt(3)
 
-# A cell: on the square grid, its bottom left point (i, j); on the
-# triangular one, the point (i, j) and 0 for the triangle pointing up from
-# it, 1 for the one pointing down beside it.
+# A cell: on the square grid, its bottom left point (i, j); on the diagonal
+# one, the same square's quarter cut off by its diagonals, 0 below, then 1,
+# 2, 3 anticlockwise; on the triangular one, the point (i, j) and 0 for the
+# triangle pointing up from it, 1 for the one pointing down beside it.
 Cell = tuple[int, ...]
 
 
 def _grid_point(grid: str, node: tuple[int, int]) -> np.ndarray:
-    """Where a grid's point is, in spacings."""
+    """Where a grid's point is, in spacings; on the diagonal grid, points
+    are counted in half spacings, to reach the middles of its squares."""
     i, j = node
     if grid == "square":
         return np.array([float(i), float(j)])
+    if grid == "diagonal":
+        return np.array([i / 2, j / 2])
     return np.array([(i + j / 2) * TRIANGLE_SIDE, float(j)])
+
+
+def grid_across(grid: str) -> tuple[float, ...]:
+    """The directions of Ashley's lines on a grid, as angles: across and up,
+    or a third of a half turn apart on the triangular grid."""
+    if grid == "triangle":
+        return (0.0, math.pi / 3, 2 * math.pi / 3)
+    return (0.0, math.pi / 2)
+
+
+def grid_lines(grid: str) -> tuple[float, ...] | None:
+    """The directions to draw a grid's shapes' lines in
+    (:func:`shape_lines`'s ``across``): None where every side of the
+    outline is parallel to some, as on the square and triangular grids, and
+    the lines are drawn parallel to the sides; the grid's own on the
+    diagonal grid, whose outline may run on a slant."""
+    return grid_across(grid) if grid == "diagonal" else None
 
 
 def _cell_points(grid: str, cell: Cell) -> list[tuple[int, int]]:
@@ -988,6 +1040,16 @@ def _cell_points(grid: str, cell: Cell) -> list[tuple[int, int]]:
     if grid == "square":
         i, j = cell
         return [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)]
+    if grid == "diagonal":
+        i, j, quarter = cell
+        square = [
+            (2 * i, 2 * j),
+            (2 * i + 2, 2 * j),
+            (2 * i + 2, 2 * j + 2),
+            (2 * i, 2 * j + 2),
+        ]
+        middle = (2 * i + 1, 2 * j + 1)
+        return [square[quarter], square[(quarter + 1) % 4], middle]
     i, j, down = cell
     if down:
         return [(i + 1, j), (i + 1, j + 1), (i, j + 1)]
@@ -1047,7 +1109,7 @@ def grid_outline(grid: str, cells: Sequence[Cell]) -> list[list[tuple[float, flo
             loop.append(after[loop[-1]])
         for node in loop:
             del left[node]
-        loops.append(_offset([_grid_point(grid, node) for node in loop]))
+        loops.append(_offset([_grid_point(grid, node) for node in loop], grid))
     # Cells anticlockwise: their outline goes round anticlockwise, a hole's
     # the other way.  A hole with every point of the grid round it, as one
     # cell left out, closes up half a spacing in: the lines pass by it.
@@ -1057,9 +1119,19 @@ def grid_outline(grid: str, cells: Sequence[Cell]) -> list[list[tuple[float, flo
     return outer + [loop for loop in loops if _area(loop) < -SAME_POINT]
 
 
-def _offset(points: list[np.ndarray]) -> list[tuple[float, float]]:
+def _offset(points: list[np.ndarray], grid: str) -> list[tuple[float, float]]:
     """An outline round cells, from the points round them in order: only
-    where it turns, half a spacing out to its right."""
+    where it turns, out to its right, half a spacing beyond the lines
+    parallel to it; a side on a slant, as on the diagonal grid, so far out
+    that the lines crossing it run on half a spacing past their last
+    point."""
+    across = [np.array([math.cos(a), math.sin(a)]) for a in grid_across(grid)]
+
+    def out(along) -> float:
+        if any(abs(_cross2(along, line)) < SAME_POINT for line in across):
+            return FIRST_LINE
+        return FIRST_LINE * min(abs(_cross2(along, line)) for line in across)
+
     turns = [
         k
         for k in range(len(points))
@@ -1074,7 +1146,7 @@ def _offset(points: list[np.ndarray]) -> list[tuple[float, float]]:
     outward = []
     for here, there in zip(points, points[1:] + points[:1]):
         along = (there - here) / np.linalg.norm(there - here)
-        outward.append((here + FIRST_LINE * np.array([along[1], -along[0]]), along))
+        outward.append((here + out(along) * np.array([along[1], -along[0]]), along))
     corners = []
     for (p, u), (q, v) in zip(outward[-1:] + outward[:-1], outward):
         t, _ = np.linalg.solve(np.array([u, -v]).T, q - p)
@@ -1092,65 +1164,99 @@ def _cross2(u, v) -> float:
     return float(u[0] * v[1] - u[1] * v[0])
 
 
-def grid_shape(name: str, size: int, height: int) -> tuple[str, list[Cell]]:
-    """A shape to start from, as a grid and its cells.
+def grid_shape(grid: str, name: str, size: int, height: int) -> list[Cell]:
+    """A shape to start from, as its cells on a grid.
 
     Args:
-        name: "triangle" or "hexagon", on the triangular grid, ``size``
-            lines along each side; "oblong", ``size`` lines across and
-            ``height`` up; "L", ``size`` lines across and up, its arms
-            ``height`` thick.
+        grid: One of ``GRIDS``.
+        name: On the square grid, "oblong", ``size`` lines across and
+            ``height`` up; "L" and "U", ``size`` lines across and up, their
+            arms ``height`` thick; "frame", a hollow square, ``size``
+            lines across, its sides ``height`` thick.  On the diagonal
+            grid, a "square" or an "oblong" standing on a corner, ``size``
+            lines along its sides, and an oblong's ``height`` across:
+            #3073 is a square of 6, #3074 of 8, #3075 an oblong of 10 by 2.
+            On the triangular grid, "triangle" or "hexagon", ``size`` lines
+            along each side.
         size: Its size, in lines.
-        height: Its height, or an L's arms, in lines.
+        height: Its height, or its arms' or sides', in lines.
 
     Returns:
-        Its grid and its cells.
+        Its cells.
     """
     if size < 2 or height < 2:
         raise ValueError("A shape on a grid is two lines or more each way.")
+    shapes = {
+        "square": {"oblong", "L", "U", "frame"},
+        "diagonal": {"square", "oblong"},
+        "triangle": {"triangle", "hexagon"},
+    }
+    if name not in shapes.get(grid, set()):
+        raise ValueError(f"No shape {name!r} on the {grid} grid.")
+    if grid == "triangle":
+        return _triangle_cells(name, size)
+    if grid == "diagonal":
+        # Its points within a slanted oblong: lines along its sides on
+        # either side of its middle, half a spacing from the points.
+        across = size / 2 if name == "square" else height / 2
+        along = size / 2
+
+        def within(node) -> bool:
+            x, y = _grid_point("diagonal", node) - 0.5
+            return (
+                abs(x + y) <= across + SAME_POINT and abs(x - y) <= along + SAME_POINT
+            )
+
+        span = range(-size - height, size + height + 1)
+        return [
+            (i, j, quarter)
+            for i in span
+            for j in span
+            for quarter in range(4)
+            if all(map(within, _cell_points("diagonal", (i, j, quarter))))
+        ]
+    if name == "oblong":
+        return [(i, j) for j in range(height - 1) for i in range(size - 1)]
+    last = size - 2
+
+    def kept(i, j) -> bool:
+        thick = height - 1
+        if name == "frame":
+            if 2 * height >= size:
+                raise ValueError("A frame's sides are thinner than half across it.")
+            return min(i, j, last - i, last - j) < thick
+        if height >= size:
+            raise ValueError(f"An {name}'s arms are thinner than it is wide.")
+        if name == "L":
+            return i < thick or j < thick
+        return j < thick or i < thick or i > last - thick  # a U
+
+    return [(i, j) for j in range(size - 1) for i in range(size - 1) if kept(i, j)]
+
+
+def _triangle_cells(name: str, size: int) -> list[Cell]:
+    """A triangle's or a hexagon's cells on the triangular grid."""
     if name == "triangle":
-        return "triangle", [
+        return [
             (i, j, down)
             for j in range(size)
             for i in range(size)
             for down in (0, 1)
             if i + j + down <= size - 2
         ]
-    if name == "hexagon":
-        r = size - 1
+    r = size - 1
 
-        def within(node):
-            q, t = node
-            return max(abs(q), abs(t), abs(q + t)) <= r
+    def within(node):
+        q, t = node
+        return max(abs(q), abs(t), abs(q + t)) <= r
 
-        return "triangle", [
-            (i, j, down)
-            for j in range(-r, r + 1)
-            for i in range(-2 * r, 2 * r + 1)
-            for down in (0, 1)
-            if all(map(within, _cell_points("triangle", (i, j, down))))
-        ]
-    if name == "oblong":
-        return "square", [(i, j) for j in range(height - 1) for i in range(size - 1)]
-    if name == "frame":
-        if 2 * height >= size:
-            raise ValueError("A frame's sides are thinner than half across it.")
-        return "square", [
-            (i, j)
-            for j in range(size - 1)
-            for i in range(size - 1)
-            if min(i, j, size - 2 - i, size - 2 - j) < height - 1
-        ]
-    if name == "L":
-        if height >= size:
-            raise ValueError("An L's arms are thinner than it is long.")
-        return "square", [
-            (i, j)
-            for j in range(size - 1)
-            for i in range(size - 1)
-            if i < height - 1 or j < height - 1
-        ]
-    raise ValueError(f"No shape {name!r} on a grid.")
+    return [
+        (i, j, down)
+        for j in range(-r, r + 1)
+        for i in range(-2 * r, 2 * r + 1)
+        for down in (0, 1)
+        if all(map(within, _cell_points("triangle", (i, j, down))))
+    ]
 
 
 def _parallel_sided(groups: MoveGroups) -> list[tuple[float, float]] | None:

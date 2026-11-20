@@ -399,7 +399,7 @@ export function attachShape(holder) {
   box.append(mode, drawing, help);
   holder.querySelector("[name=shape]").closest("label").after(box);
   // A shape started from afresh, or resized, is no longer the cells changed.
-  for (const name of ["shape", "size", "height"]) {
+  for (const name of ["grid", "shape", "size", "height"]) {
     holder.querySelector(`[name=${name}]`).addEventListener("change", () => {
       cells.value = "";
       turned.value = "";

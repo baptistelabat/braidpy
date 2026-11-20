@@ -324,25 +324,33 @@ def from_b3d(text: str) -> Spec:
     )
 
 
-_CELL = re.compile(r"(-?\d+),(-?\d+)([\^v]?)")
+_CELL = re.compile(r"(-?\d+),(-?\d+)([\^vbrtl]?)")
+# A diagonal grid's quarters of a square, as a link names them: below, to
+# the right, above, to the left.
+_QUARTERS = "brtl"
 
 
 def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
-    """Cells as a link gives them: ``i,j`` on the square grid; ``i,j^`` for
-    the triangle pointing up from point (i, j) of the triangular grid,
+    """Cells as a link gives them: ``i,j`` on the square grid; ``i,jb``,
+    ``i,jr``, ``i,jt`` or ``i,jl`` for the quarter of that square below,
+    right of, above or left of its middle on the diagonal grid; ``i,j^``
+    for the triangle pointing up from point (i, j) of the triangular grid,
     ``i,jv`` for the one pointing down beside it."""
     cells: list[tuple[int, ...]] = []
     for i, j, which in _CELL.findall(text):
         if grid == "square":
             cells.append((int(i), int(j)))
+        elif grid == "diagonal":
+            cells.append((int(i), int(j), _QUARTERS.index(which or "b")))
         else:
             cells.append((int(i), int(j), int(which == "v")))
     return cells
 
 
-def _cell_text(cell: tuple[int, ...]) -> str:
+def _cell_text(grid: str, cell: tuple[int, ...]) -> str:
     """A cell as :func:`_cells` reads it."""
-    return f"{cell[0]},{cell[1]}" + ("" if len(cell) == 2 else "^v"[cell[2]])
+    which = {"square": "", "diagonal": _QUARTERS, "triangle": "^v"}[grid]
+    return f"{cell[0]},{cell[1]}" + (which[cell[2]] if which else "")
 
 
 def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
@@ -356,12 +364,17 @@ def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
 
     taken = set(cells)
     edges = set().union(*(sides(cell) for cell in cells))
+    kinds: dict[str, list[tuple[int, ...]]] = {
+        "square": [()],
+        "diagonal": [(q,) for q in range(4)],
+        "triangle": [(0,), (1,)],
+    }
     near = {
         (cell[0] + di, cell[1] + dj, *which)
         for cell in cells
         for di in (-1, 0, 1)
         for dj in (-1, 0, 1)
-        for which in ([()] if grid == "square" else [(0,), (1,)])
+        for which in kinds[grid]
     }
     return sorted(cell for cell in near - taken if sides(cell) & edges)
 
@@ -375,6 +388,7 @@ def _from_shape(spec: Spec) -> Result:
     from braidpy.making.ashley import (
         cell_outline,
         corner_spaces,
+        grid_lines,
         grid_outline,
         grid_shape,
         shape_diagram,
@@ -382,21 +396,27 @@ def _from_shape(spec: Spec) -> Result:
         sinnet_from_shape,
     )
 
+    grid = Shape.grid.read(spec)
+    if grid not in Shape.grids:
+        raise ValueError(f"No grid {grid!r}: one of {sorted(Shape.grids)}.")
     name = Shape.shape.read(spec)
-    if name not in Shape.shapes:
-        raise ValueError(f"No shape {name!r}: one of {sorted(Shape.shapes)}.")
-    grid, cells = grid_shape(name, Shape.size.read(spec), Shape.height.read(spec))
+    if name not in Shape.shapes[grid]:
+        raise ValueError(
+            f"No shape {name!r} on that grid: one of {sorted(Shape.shapes[grid])}."
+        )
+    cells = grid_shape(grid, name, Shape.size.read(spec), Shape.height.read(spec))
     if Shape.cells.read(spec).strip():
         cells = _cells(grid, Shape.cells.read(spec))
     outline, *holes = grid_outline(grid, cells)
-    lines, joins, bights = shape_diagram(outline, holes)
+    across = grid_lines(grid)
+    lines, joins, bights = shape_diagram(outline, holes, across)
     turned = sorted(set(_numbers(Shape.turned.read(spec) or "0", "tracks")) - {0})
     extra = [0] * len(bights)
     for space in re.findall(r"\d+", Shape.extra.read(spec)):
         if not 1 <= int(space) <= len(bights):
             raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
         extra[int(space) - 1] += 1
-    for space in corner_spaces(outline, holes):
+    for space in corner_spaces(outline, holes, across):
         extra[space - 1] += Shape.corners.read(spec)
     sinnet = sinnet_from_shape(
         outline,
@@ -404,6 +424,7 @@ def _from_shape(spec: Spec) -> Result:
         turned=turned,
         order=Shape.order.read(spec),
         holes=holes,
+        across=across,
     )
     if sinnet.n_strands > Shape.most_strands:
         raise ValueError(f"That is over {Shape.most_strands} strands.")
@@ -432,7 +453,7 @@ def _from_shape(spec: Spec) -> Result:
         "tracks": len(set(track_of.values())),
         "cells": [
             {
-                "name": _cell_text(cell),
+                "name": _cell_text(grid, cell),
                 "points": [list(p) for p in cell_outline(grid, cell)],
                 "in": taken,
             }
@@ -445,7 +466,7 @@ def _from_shape(spec: Spec) -> Result:
     }
     # Called as the shape started from, or the shape's own cells.
     own = bool(Shape.cells.read(spec).strip())
-    title = Shape.shapes[name]
+    title = Shape.shapes[grid][name]
     noun = (
         None if own else title[0].lower() + title[1:] if title[1:2].islower() else title
     )
@@ -618,7 +639,8 @@ def _shape_entry() -> Source:
     return {
         "title": "Ashley's method, from a shape",
         "defaults": defaults(*Shape.shown),
-        "shapes": dict(Shape.shapes),
+        "grids": dict(Shape.grids),
+        "shapes": {grid: dict(shapes) for grid, shapes in Shape.shapes.items()},
         "orders": dict(Shape.orders),
         "examples": cast(list[Example], Shape.examples),
     }

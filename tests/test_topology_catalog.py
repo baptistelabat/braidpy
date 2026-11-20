@@ -151,6 +151,6 @@ def test_a_shape_s_example_is_known_only_as_it_is():
     from braidpy.topology_catalog import methods
 
     triangle = next(m for m in methods() if m.title.startswith("Triangle, 4 lines"))
-    spec = {"source": "shape", "shape": "triangle", "size": "4", "height": "2"}
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": "4"}
     assert triangle.describes(spec)
     assert not triangle.describes({**spec, "turned": "1"})
