@@ -155,40 +155,14 @@ class Shape:
     # of one braid (braidpy.topology_catalog).
     defining = (grid, shape, size, height, cells, order, turned, extra, corners)
     # Braids made so, offered as they come, each as it is described.
+    # Braids made so, offered as they come, each as it is described,
+    # after the book's that a shape draws (solid_sinnets_catalog.DRAWN).
     examples: ClassVar[list[dict[str, Default]]] = [
-        {
-            "title": "Triangle, 4 lines a side (ABOK #3047)",
-            "grid": "triangle",
-            "shape": "triangle",
-            "size": 4,
-        },
-        {
-            "title": "Triangle, a strand more at each corner (ABOK #3049)",
-            "grid": "triangle",
-            "shape": "triangle",
-            "size": 4,
-            "corners": 1,
-        },
-        {
-            "title": "Triangle made space by space (ABOK #3057)",
-            "grid": "triangle",
-            "shape": "triangle",
-            "size": 2,
-            "order": "spaces",
-        },
         {
             "title": "Hexagon, 3 lines a side",
             "grid": "triangle",
             "shape": "hexagon",
             "size": 3,
-        },
-        {
-            "title": "Flat oblong, chisel edges (ABOK #3071)",
-            "grid": "square",
-            "shape": "oblong",
-            "size": 6,
-            "height": 2,
-            "corners": 1,
         },
         {
             "title": "Square, 4 lines a side",
@@ -224,25 +198,6 @@ class Shape:
             "shape": "frame",
             "size": 7,
             "height": 3,
-        },
-        {
-            "title": "Square on a corner, 6 lines (ABOK #3073's lines)",
-            "grid": "diagonal",
-            "shape": "square",
-            "size": 6,
-        },
-        {
-            "title": "Square on a corner, 8 lines (ABOK #3074's lines)",
-            "grid": "diagonal",
-            "shape": "square",
-            "size": 8,
-        },
-        {
-            "title": "Oblong on a corner, 10 by 2 (ABOK #3075's lines)",
-            "grid": "diagonal",
-            "shape": "oblong",
-            "size": 10,
-            "height": 2,
         },
     ]
 

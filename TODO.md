@@ -12,6 +12,18 @@ What is known and left for later, each with enough said to pick it up.
 
 ## Later
 
+- **Ashley's method, from a shape**: what the book does that it does not.
+  - The order of the moves of a square or an oblong on a corner (#3070,
+    #3073 to #3075): the shape draws the book's lines, the book makes the
+    moves in an order of its own, moving opposite strands together.
+  - Pentagons and pentalphas (#3079 to #3082): on no grid; a grid of
+    lines at fifths of a half turn would hold them.
+  - A hollow shape's braid is made round the hole, inner and outer spaces
+    in turn, but has not been checked to tighten into a tube.
+  - Braid Studio's *Find a sinnet* still searches blindly
+    (`making.ashley.ashley_sinnet`, three seconds): a braid that a shape
+    makes could be offered its shape instead.
+
 - **Reducible, periodic or pseudo-Anosov** (`Braid.is_reducible` is a stub).
   No library fits: `flipper` and `curver` (MIT) took over two minutes on
   three strands, and libbraiding is not on PyPI. Garside theory decides it,

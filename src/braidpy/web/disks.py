@@ -642,8 +642,32 @@ def _shape_entry() -> Source:
         "grids": dict(Shape.grids),
         "shapes": {grid: dict(shapes) for grid, shapes in Shape.shapes.items()},
         "orders": dict(Shape.orders),
-        "examples": cast(list[Example], Shape.examples),
+        "examples": _shape_examples(),
     }
+
+
+def _shape_examples() -> list[Example]:
+    """The braids a sinnet from a shape offers: the book's that a shape
+    draws (:data:`braidpy.solid_sinnets_catalog.DRAWN`), named as the
+    catalogue names them, then braidpy's own (``Shape.examples``)."""
+    from braidpy.solid_sinnets_catalog import DRAWN
+
+    sinnets = _sinnets()
+    book: dict[tuple, Example] = {}
+    for name, drawn in DRAWN.items():
+        made = {k: v for k, v in drawn.items() if k != "makes"}
+        key = tuple(sorted(made.items()))
+        if key in book:
+            # Two of the book's made alike, as #3057 and #3058: one braid.
+            first, rest = book[key]["title"].split(",", 1)
+            book[key]["title"] = f"{first} and #{name.split('_')[1]},{rest}"
+            continue
+        title = sinnets[name].title
+        book[key] = cast(
+            Example,
+            {"title": title if drawn["makes"] else f"The lines of {title}", **made},
+        )
+    return list(book.values()) + cast(list[Example], Shape.examples)
 
 
 # Each source: its catalogue entry, and what builds it.

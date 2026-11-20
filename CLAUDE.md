@@ -22,6 +22,9 @@ mistake before:
 | A braid as moves on a kumihimo disk | `making.disk` |
 | A braid as a sinnet on Ashley's stand, found by searching | `making.ashley` |
 | A sinnet from the shape it takes, as Ashley draws it | `making.ashley.sinnet_from_shape` |
+| A shape as cells on a grid (square, diagonal, triangular), its outline | `making.ashley.grid_shape`, `grid_outline` |
+| From a sinnet's moves back to its shape | `making.ashley.move_groups`, `shapes_from_moves` |
+| Which of the book's sinnets a shape draws | `solid_sinnets_catalog.DRAWN` |
 | A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |

@@ -1113,6 +1113,7 @@ def grid_outline(grid: str, cells: Sequence[Cell]) -> list[list[tuple[float, flo
     # Cells anticlockwise: their outline goes round anticlockwise, a hole's
     # the other way.  A hole with every point of the grid round it, as one
     # cell left out, closes up half a spacing in: the lines pass by it.
+    loops = [loop for loop in loops if len(loop) >= 3]
     outer = [loop for loop in loops if _area(loop) > SAME_POINT]
     if len(outer) != 1:
         raise ValueError("The cells are in more than one piece.")
@@ -1147,10 +1148,16 @@ def _offset(points: list[np.ndarray], grid: str) -> list[tuple[float, float]]:
     for here, there in zip(points, points[1:] + points[:1]):
         along = (there - here) / np.linalg.norm(there - here)
         outward.append((here + out(along) * np.array([along[1], -along[0]]), along))
-    corners = []
+    corners: list[tuple[float, float]] = []
     for (p, u), (q, v) in zip(outward[-1:] + outward[:-1], outward):
         t, _ = np.linalg.solve(np.array([u, -v]).T, q - p)
-        corners.append(_point(p + t * u))
+        corner = _point(p + t * u)
+        # A side that the offset closes up, as a gap half a spacing wide,
+        # is no side.
+        if not corners or math.dist(corner, corners[-1]) > SAME_POINT:
+            corners.append(corner)
+    if len(corners) > 1 and math.dist(corners[0], corners[-1]) < SAME_POINT:
+        corners.pop()
     return corners
 
 
@@ -1301,17 +1308,29 @@ class FoundShape:
     """A shape found for a sinnet's moves (:func:`shapes_from_moves`).
 
     Args:
-        name: What it is: "triangle", "parallel-sided".
+        name: What it is: "L, 5 by 2 on the square grid", "regular",
+            "parallel-sided".
         outline: Its corners, anticlockwise, in spacings between lines.
         sinnet: Its own sinnet (:func:`sinnet_from_shape`).
         same_lines: Whether its drawing joins the very spaces the moves
             join, not only lines grouped alike.
+        grid: On a grid, which (``GRIDS``), and the shape, size and height
+            :func:`grid_shape` makes it of; None, not on a grid.
+        shape: See ``grid``.
+        size: See ``grid``.
+        height: See ``grid``.
+        holes: The corners of each hole in it.
     """
 
     name: str
     outline: tuple[tuple[float, float], ...]
     sinnet: AshleySolidSinnet
     same_lines: bool
+    grid: str | None = None
+    shape: str | None = None
+    size: int | None = None
+    height: int | None = None
+    holes: tuple[tuple[tuple[float, float], ...], ...] = ()
 
 
 def _drawn(moves: Sequence[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
@@ -1331,16 +1350,61 @@ def _drawn(moves: Sequence[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
     )
 
 
-def shapes_from_moves(moves: Sequence[tuple[int, int]]) -> list[FoundShape]:
-    """The shapes drawn on the principle of a sinnet's moves, at its size,
-    made from their groups (:func:`move_groups`), not searched for.
+def _grid_candidates(n: int, groups: MoveGroups):
+    """The shapes on a grid that a sinnet of ``n`` moves can be drawn on:
+    each ``(grid, shape, size, height)`` with ``n`` lines, as far as each
+    shape's lines can be counted without drawing it.  Its moves in two
+    groups at right angles are on the square or diagonal grid, in three a
+    third of a half turn apart on the triangular one; grouped otherwise, as
+    an L's or a hollow square's whose lines of different directions miss
+    each other, on any."""
+    turns = [turn for turn, _ in groups.groups]
+    grids = (
+        ["triangle"]
+        if turns == [Fraction(0), Fraction(1, 3), Fraction(2, 3)]
+        else ["square", "diagonal"]
+        if turns == [Fraction(0), Fraction(1, 2)]
+        else list(GRIDS)
+    )
+    half = n // 2
+    for grid in grids:
+        if grid == "triangle":
+            # A triangle has its size of lines each way, a hexagon of r
+            # lines a side 2r - 1.
+            if n % 3 == 0:
+                yield grid, "triangle", n // 3, 2
+                if (n // 3) % 2:
+                    yield grid, "hexagon", (n // 3 + 1) // 2, 2
+        elif grid == "diagonal":
+            # A square on a corner of size lines has as many each way, an
+            # oblong on a corner (size + height) / 2.
+            if n % 2 == 0:
+                yield grid, "square", half, 2
+            for size in range(2, n - 1):
+                yield grid, "oblong", size, n - size
+        else:
+            # An oblong has its width of lines up and its height across; an
+            # L, a U or a hollow square at least its size each way.
+            for size in range(max(2, n - n // 2), n - 1):
+                yield grid, "oblong", size, n - size
+            for name in ("L", "U", "frame"):
+                for size in range(3, half + 1):
+                    for thick in range(2, size):
+                        yield grid, name, size, thick
 
-    Each direction of lines is a side, or a pair of parallel sides, of the
-    shape, as far across as its moves need: a regular polygon of an odd
-    number of sides (:func:`regular_polygon`) where the directions are
-    evenly spread with as many moves each, and the shape with sides
-    parallel in pairs (an oblong, a hexagon).  Each is kept if its own
-    sinnet's moves group alike.
+
+def shapes_from_moves(moves: Sequence[tuple[int, int]]) -> list[FoundShape]:
+    """The shapes drawn on the principle of a sinnet's moves, at its size.
+
+    On a grid (:func:`grid_shape`): the shapes with as many lines as there
+    are moves, on the grids their groups (:func:`move_groups`) say, each
+    kept if its own sinnet joins the same spaces.  Off a grid, made from
+    the groups: each direction of lines is a side, or a pair of parallel
+    sides, of the shape, as far across as its moves need, a regular
+    polygon of an odd number of sides (:func:`regular_polygon`) where the
+    directions are evenly spread with as many moves each, and the shape
+    with sides parallel in pairs; each kept if its own sinnet's moves group
+    alike.
 
     Args:
         moves: A sinnet's moves, each space giving and receiving once.
@@ -1350,15 +1414,43 @@ def shapes_from_moves(moves: Sequence[tuple[int, int]]) -> list[FoundShape]:
         the moves are not drawn so.
     """
     groups = move_groups(moves)
+    wanted = _drawn(moves)
     found = []
-    for name, outline in (
+    seen = set()
+    for grid, name, size, height in _grid_candidates(len(moves), groups):
+        try:
+            outline, *holes = grid_outline(grid, grid_shape(grid, name, size, height))
+            across = grid_lines(grid)
+            # One shape under two names, as a U whose gap closes up, once.
+            drawn = tuple(tuple(round(x, 6) for x in p) for p in outline)
+            if drawn in seen or len(shape_lines(outline, holes, across)) != len(moves):
+                continue
+            seen.add(drawn)
+            sinnet = sinnet_from_shape(outline, holes=holes, across=across)
+        except ValueError:
+            continue
+        if _drawn(sinnet.moves) == wanted:
+            found.append(
+                FoundShape(
+                    f"{name}, {size} by {height} on the {grid} grid",
+                    tuple(outline),
+                    sinnet,
+                    True,
+                    grid,
+                    name,
+                    size,
+                    height,
+                    tuple(tuple(hole) for hole in holes),
+                )
+            )
+    for name, made in (
         ("regular", _regular(groups)),
         ("parallel-sided", _parallel_sided(groups)),
     ):
-        if outline is None:
+        if made is None:
             continue
-        sinnet = sinnet_from_shape(outline)
+        sinnet = sinnet_from_shape(made)
         if len(sinnet.moves) == len(moves) and move_groups(sinnet.moves) == groups:
-            same = _drawn(sinnet.moves) == _drawn(moves)
-            found.append(FoundShape(name, tuple(outline), sinnet, same))
+            same = _drawn(sinnet.moves) == wanted
+            found.append(FoundShape(name, tuple(made), sinnet, same))
     return sorted(found, key=lambda shape: not shape.same_lines)

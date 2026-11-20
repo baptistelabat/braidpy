@@ -230,13 +230,15 @@ the book's triangles, line for line. On the diagonal grid, squares cut on
 their diagonals, the outline may run on a slant while the lines run across
 and up ({func}`~braidpy.making.ashley.grid_lines`): a square standing on a
 corner so has the lines of the book's #3073 and #3074, an oblong on a
-corner those of #3075. A shape may have a hole, as a hollow
+corner those of #3075.
+
+![Shapes on a grid: an L, a hollow square, a square on a corner](ashley_grids.svg) A shape may have a hole, as a hollow
 square: its lines are cut by it, and the bights round the hole are spaces
 too, numbered with the outline's by the way they lie from the middle, an
 inner one between two outer ones. A line across the wall then joins two
-spaces side by side, and the sinnet goes round the hole as a tube does. [Braid Studio](braid_studio.md) makes
-a sinnet so, from a shape chosen, its cells, tracks and spaces clicked on
-its drawing.
+spaces side by side, and the sinnet goes round the hole as a tube does.
+[Braid Studio](braid_studio.md) makes a sinnet so, from a shape chosen,
+its cells, tracks and spaces clicked on its drawing.
 
 And back, from a sinnet's moves to its shape, without searching. Lines of
 one direction never cross, so the moves fall into groups, one a direction
@@ -252,19 +254,35 @@ one direction never cross, so the moves fall into groups, one a direction
 The groups, as shares of the spaces, are the same for a shape drawn on the
 same principle at any size: every triangle has three directions a third of
 a half turn apart, each with a third of the moves. From them
-{func}`~braidpy.making.ashley.shapes_from_moves` makes the shape: a side,
-or a pair of parallel sides, to each direction, as far across as its moves
-need. Every triangle and oblong comes back so, drawing the very same lines,
-and so do the book's #3045, #3047, #3049, #3051, #3059 and #3070–#3072,
-however their moves are ordered. Shapes drawn otherwise, as #3079's
-pentagon or #3073's square on its diagonals, are not made again yet.
+{func}`~braidpy.making.ashley.shapes_from_moves` finds the shape:
+
+- on a grid: two groups at right angles say the square or the diagonal
+  grid, three a third of a half turn apart the triangular one, and the
+  moves say how many lines the shape has. The shapes of that grid with as
+  many lines are drawn, and kept if they join the very spaces the moves
+  join. An L's or a hollow square's lines of different directions miss
+  each other, so their groups say little: every grid is tried, the count
+  of lines still narrowing it to a few shapes;
+- off a grid: a side, or a pair of parallel sides, to each direction, as
+  far across as its moves need.
+
+Every shape on a grid comes back so, an L, a U or a hollow square too, and
+so do the book's #3045 to #3051, #3059 and #3070 to #3075, however their
+moves are ordered. A pentagon drawn as #3079 is, on no grid, is not found
+yet.
+
+The book's sinnets that a shape draws say so in the catalogue
+({data}`~braidpy.solid_sinnets_catalog.DRAWN`): its grid, shape and size,
+and whether the sinnet so made is the book's braid or only draws its lines,
+its moves made in another order (#3070, #3073 to #3075).
 
 ```python
 from braidpy.making.ashley import move_groups, shapes_from_moves
-from braidpy.solid_sinnets_catalog import abok_3047
+from braidpy.solid_sinnets_catalog import abok_3047, abok_3073
 
 move_groups(abok_3047.moves).family  # three directions, a third of the moves each
-shapes_from_moves(abok_3047.moves)[0].outline  # triangle(4)
+shapes_from_moves(abok_3047.moves)[0].name  # 'triangle, 4 by 2 on the triangle grid'
+shapes_from_moves(abok_3073.moves)[0].name  # 'square, 6 by 2 on the diagonal grid'
 ```
 
 ## In Braid Studio

@@ -173,10 +173,15 @@ What changed in each release of braidpy.
   outline may run on a slant, its lines across and up (`grid_lines`): a
   square standing on a corner has the lines of #3073 and #3074, an oblong
   on a corner those of #3075.
-- And back, from a sinnet's moves to its shape, without searching: the
-  moves grouped by the direction of their lines (`move_groups`), the same
-  at any size for shapes drawn on one principle, make the shape
-  (`shapes_from_moves`).
+- And back, from a sinnet's moves to its shape: the moves grouped by the
+  direction of their lines (`move_groups`), the same at any size for shapes
+  drawn on one principle, say the grid, and their number the size; the
+  shapes of that grid with as many lines are kept if they join the very
+  spaces the moves join (`shapes_from_moves`). Every shape on a grid comes
+  back so, and the book's #3045 to #3051, #3059 and #3070 to #3075. The
+  book's sinnets that a shape draws say so in the catalogue
+  (`solid_sinnets_catalog.DRAWN`), and Braid Studio's list of shapes' braids
+  is made from it.
 - In Braid Studio, **Ashley's method, from a shape**: a grid, square,
   diamond or hexagonal, and a shape it offers to start from (an oblong, an
   L, a U, a hollow square; a square or an oblong on a corner; a triangle or

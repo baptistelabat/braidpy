@@ -1254,57 +1254,79 @@ def machine_size_survey(png_dir: Path | None) -> None:
     )
 
 
+def _ashley_panel(ax, title, outline, holes=(), across=None) -> list[tuple[int, int]]:
+    """One shape drawn as Ashley draws it, on ``ax``: its outline and holes,
+    its lines coloured by direction, each bight a loop beyond the outline,
+    numbered as its space.  Returns its sinnet's moves."""
+    from braidpy.making.ashley import (
+        _loops,
+        _round_the_outline,
+        _sides,
+        shape_diagram,
+        sinnet_from_shape,
+    )
+
+    colours = [OUT, IN, MARK]
+    lines, joins, bights = shape_diagram(outline, holes, across)
+    loops = _loops(outline, holes)
+    for corners in loops:
+        closed = np.vstack([corners, corners[:1]])
+        ax.plot(closed[:, 0], closed[:, 1], color=MUTED, lw=1)
+    for line in lines:
+        (x0, y0), (x1, y1) = line.ends
+        ax.plot([x0, x1], [y0, y1], color=colours[line.direction % 3], lw=1.6)
+    sides = _sides(loops)
+    ends: dict[int, list] = {}
+    for line, join in zip(lines, joins):
+        for end, space in zip(line.ends, join):
+            ends.setdefault(space, []).append(np.asarray(end))
+    for number, at in enumerate(bights, start=1):
+        p, q = ends[number]
+        # Out of the shape, square to the sides its two ends are on: every
+        # outline goes round with the shape on its left, a hole's too.
+        out = np.zeros(2)
+        for end in (p, q):
+            a, b = sides[_round_the_outline(loops, end)[2]]
+            out += np.array([(b - a)[1], -(b - a)[0]]) / np.linalg.norm(b - a)
+        out = out / np.linalg.norm(out)
+        # Smaller round a hole, where there is less room.
+        reach = 0.5 if _round_the_outline(loops, p)[0] else 1.0
+        tip = np.asarray(at) + out * reach * (0.3 + 0.35 * np.linalg.norm(q - p))
+        t = np.linspace(0, 1, 30)[:, None]
+        loop = (1 - t) ** 2 * p + 2 * (1 - t) * t * tip + t**2 * q
+        ax.plot(loop[:, 0], loop[:, 1], color=INK, lw=1)
+        ax.text(
+            *(tip + out * 0.3 * reach),
+            str(number),
+            ha="center",
+            va="center",
+            fontsize=8,
+            color=INK,
+        )
+    ax.set_title(title, fontsize=10, pad=24)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    return sinnet_from_shape(outline, holes=holes, across=across).moves
+
+
 def ashley_shapes(png_dir: Path | None) -> None:
     """Ashley's diagrams of a triangle and an oblong, as
     sinnet_from_shape draws them: the lines, the bights numbered as the
     spaces, and the moves in his order."""
-    from braidpy.making.ashley import (
-        oblong,
-        shape_diagram,
-        sinnet_from_shape,
-        triangle,
-    )
+    from braidpy.making.ashley import oblong, triangle
     from braidpy.solid_sinnets_catalog import abok_3047
 
     shapes = {"triangle, #3047": triangle(4), "oblong, #3071": oblong(6, 2)}
-    colours = [OUT, IN, MARK]
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8), width_ratios=[1.1, 1.3])
     notes = []
     for ax, (title, outline) in zip(axes, shapes.items()):
-        lines, joins, bights = shape_diagram(outline)
-        corners = np.array(outline + outline[:1], dtype=float)
-        ax.plot(corners[:, 0], corners[:, 1], color=MUTED, lw=1)
-        for line in lines:
-            (x0, y0), (x1, y1) = line.ends
-            ax.plot([x0, x1], [y0, y1], color=colours[line.direction % 3], lw=1.6)
-        middle = corners[:-1].mean(axis=0)
-        # Each bight, a loop beyond the outline from one line's end to the
-        # other's, numbered as its space.
-        ends: dict[int, list] = {}
-        for line, join in zip(lines, joins):
-            for end, space in zip(line.ends, join):
-                ends.setdefault(space, []).append(np.asarray(end))
-        for number, at in enumerate(bights, start=1):
-            out = np.asarray(at) - middle
-            out = out / np.linalg.norm(out)
-            p, q = ends[number]
-            tip = np.asarray(at) + out * (0.35 + 0.5 * np.linalg.norm(q - p))
-            t = np.linspace(0, 1, 30)[:, None]
-            loop = (1 - t) ** 2 * p + 2 * (1 - t) * t * tip + t**2 * q
-            ax.plot(loop[:, 0], loop[:, 1], color=INK, lw=1)
-            label = tip + out * 0.35
-            ax.text(
-                *label, str(number), ha="center", va="center", fontsize=9, color=INK
-            )
-        ax.set_title(title, fontsize=10, pad=30)
-        ax.set_aspect("equal")
-        ax.axis("off")
-        made = sinnet_from_shape(outline)
-        notes.append(f"{title}: " + ", ".join(f"{a}>{b}" for a, b in made.moves))
-    made = sinnet_from_shape(shapes["triangle, #3047"])
+        moves = _ashley_panel(ax, title, outline)
+        notes.append(f"{title}: " + ", ".join(f"{a}>{b}" for a, b in moves))
     # What the page says of the triangle: the book's own table.
-    assert made.moves == [tuple(move) for move in abok_3047.moves]
-    assert made.initial_counts_per_space == abok_3047.initial_counts_per_space
+    assert _ashley_panel(plt.figure().gca(), "", shapes["triangle, #3047"]) == [
+        tuple(move) for move in abok_3047.moves
+    ]
+    plt.close()
     _save(
         fig,
         "ashley_shapes",
@@ -1313,6 +1335,38 @@ def ashley_shapes(png_dir: Path | None) -> None:
             "Lines parallel to the sides, half a spacing in, coloured by direction; "
             "each turns at the outline in a bight, numbered as the stand's spaces. "
             "Moves in the book's order: " + "; ".join(notes) + "."
+        ),
+    )
+
+
+def ashley_grids(png_dir: Path | None) -> None:
+    """Shapes on a grid, as sinnet_from_shape draws them: an L on the
+    square grid, its lines cut where the outline turns; a hollow square, the
+    spaces round its hole numbered between the outer ones; a square on a
+    corner on the diagonal grid, the lines of the book's #3073."""
+    from braidpy.making.ashley import _drawn, grid_lines, grid_outline, grid_shape
+    from braidpy.solid_sinnets_catalog import abok_3073
+
+    shapes = {
+        "an L, 5 lines, arms 2": ("square", "L", 5, 2),
+        "a hollow square, 8 lines": ("square", "frame", 8, 2),
+        "a square on a corner, #3073": ("diagonal", "square", 6, 2),
+    }
+    fig, axes = plt.subplots(1, 3, figsize=(11, 4.2))
+    for ax, (title, (grid, shape, size, height)) in zip(axes, shapes.items()):
+        outline, *holes = grid_outline(grid, grid_shape(grid, shape, size, height))
+        moves = _ashley_panel(ax, title, outline, holes, grid_lines(grid))
+        if shape == "square":
+            # What the page says of it: the book's lines.
+            assert _drawn(moves) == _drawn([tuple(m) for m in abok_3073.moves])
+    _save(
+        fig,
+        "ashley_grids",
+        png_dir,
+        _wrapped(
+            "Shapes on a grid: an L, its lines cut where the outline turns back; a "
+            "hollow square, the spaces round its hole numbered between the outer ones; "
+            "a square on a corner, its lines across and up, the book's #3073."
         ),
     )
 
@@ -1342,7 +1396,8 @@ def main() -> int:
     split_axles_meet(args.png)
     machine_size_survey(args.png)
     ashley_shapes(args.png)
-    print("\n14 figures written to docs/source/")
+    ashley_grids(args.png)
+    print("\n15 figures written to docs/source/")
     return 0
 
 
