@@ -43,11 +43,6 @@ Braid words, their notations, operations and properties.
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.operations
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. automodule:: braidpy.properties
    :members:
    :undoc-members:
@@ -300,10 +295,6 @@ Laying braids in 3D, drawing them, and settling their yarns.
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.material_braid
-   :members:
-   :undoc-members:
-   :show-inheritance:
 ```
 
 ## Braid Studio

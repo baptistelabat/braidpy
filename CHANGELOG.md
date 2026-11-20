@@ -205,6 +205,12 @@ What changed in each release of braidpy.
   other.
 - A quantity not in SI units carries its unit in its name:
   `making.ashley_sinnet` and `making.sinnet_for_page` take `time_limit_s`.
+- Leftovers removed: `braidpy.operations` (its one function, `conjugate(b,
+  c)`, is `c * b * c.inverse()`), `braidpy.material_braid` (an early sketch;
+  yarns with a thickness are `take_off`'s and `rope`'s), the empty
+  `braid_catalog.triangle_sinnet_9` and `triangle_sinnet_10` (ABOK #3057,
+  #3058 and #3045 are in `solid_sinnets_catalog`), and `src/braidpy/analytic/`,
+  which held only a pointer to *Why there is no closed form*.
 
 - `braidpy.take_off` is a package rather than one module of 1734 lines:
   the trajectories laid and the yarns (`paths`), laying (`laying`),

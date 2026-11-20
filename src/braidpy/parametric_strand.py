@@ -145,8 +145,8 @@ class ParametricStrand:
 # shape reasoned about rather than merely sampled.
 #
 # It is a *drawing* convention, the same one `make_arc` implements, and not
-# the shape a strand takes under tension.  See src/braidpy/analytic for why
-# there is no closed form for the latter.
+# the shape a strand takes under tension, for which there is no closed form
+# (docs/source/why_no_closed_form.md).
 
 # A transition profile as polynomial coefficients in the segment parameter
 # tau, lowest power first: P(tau) = c0 + c1 tau + c2 tau^2 + ...

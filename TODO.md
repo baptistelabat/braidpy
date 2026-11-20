@@ -4,17 +4,6 @@ What is known and left for later, each with enough said to pick it up.
 
 ## Before or around a release
 
-- **Leftovers to remove, or not** (each is public API, so removing it breaks
-  imports; decided against for now):
-  - `braid_catalog.triangle_sinnet_9` and `triangle_sinnet_10`: empty
-    functions, and a loose note on a 14-strand D-shaped sinnet beside them.
-    Make them, or move their links (craftdesignonline, loopbraider) to the
-    references page.
-  - `operations.py`: one function, `conjugate(b, c) = c·b·c⁻¹`, used only by
-    a test, beside `conjugacy`.
-  - `material_braid.py`: an early sketch, used only by its test; yarns with
-    a thickness live in `take_off` and `rope` now.
-  - `src/braidpy/analytic/`: no code, only a pointer to the documentation.
 - **Two Braid Studio braids are laid too coarsely to tighten reliably**:
   a two-strand word settled by physics (yarns move 3.7 diameters sideways
   between two levels) and a lace braid made on a marudai round a rigid core

@@ -381,24 +381,6 @@ def flat_sinnet7(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     return b, n
 
 
-def triangle_sinnet_9():
-    """
-    ABOK #3057 and #3058: made, with their links, in
-    :mod:`braidpy.solid_sinnets_catalog`.
-    """
-
-
-def triangle_sinnet_10():
-    """
-    ABOK #3045: made, with its links, in :mod:`braidpy.solid_sinnets_catalog`.
-    """
-
-
-"""
-14-strands 7-loop D-shaped (unorthodox)
-https://loopbraider.com/2015/04/21/uo-dshaped-7tut/
-"""
-
 """
 16-strands interlaced french sinnet
 https://www.youtube.com/watch?v=we4seysYqrk

@@ -19,7 +19,6 @@ import pytest
 
 ROOT = pathlib.Path(__file__).parent.parent
 DOCS = ROOT / "docs" / "source"
-ANALYTIC = ROOT / "src" / "braidpy" / "analytic"
 PACKAGE = ROOT / "src" / "braidpy"
 
 PAGES = ("why_no_closed_form.md", "solving_numerically.md")
@@ -73,18 +72,10 @@ def test_the_pages_are_in_the_docs_and_in_the_toctree(page):
     assert any(page in (DOCS / listing).read_text() for listing in CONTENTS)
 
 
-def test_the_analytic_directory_holds_only_a_pointer():
-    """It is named for a thing that does not exist; it must hold no code."""
-    assert [path.name for path in ANALYTIC.iterdir() if path.is_file()] == ["README.md"]
-    pointer = (ANALYTIC / "README.md").read_text()
-    for page in PAGES:
-        assert page in pointer, f"the pointer does not name {page}"
-
-
-def test_the_pointer_and_the_code_agree_on_where_the_pages_live():
+def test_the_code_and_the_pages_agree_on_where_the_pages_live():
     """Every docs path named anywhere in the package must resolve."""
     named = set()
-    for source in list(PACKAGE.rglob("*.py")) + [ANALYTIC / "README.md"]:
+    for source in PACKAGE.rglob("*.py"):
         named |= set(re.findall(r"docs/source/([\w.]+\.md)", source.read_text()))
     missing = [page for page in sorted(named) if not (DOCS / page).is_file()]
     assert not missing, f"the code points at pages that are gone: {missing}"

@@ -51,7 +51,7 @@ braid (`is_trivial()`), and braidpy answers that two ways:
   (`full_twist()`). The full twist commutes with every braid: it generates
   the centre of the group. `full_twists()` counts how many a braid holds.
 - **Conjugates.** `c b c⁻¹` is `b` seen after `c`
-  ({func}`braidpy.operations.conjugate`). Conjugate braids close into the
+  (`c * b * c.inverse()`). Conjugate braids close into the
   same knot or link, which is why braids are compared up to conjugacy
   ({func}`braidpy.properties.conjugacy_class`).
 
