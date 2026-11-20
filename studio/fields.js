@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=64503b10ed";
-import { attachEditor } from "./editor.js?v=64503b10ed";
-import { attachMachine } from "./machine.js?v=64503b10ed";
-import { $ } from "./page.js?v=64503b10ed";
-import { submit, worker } from "./workers.js?v=64503b10ed";
+import { attachDiagram } from "./diagram.js?v=d95579c3e7";
+import { attachEditor, attachShape } from "./editor.js?v=d95579c3e7";
+import { attachMachine } from "./machine.js?v=d95579c3e7";
+import { $ } from "./page.js?v=d95579c3e7";
+import { submit, worker } from "./workers.js?v=d95579c3e7";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -123,6 +123,62 @@ const FIELDS = {
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
+  shape: [
+    // The Braid list offers only braids of the grid and shape chosen.
+    { name: "grid", label: "Grid", kind: "choice", from: "grids", narrows: true },
+    {
+      name: "shape",
+      label: "Shape",
+      kind: "choice",
+      from: "shapes",
+      by: "grid",
+      narrows: true,
+    },
+    {
+      name: "cells",
+      label: "Cells",
+      kind: "textarea",
+      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square; on the diamond grid, i,jb, i,jr, i,jt, i,jl the quarter of that square below, right of, above or left of its middle; i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape chosen. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
+    },
+    { name: "order", label: "Order of the moves", kind: "choice", from: "orders" },
+    {
+      name: "turned",
+      label: "Tracks turned round",
+      kind: "text",
+      hint: "Each track's moves made the other way round, by number.",
+    },
+    {
+      name: "extra",
+      label: "A strand more in spaces",
+      kind: "text",
+      hint: "Each space named holds a strand more from the start, twice named two.",
+    },
+    {
+      name: "size",
+      label: "Size",
+      kind: "number",
+      min: 2,
+      max: 12,
+      hint: "Lines along each side; an oblong's, an L's, a U's or a hollow square's width.",
+    },
+    {
+      name: "height",
+      label: "Height",
+      kind: "number",
+      min: 2,
+      max: 12,
+      hint: "An oblong's height, or how thick an L's or a U's arms or a hollow square's sides are, in lines.",
+    },
+    {
+      name: "corners",
+      label: "At each corner",
+      kind: "number",
+      min: 0,
+      max: 3,
+      hint: "Strands more in each space at a corner, or alone on a side, as the book sharpens a triangle's edges (#3049) or a flat oblong's (#3072).",
+    },
+    { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
+  ],
   machine: [
     { name: "name", label: "Machine", kind: "entries" },
     {
@@ -201,7 +257,10 @@ export function renderFields(source, values = {}) {
       }
     } else if (field.kind === "choice") {
       input = document.createElement("select");
-      for (const [value, text] of field.choices) input.append(new Option(text, value));
+      // A choice offered by another's value, as a grid's shapes by the grid.
+      const offered = field.by ? about[field.from][defaults[field.by]] || {} : about[field.from];
+      const choices = field.from ? Object.entries(offered) : field.choices;
+      for (const [value, text] of choices) input.append(new Option(text, value));
     } else if (field.kind === "textarea") {
       input = document.createElement("textarea");
       input.rows = 2;
@@ -240,6 +299,19 @@ export function renderFields(source, values = {}) {
     if (field.custom) label.dataset.custom = "";
     if (field.kind === "number") numbers.push(label);
     else holder.append(label);
+  }
+  // Choices offered by another's value follow it as it changes.
+  for (const field of FIELDS[source].filter((f) => f.by)) {
+    const by = holder.querySelector(`[name=${field.by}]`);
+    const input = holder.querySelector(`[name=${field.name}]`);
+    by.addEventListener("change", () => {
+      const kept = input.value;
+      input.replaceChildren(
+        ...Object.entries(about[field.from][by.value] || {}).map(([v, t]) => new Option(t, v)),
+      );
+      if ([...input.options].some((o) => o.value === kept)) input.value = kept;
+      input.dispatchEvent(new Event("change"));
+    });
   }
   if (numbers.length) {
     const row = document.createElement("div");
@@ -296,6 +368,7 @@ export function renderFields(source, values = {}) {
     }
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
+  if (source === "shape") attachShape(holder);
   if (source === "word") attachDiagram(holder);
   if (source === "machine" || source === "lace") attachMachine(holder);
   if (about.examples) attachExamples(source, about.examples, holder);
@@ -311,10 +384,24 @@ function attachExamples(source, examples, holder) {
   title.textContent = "Braid";
   const list = document.createElement("select");
   list.id = "field-example";
-  examples.forEach((example, k) => list.append(new Option(example.title, String(k))));
-  list.append(new Option("Your own…", "custom"));
+  // Only the braids whose fields that narrow the list are as chosen.
+  const narrowing = FIELDS[source].filter((f) => f.narrows).map((f) => f.name);
+  const offer = () => {
+    const value = (name) => holder.querySelector(`[name=${name}]`)?.value ?? "";
+    list.replaceChildren(
+      ...examples
+        .map((example, k) => [example, k])
+        .filter(([example]) => narrowing.every((name) => String(example[name] ?? "") === value(name)))
+        .map(([example, k]) => new Option(example.title, String(k))),
+      new Option("Your own…", "custom"),
+    );
+  };
+  offer();
   label.append(title, list);
-  holder.prepend(label);
+  // After what is chosen first, as a sinnet's grid and shape; else first.
+  const after = holder.querySelector("[name=shape]")?.closest("label");
+  if (after) after.after(label);
+  else holder.prepend(label);
   const shown = () => {
     const value = (name) => holder.querySelector(`[name=${name}]`)?.value ?? "";
     const same = (example) =>
@@ -324,8 +411,14 @@ function attachExamples(source, examples, holder) {
           String(wanted).replace(/\s+/g, " ").trim() === value(key).replace(/\s+/g, " ").trim(),
       ) && (example.layout ?? "row") === (value("layout") || "row");
     const k = examples.findIndex(same);
-    list.value = k < 0 ? "custom" : String(k);
+    list.value = k < 0 || ![...list.options].some((o) => o.value === String(k)) ? "custom" : String(k);
   };
+  for (const name of narrowing) {
+    holder.querySelector(`[name=${name}]`).addEventListener("change", () => {
+      offer();
+      shown();
+    });
+  }
   list.addEventListener("change", () => {
     if (list.value === "custom") return;
     renderFields(source, examples[Number(list.value)]);
