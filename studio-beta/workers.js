@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=64503b10ed";
-import { showMaking, showKin } from "./info.js?v=64503b10ed";
+import { onChosen, rebase } from "./colours.js?v=8a7291e92f";
+import { showMaking, showKin } from "./info.js?v=8a7291e92f";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=64503b10ed";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=64503b10ed";
-import { unpack } from "./frames.js?v=64503b10ed";
-import { machineShapes, machineWanted } from "./machine.js?v=64503b10ed";
-import { $ } from "./page.js?v=64503b10ed";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=64503b10ed";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=64503b10ed";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=8a7291e92f";
+import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=8a7291e92f";
+import { unpack } from "./frames.js?v=8a7291e92f";
+import { machineShapes, machineWanted } from "./machine.js?v=8a7291e92f";
+import { $ } from "./page.js?v=8a7291e92f";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=8a7291e92f";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=8a7291e92f";
 
 // Started by the page itself, before its modules (make.html).
 export const worker = window.braidpy.worker;
@@ -37,7 +37,7 @@ let b3dAsked = null;
 let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=64503b10ed");
+  settler = new Worker("settle.js?v=8a7291e92f");
   settling = null;
   b3dAsked?.reject(new Error("another braid was asked for"));
   b3dAsked = null;
@@ -150,6 +150,8 @@ function heard(data) {
     topAtFrame(data.frame);
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
+    // For what draws a braid's making beside the form (editor.js).
+    document.dispatchEvent(new CustomEvent("braid-laid", { detail: data.result }));
     // Settling sends the braid as it goes: the view stays put.
     if (rebase(data.result)) relink();
     show(data.result, null, shownLaid === data.id);

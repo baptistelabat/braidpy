@@ -6,10 +6,10 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour, trueColour } from "./colours.js?v=64503b10ed";
-import { drawTracks } from "./insets.js?v=64503b10ed";
-import { inTime } from "./page.js?v=64503b10ed";
-import { worker } from "./workers.js?v=64503b10ed";
+import { PALETTE, strandColour, trueColour } from "./colours.js?v=8a7291e92f";
+import { drawTracks } from "./insets.js?v=8a7291e92f";
+import { inTime } from "./page.js?v=8a7291e92f";
+import { worker } from "./workers.js?v=8a7291e92f";
 
 // A machine seen from above, to load by hand: its gears, the contacts
 // between them, and every slot, a carrier on it or not.  Clicking a slot

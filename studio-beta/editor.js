@@ -9,7 +9,7 @@
 // changes no move; a move clicked goes in after the cursor, and Undo takes
 // out the one at it.
 
-import { inTime } from "./page.js?v=64503b10ed";
+import { inTime } from "./page.js?v=8a7291e92f";
 
 function hue(i, n) {
   return `hsl(${(360 * i) / Math.max(n, 1)}, 100%, 50%)`;
@@ -339,4 +339,157 @@ export function attachEditor(source, holder) {
   const observer = new ResizeObserver(draw);
   observer.observe(canvas);
   draw();
+}
+
+// A sinnet made from a shape, drawn as Ashley draws it once braidpy has
+// made it (braidpy.web's ashley_shape): its lines, coloured by track, each
+// with an arrow the way its move goes, and its spaces, numbered, sized by
+// the strands they start with.  Clicking a track turns it round, clicking
+// a space gives it a strand more, shift-clicking takes one off; the braid
+// is made again.
+const SVG = "http://www.w3.org/2000/svg";
+// Margin round the shape, and the radius of a space with one strand, in
+// the drawing's spacings between lines.
+const SHAPE_MARGIN = 0.8;
+const SPACE_RADIUS = 0.28;
+// An arrow's length, in spacings, its width a share of it, and how far
+// along its line it points.
+const ARROW = 0.35;
+const ARROW_WIDTH = 0.5;
+const ARROW_AT = 0.55;
+// Widths of a line, of the wider line unseen round it that takes a click,
+// and of the outline and the spaces' rims, in spacings.
+const LINE_WIDTH = 0.08;
+const CLICK_WIDTH = 0.4;
+const RIM_WIDTH = 0.04;
+// The outline, faint beside the lines.
+const OUTLINE_OPACITY = 0.4;
+// A space's number, as a share of the radius of a space of one strand.
+const NUMBER_SIZE = 1.3;
+
+function svg(name, attributes = {}) {
+  const element = document.createElementNS(SVG, name);
+  for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
+  return element;
+}
+
+export function attachShape(holder) {
+  const turned = holder.querySelector("[name=turned]");
+  const extra = holder.querySelector("[name=extra]");
+  const box = document.createElement("div");
+  box.className = "editor";
+  box.dataset.entry = "shape";
+  box.hidden = turned.closest("label").hidden;
+  const drawing = svg("svg", { role: "img" });
+  drawing.setAttribute("aria-label", "The shape: click a track to turn it round, a space to add a strand");
+  drawing.style.width = "100%";
+  const help = document.createElement("small");
+  help.textContent = "Made, the shape is drawn here.";
+  box.append(drawing, help);
+  holder.querySelector("[name=extra]").closest("label").after(box);
+  // Shown with the shape's own fields.
+  new MutationObserver(() => {
+    box.hidden = turned.closest("label").hidden;
+  }).observe(turned.closest("label"), { attributes: true, attributeFilter: ["hidden"] });
+
+  const again = () => document.getElementById("build").click();
+  const listed = (field) => (field.value.match(/\d+/g) || []).map(Number);
+  const toggle = (track) => {
+    const now = listed(turned);
+    turned.value = (now.includes(track) ? now.filter((t) => t !== track) : [...now, track])
+      .sort((a, b) => a - b)
+      .join(" ");
+    again();
+  };
+  const give = (space, more) => {
+    const now = listed(extra);
+    if (more) now.push(space);
+    else if (now.includes(space)) now.splice(now.indexOf(space), 1);
+    else return;
+    extra.value = now.sort((a, b) => a - b).join(" ");
+    again();
+  };
+
+  function draw(shape) {
+    drawing.replaceChildren();
+    const xs = shape.outline.map(([x]) => x);
+    const ys = shape.outline.map(([, y]) => y);
+    const [left, right] = [Math.min(...xs) - SHAPE_MARGIN, Math.max(...xs) + SHAPE_MARGIN];
+    const [low, high] = [Math.min(...ys) - SHAPE_MARGIN, Math.max(...ys) + SHAPE_MARGIN];
+    drawing.setAttribute("viewBox", `${left} ${-high} ${right - left} ${high - low}`);
+    // Drawn with y up, as the book draws it.
+    const flip = ([x, y]) => [x, -y];
+    drawing.append(
+      svg("polygon", {
+        points: shape.outline.map((p) => flip(p).join(",")).join(" "),
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-opacity": OUTLINE_OPACITY,
+        "stroke-width": RIM_WIDTH,
+      }),
+    );
+    for (const line of shape.lines) {
+      const colour = hue(line.track - 1, shape.tracks);
+      const [a, b] = [flip(line.start), flip(line.end)];
+      const group = svg("g", { cursor: "pointer" });
+      const title = svg("title");
+      title.textContent = `Track ${line.track}: click to turn it round`;
+      group.append(title);
+      group.append(
+        svg("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: colour, "stroke-width": LINE_WIDTH }),
+        // A wider line, unseen, easier to click.
+        svg("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: "transparent", "stroke-width": CLICK_WIDTH }),
+      );
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const [ux, uy] = [(b[0] - a[0]) / length, (b[1] - a[1]) / length];
+      const tip = [a[0] + ux * length * ARROW_AT, a[1] + uy * length * ARROW_AT];
+      const back = [tip[0] - ux * ARROW, tip[1] - uy * ARROW];
+      const side = [-uy * ARROW * ARROW_WIDTH, ux * ARROW * ARROW_WIDTH];
+      group.append(
+        svg("polygon", {
+          points: [tip, [back[0] + side[0], back[1] + side[1]], [back[0] - side[0], back[1] - side[1]]]
+            .map((p) => p.join(","))
+            .join(" "),
+          fill: colour,
+        }),
+      );
+      group.addEventListener("click", () => toggle(line.track));
+      drawing.append(group);
+    }
+    shape.spaces.forEach((point, k) => {
+      const [x, y] = flip(point);
+      const strands = shape.counts[k];
+      const group = svg("g", { cursor: "pointer" });
+      const title = svg("title");
+      title.textContent = `Space ${k + 1}: ${strands} strand${strands === 1 ? "" : "s"}; click for one more, shift-click for one less`;
+      group.append(
+        title,
+        svg("circle", {
+          cx: x,
+          cy: y,
+          r: SPACE_RADIUS * Math.sqrt(strands),
+          style: "fill: var(--panel)",
+          stroke: "currentColor",
+          "stroke-width": RIM_WIDTH,
+        }),
+      );
+      const number = svg("text", {
+        x,
+        y,
+        "font-size": SPACE_RADIUS * NUMBER_SIZE,
+        "text-anchor": "middle",
+        "dominant-baseline": "central",
+        fill: "currentColor",
+      });
+      number.textContent = String(k + 1);
+      group.append(number);
+      group.addEventListener("click", (event) => give(k + 1, !event.shiftKey));
+      drawing.append(group);
+    });
+    help.textContent = `${shape.tracks} track${shape.tracks === 1 ? "" : "s"}, ${shape.spaces.length} spaces, ${shape.counts.reduce((a, b) => a + b, 0)} strands.`;
+  }
+
+  document.addEventListener("braid-laid", ({ detail }) => {
+    if (detail?.ashley_shape && holder.isConnected) draw(detail.ashley_shape);
+  });
 }
