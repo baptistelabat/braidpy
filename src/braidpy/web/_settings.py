@@ -132,9 +132,9 @@ class Shape:
     # (making.ashley.grid_shape), and the orders of the moves
     # (making.ashley.ORDERS), with their titles.
     grids: ClassVar[dict[str, str]] = {
-        "square": "Square",
-        "diagonal": "Diamond: squares on a corner",
-        "triangle": "Hexagonal: triangles",
+        "square": "Square: lines at 0° and 90°",
+        "diagonal": "Diamond: lines at 0° and 90°, sides at 45° too",
+        "triangle": "Triangular: lines at 0°, 60° and 120°",
     }
     shapes: ClassVar[dict[str, dict[str, str]]] = {
         "square": {
