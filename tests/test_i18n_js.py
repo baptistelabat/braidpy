@@ -16,9 +16,8 @@ import tomllib
 
 WEB = Path(__file__).parents[1] / "web"
 sys.path.insert(0, str(WEB))
-from test_site_build import PRIVATE
-
 import build
+from test_site_build import PRIVATE
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
 
