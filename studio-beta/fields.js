@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=98ea947540";
-import { attachEditor, attachShape } from "./editor.js?v=98ea947540";
-import { attachMachine } from "./machine.js?v=98ea947540";
-import { $ } from "./page.js?v=98ea947540";
-import { submit, worker } from "./workers.js?v=98ea947540";
+import { attachDiagram } from "./diagram.js?v=e2e7bc6015";
+import { attachEditor, attachShape } from "./editor.js?v=e2e7bc6015";
+import { attachMachine } from "./machine.js?v=e2e7bc6015";
+import { $ } from "./page.js?v=e2e7bc6015";
+import { submit, worker } from "./workers.js?v=e2e7bc6015";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -124,12 +124,13 @@ const FIELDS = {
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
   shape: [
-    { name: "shape", label: "Start from", kind: "choice", from: "shapes" },
+    { name: "grid", label: "Grid", kind: "choice", from: "grids" },
+    { name: "shape", label: "Shape", kind: "choice", from: "shapes", by: "grid" },
     {
       name: "cells",
       label: "Cells",
       kind: "textarea",
-      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square, i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape started from. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
+      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square; on the diamond grid, i,jb, i,jr, i,jt, i,jl the quarter of that square below, right of, above or left of its middle; i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape chosen. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
     },
     { name: "order", label: "Order of the moves", kind: "choice", from: "orders" },
     {
@@ -150,7 +151,7 @@ const FIELDS = {
       kind: "number",
       min: 2,
       max: 12,
-      hint: "Lines along each side; an oblong's, an L's or a hollow square's width.",
+      hint: "Lines along each side; an oblong's, an L's, a U's or a hollow square's width.",
     },
     {
       name: "height",
@@ -158,7 +159,7 @@ const FIELDS = {
       kind: "number",
       min: 2,
       max: 12,
-      hint: "An oblong's height, or how thick an L's arms or a hollow square's sides are, in lines.",
+      hint: "An oblong's height, or how thick an L's or a U's arms or a hollow square's sides are, in lines.",
     },
     {
       name: "corners",
@@ -248,7 +249,9 @@ export function renderFields(source, values = {}) {
       }
     } else if (field.kind === "choice") {
       input = document.createElement("select");
-      const choices = field.from ? Object.entries(about[field.from]) : field.choices;
+      // A choice offered by another's value, as a grid's shapes by the grid.
+      const offered = field.by ? about[field.from][defaults[field.by]] || {} : about[field.from];
+      const choices = field.from ? Object.entries(offered) : field.choices;
       for (const [value, text] of choices) input.append(new Option(text, value));
     } else if (field.kind === "textarea") {
       input = document.createElement("textarea");
@@ -288,6 +291,19 @@ export function renderFields(source, values = {}) {
     if (field.custom) label.dataset.custom = "";
     if (field.kind === "number") numbers.push(label);
     else holder.append(label);
+  }
+  // Choices offered by another's value follow it as it changes.
+  for (const field of FIELDS[source].filter((f) => f.by)) {
+    const by = holder.querySelector(`[name=${field.by}]`);
+    const input = holder.querySelector(`[name=${field.name}]`);
+    by.addEventListener("change", () => {
+      const kept = input.value;
+      input.replaceChildren(
+        ...Object.entries(about[field.from][by.value] || {}).map(([v, t]) => new Option(t, v)),
+      );
+      if ([...input.options].some((o) => o.value === kept)) input.value = kept;
+      input.dispatchEvent(new Event("change"));
+    });
   }
   if (numbers.length) {
     const row = document.createElement("div");
@@ -363,7 +379,10 @@ function attachExamples(source, examples, holder) {
   examples.forEach((example, k) => list.append(new Option(example.title, String(k))));
   list.append(new Option("Your own…", "custom"));
   label.append(title, list);
-  holder.prepend(label);
+  // After what is chosen first, as a sinnet's grid and shape; else first.
+  const after = holder.querySelector("[name=shape]")?.closest("label");
+  if (after) after.after(label);
+  else holder.prepend(label);
   const shown = () => {
     const value = (name) => holder.querySelector(`[name=${name}]`)?.value ?? "";
     const same = (example) =>
