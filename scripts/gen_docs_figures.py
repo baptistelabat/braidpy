@@ -1254,6 +1254,71 @@ def machine_size_survey(png_dir: Path | None) -> None:
     )
 
 
+def ashley_shapes(png_dir: Path | None) -> None:
+    """Ashley's diagrams of a triangle and an oblong, as
+    sinnet_from_shape draws them: the lines, the bights numbered as the
+    spaces, and the moves in his order."""
+    import math
+
+    from braidpy.making.ashley import shape_diagram, sinnet_from_shape
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    height = 4.5
+    side = height / math.sin(math.pi / 3)
+    shapes = {
+        "triangle, #3047": [(0, 0), (side, 0), (side / 2, height)],
+        "oblong, #3071": [(0, 0), (6, 0), (6, 2), (0, 2)],
+    }
+    colours = [OUT, IN, MARK]
+    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8), width_ratios=[1.1, 1.3])
+    notes = []
+    for ax, (title, outline) in zip(axes, shapes.items()):
+        lines, joins, bights = shape_diagram(outline)
+        corners = np.array(outline + outline[:1], dtype=float)
+        ax.plot(corners[:, 0], corners[:, 1], color=MUTED, lw=1)
+        for line in lines:
+            (x0, y0), (x1, y1) = line.ends
+            ax.plot([x0, x1], [y0, y1], color=colours[line.direction % 3], lw=1.6)
+        middle = corners[:-1].mean(axis=0)
+        # Each bight, a loop beyond the outline from one line's end to the
+        # other's, numbered as its space.
+        ends: dict[int, list] = {}
+        for line, join in zip(lines, joins):
+            for end, space in zip(line.ends, join):
+                ends.setdefault(space, []).append(np.asarray(end))
+        for number, at in enumerate(bights, start=1):
+            out = np.asarray(at) - middle
+            out = out / np.linalg.norm(out)
+            p, q = ends[number]
+            tip = np.asarray(at) + out * (0.35 + 0.5 * np.linalg.norm(q - p))
+            t = np.linspace(0, 1, 30)[:, None]
+            loop = (1 - t) ** 2 * p + 2 * (1 - t) * t * tip + t**2 * q
+            ax.plot(loop[:, 0], loop[:, 1], color=INK, lw=1)
+            label = tip + out * 0.35
+            ax.text(
+                *label, str(number), ha="center", va="center", fontsize=9, color=INK
+            )
+        ax.set_title(title, fontsize=10, pad=30)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        made = sinnet_from_shape(outline)
+        notes.append(f"{title}: " + ", ".join(f"{a}>{b}" for a, b in made.moves))
+    made = sinnet_from_shape(shapes["triangle, #3047"])
+    # What the page says of the triangle: the book's own table.
+    assert made.moves == [tuple(move) for move in abok_3047.moves]
+    assert made.initial_counts_per_space == abok_3047.initial_counts_per_space
+    _save(
+        fig,
+        "ashley_shapes",
+        png_dir,
+        _wrapped(
+            "Lines parallel to the sides, half a spacing in, coloured by direction; "
+            "each turns at the outline in a bight, numbered as the stand's spaces. "
+            "Moves in the book's order: " + "; ".join(notes) + "."
+        ),
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--png", type=Path, default=None, help="also write PNG copies")
@@ -1278,6 +1343,7 @@ def main() -> int:
     gear_layout_relax(args.png)
     split_axles_meet(args.png)
     machine_size_survey(args.png)
+    ashley_shapes(args.png)
     print("\n14 figures written to docs/source/")
     return 0
 

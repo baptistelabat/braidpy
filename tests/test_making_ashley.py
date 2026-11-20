@@ -84,3 +84,99 @@ def test_each_crossing_puts_every_strand_back_in_its_space():
             counts[b - 1] += 1
         assert counts == made.initial_counts_per_space
         assert len(made.moves) == (4 if g > 0 else 3)
+
+
+# ------------------------------------------------------------ from a shape
+
+
+def _oblong(width, height):
+    """An oblong, in spacings between lines, from its bottom left corner."""
+    return [(0, 0), (width, 0), (width, height), (0, height)]
+
+
+def _triangle(lines_per_side):
+    """A triangle standing on its base, as many lines parallel to each side
+    as asked, the farthest a spacing from the opposite corner."""
+    import math
+
+    height = lines_per_side + 0.5
+    side = height / math.sin(math.pi / 3)
+    return [(0, 0), (side, 0), (side / 2, height)]
+
+
+@pytest.mark.parametrize("number, lines", [(3045, 2), (3047, 4), (3051, 6)])
+def test_a_triangle_is_made_as_the_book_makes_it(number, lines):
+    """Drawn as the book draws it, a triangle's sinnet is the book's table:
+    its moves, in its order, and its strands, the fewest that order lets
+    each space start with."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import sinnet_from_shape
+
+    book = getattr(books, f"abok_{number}")
+    made = sinnet_from_shape(_triangle(lines))
+    assert made.moves == [tuple(move) for move in book.moves]
+    assert made.initial_counts_per_space == book.initial_counts_per_space
+
+
+def test_a_triangle_with_sharper_edges_has_a_strand_more_at_each_corner():
+    """#3049 is #3047's moves with a strand more at each corner of the
+    triangle, spaces 1, 5 and 9: "a corner in a diagram represents an
+    edge"."""
+    from braidpy.making.ashley import sinnet_from_shape
+    from braidpy.solid_sinnets_catalog import abok_3049
+
+    corners = [1 if space in (1, 5, 9) else 0 for space in range(1, 13)]
+    made = sinnet_from_shape(_triangle(4), extra=corners)
+    assert made.moves == [tuple(move) for move in abok_3049.moves]
+    assert made.initial_counts_per_space == abok_3049.initial_counts_per_space
+
+
+@pytest.mark.parametrize("number, width, ends", [(3071, 6, (1, 5)), (3072, 10, (1, 7))])
+def test_an_oblong_is_the_book_s_braid(number, width, ends):
+    """A flat chisel-edge oblong is the book's cycle of moves, started from
+    space 1 where the book starts on the move into it; with a strand more at
+    each chisel edge, the two ends of its long loop, it is the book's
+    braid."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import sinnet_from_shape
+
+    book = getattr(books, f"abok_{number}")
+    n = len(book.initial_counts_per_space)
+    edges = [1 if space in ends else 0 for space in range(1, n + 1)]
+    made = sinnet_from_shape(_oblong(width, 2), extra=edges)
+    moves = [tuple(move) for move in book.moves]
+    turned = moves.index(made.moves[0])
+    assert made.moves == moves[turned:] + moves[:turned]
+    assert same_braid(made.braid(), book.braid())
+
+
+def test_the_square_has_the_book_s_lines_in_the_order_of_the_others():
+    """#3070's two loops are the book's; the book moves opposite strands
+    together there, 1-3 with 3-1, where the others alternate."""
+    from braidpy.making.ashley import sinnet_from_shape
+    from braidpy.solid_sinnets_catalog import abok_3070
+
+    made = sinnet_from_shape(_oblong(2, 2))
+    assert sorted(made.moves) == sorted(tuple(move) for move in abok_3070.moves)
+    assert made.moves == [(1, 3), (2, 4), (3, 1), (4, 2)]
+
+
+def test_a_shape_s_lines_run_parallel_to_its_sides():
+    """A line half a spacing in from each side, then one a spacing on, as
+    many as fit; parallel sides share theirs."""
+    from braidpy.making.ashley import shape_diagram
+
+    lines, joins, bights = shape_diagram(_oblong(6, 2))
+    assert sorted(line.direction for line in lines) == [0, 0] + [1] * 6
+    assert len(bights) == 8
+    # Every space is the end of two lines: it gives a strand and takes one.
+    assert sorted(space for join in joins for space in join) == sorted(
+        list(range(1, 9)) * 2
+    )
+
+
+def test_the_fewest_strands_keep_every_space_filled():
+    """Two in a space that gives before it is given, one otherwise."""
+    from braidpy.making.ashley import least_counts
+
+    assert least_counts([(1, 3), (2, 4), (3, 1), (4, 2)], 4) == [2, 2, 1, 1]
