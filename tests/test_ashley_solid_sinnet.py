@@ -255,3 +255,20 @@ def test_a_sinnet_in_3d():
     braid = abok_3042.braid_3d(0.12, n_cycles=1, iterations=60)
     assert len(braid.points) == 8
     assert braid.closest_approach() > 0.12 * 0.9
+
+
+def test_3057_and_3058_differ_only_in_the_way_round_not_in_the_braid():
+    """The book gives both one table: #3058's strands all go to the right.
+
+    A strand carried over all the others can be swung over the top of the
+    sinnet, so which way round it goes changes the moves on the disk, not
+    the braid.
+    """
+    one, other = _catalogue()["abok_3057"], _catalogue()["abok_3058"]
+    assert (one.initial_counts_per_space, one.moves) == (
+        other.initial_counts_per_space,
+        other.moves,
+    )
+    assert not one.all_right and other.all_right
+    assert one.annular_word(2) != other.annular_word(2)
+    assert one.braid(2) == other.braid(2)

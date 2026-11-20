@@ -79,18 +79,30 @@ class AshleySolidSinnet:
     even space its left-hand strand, clockwise.  It goes in at the left
     (clockwise) end of an odd space and at the right (anticlockwise) end of
     an even one, so the earliest strand in a space is always the next to
-    leave it.
+    leave it.  When ``all_right``, as the book has it for "All strands move
+    to the right", the strand from an even space is led anticlockwise too,
+    still from its left and over all.
 
     Attributes:
         initial_counts_per_space (List[int]): Number of strands per sector. 1-based sectors.
         moves (List[Tuple[int, int]]): Sequence of (from_sector, to_sector) moves, each 1-based.
         shape (Optional[str]): The cross-section the sinnet takes when made, as
             the book names it: "round", "triangle", "hexagon"…
+        all_right (bool): Every strand is led to the right, anticlockwise,
+            not only those from odd spaces.  The same table makes another
+            braid so: #3057 and #3058 differ only in this.
     """
 
     initial_counts_per_space: list[int]
     moves: list[tuple[int, int]]
     shape: str | None = None
+    all_right: bool = False
+
+    def goes_right(self, space: int) -> bool:
+        """Whether a strand leaving ``space`` is led to the right,
+        anticlockwise.  Which end it leaves from, and which it arrives at,
+        is the space's parity whichever way it goes."""
+        return self.all_right or space % 2 == 1
 
     @property
     def n_strands(self) -> int:
@@ -193,7 +205,8 @@ def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
 
     Each move takes the earliest strand of its space — the right-hand one of
     an odd space, the left-hand one of an even space — round the disk over
-    every strand it passes, into its place at the end of the space it goes
+    every strand it passes, the way :meth:`AshleySolidSinnet.goes_right`
+    says, into its place at the end of the space it goes
     to.  The strands left behind, and those it joins, then slide along
     together to the middle of their spaces, so each space always has room
     either side of its strands.
@@ -271,7 +284,7 @@ def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
                 there = where[joining[-1]] + 1 if joining else placed(target, 1)[0]
                 joining.append(mover)
             gap = (there - where[mover]) % n_slots
-            steps.append({mover: gap if odd else gap - n_slots})
+            steps.append({mover: gap if sinnet.goes_right(source) else gap - n_slots})
             labels.append(f"{source} → {target}")
             where[mover] = there
             settle(source)
@@ -284,7 +297,8 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
 
     The disk of :func:`sinnet_disk`, numbered as a mobidai is, every move
     made from slot to slot the way the sinnet goes round — anticlockwise
-    from an odd space, clockwise from an even one — and every slide made one
+    from an odd space, clockwise from an even one, unless all go to the
+    right — and every slide made one
     strand at a time, the front one first.  A sinnet whose cycle brings each
     space back to its count brings every slot back too, so the pattern is
     simply repeated.

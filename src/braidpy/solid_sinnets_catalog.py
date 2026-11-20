@@ -345,6 +345,7 @@ abok_3056 = AshleySolidSinnet(
 """
 ABOK #3057
 9-strand triangle
+#3058's table, odd strands to the right and even ones to the left.
 """
 abok_3057 = AshleySolidSinnet(
     shape="triangle",
@@ -365,6 +366,7 @@ ABOK #3058
 All strands move to the right.
 """
 abok_3058 = AshleySolidSinnet(
+    all_right=True,
     shape="triangle",
     initial_counts_per_space=[2, 2, 2, 1, 1, 1],
     moves=[
@@ -383,6 +385,7 @@ ABOK #3059
 All strands move to the right.
 """
 abok_3059 = AshleySolidSinnet(
+    all_right=True,
     shape="triangle",
     initial_counts_per_space=[2, 2, 2, 2, 1, 1, 1, 1, 1],
     moves=[
@@ -539,6 +542,7 @@ ABOK #3066
 All strands move to the right.
 """
 abok_3066 = AshleySolidSinnet(
+    all_right=True,
     shape="round",
     initial_counts_per_space=[2, 1, 1, 1, 2, 1, 1, 1],
     moves=[
@@ -558,6 +562,7 @@ ABOK #3068
 All strands move to the right.
 """
 abok_3068 = AshleySolidSinnet(
+    all_right=True,
     shape="round",
     initial_counts_per_space=[2, 2, 2, 2, 2, 2],
     moves=[
@@ -576,6 +581,7 @@ ABOK #3069
 All strands move to the right.
 """
 abok_3069 = AshleySolidSinnet(
+    all_right=True,
     shape="round",
     initial_counts_per_space=[2, 2, 1, 1],
     moves=[

@@ -128,7 +128,11 @@ moves.spec()  # the disk braid as Braid Studio makes it
 
 On Ashley's stand ({mod}`braidpy.ashley_solid_sinnet`) the strands lie in
 spaces round the rim, and a move carries a strand from one space to another,
-over every strand it passes: not a swap of neighbours. So braidpy
+over every strand it passes: not a swap of neighbours. From an odd space
+it goes to the right, from an even one to the left, unless the book says
+all go to the right (`all_right`, as #3058 does with #3057's table): the
+way round, not the braid, since a strand carried over all can swing over
+the top. So braidpy
 searches for a sinnet that makes the braid
 ({func}`~braidpy.making.ashley.ashley_sinnet`): the strands shared out
 among the spaces, and a cycle of moves in which every space gives a strand
