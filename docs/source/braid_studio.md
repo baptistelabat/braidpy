@@ -199,7 +199,10 @@ The studio has a form and a 3D view.
   [Making](making.md#from-the-shape-it-is-to-take)): a triangle, a hexagon,
   an oblong, an L or a hollow square to start from, so many lines along a
   side (an oblong's width and height, an L's width and arms, a hollow
-  square's width and sides). The shape is its grid's cells,
+  square's width and sides), or one of the braids its **Braid** list
+  offers, made with the site and found among the others by topology: the
+  book's triangles and flat oblong, a hexagon, a square, an L, a U and
+  hollow squares. The shape is its grid's cells,
   squares or triangles, and is drawn once made: its cells, its lines,
   coloured by track, each with an arrow the way its move goes, and its
   spaces, numbered, larger with more strands. As the list above the

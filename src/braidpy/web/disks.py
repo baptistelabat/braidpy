@@ -42,6 +42,7 @@ from braidpy.web._types import (
     DiskProgram,
     DrawnLine,
     Entry,
+    Example,
     Result,
     ShapeDrawing,
     Source,
@@ -442,8 +443,15 @@ def _from_shape(spec: Spec) -> Result:
             for cell in group
         ],
     }
-    named = dataclasses.replace(sinnet, shape=name)
-    result = _sinnet_result(named, spec, Shape.cycles.read(spec), "From a shape,")
+    # Called as the shape started from, or the shape's own cells.
+    own = bool(Shape.cells.read(spec).strip())
+    title = Shape.shapes[name]
+    noun = (
+        None if own else title[0].lower() + title[1:] if title[1:2].islower() else title
+    )
+    named = dataclasses.replace(sinnet, shape=noun)
+    called = "Your own shape," if own else "From a shape,"
+    result = _sinnet_result(named, spec, Shape.cycles.read(spec), called)
     result["ashley_shape"] = drawing
     return result
 
@@ -612,6 +620,7 @@ def _shape_entry() -> Source:
         "defaults": defaults(*Shape.shown),
         "shapes": dict(Shape.shapes),
         "orders": dict(Shape.orders),
+        "examples": cast(list[Example], Shape.examples),
     }
 
 

@@ -257,13 +257,20 @@ Default = str | int | float
 
 
 class Example(TypedDict, total=False):
-    """A braid word worth trying, with a title."""
+    """A braid worth trying, with a title: a braid word, or a sinnet from a
+    shape."""
 
     title: str
     word: str
     layout: str
     n_strands: int
     repeat: int
+    shape: str
+    size: int
+    height: int
+    cells: str
+    order: str
+    corners: int
 
 
 class Entry(TypedDict, total=False):

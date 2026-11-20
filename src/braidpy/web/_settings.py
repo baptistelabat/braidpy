@@ -141,6 +141,58 @@ class Shape:
         "spaces": "Space by space",
     }
     shown = (shape, size, height, order, corners, cycles)
+    # What makes the braid what it is: two descriptions alike in these are
+    # of one braid (braidpy.topology_catalog).
+    defining = (shape, size, height, cells, order, turned, extra, corners)
+    # Braids made so, offered as they come, each as it is described.
+    examples: ClassVar[list[dict[str, Default]]] = [
+        {
+            "title": "Triangle, 4 lines a side (ABOK #3047)",
+            "shape": "triangle",
+            "size": 4,
+        },
+        {
+            "title": "Triangle, a strand more at each corner (ABOK #3049)",
+            "shape": "triangle",
+            "size": 4,
+            "corners": 1,
+        },
+        {
+            "title": "Triangle made space by space (ABOK #3057)",
+            "shape": "triangle",
+            "size": 2,
+            "order": "spaces",
+        },
+        {"title": "Hexagon, 3 lines a side", "shape": "hexagon", "size": 3},
+        {
+            "title": "Flat oblong, chisel edges (ABOK #3071)",
+            "shape": "oblong",
+            "size": 6,
+            "height": 2,
+            "corners": 1,
+        },
+        {"title": "Square, 4 lines a side", "shape": "oblong", "size": 4, "height": 4},
+        {"title": "L, 5 lines, its arms 2 thick", "shape": "L", "size": 5, "height": 2},
+        {
+            "title": "U, 6 by 5 lines, 2 thick",
+            "shape": "oblong",
+            "size": 6,
+            "height": 5,
+            "cells": "0,0 1,0 2,0 3,0 4,0 0,1 4,1 0,2 4,2 0,3 4,3",
+        },
+        {
+            "title": "Hollow square, 6 lines, its sides 2 thick",
+            "shape": "frame",
+            "size": 6,
+            "height": 2,
+        },
+        {
+            "title": "Hollow square, 7 lines, its sides 3 thick",
+            "shape": "frame",
+            "size": 7,
+            "height": 3,
+        },
+    ]
 
 
 # ------------------------------------------------------------------ machines
