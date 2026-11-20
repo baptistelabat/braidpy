@@ -203,8 +203,8 @@ The studio has a form and a 3D view.
   corner on the diamond grid; a triangle or a hexagon on triangles, so many
   lines along a side (an oblong's width and height, an L's or a U's width
   and arms, a hollow square's width and sides). Or one of the braids its
-  **Braid** list offers, made with the site and found among the others by
-  topology: the book's triangles, flat oblong and squares on a corner, a
+  **Braid** list offers on that grid and of that shape, made with the site
+  and found among the others by topology: the book's triangles, flat oblong and squares on a corner, a
   hexagon, a square, an L, a U and hollow squares. The shape is its grid's cells,
   squares or triangles, and is drawn once made: its cells, its lines,
   coloured by track, each with an arrow the way its move goes, and its
