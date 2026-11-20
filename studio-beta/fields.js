@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=8a7291e92f";
-import { attachEditor, attachShape } from "./editor.js?v=8a7291e92f";
-import { attachMachine } from "./machine.js?v=8a7291e92f";
-import { $ } from "./page.js?v=8a7291e92f";
-import { submit, worker } from "./workers.js?v=8a7291e92f";
+import { attachDiagram } from "./diagram.js?v=304ab62f1f";
+import { attachEditor, attachShape } from "./editor.js?v=304ab62f1f";
+import { attachMachine } from "./machine.js?v=304ab62f1f";
+import { $ } from "./page.js?v=304ab62f1f";
+import { submit, worker } from "./workers.js?v=304ab62f1f";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -154,6 +154,15 @@ const FIELDS = {
       kind: "text",
       entry: "shape",
       hint: "Each space named holds a strand more from the start, twice named two: as the book adds them at corners to sharpen the edges. Click a space on the drawing to add one, shift-click to take one off.",
+    },
+    {
+      name: "corners",
+      label: "At each corner",
+      kind: "number",
+      min: 0,
+      max: 3,
+      entry: "shape",
+      hint: "Strands more in each space at a corner, or alone on a side, as the book sharpens a triangle's edges (#3049) or a flat oblong's (#3072).",
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
