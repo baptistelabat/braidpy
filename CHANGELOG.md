@@ -168,16 +168,21 @@ What changed in each release of braidpy.
   hole, its bights numbered with the outline's, an inner one between two
   outer ones, so that the sinnet goes round the hole as a tube does. Its
   tracks (`shape_tracks`) can each be made the other way round. On a grid,
-  a shape is its cells, squares or triangles (`grid_shape`,
-  `grid_outline`).
+  a shape is its cells, squares, squares cut on their diagonals or
+  triangles (`grid_shape`, `grid_outline`); on the diagonal grid its
+  outline may run on a slant, its lines across and up (`grid_lines`): a
+  square standing on a corner has the lines of #3073 and #3074, an oblong
+  on a corner those of #3075.
 - And back, from a sinnet's moves to its shape, without searching: the
   moves grouped by the direction of their lines (`move_groups`), the same
   at any size for shapes drawn on one principle, make the shape
   (`shapes_from_moves`).
-- In Braid Studio, **Ashley's method, from a shape**: a triangle, a
-  hexagon, an oblong, an L or a hollow square to start from, or one of ten
-  braids made so; drawn once made, its cells, tracks and spaces clicked to
-  change the shape, turn a track round or add a strand.
+- In Braid Studio, **Ashley's method, from a shape**: a grid, square,
+  diamond or hexagonal, and a shape it offers to start from (an oblong, an
+  L, a U, a hollow square; a square or an oblong on a corner; a triangle or
+  a hexagon), or one of thirteen braids made so; drawn once made, its
+  cells, tracks and spaces clicked to change the shape, turn a track round
+  or add a strand.
 - Two split gears may mesh once for each pairing of their parts
   (`A1-B1 A2-B2 A1+A2 B1+B2`), as a matrix of split gears wants: they touch
   at one contact, the pairing named first handing over at the end of each
