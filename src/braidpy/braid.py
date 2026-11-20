@@ -89,6 +89,10 @@ BraidingProcess = tuple[BraidingStep, ...]
 
 
 class BraidWordNotation(str, enum.Enum):
+    """How :meth:`Braid.format_to_notation` writes a braid word: in Artin's generators
+    (``s_{1}^{1.0}``), in letters (``aB``), or as math-braid and braidlab
+    write it (``<1 : -2>``)."""
+
     ARTIN = "ARTIN"
     ALPHA = "ALPHA"
     DEFAULT = "DEFAULT"

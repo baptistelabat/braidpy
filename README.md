@@ -45,6 +45,9 @@ Braids people make:
       the middle of the disk
 - [x] Ashley's solid sinnets (ABOK #2965–#3082, 43 of them), worked on his
       stand, animated with the braid growing below
+- [x] A sinnet from the shape it is to take, drawn as Ashley draws it, on a
+      grid of squares or triangles: triangles, oblongs, an L, a U, a hollow
+      square; and back from a sinnet's moves to its shape
 - [x] A braid made move by move on a marudai, each yarn carried over the
       others and drawn tight
 - [x] Ways of making a braid: from a braid word to how to make it on a kumihimo disk, on a

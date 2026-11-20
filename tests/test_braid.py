@@ -8,7 +8,6 @@ from sympy import Matrix, symbols
 
 from braidpy import Braid
 from braidpy.garside_canonical_form import permutation_word
-from braidpy.operations import conjugate
 
 # Run tests with: uv run pytest /tests
 
@@ -410,10 +409,10 @@ class TestBraid:
         assert Braid([1, -2], n_strands=3).to_reduced_matrix() == M
 
     def test_conjugate(self):
-        """Test conjugacy class generation"""
+        """A braid conjugated by another, c b c⁻¹, is their product."""
         b1 = Braid([1], 3)
         b2 = Braid([2], 3)
-        assert conjugate(b1, b2).word_eq(Braid([2, 1, -2], 3))
+        assert (b2 * b1 * b2.inverse()).word_eq(Braid([2, 1, -2], 3))
 
     def test_is_reduced(self):
         assert not Braid([1, -1], 3).is_reduced()

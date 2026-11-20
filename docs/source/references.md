@@ -148,6 +148,7 @@ https://www.artisanart.biz/Apps/Kikko_Planner/
 
 Historical braids by Masako Kinoshita https://loopbraiding.com/ https://www.ee0r.com/lmbric.net/
 Ingrid Crickmore blog https://loopbraider.com/
+A 14-strand, 7-loop D-shaped braid (unorthodox) https://loopbraider.com/2015/04/21/uo-dshaped-7tut/
 Braid planner by Gary Mitchell https://www.islandbraider.com/
 ## 📺 Video Resource
 

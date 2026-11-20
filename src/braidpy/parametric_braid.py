@@ -31,11 +31,15 @@ else:
 
 
 class Plotter(str, Enum):
+    """What draws a braid: Plotly or Matplotlib."""
+
     PLOTLY = "PLOTLY"
     MATPLOTLIB = "MATPLOTLIB"
 
 
 class ParametricBraid:
+    """A braid as its strands' curves in space, to sample and draw."""
+
     def __init__(self, strands: list[ParametricStrand]) -> None:
         self.strands = strands
         self.n_strands = len(strands)
