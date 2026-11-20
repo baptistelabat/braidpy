@@ -70,6 +70,7 @@ __all__ = [
     "regular_polygon",
     "shape_diagram",
     "shape_lines",
+    "shape_tracks",
     "shapes_from_moves",
     "sinnet_from_shape",
     "sinnet_spec",
@@ -557,9 +558,37 @@ def least_counts(moves: Sequence[tuple[int, int]], n_spaces: int) -> list[int]:
     return [2 if gives[s] < receives[s] else 1 for s in range(1, n_spaces + 1)]
 
 
+def shape_tracks(moves: Sequence[tuple[int, int]]) -> list[list[int]]:
+    """The tracks of a sinnet's moves: the curves the book draws, each line
+    turning at a bight into the next, the way the moves run.  Every space
+    giving once and receiving once, each move leads to the one from the
+    space it ends in, and round to where it started.
+
+    Args:
+        moves: The moves of a cycle, every space giving and receiving once.
+
+    Returns:
+        Each track's moves, by index, in the order they follow each other,
+        the track with the first move first.
+    """
+    gives = {a: k for k, (a, _) in enumerate(moves)}
+    tracks: list[list[int]] = []
+    seen: set[int] = set()
+    for k in range(len(moves)):
+        track = []
+        while k not in seen:
+            seen.add(k)
+            track.append(k)
+            k = gives[moves[k][1]]
+        if track:
+            tracks.append(track)
+    return tracks
+
+
 def sinnet_from_shape(
     outline: Sequence[tuple[float, float]],
     extra: Optional[Sequence[int]] = None,
+    turned: Sequence[int] = (),
 ) -> AshleySolidSinnet:
     """The sinnet the book's method makes of a shape.
 
@@ -575,15 +604,19 @@ def sinnet_from_shape(
     beside where the last ended, one back, then one on, and so on, along the
     line parallel to the last while there is one there, across the shape
     and back; a space that has given its strand gives none again, and its
-    line is taken towards it.  Each space starts with the fewest strands
-    the order lets it (:func:`least_counts`), and any ``extra``: the book
-    adds strands at the corners of a shape to sharpen its edges.
+    line is taken towards it.  The moves of any track
+    (:func:`shape_tracks`) may be made the other way round: every space
+    still gives once and receives once.  Each space starts with the fewest
+    strands the order lets it (:func:`least_counts`), and any ``extra``:
+    the book adds strands at the corners of a shape to sharpen its edges.
 
     Args:
         outline: The shape's corners, anticlockwise, convex, in spacings
             between lines; the first is where the numbering starts, the
             book's bottom left.
         extra: Strands to add to each space, space 1 first; none if None.
+        turned: The tracks made the other way round, numbered from 1 as
+            :func:`shape_tracks` lists them.
 
     Returns:
         The sinnet.
@@ -610,6 +643,12 @@ def sinnet_from_shape(
     moves = _in_order(
         n, joins, [line.direction for line in lines], first_side_direction
     )
+    tracks = shape_tracks(moves)
+    for track in turned:
+        if not 1 <= track <= len(tracks):
+            raise ValueError(f"No track {track}: the shape has {len(tracks)}.")
+        for k in tracks[track - 1]:
+            moves[k] = (moves[k][1], moves[k][0])
     counts = least_counts(moves, n)
     if extra is not None:
         counts = [c + e for c, e in zip(counts, extra)]

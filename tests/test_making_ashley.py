@@ -226,3 +226,22 @@ def test_moves_drawn_otherwise_find_no_shape():
     from braidpy.solid_sinnets_catalog import abok_3079
 
     assert shapes_from_moves(abok_3079.moves) == []
+
+
+def test_a_shape_s_tracks_can_be_turned_round():
+    """A triangle of four lines a side is drawn as three tracks; turned
+    round, a track's moves go the other way, every space still giving once
+    and receiving once."""
+    from braidpy.making.ashley import shape_tracks, sinnet_from_shape
+
+    made = sinnet_from_shape(triangle(4))
+    tracks = shape_tracks(made.moves)
+    assert sorted(len(track) for track in tracks) == [3, 3, 6]
+    turned = sinnet_from_shape(triangle(4), turned=[2])
+    for k, (a, b) in enumerate(made.moves):
+        assert turned.moves[k] == ((b, a) if k in tracks[1] else (a, b))
+    every = list(range(1, 13))
+    assert sorted(a for a, _ in turned.moves) == every
+    assert sorted(b for _, b in turned.moves) == every
+    with pytest.raises(ValueError, match="No track"):
+        sinnet_from_shape(triangle(4), turned=[4])

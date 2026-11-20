@@ -210,6 +210,13 @@ made.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
 sinnet_from_shape(oblong(6, 2))  # #3071's moves
 ```
 
+The lines, each turning at a bight into the next, make closed tracks
+({func}`~braidpy.making.ashley.shape_tracks`): three round the triangle of
+four lines a side. A track's moves can all be made the other way round
+(`turned`), every space still giving one strand and taking one, and strands
+added to any space (`extra`). [Braid Studio](braid_studio.md) makes a
+sinnet so, from a shape chosen, tracks and spaces clicked on its drawing.
+
 And back, from a sinnet's moves to its shape, without searching. Lines of
 one direction never cross, so the moves fall into groups, one a direction
 ({func}`~braidpy.making.ashley.move_groups`):

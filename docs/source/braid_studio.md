@@ -194,6 +194,15 @@ The studio has a form and a 3D view.
   always, ready to change there: changing a move, its slots, its counts or
   its turn makes it your own, and the catalogued braid stays as it was, to
   choose again.
+- A sinnet can be made **from a shape**, as Ashley draws it (see
+  [Making](making.md#from-the-shape-it-is-to-take)): "From a shape…" asks
+  for a triangle, an oblong, a pentagon or a heptagon and its size, in lines
+  along a side (an oblong's width and height), and draws it once made: its
+  lines, coloured by track, each with an arrow the way its move goes, and
+  its spaces, numbered, larger with more strands. Clicking a track makes
+  its moves the other way round; clicking a space gives it a strand more
+  from the start, shift-clicking takes one off, as the book adds strands at
+  a shape's corners to sharpen its edges.
 - **Import a braid3d design** reads a `.b3d` file saved by braid3d (the
   designer braid3dmin runs) as your own mobidai braid: its yarns in their
   colours, its moves, and its repeat as cycles, on a disk of as few slots

@@ -47,6 +47,12 @@ class Spec(TypedDict, total=False):
     n_slots: Value
     shift: Value
     counts: str
+    # Your own sinnet from a shape.
+    shape: str
+    size: Value
+    height: Value
+    turned: str
+    extra: str
     # A machine.
     carriers: str
     core: str
@@ -189,6 +195,28 @@ class DiskProgram(_DiskProgram, total=False):
     core: str
 
 
+class DrawnLine(TypedDict):
+    """A line of Ashley's drawing of a shape: the move along it, from where
+    to where, and the track it is on, numbered from 1."""
+
+    start: Point
+    end: Point
+    track: int
+
+
+class ShapeDrawing(TypedDict):
+    """A sinnet's shape as Ashley draws it
+    (:func:`braidpy.making.ashley.shape_diagram`): its outline, its lines,
+    each a move, its bights, space 1 first, and the strands each starts
+    with."""
+
+    outline: list[Point]
+    lines: list[DrawnLine]
+    spaces: list[Point]
+    counts: list[int]
+    tracks: int
+
+
 class _Result(TypedDict):
     title: str
     strands: list[Strand]
@@ -204,6 +232,8 @@ class Result(_Result, total=False):
     timeline: Timeline
     tighten: Tightening
     disk: DiskProgram
+    # A sinnet made from a shape, drawn as Ashley draws it.
+    ashley_shape: ShapeDrawing
     # To make it by its carriers: braidpy.carried.carriers_job.
     carriers: dict[str, Any]
 
@@ -243,6 +273,8 @@ class Source(_Source, total=False):
 
     entries: list[Entry]
     examples: list[Example]
+    # The shapes a sinnet can be made from, by name, with their titles.
+    shapes: dict[str, str]
 
 
 # ---------------------------------------------------------------- machines

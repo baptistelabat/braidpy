@@ -107,6 +107,25 @@ class Sinnet:
     # Your own, at most.
     most_strands = 64
     shown = (name, cycles)
+    # From the shape it is to take, as Ashley draws it (the entry named
+    # ``from_shape``): which shape, how large, in lines across it, the
+    # tracks made the other way round and the spaces given a strand more,
+    # by number, a space named twice given two.
+    from_shape = "shape"
+    shape = Text("shape", "triangle")
+    size = Count("size", 4, low=1, high=12)
+    height = Count("height", 2, low=1, high=12)
+    turned = Text("turned", "")
+    extra = Text("extra", "")
+    # The shapes offered, and what their size is: an oblong's is its width
+    # and its height, the others' the lines along each side.
+    shapes: ClassVar[dict[str, str]] = {
+        "triangle": "Triangle",
+        "oblong": "Oblong",
+        "pentagon": "Pentagon",
+        "heptagon": "Heptagon",
+    }
+    shape_shown = (shape, size, height, turned, extra)
 
 
 # ------------------------------------------------------------------ machines

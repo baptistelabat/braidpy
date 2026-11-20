@@ -6,7 +6,7 @@
 // and the examples a source offers.
 
 import { attachDiagram } from "./diagram.js";
-import { attachEditor } from "./editor.js";
+import { attachEditor, attachShape } from "./editor.js";
 import { attachMachine } from "./machine.js";
 import { $ } from "./page.js";
 import { submit, worker } from "./workers.js";
@@ -121,6 +121,40 @@ const FIELDS = {
       custom: true,
       hint: "From space > to space. Odd spaces send their right-hand strand anticlockwise, even spaces their left-hand one clockwise, over all.",
     },
+    // From a shape: shown for that entry only.
+    { name: "shape", label: "Shape", kind: "choice", from: "shapes", entry: "shape" },
+    {
+      name: "size",
+      label: "Size",
+      kind: "number",
+      min: 1,
+      max: 12,
+      entry: "shape",
+      hint: "Lines along each side; an oblong's width.",
+    },
+    {
+      name: "height",
+      label: "Height",
+      kind: "number",
+      min: 1,
+      max: 12,
+      entry: "shape",
+      hint: "An oblong's height, in lines.",
+    },
+    {
+      name: "turned",
+      label: "Tracks turned round",
+      kind: "text",
+      entry: "shape",
+      hint: "Each track's moves made the other way round: click a track on the drawing.",
+    },
+    {
+      name: "extra",
+      label: "A strand more in spaces",
+      kind: "text",
+      entry: "shape",
+      hint: "Each space named holds a strand more from the start, twice named two: as the book adds them at corners to sharpen the edges. Click a space on the drawing to add one, shift-click to take one off.",
+    },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
   machine: [
@@ -201,7 +235,8 @@ export function renderFields(source, values = {}) {
       }
     } else if (field.kind === "choice") {
       input = document.createElement("select");
-      for (const [value, text] of field.choices) input.append(new Option(text, value));
+      const choices = field.from ? Object.entries(about[field.from]) : field.choices;
+      for (const [value, text] of choices) input.append(new Option(text, value));
     } else if (field.kind === "textarea") {
       input = document.createElement("textarea");
       input.rows = 2;
@@ -238,6 +273,7 @@ export function renderFields(source, values = {}) {
       label.append(hint);
     }
     if (field.custom) label.dataset.custom = "";
+    if (field.entry) label.dataset.entry = field.entry;
     if (field.kind === "number") numbers.push(label);
     else holder.append(label);
   }
@@ -265,8 +301,18 @@ export function renderFields(source, values = {}) {
       }
       filling = false;
     };
+    // An entry with fields of its own, as a sinnet from a shape, shows
+    // them and not what the others are made of.
+    const own = new Set(
+      [...holder.querySelectorAll("[data-entry]")].map((label) => label.dataset.entry),
+    );
     const showCustom = (shown) => {
-      for (const label of holder.querySelectorAll("[data-custom]")) label.hidden = !shown;
+      for (const label of holder.querySelectorAll("[data-custom]")) {
+        label.hidden = !shown || own.has(entries.value);
+      }
+      for (const label of holder.querySelectorAll("[data-entry]")) {
+        label.hidden = label.dataset.entry !== entries.value;
+      }
     };
     entries.addEventListener("change", () => {
       const custom = entries.value === "custom";
@@ -296,6 +342,7 @@ export function renderFields(source, values = {}) {
     }
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
+  if (source === "sinnet") attachShape(holder);
   if (source === "word") attachDiagram(holder);
   if (source === "machine" || source === "lace") attachMachine(holder);
   if (about.examples) attachExamples(source, about.examples, holder);

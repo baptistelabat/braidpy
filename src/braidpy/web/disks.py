@@ -37,7 +37,15 @@ from braidpy.web._settings import (
     Sinnet,
 )
 from braidpy.web._spec import _moves_text, _numbers, defaults, parse_moves
-from braidpy.web._types import DiskProgram, Entry, Result, Source, Spec
+from braidpy.web._types import (
+    DiskProgram,
+    DrawnLine,
+    Entry,
+    Result,
+    ShapeDrawing,
+    Source,
+    Spec,
+)
 
 
 def _sinnets():
@@ -314,13 +322,77 @@ def from_b3d(text: str) -> Spec:
     )
 
 
+def _outline(shape: str, size: int, height: int) -> list[tuple[float, float]]:
+    """The outline of a shape :class:`Sinnet` offers, so large."""
+    from braidpy.making.ashley import oblong, regular_polygon, triangle
+
+    outlines = {
+        "triangle": lambda: triangle(size),
+        "oblong": lambda: oblong(size, height),
+        "pentagon": lambda: regular_polygon(5, size),
+        "heptagon": lambda: regular_polygon(7, size),
+    }
+    if shape not in outlines:
+        raise ValueError(f"No shape {shape!r}: one of {sorted(Sinnet.shapes)}.")
+    return outlines[shape]()
+
+
+def _from_shape(spec: Spec):
+    """A sinnet from the shape it is to take, as Ashley draws it
+    (:func:`braidpy.making.ashley.sinnet_from_shape`), and the drawing."""
+    import dataclasses
+
+    from braidpy.making.ashley import shape_diagram, shape_tracks, sinnet_from_shape
+
+    outline = _outline(
+        Sinnet.shape.read(spec), Sinnet.size.read(spec), Sinnet.height.read(spec)
+    )
+    lines, joins, bights = shape_diagram(outline)
+    turned = sorted(set(_numbers(Sinnet.turned.read(spec) or "0", "tracks")) - {0})
+    extra = [0] * len(bights)
+    for space in re.findall(r"\d+", Sinnet.extra.read(spec)):
+        if not 1 <= int(space) <= len(bights):
+            raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
+        extra[int(space) - 1] += 1
+    sinnet = sinnet_from_shape(outline, extra=extra, turned=turned)
+    if sinnet.n_strands > Sinnet.most_strands:
+        raise ValueError(f"That is over {Sinnet.most_strands} strands.")
+    track_of = {
+        k: number
+        for number, track in enumerate(shape_tracks(sinnet.moves), start=1)
+        for k in track
+    }
+    # Each move along a line joining its two spaces; two lines may join the
+    # same two, as across an oblong, either taking either move.
+    free = list(range(len(lines)))
+    drawn: list[DrawnLine] = []
+    for k, (a, b) in enumerate(sinnet.moves):
+        line = next(i for i in free if sorted(joins[i]) == sorted((a, b)))
+        free.remove(line)
+        ends = lines[line].ends if joins[line][0] == a else lines[line].ends[::-1]
+        drawn.append(
+            {"start": list(ends[0]), "end": list(ends[1]), "track": track_of[k]}
+        )
+    drawing: ShapeDrawing = {
+        "outline": [list(corner) for corner in outline],
+        "lines": drawn,
+        "spaces": [list(bight) for bight in bights],
+        "counts": list(sinnet.initial_counts_per_space),
+        "tracks": len(set(track_of.values())),
+    }
+    return dataclasses.replace(sinnet, shape=Sinnet.shape.read(spec)), drawing
+
+
 def _from_sinnet(spec: Spec) -> Result:
     from braidpy.ashley_solid_sinnet import AshleySolidSinnet, strand_colours
     from braidpy.take_off import disk_trajectories
 
     sinnets = _sinnets()
     name = Sinnet.name.read(spec)
-    if name == OWN:
+    drawing: ShapeDrawing | None = None
+    if name == Sinnet.from_shape:
+        sinnet, drawing = _from_shape(spec)
+    elif name == OWN:
         counts = _numbers(spec.get("counts", ""), "strands in each space")
         if len(counts) < 2 or min(counts) < 0 or sum(counts) < 2:
             raise ValueError("Give two spaces or more, holding two strands or more.")
@@ -366,7 +438,13 @@ def _from_sinnet(spec: Spec) -> Result:
             "Its moves do not bring every space back to its count after a "
             "cycle: the catalogue's moves may be mistranscribed."
         )
-    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
+    called = (
+        "Your own"
+        if name == OWN
+        else "From a shape,"
+        if drawing is not None
+        else f"ABOK #{name.split('_')[1]},"
+    )
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
 
     def worked(k: int):
@@ -393,6 +471,8 @@ def _from_sinnet(spec: Spec) -> Result:
         disk.start, disk.steps, disk.n_slots, False, list(paths.points)
     )
     result["info"]["made"] = cycles
+    if drawing is not None:
+        result["ashley_shape"] = drawing
     return result
 
 
@@ -461,8 +541,13 @@ def _sinnet_entry() -> Source:
     ]
     return {
         "title": "Ashley solid sinnet",
-        "defaults": defaults(*Sinnet.shown),
-        "entries": entries + [{"name": OWN, "title": "Your own moves…"}],
+        "defaults": defaults(*Sinnet.shown, *Sinnet.shape_shown),
+        "entries": entries
+        + [
+            {"name": Sinnet.from_shape, "title": "From a shape…"},
+            {"name": OWN, "title": "Your own moves…"},
+        ],
+        "shapes": dict(Sinnet.shapes),
     }
 
 

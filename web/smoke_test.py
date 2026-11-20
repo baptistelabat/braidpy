@@ -40,6 +40,17 @@ CASES = [
     ({"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2}, 8),
     ({"source": "mobidai", "name": "KONGO_8", "cycles": 2}, 8),
     ({"source": "sinnet", "name": "abok_3042", "cycles": 1}, 8),
+    # A sinnet from the shape it is to take: the book's #3045, ten strands.
+    (
+        {
+            "source": "sinnet",
+            "name": "shape",
+            "shape": "triangle",
+            "size": 2,
+            "cycles": 1,
+        },
+        10,
+    ),
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
     # Laid on its fell ring, a machine's braid can be settled by physics.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
