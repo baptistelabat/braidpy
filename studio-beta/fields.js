@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=c3ac1eda50";
-import { attachEditor, attachShape } from "./editor.js?v=c3ac1eda50";
-import { attachMachine } from "./machine.js?v=c3ac1eda50";
-import { $ } from "./page.js?v=c3ac1eda50";
-import { submit, worker } from "./workers.js?v=c3ac1eda50";
+import { attachDiagram } from "./diagram.js?v=98ea947540";
+import { attachEditor, attachShape } from "./editor.js?v=98ea947540";
+import { attachMachine } from "./machine.js?v=98ea947540";
+import { $ } from "./page.js?v=98ea947540";
+import { submit, worker } from "./workers.js?v=98ea947540";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -129,7 +129,7 @@ const FIELDS = {
       name: "cells",
       label: "Cells",
       kind: "textarea",
-      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square, i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape started from.",
+      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square, i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape started from. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
     },
     { name: "order", label: "Order of the moves", kind: "choice", from: "orders" },
     {
@@ -150,7 +150,7 @@ const FIELDS = {
       kind: "number",
       min: 2,
       max: 12,
-      hint: "Lines along each side; an oblong's or an L's width.",
+      hint: "Lines along each side; an oblong's, an L's or a hollow square's width.",
     },
     {
       name: "height",
@@ -158,7 +158,7 @@ const FIELDS = {
       kind: "number",
       min: 2,
       max: 12,
-      hint: "An oblong's height, or an L's arms, in lines.",
+      hint: "An oblong's height, or how thick an L's arms or a hollow square's sides are, in lines.",
     },
     {
       name: "corners",
