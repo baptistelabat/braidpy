@@ -5,11 +5,18 @@
 """A braid as a sinnet on Ashley's stand, found by searching:
 braidpy.making.ashley."""
 
+import numpy as np
 import pytest
 
 from braidpy import Braid
 from braidpy.braid_catalog import word_examples
-from braidpy.making.ashley import ashley_moves, ashley_sinnet, sinnet_spec
+from braidpy.making.ashley import (
+    ashley_moves,
+    ashley_sinnet,
+    oblong,
+    sinnet_spec,
+    triangle,
+)
 from braidpy.ring_program import same_braid
 from braidpy.solid_sinnets_catalog import abok_2965, abok_2999
 
@@ -89,31 +96,18 @@ def test_each_crossing_puts_every_strand_back_in_its_space():
 # ------------------------------------------------------------ from a shape
 
 
-def _oblong(width, height):
-    """An oblong, in spacings between lines, from its bottom left corner."""
-    return [(0, 0), (width, 0), (width, height), (0, height)]
-
-
-def _triangle(lines_per_side):
-    """A triangle standing on its base, as many lines parallel to each side
-    as asked, the farthest a spacing from the opposite corner."""
-    import math
-
-    height = lines_per_side + 0.5
-    side = height / math.sin(math.pi / 3)
-    return [(0, 0), (side, 0), (side / 2, height)]
-
-
-@pytest.mark.parametrize("number, lines", [(3045, 2), (3047, 4), (3051, 6)])
+@pytest.mark.parametrize("number, lines", [(3045, 2), (3047, 4), (3051, 6), (3059, 3)])
 def test_a_triangle_is_made_as_the_book_makes_it(number, lines):
     """Drawn as the book draws it, a triangle's sinnet is the book's table:
     its moves, in its order, and its strands, the fewest that order lets
-    each space start with."""
+    each space start with.  With an odd number of lines a side the moves
+    cannot alternate, and are made space by space, as the book makes
+    #3059."""
     from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import sinnet_from_shape
 
     book = getattr(books, f"abok_{number}")
-    made = sinnet_from_shape(_triangle(lines))
+    made = sinnet_from_shape(triangle(lines))
     assert made.moves == [tuple(move) for move in book.moves]
     assert made.initial_counts_per_space == book.initial_counts_per_space
 
@@ -126,7 +120,7 @@ def test_a_triangle_with_sharper_edges_has_a_strand_more_at_each_corner():
     from braidpy.solid_sinnets_catalog import abok_3049
 
     corners = [1 if space in (1, 5, 9) else 0 for space in range(1, 13)]
-    made = sinnet_from_shape(_triangle(4), extra=corners)
+    made = sinnet_from_shape(triangle(4), extra=corners)
     assert made.moves == [tuple(move) for move in abok_3049.moves]
     assert made.initial_counts_per_space == abok_3049.initial_counts_per_space
 
@@ -143,7 +137,7 @@ def test_an_oblong_is_the_book_s_braid(number, width, ends):
     book = getattr(books, f"abok_{number}")
     n = len(book.initial_counts_per_space)
     edges = [1 if space in ends else 0 for space in range(1, n + 1)]
-    made = sinnet_from_shape(_oblong(width, 2), extra=edges)
+    made = sinnet_from_shape(oblong(width, 2), extra=edges)
     moves = [tuple(move) for move in book.moves]
     turned = moves.index(made.moves[0])
     assert made.moves == moves[turned:] + moves[:turned]
@@ -156,7 +150,7 @@ def test_the_square_has_the_book_s_lines_in_the_order_of_the_others():
     from braidpy.making.ashley import sinnet_from_shape
     from braidpy.solid_sinnets_catalog import abok_3070
 
-    made = sinnet_from_shape(_oblong(2, 2))
+    made = sinnet_from_shape(oblong(2, 2))
     assert sorted(made.moves) == sorted(tuple(move) for move in abok_3070.moves)
     assert made.moves == [(1, 3), (2, 4), (3, 1), (4, 2)]
 
@@ -166,7 +160,7 @@ def test_a_shape_s_lines_run_parallel_to_its_sides():
     many as fit; parallel sides share theirs."""
     from braidpy.making.ashley import shape_diagram
 
-    lines, joins, bights = shape_diagram(_oblong(6, 2))
+    lines, joins, bights = shape_diagram(oblong(6, 2))
     assert sorted(line.direction for line in lines) == [0, 0] + [1] * 6
     assert len(bights) == 8
     # Every space is the end of two lines: it gives a strand and takes one.
@@ -180,3 +174,55 @@ def test_the_fewest_strands_keep_every_space_filled():
     from braidpy.making.ashley import least_counts
 
     assert least_counts([(1, 3), (2, 4), (3, 1), (4, 2)], 4) == [2, 2, 1, 1]
+
+
+def test_moves_group_alike_for_a_shape_of_any_size():
+    """Grouped by the direction of their lines, a triangle's moves are three
+    directions a third of a half turn apart, each with a third of the
+    moves, however many lines it has; an oblong's two, at right angles,
+    each with as many moves as lines fit across it."""
+    from fractions import Fraction
+
+    from braidpy.making.ashley import move_groups, sinnet_from_shape
+
+    third = Fraction(1, 3)
+    for lines in range(2, 9):
+        groups = move_groups(sinnet_from_shape(triangle(lines)).moves)
+        assert groups.family == ((0, third), (third, third), (2 * third, third))
+    groups = move_groups(sinnet_from_shape(oblong(8, 3)).moves)
+    assert groups.groups == ((0, 3), (Fraction(1, 2), 8))
+
+
+def test_a_shape_comes_back_from_its_moves_at_any_size():
+    """A triangle's or an oblong's shape is made again from its moves,
+    drawing the very same lines, whatever its size."""
+    from braidpy.making.ashley import shapes_from_moves, sinnet_from_shape
+
+    for outline in [triangle(lines) for lines in (3, 4, 12)] + [
+        oblong(5, 2),
+        oblong(8, 3),
+        oblong(12, 7),
+    ]:
+        found = shapes_from_moves(sinnet_from_shape(outline).moves)
+        assert found[0].same_lines
+        assert np.allclose(found[0].outline, outline)
+
+
+@pytest.mark.parametrize("number", [3045, 3047, 3049, 3051, 3059, 3070, 3071, 3072])
+def test_the_book_s_moves_find_its_shape(number):
+    """The book's triangles and oblongs drawn as the book draws them find
+    the shape that draws their lines, however their moves are ordered or
+    made, and with whatever strands."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.making.ashley import shapes_from_moves
+
+    book = getattr(books, f"abok_{number}")
+    assert shapes_from_moves(book.moves)[0].same_lines
+
+
+def test_moves_drawn_otherwise_find_no_shape():
+    """A pentagon of four lines a side is not drawn as these shapes are."""
+    from braidpy.making.ashley import shapes_from_moves
+    from braidpy.solid_sinnets_catalog import abok_3079
+
+    assert shapes_from_moves(abok_3079.moves) == []

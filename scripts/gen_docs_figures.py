@@ -1258,17 +1258,15 @@ def ashley_shapes(png_dir: Path | None) -> None:
     """Ashley's diagrams of a triangle and an oblong, as
     sinnet_from_shape draws them: the lines, the bights numbered as the
     spaces, and the moves in his order."""
-    import math
-
-    from braidpy.making.ashley import shape_diagram, sinnet_from_shape
+    from braidpy.making.ashley import (
+        oblong,
+        shape_diagram,
+        sinnet_from_shape,
+        triangle,
+    )
     from braidpy.solid_sinnets_catalog import abok_3047
 
-    height = 4.5
-    side = height / math.sin(math.pi / 3)
-    shapes = {
-        "triangle, #3047": [(0, 0), (side, 0), (side / 2, height)],
-        "oblong, #3071": [(0, 0), (6, 0), (6, 2), (0, 2)],
-    }
+    shapes = {"triangle, #3047": triangle(4), "oblong, #3071": oblong(6, 2)}
     colours = [OUT, IN, MARK]
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8), width_ratios=[1.1, 1.3])
     notes = []

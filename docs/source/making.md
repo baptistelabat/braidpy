@@ -195,19 +195,48 @@ the stand's spaces and the lines its moves
 
 Drawn so, a triangle is the book's table exactly, moves, order and strands:
 #3045, #3047 and #3051, with two, four and six lines a side; #3049 is
-#3047 with a strand more at each corner. A flat chisel-edge oblong, 2 by 6
+#3047 with a strand more at each corner. With three lines a side the moves
+cannot alternate, and are made space by space, 1, 2, 3 and on, each curve
+of lines run one way: the book's #3059. A flat chisel-edge oblong, 2 by 6
 or 10 spacings, is the book's cycle (#3071, #3072), its braid the book's
 with a strand more at each chisel edge. The square, #3070, has the book's
 two loops, but the book moves its opposite strands together.
 
 ```python
-import math
-from braidpy.making.ashley import sinnet_from_shape
+from braidpy.making.ashley import oblong, sinnet_from_shape, triangle
 
-height = 4.5  # four lines a side, in spacings
-side = height / math.sin(math.pi / 3)
-triangle = sinnet_from_shape([(0, 0), (side, 0), (side / 2, height)])
-triangle.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
+made = sinnet_from_shape(triangle(4))  # four lines a side
+made.moves[:4]  # [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047
+sinnet_from_shape(oblong(6, 2))  # #3071's moves
+```
+
+And back, from a sinnet's moves to its shape, without searching. Lines of
+one direction never cross, so the moves fall into groups, one a direction
+({func}`~braidpy.making.ashley.move_groups`):
+
+- across an oblong, joining every two moves whose lines do not cross
+  leaves the directions;
+- across a triangle, whose lines of different directions miss each other
+  near its corners, moves are parallel when their spaces add up to the same
+  number round the stand: with the spaces evenly spaced, the line from
+  space *a* to space *b* runs at (*a* + *b*)π/*n*.
+
+The groups, as shares of the spaces, are the same for a shape drawn on the
+same principle at any size: every triangle has three directions a third of
+a half turn apart, each with a third of the moves. From them
+{func}`~braidpy.making.ashley.shapes_from_moves` makes the shape: a side,
+or a pair of parallel sides, to each direction, as far across as its moves
+need. Every triangle and oblong comes back so, drawing the very same lines,
+and so do the book's #3045, #3047, #3049, #3051, #3059 and #3070–#3072,
+however their moves are ordered. Shapes drawn otherwise, as #3079's
+pentagon or #3073's square on its diagonals, are not made again yet.
+
+```python
+from braidpy.making.ashley import move_groups, shapes_from_moves
+from braidpy.solid_sinnets_catalog import abok_3047
+
+move_groups(abok_3047.moves).family  # three directions, a third of the moves each
+shapes_from_moves(abok_3047.moves)[0].outline  # triangle(4)
 ```
 
 ## In Braid Studio

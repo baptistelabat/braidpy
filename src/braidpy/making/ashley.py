@@ -37,6 +37,9 @@ A sinnet can also be made from the shape it is to take, as the book draws it
 (:func:`sinnet_from_shape`): straight lines across the shape, parallel to
 its sides, each turning at the outline in a bight into the next.  The
 bights are the spaces, the lines the moves, made in the book's order.
+And the other way: a sinnet's moves, grouped by the direction of their
+lines (:func:`move_groups`), are the same at any size for shapes drawn on
+one principle, and make its shape (:func:`shapes_from_moves`).
 """
 
 from __future__ import annotations
@@ -46,6 +49,7 @@ import math
 import time
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
+from fractions import Fraction
 from typing import Optional
 
 import numpy as np
@@ -55,14 +59,21 @@ from braidpy.braid import Braid
 
 __all__ = [
     "AshleySearch",
+    "FoundShape",
+    "MoveGroups",
     "ShapeLine",
     "ashley_moves",
     "ashley_sinnet",
     "least_counts",
+    "move_groups",
+    "oblong",
+    "regular_polygon",
     "shape_diagram",
     "shape_lines",
+    "shapes_from_moves",
     "sinnet_from_shape",
     "sinnet_spec",
+    "triangle",
 ]
 
 
@@ -435,14 +446,72 @@ def _turn_into(outline, first: ShapeLine, second: ShapeLine) -> bool:
 
 
 def _in_order(n, joins, directions, first_side_direction) -> list[tuple[int, int]]:
-    """The lines as moves, in the book's order (:func:`sinnet_from_shape`)."""
-    left = set(range(len(joins)))
+    """The lines as moves, in the book's order (:func:`sinnet_from_shape`):
+    alternating, or space by space where that cannot be followed."""
+    try:
+        moves = _alternating(n, joins, directions, first_side_direction)
+    except ValueError:
+        return _space_by_space(n, joins, directions, first_side_direction)
+    every = list(range(1, n + 1))
+    if sorted(a for a, _ in moves) != every or sorted(b for _, b in moves) != every:
+        return _space_by_space(n, joins, directions, first_side_direction)
+    return moves
+
+
+def _first_line(at, joins, directions, first_side_direction) -> int:
+    """Space 1's line: the one across the first side, if one starts there."""
+    return min(at[1], key=lambda line: directions[line] == first_side_direction)
+
+
+def _lines_at(joins) -> dict[int, list[int]]:
+    """Each space's two lines."""
     at: dict[int, list[int]] = {}
     for line, (a, b) in enumerate(joins):
         at.setdefault(a, []).append(line)
         at.setdefault(b, []).append(line)
+    return at
+
+
+def _space_by_space(n, joins, directions, first_side_direction):
+    """The lines as moves, space 1 first, then 2, 3 and so on, each giving
+    its strand: the book's order where the alternating one cannot be
+    followed, as round a triangle of three lines a side (#3059).  Each
+    curve of lines runs one way, the first space on it giving its strand
+    along the way space 1's does, if it can."""
+    at = _lines_at(joins)
+    first = _first_line(at, joins, directions, first_side_direction)
+    direction = directions[first]
+    gives: dict[int, int] = {}
+    for space in range(1, n + 1):
+        if space in gives or any(
+            gives.get(_other(joins[i], space)) == i for i in at[space]
+        ):
+            continue
+        # The first space of a curve not yet run: run the curve from it.
+        line = (
+            first
+            if space == 1
+            else min(at[space], key=lambda i: directions[i] != direction)
+        )
+        here = space
+        while here not in gives:
+            gives[here] = line
+            here = _other(joins[line], here)
+            line = (
+                next(i for i in at[here] if i != line)
+                if len(set(at[here])) > 1
+                else line
+            )
+    return [(space, _other(joins[gives[space]], space)) for space in range(1, n + 1)]
+
+
+def _alternating(n, joins, directions, first_side_direction) -> list[tuple[int, int]]:
+    """The lines as moves, each from the space beside where the last ended
+    (:func:`sinnet_from_shape`)."""
+    left = set(range(len(joins)))
+    at = _lines_at(joins)
     # From space 1, along the line across the first side, if there is one.
-    first = min(at[1], key=lambda line: directions[line] == first_side_direction)
+    first = _first_line(at, joins, directions, first_side_direction)
     moves = [(1, _other(joins[first], 1))]
     left.discard(first)
     gave = {1}
@@ -545,3 +614,276 @@ def sinnet_from_shape(
     if extra is not None:
         counts = [c + e for c, e in zip(counts, extra)]
     return AshleySolidSinnet(counts, moves)
+
+
+# ------------------------------------------------------------- to a shape
+
+
+@dataclass(frozen=True)
+class MoveGroups:
+    """A sinnet's moves grouped by the direction of their lines: what stays
+    the same, whatever the size, for shapes drawn on the same principle
+    (:func:`move_groups`).
+
+    Args:
+        n_spaces: The spaces round the stand.
+        groups: For each direction, its angle from the first, as a share of
+            a half turn, and the moves made along it.
+    """
+
+    n_spaces: int
+    groups: tuple[tuple[Fraction, int], ...]
+
+    @property
+    def angles(self) -> list[float]:
+        """Each direction's angle from the first."""
+        return [math.pi * float(turn) for turn, _ in self.groups]
+
+    @property
+    def lines(self) -> list[int]:
+        """The moves made along each direction."""
+        return [count for _, count in self.groups]
+
+    @property
+    def family(self) -> tuple[tuple[Fraction, Fraction], ...]:
+        """Each direction's angle, and its moves as a share of the spaces:
+        the same for a shape drawn on the same principle at any size, as
+        every triangle of :func:`triangle` is, its three directions a third
+        of a half turn apart, each with a third of the moves."""
+        return tuple(
+            (turn, Fraction(count, self.n_spaces)) for turn, count in self.groups
+        )
+
+
+def _cross(first: tuple[int, int], second: tuple[int, int]) -> bool | None:
+    """Whether two moves' lines cross; None if they share a space, which
+    says nothing, every space being the end of two lines."""
+    a, b = sorted(first)
+    if {a, b} & set(second):
+        return None
+    return (a < second[0] < b) != (a < second[1] < b)
+
+
+def _apart(moves: Sequence[tuple[int, int]]) -> list[list[int]] | None:
+    """The moves in sets none of whose lines cross, joining any two that do
+    not, or that join the same two spaces, and then any two sets with no
+    line of one crossing a line of the other; None unless that leaves two sets
+    or more, in each of which no two lines cross."""
+    sets = [{k} for k in range(len(moves))]
+    for i, j in itertools.combinations(range(len(moves)), 2):
+        same = sorted(moves[i]) == sorted(moves[j])
+        if same or _cross(moves[i], moves[j]) is False:
+            joined = next(s for s in sets if i in s) | next(s for s in sets if j in s)
+            sets = [s for s in sets if i not in s and j not in s] + [joined]
+    # Two lines meeting in a bight say nothing: sets none of whose lines
+    # cross are one direction too, as the two lines of a loop.
+    while pair := next(
+        (
+            (p, q)
+            for p, q in itertools.combinations(sets, 2)
+            if not any(_cross(moves[i], moves[j]) for i in p for j in q)
+        ),
+        None,
+    ):
+        sets = [s for s in sets if s not in pair] + [pair[0] | pair[1]]
+    if len(sets) < 2 or any(
+        _cross(moves[i], moves[j])
+        for s in sets
+        for i, j in itertools.combinations(s, 2)
+    ):
+        return None
+    return [sorted(s) for s in sets]
+
+
+def move_groups(moves: Sequence[tuple[int, int]]) -> MoveGroups:
+    """A sinnet's moves grouped by the direction of their lines (see
+    :class:`MoveGroups`).
+
+    Lines of one direction never cross.  Where joining every two moves whose
+    lines do not cross leaves sets in which none do, as across an oblong,
+    those sets are the directions, taken as evenly spread (at right angles
+    for two).  Otherwise, as across a triangle, whose lines of different
+    directions miss each other near its corners, the directions are found
+    from the spaces' numbers: round a stand of ``n`` spaces evenly spaced,
+    the line from space ``a`` to space ``b`` runs at ``(a + b) π / n`` and
+    a half turn, so moves whose spaces add up to the same number, modulo
+    ``n``, are parallel.  Wherever the numbering starts, or whichever way it
+    runs, the directions only turn together, and are kept turned as little
+    as can be.
+
+    Args:
+        moves: The moves, each space giving and receiving once.
+
+    Returns:
+        The groups.
+    """
+    n = len(moves)
+    apart = _apart(moves)
+    if apart is not None:
+        counts = sorted(len(s) for s in apart)
+        return MoveGroups(
+            n, tuple((Fraction(k, len(counts)), c) for k, c in enumerate(counts))
+        )
+    sums: dict[int, int] = {}
+    for a, b in moves:
+        sums[(a + b) % n] = sums.get((a + b) % n, 0) + 1
+    # Starting the numbering a space on adds two to every sum; numbering
+    # the other way round sends a sum s to 2 - s.
+    turned = min(
+        tuple(sorted(((sense * s + 2 * shift) % n, c) for s, c in sums.items()))
+        for shift in range(n)
+        for sense in (1, -1)
+    )
+    return MoveGroups(n, tuple((Fraction(s, n), c) for s, c in turned))
+
+
+def oblong(width: int, height: int) -> list[tuple[float, float]]:
+    """An oblong (a square if ``width == height``), in spacings between
+    lines, from its bottom left corner: ``height`` lines across it,
+    ``width`` up it."""
+    return [
+        (0.0, 0.0),
+        (float(width), 0.0),
+        (float(width), float(height)),
+        (0.0, float(height)),
+    ]
+
+
+def regular_polygon(sides: int, lines_per_side: int) -> list[tuple[float, float]]:
+    """A regular polygon of an odd number of sides standing on one, with so
+    many lines parallel to each side, the farthest a spacing from the
+    corner opposite, from its bottom left corner.
+
+    Args:
+        sides: Its sides, odd: with an even number they are parallel in
+            pairs, a shape of :func:`_parallel_sided`.
+        lines_per_side: Lines parallel to each side.
+
+    Returns:
+        Its corners, anticlockwise, in spacings between lines.
+    """
+    if sides < 3 or sides % 2 == 0:
+        raise ValueError(f"a regular polygon of {sides} sides has no corner opposite")
+    height = lines_per_side + FIRST_LINE
+    radius = height / (1 + math.cos(math.pi / sides))
+    first = -math.pi / 2 - math.pi / sides
+    corners = [
+        (
+            radius * math.cos(first + 2 * math.pi * k / sides),
+            radius * math.sin(first + 2 * math.pi * k / sides),
+        )
+        for k in range(sides)
+    ]
+    x0, y0 = corners[0]
+    return [(x - x0, y - y0) for x, y in corners]
+
+
+def triangle(lines_per_side: int) -> list[tuple[float, float]]:
+    """A triangle standing on its base, as the book draws #3045, #3047 and
+    #3051 (2, 4 and 6 lines a side): see :func:`regular_polygon`."""
+    return regular_polygon(3, lines_per_side)
+
+
+def _parallel_sided(groups: MoveGroups) -> list[tuple[float, float]] | None:
+    """The shape whose sides are parallel in pairs, one pair to each
+    direction of ``groups``, so wide across each that as many lines fit as
+    the direction has moves: an oblong for two directions, a hexagon for
+    three; None if there is none.
+
+    Across a direction, each pair of sides adds its length times the sine
+    of the angle between them: one equation a direction for the sides'
+    lengths."""
+    angles = np.array(groups.angles)
+    if len(angles) < 2:
+        return None
+    across = np.abs(np.sin(angles[None, :] - angles[:, None]))
+    lengths = np.linalg.lstsq(across, np.array(groups.lines, float), rcond=None)[0]
+    if np.any(lengths < -SAME_POINT) or not np.allclose(across @ lengths, groups.lines):
+        return None
+    corners = [np.zeros(2)]
+    for angle, length in [*zip(angles, lengths), *zip(angles + math.pi, lengths)]:
+        if length > SAME_POINT:
+            corners.append(
+                corners[-1] + length * np.array([math.cos(angle), math.sin(angle)])
+            )
+    return [_point(corner) for corner in corners[:-1]]
+
+
+def _regular(groups: MoveGroups) -> list[tuple[float, float]] | None:
+    """The regular polygon of :func:`regular_polygon` with a side to each
+    direction of ``groups``, if they are evenly spread and as many lines
+    each; None otherwise."""
+    sides = len(groups.groups)
+    if sides < 3 or sides % 2 == 0 or len(set(groups.lines)) != 1:
+        return None
+    if any(turn != Fraction(k, sides) for k, (turn, _) in enumerate(groups.groups)):
+        return None
+    return regular_polygon(sides, groups.lines[0])
+
+
+@dataclass(frozen=True)
+class FoundShape:
+    """A shape found for a sinnet's moves (:func:`shapes_from_moves`).
+
+    Args:
+        name: What it is: "triangle", "parallel-sided".
+        outline: Its corners, anticlockwise, in spacings between lines.
+        sinnet: Its own sinnet (:func:`sinnet_from_shape`).
+        same_lines: Whether its drawing joins the very spaces the moves
+            join, not only lines grouped alike.
+    """
+
+    name: str
+    outline: tuple[tuple[float, float], ...]
+    sinnet: AshleySolidSinnet
+    same_lines: bool
+
+
+def _drawn(moves: Sequence[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
+    """The lines of a sinnet's moves, whichever way and order they are made,
+    and wherever its numbering starts or whichever way it runs round the
+    stand: the same for one drawing."""
+    n = len(moves)
+
+    def line(a: int, b: int, shift: int, sense: int) -> tuple[int, int]:
+        x, y = (sense * (a - 1) + shift) % n + 1, (sense * (b - 1) + shift) % n + 1
+        return (x, y) if x < y else (y, x)
+
+    return min(
+        tuple(sorted(line(a, b, shift, sense) for a, b in moves))
+        for shift in range(n)
+        for sense in (1, -1)
+    )
+
+
+def shapes_from_moves(moves: Sequence[tuple[int, int]]) -> list[FoundShape]:
+    """The shapes drawn on the principle of a sinnet's moves, at its size,
+    made from their groups (:func:`move_groups`), not searched for.
+
+    Each direction of lines is a side, or a pair of parallel sides, of the
+    shape, as far across as its moves need: a regular polygon of an odd
+    number of sides (:func:`regular_polygon`) where the directions are
+    evenly spread with as many moves each, and the shape with sides
+    parallel in pairs (an oblong, a hexagon).  Each is kept if its own
+    sinnet's moves group alike.
+
+    Args:
+        moves: A sinnet's moves, each space giving and receiving once.
+
+    Returns:
+        The shapes, those whose drawing joins the same spaces first; none if
+        the moves are not drawn so.
+    """
+    groups = move_groups(moves)
+    found = []
+    for name, outline in (
+        ("regular", _regular(groups)),
+        ("parallel-sided", _parallel_sided(groups)),
+    ):
+        if outline is None:
+            continue
+        sinnet = sinnet_from_shape(outline)
+        if len(sinnet.moves) == len(moves) and move_groups(sinnet.moves) == groups:
+            same = _drawn(sinnet.moves) == _drawn(moves)
+            found.append(FoundShape(name, tuple(outline), sinnet, same))
+    return sorted(found, key=lambda shape: not shape.same_lines)
