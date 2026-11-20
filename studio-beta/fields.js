@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=e2e7bc6015";
-import { attachEditor, attachShape } from "./editor.js?v=e2e7bc6015";
-import { attachMachine } from "./machine.js?v=e2e7bc6015";
-import { $ } from "./page.js?v=e2e7bc6015";
-import { submit, worker } from "./workers.js?v=e2e7bc6015";
+import { attachDiagram } from "./diagram.js?v=d95579c3e7";
+import { attachEditor, attachShape } from "./editor.js?v=d95579c3e7";
+import { attachMachine } from "./machine.js?v=d95579c3e7";
+import { $ } from "./page.js?v=d95579c3e7";
+import { submit, worker } from "./workers.js?v=d95579c3e7";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -124,8 +124,16 @@ const FIELDS = {
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
   ],
   shape: [
-    { name: "grid", label: "Grid", kind: "choice", from: "grids" },
-    { name: "shape", label: "Shape", kind: "choice", from: "shapes", by: "grid" },
+    // The Braid list offers only braids of the grid and shape chosen.
+    { name: "grid", label: "Grid", kind: "choice", from: "grids", narrows: true },
+    {
+      name: "shape",
+      label: "Shape",
+      kind: "choice",
+      from: "shapes",
+      by: "grid",
+      narrows: true,
+    },
     {
       name: "cells",
       label: "Cells",
@@ -376,8 +384,19 @@ function attachExamples(source, examples, holder) {
   title.textContent = "Braid";
   const list = document.createElement("select");
   list.id = "field-example";
-  examples.forEach((example, k) => list.append(new Option(example.title, String(k))));
-  list.append(new Option("Your own…", "custom"));
+  // Only the braids whose fields that narrow the list are as chosen.
+  const narrowing = FIELDS[source].filter((f) => f.narrows).map((f) => f.name);
+  const offer = () => {
+    const value = (name) => holder.querySelector(`[name=${name}]`)?.value ?? "";
+    list.replaceChildren(
+      ...examples
+        .map((example, k) => [example, k])
+        .filter(([example]) => narrowing.every((name) => String(example[name] ?? "") === value(name)))
+        .map(([example, k]) => new Option(example.title, String(k))),
+      new Option("Your own…", "custom"),
+    );
+  };
+  offer();
   label.append(title, list);
   // After what is chosen first, as a sinnet's grid and shape; else first.
   const after = holder.querySelector("[name=shape]")?.closest("label");
@@ -392,8 +411,14 @@ function attachExamples(source, examples, holder) {
           String(wanted).replace(/\s+/g, " ").trim() === value(key).replace(/\s+/g, " ").trim(),
       ) && (example.layout ?? "row") === (value("layout") || "row");
     const k = examples.findIndex(same);
-    list.value = k < 0 ? "custom" : String(k);
+    list.value = k < 0 || ![...list.options].some((o) => o.value === String(k)) ? "custom" : String(k);
   };
+  for (const name of narrowing) {
+    holder.querySelector(`[name=${name}]`).addEventListener("change", () => {
+      offer();
+      shown();
+    });
+  }
   list.addEventListener("change", () => {
     if (list.value === "custom") return;
     renderFields(source, examples[Number(list.value)]);
