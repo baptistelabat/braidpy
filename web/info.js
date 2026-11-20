@@ -7,7 +7,7 @@
 // notes.
 
 import { catalogue } from "./fields.js";
-import { tr } from "./i18n.js";
+import { englishText, tr } from "./i18n.js";
 import { $, round } from "./page.js";
 import { lastResult } from "./scene.js";
 import { writeSpec } from "./spec.js";
@@ -296,7 +296,7 @@ export async function copyText(text, button) {
     window.prompt(tr("Copy it from here:"), text);
     return;
   }
-  const was = button.textContent;
+  const was = englishText(button);
   button.textContent = "Copied ✓";
   setTimeout(() => (button.textContent = was), 1500);
 }

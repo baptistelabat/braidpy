@@ -848,6 +848,29 @@ body.home {
   max-width: 60ch;
 }
 
+.home-actions {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* The language the page is shown in (web/i18n.js). */
+.language select {
+  font-size: 13px;
+  padding: 3px 6px;
+}
+
+.panel-head {
+  position: relative;
+}
+
+.panel-head .language {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
 a.primary {
   flex: none;
   background: var(--accent);

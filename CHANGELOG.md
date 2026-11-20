@@ -10,9 +10,11 @@ What changed in each release of braidpy.
   (`web/profile.toml`) names the catalogue its pages are shown in,
   `web/locales/fr.toml` for French, each text braidpy writes in English,
   in Python or in the page, put into it as it is shown (`web/i18n.js`).
-  braidpy's own site stays in English; a site of its own, as
-  braid-designer, builds in French with `language = "fr"`. A profile
-  must now give `language`.
+  A site opens in its profile's language, braidpy's in English,
+  braid-designer's in French with `language = "fr"`; a menu at the top of
+  each page switches between them there and then, the braid on show kept,
+  and remembers the choice (or `?lang=fr` in a link). A profile must now
+  give `language`.
 - A design saved by braid3d (`.b3d`) read as a mobidai braid
   (`braidpy.b3d.mobidai_from_b3d`, `braidpy.web.from_b3d`): its yarns in
   their colours, its moves and its repeat, on a disk of as few slots as

@@ -7,6 +7,10 @@
 # gear) encoche, notch cran, space (Ashley's) espace, move mouvement, core
 # âme, card carton, fell point de tressage, sinnet tresse.
 
+# The language's own name, in the page's menu.
+"English" = "Français"
+"Language" = "Langue"
+
 # ------------------------------------------------------------ the front page
 
 "Braids from books, videos and machines, to look up by what they are — strands, loops, writhe — each shown settled, and opened in 3D in {}, computed by {} in your browser." = "Des tresses de livres, de vidéos et de machines, à chercher par ce qu'elles sont — brins, boucles, vrillage — chacune montrée tassée, et ouverte en 3D dans {}, calculée par {} dans votre navigateur."
@@ -287,6 +291,10 @@
 "Core {}" = "Âme {}"
 "Yarn {}" = "Fil {}"
 "Bobbin {}" = "Bobine {}"
+"Strand {#}: {}" = "Brin {} : {}"
+"Core {}: {}" = "Âme {} : {}"
+"Yarn {}: {}" = "Fil {} : {}"
+"Bobbin {}: {}" = "Bobine {} : {}"
 
 # ------------------------------------------------------------ making it
 

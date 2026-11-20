@@ -98,8 +98,8 @@ PAGE = [
 # What the site calls itself, whom it credits and where it links: this
 # repository's Braid Studio, unless another profile is given (--profile).
 PROFILE = WEB / "profile.toml"
-# Each language's words, by their English (web/i18n.js): a site in English
-# needs none.
+# Each language's words, by their English (web/i18n.js), every one offered
+# by the page's menu.
 LOCALES = WEB / "locales"
 THREE = WEB / "node_modules" / "three"
 MATH_BRAID = "math-braid==0.8"
@@ -181,20 +181,20 @@ def _rendered(text: str, site: dict[str, str | bool]) -> str:
 
 
 def locale(language: str) -> str:
-    """The page's words in ``language`` (web/i18n.js), as the module the
-    page imports: ``locales/<language>.toml``, a text by its English; none
-    in English."""
-    texts = {}
-    if language != "en":
-        source = LOCALES / f"{language}.toml"
-        if not source.exists():
-            raise SystemExit(f"No words in {language!r}: {source} is missing.")
-        texts = tomllib.loads(source.read_text())
+    """The page's words in every language of ``web/locales/`` (web/i18n.js),
+    as the module the page imports, opening in ``language``: each
+    ``<code>.toml`` a text by its English; English needs none."""
+    catalogues = {
+        source.stem: tomllib.loads(source.read_text())
+        for source in sorted(LOCALES.glob("*.toml"))
+    }
+    if language != "en" and language not in catalogues:
+        raise SystemExit(f"No words in {language!r}: no {LOCALES}/{language}.toml.")
     return (
-        "// The page's words in the site's language, written by web/build.py\n"
-        f"// from web/locales/: see web/i18n.js.\n"
+        "// The page's words in each language, written by web/build.py from\n"
+        "// web/locales/: see web/i18n.js.\n"
         f"export const language = {json.dumps(language)};\n"
-        f"export const texts = {json.dumps(texts, ensure_ascii=False, indent=0)};\n"
+        f"export const catalogues = {json.dumps(catalogues, ensure_ascii=False, indent=0)};\n"
     )
 
 

@@ -5,6 +5,7 @@
 // Settings left empty, and choices not made, take the braid's own: shown
 // greyed with "default" once it is made.
 
+import { englishText } from "./i18n.js";
 import { $, round } from "./page.js";
 
 // A setting left empty takes the braid's own default, shown greyed with
@@ -105,7 +106,7 @@ $("settle").addEventListener("change", () => {
 function markDefault(select, value) {
   if (!value) return;
   for (const option of select.options) {
-    option.dataset.text ??= option.textContent;
+    option.dataset.text ??= englishText(option);
     option.textContent = option.dataset.text + (option.value === value ? " (default)" : "");
   }
   const chosen = select.dataset.chosen === "1";

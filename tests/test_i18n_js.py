@@ -23,12 +23,13 @@ FRENCH = tomllib.loads((WEB / "locales" / "fr.toml").read_text())
 DESIGNER = tomllib.loads(PRIVATE)
 
 
-def shown(texts, language="fr", tmp_path=None):
-    """Each text as the page shows it in ``language``, and those it lacks."""
+def shown(texts, language="fr", tmp_path=None, chosen=None):
+    """Each text as the page shows it on a site in ``language``, another
+    ``chosen`` from its menu if given, and those it lacks."""
     (tmp_path / "i18n.js").write_text((WEB / "i18n.js").read_text())
     (tmp_path / "locale.js").write_text(build.locale(language))
     run = subprocess.run(
-        ["node", str(CASES), str(tmp_path)],
+        ["node", str(CASES), str(tmp_path), *([chosen] if chosen else [])],
         input=json.dumps(texts),
         capture_output=True,
         text=True,
@@ -85,6 +86,20 @@ def test_in_english_every_text_is_shown_as_written(tmp_path):
     out, missing = shown(["Strands", "Nothing"], language="en", tmp_path=tmp_path)
     assert out == ["Strands", "Nothing"]
     assert not missing
+
+
+def test_a_site_in_english_is_shown_in_french_once_chosen_and_back(tmp_path):
+    out, missing = shown(
+        ["Strands", "Top view"], language="en", tmp_path=tmp_path, chosen="fr"
+    )
+    assert out == ["Brins", "Vue de dessus"]
+    assert not missing
+    out, _ = shown(["Strands"], language="fr", tmp_path=tmp_path, chosen="en")
+    assert out == ["Strands"]
+
+
+def test_each_language_is_offered_by_its_own_name():
+    assert FRENCH["English"] == "Français"
 
 
 def test_every_translation_takes_the_words_its_english_leaves_open():
