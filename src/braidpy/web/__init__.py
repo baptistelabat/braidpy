@@ -139,7 +139,7 @@ def premade_specs() -> list[Spec]:
     specs: list[Spec] = []
     for source, about in catalogue().items():
         for entry in about.get("entries", []):
-            if entry["name"] != OWN and not entry.get("own"):
+            if entry["name"] != OWN:
                 specs.append(cast(Spec, {"source": source, "name": entry["name"]}))
         for example in about.get("examples", []):
             made = {k: v for k, v in example.items() if k != "title"}

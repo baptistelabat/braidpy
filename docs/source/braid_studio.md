@@ -194,16 +194,22 @@ The studio has a form and a 3D view.
   always, ready to change there: changing a move, its slots, its counts or
   its turn makes it your own, and the catalogued braid stays as it was, to
   choose again.
-- A sinnet can be made **from a shape**, as Ashley draws it (see
-  [Making](making.md#from-the-shape-it-is-to-take)): "From a shape…" asks
-  for a triangle, an oblong, a pentagon or a heptagon and its size, in lines
-  along a side (an oblong's width and height), and draws it once made: its
-  lines, coloured by track, each with an arrow the way its move goes, and
-  its spaces, numbered, larger with more strands. Clicking a track makes
-  its moves the other way round; clicking a space gives it a strand more
-  from the start, shift-clicking takes one off. **At each corner** adds
+- **Ashley's method, from a shape** makes a sinnet from the shape it is to
+  take, as Ashley draws it (see
+  [Making](making.md#from-the-shape-it-is-to-take)): a triangle, a hexagon,
+  an oblong or an L to start from, so many lines along a side (an oblong's
+  width and height, an L's width and arms). The shape is its grid's cells,
+  squares or triangles, and is drawn once made: its cells, its lines,
+  coloured by track, each with an arrow the way its move goes, and its
+  spaces, numbered, larger with more strands. As the list above the
+  drawing says, clicking a track makes its moves the other way round;
+  clicking a space gives it a strand more from the start, shift-clicking
+  takes one off; clicking a cell adds it to the shape, or takes it off, the
+  cells then listed in **Cells**, the shape's own. **At each corner** adds
   strands at every corner at once, as the book sharpens a shape's edges: a
-  triangle of four lines a side with one is #3049.
+  triangle of four lines a side with one is #3049. **Order of the moves**
+  is the book's, alternating where it can, or space by space: a triangle of
+  two lines a side so is #3057.
 - **Import a braid3d design** reads a `.b3d` file saved by braid3d (the
   designer braid3dmin runs) as your own mobidai braid: its yarns in their
   colours, its moves, and its repeat as cycles, on a disk of as few slots

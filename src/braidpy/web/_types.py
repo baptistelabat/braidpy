@@ -47,10 +47,12 @@ class Spec(TypedDict, total=False):
     n_slots: Value
     shift: Value
     counts: str
-    # Your own sinnet from a shape.
+    # A sinnet from a shape.
     shape: str
     size: Value
     height: Value
+    cells: str
+    order: str
     turned: str
     extra: str
     corners: Value
@@ -205,6 +207,12 @@ class DrawnLine(TypedDict):
     track: int
 
 
+# A cell of the grid a shape is drawn on: its name, as a link gives it, its
+# corners, and whether it is in the shape or beside it, to add ("in" is a
+# keyword: hence the functional form).
+GridCell = TypedDict("GridCell", {"name": str, "points": list[Point], "in": bool})
+
+
 class ShapeDrawing(TypedDict):
     """A sinnet's shape as Ashley draws it
     (:func:`braidpy.making.ashley.shape_diagram`): its outline, its lines,
@@ -216,6 +224,7 @@ class ShapeDrawing(TypedDict):
     spaces: list[Point]
     counts: list[int]
     tracks: int
+    cells: list[GridCell]
 
 
 class _Result(TypedDict):
@@ -262,8 +271,6 @@ class Entry(TypedDict, total=False):
     title: str
     shape: str | None
     pattern: dict[str, Default]
-    # Made from what is given, as "Your own moves…" is: no catalogued braid.
-    own: bool
 
 
 class _Source(TypedDict):
@@ -276,8 +283,10 @@ class Source(_Source, total=False):
 
     entries: list[Entry]
     examples: list[Example]
-    # The shapes a sinnet can be made from, by name, with their titles.
+    # The shapes a sinnet can be made from, and the orders of its moves, by
+    # name, with their titles.
     shapes: dict[str, str]
+    orders: dict[str, str]
 
 
 # ---------------------------------------------------------------- machines

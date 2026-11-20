@@ -217,8 +217,18 @@ four lines a side. A track's moves can all be made the other way round
 added to any space (`extra`): the book adds them at the corners
 ({func}`~braidpy.making.ashley.corner_spaces`), the bights turning a corner
 or alone on a side, making #3049 of #3047 and the chisel edges of #3071 and
-#3072. [Braid Studio](braid_studio.md) makes a
-sinnet so, from a shape chosen, tracks and spaces clicked on its drawing.
+#3072. The moves can also be made space by space (`order="spaces"`), as
+the book makes them where it cannot alternate: a triangle of two lines a
+side so is #3057.
+
+A shape can be any outline that does not cross itself: a line across an L
+or a U is cut in pieces where the outline turns back, each a line of its
+own. On a grid, a shape is its cells, squares or triangles
+({func}`~braidpy.making.ashley.grid_shape`), outlined half a spacing beyond
+them ({func}`~braidpy.making.ashley.grid_outline`): rows of triangles so are
+the book's triangles, line for line. [Braid Studio](braid_studio.md) makes
+a sinnet so, from a shape chosen, its cells, tracks and spaces clicked on
+its drawing.
 
 And back, from a sinnet's moves to its shape, without searching. Lines of
 one direction never cross, so the moves fall into groups, one a direction

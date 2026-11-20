@@ -34,6 +34,7 @@ from braidpy.web._settings import (
     OWN,
     Kumihimo,
     Mobidai,
+    Shape,
     Sinnet,
 )
 from braidpy.web._spec import _moves_text, _numbers, defaults, parse_moves
@@ -322,48 +323,85 @@ def from_b3d(text: str) -> Spec:
     )
 
 
-def _outline(shape: str, size: int, height: int) -> list[tuple[float, float]]:
-    """The outline of a shape :class:`Sinnet` offers, so large."""
-    from braidpy.making.ashley import oblong, regular_polygon, triangle
+_CELL = re.compile(r"(-?\d+),(-?\d+)([\^v]?)")
 
-    outlines = {
-        "triangle": lambda: triangle(size),
-        "oblong": lambda: oblong(size, height),
-        "pentagon": lambda: regular_polygon(5, size),
-        "heptagon": lambda: regular_polygon(7, size),
+
+def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
+    """Cells as a link gives them: ``i,j`` on the square grid; ``i,j^`` for
+    the triangle pointing up from point (i, j) of the triangular grid,
+    ``i,jv`` for the one pointing down beside it."""
+    cells: list[tuple[int, ...]] = []
+    for i, j, which in _CELL.findall(text):
+        if grid == "square":
+            cells.append((int(i), int(j)))
+        else:
+            cells.append((int(i), int(j), int(which == "v")))
+    return cells
+
+
+def _cell_text(cell: tuple[int, ...]) -> str:
+    """A cell as :func:`_cells` reads it."""
+    return f"{cell[0]},{cell[1]}" + ("" if len(cell) == 2 else "^v"[cell[2]])
+
+
+def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
+    """The cells sharing a side with these, not among them: those a shape
+    can grow by."""
+    from braidpy.making.ashley import _cell_points
+
+    def sides(cell):
+        points = _cell_points(grid, cell)
+        return {frozenset(side) for side in zip(points, points[1:] + points[:1])}
+
+    taken = set(cells)
+    edges = set().union(*(sides(cell) for cell in cells))
+    near = {
+        (cell[0] + di, cell[1] + dj, *which)
+        for cell in cells
+        for di in (-1, 0, 1)
+        for dj in (-1, 0, 1)
+        for which in ([()] if grid == "square" else [(0,), (1,)])
     }
-    if shape not in outlines:
-        raise ValueError(f"No shape {shape!r}: one of {sorted(Sinnet.shapes)}.")
-    return outlines[shape]()
+    return sorted(cell for cell in near - taken if sides(cell) & edges)
 
 
-def _from_shape(spec: Spec):
+def _from_shape(spec: Spec) -> Result:
     """A sinnet from the shape it is to take, as Ashley draws it
-    (:func:`braidpy.making.ashley.sinnet_from_shape`), and the drawing."""
+    (:func:`braidpy.making.ashley.sinnet_from_shape`), drawn as he draws
+    it, its grid's cells beside, to change the shape by."""
     import dataclasses
 
     from braidpy.making.ashley import (
+        cell_outline,
         corner_spaces,
+        grid_outline,
+        grid_shape,
         shape_diagram,
         shape_tracks,
         sinnet_from_shape,
     )
 
-    outline = _outline(
-        Sinnet.shape.read(spec), Sinnet.size.read(spec), Sinnet.height.read(spec)
-    )
+    name = Shape.shape.read(spec)
+    if name not in Shape.shapes:
+        raise ValueError(f"No shape {name!r}: one of {sorted(Shape.shapes)}.")
+    grid, cells = grid_shape(name, Shape.size.read(spec), Shape.height.read(spec))
+    if Shape.cells.read(spec).strip():
+        cells = _cells(grid, Shape.cells.read(spec))
+    outline = grid_outline(grid, cells)
     lines, joins, bights = shape_diagram(outline)
-    turned = sorted(set(_numbers(Sinnet.turned.read(spec) or "0", "tracks")) - {0})
+    turned = sorted(set(_numbers(Shape.turned.read(spec) or "0", "tracks")) - {0})
     extra = [0] * len(bights)
-    for space in re.findall(r"\d+", Sinnet.extra.read(spec)):
+    for space in re.findall(r"\d+", Shape.extra.read(spec)):
         if not 1 <= int(space) <= len(bights):
             raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
         extra[int(space) - 1] += 1
     for space in corner_spaces(outline):
-        extra[space - 1] += Sinnet.corners.read(spec)
-    sinnet = sinnet_from_shape(outline, extra=extra, turned=turned)
-    if sinnet.n_strands > Sinnet.most_strands:
-        raise ValueError(f"That is over {Sinnet.most_strands} strands.")
+        extra[space - 1] += Shape.corners.read(spec)
+    sinnet = sinnet_from_shape(
+        outline, extra=extra, turned=turned, order=Shape.order.read(spec)
+    )
+    if sinnet.n_strands > Shape.most_strands:
+        raise ValueError(f"That is over {Shape.most_strands} strands.")
     track_of = {
         k: number
         for number, track in enumerate(shape_tracks(sinnet.moves), start=1)
@@ -386,20 +424,31 @@ def _from_shape(spec: Spec):
         "spaces": [list(bight) for bight in bights],
         "counts": list(sinnet.initial_counts_per_space),
         "tracks": len(set(track_of.values())),
+        "cells": [
+            {
+                "name": _cell_text(cell),
+                "points": [list(p) for p in cell_outline(grid, cell)],
+                "in": taken,
+            }
+            for taken, group in (
+                (True, sorted(set(cells))),
+                (False, _beside(grid, cells)),
+            )
+            for cell in group
+        ],
     }
-    return dataclasses.replace(sinnet, shape=Sinnet.shape.read(spec)), drawing
+    named = dataclasses.replace(sinnet, shape=name)
+    result = _sinnet_result(named, spec, Shape.cycles.read(spec), "From a shape,")
+    result["ashley_shape"] = drawing
+    return result
 
 
 def _from_sinnet(spec: Spec) -> Result:
-    from braidpy.ashley_solid_sinnet import AshleySolidSinnet, strand_colours
-    from braidpy.take_off import disk_trajectories
+    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 
     sinnets = _sinnets()
     name = Sinnet.name.read(spec)
-    drawing: ShapeDrawing | None = None
-    if name == Sinnet.from_shape:
-        sinnet, drawing = _from_shape(spec)
-    elif name == OWN:
+    if name == OWN:
         counts = _numbers(spec.get("counts", ""), "strands in each space")
         if len(counts) < 2 or min(counts) < 0 or sum(counts) < 2:
             raise ValueError("Give two spaces or more, holding two strands or more.")
@@ -413,7 +462,15 @@ def _from_sinnet(spec: Spec) -> Result:
         sinnet = sinnets[name].make()
     else:
         raise ValueError(f"No sinnet {name!r}: one of {sorted(sinnets)}.")
-    cycles = Sinnet.cycles.read(spec)
+    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
+    return _sinnet_result(sinnet, spec, Sinnet.cycles.read(spec), called)
+
+
+def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
+    """A sinnet made on its disk, so many cycles, called so."""
+    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.take_off import disk_trajectories
+
     diameter = DISK_YARN.read(spec)
     disk = sinnet.disk(cycles)
     paths, clock, ring = _disk_in_step(
@@ -445,13 +502,6 @@ def _from_sinnet(spec: Spec) -> Result:
             "Its moves do not bring every space back to its count after a "
             "cycle: the catalogue's moves may be mistranscribed."
         )
-    called = (
-        "Your own"
-        if name == OWN
-        else "From a shape,"
-        if drawing is not None
-        else f"ABOK #{name.split('_')[1]},"
-    )
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
 
     def worked(k: int):
@@ -478,8 +528,6 @@ def _from_sinnet(spec: Spec) -> Result:
         disk.start, disk.steps, disk.n_slots, False, list(paths.points)
     )
     result["info"]["made"] = cycles
-    if drawing is not None:
-        result["ashley_shape"] = drawing
     return result
 
 
@@ -548,13 +596,17 @@ def _sinnet_entry() -> Source:
     ]
     return {
         "title": "Ashley solid sinnet",
-        "defaults": defaults(*Sinnet.shown, *Sinnet.shape_shown),
-        "entries": entries
-        + [
-            {"name": Sinnet.from_shape, "title": "From a shape…", "own": True},
-            {"name": OWN, "title": "Your own moves…"},
-        ],
-        "shapes": dict(Sinnet.shapes),
+        "defaults": defaults(*Sinnet.shown),
+        "entries": entries + [{"name": OWN, "title": "Your own moves…"}],
+    }
+
+
+def _shape_entry() -> Source:
+    return {
+        "title": "Ashley's method, from a shape",
+        "defaults": defaults(*Shape.shown),
+        "shapes": dict(Shape.shapes),
+        "orders": dict(Shape.orders),
     }
 
 
@@ -563,4 +615,5 @@ SOURCES: dict[str, tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "kumihimo": (_kumihimo_entry, _from_kumihimo),
     "mobidai": (_mobidai_entry, _from_mobidai),
     "sinnet": (_sinnet_entry, _from_sinnet),
+    "shape": (_shape_entry, _from_shape),
 }

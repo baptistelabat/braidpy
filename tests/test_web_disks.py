@@ -259,20 +259,20 @@ def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
     track, and its spaces."""
     from braidpy.solid_sinnets_catalog import abok_3047
 
-    spec = {"source": "sinnet", "name": "shape", "shape": "triangle", "size": 4}
+    spec = {"source": "shape", "shape": "triangle", "size": 4}
     result = build({**spec, "cycles": 1, "iterations": 0})
     check(result, abok_3047.n_strands)
     drawn = result["ashley_shape"]
     assert drawn["counts"] == abok_3047.initial_counts_per_space
     assert len(drawn["lines"]) == len(drawn["spaces"]) == 12
     assert drawn["tracks"] == 3
-    assert set(catalogue()["sinnet"]["shapes"]) >= {"triangle", "oblong"}
+    assert set(catalogue()["shape"]["shapes"]) >= {"triangle", "oblong", "L"}
 
 
 def test_a_shape_s_track_turned_round_and_strands_added():
     """A track turned round runs the other way, each space still giving
     once and taking once; a space named twice holds two strands more."""
-    spec = {"source": "sinnet", "name": "shape", "shape": "triangle", "size": 4}
+    spec = {"source": "shape", "shape": "triangle", "size": 4}
     plain = build({**spec, "cycles": 1, "iterations": 0})["ashley_shape"]
     turned = build({**spec, "turned": "1", "cycles": 1, "iterations": 0})
     turned = turned["ashley_shape"]
@@ -287,13 +287,14 @@ def test_a_shape_s_track_turned_round_and_strands_added():
     "spec, message",
     [
         ({"shape": "circle"}, "No shape"),
+        ({"cells": "0,0^ 1,1^"}, "meet at a point|more than one piece"),
         ({"turned": "9"}, "No track"),
         ({"extra": "99"}, "numbered 1 to"),
     ],
 )
 def test_a_sinnet_from_a_shape_is_checked(spec, message):
     with pytest.raises(ValueError, match=message):
-        build({"source": "sinnet", "name": "shape", "iterations": 0, **spec})
+        build({"source": "shape", "iterations": 0, **spec})
 
 
 def test_a_shape_s_corners_take_strands_more():
@@ -301,6 +302,25 @@ def test_a_shape_s_corners_take_strands_more():
     the book's #3049."""
     from braidpy.solid_sinnets_catalog import abok_3049
 
-    spec = {"source": "sinnet", "name": "shape", "shape": "triangle", "size": 4}
+    spec = {"source": "shape", "shape": "triangle", "size": 4}
     result = build({**spec, "corners": 1, "cycles": 1, "iterations": 0})
     assert result["ashley_shape"]["counts"] == abok_3049.initial_counts_per_space
+
+
+def test_a_shape_s_cells_are_its_own():
+    """A shape is its grid's cells: given, they make it, and it comes with
+    them and the cells beside, to add; an L is cut in two triangles' less
+    than its oblong, and its lines in pieces where it turns."""
+    spec = {"source": "shape", "shape": "oblong", "size": 3, "height": 3}
+    whole = build({**spec, "cycles": 1, "iterations": 0})["ashley_shape"]
+    assert sorted(c["name"] for c in whole["cells"] if c["in"]) == [
+        "0,0",
+        "0,1",
+        "1,0",
+        "1,1",
+    ]
+    notched = build({**spec, "cells": "0,0 1,0 0,1", "cycles": 1, "iterations": 0})
+    drawn = notched["ashley_shape"]
+    assert sum(c["in"] for c in drawn["cells"]) == 3
+    assert "1,1" in [c["name"] for c in drawn["cells"] if not c["in"]]
+    assert len(drawn["outline"]) == 6

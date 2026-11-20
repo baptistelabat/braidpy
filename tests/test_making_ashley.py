@@ -267,3 +267,46 @@ def test_the_book_s_strands_more_are_at_the_corners(number, outline):
         book.initial_counts_per_space
     )
     assert same_braid(made.braid(1), book.braid(1))
+
+
+def test_a_shape_on_a_grid_is_drawn_as_the_book_draws_it():
+    """Rows of triangles on the triangular grid, outlined half a spacing
+    beyond, are the book's triangles, line for line; squares, its
+    oblongs."""
+    from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
+
+    for lines in range(2, 7):
+        on_grid = sinnet_from_shape(grid_outline(*grid_shape("triangle", lines, 2)))
+        assert on_grid == sinnet_from_shape(triangle(lines))
+    on_grid = sinnet_from_shape(grid_outline(*grid_shape("oblong", 10, 2)))
+    assert on_grid.moves == sinnet_from_shape(oblong(10, 2)).moves
+
+
+def test_a_line_is_cut_where_the_outline_turns_back():
+    """Across a U, a line through both arms is two lines, one an arm."""
+    from braidpy.making.ashley import grid_outline, shape_lines
+
+    u = [(i, j) for i in range(4) for j in range(3) if not (i in (1, 2) and j > 0)]
+    lines = shape_lines(grid_outline("square", u))
+    upper = [line for line in lines if line.ends[0][1] == line.ends[1][1] > 1]
+    assert len(upper) == 4  # two rows, each cut in two
+
+
+def test_space_by_space_is_the_book_s_other_order():
+    """Made space by space, a triangle of two lines a side is the book's
+    #3057 and #3058."""
+    from braidpy.making.ashley import sinnet_from_shape
+    from braidpy.solid_sinnets_catalog import abok_3057
+
+    made = sinnet_from_shape(triangle(2), order="spaces")
+    assert made.moves == [tuple(move) for move in abok_3057.moves]
+    assert made.initial_counts_per_space == abok_3057.initial_counts_per_space
+
+
+def test_cells_must_make_one_piece():
+    from braidpy.making.ashley import grid_outline
+
+    with pytest.raises(ValueError, match="point only"):
+        grid_outline("square", [(0, 0), (1, 1)])
+    with pytest.raises(ValueError, match="more than one piece"):
+        grid_outline("square", [(0, 0), (2, 0)])

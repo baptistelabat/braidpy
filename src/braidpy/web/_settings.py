@@ -107,27 +107,39 @@ class Sinnet:
     # Your own, at most.
     most_strands = 64
     shown = (name, cycles)
-    # From the shape it is to take, as Ashley draws it (the entry named
-    # ``from_shape``): which shape, how large, in lines across it, the
-    # tracks made the other way round and the spaces given a strand more,
-    # by number, a space named twice given two.
-    from_shape = "shape"
+
+
+class Shape:
+    """A sinnet from the shape it is to take, as Ashley draws it
+    (:mod:`braidpy.making.ashley`): a shape to start from and its size,
+    in lines, or its own cells on that shape's grid; the order of the
+    moves; the tracks made the other way round, by number; and the spaces
+    given a strand more, by number, a space named twice given two, and
+    the strands added at each corner."""
+
     shape = Text("shape", "triangle")
-    size = Count("size", 4, low=1, high=12)
-    height = Count("height", 2, low=1, high=12)
+    size = Count("size", 4, low=2, high=12)
+    height = Count("height", 2, low=2, high=12)
+    cells = Text("cells", "")
+    order = Text("order", "book")
     turned = Text("turned", "")
     extra = Text("extra", "")
-    # Strands added at each corner (making.ashley.corner_spaces).
     corners = Count("corners", 0, low=0, high=3)
-    # The shapes offered, and what their size is: an oblong's is its width
-    # and its height, the others' the lines along each side.
+    cycles = Count("cycles", 3, low=1, high=12)
+    most_strands = Sinnet.most_strands
+    # The shapes to start from (making.ashley.grid_shape), and the orders of
+    # the moves (making.ashley.ORDERS), with their titles.
     shapes: ClassVar[dict[str, str]] = {
         "triangle": "Triangle",
+        "hexagon": "Hexagon",
         "oblong": "Oblong",
-        "pentagon": "Pentagon",
-        "heptagon": "Heptagon",
+        "L": "L",
     }
-    shape_shown = (shape, size, height, turned, extra, corners)
+    orders: ClassVar[dict[str, str]] = {
+        "book": "The book's, alternating",
+        "spaces": "Space by space",
+    }
+    shown = (shape, size, height, order, corners, cycles)
 
 
 # ------------------------------------------------------------------ machines

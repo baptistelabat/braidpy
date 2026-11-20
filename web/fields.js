@@ -121,39 +121,44 @@ const FIELDS = {
       custom: true,
       hint: "From space > to space. Odd spaces send their right-hand strand anticlockwise, even spaces their left-hand one clockwise, over all.",
     },
-    // From a shape: shown for that entry only.
-    { name: "shape", label: "Shape", kind: "choice", from: "shapes", entry: "shape" },
+    { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
+  ],
+  shape: [
+    { name: "shape", label: "Start from", kind: "choice", from: "shapes" },
     {
-      name: "size",
-      label: "Size",
-      kind: "number",
-      min: 1,
-      max: 12,
-      entry: "shape",
-      hint: "Lines along each side; an oblong's width.",
+      name: "cells",
+      label: "Cells",
+      kind: "textarea",
+      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square, i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape started from.",
     },
-    {
-      name: "height",
-      label: "Height",
-      kind: "number",
-      min: 1,
-      max: 12,
-      entry: "shape",
-      hint: "An oblong's height, in lines.",
-    },
+    { name: "order", label: "Order of the moves", kind: "choice", from: "orders" },
     {
       name: "turned",
       label: "Tracks turned round",
       kind: "text",
-      entry: "shape",
-      hint: "Each track's moves made the other way round: click a track on the drawing.",
+      hint: "Each track's moves made the other way round, by number.",
     },
     {
       name: "extra",
       label: "A strand more in spaces",
       kind: "text",
-      entry: "shape",
-      hint: "Each space named holds a strand more from the start, twice named two: as the book adds them at corners to sharpen the edges. Click a space on the drawing to add one, shift-click to take one off.",
+      hint: "Each space named holds a strand more from the start, twice named two.",
+    },
+    {
+      name: "size",
+      label: "Size",
+      kind: "number",
+      min: 2,
+      max: 12,
+      hint: "Lines along each side; an oblong's or an L's width.",
+    },
+    {
+      name: "height",
+      label: "Height",
+      kind: "number",
+      min: 2,
+      max: 12,
+      hint: "An oblong's height, or an L's arms, in lines.",
     },
     {
       name: "corners",
@@ -161,7 +166,6 @@ const FIELDS = {
       kind: "number",
       min: 0,
       max: 3,
-      entry: "shape",
       hint: "Strands more in each space at a corner, or alone on a side, as the book sharpens a triangle's edges (#3049) or a flat oblong's (#3072).",
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 12 },
@@ -282,7 +286,6 @@ export function renderFields(source, values = {}) {
       label.append(hint);
     }
     if (field.custom) label.dataset.custom = "";
-    if (field.entry) label.dataset.entry = field.entry;
     if (field.kind === "number") numbers.push(label);
     else holder.append(label);
   }
@@ -310,18 +313,8 @@ export function renderFields(source, values = {}) {
       }
       filling = false;
     };
-    // An entry with fields of its own, as a sinnet from a shape, shows
-    // them and not what the others are made of.
-    const own = new Set(
-      [...holder.querySelectorAll("[data-entry]")].map((label) => label.dataset.entry),
-    );
     const showCustom = (shown) => {
-      for (const label of holder.querySelectorAll("[data-custom]")) {
-        label.hidden = !shown || own.has(entries.value);
-      }
-      for (const label of holder.querySelectorAll("[data-entry]")) {
-        label.hidden = label.dataset.entry !== entries.value;
-      }
+      for (const label of holder.querySelectorAll("[data-custom]")) label.hidden = !shown;
     };
     entries.addEventListener("change", () => {
       const custom = entries.value === "custom";
@@ -351,7 +344,7 @@ export function renderFields(source, values = {}) {
     }
   }
   if (source === "mobidai" || source === "sinnet") attachEditor(source, holder);
-  if (source === "sinnet") attachShape(holder);
+  if (source === "shape") attachShape(holder);
   if (source === "word") attachDiagram(holder);
   if (source === "machine" || source === "lace") attachMachine(holder);
   if (about.examples) attachExamples(source, about.examples, holder);

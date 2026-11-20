@@ -247,8 +247,7 @@ def test_every_braid_offered_as_it_comes_is_made_with_the_site():
     for source, about in listed.items():
         for entry in about.get("entries", []):
             wanted = {"source": source, "name": entry["name"]}
-            own = entry["name"] == "custom" or entry.get("own", False)
-            assert (wanted in specs) == (not own)
+            assert (wanted in specs) == (entry["name"] != "custom")
     for example in listed["word"]["examples"]:
         assert {
             "source": "word",

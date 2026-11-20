@@ -92,7 +92,7 @@ def list_braids(source: Optional[str] = None) -> dict[str, Any]:
             "braids": [
                 {"name": e["name"], "title": e["title"]}
                 for e in about.get("entries", [])
-                if e["name"] != "custom" and not e.get("own")
+                if e["name"] != "custom"
             ]
             + [
                 {"word": e["word"], "n_strands": e["n_strands"], "title": e["title"]}

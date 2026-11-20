@@ -43,8 +43,7 @@ CASES = [
     # A sinnet from the shape it is to take: the book's #3045, ten strands.
     (
         {
-            "source": "sinnet",
-            "name": "shape",
+            "source": "shape",
             "shape": "triangle",
             "size": 2,
             "cycles": 1,
