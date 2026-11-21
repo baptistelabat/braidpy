@@ -203,6 +203,14 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- A sinnet whose strands all move to the right (`AshleySolidSinnet.all_right`),
+  as the book's #3058, #3059 and #3066 to #3069 do: a strand from an even
+  space is led anticlockwise too, still from the left of its space. The
+  disk, its animation and the mobidai pattern go round as the book says;
+  the braid is the same, a strand carried over all being free to swing
+  over the top. #3057 and #3058, given one table in the book, now differ
+  as the book has them, in this alone.
+
 - Every contact of a horn gear machine hands over when a horn of each gear
   comes round to it: round a ring of six or eight gears of four slots, or a
   matrix of gears of several sizes, the gears are moved and sized so that
