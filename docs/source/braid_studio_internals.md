@@ -53,7 +53,9 @@ static files, published with the documentation.
   loading a machine and editing a disk's moves), the braid asked for in the
   address (`spec.js`), the workers (`workers.js`), the braid's own defaults
   (`defaults.js`), the 3D view (`scene.js`) and its insets (`insets.js`), the
-  info card (`info.js`) and the view's controls (`controls.js`).
+  info card (`info.js`) and the view's controls (`controls.js`). The page's
+  words are put into the site's language as they are shown (`i18n.js`):
+  see [A site of your own](private_sites.md#in-another-language).
 - `web/build.py` assembles the site in `web/site/`. It copies the page, each
   of its files naming the others with the page's version, so a browser never
   mixes old files with new ones, and three.js; builds the wheels, math_braid's from its source package,
@@ -145,8 +147,8 @@ python -m http.server -d web/site    # then open http://localhost:8000
 or `make studio` and `make studio-serve`. To use a Pyodide of your own rather than its CDN, add
 `?pyodide=<url of its full/ directory>` to the address.
 
-Under another name, crediting and linking otherwise: `--profile`, see
-[A site of your own](private_sites.md).
+Under another name, crediting and linking otherwise, or in another
+language: `--profile`, see [A site of your own](private_sites.md).
 
 ## What comes next
 

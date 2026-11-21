@@ -15,5 +15,8 @@ documentation = "../"
 documentation_title = "braidpy's documentation"
 # Where to sponsor braidpy, from the studio's foot.
 sponsor = "https://github.com/sponsors/baptistelabat"
+# The language its pages open in, as web/locales/ names it: "en" as braidpy
+# writes them, "fr" in French.  Their menu offers every language there.
+language = "en"
 # Whether search engines are welcome: false asks them to leave the site out.
 indexed = true

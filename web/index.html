@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{language}}" class="untranslated">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -24,6 +24,8 @@
       addEventListener("hashchange", studio);
     </script>
     <link rel="stylesheet" href="style.css" />
+    <!-- First, on its own: the page is shown once its words are in the site's language. -->
+    <script type="module" src="i18n.js"></script>
     <script type="module" src="home.js"></script>
   </head>
   <body class="home">
@@ -37,7 +39,13 @@
           your browser — or <a href="make.html">make your own</a>.
         </p>
       </div>
-      <a class="primary" href="make.html">Make a braid</a>
+      <div class="home-actions">
+        <!-- Filled by i18n.js, with every language the site has. -->
+        <label class="language"
+          ><span class="sr-only">Language</span><select data-language translate="no" hidden></select
+        ></label>
+        <a class="primary" href="make.html">Make a braid</a>
+      </div>
     </header>
 
     <form id="filters" class="filters" autocomplete="off">

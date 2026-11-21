@@ -6,6 +6,15 @@ What changed in each release of braidpy.
 
 ### New
 
+- Braid Studio in French, or another language: a profile's `language`
+  (`web/profile.toml`) names the catalogue its pages are shown in,
+  `web/locales/fr.toml` for French, each text braidpy writes in English,
+  in Python or in the page, put into it as it is shown (`web/i18n.js`).
+  A site opens in its profile's language, braidpy's in English,
+  braid-designer's in French with `language = "fr"`; a menu at the top of
+  each page switches between them there and then, the braid on show kept,
+  and remembers the choice (or `?lang=fr` in a link). A profile must now
+  give `language`.
 - A design saved by braid3d (`.b3d`) read as a mobidai braid
   (`braidpy.b3d.mobidai_from_b3d`, `braidpy.web.from_b3d`): its yarns in
   their colours, its moves and its repeat, on a disk of as few slots as

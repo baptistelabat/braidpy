@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{language}}" class="untranslated">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -41,11 +41,17 @@
         }
       }
     </script>
+    <!-- First, on its own: the page is shown once its words are in the site's language. -->
+    <script type="module" src="i18n.js"></script>
     <script type="module" src="app.js"></script>
   </head>
   <body>
     <aside class="panel">
-      <header>
+      <header class="panel-head">
+        <!-- Filled by i18n.js, with every language the site has. -->
+        <label class="language"
+          ><span class="sr-only">Language</span><select data-language translate="no" hidden></select
+        ></label>
         <h1>{{name}}</h1>
         <p class="lede">
           Describe a braid and see it laid and tightened in 3D, computed<!-- if by --> by

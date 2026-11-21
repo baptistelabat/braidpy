@@ -63,7 +63,8 @@ def test_the_braids_made_with_the_site_are_kept_gzipped(tmp_path):
 
 
 # A site of its own, built from braidpy: named otherwise, crediting and
-# linking nothing, kept from search engines (docs/source/private_sites.md).
+# linking nothing, in French, kept from search engines
+# (docs/source/private_sites.md).
 PRIVATE = """
 name = "Braid Designer"
 by = ""
@@ -71,6 +72,7 @@ by_url = ""
 documentation = ""
 documentation_title = ""
 sponsor = ""
+language = "fr"
 indexed = false
 """
 
@@ -107,6 +109,7 @@ def test_a_site_of_its_own_names_neither_braidpy_nor_its_links(tmp_path):
         for told in ("braidpy", "github", "sponsor", "Braid Studio"):
             assert told.lower() not in shown.lower(), (name, told)
         assert "<title>Braid Designer</title>" in page, name
+        assert '<html lang="fr"' in page, name
         assert '<meta name="robots" content="noindex, nofollow" />' in page, name
 
 

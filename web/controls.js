@@ -50,6 +50,8 @@ $("hanging").addEventListener("change", (event) => {
   fit();
 });
 $("reset").addEventListener("click", fit);
+// The cross-section's name is drawn, not written: drawn again in another language.
+document.addEventListener("language", () => drawSection(lastResult));
 $("made").addEventListener("input", (event) => {
   growing = false;
   $("grow").textContent = "▶ Grow";

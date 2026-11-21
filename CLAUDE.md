@@ -30,6 +30,7 @@ mistake before:
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |
 | A catalogue of braids | `catalogue.Entry`, each catalogue's `CATALOGUE` |
 | Defaults and limits for the web page | `web/_settings.py` |
+| The page in another language: a text by its English | `web/i18n.js`, `web/locales/` |
 
 ## Rules
 
@@ -64,6 +65,10 @@ mistake before:
 - **Refactoring keeps results.** Check outputs are the same before and after
   (for `braidpy.web`, the same JSON for every build); say so in the PR, and
   say what changes when something does.
+- **The page's words are English, their French beside them.** A sentence
+  added to or changed on Braid Studio, in Python or in JavaScript, gets
+  its line in `web/locales/fr.toml` (a pattern for one with numbers or
+  names in it); `tests/test_i18n_js.py` checks the pages and catalogues.
 - **Commit only what you mean to.** `git add` named paths, never a whole
   directory: `web/site/` and `web/node_modules/` are build output.
 
