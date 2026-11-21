@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="untranslated">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,13 +9,13 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet, a braiding machine or a lace machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=d95579c3e7" />
+    <link rel="stylesheet" href="style.css?v=78e672da68" />
     <script>
       // braidpy's worker starts first, while three.js and the page's
       // modules load: Python is the slowest to start.  What it says before
       // the page is ready to hear it is kept for workers.js to read.
       window.braidpy = (() => {
-        const worker = new Worker("worker.js?v=d95579c3e7");
+        const worker = new Worker("worker.js?v=78e672da68");
         const early = [];
         worker.onmessage = ({ data }) => early.push(data);
         const pyodideUrl =
@@ -38,11 +38,17 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=d95579c3e7"></script>
+    <!-- First, on its own: the page is shown once its words are in the site's language. -->
+    <script type="module" src="i18n.js?v=78e672da68"></script>
+    <script type="module" src="app.js?v=78e672da68"></script>
   </head>
   <body>
     <aside class="panel">
-      <header>
+      <header class="panel-head">
+        <!-- Filled by i18n.js, with every language the site has. -->
+        <label class="language"
+          ><span class="sr-only">Language</span><select data-language translate="no" hidden></select
+        ></label>
         <h1>Braid Studio</h1>
         <p class="lede">
           Describe a braid and see it laid and tightened in 3D, computed by

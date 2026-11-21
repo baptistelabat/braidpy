@@ -8,9 +8,9 @@
 import * as THREE from "three";
 import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import { copyText } from "./info.js?v=d95579c3e7";
-import { drawSection, section, top } from "./insets.js?v=d95579c3e7";
-import { $ } from "./page.js?v=d95579c3e7";
+import { copyText } from "./info.js?v=78e672da68";
+import { drawSection, section, top } from "./insets.js?v=78e672da68";
+import { $ } from "./page.js?v=78e672da68";
 import {
   awake,
   braid,
@@ -25,8 +25,8 @@ import {
   SUBSTEPS,
   scene,
   showTubes,
-} from "./scene.js?v=d95579c3e7";
-import { b3dOf } from "./workers.js?v=d95579c3e7";
+} from "./scene.js?v=78e672da68";
+import { b3dOf } from "./workers.js?v=78e672da68";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {
@@ -50,6 +50,8 @@ $("hanging").addEventListener("change", (event) => {
   fit();
 });
 $("reset").addEventListener("click", fit);
+// The cross-section's name is drawn, not written: drawn again in another language.
+document.addEventListener("language", () => drawSection(lastResult));
 $("made").addEventListener("input", (event) => {
   growing = false;
   $("grow").textContent = "▶ Grow";

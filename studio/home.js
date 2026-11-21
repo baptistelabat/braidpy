@@ -7,6 +7,8 @@
 // (braids.json, braidpy.web.braids); this only shows it.  Each braid opens
 // in the studio (make.html), made with the site, so shown at once.
 
+import { tr } from "./i18n.js?v=78e672da68";
+
 const $ = (id) => document.getElementById(id);
 
 // What each kind of link is called beside it.
@@ -70,9 +72,10 @@ function row(braid) {
             {},
             element("span", { className: `kind kind-${link.kind}` }, KIND[link.kind] ?? link.kind),
             " ",
+            // A book's or a page's own title, in its own language.
             link.url
-              ? element("a", { href: link.url, rel: "noopener", target: "_blank" }, link.title)
-              : link.title,
+              ? element("a", { href: link.url, rel: "noopener", target: "_blank", translate: false }, link.title)
+              : element("span", { translate: false }, link.title),
           ),
         ),
       )
@@ -97,7 +100,12 @@ function row(braid) {
     element("td", { className: "num" }, braid.n_strands ?? dash()),
     element("td", { className: "num" }, loops),
     element("td", { className: "num" }, braid.writhe ?? dash()),
-    element("td", { className: "same" }, braid.same?.length ? braid.same.join("; ") : dash()),
+    element(
+      "td",
+      { className: "same" },
+      // Each name a text of its own, to be shown in the site's language.
+      ...(braid.same?.length ? braid.same.flatMap((name, i) => (i ? ["; ", name] : [name])) : [dash()]),
+    ),
     element("td", {}, links),
   );
 }
@@ -116,7 +124,9 @@ function within(value, low, high) {
 
 function kept(braid) {
   const words = $("search").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const text = [braid.title, sourceName(braid.source), ...braid.links.map((l) => l.title), ...(braid.same ?? [])]
+  // Its names as written and as shown, in the site's language.
+  const names = [braid.title, sourceName(braid.source), ...(braid.same ?? [])];
+  const text = [...names, ...names.map(tr), ...braid.links.map((l) => l.title)]
     .join(" ")
     .toLowerCase();
   if (!words.every((word) => text.includes(word))) return false;

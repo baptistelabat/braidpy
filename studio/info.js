@@ -6,11 +6,12 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=d95579c3e7";
-import { $, round } from "./page.js?v=d95579c3e7";
-import { lastResult } from "./scene.js?v=d95579c3e7";
-import { writeSpec } from "./spec.js?v=d95579c3e7";
-import { pending, submit, worker } from "./workers.js?v=d95579c3e7";
+import { catalogue } from "./fields.js?v=78e672da68";
+import { englishText, tr } from "./i18n.js?v=78e672da68";
+import { $, round } from "./page.js?v=78e672da68";
+import { lastResult } from "./scene.js?v=78e672da68";
+import { writeSpec } from "./spec.js?v=78e672da68";
+import { pending, submit, worker } from "./workers.js?v=78e672da68";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -292,10 +293,10 @@ export async function copyText(text, button) {
     area.remove();
   }
   if (!copied) {
-    window.prompt("Copy it from here:", text);
+    window.prompt(tr("Copy it from here:"), text);
     return;
   }
-  const was = button.textContent;
+  const was = englishText(button);
   button.textContent = "Copied ✓";
   setTimeout(() => (button.textContent = was), 1500);
 }

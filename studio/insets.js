@@ -5,8 +5,9 @@
 // The insets over the 3D view: the braid's cross-section, and what made it
 // seen from above.
 
-import { $ } from "./page.js?v=d95579c3e7";
-import { braid } from "./scene.js?v=d95579c3e7";
+import { tr } from "./i18n.js?v=78e672da68";
+import { $ } from "./page.js?v=78e672da68";
+import { braid } from "./scene.js?v=78e672da68";
 
 // How a machine's tracks are drawn from above, under its carriers: thin
 // and see-through, so the slots and carriers on them stay clear.
@@ -82,7 +83,7 @@ export function drawSection(result) {
   const style = getComputedStyle(document.documentElement);
   ctx.fillStyle = style.getPropertyValue("--muted").trim();
   ctx.font = "10px system-ui, sans-serif";
-  ctx.fillText("Cross-section", 8, 14);
+  ctx.fillText(tr("Cross-section"), 8, 14);
   ctx.globalAlpha = 0.55;
   ctx.lineWidth = 1;
   middle.forEach((points, i) => {
