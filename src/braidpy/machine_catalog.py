@@ -23,7 +23,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from braidpy.catalogue import Entry, Link
+from braidpy.catalogue import Entry, Link, extended
 
 if TYPE_CHECKING:
     from braidpy.horn_gear.model import BraidingMachine
@@ -118,6 +118,8 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
         _multiband("multiband_band", band=2),
     ),
 }
+# Then the braids installed packages add (braidpy.catalogue.extended).
+CATALOGUE = extended("machine_catalog", CATALOGUE)
 
 
 @dataclass(frozen=True)

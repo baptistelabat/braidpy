@@ -39,7 +39,9 @@ try:
 except ModuleNotFoundError:  # Python 3.10: tomllib's forerunner
     import tomli as tomllib
 import urllib.request
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 WEB = Path(__file__).resolve().parent
 ROOT = WEB.parent
@@ -146,25 +148,27 @@ _WORDS = re.compile(rf"{_IF}(.*?){_END}", re.DOTALL)
 _FILLED = re.compile(r"\{\{(\w+)\}\}")
 
 
-def profile(path: Path = PROFILE) -> dict[str, str | bool]:
+def profile(path: Path = PROFILE) -> dict[str, Any]:
     """A site's profile: what it calls itself, whom it credits and where it
     links.  It gives every key this repository's own profile gives, and no
     other: a site built from braidpy decides each, a key added here
-    included, rather than taking this one's."""
+    included, rather than taking this one's.  Its ``packages``, given from
+    where the profile is, come back as absolute paths."""
     given = tomllib.loads(path.read_text())
     expected = tomllib.loads(PROFILE.read_text())
     if given.keys() != expected.keys():
         raise SystemExit(
             f"{path} gives {sorted(given)}; a profile gives {sorted(expected)}."
         )
+    given["packages"] = [str((path.parent / p).resolve()) for p in given["packages"]]
     return given
 
 
-def _rendered(text: str, site: dict[str, str | bool]) -> str:
+def _rendered(text: str, site: dict[str, Any]) -> str:
     """A page filled with its site's profile: ``{{key}}`` by its value, a
     part kept or left out as its key is set or not."""
 
-    def value(key: str) -> str | bool:
+    def value(key: str) -> Any:
         if key not in site:
             raise RuntimeError(f"The page asks for {key!r}, which no profile gives.")
         return site[key]
@@ -180,14 +184,18 @@ def _rendered(text: str, site: dict[str, str | bool]) -> str:
     return _FILLED.sub(filled, _WORDS.sub(kept, _LINES.sub(kept, text)))
 
 
-def locale(language: str) -> str:
+def locale(language: str, packages: Sequence[str] = ()) -> str:
     """The page's words in every language of ``web/locales/`` (web/i18n.js),
     as the module the page imports, opening in ``language``: each
-    ``<code>.toml`` a text by its English; English needs none."""
-    catalogues = {
-        source.stem: tomllib.loads(source.read_text())
-        for source in sorted(LOCALES.glob("*.toml"))
-    }
+    ``<code>.toml`` a text by its English; English needs none.  Each of the
+    site's ``packages`` adds the words of its own braids from its own
+    ``locales/``, kept out of braidpy's."""
+    catalogues: dict[str, dict[str, str]] = {}
+    for folder in [LOCALES, *(Path(p) / "locales" for p in packages)]:
+        for source in sorted(folder.glob("*.toml")):
+            catalogues.setdefault(source.stem, {}).update(
+                tomllib.loads(source.read_text())
+            )
     if language != "en" and language not in catalogues:
         raise SystemExit(f"No words in {language!r}: no {LOCALES}/{language}.toml.")
     return (
@@ -198,7 +206,7 @@ def locale(language: str) -> str:
     )
 
 
-def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
+def _copy_page(site: Path, about: dict[str, Any]) -> None:
     """The page's own files, each naming the others with the page's version,
     its HTML filled with the site's profile (``about``), and its words in
     the site's language (:func:`locale`).
@@ -211,7 +219,7 @@ def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
     for name in PAGE:
         text = (WEB / name).read_text()
         texts[name] = _rendered(text, about) if name.endswith(".html") else text
-    texts["locale.js"] = locale(str(about["language"]))
+    texts["locale.js"] = locale(str(about["language"]), about["packages"])
     digest = hashlib.sha256()
     for name, text in texts.items():
         digest.update(name.encode() + b"\0" + text.encode())
@@ -239,22 +247,26 @@ def _copy_page(site: Path, about: dict[str, str | bool]) -> None:
         (site / name).write_text(_NAMED.sub(stamp, text))
 
 
-def _braidpy(script: str) -> subprocess.CompletedProcess:
+def _braidpy(script: str, packages: Sequence[str] = ()) -> subprocess.CompletedProcess:
     """A Python script run with braidpy and all it needs: the project's own
-    environment."""
+    environment, with the site's ``packages`` (without uv, installed in it
+    already)."""
     if shutil.which("uv"):
-        command = ["uv", "run", "--project", str(ROOT), "python", "-c", script]
+        command = ["uv", "run", "--project", str(ROOT)]
+        for package in packages:
+            command += ["--with", package]
+        command += ["python", "-c", script]
     else:
         command = [sys.executable, "-c", script]
     return subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
 
 
-def _premade(site: Path) -> None:
+def _premade(site: Path, packages: Sequence[str] = ()) -> None:
     """Every braid the page offers as it comes, made once here
     (``braidpy.web.premade``): a visitor choosing one sees it at once,
     without waiting for Python — the biggest sinnets took minutes."""
     script = f"from braidpy import web; web.premade({str(site / 'made')!r})"
-    _braidpy(script)
+    _braidpy(script, packages)
 
 
 def _settled(site: Path, cache: Path = SETTLED_CACHE) -> None:
@@ -327,7 +339,7 @@ def _compressed(site: Path) -> None:
     (made / "index.json").write_text(json.dumps(index))
 
 
-def _data(site: Path) -> None:
+def _data(site: Path, packages: Sequence[str] = ()) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
     catalogue — what it can make, offered before Python has started — the
     catalogue of braids by topology, and the table of braids the front
@@ -340,7 +352,7 @@ def _data(site: Path) -> None:
         "json.dump({'catalogue': web.catalogue(), 'topologies': topologies, "
         "'braids': web.braids(topologies)}, sys.stdout)"
     )
-    data = json.loads(_braidpy(script).stdout)
+    data = json.loads(_braidpy(script, packages).stdout)
     for name, value in data.items():
         (site / f"{name}.json").write_text(json.dumps(value))
 
@@ -357,9 +369,9 @@ def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:
     if not described["indexed"]:
         # Search engines read it only at a host's root: a site served there.
         (site / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
-    _data(site)
+    _data(site, described["packages"])
     if premade:
-        _premade(site)
+        _premade(site, described["packages"])
         _settled(site)
         _compressed(site)
     vendor = site / "vendor" / "three"
@@ -379,10 +391,16 @@ def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:
     braidpy = _wheel(ROOT, wheels)
     with tempfile.TemporaryDirectory() as scratch:
         math_braid = _wheel(_math_braid_sdist(Path(scratch)), wheels)
+    # The site's own packages, installed after braidpy, whose catalogues
+    # they add to (braidpy.catalogue.extended).
+    own = [_wheel(package, wheels) for package in described["packages"]]
     version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
     (wheels / "manifest.json").write_text(
         json.dumps(
-            {"version": version, "wheels": [math_braid.name, braidpy.name]},
+            {
+                "version": version,
+                "wheels": [math_braid.name, braidpy.name, *(w.name for w in own)],
+            },
             indent=2,
         )
     )

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from braidpy.catalogue import Entry, Link
+from braidpy.catalogue import Entry, Link, extended
 
 __all__ = ["CATALOGUE", "CataloguedBraid", "CataloguedMobidai"]
 
@@ -390,3 +390,5 @@ CATALOGUE: dict[str, Entry[CataloguedMobidai]] = {
     "HIRA_NAIKI": _entry(HIRA_NAIKI),
     "UNERI_MARU_GENJI": _entry(UNERI_MARU_GENJI),
 }
+# Then the braids installed packages add (braidpy.catalogue.extended).
+CATALOGUE = extended("mobidai_catalog", CATALOGUE)

@@ -6,6 +6,13 @@ What changed in each release of braidpy.
 
 ### New
 
+- Catalogues from outside: a package of a site's own adds braids to
+  braidpy's catalogues (`braidpy.catalogue.extended`, entry points in
+  the group `braidpy.catalogues`), as braid-designer adds machines of its
+  own without braidpy knowing them. A profile's `packages` name the
+  site's packages: the build runs braidpy with them, installs their
+  wheels in the page, and merges the words of their braids from their own
+  `locales/`. A profile must now give `packages`.
 - Braid Studio in French, or another language: a profile's `language`
   (`web/profile.toml`) names the catalogue its pages are shown in,
   `web/locales/fr.toml` for French, each text braidpy writes in English,

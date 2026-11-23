@@ -8,7 +8,7 @@ in the book, and all of them in :data:`CATALOGUE`, as every catalogue lists
 its braids (:mod:`braidpy.catalogue`)."""
 
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
-from braidpy.catalogue import Entry, Link, ashley
+from braidpy.catalogue import Entry, Link, ashley, extended
 
 """The simplest sinnets, worked the same way on the stand: Ashley's stand,
 like a marudai, makes the plait and the square and round sinnets as well
@@ -1178,3 +1178,5 @@ CATALOGUE: dict[str, Entry[AshleySolidSinnet]] = {
     for name, value in sorted(globals().items())
     if isinstance(value, AshleySolidSinnet)
 }
+# Then the braids installed packages add (braidpy.catalogue.extended).
+CATALOGUE = extended("solid_sinnets_catalog", CATALOGUE)
