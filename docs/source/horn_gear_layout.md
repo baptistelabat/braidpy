@@ -142,6 +142,21 @@ ticks.
 
 ![The a horns meet at the contact, then the b horns](split_axles_meet.svg)
 
+### Split gears in a timed ring
+
+In a ring timed so, the parts of a split gear are stacked on their axle,
+each a horn plate of its own meeting only its own neighbours. Each keeps
+its own time, its own $x$, its $p_u / k_u$ then 0: its plate set on the axle
+where its contacts want it, as when the machine is assembled. The axle is
+as large as one part, not all of them. Where no contact ties two parts'
+bands, as two matrices of gears joined by a column of split gears, each
+band is laid out alone first and the next turned, and mirrored if that
+leaves it clearer, so that the split axles it shares come where they stand;
+then each band's times are shifted together, which changes none of its
+contacts, so that each split gear's parts stand $j / k$ of a pitch apart,
+their carriers out of each other's way. Each band then braids as it does
+alone: two matrices of 14 carriers joined so hold 28.
+
 ## How large a machine must be for its bobbins
 
 The simulation stops a machine where two carriers would take one slot
@@ -159,7 +174,8 @@ $$
 g = \min_i \, 2\, r_i \sin\frac{\pi}{h_i}
 $$
 
-(round a split gear, all its parts' horns count), is $g \, b / d$: $g / d$
+(round a split gear whose parts take turns, all its parts' horns count;
+stacked, a part's own), is $g \, b / d$: $g / d$
 bobbin diameters. Braid Studio sizes every machine so for bobbins of
 `bobbin_diameter_mm` (20 unless the link says otherwise), and says how
 large its horns, gears and deck come out.

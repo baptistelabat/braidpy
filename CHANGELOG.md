@@ -212,6 +212,15 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- In a ring of gears timed so that every contact is on a horn
+  (`described`, `layout.time_ring`), the parts of a split gear are
+  stacked on their axle, each keeping its own time, the axle as large as
+  one part; the bands they join are laid out each alone and put
+  together, each split gear's parts half a pitch apart (or j/k of k).
+  Two matrices of gears joined by split gears, the split ladder, now each
+  braid as they do alone: 28 carriers rather than 14, clear of each other.
+  Machines without split gears in a ring are as before.
+
 - A sinnet whose strands all move to the right (`AshleySolidSinnet.all_right`),
   as the book's #3058, #3059 and #3066 to #3069 do: a strand from an even
   space is led anticlockwise too, still from the left of its space. The
