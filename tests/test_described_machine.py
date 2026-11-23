@@ -681,6 +681,29 @@ def test_the_split_ladder_puts_every_contact_on_a_horn():
     simulate(machine, state_period(machine, carriers), carriers)
 
 
+@pytest.mark.slow
+def test_two_matrices_joined_by_split_gears_each_braid_as_one_alone():
+    """The split ladder is two matrices of gears, the column where they meet
+    of split gears.  Their parts stacked, each keeping its own time, each
+    matrix braids as it does alone: the ladder holds twice the matrix's
+    carriers, every contact on a horn, and its carriers clear each other,
+    the parts of each split gear half a pitch apart."""
+    from braidpy.horn_gear.layout import compute_layout, offset_residuals
+    from braidpy.horn_gear.simulation import state_period
+    from braidpy.horn_gear.take_off import clearance
+
+    ladder = machine_from_graph(LADDERS[-1], 4)
+    # One matrix: the ladder's left half, its split gears whole.
+    matrix = machine_from_graph(
+        "A0-A1:3 A0-B0 A1-A2:3 A1-B1:3 A2-A3 A2-B2:3 A3-B3 B0-B1 B1-B2 B2-B3", 4
+    )
+    carriers = ladder.default_carriers()
+    assert len(carriers) == 2 * len(matrix.default_carriers()) == 28
+    assert max(offset_residuals(ladder, compute_layout(ladder)).values()) < 1e-3
+    room = clearance(ladder, min(state_period(ladder, carriers) or 1, 64), carriers)
+    assert room is not None and room.met is None and room.share > 0.5
+
+
 def test_the_timing_takes_no_step_from_two_gears_at_one_place():
     """Two meshing gears started at one place have no direction between
     them: the fit's derivatives divided by their distance, gave a NaN, and

@@ -343,6 +343,12 @@ class RingContacts:
     gear's start ``x = d n psi / 2 pi``, that is
     ``turns * alpha - x - part = t``.
 
+    Each start is a timer's: by default each gear's, its parts a fixed
+    share of a step apart; or, with ``timer_first`` and ``timer_second``,
+    one of ``n_timers``, so that the parts of a split gear, stacked on one
+    axle, each start where they are set, as their horn plates are when the
+    machine is assembled (``part`` then 0).
+
     Attributes:
         first: Each contact's first gear.
         second: Its second gear.
@@ -351,6 +357,15 @@ class RingContacts:
         part_second: The same of the second's.
         weight: A miss of one step at the contact, as a share of the gap
             between two horns of the first gear.
+        timer_first: The timer of the first gear's part, by index; the
+            gear's own if None.
+        timer_second: The same of the second's.
+        n_timers: How many timers; as many as gears if None.
+        apart: Timers set so far apart once fitted, as ``(timer, other,
+            share of a step)``: the parts of a split gear, their horns
+            taking turns round its axle.  Where no contact ties the two, as
+            two bands joined by split gears, the first's whole band is
+            turned so, which changes no contact of it.
     """
 
     first: np.ndarray
@@ -359,6 +374,10 @@ class RingContacts:
     part_first: np.ndarray
     part_second: np.ndarray
     weight: np.ndarray
+    timer_first: np.ndarray | None = None
+    timer_second: np.ndarray | None = None
+    n_timers: int | None = None
+    apart: tuple[tuple[int, int, float], ...] = ()
 
 
 def _wrap(x):
@@ -375,6 +394,10 @@ class _Timing:
         self.n = len(convention)
         self.meshes, self.others, self.contacts = meshes, others, contacts
         c = contacts
+        # Whose start each contact's two horns keep time by.
+        self.m = self.n if c.n_timers is None else c.n_timers
+        self.timed_first = c.first if c.timer_first is None else c.timer_first
+        self.timed_second = c.second if c.timer_second is None else c.timer_second
         # A contact asks first's start minus second's to be
         # slope * alpha + offset, alpha its angle seen from first.
         self.slope = c.turns[c.first] - c.turns[c.second]
@@ -398,9 +421,8 @@ class _Timing:
         """How far each contact's two horns miss each other, in steps."""
         centres, _, turned = self.split(z)
         alpha, _ = self.angle(centres)
-        c = self.contacts
         wanted = self.slope * alpha + self.offset
-        return _wrap(turned[c.first] - turned[c.second] - wanted)
+        return _wrap(turned[self.timed_first] - turned[self.timed_second] - wanted)
 
     def residuals(self, z):
         """Every error, as a share of what it is measured against: each mesh
@@ -423,7 +445,7 @@ class _Timing:
         a, b, unit, apart = _pairs(centres, self.meshes)
         apart = np.maximum(apart, SAME_PLACE)
         touch = radii[a] + radii[b]
-        mesh = np.zeros((len(a), 4 * n))
+        mesh = np.zeros((len(a), 3 * n + self.m))
         k = np.arange(len(a))
         for axis in (0, 1):
             mesh[k, 2 * b + axis] += unit[:, axis] / touch
@@ -434,7 +456,7 @@ class _Timing:
         apart = np.maximum(apart, SAME_PLACE)
         clear = (1 + CLEARANCE) * (radii[a] + radii[b])
         near = apart < clear
-        overlap = np.zeros((len(a), 4 * n))
+        overlap = np.zeros((len(a), 3 * n + self.m))
         k = np.arange(len(a))[near]
         a, b, unit, apart, clear = (
             a[near],
@@ -456,13 +478,13 @@ class _Timing:
         square = np.maximum(gx * gx + gy * gy, SAME_PLACE**2)
         turn = np.stack([-gy / square, gx / square], axis=1)
         pull = (c.weight * self.slope)[:, None] * turn
-        timing = np.zeros((len(c.first), 4 * n))
+        timing = np.zeros((len(c.first), 3 * n + self.m))
         k = np.arange(len(c.first))
         for axis in (0, 1):
             timing[k, 2 * c.second + axis] -= pull[:, axis]
             timing[k, 2 * c.first + axis] += pull[:, axis]
-        timing[k, 3 * n + c.first] += c.weight
-        timing[k, 3 * n + c.second] -= c.weight
+        timing[k, 3 * n + self.timed_first] += c.weight
+        timing[k, 3 * n + self.timed_second] -= c.weight
         rows.append(timing)
         return np.vstack(rows)
 
@@ -475,15 +497,14 @@ class _Timing:
         return z
 
     def start(self, centres):
-        """Each gear's start from a spanning tree of its contacts, the rest
+        """Each timer's start from a spanning tree of its contacts, the rest
         of the contacts left to the fit."""
-        c = self.contacts
-        turned = np.zeros(self.n)
+        turned = np.zeros(self.m)
         alpha, _ = self.angle(centres)
         wanted = self.slope * alpha + self.offset
         placed = {0}
-        while len(placed) < self.n:
-            for k, (u, v) in enumerate(zip(c.first, c.second)):
+        while len(placed) < self.m:
+            for k, (u, v) in enumerate(zip(self.timed_first, self.timed_second)):
                 if (u in placed) != (v in placed):
                     if u in placed:
                         turned[v] = turned[u] - wanted[k]
@@ -493,7 +514,9 @@ class _Timing:
                         placed.add(int(u))
                     break
             else:
-                break  # not connected: the rest stay at 0
+                # Timers no contact joins to those placed, as the parts of
+                # split gears braiding apart: their own tree, from 0.
+                placed.add(min(set(range(self.m)) - placed))
         return turned
 
 
@@ -557,16 +580,41 @@ def time_ring(
         else:
             damping *= DAMPING_STIFFEN
     centres, radii, turned = fit.split(z)
+    turned = _set_apart(turned.copy(), fit, contacts.apart)
     alpha, _ = fit.angle(centres)
     c = contacts
     # When the first gear's part comes round, the miss shared with the
     # second's by halves.
-    own = c.turns[c.first] * alpha - turned[c.first] - c.part_first
+    own = c.turns[c.first] * alpha - turned[fit.timed_first] - c.part_first
     phases = [
         0.0 if min(phase, 1 - phase) < WHOLE_STEP else phase
         for phase in ((own + fit.miss(z) / 2) % 1.0).tolist()
     ]
     return centres.copy(), radii.copy(), turned.copy(), phases
+
+
+def _set_apart(turned, fit, apart):
+    """The timers, each band no contact ties to another turned so that its
+    timers stand as far from the other's as ``apart`` asks
+    (:class:`RingContacts`); a band tied to one already set stays."""
+    band = list(range(len(turned)))
+
+    def root(t):
+        while band[t] != t:
+            band[t] = band[band[t]]
+            t = band[t]
+        return t
+
+    for u, v in zip(fit.timed_first, fit.timed_second):
+        band[root(int(u))] = root(int(v))
+    for timer, other, share in apart:
+        mine, theirs = root(timer), root(other)
+        if mine == theirs:
+            continue
+        shift = turned[other] + share - turned[timer]
+        turned[[t for t in range(len(turned)) if root(t) == mine]] += shift
+        band[mine] = theirs
+    return turned
 
 
 def _orient(
