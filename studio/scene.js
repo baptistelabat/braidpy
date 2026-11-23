@@ -7,12 +7,12 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onChosen, paint } from "./colours.js?v=78e672da68";
-import { wholeFrame } from "./frames.js?v=78e672da68";
-import { describe } from "./info.js?v=78e672da68";
-import { drawSection, drawTop } from "./insets.js?v=78e672da68";
-import { $ } from "./page.js?v=78e672da68";
-import { pending } from "./workers.js?v=78e672da68";
+import { onChosen, paint } from "./colours.js?v=dede6f4546";
+import { wholeFrame } from "./frames.js?v=dede6f4546";
+import { describe } from "./info.js?v=dede6f4546";
+import { drawSection, drawTop } from "./insets.js?v=dede6f4546";
+import { $ } from "./page.js?v=dede6f4546";
+import { pending } from "./workers.js?v=dede6f4546";
 
 export let lastResult = null;
 
