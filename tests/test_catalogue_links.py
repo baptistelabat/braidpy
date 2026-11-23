@@ -70,3 +70,42 @@ def test_the_links_go_with_the_topologies_they_make():
     assert [m.links for t in back for m in t.methods] == [
         tuple(Link(**link) for link in m["links"]) for t in data for m in t["methods"]
     ]
+
+
+def test_a_package_adds_its_braids_after_braidpy_s_and_none_twice(monkeypatch):
+    """What a site's own package adds to a catalogue comes after braidpy's
+    braids; a name braidpy has already is refused, not overwritten."""
+    from importlib import metadata
+
+    import pytest
+
+    from braidpy.catalogue import GROUP, Entry, extended
+
+    class Point:
+        value = "own_braids:MACHINES"
+
+        def __init__(self, entries):
+            self.entries = entries
+
+        def load(self):
+            return self.entries
+
+    def points(entries):
+        def found(group, name):
+            return (
+                [Point(entries)] if (group, name) == (GROUP, "machine_catalog") else []
+            )
+
+        return found
+
+    theirs = {"tubular_8": Entry("Tubular braid", lambda: None)}
+    monkeypatch.setattr(
+        metadata, "entry_points", points({"mine": Entry("Mine", lambda: None)})
+    )
+    assert list(extended("machine_catalog", theirs)) == ["tubular_8", "mine"]
+    assert list(extended("mobidai_catalog", theirs)) == ["tubular_8"]
+    monkeypatch.setattr(
+        metadata, "entry_points", points({"tubular_8": Entry("Mine", lambda: None)})
+    )
+    with pytest.raises(ValueError, match="tubular_8"):
+        extended("machine_catalog", theirs)

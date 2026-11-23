@@ -10,6 +10,11 @@ Each catalogue — :mod:`braidpy.braid_catalog` (braid words),
 :mod:`braidpy.machine_catalog` (braiding machines) — keeps its braids as
 it likes best, and lists them in a ``CATALOGUE``: an :class:`Entry` per
 braid, by the name it is known by, in the order to offer them.
+
+A site built from braidpy can add braids of its own to a catalogue without
+braidpy knowing them (:func:`extended`): a package of the site's names,
+in the entry point group :data:`GROUP`, a ``CATALOGUE`` to add to one of
+braidpy's, by that catalogue's module name (docs: *A site of your own*).
 """
 
 from __future__ import annotations
@@ -18,12 +23,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-__all__ = ["KINDS", "Entry", "Link", "ashley"]
+__all__ = ["GROUP", "KINDS", "Entry", "Link", "ashley", "extended"]
 
 T = TypeVar("T")
 
 # What a link can be: where a braid is described, shown or made.
 KINDS = ("book", "article", "video", "page", "post")
+
+# The entry point group through which packages add to braidpy's catalogues.
+GROUP = "braidpy.catalogues"
 
 
 @dataclass(frozen=True)
@@ -71,3 +79,33 @@ class Entry(Generic[T]):
     def reference(self) -> str:
         """Where it comes from, as one line: the first link's title."""
         return self.links[0].title if self.links else ""
+
+
+def extended(name: str, own: dict[str, Entry[T]]) -> dict[str, Entry[T]]:
+    """A catalogue of braidpy's, with the braids installed packages add to
+    it: each entry point of :data:`GROUP` named ``name`` (the catalogue's
+    module, as ``machine_catalog``) loads a dict of :class:`Entry` by name,
+    listed after braidpy's own.  A package's catalogue imports from braidpy
+    what its braids need, but not the catalogue it adds to.
+
+    Args:
+        name: The catalogue's module name, without ``braidpy.``.
+        own: braidpy's own entries.
+
+    Returns:
+        braidpy's entries, then every package's.
+
+    Raises:
+        ValueError: If a package names a braid the catalogue has already.
+    """
+    from importlib.metadata import entry_points
+
+    merged = dict(own)
+    for point in entry_points(group=GROUP, name=name):
+        for key, entry in point.load().items():
+            if key in merged:
+                raise ValueError(
+                    f"{point.value} adds {key!r} to {name}, which has one already."
+                )
+            merged[key] = entry
+    return merged

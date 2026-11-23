@@ -38,17 +38,20 @@ in the pages and the build, the files both sides change most.
 1. **The profile** — done. What the site calls itself, whom it credits and
    where it links are data (`web/profile.toml`), not words in the pages:
    `build.py --profile` fills the pages with another (see below).
-2. **Catalogues from outside** — to come. The machines, disk braids, sinnets
-   and words the studio offers come from braidpy's catalogues
-   (`machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog`, the
-   words' examples) through `braidpy.web.catalogue()`. A package of the
-   site's own would add to them by
-   [entry points](https://packaging.python.org/en/latest/specifications/entry-points/),
-   a group `braidpy.catalogues` naming its `CATALOGUE`s of
-   {class}`~braidpy.catalogue.Entry`, read by `braidpy.web` and by
-   {mod}`braidpy.topology_catalog` beside their own. The build would put the
-   package's wheel beside braidpy's (`wheels/manifest.json`), for Pyodide to
-   install it too. braidpy gains a way in, and keeps no customer's name.
+2. **Catalogues from outside** — done. The machines, disk braids and
+   sinnets the studio offers come from braidpy's catalogues
+   (`machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog`), each
+   extended with what installed packages add to it
+   ({func}`~braidpy.catalogue.extended`): a package of the site's own names,
+   by [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
+   in the group `braidpy.catalogues`, a dict of
+   {class}`~braidpy.catalogue.Entry` to add to a catalogue, by its module
+   name. The profile's `packages` name the site's packages, and the build
+   runs braidpy with them, so that the page, the braids made with the site
+   and the catalogue of braids by topology all have their braids, and puts
+   each package's wheel beside braidpy's (`wheels/manifest.json`), for
+   Pyodide to install it too. braidpy gains a way in, and keeps no
+   customer's name (see below).
 3. **A build per customer** — to come. A customer's braids are seen by
    whoever opens the site (see below), so each customer has a build of their
    own: the profile says which catalogues it carries, and each build goes to
@@ -69,6 +72,7 @@ braidpy's value unseen.
 | `documentation`, `documentation_title` | `../`, braidpy's documentation | The documentation linked from the front page |
 | `sponsor` | GitHub Sponsors | The studio's sponsor button |
 | `language` | `en` | The language its pages open in, as `web/locales/` names it (see below) |
+| `packages` | none | The site's own packages, folders from the profile's: their braids join braidpy's catalogues (see below) |
 | `indexed` | `true` | `false` asks search engines to leave the site out |
 
 A site naming nothing of braidpy:
@@ -81,6 +85,7 @@ documentation = ""
 documentation_title = ""
 sponsor = ""
 language = "fr"
+packages = []
 indexed = false
 ```
 
@@ -88,6 +93,45 @@ In the pages, `{{key}}` is replaced by its value, and
 `<!-- if key -->…<!-- end if -->` (or `if not key`) kept only when the key is
 set; `tests/test_site_build.py` checks that such a site's pages name neither
 braidpy, nor its repository, nor its sponsoring.
+
+## Braids of the site's own
+
+A site's package is an ordinary Python package beside its profile:
+
+```
+designer/
+├── pyproject.toml
+├── locales/fr.toml           the words of its braids, in French
+└── designer_braids/__init__.py
+```
+
+```toml
+# pyproject.toml
+[project]
+name = "designer-braids"
+version = "0.1"
+
+[project.entry-points."braidpy.catalogues"]
+machine_catalog = "designer_braids:MACHINES"
+```
+
+```python
+# designer_braids/__init__.py
+from braidpy.catalogue import Entry
+from braidpy.horn_gear.described import machine_from_graph
+
+MACHINES = {
+    "my_matrix": Entry("Matrix of gears", lambda: machine_from_graph("A0-A1 …")),
+}
+```
+
+with `packages = ["designer"]` in the profile. Its machines are listed after
+braidpy's, as if braidpy had them: shown, made, premade, catalogued by
+topology. A name braidpy has already is refused. The package imports from
+braidpy what its braids need, but not the catalogue it adds to, which
+reads it as it loads. The words of its braids, in another language, are
+in its own `locales/<code>.toml`, merged with braidpy's when the page is
+built: braidpy's catalogue of words names none of them.
 
 ## In another language
 

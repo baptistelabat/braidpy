@@ -18,5 +18,9 @@ sponsor = "https://github.com/sponsors/baptistelabat"
 # The language its pages open in, as web/locales/ names it: "en" as braidpy
 # writes them, "fr" in French.  Their menu offers every language there.
 language = "en"
+# The site's own packages, as folders from where this profile is: each
+# adds braids to braidpy's catalogues (braidpy.catalogue.extended), and the
+# words of its own braids from its locales/.  None for braidpy's.
+packages = []
 # Whether search engines are welcome: false asks them to leave the site out.
 indexed = true
