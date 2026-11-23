@@ -373,7 +373,11 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
     )
 
 
-def _banded(pairs, axle_of, slots):
+def _banded(
+    pairs: list[tuple[str, str]],
+    axle_of: dict[str, str],
+    slots: dict[str, int],
+) -> tuple[dict[str, tuple[float, float]], dict[str, float]]:
     """Where the axles of a ring stand, and how large they are, its split
     gears' parts stacked: each band (the gears its carriers ride, parts
     and all) laid out alone, an axle as large as its part
@@ -389,7 +393,7 @@ def _banded(pairs, axle_of, slots):
         slots: Each gear's slots.
 
     Returns:
-        Each axle's centre and radius.
+        Each axle's centre, and its radius.
     """
     from .layout import compute_layout, gear_radii, ring_geometry
 
@@ -414,19 +418,41 @@ def _banded(pairs, axle_of, slots):
         for axle, at in own.items():
             centres.setdefault(axle, at)
             radius.setdefault(axle, float(size[axle]))
-    return {axle: tuple(at) for axle, at in centres.items()}, radius
+    return {axle: (float(at[0]), float(at[1])) for axle, at in centres.items()}, radius
 
 
-def _onto(own, shared, placed):
+def _onto(
+    own: dict[str, np.ndarray],
+    shared: list[str],
+    placed: dict[str, np.ndarray],
+) -> dict[str, np.ndarray]:
     """A band's centres turned and moved, mirrored if that leaves it
     farther from those placed, so that its axles ``shared`` with them come
-    where they stand: by the two farthest apart, or about the one."""
+    where they stand.
+
+    With two shared axles or more, the band is turned so that the first of
+    them points from their middle as it does among those placed, and moved
+    so that the middles meet; with one, it is turned about it to point away
+    from those placed.  Of the band as it is and mirrored, the one whose
+    nearest new axle is farthest from those placed.
+
+    Args:
+        own: The band's centres, by axle, as laid out alone.
+        shared: Its axles already placed: the split gears joining it to
+            the bands before it.
+        placed: The centres placed so far, by axle.
+
+    Returns:
+        The band's centres, by axle, where it is to stand.
+    """
     pinned = np.array([placed[axle] for axle in shared])
     mine = np.array([own[axle] for axle in shared])
     middle_placed, middle_mine = pinned.mean(axis=0), mine.mean(axis=0)
     rest = np.array(list(placed.values())).mean(axis=0)
 
-    def moved(flip: bool):
+    def moved(flip: bool) -> dict[str, np.ndarray]:
+        """The band turned and moved onto those placed, mirrored if
+        ``flip``."""
         sign = -1.0 if flip else 1.0
         if len(shared) > 1:
             a, b = mine[0] - middle_mine, pinned[0] - middle_placed
@@ -445,7 +471,8 @@ def _onto(own, shared, placed):
             for axle, at in own.items()
         }
 
-    def clearance(band):
+    def clearance(band: dict[str, np.ndarray]) -> float:
+        """How near the band's new axles come to those placed."""
         return min(
             np.linalg.norm(at - other)
             for axle, at in band.items()
@@ -456,7 +483,13 @@ def _onto(own, shared, placed):
     return max((moved(False), moved(True)), key=clearance)
 
 
-def _timed(gears, pairs, axle_of, centres, radius):
+def _timed(
+    gears: list[HornGear],
+    pairs: list[tuple[str, str]],
+    axle_of: dict[str, str],
+    centres: dict[str, tuple[float, float]],
+    radius: dict[str, float],
+) -> DescribedMachine:
     """A ring of gears whose contacts cannot all be whole slots apart, laid
     out and timed so that each contact hands over when a horn of each gear
     is at it (:func:`~braidpy.horn_gear.layout.time_ring`).
@@ -553,7 +586,13 @@ def _timed(gears, pairs, axle_of, centres, radius):
         # A part drawn, and its horns spaced, as a gear of its own slots.
         [dataclasses.replace(g, size=None) for g in gears],
         connections,
-        {g.name: tuple(map(float, centre[index[axle_of[g.name]]])) for g in gears},
+        {
+            g.name: (
+                float(centre[index[axle_of[g.name]]][0]),
+                float(centre[index[axle_of[g.name]]][1]),
+            )
+            for g in gears
+        },
         radii={g.name: float(radii[index[axle_of[g.name]]]) for g in gears},
     )
 

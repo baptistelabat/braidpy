@@ -593,13 +593,30 @@ def time_ring(
     return centres.copy(), radii.copy(), turned.copy(), phases
 
 
-def _set_apart(turned, fit, apart):
-    """The timers, each band no contact ties to another turned so that its
-    timers stand as far from the other's as ``apart`` asks
-    (:class:`RingContacts`); a band tied to one already set stays."""
+def _set_apart(
+    turned: np.ndarray,
+    fit: _Timing,
+    apart: tuple[tuple[int, int, float], ...],
+) -> np.ndarray:
+    """The timers, each band of them that no contact ties to another shifted
+    together, which changes none of its contacts, so that its timers stand
+    as far from the other band's as ``apart`` asks (:class:`RingContacts`);
+    a band already tied to the other, by a contact or an earlier shift,
+    stays as it is.
+
+    Args:
+        turned: Each timer's start, as fitted; shifted in place.
+        fit: The fit, for which timers each contact keeps time by.
+        apart: ``(timer, other, share of a step)``: ``timer``'s band
+            shifted so that it starts that share after ``other``.
+
+    Returns:
+        The timers' starts.
+    """
     band = list(range(len(turned)))
 
-    def root(t):
+    def root(t: int) -> int:
+        """The timer that stands for ``t``'s band (union-find)."""
         while band[t] != t:
             band[t] = band[band[t]]
             t = band[t]
