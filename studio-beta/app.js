@@ -20,18 +20,20 @@
 //   info.js      the card: what is known of the braid
 //   controls.js  the view's controls, sharing and saving
 //   page.js      what they all share
+//   i18n.js      the page in the site's language, first
 //
 // Each sets itself up as it loads, in this order.
 
-import "./fields.js?v=d95579c3e7";
-import "./diagram.js?v=d95579c3e7";
-import "./machine.js?v=d95579c3e7";
-import "./editor.js?v=d95579c3e7";
-import "./spec.js?v=d95579c3e7";
-import "./workers.js?v=d95579c3e7";
-import "./defaults.js?v=d95579c3e7";
-import "./scene.js?v=d95579c3e7";
-import "./insets.js?v=d95579c3e7";
-import "./info.js?v=d95579c3e7";
-import "./colours.js?v=d95579c3e7";
-import "./controls.js?v=d95579c3e7";
+import "./i18n.js?v=14e56890c5";
+import "./fields.js?v=14e56890c5";
+import "./diagram.js?v=14e56890c5";
+import "./machine.js?v=14e56890c5";
+import "./editor.js?v=14e56890c5";
+import "./spec.js?v=14e56890c5";
+import "./workers.js?v=14e56890c5";
+import "./defaults.js?v=14e56890c5";
+import "./scene.js?v=14e56890c5";
+import "./insets.js?v=14e56890c5";
+import "./info.js?v=14e56890c5";
+import "./colours.js?v=14e56890c5";
+import "./controls.js?v=14e56890c5";
