@@ -198,15 +198,18 @@ The studio has a form and a 3D view.
   take, as Ashley draws it (see
   [Making](making.md#from-the-shape-it-is-to-take)): first its **Grid**,
   square (lines at 0° and 90°), diamond (the same lines, the sides free to
-  run at 45°) or triangular (lines at 0°, 60° and 120°), then a **Shape**
+  run at 45°), triangular (lines at 0°, 60° and 120°) or skewed (lines at
+  0° and 120°, and at 60° between their crossings, as in #3078: see
+  [Making](making.md#from-the-shape-it-is-to-take)), then a **Shape**
   that grid offers: an oblong,
-  an L, a U or a hollow square on squares; a square or an oblong on a
+  an L, a U or a hollow square on squares, or skewed (an oblong a
+  parallelogram); a square or an oblong on a
   corner on the diamond grid; a triangle or a hexagon on triangles, so many
   lines along a side (an oblong's width and height, an L's or a U's width
   and arms, a hollow square's width and sides). Or one of the braids its
   **Braid** list offers on that grid and of that shape, made with the site
-  and found among the others by topology: the book's triangles, flat oblong and squares on a corner, a
-  hexagon, a square, an L, a U and hollow squares. The shape is its grid's cells,
+  and found among the others by topology: the book's triangles, flat oblong, squares on a corner and #3078, a
+  hexagon, a square, #3078 larger and longer, an L, a U and hollow squares. The shape is its grid's cells,
   squares or triangles, and is drawn once made: its cells, its lines,
   coloured by track, each with an arrow the way its move goes, and its
   spaces, numbered, larger with more strands. As the list above the

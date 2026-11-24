@@ -236,6 +236,19 @@ and up ({func}`~braidpy.making.ashley.grid_lines`): a square standing on a
 corner so has the lines of the book's #3073 and #3074, an oblong on a
 corner those of #3075.
 
+On the skewed grid, squares skewed into rhombs of two triangles base to
+base, the lines run along their sides, and a third way along their short
+diagonals, halfway between their crossings
+({func}`~braidpy.making.ashley.grid_halfway`). Each of these meets the
+outline between two lines' ends, its ends moved on half the way to the
+next: the bights join it to a line beside it, not to the line ending where
+it would have. The two at the acute corners, crossing nothing, are left
+out, and two lines turn there into each other instead. A parallelogram of
+3 by 5 lines so has the lines of the book's #3078, the "ellipse" Ashley
+finds "a bit irregular"; the book lists its moves in an order of its own.
+Any size can be drawn so, or any shape of the square grid skewed: the same
+lines, by their order round the outline, with the third way among them.
+
 ![Shapes on a grid: an L, a hollow square, a square on a corner](ashley_grids.svg) A shape may have a hole, as a hollow
 square: its lines are cut by it, and the bights round the hole are spaces
 too, numbered with the outline's by the way they lie from the middle, an

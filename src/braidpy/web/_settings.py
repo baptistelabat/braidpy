@@ -135,6 +135,7 @@ class Shape:
         "square": "Square: lines at 0° and 90°",
         "diagonal": "Diamond: lines at 0° and 90°, sides at 45° too",
         "triangle": "Triangular: lines at 0°, 60° and 120°",
+        "skew": "Skewed: lines at 0° and 120°, and at 60° between their crossings",
     }
     shapes: ClassVar[dict[str, dict[str, str]]] = {
         "square": {
@@ -145,6 +146,12 @@ class Shape:
         },
         "diagonal": {"square": "Square", "oblong": "Oblong"},
         "triangle": {"triangle": "Triangle", "hexagon": "Hexagon"},
+        "skew": {
+            "oblong": "Parallelogram",
+            "L": "L",
+            "U": "U",
+            "frame": "Hollow rhomb",
+        },
     }
     orders: ClassVar[dict[str, str]] = {
         "book": "The book's, alternating",
@@ -170,6 +177,20 @@ class Shape:
             "shape": "oblong",
             "size": 4,
             "height": 4,
+        },
+        {
+            "title": "Parallelogram, 4 by 6 lines, #3078 made larger",
+            "grid": "skew",
+            "shape": "oblong",
+            "size": 4,
+            "height": 6,
+        },
+        {
+            "title": "Parallelogram, 3 by 8 lines, #3078 made longer",
+            "grid": "skew",
+            "shape": "oblong",
+            "size": 3,
+            "height": 8,
         },
         {
             "title": "L, 5 lines, its arms 2 thick",

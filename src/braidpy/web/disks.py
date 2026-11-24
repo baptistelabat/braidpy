@@ -331,14 +331,14 @@ _QUARTERS = "brtl"
 
 
 def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
-    """Cells as a link gives them: ``i,j`` on the square grid; ``i,jb``,
+    """Cells as a link gives them: ``i,j`` on the square and skewed grids; ``i,jb``,
     ``i,jr``, ``i,jt`` or ``i,jl`` for the quarter of that square below,
     right of, above or left of its middle on the diagonal grid; ``i,j^``
     for the triangle pointing up from point (i, j) of the triangular grid,
     ``i,jv`` for the one pointing down beside it."""
     cells: list[tuple[int, ...]] = []
     for i, j, which in _CELL.findall(text):
-        if grid == "square":
+        if grid in ("square", "skew"):
             cells.append((int(i), int(j)))
         elif grid == "diagonal":
             cells.append((int(i), int(j), _QUARTERS.index(which or "b")))
@@ -349,7 +349,7 @@ def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
 
 def _cell_text(grid: str, cell: tuple[int, ...]) -> str:
     """A cell as :func:`_cells` reads it."""
-    which = {"square": "", "diagonal": _QUARTERS, "triangle": "^v"}[grid]
+    which = {"square": "", "skew": "", "diagonal": _QUARTERS, "triangle": "^v"}[grid]
     return f"{cell[0]},{cell[1]}" + (which[cell[2]] if which else "")
 
 
@@ -366,6 +366,7 @@ def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
     edges = set().union(*(sides(cell) for cell in cells))
     kinds: dict[str, list[tuple[int, ...]]] = {
         "square": [()],
+        "skew": [()],
         "diagonal": [(q,) for q in range(4)],
         "triangle": [(0,), (1,)],
     }
@@ -388,6 +389,7 @@ def _from_shape(spec: Spec) -> Result:
     from braidpy.making.ashley import (
         cell_outline,
         corner_spaces,
+        grid_halfway,
         grid_lines,
         grid_outline,
         grid_shape,
@@ -409,14 +411,15 @@ def _from_shape(spec: Spec) -> Result:
         cells = _cells(grid, Shape.cells.read(spec))
     outline, *holes = grid_outline(grid, cells)
     across = grid_lines(grid)
-    lines, joins, bights = shape_diagram(outline, holes, across)
+    halfway = grid_halfway(grid)
+    lines, joins, bights = shape_diagram(outline, holes, across, halfway)
     turned = sorted(set(_numbers(Shape.turned.read(spec) or "0", "tracks")) - {0})
     extra = [0] * len(bights)
     for space in re.findall(r"\d+", Shape.extra.read(spec)):
         if not 1 <= int(space) <= len(bights):
             raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
         extra[int(space) - 1] += 1
-    for space in corner_spaces(outline, holes, across):
+    for space in corner_spaces(outline, holes, across, halfway):
         extra[space - 1] += Shape.corners.read(spec)
     sinnet = sinnet_from_shape(
         outline,
@@ -425,6 +428,7 @@ def _from_shape(spec: Spec) -> Result:
         order=Shape.order.read(spec),
         holes=holes,
         across=across,
+        halfway=halfway,
     )
     if sinnet.n_strands > Shape.most_strands:
         raise ValueError(f"That is over {Shape.most_strands} strands.")

@@ -138,7 +138,7 @@ const FIELDS = {
       name: "cells",
       label: "Cells",
       kind: "textarea",
-      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square; on the diamond grid, i,jb, i,jr, i,jt, i,jl the quarter of that square below, right of, above or left of its middle; i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape chosen. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
+      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square, or a rhomb on the skewed grid; on the diamond grid, i,jb, i,jr, i,jt, i,jl the quarter of that square below, right of, above or left of its middle; i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape chosen. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
     },
     { name: "order", label: "Order of the moves", kind: "choice", from: "orders" },
     {

@@ -267,8 +267,19 @@ def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
     assert len(drawn["lines"]) == len(drawn["spaces"]) == 12
     assert drawn["tracks"] == 3
     shapes = catalogue()["shape"]["shapes"]
-    assert set(shapes) == {"square", "diagonal", "triangle"}
+    assert set(shapes) == {"square", "diagonal", "triangle", "skew"}
     assert set(shapes["square"]) >= {"oblong", "L", "U", "frame"}
+
+
+def test_a_parallelogram_from_the_page_draws_3078_s_lines():
+    """A parallelogram of 3 by 5 lines on the skewed grid, from the page,
+    is drawn with #3078's 14 lines, a third of them halfway between the
+    others' crossings."""
+    spec = {"source": "shape", "grid": "skew", "shape": "oblong", "size": 3}
+    result = build({**spec, "height": 5, "cycles": 1, "iterations": 0})
+    drawn = result["ashley_shape"]
+    assert len(drawn["lines"]) == len(drawn["spaces"]) == 14
+    assert len(drawn["outline"]) == 4
 
 
 def test_a_shape_s_track_turned_round_and_strands_added():
