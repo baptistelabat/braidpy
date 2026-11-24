@@ -79,6 +79,8 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
     if found is None:
         return {}
     unit, repeats = found
+    # Fewer crossings, fewer moves: the unit as short as is found.
+    unit = unit.shortened()
     shown: dict[str, Any] = {"crossings": len(unit.generators)}
     if 2 * unit.n_strands + 2 <= 32:
         moves = disk_moves(unit)

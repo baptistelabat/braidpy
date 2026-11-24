@@ -44,7 +44,7 @@ def test_ways_to_make_a_braid_no_sinnet_makes():
     assert set(made) == {"disk", "lace", "ashley"}
     assert made["ashley"]["a_sinnet"] is False
     assert made["ashley"]["spaces"] == "1 0 1 0 1 0"
-    assert made["lace"]["bobbins"] == ["A-B", "B-C", "C-D"]
+    assert made["lace"]["bobbins"] == ["A-B", "C-D", "E-F"]
 
 
 def test_a_braid_word_with_no_crossing_says_so():

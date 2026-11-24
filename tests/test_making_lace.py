@@ -55,12 +55,42 @@ def test_crossings_already_signed_as_their_gears_need_no_moving():
 
 
 def test_the_plait_moves_its_strands_along_and_back():
-    """σ₁ is positive but gear 1 turns clockwise: the strands move along a
-    notch, three half turns, then every crossing is its gear's; and they
-    move back at the end, three more — one beside the last crossing — so
-    the card can run again."""
+    """σ₁ is positive but gear 1 turns clockwise: on four gears the strands
+    move along a notch, three half turns, then every crossing is its
+    gear's; and they move back at the end, three more — one beside the last
+    crossing — so the card can run again.  Given gears to spare, fewer
+    steps."""
     plait = Braid((1, -2) * 6, 3)
-    assert len(lace_card(plait).steps) == 12 + 3 + 3 - 1
+    assert len(lace_card(plait, n_gears=4).steps) == 12 + 3 + 3 - 1
+    assert len(lace_card(plait).steps) < 12 + 3 + 3 - 1
+
+
+def test_strands_spread_out_move_only_in_pairs():
+    """With a notch spare beside each strand, a crossing whose sign is not
+    its gear's moves its two strands only: the book's #3047, 94 crossings
+    of 19 strands, in a few steps a crossing rather than twenty."""
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    braid = abok_3047.braid(1)
+    card = lace_card(braid)
+    assert len(card.steps) < 2 * len(braid.generators)
+    assert lace_braid(card) == braid
+
+
+def test_the_card_of_fewest_steps_is_kept():
+    """Of the gears tried, the card of fewest steps, packed or spread."""
+    braid = Braid((1, -2, 3, -1, 2) * 2, 4)
+    best = lace_card(braid)
+    for gears in (6, 8):
+        assert len(best.steps) <= len(lace_card(braid, n_gears=gears).steps)
+
+
+def test_a_braid_of_no_crossing_is_a_step_turning_no_gear():
+    """A card has a step: for no crossing, one turning no gear."""
+    card = lace_card(Braid((), 4))
+    assert len(card.steps) == 1
+    assert not any(any(line) for line in card.steps[0])
+    assert lace_braid(card) == Braid((), 4)
 
 
 def test_a_card_run_round_again_makes_the_braid_again():
