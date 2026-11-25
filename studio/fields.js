@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=dede6f4546";
-import { attachEditor, attachShape } from "./editor.js?v=dede6f4546";
-import { attachMachine } from "./machine.js?v=dede6f4546";
-import { $ } from "./page.js?v=dede6f4546";
-import { submit, worker } from "./workers.js?v=dede6f4546";
+import { attachDiagram } from "./diagram.js?v=cba0328c37";
+import { attachEditor, attachShape } from "./editor.js?v=cba0328c37";
+import { attachMachine } from "./machine.js?v=cba0328c37";
+import { $ } from "./page.js?v=cba0328c37";
+import { submit, worker } from "./workers.js?v=cba0328c37";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -138,7 +138,7 @@ const FIELDS = {
       name: "cells",
       label: "Cells",
       kind: "textarea",
-      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square; on the diamond grid, i,jb, i,jr, i,jt, i,jl the quarter of that square below, right of, above or left of its middle; i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape chosen. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
+      hint: "The shape's own cells, changed by clicking on the drawing: i,j a square, or a rhomb on the skewed grid; on the diamond grid, i,jb, i,jr, i,jt, i,jl the quarter of that square below, right of, above or left of its middle; i,j^ the triangle pointing up from point i,j, i,jv the one down beside it. Empty, the shape chosen. A hole is a hole once a point of the grid is left out, Ashley's lines running through the points.",
     },
     { name: "order", label: "Order of the moves", kind: "choice", from: "orders" },
     {

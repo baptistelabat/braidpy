@@ -5,10 +5,10 @@
 // The braid asked for, read from the form, written into the address, and
 // read back from it: a link makes the same braid.
 
-import { chosenColours, useColours } from "./colours.js?v=dede6f4546";
-import { CHOICES, guessChoices } from "./defaults.js?v=dede6f4546";
-import { catalogue, renderFields } from "./fields.js?v=dede6f4546";
-import { $ } from "./page.js?v=dede6f4546";
+import { chosenColours, useColours } from "./colours.js?v=cba0328c37";
+import { CHOICES, guessChoices } from "./defaults.js?v=cba0328c37";
+import { catalogue, renderFields } from "./fields.js?v=cba0328c37";
+import { $ } from "./page.js?v=cba0328c37";
 
 // Fields filled with what the machine does itself -- its loading, its
 // axial yarns -- which the link leaves to it while they are left so.
