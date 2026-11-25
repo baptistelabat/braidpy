@@ -27,12 +27,18 @@ and round.
 
 Spare notches cost gears but save steps: with one, every strand between a
 pair and the spare notch must move for each sign that does not suit; with
-one beside each strand, only the pair does.  So the strands are tried both
-packed together and spread round the ring, on as many gears as are given
-or on each number from the fewest to ``MOST_GEARS_PER_STRAND`` a strand,
-and the card of fewest steps is kept, of fewest gears if two tie.  A
-word shortened first (:meth:`braidpy.braid.Braid.shortened`) has fewer
-crossings to make, and so fewer moves: Braid Studio shortens it so.
+one beside each strand, only the pair does.  Where the strands begin
+matters as much: begun a notch along, the plait's crossings all fall on
+gears of their signs.  So the strands are tried packed together from every
+notch, spread a notch apart and spread evenly (:func:`_starts`), on as many
+gears as are given or on each number from the fewest to
+``MOST_GEARS_PER_STRAND`` a strand; then searched, a few hundred tries
+seeded: the crossings in other orders where they commute
+(:func:`_reordered`), the strands begun anywhere, a crossing at times at
+the next nearest gear of its sign.  The card of fewest steps is kept, of
+fewest gears if two tie.  A word shortened first
+(:meth:`braidpy.braid.Braid.shortened`) has fewer crossings to make, and so
+fewer moves: Braid Studio shortens it so.
 
 A step of the card is two lines over the gears, as the machine reads it:
 the gears to turn anticlockwise, then those to turn clockwise.  The swaps
@@ -50,6 +56,7 @@ the machine's own motion, with each crossing the sign of the gear's turn.
 from __future__ import annotations
 
 import math
+import random
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -73,6 +80,20 @@ __all__ = [
 MOST_GEARS_PER_STRAND = 2
 # The fewest gears a lace ring has: two pairs, each turning its own way.
 FEWEST_GEARS = 4
+# The search for a card of fewer steps (lace_card): how many tries at most,
+# and at most so many crossings made in all, which a second or two takes in
+# a browser; how often a try takes the crossings in another order, and how
+# often a crossing goes to the next nearest gear of its sign; and the seed,
+# so that a braid always has the same card.
+SEARCH_RUNS = 300
+SEARCH_CROSSINGS = 30000
+REORDERED = 0.7
+NEXT_NEAREST = 0.2
+SEED = 0
+# The search tries the numbers of gears of the best cards found without it,
+# so many of them, and begins the strands anywhere so often.
+SEARCH_GEARS = 3
+ANYWHERE = 0.3
 
 
 @dataclass(frozen=True)
@@ -246,26 +267,97 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
         else list(range(fewest, max(fewest, MOST_GEARS_PER_STRAND * n) + 1, 2))
     )
     word = [int(g) for g in braid.generators]
-    cards = [
-        _card(word, n, gears, start)
-        for gears in tried
-        for start in {tuple(range(n)), tuple(k * gears // n for k in range(n))}
+    # Each number of gears and each way of placing the strands, the moves
+    # as they come: (steps, gears, start, swaps).
+    found = [
+        _tried(word, gears, start) for gears in tried for start in _starts(n, gears)
     ]
-    return min(cards, key=lambda card: (len(card.steps), card.n_gears))
+    found.sort(key=lambda tried_: tried_[:2])
+    best = found[0]
+    # Then the search, on the gears of the best cards so far: the crossings
+    # in other orders, where they commute; the strands begun anywhere; and
+    # a crossing sometimes at another gear than the nearest.  Seeded, so a
+    # braid always has the same card.
+    gears_tried = list(dict.fromkeys(tried_[1] for tried_ in found))[:SEARCH_GEARS]
+    rng = random.Random(SEED)
+    runs = min(SEARCH_RUNS, SEARCH_CROSSINGS // max(1, len(word)))
+    for run in range(runs):
+        gears = gears_tried[run % len(gears_tried)]
+        order = _reordered(word, rng) if rng.random() < REORDERED else word
+        start = (
+            tuple(sorted(rng.sample(range(gears), n)))
+            if rng.random() < ANYWHERE
+            else rng.choice(_starts(n, gears))
+        )
+        best = min(best, _tried(order, gears, start, rng), key=lambda t: t[:2])
+    _, gears, start, swaps = best
+    return _card(gears, start, swaps)
 
 
-def _card(word: Sequence[int], n: int, gears: int, start: Sequence[int]) -> LaceCard:
-    """A word's card on ``gears`` gears, its ``n`` strands starting in the
-    notches ``start``, in order (:func:`lace_card`)."""
-    moves = _Moves(gears, start)
+def _starts(n: int, gears: int) -> list[tuple[int, ...]]:
+    """Where the strands may begin, in order: packed together from each
+    notch; a notch spare beside each, from the first notch or the second;
+    and spread evenly round the ring.  Which suits a braid's signs best
+    depends on where its crossings fall on gears of either way: shifted a
+    notch, the plait's are every one its gear's."""
+    starts = [tuple(range(offset, offset + n)) for offset in range(gears - n + 1)]
+    starts += [
+        tuple(offset + 2 * k for k in range(n))
+        for offset in (0, 1)
+        if offset + 2 * (n - 1) < gears
+    ]
+    starts.append(tuple(k * gears // n for k in range(n)))
+    return sorted(set(starts))
+
+
+def _reordered(word: Sequence[int], rng: random.Random) -> list[int]:
+    """The word's crossings in a random order that keeps the braid: a
+    crossing only moved past crossings of strands apart from its own,
+    which commute with it."""
+    later: list[list[int]] = [[] for _ in word]
+    waiting = [0] * len(word)
+    last: dict[int, int] = {}
+    for k, g in enumerate(word):
+        for place in {abs(g) - 1, abs(g), abs(g) + 1} & last.keys():
+            later[last[place]].append(k)
+            waiting[k] += 1
+        last[abs(g)] = k
+    ready = [k for k in range(len(word)) if not waiting[k]]
+    order = []
+    while ready:
+        k = ready.pop(rng.randrange(len(ready)))
+        order.append(word[k])
+        for after in later[k]:
+            waiting[after] -= 1
+            if not waiting[after]:
+                ready.append(after)
+    return order
+
+
+def _tried(
+    word: Sequence[int],
+    gears: int,
+    start: tuple[int, ...],
+    rng: Optional[random.Random] = None,
+) -> tuple[int, int, tuple[int, ...], list[Swap]]:
+    """A word's moves on ``gears`` gears from ``start``, and how many steps
+    they take once packed: the nearest gear for each crossing, or with
+    ``rng`` sometimes the next nearest."""
+    moves = _Moves(gears, start, rng)
     for g in word:
         moves.cross(abs(g) - 1, 1 if g > 0 else -1)
     moves.home()
+    return len(_packed(gears, moves.swaps)), gears, start, moves.swaps
+
+
+def _card(gears: int, start: Sequence[int], swaps: Sequence[Swap]) -> LaceCard:
+    """The card of these moves on ``gears`` gears, the strands beginning in
+    the notches ``start``, in order (:func:`lace_card`)."""
     bobbins: list[int | None] = [None] * gears
     for k, notch in enumerate(start):
         bobbins[notch] = k
     # A braid of no crossing is a step turning no gear: a card has a step.
-    rows = _packed(gears, moves.swaps) or ((),)
+    rows = _packed(gears, swaps) or ((),)
     program = RingProgram(gears, tuple(bobbins), rows)
     steps = []
     for row in program.rows:
@@ -279,10 +371,15 @@ def _card(word: Sequence[int], n: int, gears: int, start: Sequence[int]) -> Lace
 class _Moves:
     """The swaps that make a word on a lace ring, worked out crossing by
     crossing (:func:`lace_card`): the strands in notches ``start``, in
-    order, kept so; each gear's turn a swap of the sign it turns."""
+    order, kept so; each gear's turn a swap of the sign it turns.  With
+    ``rng``, a crossing is sometimes made at the next nearest gear of its
+    sign, ``NEXT_NEAREST`` of the time, and a tie broken at random."""
 
-    def __init__(self, gears: int, start: Sequence[int]) -> None:
+    def __init__(
+        self, gears: int, start: Sequence[int], rng: Optional[random.Random] = None
+    ) -> None:
         self.gears = gears
+        self.rng = rng
         self.start = list(start)
         self.held: list[int | None] = [None] * gears
         for k, notch in enumerate(start):
@@ -338,10 +435,20 @@ class _Moves:
                 for way, notch in beside.items()
                 if (room := self._room(notch, way)) is not None
             }
-            way = min(rooms, key=lambda w: abs(rooms[w] - beside[w]))
+            way = min(
+                rooms,
+                key=lambda w: (
+                    abs(rooms[w] - beside[w]),
+                    self.rng and self.rng.random(),
+                ),
+            )
             self._push(beside[way], way, rooms[way])
             places = self._places(x, y, sign)
-        place = min(places, key=lambda p: abs(x - p) + abs(y - p - 1))
+        places.sort(key=lambda p: abs(x - p) + abs(y - p - 1))
+        nearer = (
+            self.rng is None or len(places) < 2 or self.rng.random() >= NEXT_NEAREST
+        )
+        place = places[0] if nearer else places[1]
         # The one moving outwards first, into the room it leaves the other.
         if place < x:
             self._walk(left, place)

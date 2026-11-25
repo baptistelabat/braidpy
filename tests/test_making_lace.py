@@ -54,15 +54,29 @@ def test_crossings_already_signed_as_their_gears_need_no_moving():
     assert len(lace_card(dutch).steps) == 12
 
 
-def test_the_plait_moves_its_strands_along_and_back():
-    """σ₁ is positive but gear 1 turns clockwise: on four gears the strands
-    move along a notch, three half turns, then every crossing is its
-    gear's; and they move back at the end, three more — one beside the last
-    crossing — so the card can run again.  Given gears to spare, fewer
-    steps."""
+def test_the_plait_begun_a_notch_along_needs_no_moving():
+    """σ₁ is positive, but gear 1 turns clockwise: begun from notch 0, the
+    strands must move.  Begun a notch along, every crossing is its gear's,
+    and the plait takes a step a crossing on four gears."""
     plait = Braid((1, -2) * 6, 3)
-    assert len(lace_card(plait, n_gears=4).steps) == 12 + 3 + 3 - 1
-    assert len(lace_card(plait).steps) < 12 + 3 + 3 - 1
+    card = lace_card(plait, n_gears=4)
+    assert len(card.steps) == 12
+    assert card.notches() == ["B-C", "C-D", "D-A"]
+    assert lace_braid(card) == plait
+
+
+def test_the_search_finds_the_fewest_steps_of_small_braids():
+    """The fewest steps there are, found by trying every turn of every gear
+    (scratch work): the square sinnet of 4 on six gears in 8, though it has
+    6 crossings, as two of them must wait for a strand to move; the
+    asymmetric flat braid of 4 in 4."""
+    from braidpy.braid_catalog import CATALOGUE
+    from braidpy.pure_braid import repeating_unit
+
+    for name, gears, fewest in (("square4", 6, 8), ("asymmetric_flat4", 6, 4)):
+        made = CATALOGUE[name].make()
+        unit = Braid(tuple(repeating_unit(made.generators)), made.n_strands)
+        assert len(lace_card(unit, n_gears=gears).steps) == fewest, name
 
 
 def test_strands_spread_out_move_only_in_pairs():
