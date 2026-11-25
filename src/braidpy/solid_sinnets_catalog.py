@@ -1160,6 +1160,15 @@ DRAWN: dict[str, dict[str, str | int | bool]] = {
         "height": 2,
         "makes": False,
     },
+    # Its lines halfway between crossings, a little irregular, as the book
+    # says; its moves made in an order of the book's own.
+    "abok_3078": {
+        "grid": "skew",
+        "shape": "oblong",
+        "size": 3,
+        "height": 5,
+        "makes": False,
+    },
 }
 
 
