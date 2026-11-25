@@ -87,6 +87,9 @@ FEWEST_GEARS = 4
 # so that a braid always has the same card.
 SEARCH_RUNS = 300
 SEARCH_CROSSINGS = 30000
+# And before it, each way of beginning the strands on each number of gears,
+# so many crossings made at most: every so many ways, if they are more.
+TRIED_CROSSINGS = 100000
 REORDERED = 0.7
 NEXT_NEAREST = 0.2
 SEED = 0
@@ -269,8 +272,14 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     word = [int(g) for g in braid.generators]
     # Each number of gears and each way of placing the strands, the moves
     # as they come: (steps, gears, start, swaps).
+    starts = {gears: _starts(n, gears) for gears in tried}
+    # As many as the budget allows, every so many of each gear count's.
+    allowed = max(len(tried), TRIED_CROSSINGS // max(1, len(word)))
+    every = -(-sum(map(len, starts.values())) // allowed)
     found = [
-        _tried(word, gears, start) for gears in tried for start in _starts(n, gears)
+        _tried(word, gears, start)
+        for gears in tried
+        for start in starts[gears][::every]
     ]
     found.sort(key=lambda tried_: tried_[:2])
     best = found[0]
@@ -297,7 +306,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
 def _starts(n: int, gears: int) -> list[tuple[int, ...]]:
     """Where the strands may begin, in order: packed together from each
     notch; a notch spare beside each, from the first notch or the second;
-    and spread evenly round the ring.  Which suits a braid's signs best
+    and spread evenly over the ring, or over part of it, from either end.  Which suits a braid's signs best
     depends on where its crossings fall on gears of either way: shifted a
     notch, the plait's are every one its gear's."""
     starts = [tuple(range(offset, offset + n)) for offset in range(gears - n + 1)]
@@ -306,7 +315,13 @@ def _starts(n: int, gears: int) -> list[tuple[int, ...]]:
         for offset in (0, 1)
         if offset + 2 * (n - 1) < gears
     ]
-    starts.append(tuple(k * gears // n for k in range(n)))
+    # Spread evenly over every width the ring holds, from either end: a
+    # ring of more gears than a braid needs holds what a smaller one does.
+    starts += [
+        tuple(offset + k * width // n for k in range(n))
+        for width in range(n, gears + 1)
+        for offset in {0, gears - width}
+    ]
     return sorted(set(starts))
 
 
