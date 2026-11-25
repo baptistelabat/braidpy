@@ -37,6 +37,7 @@ the machine's own motion, with each crossing the sign of the gear's turn.
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -46,7 +47,14 @@ from braidpy.ring_program import RingProgram, Swap, _packed
 
 Position = tuple[str, int]
 
-__all__ = ["LaceCard", "lace_braid", "lace_card", "punchcard_text", "ring_braid"]
+__all__ = [
+    "LaceCard",
+    "lace_braid",
+    "lace_card",
+    "punchcard_text",
+    "read_card",
+    "ring_braid",
+]
 
 
 @dataclass(frozen=True)
@@ -152,6 +160,50 @@ def card_digits(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
         " ".join("".join("1" if on else "0" for on in line) for line in step)
         for step in steps
     )
+
+
+def read_card(
+    text: str, n_gears: int
+) -> list[tuple[tuple[bool, ...], tuple[bool, ...]]]:
+    """A card as it is typed (:func:`card_digits`): groups of 0 and 1, a
+    digit a gear, taken two by two — the gears turning anticlockwise, then
+    clockwise — however the steps are laid out on lines.
+
+    Args:
+        text: The card.
+        n_gears: Gears round the ring.
+
+    Returns:
+        Per step, whether each gear turns anticlockwise, then clockwise.
+
+    Raises:
+        ValueError: If a group is not of 0 and 1, a digit a gear, or the
+            groups do not make whole steps.
+    """
+    groups = re.findall(r"\S+", text)
+    for group in groups:
+        if not re.fullmatch(r"[01]+", group):
+            raise ValueError(
+                f"Cannot read {group!r}: a card is 0 and 1, a digit a gear."
+            )
+        if len(group) != n_gears:
+            raise ValueError(
+                f"{group!r} has {len(group)} digits: give one for each of the "
+                f"{n_gears} gears."
+            )
+    if not groups:
+        raise ValueError(
+            "Give the card: per step, the gears turning anticlockwise, then clockwise."
+        )
+    if len(groups) % 2:
+        raise ValueError(
+            "A step is two groups: the gears turning anticlockwise, then those "
+            "turning clockwise."
+        )
+    return [
+        (tuple(c == "1" for c in groups[k]), tuple(c == "1" for c in groups[k + 1]))
+        for k in range(0, len(groups), 2)
+    ]
 
 
 def punchcard_text(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:

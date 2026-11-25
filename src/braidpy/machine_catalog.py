@@ -190,3 +190,6 @@ LACE: dict[str, Entry[LaceRing]] = {
     "lace_flat6": Entry("Regular flat braid of 6, 8 gears", _card("regular_flat6")),
     "lace_tubular_8": Entry("Every gear turning, 8 gears and bobbins", _ring(8)),
 }
+# Then the lace machines installed packages add (braidpy.catalogue.extended),
+# by the entry point name "lace_machines": a dict of Entry of LaceRing.
+LACE = extended("lace_machines", LACE)
