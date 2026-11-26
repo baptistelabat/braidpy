@@ -150,3 +150,20 @@ def test_braid_studio_shows_a_band_word_where_it_is_shorter():
         tighten=False,
     )["info"]
     assert "band_word" not in plait
+
+
+def test_a_word_is_read_as_band_letters_as_it_stands():
+    """Each run spelling a band letter one letter, every other crossing a
+    letter of neighbours: never longer, the same braid."""
+    from braidpy.band_canonical_form import band_letters
+
+    assert band_letters([3, 2, -1, -2, -3, 1]) == [(1, 4), (2, 1)]
+    assert band_letters([1, -2]) == [(2, 1), (2, 3)]
+    rng = random.Random(2)
+    for _ in range(200):
+        n = rng.randint(2, 6)
+        word = [rng.choice((-1, 1)) * rng.randint(1, n - 1) for _ in range(15)]
+        word += artin_from_band([(n, 1)])
+        letters = band_letters(word)
+        assert len(letters) <= len(word)
+        assert Braid(tuple(artin_from_band(letters)), n) == Braid(tuple(word), n)
