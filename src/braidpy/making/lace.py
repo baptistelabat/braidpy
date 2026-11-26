@@ -68,7 +68,11 @@ from braidpy.ring_program import RingProgram, Swap, _packed
 Position = tuple[str, int]
 
 __all__ = [
+    "CARD_SEARCH",
+    "CONJUGATE_SEARCH",
     "MOST_GEARS_PER_STRAND",
+    "CardSearch",
+    "ConjugateSearch",
     "LaceCard",
     "card_conjugate",
     "card_names",
@@ -92,33 +96,69 @@ STILL = "-"
 MOST_GEARS_PER_STRAND = 2
 # The fewest gears a lace ring has: two pairs, each turning its own way.
 FEWEST_GEARS = 4
-# The search for a card of fewer steps (lace_card): how many tries at most,
-# and at most so many crossings made in all, which a second or two takes in
-# a browser; how often a try takes the crossings in another order, and how
-# often a crossing goes to the next nearest gear of its sign; and the seed,
-# so that a braid always has the same card.
-SEARCH_RUNS = 300
-SEARCH_CROSSINGS = 30000
-# And before it, each way of beginning the strands on each number of gears,
-# so many crossings made at most: every so many ways, if they are more.
-TRIED_CROSSINGS = 100000
-REORDERED = 0.7
-NEXT_NEAREST = 0.2
-SEED = 0
-# The search tries the numbers of gears of the best cards found without it,
-# so many of them, and begins the strands anywhere so often.
-SEARCH_GEARS = 3
-ANYWHERE = 0.3
-# The search for a conjugate of fewer steps (card_conjugate): so many words
-# tried, a hundredth of a second each on the book's sinnets; and the
-# temperature it begins at, in steps, and how fast it cools, each try.
-CONJUGATE_TRIES = 3000
-# At most so many crossings counted in all, each try counting three times
-# the word's: a second or two in a browser.
-CONJUGATE_CROSSINGS = 300000
-WARM = 1.0
-COOLING = 0.999
-COLD = 0.05
+
+
+@dataclass(frozen=True)
+class CardSearch:
+    """How :func:`lace_card` searches for a card of fewer steps: first each
+    way of beginning the strands on each number of gears, then tries of
+    the crossings in other orders, the strands begun anywhere, a crossing
+    at times at the next nearest gear of its sign.  Seeded, so that a braid
+    always has the same card.
+
+    Args:
+        tried_crossings: Crossings made at most in trying each way of
+            beginning the strands: every so many ways, if they are more.
+        runs: Tries at most, after.
+        crossings: Crossings made at most in those tries: together, a
+            second or two in a browser.
+        gears: How many numbers of gears are tried, those of the best cards
+            found before.
+        reordered: How often a try takes the crossings in another order.
+        anywhere: How often a try begins the strands anywhere.
+        next_nearest: How often a crossing goes to the next nearest gear of
+            its sign.
+        seed: The tries' seed.
+    """
+
+    tried_crossings: int = 100_000
+    runs: int = 300
+    crossings: int = 30_000
+    gears: int = 3
+    reordered: float = 0.7
+    anywhere: float = 0.3
+    next_nearest: float = 0.2
+    seed: int = 0
+
+
+@dataclass(frozen=True)
+class ConjugateSearch:
+    """How :func:`card_conjugate` searches for a conjugate of fewer steps:
+    rewrites tried, each kept if it lowers the floor a repeat, or now and
+    then if it raises it, the more rarely as the search cools.  Seeded.
+
+    Args:
+        tries: Rewrites tried at most, a hundredth of a second each on the
+            book's sinnets.
+        crossings: Crossings counted at most, each try counting three
+            times the word's: a second or two in a browser.
+        warm: The temperature it begins at, in steps of the floor.
+        cooling: What the temperature is multiplied by, each try.
+        cold: The temperature it cools to, and no further.
+        seed: The tries' seed.
+    """
+
+    tries: int = 3000
+    crossings: int = 300_000
+    warm: float = 1.0
+    cooling: float = 0.999
+    cold: float = 0.05
+    seed: int = 0
+
+
+# The searches as Braid Studio makes them.
+CARD_SEARCH = CardSearch()
+CONJUGATE_SEARCH = ConjugateSearch()
 
 
 @dataclass(frozen=True)
@@ -391,7 +431,9 @@ def _gear_sign(gear: int) -> int:
     return 1 if gear % 2 == 0 else -1
 
 
-def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
+def lace_card(
+    braid: Braid, n_gears: Optional[int] = None, search: CardSearch = CARD_SEARCH
+) -> LaceCard:
     """A braid as a lace machine's punchcard of as few steps as are found;
     see the module.
 
@@ -401,6 +443,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
             more than the strands, a notch being spare.  If None, each
             number from the fewest that do to ``MOST_GEARS_PER_STRAND`` a
             strand is tried.
+        search: How the card is searched for.
 
     Returns:
         The card.  :func:`lace_braid` reads back the same braid, exactly.
@@ -428,7 +471,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     # as they come: (steps, gears, start, swaps).
     starts = {gears: _starts(n, gears) for gears in tried}
     # As many as the budget allows, every so many of each gear count's.
-    allowed = max(len(tried), TRIED_CROSSINGS // max(1, len(word)))
+    allowed = max(len(tried), search.tried_crossings // max(1, len(word)))
     every = -(-sum(map(len, starts.values())) // allowed)
     found = [
         _tried(word, gears, start)
@@ -441,18 +484,19 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     # in other orders, where they commute; the strands begun anywhere; and
     # a crossing sometimes at another gear than the nearest.  Seeded, so a
     # braid always has the same card.
-    gears_tried = list(dict.fromkeys(tried_[1] for tried_ in found))[:SEARCH_GEARS]
-    rng = random.Random(SEED)
-    runs = _tries(SEARCH_RUNS, SEARCH_CROSSINGS, len(word))
+    gears_tried = list(dict.fromkeys(tried_[1] for tried_ in found))[: search.gears]
+    rng = random.Random(search.seed)
+    runs = _tries(search.runs, search.crossings, len(word))
     for run in range(runs):
         gears = gears_tried[run % len(gears_tried)]
-        order = _reordered(word, rng) if rng.random() < REORDERED else word
+        order = _reordered(word, rng) if rng.random() < search.reordered else word
         start = (
             tuple(sorted(rng.sample(range(gears), n)))
-            if rng.random() < ANYWHERE
+            if rng.random() < search.anywhere
             else rng.choice(_starts(n, gears))
         )
-        best = min(best, _tried(order, gears, start, rng), key=lambda t: t[:2])
+        trial = _tried(order, gears, start, rng, search.next_nearest)
+        best = min(best, trial, key=lambda t: t[:2])
     _, gears, start, swaps = best
     return _card(gears, start, swaps)
 
@@ -514,11 +558,12 @@ def _tried(
     gears: int,
     start: tuple[int, ...],
     rng: Optional[random.Random] = None,
+    next_nearest: float = 0.0,
 ) -> tuple[int, int, tuple[int, ...], list[Swap]]:
     """A word's moves on ``gears`` gears from ``start``, and how many steps
     they take once packed: the nearest gear for each crossing, or with
-    ``rng`` sometimes the next nearest."""
-    moves = _Moves(gears, start, rng)
+    ``rng`` the next nearest ``next_nearest`` of the time."""
+    moves = _Moves(gears, start, rng, next_nearest)
     for g in word:
         moves.cross(abs(g) - 1, 1 if g > 0 else -1)
     moves.home()
@@ -547,14 +592,19 @@ class _Moves:
     """The swaps that make a word on a lace ring, worked out crossing by
     crossing (:func:`lace_card`): the strands in notches ``start``, in
     order, kept so; each gear's turn a swap of the sign it turns.  With
-    ``rng``, a crossing is sometimes made at the next nearest gear of its
-    sign, ``NEXT_NEAREST`` of the time, and a tie broken at random."""
+    ``rng``, a crossing is made at the next nearest gear of its sign
+    ``next_nearest`` of the time, and a tie broken at random."""
 
     def __init__(
-        self, gears: int, start: Sequence[int], rng: Optional[random.Random] = None
+        self,
+        gears: int,
+        start: Sequence[int],
+        rng: Optional[random.Random] = None,
+        next_nearest: float = 0.0,
     ) -> None:
         self.gears = gears
         self.rng = rng
+        self.next_nearest = next_nearest
         self.start = list(start)
         self.held: list[int | None] = [None] * gears
         for k, notch in enumerate(start):
@@ -621,7 +671,9 @@ class _Moves:
             places = self._places(x, y, sign)
         places.sort(key=lambda p: abs(x - p) + abs(y - p - 1))
         nearer = (
-            self.rng is None or len(places) < 2 or self.rng.random() >= NEXT_NEAREST
+            self.rng is None
+            or len(places) < 2
+            or self.rng.random() >= self.next_nearest
         )
         place = places[0] if nearer else places[1]
         # The one moving outwards first, into the room it leaves the other.
@@ -768,9 +820,7 @@ def repeat_floor(word: Sequence[int], n_strands: int) -> int:
     return max(finish, default=0) - max(finish[: 2 * len(word)], default=0)
 
 
-def card_conjugate(
-    braid: Braid, tries: int = CONJUGATE_TRIES, seed: int = SEED
-) -> Braid:
+def card_conjugate(braid: Braid, search: ConjugateSearch = CONJUGATE_SEARCH) -> Braid:
     """A conjugate of a braid whose repeats a lace card makes in fewer
     steps: the same braid, once repeated, seen another way.
 
@@ -787,9 +837,7 @@ def card_conjugate(
 
     Args:
         braid: The braid.
-        tries: How many rewrites are tried, at most: fewer for a long word
-            (``CONJUGATE_CROSSINGS``).
-        seed: The search's seed.
+        search: How the conjugate is searched for.
 
     Returns:
         The conjugate of lowest floor found: the braid if none is lower.
@@ -800,10 +848,10 @@ def card_conjugate(
     current = tuple(int(g) for g in braid.generators)
     floor = repeat_floor(current, n)
     best = (floor, current)
-    rng = random.Random(seed)
-    warmth = WARM
+    rng = random.Random(search.seed)
+    warmth = search.warm
     # Each try counts three repeats of the word (repeat_floor).
-    budget = _tries(tries, CONJUGATE_CROSSINGS, 3 * len(current))
+    budget = _tries(search.tries, search.crossings, 3 * len(current))
     for _ in range(budget if len(current) > 2 else 0):
         cut = rng.randrange(len(current))
         found = list(rewrites(current[cut:] + current[:cut]))
@@ -815,7 +863,7 @@ def card_conjugate(
             current, floor = candidate, lower
             if floor < best[0]:
                 best = (floor, current)
-        warmth = max(COLD, warmth * COOLING)
+        warmth = max(search.cold, warmth * search.cooling)
     return Braid(best[1], n)
 
 
