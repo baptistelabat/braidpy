@@ -616,6 +616,39 @@ class Braid:
         k, factors = artin_left_normal_form(self.generators, n)
         return GarsideCanonicalFactors(n_half_twist=k, n_strands=n, Ai=factors)
 
+    def get_band_canonical_factors(self) -> GarsideCanonicalFactors:
+        """Get decomposition in Birman, Ko and Lee's left normal form, in
+        band generators, δ^p · A_1 ⋯ A_r
+        (:func:`~braidpy.band_canonical_form.band_left_normal_form`).
+
+        Not Artin's form: ``n_half_twist`` here counts δ, every strand a
+        place round, a ``1/n_strands`` turn — a full twist is
+        ``n_strands`` of them — and each factor is strands in blocks round
+        the circle (:func:`~braidpy.band_canonical_form.factor_blocks`).
+
+        Returns:
+            GarsideCanonicalFactors: the band generator decomposition.
+        """
+        from braidpy.band_canonical_form import band_left_normal_form
+
+        n = StrictlyPositiveInt(self.n_strands)
+        p, factors = band_left_normal_form(self.generators, n)
+        return GarsideCanonicalFactors(n_half_twist=p, n_strands=n, Ai=factors)
+
+    def band_word(self) -> list[tuple[int, int]]:
+        """The braid in band generators, as its band normal form spells it
+        (:func:`~braidpy.band_canonical_form.band_word`): ``(t, s)`` for
+        ``a_ts``, strands ``t > s`` crossing in front of those between,
+        ``(s, t)`` for its inverse.  A disk braid's is far shorter than its
+        word.
+
+        Returns:
+            The band letters.
+        """
+        from braidpy.band_canonical_form import band_word
+
+        return band_word(self.generators, self.n_strands)
+
     def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
 

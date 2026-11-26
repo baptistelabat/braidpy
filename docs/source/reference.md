@@ -53,6 +53,10 @@ Braid words, their notations, operations and properties.
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.band_canonical_form
+   :members:
+   :show-inheritance:
+
 .. automodule:: braidpy.garside_canonical_form
    :members:
    :undoc-members:
