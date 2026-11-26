@@ -48,6 +48,28 @@ word = ring_word(examples.tubular_braid_8())  # round the tube's hole
 len(word.moves), len(word.shortened().moves)  # 40, 32: the turns cancel
 ```
 
+## In band generators
+
+Round a circle — a kumihimo disk, a marudai — any two strands can cross
+directly, in front of those between: the **band generator** `a_ts`
+(Birman, Ko and Lee), `σ_{t-1} ⋯ σ_{s+1} σ_s σ_{s+1}⁻¹ ⋯ σ_{t-1}⁻¹` in Artin's
+letters, `a_{s+1,s}` being `σ_s` ({mod}`braidpy.band_canonical_form`). A
+ring word's crossing across the seam is `a_{n,1}`, and its turn is
+`δ = a_{n,n-1} ⋯ a_{2,1}`. `braid.band_word()` writes a braid so, as its band
+normal form spells it, `(t, s)` for `a_ts` and `(s, t)` for its inverse;
+`artin_from_band` reads one back.
+
+| Braid | Strands | Crossings | Band letters |
+|---|---|---|---|
+| Kongo gumi, a disk braid | 8 | 81 | 43 |
+| The 16-strand disk braid | 16 | 351 | 117 |
+| Tubular braider, 16 carriers | 16 | 44 | 30 |
+| A machine's flat braid, neighbours crossing | 28 | 68 | 378 |
+
+The crossings are each braid's repeat, shortened. A braid of strands carried
+across the disk is shorter so; one of neighbours crossing, as most machines
+make, is longer.
+
 ## Where the strands go
 
 A braid takes the strand starting in each place to a place at the other end:

@@ -253,9 +253,14 @@ What changed in each release of braidpy.
   results as before. `ring_program.same_braid` is its old name, kept.
   `tools.compare_braids`, and so the MCP server, now also says whether
   two braids are `proven` the same pattern.
-- `Braid.get_band_canonical_factors`, the Birman–Ko–Lee (band generator)
-  normal form, is removed: math-braid's, and used by nothing in braidpy.
-  Artin's normal form (`get_canonical_factors`) is braidpy's own.
+- Braids in band generators, braidpy's own
+  (`braidpy.band_canonical_form`): `a_ts`, strands t and s crossing in
+  front of those between, as round a kumihimo disk or a marudai. Birman,
+  Ko and Lee's normal form (`Braid.get_band_canonical_factors`, before
+  math-braid's: the same, checked against it, faster) and a braid as band
+  letters (`Braid.band_word`, `artin_from_band`). Disk braids spell far
+  shorter so: Kongo gumi on 8 strands, 81 crossings, is 43 band letters;
+  the 16-strand disk braid, 351, is 117.
 - braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
   braid's triviality, and so `==`, falls back on braidpy's own Garside
   normal form when handle reduction takes too long, and the page no longer
