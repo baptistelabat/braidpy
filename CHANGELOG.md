@@ -6,6 +6,15 @@ What changed in each release of braidpy.
 
 ### New
 
+- Four kinds of "the same braid", each with its own `==` and hash
+  (`braidpy.kinds`): `BraidWord` (`braid.word()`), the same crossings;
+  `Braid`, the same braid; `BraidPattern` (`braid.pattern()`), the same
+  braid made over and over, proven by conjugacy where it can be; and
+  `ClosedBraid` (`braid.closed()`), the same knot or link, by its loops,
+  linking numbers and Alexander polynomial, however many strands.
+  `conjugacy.same_braid` is now `same_pattern`, which is what it tells;
+  the old name is kept. The topology catalogue groups braids by pattern
+  key, with the same 91 topologies as before.
 - Catalogues from outside: a package of a site's own adds braids to
   braidpy's catalogues (`braidpy.catalogue.extended`, entry points in
   the group `braidpy.catalogues`), as braid-designer adds machines of its

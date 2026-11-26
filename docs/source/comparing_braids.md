@@ -22,17 +22,47 @@ similar(mine, count=3)
 # [Match(name='flat3', distance=0.0, same_fingerprint=True), ...]
 ```
 
+## Four kinds of "the same"
+
+"The same braid" can mean four things, each coarser than a word, and
+{mod}`braidpy.kinds` gives each its own type, its own `==` and its own hash,
+so that a set or a dict of them keeps one of each:
+
+| Kind | The same when | Told |
+|---|---|---|
+| `BraidWord` (`braid.word()`) | the same crossings in the same order | exactly |
+| `Braid` | the same braid, its ends held where they are | exactly |
+| `BraidPattern` (`braid.pattern()`) | the same braid made over and over: read from another start, or a power of it | proven where it can be, else by fingerprint |
+| `ClosedBraid` (`braid.closed()`) | the same knot or link once each strand's end is tied back to its start, however many strands | by invariants |
+
+A pattern and a closed braid are both coarser than a braid, but neither is
+coarser than the other: the plait and the plait twice are one pattern and
+close into two knots (a plain loop, the figure-eight knot); σ₁ on two strands
+and a single strand close into one loop and are two patterns. Grommets and
+Turk's heads are closed braids.
+
+```python
+from braidpy import Braid
+
+a, b = Braid([1, 2], 3), Braid([2, 1], 3)
+a == b  # False: two braids
+a.pattern() == b.pattern()  # True: one read from the other's second crossing
+Braid([1], 2).closed() == Braid([], 1).closed()  # True: one loop
+```
+
 ## Deciding it exactly
 
 "The same braid, read from another starting point" is conjugacy in the braid
-group, and {mod}`braidpy.conjugacy` decides it: {func}`~braidpy.conjugacy.same_braid`
-says yes or no, a proof, where fingerprints only ever prove braids different.
+group, and {mod}`braidpy.conjugacy` decides it for patterns:
+{func}`~braidpy.conjugacy.same_pattern` (once called `same_braid`, a name
+kept) says yes or no, a proof, where fingerprints only ever prove braids
+different.
 
 ```python
 from braidpy.braid import Braid
-from braidpy.conjugacy import same_braid
+from braidpy.conjugacy import same_pattern
 
-same_braid(Braid([1, -2], 3), Braid([-2, 1], 3))  # True
+same_pattern(Braid([1, -2], 3), Braid([-2, 1], 3))  # True
 ```
 
 It goes by summit sets (Elrifai and Morton https://nsalter.science.nd.edu/teaching/braidsspring2024/elrifaimorton.pdf): each braid is cycled to its
@@ -167,7 +197,7 @@ description, and any other by the fingerprint of the braid made.
 ## Limits
 
 - **Equal fingerprints do not prove two braids the same.** Different ones
-  prove them different; {func}`~braidpy.conjugacy.same_braid` proves either.
+  prove them different; {func}`~braidpy.conjugacy.same_pattern` proves either.
 - **A braid seen from behind is the same braid.** The Dutch braid,
   σ₁⁻¹σ₂, is the plait σ₁σ₂⁻¹ with its strands numbered from the other side,
   and has its fingerprint.
