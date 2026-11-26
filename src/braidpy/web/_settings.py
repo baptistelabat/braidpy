@@ -36,7 +36,7 @@ class Word:
     """A braid word, flat or round a ring, repeated."""
 
     layout = Text("layout", "row")
-    layouts = ("row", "ring")
+    layouts = ("row", "ring", "band")
     word = Text("word", "")
     # By default, as many strands as the word needs.
     n_strands = Count("n_strands", 2, low=2, high=32)

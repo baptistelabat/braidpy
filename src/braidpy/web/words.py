@@ -172,15 +172,24 @@ def _shortened(text: str, most: int = 32) -> str:
 
 def _from_word(spec: Spec) -> Result:
     from braidpy.annulus_braid import ring_moves, solid_word
+    from braidpy.band_canonical_form import artin_from_band
     from braidpy.braid import Braid
+    from braidpy.braidword import parse_band_word
     from braidpy.pure_braid import repeating_unit
     from braidpy.take_off import braid_word_trajectories, lay_yarns
 
     layout = Word.layout.read(spec)
     if layout not in Word.layouts:
-        raise ValueError("Strands are either in a row or round a ring.")
+        raise ValueError("Strands are in a row, round a ring, or in band letters.")
     ring = layout == "ring"
-    word = parse_word(Word.word.read(spec))
+    band = layout == "band"
+    # In band letters, any two strands crossing in front of those between
+    # (braidpy.band_canonical_form): the same braid, in Artin's letters.
+    word = (
+        artin_from_band(parse_band_word(Word.word.read(spec)))
+        if band
+        else parse_word(Word.word.read(spec))
+    )
     if not word:
         raise ValueError("Give a braid word, for example 1 -2.")
     repeat = Word.repeat.read(spec)
@@ -247,7 +256,7 @@ def _from_word(spec: Spec) -> Result:
         info["ring_strands"] = n_strands
         info["ring_repeats"] = len(moves) // len(unit)
     result = _result(
-        ("Ring word " if ring else "Braid word ")
+        ("Ring word " if ring else "Band word " if band else "Braid word ")
         + _shortened(Word.word.read(spec))
         + (f", {repeat} times" if repeat > 1 else ""),
         paths,
