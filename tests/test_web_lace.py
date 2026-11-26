@@ -8,9 +8,9 @@ loaded by hand, turned by the handle."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalog import CATALOGUE as BRAIDS
+from braidpy.braid_catalogue import CATALOGUE as BRAIDS
 from braidpy.horn_gear.jacquard import jacquard_lace_ring
-from braidpy.machine_catalog import LACE
+from braidpy.machine_catalogue import LACE
 from braidpy.making.lace import punchcard_text, ring_braid
 from braidpy.pure_braid import repeating_unit
 from braidpy.web import build, catalogue, machine_geometry, machine_turned

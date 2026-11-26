@@ -219,6 +219,13 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- One spelling for the catalogues: the modules `braid_catalog`,
+  `machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog` and
+  `topology_catalog` are now `braid_catalogue`, `machine_catalogue`,
+  `mobidai_catalogue`, `solid_sinnets_catalogue` and `topology_catalogue`,
+  after `catalogue.py`.  The older names go on working as modules that say
+  so with a `DeprecationWarning` and answer as the new ones do.
+
 - In a ring of gears timed so that every contact is on a horn
   (`described`, `layout.time_ring`), the parts of a split gear are
   stacked on their axle, each keeping its own time, the axle as large as

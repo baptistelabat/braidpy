@@ -10,7 +10,7 @@ import itertools
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalog import word_examples
+from braidpy.braid_catalogue import word_examples
 from braidpy.making.lace import _gear_sign, lace_braid, lace_card
 
 
@@ -70,7 +70,7 @@ def test_the_search_finds_the_fewest_steps_of_small_braids():
     (scratch work): the square sinnet of 4 on six gears in 8, though it has
     6 crossings, as two of them must wait for a strand to move; the
     asymmetric flat braid of 4 in 4."""
-    from braidpy.braid_catalog import CATALOGUE
+    from braidpy.braid_catalogue import CATALOGUE
     from braidpy.pure_braid import repeating_unit
 
     for name, gears, fewest in (("square4", 6, 8), ("asymmetric_flat4", 6, 4)):
@@ -83,7 +83,7 @@ def test_strands_spread_out_move_only_in_pairs():
     """With a notch spare beside each strand, a crossing whose sign is not
     its gear's moves its two strands only: the book's #3047, 94 crossings
     of 19 strands, in a few steps a crossing rather than twenty."""
-    from braidpy.solid_sinnets_catalog import abok_3047
+    from braidpy.solid_sinnets_catalogue import abok_3047
 
     braid = abok_3047.braid(1)
     card = lace_card(braid)
@@ -155,7 +155,7 @@ def test_a_card_run_on_its_ring_is_the_braid_the_machine_reads():
     for every card of the catalogue and for cards made from braid words."""
     import random
 
-    from braidpy.machine_catalog import LACE
+    from braidpy.machine_catalogue import LACE
     from braidpy.making.lace import card_program, ring_braid
 
     for entry in LACE.values():
@@ -182,7 +182,7 @@ def test_no_card_takes_fewer_steps_than_its_floor():
     """The floor is no more than the steps of any card found, and the
     fewest there are for the square sinnet of 4 (8, by trying every turn
     of every gear): two of its crossings wait for a strand to move."""
-    from braidpy.braid_catalog import CATALOGUE
+    from braidpy.braid_catalogue import CATALOGUE
     from braidpy.making.lace import step_floor
     from braidpy.pure_braid import repeating_unit
 
@@ -196,7 +196,7 @@ def test_no_card_takes_fewer_steps_than_its_floor():
 
 def test_the_floor_a_repeat_does_not_depend_on_where_the_word_is_cut():
     from braidpy.making.lace import repeat_floor, step_floor
-    from braidpy.solid_sinnets_catalog import abok_3059
+    from braidpy.solid_sinnets_catalogue import abok_3059
 
     word = [int(g) for g in abok_3059.braid(1).generators]
     n = abok_3059.n_strands
@@ -234,7 +234,7 @@ def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
     shorter."""
     from braidpy.making.lace import card_conjugate
     from braidpy.ring_program import same_braid
-    from braidpy.solid_sinnets_catalog import abok_3047
+    from braidpy.solid_sinnets_catalogue import abok_3047
 
     braid = abok_3047.braid(1)
     found = card_conjugate(braid)

@@ -82,7 +82,7 @@ def test_braids_are_made_without_loading_what_draws_them():
         "from braidpy.braid import Braid\n"
         "from braidpy.take_off import braid_word_trajectories, lay_yarns,"
         " kumihimo_braid, tighten_yarns\n"
-        "from braidpy.solid_sinnets_catalog import abok_3042\n"
+        "from braidpy.solid_sinnets_catalogue import abok_3042\n"
         "from braidpy.ashley_solid_sinnet import sinnet_to_mobidai\n"
         "from braidpy.take_off import mobidai_braid\n"
         "from braidpy.horn_gear.examples import tubular_braid_8\n"

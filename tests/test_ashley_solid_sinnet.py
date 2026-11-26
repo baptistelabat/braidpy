@@ -111,7 +111,7 @@ from braidpy.take_off import (
 
 
 def _catalogue():
-    import braidpy.solid_sinnets_catalog as catalogue
+    import braidpy.solid_sinnets_catalogue as catalogue
 
     return {
         name: value
@@ -142,7 +142,7 @@ def _end(disk):
 
 
 def test_a_move_takes_the_earliest_strand_over_all_it_passes():
-    from braidpy.solid_sinnets_catalog import abok_3042
+    from braidpy.solid_sinnets_catalogue import abok_3042
 
     disk = sinnet_disk(abok_3042)
     _order, crossings, _ = disk_crossing_steps(disk.start, disk.steps, disk.n_slots)
@@ -237,7 +237,7 @@ def test_the_mobidai_pattern_makes_the_same_braid(name):
 
 
 def test_a_sinnet_is_animated_strand_by_strand():
-    from braidpy.solid_sinnets_catalog import abok_3042
+    from braidpy.solid_sinnets_catalogue import abok_3042
 
     fig = abok_3042.animate(samples_per_step=2, side_view=True)
     labels = [s.label for s in fig.layout.sliders[0].steps if s.label]
@@ -250,7 +250,7 @@ def test_a_sinnet_is_animated_strand_by_strand():
 
 
 def test_a_sinnet_in_3d():
-    from braidpy.solid_sinnets_catalog import abok_3042
+    from braidpy.solid_sinnets_catalogue import abok_3042
 
     braid = abok_3042.braid_3d(0.12, n_cycles=1, iterations=60)
     assert len(braid.points) == 8

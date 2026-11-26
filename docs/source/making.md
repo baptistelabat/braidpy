@@ -347,13 +347,13 @@ moves are ordered. A pentagon drawn as #3079 is, on no grid, is not found
 yet.
 
 The book's sinnets that a shape draws say so in the catalogue
-({data}`~braidpy.solid_sinnets_catalog.DRAWN`): its grid, shape and size,
+({data}`~braidpy.solid_sinnets_catalogue.DRAWN`): its grid, shape and size,
 and whether the sinnet so made is the book's braid or only draws its lines,
 its moves made in another order (#3070, #3073 to #3075).
 
 ```python
 from braidpy.making.ashley import move_groups, shapes_from_moves
-from braidpy.solid_sinnets_catalog import abok_3047, abok_3073
+from braidpy.solid_sinnets_catalogue import abok_3047, abok_3073
 
 move_groups(abok_3047.moves).family  # three directions, a third of the moves each
 shapes_from_moves(abok_3047.moves)[0].name  # 'triangle, 4 by 2 on the triangle grid'

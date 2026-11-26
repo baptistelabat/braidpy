@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from js_maths import rounded_math
 
-from braidpy.machine_catalog import CATALOGUE
+from braidpy.machine_catalogue import CATALOGUE
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
 

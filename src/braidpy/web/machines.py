@@ -59,7 +59,7 @@ from braidpy.web._types import (
 def _machines():
     """Every catalogued machine the page can draw and turn by hand, by
     name: the horn gear machines and the lace machines."""
-    from braidpy.machine_catalog import CATALOGUE, LACE
+    from braidpy.machine_catalogue import CATALOGUE, LACE
 
     return {**CATALOGUE, **LACE}
 
@@ -86,7 +86,7 @@ def _machine(name: str) -> Any:
     if name.startswith(OWN_GEARS):
         n_slots, _, graph = name[len(OWN_GEARS) :].partition(":")
         return _own_machine({"n_slots": n_slots, "graph": graph})
-    from braidpy.machine_catalog import LaceRing
+    from braidpy.machine_catalogue import LaceRing
 
     machines = _machines()
     if name not in machines:
@@ -127,7 +127,7 @@ def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import gear_radii
     from braidpy.horn_gear.tracks import ring_order
     from braidpy.horn_gear.word import annular_word, flat_word
-    from braidpy.machine_catalog import CATALOGUE as machines
+    from braidpy.machine_catalogue import CATALOGUE as machines
 
     name = Machine.name.read(spec)
     if name == OWN:
@@ -455,7 +455,7 @@ def _lace_card(spec: Spec) -> tuple[str, int, list[Any], list[int] | None]:
     step whether each gear turns anticlockwise, then clockwise, and the
     notches threaded, strand after strand (every one if None).  Read without
     building the machine."""
-    from braidpy.machine_catalog import LACE
+    from braidpy.machine_catalogue import LACE
     from braidpy.making.lace import read_card
 
     name = Lace.name.read(spec)
@@ -558,7 +558,7 @@ def _from_lace(spec: Spec) -> Result:
     if Lace.settle.read(spec) == "marudai":
         return _lace_on_disk(spec)
     from braidpy.horn_gear import gear_radii
-    from braidpy.machine_catalog import LACE
+    from braidpy.machine_catalogue import LACE
     from braidpy.making.lace import punchcard_text, ring_braid
 
     name = Lace.name.read(spec)
@@ -838,7 +838,7 @@ def machine_origin(name: str, place: list[Any], time: int) -> list[Any] | None:
 
 
 def _machine_entry() -> Source:
-    from braidpy.machine_catalog import CATALOGUE
+    from braidpy.machine_catalogue import CATALOGUE
 
     # Your own starts from the machine drawn before, written as its graph
     # (machine_geometry): the catalogue makes no machine, which would load
@@ -854,7 +854,7 @@ def _machine_entry() -> Source:
 
 
 def _lace_entry() -> Source:
-    from braidpy.machine_catalog import LACE
+    from braidpy.machine_catalogue import LACE
     from braidpy.making.lace import card_digits
 
     entries: list[Any] = []

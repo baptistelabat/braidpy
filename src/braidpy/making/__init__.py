@@ -25,7 +25,7 @@ def _unit(info: Mapping[str, Any]):
     word, or one too long."""
     from braidpy.braid import Braid
     from braidpy.pure_braid import repeating_unit
-    from braidpy.topology_catalog import braid_of
+    from braidpy.topology_catalogue import braid_of
 
     braid = braid_of(info)
     if braid is None or not braid.generators:

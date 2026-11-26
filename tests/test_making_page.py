@@ -120,7 +120,7 @@ def test_a_link_asks_for_no_more_passes_than_its_source_takes():
     rather than asking fourteen and being refused when it is followed.  The
     disk and the lace machine take fourteen, so those are left alone.
     """
-    from braidpy.braid_catalog import RECTANGULAR_14
+    from braidpy.braid_catalogue import RECTANGULAR_14
     from braidpy.web._settings import Sinnet
 
     spec = {"source": "word", "word": RECTANGULAR_14, "n_strands": 14, "repeat": 14}

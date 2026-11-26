@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from braidpy.carried import RADIUS, braid_by_carriers, figure
-from braidpy.machine_catalog import CATALOGUE
+from braidpy.machine_catalogue import CATALOGUE
 
 # Steps of the flat plait, enough for its first crossings to be taken off.
 STEPS = 8

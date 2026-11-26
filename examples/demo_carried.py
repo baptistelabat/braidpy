@@ -15,7 +15,7 @@ and the braid, as small as it is beside them.  See :mod:`braidpy.carried`.
 import time
 
 from braidpy.carried import braid_by_carriers, figure
-from braidpy.machine_catalog import CATALOGUE
+from braidpy.machine_catalogue import CATALOGUE
 
 #: The machine, and its steps to make.
 MACHINE = "flat_3"
