@@ -16,6 +16,10 @@ if TYPE_CHECKING:
     # sympy is only needed for the Burau matrices, and is slow to import —
     # seconds, in a browser: imported there, when they are asked for.
     from sympy import Matrix
+
+    from braidpy.braid_pattern import BraidPattern
+    from braidpy.braid_word import BraidWord
+    from braidpy.closed_braid import ClosedBraid
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
@@ -341,6 +345,26 @@ class Braid:
             bool: True if the braid words are identical.
         """
         return self.__key() == other.__key()
+
+    def word(self) -> "BraidWord":
+        """The braid's word, compared as a word (:mod:`braidpy.braid_word`)."""
+        from braidpy.braid_word import BraidWord
+
+        return BraidWord(tuple(int(g) for g in self.generators), self.n_strands)
+
+    def pattern(self) -> "BraidPattern":
+        """The braid made over and over, compared as a pattern
+        (:mod:`braidpy.braid_pattern`)."""
+        from braidpy.braid_pattern import BraidPattern
+
+        return BraidPattern(self)
+
+    def closed(self) -> "ClosedBraid":
+        """The braid closed, each strand's end tied to its start: a knot or
+        a link, compared as one (:mod:`braidpy.closed_braid`)."""
+        from braidpy.closed_braid import ClosedBraid
+
+        return ClosedBraid(self)
 
     def __hash__(self) -> int:
         """Hash the braid by what every word for it shares: its strands, the

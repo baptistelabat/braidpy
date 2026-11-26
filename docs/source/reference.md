@@ -79,6 +79,18 @@ Braid words, their notations, operations and properties.
 Whether braids are alike, and the braids braidpy knows.
 
 ```{eval-rst}
+.. automodule:: braidpy.braid_word
+   :members:
+   :show-inheritance:
+
+.. automodule:: braidpy.braid_pattern
+   :members:
+   :show-inheritance:
+
+.. automodule:: braidpy.closed_braid
+   :members:
+   :show-inheritance:
+
 .. automodule:: braidpy.similarity
    :members:
    :undoc-members:
