@@ -19,7 +19,7 @@ move is the same braid, so the first move is taken from space 1.
 
 A sinnet is found when its braid is the braid wanted, compared as every
 way of making a braid compares them: by their topology
-(:func:`~braidpy.ring_program.same_braid`) — the braid repeated, read from
+(:func:`~braidpy.braid_pattern.alike`) — the braid repeated, read from
 any strand, however written.  Fewer spaces are tried first, so the simplest
 sinnet is found first; the search stops at a time limit, and says whether
 it tried everything it could.  Not every braid is a sinnet: when none is
@@ -147,9 +147,9 @@ def ashley_sinnet(
     Returns:
         The search: the sinnet found, or the nearest.
     """
-    from braidpy.similarity import distance, fingerprint, same_fingerprint
+    from braidpy.similarity import distance
 
-    wanted = fingerprint(braid)
+    wanted = braid.pattern()
     n = braid.n_strands
     started = time.monotonic()
     tried = 0
@@ -169,10 +169,10 @@ def ashley_sinnet(
                     continue
                 if not made.generators:
                     continue
-                mark = fingerprint(made)
-                if same_fingerprint(mark, wanted):
+                pattern = made.pattern()
+                if pattern.alike(wanted):
                     return AshleySearch(sinnet, sinnet, 0.0, tried, True)
-                apart = distance(mark, wanted)
+                apart = distance(pattern.fingerprint, wanted.fingerprint)
                 if apart < nearest_distance:
                     nearest, nearest_distance = sinnet, apart
     return AshleySearch(None, nearest, nearest_distance, tried, True)

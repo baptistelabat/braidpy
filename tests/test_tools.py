@@ -33,7 +33,7 @@ def test_a_braid_is_described_and_linked():
 def test_the_same_braid_however_written():
     """Ashley's flat sinnet of 7 is the catalogue's word read backwards."""
     same = tools.compare_braids("1 2 3 -6 -5 -4", "3 2 1 -4 -5 -6", n_strands=7)
-    assert same == {"same_braid": True, "distance": 0.0}
+    assert same == {"same_braid": True, "proven": True, "distance": 0.0}
     assert not tools.compare_braids("1 -2", "1 2")["same_braid"]
 
 

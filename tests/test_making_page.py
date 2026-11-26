@@ -8,9 +8,9 @@ braidpy.making.for_page and sinnet_for_page."""
 import pytest
 
 from braidpy import Braid
+from braidpy.braid_pattern import alike
 from braidpy.making import for_page, sinnet_for_page
 from braidpy.making.disk import DiskMoves, disk_braid
-from braidpy.ring_program import same_braid
 from braidpy.web import build
 
 
@@ -31,7 +31,7 @@ def test_the_plait_shown_as_a_disk_and_a_lace_card():
         tuple(int(s) for s in disk["spec"]["slots"].split()),
         tuple(tuple(int(p) for p in m.split(">")) for m in disk["moves"].split(", ")),
     )
-    assert same_braid(disk_braid(moves), Braid((1, -2), 3))
+    assert alike(disk_braid(moves), Braid((1, -2), 3))
     lace = shown["lace"]
     # Begun a notch along, every crossing on a gear of its sign.
     assert lace["gears"] == 4 and lace["threading"] == "B-C C-D D-A"
@@ -58,7 +58,7 @@ def test_braid_studio_makes_what_it_shows():
 def test_braid_studio_makes_the_lace_card_it_shows(spec):
     """The lace machine shown is one the page makes, from its own address:
     the same braid comes off it, however written (braidpy.conjugacy)."""
-    from braidpy.conjugacy import same_braid as proven
+    from braidpy.conjugacy import same_pattern as proven
 
     lace = for_page(_info(spec))["lace"]["spec"]
     assert lace["name"] == "custom" and lace["cycles"] == spec["repeat"]
@@ -102,7 +102,7 @@ def test_a_braid_with_no_word_has_nothing_shown():
 def test_the_twin_plait_machine_is_made_on_a_lace_machine():
     """Two plaits braided at once on a line with a split gear: its lace card
     is a link to a lace machine making the same braid."""
-    from braidpy.conjugacy import same_braid as proven
+    from braidpy.conjugacy import same_pattern as proven
 
     shown = _info({"source": "machine", "name": "twin_plait"})
     made = build({**for_page(shown)["lace"]["spec"], "iterations": 0}, tighten=False)

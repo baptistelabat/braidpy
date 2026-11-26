@@ -271,12 +271,16 @@ def similar(
     """
     if candidates is None:
         candidates = catalogue_braids()
-    mine = fingerprint(braid)
+    mine = braid.pattern()
     found = []
     for name, other in candidates.items():
-        theirs = fingerprint(other)
+        theirs = other.pattern()
         found.append(
-            Match(name, distance(mine, theirs), same_fingerprint(mine, theirs))
+            Match(
+                name,
+                distance(mine.fingerprint, theirs.fingerprint),
+                mine.alike(theirs),
+            )
         )
     found.sort(key=lambda m: (not m.same_fingerprint, m.distance, m.name))
     return found[:count]

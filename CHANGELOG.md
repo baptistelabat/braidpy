@@ -229,6 +229,14 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- Braids are compared as patterns (`braidpy.braid_pattern`) where braidpy
+  compares them: `BraidPattern.alike`, and `braid_pattern.alike(a, b)` for
+  two braids, say nothing measured tells two patterns apart — fast, the
+  fingerprints — where `==` proves it. The ways of making a braid, the
+  Ashley search and `similarity.similar` check by it, with the same
+  results as before. `ring_program.same_braid` is its old name, kept.
+  `tools.compare_braids`, and so the MCP server, now also says whether
+  two braids are `proven` the same pattern.
 - In a ring of gears timed so that every contact is on a horn
   (`described`, `layout.time_ring`), the parts of a split gear are
   stacked on their axle, each keeping its own time, the axle as large as

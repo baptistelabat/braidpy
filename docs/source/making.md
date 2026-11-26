@@ -6,7 +6,8 @@ already gives the braid it makes, as a braid word. {mod}`braidpy.making`
 goes the other way: from a braid — a braid word, say — to how to make it.
 
 Two braids are the same braid, here, when nothing braidpy measures
-of their topology tells them apart ({func}`~braidpy.ring_program.same_braid`,
+of their topology tells them apart: their patterns are alike
+({func}`~braidpy.braid_pattern.alike`,
 see {doc}`comparing_braids`): a way of making a braid need not make its very
 word, only the same braid. Each way is checked by reading the braid back
 off what it made, with the code that reads it off that way of making

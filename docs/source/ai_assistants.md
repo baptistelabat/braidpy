@@ -27,7 +27,8 @@ from braidpy import tools
 
 tools.describe_braid("1 -2")["permutation"]  # [2, 3, 1]
 tools.compare_braids("1 2 3 -6 -5 -4", "3 2 1 -4 -5 -6", n_strands=7)
-# {'same_braid': True, 'distance': 0.0}: the flat sinnet of 7, read backwards
+# {'same_braid': True, 'proven': True, 'distance': 0.0}: the flat sinnet of 7,
+# read backwards: alike, and proven the same pattern
 tools.ways_to_make("1 -2 -2 1")["ashley"]["a_sinnet"]  # False: one strand a space
 ```
 

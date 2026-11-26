@@ -235,13 +235,13 @@ def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
     """#3047, a cascade of one strand crossing many after another: a
     conjugate of it, the same braid by its topology, takes a card far
     shorter."""
+    from braidpy.braid_pattern import alike
     from braidpy.making.lace import card_conjugate
-    from braidpy.ring_program import same_braid
     from braidpy.solid_sinnets_catalog import abok_3047
 
     braid = abok_3047.braid(1)
     found = card_conjugate(braid)
-    assert same_braid(found, braid)
+    assert alike(found, braid)
     assert len(lace_card(found).steps) < 0.7 * len(lace_card(braid).steps)
 
 
