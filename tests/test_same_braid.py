@@ -73,3 +73,16 @@ def test_the_old_name_is_the_same_test():
     assert same_braid is same_pattern
     assert isinstance(ONE.pattern(), BraidPattern)
     assert isinstance(ONE.closed(), ClosedBraid)
+
+
+def test_alike_is_the_fingerprints_and_proven_the_proof():
+    """Alike, as the ways of making a braid check theirs, is fast; proven
+    is the conjugacy search; the old names say the same."""
+    from braidpy.braid_pattern import alike
+    from braidpy.ring_program import same_braid as old
+
+    a, b = Braid((1, 2), 3), Braid((2, 1), 3)
+    assert alike(a, b) and a.pattern().alike(b.pattern())
+    assert a.pattern().proven(b.pattern()) is True
+    assert not alike(a, Braid((1, -2), 3))
+    assert old(a, b) == alike(a, b)

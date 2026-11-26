@@ -24,7 +24,7 @@ Meneses made it practical:
 - two braids are conjugate exactly when their super summit sets are the
   same, and so when one holds a braid of the other's.
 
-:func:`same_braid` asks this of two braids' patterns, their
+:func:`same_pattern` asks this of two braids' patterns, their
 :func:`~braidpy.similarity.home` braids.  Strands numbered from the other
 side, ``σ_i`` read as ``σ_{n-i}``, need no asking: that is conjugation by
 ``Δ``.

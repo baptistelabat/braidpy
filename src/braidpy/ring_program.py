@@ -13,8 +13,8 @@ neighbouring places exchanging what they hold, the swaps of a row sharing
 no place so that they are made at once.  A braid becomes a ring program
 (:func:`from_braid`), and a ring program becomes each way of making it;
 read back as a braid (:meth:`RingProgram.braid`), each must be the braid
-it was made from, as braidpy compares braids: by their topology
-(:func:`same_braid`).
+it was made from, as braidpy compares braids: by their topology, their
+patterns alike (:func:`braidpy.braid_pattern.alike`).
 
 Conventions.  The ring is seen from above, from the side the braider
 works from on a kumihimo disk, and the braid is made downwards, away from
@@ -223,9 +223,8 @@ def from_braid(
 
 
 def same_braid(a: Braid, b: Braid) -> bool:
-    """Whether two braids are the same braid, as the ways
-    of making one compare them: by their topology
-    (:func:`~braidpy.similarity.same_fingerprint`), whatever their words.
+    """Whether two braids make alike patterns: the name
+    :func:`braidpy.braid_pattern.alike` had, kept.
 
     Args:
         a: A braid.
@@ -234,6 +233,6 @@ def same_braid(a: Braid, b: Braid) -> bool:
     Returns:
         True if nothing measured tells them apart.
     """
-    from braidpy.similarity import fingerprint, same_fingerprint
+    from braidpy.braid_pattern import alike
 
-    return same_fingerprint(fingerprint(a), fingerprint(b))
+    return alike(a, b)

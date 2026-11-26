@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from braidpy.braid import Braid
     from braidpy.similarity import Fingerprint
 
-__all__ = ["BraidPattern"]
+__all__ = ["BraidPattern", "alike"]
 
 
 @dataclass(frozen=True, eq=False)
@@ -65,6 +65,13 @@ class BraidPattern:
         parts (:func:`~braidpy.similarity.exact_part`)."""
         return self._key
 
+    def alike(self, other: BraidPattern) -> bool:
+        """Whether nothing measured tells two patterns apart: their
+        fingerprints agree (:meth:`key`).  Fast, and what the ways of making
+        a braid check what they made by; not a proof, which ``==`` and
+        :meth:`proven` give, and which can take seconds on many strands."""
+        return self._key == other._key
+
     def proven(self, other: BraidPattern) -> bool | None:
         """Whether two patterns are the same, proven; None if the search
         for it would be too long."""
@@ -85,3 +92,18 @@ class BraidPattern:
 
     def __hash__(self) -> int:
         return hash(self._key)
+
+
+def alike(a: Braid, b: Braid) -> bool:
+    """Whether two braids make patterns nothing measured tells apart
+    (:meth:`BraidPattern.alike`): how the ways of making a braid check
+    that they made it, whatever the words.
+
+    Args:
+        a: A braid.
+        b: Another.
+
+    Returns:
+        True if their fingerprints agree.
+    """
+    return a.pattern().alike(b.pattern())

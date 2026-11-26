@@ -229,6 +229,14 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- Braids are compared as patterns (`braidpy.braid_pattern`) where braidpy
+  compares them: `BraidPattern.alike`, and `braid_pattern.alike(a, b)` for
+  two braids, say nothing measured tells two patterns apart — fast, the
+  fingerprints — where `==` proves it. The ways of making a braid, the
+  Ashley search and `similarity.similar` check by it, with the same
+  results as before. `ring_program.same_braid` is its old name, kept.
+  `tools.compare_braids`, and so the MCP server, now also says whether
+  two braids are `proven` the same pattern.
 - `Braid.get_band_canonical_factors`, the Birman–Ko–Lee (band generator)
   normal form, is removed: math-braid's, and used by nothing in braidpy.
   Artin's normal form (`get_canonical_factors`) is braidpy's own.

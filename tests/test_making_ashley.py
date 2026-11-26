@@ -11,6 +11,7 @@ import pytest
 
 from braidpy import Braid
 from braidpy.braid_catalog import word_examples
+from braidpy.braid_pattern import alike
 from braidpy.making.ashley import (
     ashley_moves,
     ashley_sinnet,
@@ -18,7 +19,6 @@ from braidpy.making.ashley import (
     sinnet_spec,
     triangle,
 )
-from braidpy.ring_program import same_braid
 from braidpy.solid_sinnets_catalog import abok_2965, abok_2999
 
 
@@ -41,7 +41,7 @@ def test_a_sinnet_found_makes_the_braid():
     braid = Braid((1, -2, 3, 5, -4) * 2, 6)  # the regular flat braid of 6
     search = ashley_sinnet(braid)
     assert search.sinnet is not None and search.distance == 0
-    assert same_braid(search.sinnet.braid(1), braid)
+    assert alike(search.sinnet.braid(1), braid)
 
 
 def test_a_braid_no_sinnet_makes_gets_the_nearest():
@@ -64,7 +64,7 @@ def test_braid_studio_makes_the_sinnet_found():
     sinnet = ashley_sinnet(square).sinnet
     made = build({**sinnet_spec(sinnet), "iterations": 0}, tighten=False)
     word = tuple(int(g) for g in made["info"]["word"].split())
-    assert same_braid(Braid(word, 4), square)
+    assert alike(Braid(word, 4), square)
 
 
 @pytest.mark.parametrize(
@@ -142,7 +142,7 @@ def test_an_oblong_is_the_book_s_braid(number, width, ends):
     moves = [tuple(move) for move in book.moves]
     turned = moves.index(made.moves[0])
     assert made.moves == moves[turned:] + moves[:turned]
-    assert same_braid(made.braid(), book.braid())
+    assert alike(made.braid(), book.braid())
 
 
 def test_the_square_has_the_book_s_lines_in_the_order_of_the_others():
@@ -306,7 +306,7 @@ def test_the_book_s_strands_more_are_at_the_corners(number, outline):
     assert sorted(made.initial_counts_per_space) == sorted(
         book.initial_counts_per_space
     )
-    assert same_braid(made.braid(1), book.braid(1))
+    assert alike(made.braid(1), book.braid(1))
 
 
 def test_a_shape_on_a_grid_is_drawn_as_the_book_draws_it():
@@ -492,7 +492,7 @@ def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
     )
     assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])
     if drawn["makes"]:
-        assert same_braid(made.braid(1), book.braid(1))
+        assert alike(made.braid(1), book.braid(1))
 
 
 @pytest.mark.parametrize("name", ["abok_3047", "abok_3059"])
