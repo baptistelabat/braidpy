@@ -4,10 +4,10 @@
 
 """What every catalogue of braids in braidpy has in common.
 
-Each catalogue — :mod:`braidpy.braid_catalog` (braid words),
-:mod:`braidpy.mobidai_catalog` (kumihimo disk braids),
-:mod:`braidpy.solid_sinnets_catalog` (Ashley's solid sinnets) and
-:mod:`braidpy.machine_catalog` (braiding machines) — keeps its braids as
+Each catalogue — :mod:`braidpy.braid_catalogue` (braid words),
+:mod:`braidpy.mobidai_catalogue` (kumihimo disk braids),
+:mod:`braidpy.solid_sinnets_catalogue` (Ashley's solid sinnets) and
+:mod:`braidpy.machine_catalogue` (braiding machines) — keeps its braids as
 it likes best, and lists them in a ``CATALOGUE``: an :class:`Entry` per
 braid, by the name it is known by, in the order to offer them.
 
@@ -84,14 +84,14 @@ class Entry(Generic[T]):
 def extended(name: str, own: dict[str, Entry[T]]) -> dict[str, Entry[T]]:
     """A catalogue of braidpy's, with the braids installed packages add to
     it: each entry point of :data:`GROUP` named ``name`` (the catalogue's
-    module, as ``machine_catalog``, or ``lace_machines`` for its lace
+    module, as ``machine_catalogue``, or ``lace_machines`` for its lace
     machines) loads a dict of :class:`Entry` by name,
     listed after braidpy's own.  A package's catalogue imports from braidpy
     what its braids need, but not the catalogue it adds to.
 
     Args:
         name: The catalogue's module name, without ``braidpy.``; or
-            ``lace_machines``, :data:`braidpy.machine_catalog.LACE`.
+            ``lace_machines``, :data:`braidpy.machine_catalogue.LACE`.
         own: braidpy's own entries.
 
     Returns:

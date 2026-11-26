@@ -170,7 +170,7 @@ def similar_braids(
 ) -> list[dict[str, Any]]:
     """The braids of braidpy's catalogues most like this one, nearest first,
     each with every way braidpy knows of making it
-    (:func:`braidpy.topology_catalog.related`).
+    (:func:`braidpy.topology_catalogue.related`).
 
     Args:
         word: The braid word.
@@ -181,7 +181,7 @@ def similar_braids(
         Per braid: its ``title``, ``distance`` (0 is this very braid), and
         ``made_as``, each way of making it with a ``studio`` link.
     """
-    from braidpy.topology_catalog import related
+    from braidpy.topology_catalogue import related
 
     found = []
     for topology, apart in related(_braid(word, n_strands), count=count):

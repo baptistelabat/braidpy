@@ -12,7 +12,7 @@ therefore the check that matters: it exercises every slot and every move.
 import pytest
 
 from braidpy.mobidai import Mobidai
-from braidpy.mobidai_catalog import CATALOGUE
+from braidpy.mobidai_catalogue import CATALOGUE
 
 
 @pytest.mark.parametrize("name", sorted(CATALOGUE))
@@ -159,7 +159,7 @@ def test_edo_yatsu_is_not_ashleys_8_strand_square():
     but the Burau polynomials of their braids differ, so they are not the
     same braid however written, and are not listed as each other's."""
     from braidpy.braid_pattern import alike
-    from braidpy.topology_catalog import braid_of
+    from braidpy.topology_catalogue import braid_of
     from braidpy.web import build
 
     def braid(spec):

@@ -30,9 +30,9 @@ source offered:
 ``{"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 8}``
     Kumihimo's own moves: swap top and bottom, rotate a quarter.
 ``{"source": "mobidai", "name": "KONGO_8", "cycles": 8}``
-    A disk braid from the catalogue (:mod:`braidpy.mobidai_catalog`).
+    A disk braid from the catalogue (:mod:`braidpy.mobidai_catalogue`).
 ``{"source": "sinnet", "name": "abok_3042", "cycles": 4}``
-    An Ashley solid sinnet (:mod:`braidpy.solid_sinnets_catalog`).
+    An Ashley solid sinnet (:mod:`braidpy.solid_sinnets_catalogue`).
 ``{"source": "machine", "name": "tubular_8", "cycles": 3}``
     A horn gear braiding machine (:mod:`braidpy.horn_gear.examples`).
 
@@ -166,7 +166,7 @@ def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
 
     Args:
         topologies: The catalogue of braids by topology, as
-            :func:`braidpy.topology_catalog.export` writes it.
+            :func:`braidpy.topology_catalogue.export` writes it.
 
     Returns:
         Per braid: ``key``, a name for its files; ``title``; ``source``;
@@ -180,7 +180,7 @@ def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """
     from dataclasses import asdict
 
-    from braidpy.topology_catalog import links_of, load
+    from braidpy.topology_catalogue import links_of, load
 
     known = load(topologies)
     titles = {

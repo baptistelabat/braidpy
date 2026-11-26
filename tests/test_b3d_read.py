@@ -14,7 +14,7 @@ import pytest
 from braidpy import web
 from braidpy.b3d import mobidai_from_b3d
 from braidpy.similarity import fingerprint, same_fingerprint
-from braidpy.topology_catalog import braid_of
+from braidpy.topology_catalogue import braid_of
 
 # Ashley's #3054, designed in braid3d by hand.
 ABOK_3054 = Path(__file__).parent / "abok3054.b3d"

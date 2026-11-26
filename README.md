@@ -168,7 +168,7 @@ takes the earliest strand of a space over every strand it passes to another
 space.
 
 ```python
-from braidpy.solid_sinnets_catalog import abok_3042
+from braidpy.solid_sinnets_catalogue import abok_3042
 
 abok_3042.braid()  # the braid word one cycle makes
 abok_3042.to_mobidai()  # the same, as a kumihimo disk pattern

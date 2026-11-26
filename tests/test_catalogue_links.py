@@ -9,14 +9,19 @@ from urllib.parse import urlparse
 import pytest
 
 from braidpy import (
-    braid_catalog,
-    machine_catalog,
-    mobidai_catalog,
-    solid_sinnets_catalog,
+    braid_catalogue,
+    machine_catalogue,
+    mobidai_catalogue,
+    solid_sinnets_catalogue,
 )
 from braidpy.catalogue import KINDS, Link, ashley
 
-CATALOGUES = [braid_catalog, mobidai_catalog, solid_sinnets_catalog, machine_catalog]
+CATALOGUES = [
+    braid_catalogue,
+    mobidai_catalogue,
+    solid_sinnets_catalogue,
+    machine_catalogue,
+]
 
 
 def test_a_link_is_of_a_known_kind():
@@ -47,7 +52,7 @@ def test_every_link_is_whole(catalogue):
 
 
 def test_the_reference_is_the_first_link():
-    entry = solid_sinnets_catalog.CATALOGUE["abok_3051"]
+    entry = solid_sinnets_catalogue.CATALOGUE["abok_3051"]
     assert entry.reference == "The Ashley Book of Knots, #3051"
     assert [link.kind for link in entry.links] == ["book", "video", "video", "post"]
 
@@ -55,7 +60,7 @@ def test_the_reference_is_the_first_link():
 @pytest.mark.slow
 def test_the_links_go_with_the_topologies_they_make():
     """Exported with the topology catalogue, and read back alike."""
-    from braidpy.topology_catalog import export, load
+    from braidpy.topology_catalogue import export, load
 
     data = export()
     linked = [m for t in data for m in t["methods"] if m["links"]]
@@ -93,7 +98,9 @@ def test_a_package_adds_its_braids_after_braidpy_s_and_none_twice(monkeypatch):
     def points(entries):
         def found(group, name):
             return (
-                [Point(entries)] if (group, name) == (GROUP, "machine_catalog") else []
+                [Point(entries)]
+                if (group, name) == (GROUP, "machine_catalogue")
+                else []
             )
 
         return found
@@ -102,10 +109,10 @@ def test_a_package_adds_its_braids_after_braidpy_s_and_none_twice(monkeypatch):
     monkeypatch.setattr(
         metadata, "entry_points", points({"mine": Entry("Mine", lambda: None)})
     )
-    assert list(extended("machine_catalog", theirs)) == ["tubular_8", "mine"]
-    assert list(extended("mobidai_catalog", theirs)) == ["tubular_8"]
+    assert list(extended("machine_catalogue", theirs)) == ["tubular_8", "mine"]
+    assert list(extended("mobidai_catalogue", theirs)) == ["tubular_8"]
     monkeypatch.setattr(
         metadata, "entry_points", points({"tubular_8": Entry("Mine", lambda: None)})
     )
     with pytest.raises(ValueError, match="tubular_8"):
-        extended("machine_catalog", theirs)
+        extended("machine_catalogue", theirs)

@@ -13,7 +13,7 @@ def _catalogue():
     # It could not be imported at all: it imported ashley_solid_sinnet as a
     # top-level module rather than from braidpy, and a missing comma made one
     # entry call a tuple.
-    import braidpy.solid_sinnets_catalog as catalogue
+    import braidpy.solid_sinnets_catalogue as catalogue
 
     return {
         name: value
@@ -49,7 +49,7 @@ def test_every_sinnet_has_the_shape_the_book_gives_it():
     import inspect
     import re
 
-    import braidpy.solid_sinnets_catalog as catalogue
+    import braidpy.solid_sinnets_catalogue as catalogue
 
     notes = re.findall(
         r"ABOK #(\d+)\s*\n\s*(\d+)-strand ([a-z -]+?)\s*\n",
@@ -69,7 +69,7 @@ def test_every_sinnet_has_the_shape_the_book_gives_it():
 def test_the_simplest_sinnets_are_the_braids_they_are_named_for(sinnet, word):
     """Worked on Ashley's stand, the plait and the square sinnet are the
     braids their braid words make: nothing measured tells them apart."""
-    from braidpy.braid_catalog import CATALOGUE as WORDS
+    from braidpy.braid_catalogue import CATALOGUE as WORDS
     from braidpy.similarity import fingerprint, same_fingerprint
 
     made = _catalogue()[sinnet].braid(1)

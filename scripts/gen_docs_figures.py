@@ -1212,7 +1212,7 @@ def machine_size_survey(png_dir: Path | None) -> None:
     from braidpy.horn_gear.described import machine_from_graph
     from braidpy.horn_gear.simulation import state_period
     from braidpy.horn_gear.take_off import clearance
-    from braidpy.machine_catalog import CATALOGUE
+    from braidpy.machine_catalogue import CATALOGUE
 
     machines = {name: entry.make for name, entry in sorted(CATALOGUE.items())}
     machines.update(
@@ -1314,7 +1314,7 @@ def ashley_shapes(png_dir: Path | None) -> None:
     sinnet_from_shape draws them: the lines, the bights numbered as the
     spaces, and the moves in his order."""
     from braidpy.making.ashley import oblong, triangle
-    from braidpy.solid_sinnets_catalog import abok_3047
+    from braidpy.solid_sinnets_catalogue import abok_3047
 
     shapes = {"triangle, #3047": triangle(4), "oblong, #3071": oblong(6, 2)}
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8), width_ratios=[1.1, 1.3])
@@ -1345,7 +1345,7 @@ def ashley_grids(png_dir: Path | None) -> None:
     spaces round its hole numbered between the outer ones; a square on a
     corner on the diagonal grid, the lines of the book's #3073."""
     from braidpy.making.ashley import _drawn, grid_lines, grid_outline, grid_shape
-    from braidpy.solid_sinnets_catalog import abok_3073
+    from braidpy.solid_sinnets_catalogue import abok_3073
 
     shapes = {
         "an L, 5 lines, arms 2": ("square", "L", 5, 2),

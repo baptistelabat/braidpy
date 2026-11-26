@@ -99,7 +99,7 @@ def test_a_machines_braid_is_made_by_its_carriers_in_the_page(tmp_path):
     from test_carried import _crossings
 
     from braidpy.horn_gear import yarn_paths
-    from braidpy.machine_catalog import CATALOGUE
+    from braidpy.machine_catalogue import CATALOGUE
     from braidpy.web import build
 
     cycles = 2

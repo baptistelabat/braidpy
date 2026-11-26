@@ -246,8 +246,8 @@ def exact_part(mark: Fingerprint) -> tuple:
 
 
 def catalogue_braids() -> dict[str, Braid]:
-    """The braids of :mod:`braidpy.braid_catalog`, by name."""
-    from braidpy.braid_catalog import CATALOGUE
+    """The braids of :mod:`braidpy.braid_catalogue`, by name."""
+    from braidpy.braid_catalogue import CATALOGUE
 
     return {name: entry.make() for name, entry in CATALOGUE.items()}
 
@@ -262,7 +262,7 @@ def similar(
     Args:
         braid: The braid — your own, say.
         candidates: The braids to look among, by name; by default those of
-            :mod:`braidpy.braid_catalog`.
+            :mod:`braidpy.braid_catalogue`.
         count: How many to give.
 
     Returns:

@@ -120,7 +120,7 @@ def test_a_link_asks_for_no_more_passes_than_its_source_takes():
     rather than asking fourteen and being refused when it is followed.  The
     disk and the lace machine take fourteen, so those are left alone.
     """
-    from braidpy.braid_catalog import RECTANGULAR_14
+    from braidpy.braid_catalogue import RECTANGULAR_14
     from braidpy.web._settings import Sinnet
 
     spec = {"source": "word", "word": RECTANGULAR_14, "n_strands": 14, "repeat": 14}
@@ -143,7 +143,7 @@ def test_a_tube_is_shown_made_as_a_tube():
     machine's, exactly."""
     from braidpy.annulus_braid import cored_word
     from braidpy.horn_gear.word import ring_word
-    from braidpy.machine_catalog import CATALOGUE
+    from braidpy.machine_catalogue import CATALOGUE
     from braidpy.making.lace import card_program, gear_number, read_card
     from braidpy.ring_program import RingProgram
 

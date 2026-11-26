@@ -93,7 +93,7 @@ export function describe(result, seconds) {
   );
 }
 
-// The braid's kin (braidpy.topology_catalog.for_page): every other way of
+// The braid's kin (braidpy.topology_catalogue.for_page): every other way of
 // making the same braid, and the braids nearest it, each a button to make
 // it.  None: nothing known yet, nothing shown.
 export function showKin(kin) {

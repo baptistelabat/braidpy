@@ -279,7 +279,7 @@ def _from_word(spec: Spec) -> Result:
 
 
 def _word_entry() -> Source:
-    from braidpy.braid_catalog import word_examples
+    from braidpy.braid_catalogue import word_examples
 
     return {
         "title": "Braid word",

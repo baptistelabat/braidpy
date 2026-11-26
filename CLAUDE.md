@@ -16,7 +16,7 @@ mistake before:
 | Linking numbers, from a word or from yarns | `linking` |
 | Alexander polynomial, Burau matrix | `properties`, `braid.reduced_burau_generator` |
 | Compare braids, find similar ones | `similarity` |
-| Braids by topology, and every way of making each | `topology_catalog` |
+| Braids by topology, and every way of making each | `topology_catalogue` |
 | A braid as neighbours swapping places round a ring: the step to other ways of making it | `ring_program` |
 | A braid as a punchcard for the Jacquard lace machine | `making.lace` |
 | A braid as moves on a kumihimo disk | `making.disk` |
@@ -24,7 +24,7 @@ mistake before:
 | A sinnet from the shape it takes, as Ashley draws it | `making.ashley.sinnet_from_shape` |
 | A shape as cells on a grid (square, diagonal, triangular), its outline | `making.ashley.grid_shape`, `grid_outline` |
 | From a sinnet's moves back to its shape | `making.ashley.move_groups`, `shapes_from_moves` |
-| Which of the book's sinnets a shape draws | `solid_sinnets_catalog.DRAWN` |
+| Which of the book's sinnets a shape draws | `solid_sinnets_catalogue.DRAWN` |
 | A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |

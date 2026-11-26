@@ -8,7 +8,7 @@ braidpy reads any mobidai."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalog import word_examples
+from braidpy.braid_catalogue import word_examples
 from braidpy.making.disk import disk_braid, disk_moves
 
 

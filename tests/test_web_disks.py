@@ -41,7 +41,7 @@ def test_what_cannot_be_made_is_explained(spec, message):
 
 
 def test_a_disk_braid_is_made_in_step_with_its_crossings():
-    from braidpy.mobidai_catalog import KONGO_8
+    from braidpy.mobidai_catalogue import KONGO_8
     from braidpy.take_off import disk_crossing_steps, mobidai_steps
 
     result = build(
@@ -257,7 +257,7 @@ def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
     """A triangle of four lines a side, from the page, is the book's #3047,
     its strands and moves, and comes drawn: its lines, each a move on a
     track, and its spaces."""
-    from braidpy.solid_sinnets_catalog import abok_3047
+    from braidpy.solid_sinnets_catalogue import abok_3047
 
     spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
     result = build({**spec, "cycles": 1, "iterations": 0})
@@ -315,7 +315,7 @@ def test_a_sinnet_from_a_shape_is_checked(spec, message):
 def test_a_shape_s_corners_take_strands_more():
     """A strand more at each corner of a triangle of four lines a side is
     the book's #3049."""
-    from braidpy.solid_sinnets_catalog import abok_3049
+    from braidpy.solid_sinnets_catalogue import abok_3049
 
     spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
     result = build({**spec, "corners": 1, "cycles": 1, "iterations": 0})

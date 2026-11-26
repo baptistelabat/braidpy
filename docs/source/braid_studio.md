@@ -17,7 +17,7 @@ loops its strands make when its ends are joined (one, several, or one per
 strand, a pure braid), and by its writhe, its crossings counted with their
 signs (see {mod}`braidpy.similarity` for what each says). Each row says
 what else makes the same braid (the catalogue of braids by topology,
-{mod}`braidpy.topology_catalog`), and where the braid comes from and is
+{mod}`braidpy.topology_catalogue`), and where the braid comes from and is
 shown made: the book, videos, pages ({class}`braidpy.catalogue.Link`).
 Clicking a braid opens it in the studio, at once.
 
@@ -25,7 +25,7 @@ A braid made round cores — a machine's axial yarns, held straight up
 through it, as soutache's two cords or a triaxial braid's eight — counts
 each core as a strand standing still, which the other yarns pass in front
 of or behind. A lace machine's braid has no figures yet: it has a word,
-but the catalogue of braids by topology ({mod}`braidpy.topology_catalog`)
+but the catalogue of braids by topology ({mod}`braidpy.topology_catalogue`)
 does not take lace machines yet.
 
 ## What it does
