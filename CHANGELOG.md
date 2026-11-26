@@ -6,6 +6,14 @@ What changed in each release of braidpy.
 
 ### New
 
+- A machine's braid as a ring word round an axis
+  (`braidpy.horn_gear.word.ring_word`): an axial, or any spot one could be
+  fed at, the core the machine braids round if not said (`default_axis`).
+  The turns are kept, so with the core kept as a strand
+  (`annulus_braid.cored_word`) it is the braid the machine makes round a
+  yarn fed there: a tube is not a flat braid curled up. `shortened()`
+  shortens it, the relations read round the ring
+  (`shortening.shortened_ring`, `annulus_braid.turns_last`).
 - Catalogues from outside: a package of a site's own adds braids to
   braidpy's catalogues (`braidpy.catalogue.extended`, entry points in
   the group `braidpy.catalogues`), as braid-designer adds machines of its

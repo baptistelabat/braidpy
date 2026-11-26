@@ -76,3 +76,36 @@ def test_a_word_of_one_sign_is_as_short_as_it_gets():
 def test_the_braid_method_is_the_same():
     braid = Braid((1, 3, -1, 2), 4)
     assert braid.shortened().generators == shortened(braid).generators
+
+
+def test_moves_round_a_ring_are_shortened_round_the_core():
+    """Round a ring, the wrapping crossing is a neighbour like any other and
+    a turn passes a crossing by renumbering it: each rewrite, and the word
+    shortened, is the same braid round the core, exactly."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.shortening import shortened_ring
+
+    rng = random.Random(1)
+    shorter = 0
+    for _ in range(60):
+        n = rng.randint(2, 5)
+        word = tuple(
+            rng.choice((-1, 1)) * rng.randint(1, n + 1)
+            for _ in range(rng.randint(2, 10))
+        )
+        braid = Braid(tuple(cored_word(word, n)), n + 1)
+        for other in rewrites(word, n):
+            assert len(other) == len(word)
+            assert Braid(tuple(cored_word(other, n)), n + 1) == braid
+        found = shortened_ring(word, n)
+        assert len(found) <= len(word)
+        assert Braid(tuple(cored_word(found, n)), n + 1) == braid
+        shorter += len(found) < len(word)
+    assert shorter > 20
+
+
+def test_crossings_far_apart_round_a_ring_are_not_far_apart_on_a_line():
+    """σ₁ and σ₄ of five strands commute on a line; round a ring of four
+    slots, crossing 4 is crossing 1's neighbour."""
+    assert (3, 1) in set(rewrites((1, 3), 4)) and (4, 1) not in set(rewrites((1, 4), 4))
+    assert (4, 1) in set(rewrites((1, 4)))
