@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
-from math_braid.canonical_factor import CanonicalFactor
 from sympy import Matrix, symbols
 
 from braidpy import Braid
@@ -218,25 +217,6 @@ class TestBraid:
         assert f.n_strands == 3
         assert [permutation_word(a) for a in f.Ai] == [[1], [1, 2]]
 
-    def test_band_canonical_form(self):
-        """math_braid's own form: band generators, whose twist is δ."""
-        f = Braid([2, -1]).get_band_canonical_factors()
-        assert isinstance(f.Ai[0], CanonicalFactor)
-        assert f.Ai[0].array_form == [
-            1,
-            0,
-            2,
-        ]  # This describes the permutation of first and second strands
-        assert f.Ai[1].array_form == [
-            0,
-            2,
-            1,
-        ]  # This describes the permutation of second and third strands
-        assert f.n_half_twist == -1
-        # A full twist on three strands is three of its δ.
-        full = Braid([1, -1], n_strands=3).full_twist()
-        assert full.get_band_canonical_factors().n_half_twist == 3
-
     def test_canonical_form_is_the_braid_and_only_it(self):
         """Δ^k · A_1 ⋯ A_r spells the braid, and equal braids spell it alike."""
         import random
@@ -268,9 +248,9 @@ class TestBraid:
     def test_canonical_form_counts_half_twists(self):
         """n_half_twist is the number of half twists Δ in front, as documented.
 
-        It used to be the exponent of math_braid's band generator twist δ, a
-        1/n turn: a full twist read as n_strands rather than 2, and a single
-        half twist as 1 with factors still after it.
+        It used to be the exponent of math_braid's twist δ, a 1/n turn of
+        the band generators' form: a full twist read as n_strands rather
+        than 2, and a single half twist as 1 with factors still after it.
         """
         for n in (2, 3, 4, 5):
             half = Braid([1, -1], n_strands=n).half_twist()
@@ -360,15 +340,57 @@ class TestBraid:
                     )
                     assert (b == other) == expected
 
-    def test_math_braid_decides_when_handle_reduction_takes_too_long(self, monkeypatch):
+    def test_the_normal_form_decides_when_handle_reduction_takes_too_long(
+        self, monkeypatch
+    ):
         """Given no time at all, handle reduction gives up on a long word:
-        math_braid's normal form then says whether it is trivial."""
+        the braid's own left normal form then says whether it is trivial,
+        as math_braid's does, without math_braid."""
+        import random
+
+        import math_braid
+
         import braidpy.braid
 
         monkeypatch.setattr(braidpy.braid, "HANDLE_REDUCTION_S", 0.0)
         b = Braid([1, 2, -1, 3, -2, 1, 2, 3, -1, 2] * 3, n_strands=4)
         assert (b * b.inverse()).is_trivial()
         assert not b.is_trivial()
+        rng = random.Random(3)
+        for n in (3, 5, 8):
+            for _ in range(10):
+                word = [rng.choice((1, -1)) * rng.randint(1, n - 1) for _ in range(20)]
+                again = word[:7] + [1, -1] + word[7:]
+                other = Braid(word, n) * Braid(again, n).inverse()
+                assert other.is_trivial()
+                changed = Braid(word, n) * Braid(word[:-1] + [-word[-1]], n).inverse()
+                assert changed.is_trivial() == (
+                    not math_braid.Braid(list(changed.generators), n)
+                )
+
+    @pytest.mark.slow
+    def test_a_long_braid_of_many_strands_is_decided_by_its_normal_form(self):
+        """ABOK #3082, 61 strands, against itself rewritten: handle
+        reduction takes minutes, its normal form seconds."""
+        import random
+        import time
+
+        from braidpy.annulus_braid import solid_word
+        from braidpy.garside_canonical_form import artin_left_normal_form
+        from braidpy.solid_sinnets_catalog import abok_3082
+
+        n = abok_3082.n_strands
+        word = solid_word(abok_3082.annular_word(1), n)
+        rewritten = list(word)
+        rng = random.Random(0)
+        for _ in range(3000):
+            k = rng.randrange(len(rewritten) - 1)
+            if abs(abs(rewritten[k]) - abs(rewritten[k + 1])) >= 2:
+                rewritten[k], rewritten[k + 1] = rewritten[k + 1], rewritten[k]
+        start = time.perf_counter()
+        both = word + [-g for g in reversed(rewritten)]
+        assert artin_left_normal_form(both, n) == (0, ())
+        assert time.perf_counter() - start < 60
 
     def test_a_braid_compares_with_the_trivial_braid(self):
         """Compared with a braid of no crossings, either way round, a braid
