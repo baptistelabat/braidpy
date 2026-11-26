@@ -24,27 +24,19 @@ What is known and left for later, each with enough said to pick it up.
     (`making.ashley.ashley_sinnet`, three seconds): a braid that a shape
     makes could be offered its shape instead.
 
-- **Reducible, periodic or pseudo-Anosov** (`Braid.is_reducible` is a stub).
-  No library fits: `flipper` and `curver` (MIT) took over two minutes on
-  three strands, and libbraiding is not on PyPI. Garside theory decides it,
-  on the super summit sets `conjugacy` already computes:
-  - Benardete, Gutiérrez and Nitecki, *A combinatorial approach to
-    reducibility of mapping classes* (1993): a reducible braid has a
-    conjugate in its super summit set that keeps a round curve, one round
-    strands i to j. The place to start.
-  - Lee and Lee, *A Garside-theoretic approach to the reducibility problem
-    in braid groups*, J. Algebra (2008): the ultra summit set suffices.
-  - González-Meneses and Wiest, *Reducible braids and Garside theory*,
-    Algebr. Geom. Topol. 11 (2011): round or almost round curves in the
-    sliding circuits set; libbraiding's way.
-  - Calvez, *Fast Nielsen–Thurston classification of braids*, Algebr. Geom.
-    Topol. 14 (2014): polynomial for a given number of strands.
-  - Birman, Gebhardt and González-Meneses, *Conjugacy in Garside groups III:
-    periodic braids*, J. Algebra (2007).
-  - Bestvina and Handel, *Train-tracks for surface homeomorphisms*, Topology
-    (1995): the other way, flipper's.
-
-  Then Braid Studio's card can say which of the three a braid is.
+- **Which of the three a braid is, said on Braid Studio's card**: it can
+  now be told — `Braid.is_reducible` asks the super summit sets
+  `conjugacy` computes, after Benardete, Gutiérrez and Nitecki 1993 and
+  Calvez 2014, and `Braid.is_periodic` asks whether the nth or (n − 1)st
+  power is a power of Δ.  What is left:
+  - the answer needs the whole super summit set, exponential at worst;
+    Lee and Lee's ultra summit set (J. Algebra 2008) or González-Meneses
+    and Wiest's sliding circuits (Algebr. Geom. Topol. 11, 2011),
+    libbraiding's way, would take fewer;
+  - reducible says a round curve is kept, not which one: finding the
+    reducing curves would let the card show the tubes;
+  - Bestvina and Handel's train-tracks (Topology, 1995), flipper's way,
+    remain the other road, slow in Python so far.
 - **Lace braids on the front page**: they have no topology, so their
   strands, loops and writhe are not shown. A lace machine's braid has a
   braid word: adding lace to the topology catalogue's methods would give

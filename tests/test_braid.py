@@ -6,6 +6,7 @@ import pytest
 from sympy import Matrix, symbols
 
 from braidpy import Braid
+from braidpy.conjugacy import SuperSummitSetTooLarge
 from braidpy.garside_canonical_form import permutation_word
 
 # Run tests with: uv run pytest /tests
@@ -469,6 +470,38 @@ class TestBraid:
         """Test pure braid detection"""
         assert pure_braid.is_pure()
         assert not non_pure_braid.is_pure()
+
+    def test_is_periodic(self):
+        """A braid that turns the strands round together is periodic; a
+        twist of two strands among three keeps every strand's place, and
+        is not."""
+        assert Braid([1, 2], 3).is_periodic()
+        assert Braid([-1, -2], 3).is_periodic()
+        assert Braid([1, 2, 1], 3).is_periodic()
+        assert Braid([1, 2, 1, 1, 2, 1], 3).is_periodic()
+        assert Braid([1], 2).is_periodic()
+        assert not Braid([1, 1], 3).is_periodic()
+        assert not Braid([1, 2, -3], 4).is_periodic()
+
+    def test_is_reducible(self):
+        """Strands crossed among themselves and left alone otherwise run in
+        a tube, and still do once the braid is conjugated: reducibility goes
+        with a braid's conjugates, into its super summit set.  A rotation of
+        the strands keeps no curve, and neither does the figure-of-eight
+        braid, which makes none."""
+        assert Braid([1], 3).is_reducible()
+        assert Braid([1, 1], 3).is_reducible()
+        assert Braid([], 4).is_reducible()
+        assert Braid([2], 4).is_reducible()
+        assert Braid([1, 3], 4).is_reducible()
+        slid = Braid([1, 2], 4).inverse() * Braid([1, 3], 4) * Braid([1, 2], 4)
+        assert slid.is_reducible()
+        assert Braid([1, 2, 1, 1, 2, 1], 3).is_reducible()
+        assert not Braid([1, 2], 3).is_reducible()
+        assert not Braid([1, -2, 1, -2], 3).is_reducible()
+        assert not Braid([1, 2, -3], 4).is_reducible()
+        with pytest.raises(SuperSummitSetTooLarge):
+            Braid([1], 3).is_reducible(limit=1)
 
     def test_is_palindromic(self):
         assert Braid([1, 2, 1]).is_palindromic()

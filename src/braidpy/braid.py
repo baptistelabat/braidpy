@@ -23,7 +23,10 @@ if TYPE_CHECKING:
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from braidpy.garside_canonical_form import GarsideCanonicalFactors
+from braidpy.garside_canonical_form import (
+    GarsideCanonicalFactors,
+    artin_left_normal_form,
+)
 from braidpy.parametric_strand import (
     Arc,
     ParametricStrand,
@@ -808,22 +811,28 @@ class Braid:
         return self.inverse().generators == self.generators
 
     def is_periodic(self) -> bool:
-        """Check if braid is periodic.
+        """Check if braid is periodic: some power of it is a power of the
+        half-twist ∆ — a rotation of the disk holding the strands, the
+        strands riding it round.
 
-        A braid x is periodic if and only if its nth power or its (n − 1)st power
-        is a power of the half-twist ∆.
+        A braid x is periodic if and only if its nth power or its (n − 1)st
+        power is a power of the half-twist ∆ (González-Meneses, *Periodic
+        braids*): that power is read in the Garside canonical form
+        (:func:`braidpy.garside_canonical_form.artin_left_normal_form`),
+        where a power of ∆ is the form with no permutation braid left in it.
+        Being pure is not enough: σ₁² keeps every strand's place and is not
+        periodic, while σ₁σ₂ turns the three strands round and is.
 
         https://hal.science/hal-00647035v2/file/B_nNTHClassificationv5.pdf
-        Periodic braid are roots of ∆**m
         https://homepages.math.uic.edu/~jaca2009/notes/Meneses.pdf
 
         Returns:
             bool: True if the braid is periodic.
         """
-        return (self ** (2 * self.n_strands)).perm() == list(
-            range(1, self.n_strands + 1)
-        ) or (self ** (2 * (self.n_strands - 1))).perm() == list(
-            range(1, self.n_strands + 1)
+        n = self.n_strands
+        return any(
+            not artin_left_normal_form((self**power).generators, n)[1]
+            for power in (n, n - 1)
         )
 
     def without_strand(self, strand: int) -> "Braid":
@@ -885,17 +894,55 @@ class Braid:
             for strand in range(1, self.n_strands + 1)
         )
 
-    def is_reducible(self) -> bool:
+    def is_reducible(self, limit: Optional[int] = 10000) -> bool:
         """Check if the braid is reducible.
 
         If a braid is reducible, it means that the strands can be separated
         into groups of strands (less groups than number of strands), such that
-        each group is running inside one tube. The tubes themselves can form a braid.
+        each group is running inside one tube. The tubes themselves can form a
+        braid.  Said of curves: some round curve round consecutive strands —
+        two of them at least, all but two at most — is brought back to itself,
+        up to stretching.  The trivial braid is reducible, every curve coming
+        back; a periodic braid (:meth:`is_periodic`) may be too, the full
+        twist turning every curve round and back; a braid neither periodic nor
+        reducible is pseudo-Anosov.
+
+        Reducibility goes with a braid's conjugates, so it is asked of the
+        super summit set (:func:`braidpy.conjugacy.super_summit_set`): a
+        reducible braid has a conjugate there that keeps a round curve
+        (Benardete, Gutiérrez and Nitecki 1993; Calvez, *Fast Nielsen–Thurston
+        classification of braids*, theorem 10), and of that set's braids
+        ``∆^p · A_1 ⋯ A_r`` the one keeps the round curve round strands
+        ``i…j`` when every ``A_k`` carries strands ``i…j`` back to them, and
+        ``∆^p``, for an odd ``p``, when ``i + j`` is one more than the number
+        of strands — the middle curve, which the half twist turns round and
+        back.
+
+        Args:
+            limit: The most braids of the super summit set to find; None for
+                no limit.
 
         Returns:
             bool: True if reducible.
+
+        Raises:
+            braidpy.conjugacy.SuperSummitSetTooLarge: If it cannot tell within
+                ``limit`` braids.
         """
-        raise NotImplementedError()
+        from braidpy.conjugacy import super_summit_set
+
+        n = self.n_strands
+        for twists, factors in super_summit_set(self, limit):
+            for first in range(n - 1):
+                for last in range(first + 1, n):
+                    if first == 0 and last == n - 1:
+                        continue
+                    if twists % 2 and first + last != n - 1:
+                        continue
+                    inside = set(range(first, last + 1))
+                    if all({a[strand] for strand in inside} == inside for a in factors):
+                        return True
+        return False
 
     def slot_history(self) -> list[list[int]]:
         """Which slot every strand occupies, before and after each generator.
