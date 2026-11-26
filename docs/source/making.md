@@ -130,6 +130,26 @@ with a notch beside each strand, it is within a few steps of that bound
 strand, it takes far more (#3047 on 20 gears: about 270), and how many fewer
 it could take is not known: the bound counts no strand hemmed in.
 
+That bound is {func}`~braidpy.making.lace.step_floor`; a card is run round
+and round, so what counts is what each repeat adds once they follow one
+another, {func}`~braidpy.making.lace.repeat_floor`, which does not depend
+on where the word is cut. And a card need not make the very word: any
+conjugate is the same braid once repeated, seen another way.
+{func}`~braidpy.making.lace.card_conjugate` looks for one of lower floor:
+the word read round as the card runs it, rewritten by the braid relations
+wherever it is cut, the rewrites that lower the floor kept and, now and
+then less and less often, one that raises it, to cross what does not
+change it (seeded, so a braid always has the same). The book's sinnets are
+written as cascades, one strand crossing many one after another with the
+same sign, each crossing waiting a step for a notch: rewritten, their
+cascades are no fewer, but overlap. #3047's floor a repeat goes from 106 to
+about 45, its card on 48 gears from 121 steps to about 55; #3072's from 168
+to about 70. Braid Studio makes its card of a conjugate so, within a budget
+of a second or two. For one braid, an exact search (a SAT solver, outside
+braidpy) took the dual matrix of braid-designer, 68 crossings of 28 strands,
+from 20 steps for its word, the fewest there are for it, to 16 for a
+conjugate, which 15 cannot do.
+
 The card is checked on the machine itself
 ({func}`~braidpy.making.lace.lace_braid`): it is run, after each step every
 bobbin is found in its notch, and each gear that turned must have swapped
@@ -225,6 +245,13 @@ the stand's spaces and the lines its moves
 - **The strands**: each space starts with the fewest that order lets it, two
   where a space gives before it is given; the book adds one at a corner to
   sharpen an edge (`extra`).
+
+Two moves whose lines do not cross can be made either way round, the braid
+the same exactly; two whose lines cross cannot, the strand of one passing
+over the other's. A group of parallel lines is so moves made in any order:
+crossing by crossing, the braid relations let one cascade slide through
+the other. It is what a lace card makes of a sinnet, its moves overlapping
+({func}`~braidpy.making.lace.card_conjugate`).
 
 ![Ashley's diagrams of a triangle and an oblong](ashley_shapes.svg)
 

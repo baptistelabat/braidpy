@@ -73,7 +73,7 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
         and Braid Studio's description of the lace machine.  Empty for a braid with no braid word, or too long.
     """
     from braidpy.making.disk import disk_moves
-    from braidpy.making.lace import lace_card
+    from braidpy.making.lace import card_conjugate, lace_card
 
     found = _unit(info)
     if found is None:
@@ -90,7 +90,9 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
             "spec": {**moves.spec(), "cycles": _passes("mobidai", repeats)},
             "moves": moves.text(),
         }
-    card = lace_card(unit)
+    # The card repeats the unit: a conjugate of it is the same braid once
+    # repeated, and may take far fewer steps (card_conjugate).
+    card = lace_card(card_conjugate(unit))
     shown["lace"] = {
         "gears": card.n_gears,
         "steps": len(card.steps),

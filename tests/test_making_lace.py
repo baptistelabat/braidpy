@@ -176,3 +176,67 @@ def test_a_gear_turned_the_wrong_way_is_refused():
 
     with pytest.raises(ValueError, match="cannot turn anticlockwise"):
         card_program(4, [((False, True, False, False), (False,) * 4)])
+
+
+def test_no_card_takes_fewer_steps_than_its_floor():
+    """The floor is no more than the steps of any card found, and the
+    fewest there are for the square sinnet of 4 (8, by trying every turn
+    of every gear): two of its crossings wait for a strand to move."""
+    from braidpy.braid_catalog import CATALOGUE
+    from braidpy.making.lace import step_floor
+    from braidpy.pure_braid import repeating_unit
+
+    for name, entry in CATALOGUE.items():
+        made = entry.make()
+        unit = Braid(tuple(repeating_unit(made.generators)), made.n_strands)
+        word = [int(g) for g in unit.generators]
+        assert step_floor(word, unit.n_strands) <= len(lace_card(unit).steps), name
+    assert step_floor([-1, -2, -2, 3, 2, 2], 4) == 8
+
+
+def test_the_floor_a_repeat_does_not_depend_on_where_the_word_is_cut():
+    from braidpy.making.lace import repeat_floor, step_floor
+    from braidpy.solid_sinnets_catalog import abok_3059
+
+    word = [int(g) for g in abok_3059.braid(1).generators]
+    n = abok_3059.n_strands
+    floors = {repeat_floor(word[k:] + word[:k], n) for k in range(len(word))}
+    assert len(floors) == 1
+    assert len({step_floor(word[k:] + word[:k], n) for k in range(len(word))}) > 1
+
+
+def test_a_card_conjugate_is_the_same_braid_once_repeated():
+    """Read from elsewhere and rewritten by the braid relations: a
+    conjugate, exactly, on braids small enough to tell; of a floor no
+    higher; the same each time."""
+    import random
+
+    from braidpy.conjugacy import are_conjugate
+    from braidpy.making.lace import card_conjugate, repeat_floor
+
+    rng = random.Random(0)
+    for _ in range(10):
+        n = rng.randint(3, 5)
+        braid = Braid(
+            [rng.choice((-1, 1)) * rng.randint(1, n - 1) for _ in range(10)], n
+        )
+        found = card_conjugate(braid, tries=300)
+        assert are_conjugate(found, braid)
+        assert repeat_floor(list(found.generators), n) <= repeat_floor(
+            list(braid.generators), n
+        )
+        assert card_conjugate(braid, tries=300).generators == found.generators
+
+
+def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
+    """#3047, a cascade of one strand crossing many after another: a
+    conjugate of it, the same braid by its topology, takes a card far
+    shorter."""
+    from braidpy.making.lace import card_conjugate
+    from braidpy.ring_program import same_braid
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    braid = abok_3047.braid(1)
+    found = card_conjugate(braid)
+    assert same_braid(found, braid)
+    assert len(lace_card(found).steps) < 0.7 * len(lace_card(braid).steps)
