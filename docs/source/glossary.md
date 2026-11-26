@@ -44,10 +44,25 @@ tightened.
 **marudai** — the round Japanese braiding stand: yarns hang on bobbins over a
 polished mirror, the braid forming below its hole. See {doc}`marudai`.
 
+**notch** — on a lace machine, where two neighbouring gears overlap: a
+bobbin's place between turns. The patents call it where two **race-circles**
+intersect. See [the lace machine](making.md#the-jacquard-lace-machine).
+
+**pattern bar** — in the lace machine patents, the bar, set by the pattern,
+that clutches the **quoits** to be turned at a step: a line of braidpy's
+punchcard.
+
 **permutation** — where a braid takes each strand: the strand starting in
 place `i` ends in place `perm()[i - 1]`.
 
 **pure braid** — a braid that brings every strand back to its place.
+
+**quoit** — in the lace machine patents, a gear's carrier-engaging plate:
+braidpy's gear of the lace ring. Each quoit is clutched to its drive and
+stops itself after a half turn.
+
+**race-circle** — in the lace machine patents, the circle a carrier runs
+round a **quoit**; they intersect at the **notches**.
 
 **ring program** — a braid as neighbours swapping places round a ring: the
 common step between the ways of making it. See {doc}`making`.
