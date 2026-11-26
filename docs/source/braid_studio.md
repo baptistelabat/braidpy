@@ -198,15 +198,18 @@ The studio has a form and a 3D view.
   take, as Ashley draws it (see
   [Making](making.md#from-the-shape-it-is-to-take)): first its **Grid**,
   square (lines at 0° and 90°), diamond (the same lines, the sides free to
-  run at 45°) or triangular (lines at 0°, 60° and 120°), then a **Shape**
+  run at 45°), triangular (lines at 0°, 60° and 120°) or skewed (lines at
+  0° and 120°, and at 60° between their crossings, as in #3078: see
+  [Making](making.md#from-the-shape-it-is-to-take)), then a **Shape**
   that grid offers: an oblong,
-  an L, a U or a hollow square on squares; a square or an oblong on a
+  an L, a U or a hollow square on squares, or skewed (an oblong a
+  parallelogram); a square or an oblong on a
   corner on the diamond grid; a triangle or a hexagon on triangles, so many
   lines along a side (an oblong's width and height, an L's or a U's width
   and arms, a hollow square's width and sides). Or one of the braids its
   **Braid** list offers on that grid and of that shape, made with the site
-  and found among the others by topology: the book's triangles, flat oblong and squares on a corner, a
-  hexagon, a square, an L, a U and hollow squares. The shape is its grid's cells,
+  and found among the others by topology: the book's triangles, flat oblong, squares on a corner and #3078, a
+  hexagon, a square, #3078 larger and longer, an L, a U and hollow squares. The shape is its grid's cells,
   squares or triangles, and is drawn once made: its cells, its lines,
   coloured by track, each with an arrow the way its move goes, and its
   spaces, numbered, larger with more strands. As the list above the
@@ -252,7 +255,8 @@ The studio has a form and a 3D view.
   the braid: its strands; after how many of its words or cycles it is pure
   — every strand back where it started — how many were made, and so
   whether it is; its crossings and word (its ring word too, for a disk
-  braid), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
+  braid, and a shorter word for the same braid when one is found:
+  {doc}`braid_algebra`, *Shortening a word*), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
   normal form and full twists, how close the yarns come.
   Long words show three lines; **Make from it** makes the braid again from
   its own word or ring word, as a braid word — the same braid, made on the
@@ -262,8 +266,8 @@ The studio has a form and a 3D view.
   **Nearest braids** the braids of the catalogues most like it, whatever
   makes them, each with how unlike it is; your own braid too, found by its
   fingerprint ({doc}`comparing_braids`). Each is a link that makes it. And
-  **Make it as…** gives the braid made other ways ({doc}`making`): its
-  moves on a kumihimo disk, to make; a lace machine's punchcard, to make,
+  **Make it as…** gives the braid made other ways ({doc}`making`), from
+  its word shortened: its moves on a kumihimo disk, to make; a lace machine's punchcard, to make,
   copy or download; and, when asked, a sinnet on Ashley's stand, to make. The
   braid is drawn in the middle of what the card leaves free.
 - A braid word or ring word is made on the marudai hanging free, as a disk

@@ -153,9 +153,9 @@ def _ring(n_gears: int) -> Callable[[], LaceRing]:
     return make
 
 
-def _card(braid: str) -> Callable[[], LaceRing]:
-    """A lace ring driven by the punchcard for a braid of
-    :data:`braidpy.braid_catalog.CATALOGUE`, its repeating unit
+def _card(braid: str, n_gears: int) -> Callable[[], LaceRing]:
+    """A lace ring of ``n_gears`` gears driven by the punchcard for a braid
+    of :data:`braidpy.braid_catalog.CATALOGUE`, its repeating unit
     (:func:`~braidpy.making.lace.lace_card`), threaded as the card says."""
 
     def make() -> LaceRing:
@@ -166,7 +166,7 @@ def _card(braid: str) -> Callable[[], LaceRing]:
 
         made = BRAIDS[braid].make()
         unit = repeating_unit([int(g) for g in made.generators])
-        card = lace_card(Braid(tuple(unit), made.n_strands))
+        card = lace_card(Braid(tuple(unit), made.n_strands).shortened(), n_gears)
         return LaceRing(card.n_gears, card.steps, tuple(card.threaded()))
 
     return make
@@ -177,17 +177,19 @@ def _card(braid: str) -> Callable[[], LaceRing]:
 # then a ring turning every gear, as a tubular braider does.
 LACE: dict[str, Entry[LaceRing]] = {
     "lace_dutch": Entry(
-        "Dutch braid of 3 (ABOK 2966), 4 gears", _card("inverted_flat3")
+        "Dutch braid of 3 (ABOK 2966), 4 gears", _card("inverted_flat3", 4)
     ),
     "lace_plait": Entry(
-        "Plait, or flat sinnet of 3 (ABOK 2965), 4 gears", _card("flat3")
+        "Plait, or flat sinnet of 3 (ABOK 2965), 4 gears", _card("flat3", 4)
     ),
-    "lace_weave3": Entry("Weave of 3 (ABOK 2973), 4 gears", _card("weave3")),
+    "lace_weave3": Entry("Weave of 3 (ABOK 2973), 4 gears", _card("weave3", 4)),
     "lace_sinnet4": Entry(
-        "Four-strand sinnet (ABOK 2974), 6 gears", _card("abok_2974")
+        "Four-strand sinnet (ABOK 2974), 6 gears", _card("abok_2974", 6)
     ),
-    "lace_square4": Entry("Square sinnet of 4 (ABOK 2999), 6 gears", _card("square4")),
-    "lace_flat6": Entry("Regular flat braid of 6, 8 gears", _card("regular_flat6")),
+    "lace_square4": Entry(
+        "Square sinnet of 4 (ABOK 2999), 6 gears", _card("square4", 6)
+    ),
+    "lace_flat6": Entry("Regular flat braid of 6, 8 gears", _card("regular_flat6", 8)),
     "lace_tubular_8": Entry("Every gear turning, 8 gears and bobbins", _ring(8)),
 }
 # Then the lace machines installed packages add (braidpy.catalogue.extended),

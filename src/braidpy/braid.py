@@ -533,6 +533,19 @@ class Braid:
         """
         return self.up_side_down()
 
+    def shortened(self) -> "Braid":
+        """The same braid in as few crossings as are found: crossings that
+        cancel, brought together by the braid relations, and Dehornoy's
+        handle reduction where it is shorter
+        (:func:`braidpy.shortening.shortened`).
+
+        Returns:
+            The braid, its word no longer than this one's.
+        """
+        from braidpy.shortening import shortened
+
+        return shortened(self)
+
     def is_reduced(self) -> bool:
         """Check if a braid word is reduced.
 

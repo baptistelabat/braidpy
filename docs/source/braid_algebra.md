@@ -44,6 +44,28 @@ braid (`is_trivial()`), and braidpy answers that two ways:
   **Garside normal forms** do ({doc}`braid_representations`), through
   math-braid (Cha et al., 2001).
 
+## Shortening a word
+
+A braid has many words, and the shorter is the fewer moves to make, by hand
+or on a machine. `braid.shortened()` ({mod}`braidpy.shortening`) gives the
+same braid, exactly, in as few crossings as it finds:
+
+- a crossing followed at once by its inverse is taken out;
+- a crossing and its inverse kept apart are brought together where the
+  braid relations allow: crossings of strands far apart commute, and three
+  crossings of three strands can be made the other way round, signs mixed
+  too. Each piece of the word is rewritten every way they allow, up to a
+  budget, for one where two crossings cancel;
+- handle reduction's word is kept if it is shorter, after the same search.
+  Removing every handle is not shortening: the book's #3072 has 114
+  crossings, and 150 once its handles are reduced.
+
+A word whose crossings all have one sign is as short as it gets, since the
+relations keep the sum of a word's signs. A shortest word is not promised:
+finding one is hard in general. Braid Studio shows the shorter word under
+the braid's own, when it finds one; the catalogue's rectangular braid of 14
+goes from 448 crossings to 364.
+
 ## Twists and conjugates
 
 - **The half twist** `Δ` turns the whole braid over by half a turn

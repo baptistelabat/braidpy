@@ -63,6 +63,11 @@ Braid words, their notations, operations and properties.
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.shortening
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.linking
    :members:
    :undoc-members:

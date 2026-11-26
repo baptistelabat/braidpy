@@ -199,7 +199,8 @@ def ways_to_make(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
     """How to make a braid by hand or on a machine (:mod:`braidpy.making`):
     a kumihimo disk's moves, a Jacquard lace machine's punchcard, and
     Ashley's stand — a sinnet of the book's kind if one makes it, or the
-    braid itself one strand a space.
+    braid itself one strand a space; each from the word shortened first
+    (:meth:`~braidpy.braid.Braid.shortened`), fewer crossings to make.
 
     Args:
         word: The braid word, one repeat of it.
@@ -215,7 +216,7 @@ def ways_to_make(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
     from braidpy.making.disk import disk_moves
     from braidpy.making.lace import lace_card
 
-    braid = _braid(word, n_strands)
+    braid = _braid(word, n_strands).shortened()
     made: dict[str, Any] = {}
     if 2 * braid.n_strands + 2 <= 32:
         disk = disk_moves(braid)

@@ -54,13 +54,57 @@ def test_crossings_already_signed_as_their_gears_need_no_moving():
     assert len(lace_card(dutch).steps) == 12
 
 
-def test_the_plait_moves_its_strands_along_and_back():
-    """σ₁ is positive but gear 1 turns clockwise: the strands move along a
-    notch, three half turns, then every crossing is its gear's; and they
-    move back at the end, three more — one beside the last crossing — so
-    the card can run again."""
+def test_the_plait_begun_a_notch_along_needs_no_moving():
+    """σ₁ is positive, but gear 1 turns clockwise: begun from notch 0, the
+    strands must move.  Begun a notch along, every crossing is its gear's,
+    and the plait takes a step a crossing on four gears."""
     plait = Braid((1, -2) * 6, 3)
-    assert len(lace_card(plait).steps) == 12 + 3 + 3 - 1
+    card = lace_card(plait, n_gears=4)
+    assert len(card.steps) == 12
+    assert card.notches() == ["B-C", "C-D", "D-A"]
+    assert lace_braid(card) == plait
+
+
+def test_the_search_finds_the_fewest_steps_of_small_braids():
+    """The fewest steps there are, found by trying every turn of every gear
+    (scratch work): the square sinnet of 4 on six gears in 8, though it has
+    6 crossings, as two of them must wait for a strand to move; the
+    asymmetric flat braid of 4 in 4."""
+    from braidpy.braid_catalog import CATALOGUE
+    from braidpy.pure_braid import repeating_unit
+
+    for name, gears, fewest in (("square4", 6, 8), ("asymmetric_flat4", 6, 4)):
+        made = CATALOGUE[name].make()
+        unit = Braid(tuple(repeating_unit(made.generators)), made.n_strands)
+        assert len(lace_card(unit, n_gears=gears).steps) == fewest, name
+
+
+def test_strands_spread_out_move_only_in_pairs():
+    """With a notch spare beside each strand, a crossing whose sign is not
+    its gear's moves its two strands only: the book's #3047, 94 crossings
+    of 19 strands, in a few steps a crossing rather than twenty."""
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    braid = abok_3047.braid(1)
+    card = lace_card(braid)
+    assert len(card.steps) < 2 * len(braid.generators)
+    assert lace_braid(card) == braid
+
+
+def test_the_card_of_fewest_steps_is_kept():
+    """Of the gears tried, the card of fewest steps, packed or spread."""
+    braid = Braid((1, -2, 3, -1, 2) * 2, 4)
+    best = lace_card(braid)
+    for gears in (6, 8):
+        assert len(best.steps) <= len(lace_card(braid, n_gears=gears).steps)
+
+
+def test_a_braid_of_no_crossing_is_a_step_turning_no_gear():
+    """A card has a step: for no crossing, one turning no gear."""
+    card = lace_card(Braid((), 4))
+    assert len(card.steps) == 1
+    assert not any(any(line) for line in card.steps[0])
+    assert lace_braid(card) == Braid((), 4)
 
 
 def test_a_card_run_round_again_makes_the_braid_again():
