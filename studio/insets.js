@@ -5,9 +5,9 @@
 // The insets over the 3D view: the braid's cross-section, and what made it
 // seen from above.
 
-import { tr } from "./i18n.js?v=027bc7447f";
-import { $ } from "./page.js?v=027bc7447f";
-import { braid } from "./scene.js?v=027bc7447f";
+import { tr } from "./i18n.js?v=598c988b3e";
+import { $ } from "./page.js?v=598c988b3e";
+import { braid } from "./scene.js?v=598c988b3e";
 
 // How a machine's tracks are drawn from above, under its carriers: thin
 // and see-through, so the slots and carriers on them stay clear.
