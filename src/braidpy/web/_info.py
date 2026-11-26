@@ -14,11 +14,8 @@ from typing import Any
 
 import numpy as np
 
+from braidpy.web._settings import MOST_CROSSINGS_SHORTENED
 from braidpy.web._types import Info
-
-# The longest word a shorter one is looked for, in crossings: a second or
-# so in a browser (braidpy.shortening).
-_MOST_CROSSINGS_SHORTENED = 300
 
 
 def _braid_info(word: Sequence[int], n_strands: int) -> Info:
@@ -38,7 +35,7 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
         info["pure"] = bool(braid.is_pure())
         info["pure_after"] = closing_repeats(braid, limit=None)
         info["components"] = components(braid)
-        if len(word) <= _MOST_CROSSINGS_SHORTENED:
+        if len(word) <= MOST_CROSSINGS_SHORTENED:
             shorter = [int(g) for g in braid.shortened().generators]
             if len(shorter) < len(word):
                 info["shorter_word"] = " ".join(str(g) for g in shorter)

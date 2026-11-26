@@ -25,6 +25,10 @@ ITERATIONS = Count("iterations", 150, low=0, high=2000)
 # can be recoloured, so this belongs to none of the sources in particular.
 COLOURS = Colours("colours")
 
+# The longest braid word a shorter one is looked for, in crossings, for the
+# info card of any braid (braidpy.shortening): a second or so in a browser.
+MOST_CROSSINGS_SHORTENED = 300
+
 # ------------------------------------------------------------- braid words
 
 

@@ -58,6 +58,7 @@ from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 from braidpy.braid import Braid
 
 __all__ = [
+    "CELL_PARTS",
     "AshleySearch",
     "FoundShape",
     "MoveGroups",
@@ -387,15 +388,23 @@ def _start_along(line: ShapeLine) -> tuple[np.ndarray, np.ndarray]:
     return start, (end - start) / np.linalg.norm(end - start)
 
 
-def _crossing(first: ShapeLine, second: ShapeLine) -> bool:
-    """Whether two lines cross, inside the shape, not at an end."""
+def _meeting(first: ShapeLine, second: ShapeLine) -> tuple[float, float] | None:
+    """Where two lines, drawn on as far as need be, meet: how far along
+    each from its first end to its second, 0 to 1 within it; None if they
+    are parallel."""
     p, q = (np.asarray(e, dtype=float) for e in first.ends)
     r, t = (np.asarray(e, dtype=float) for e in second.ends)
     matrix = np.array([q - p, r - t]).T
     if abs(np.linalg.det(matrix)) < SAME_POINT:
-        return False
+        return None
     a, b = np.linalg.solve(matrix, r - p)
-    return bool(SAME_POINT < a < 1 - SAME_POINT and SAME_POINT < b < 1 - SAME_POINT)
+    return float(a), float(b)
+
+
+def _crossing(first: ShapeLine, second: ShapeLine) -> bool:
+    """Whether two lines cross, inside the shape, not at an end."""
+    met = _meeting(first, second)
+    return met is not None and all(SAME_POINT < x < 1 - SAME_POINT for x in met)
 
 
 def _moved_on(loops, point, distance: float) -> np.ndarray:
@@ -631,14 +640,11 @@ def shape_diagram(
 def _turn_into(loops, first: ShapeLine, second: ShapeLine) -> bool:
     """Whether two lines can turn into each other at the outline: they are
     parallel, or would meet beyond the outline, or on it."""
-    p, q = (np.asarray(end) for end in first.ends)
-    r, t = (np.asarray(end) for end in second.ends)
-    matrix = np.array([q - p, r - t]).T
-    if abs(np.linalg.det(matrix)) < SAME_POINT:
+    met = _meeting(first, second)
+    if met is None:
         return True
-    along, _ = np.linalg.solve(matrix, r - p)
-    meeting = p + along * (q - p)
-    return not _inside(loops, meeting)
+    p, q = (np.asarray(end, dtype=float) for end in first.ends)
+    return not _inside(loops, p + met[0] * (q - p))
 
 
 def _inside(loops, point) -> bool:
@@ -1112,11 +1118,21 @@ GRIDS = ("square", "diagonal", "triangle", "skew")
 # The height of a row of triangles, a spacing, and so the side of one.
 TRIANGLE_SIDE = 2 / math.sqrt(3)
 
-# A cell: on the square and skewed grids, its bottom left point (i, j); on the diagonal
-# one, the same square's quarter cut off by its diagonals, 0 below, then 1,
-# 2, 3 anticlockwise; on the triangular one, the point (i, j) and 0 for the
-# triangle pointing up from it, 1 for the one pointing down beside it.
+# A cell: on the square and skewed grids, its bottom left point (i, j); on
+# the diagonal one, the same square's quarter cut off by its diagonals, 0
+# below, then 1, 2, 3 anticlockwise; on the triangular one, the point (i, j)
+# and 0 for the triangle pointing up from it, 1 for the one pointing down
+# beside it.
 Cell = tuple[int, ...]
+# Each grid's parts of the square or rhomb at a point, a cell each: its
+# quarters, its two triangles; none where the cell is the square itself,
+# skewed or not.
+CELL_PARTS: dict[str, tuple[int, ...]] = {
+    "square": (),
+    "skew": (),
+    "diagonal": (0, 1, 2, 3),
+    "triangle": (0, 1),
+}
 
 
 def _grid_point(grid: str, node: tuple[int, int]) -> np.ndarray:
@@ -1163,7 +1179,7 @@ def grid_lines(grid: str) -> tuple[float, ...] | None:
 
 def _cell_points(grid: str, cell: Cell) -> list[tuple[int, int]]:
     """A cell's corners, as grid points, anticlockwise."""
-    if grid in ("square", "skew"):
+    if not CELL_PARTS[grid]:
         i, j = cell
         return [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)]
     if grid == "diagonal":
@@ -1321,9 +1337,11 @@ def grid_shape(grid: str, name: str, size: int, height: int) -> list[Cell]:
     """
     if size < 2 or height < 2:
         raise ValueError("A shape on a grid is two lines or more each way.")
+    squares = {"oblong", "L", "U", "frame"}
     shapes = {
-        "square": {"oblong", "L", "U", "frame"},
-        "skew": {"oblong", "L", "U", "frame"},
+        "square": squares,
+        # The square grid's shapes, skewed.
+        "skew": squares,
         "diagonal": {"square", "oblong"},
         "triangle": {"triangle", "hexagon"},
     }
