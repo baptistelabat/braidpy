@@ -11,6 +11,8 @@ from collections.abc import Sequence
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional
 
+from braidpy._renamed import renamed_globals
+
 if TYPE_CHECKING:
     # typing.Self is 3.11's; braidpy does not depend on typing_extensions,
     # nor does a browser load it (Pyodide).
@@ -33,8 +35,8 @@ PALETTE = [
     "#e78ac3",
 ]
 
-# ANSI color codes (foreground)
-ANSI_COLORS = [
+# ANSI colour codes (foreground)
+ANSI_COLOURS = [
     "\033[31m",  # Red
     "\033[32m",  # Green
     "\033[34m",  # Blue
@@ -44,7 +46,7 @@ ANSI_COLORS = [
 ]
 RESET = "\033[0m"
 
-terminal_colors = {
+terminal_colours = {
     0: "red",  # Red
     1: "green",  # Green
     2: "blue",  # Blue
@@ -58,34 +60,34 @@ terminal_colors = {
 }
 
 
-def colorize_by_index(text: str, index: int) -> str:
-    """Colorize a string using a repeating color based on index (starting at 0).
+def colourise_by_index(text: str, index: int) -> str:
+    """Colour a string, the colours repeating by index (starting at 0).
 
     Args:
-        text: The string to colorize.
-        index: The index used to determine the color.
+        text: The string to colour.
+        index: The index that picks the colour.
 
     Returns:
-        str: The colorized string.
+        str: The string, coloured.
     """
-    color = ANSI_COLORS[index % len(ANSI_COLORS)]
-    return f"{color}{text}{RESET}"
+    colour = ANSI_COLOURS[index % len(ANSI_COLOURS)]
+    return f"{colour}{text}{RESET}"
 
 
-def colorize(item: str | int, index: Optional[int] = None) -> str:
-    """Colorize item based on index (or its value if it's an int).
+def colourise(item: str | int, index: Optional[int] = None) -> str:
+    """Colour an item by its index (or its value if it's an int).
 
     Args:
-        item: The item to colorize (string or integer).
-        index: Optional index to use for color selection. If None, uses the
+        item: The item to colour (string or integer).
+        index: Optional index that picks the colour. If None, uses the
             item's value (if int) or 0.
 
     Returns:
-        str: The colorized string representation of the item.
+        str: The item as a string, coloured.
     """
     if index is None:
         index = item - 1 if isinstance(item, int) else 0
-    return colorize_by_index(str(item), index)
+    return colourise_by_index(str(item), index)
 
 
 def int_to_superscript(n: int) -> str:
@@ -307,3 +309,15 @@ def play_controls(
             )
         ],
     }
+
+
+# The names these went by before braidpy spelled its own in British English.
+__getattr__ = renamed_globals(
+    __name__,
+    {
+        "ANSI_COLORS": "ANSI_COLOURS",
+        "terminal_colors": "terminal_colours",
+        "colorize": "colourise",
+        "colorize_by_index": "colourise_by_index",
+    },
+)

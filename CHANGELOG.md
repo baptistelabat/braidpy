@@ -251,6 +251,16 @@ What changed in each release of braidpy.
   `mobidai_catalogue`, `solid_sinnets_catalogue` and `topology_catalogue`,
   after `catalogue.py`.  The older names go on working as modules that say
   so with a `DeprecationWarning` and answer as the new ones do.
+- British spelling for braidpy's own names, as for its prose, and a test
+  that keeps it so (`tests/test_spelling.py`); a library's names, as
+  Plotly's `color=`, are its own. Renamed, the old names warning
+  (`braidpy._renamed`): `utils.colourise`, `colourise_by_index`,
+  `terminal_colours` and `ANSI_COLOURS`; `braid_diagram.strand_colour` and
+  `DIAGRAM_COLOURS`; `BraidingMachine.neighbour_at_slot`;
+  `mobidai.Strand.colour`, `Kumihimo.colours`; the keyword arguments
+  `colour=` of `Braid.plot` and `draw_diagram`, `colours=` of
+  `animate_disk`, `take_off.visualize_yarns` and `ParametricBraid.figure`,
+  and `neighbour=` of `contact_point` and `contact_angle`.
 - Braids are compared as patterns (`braidpy.braid_pattern`) where braidpy
   compares them: `BraidPattern.alike`, and `braid_pattern.alike(a, b)` for
   two braids, say nothing measured tells two patterns apart — fast, the

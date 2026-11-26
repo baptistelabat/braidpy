@@ -11,7 +11,7 @@ Kumihimo simulator and visualizer.
 Features:
 - Simulates formal S/R sequences (swap, rotate)
 - Tracks Artin braid word (σ generators)
-- Produces a vertical timeline with labeled steps
+- Produces a vertical timeline with labelled steps
 - Displays step labels, strand IDs, and pattern info
 """
 
@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_attribute
 from braidpy.utils import lazy_module
 
 if TYPE_CHECKING:
@@ -40,9 +41,12 @@ class Kumihimo:
         history (List[str]): Record of performed S/R moves.
         frames (List[List[int]]): Strand configurations per step.
         angles (np.ndarray): Angular positions of strand slots.
-        colors (np.ndarray): Color assigned to each strand.
+        colours (np.ndarray): Colour assigned to each strand.
         pattern (str): Original S/R pattern executed.
     """
+
+    # Its name before braidpy spelled its own in British English.
+    colors = renamed_attribute("colours")
 
     def __init__(self, n_strands: int = 8) -> None:
         """Initialize a Kumihimo simulation.
@@ -64,7 +68,7 @@ class Kumihimo:
         self.history: list[str] = []
         self.frames: list[list[int]] = [self.state.copy()]
         self.angles: np.ndarray = np.linspace(0, 2 * np.pi, n_strands, endpoint=False)
-        self.colors: np.ndarray = matplotlib.colormaps["hsv"](
+        self.colours: np.ndarray = matplotlib.colormaps["hsv"](
             np.linspace(0, 1, n_strands)
         )
         self.pattern: str = ""
@@ -169,13 +173,13 @@ class Kumihimo:
             # draw each strand as a radial line
             for i, strand in enumerate(frame):
                 angle = self.angles[i]
-                # x and y calculations remain relative to the disk center
+                # x and y calculations remain relative to the disk centre
                 x, y = -np.sin(angle), np.cos(angle)
-                color = self.colors[strand]
+                colour = self.colours[strand]
                 ax.plot(
                     [x_offset, x_offset + radius * x],  # Add x_offset to x-coordinates
                     [0, radius * y],
-                    color=color,
+                    color=colour,
                     lw=2.3,
                     alpha=0.85,
                 )
@@ -186,7 +190,7 @@ class Kumihimo:
                         x_offset + 1.15 * radius * x,
                         1.15 * radius * y,
                         f"{strand}",
-                        color=color,
+                        color=colour,
                         ha="center",
                         va="center",
                         fontsize=8,

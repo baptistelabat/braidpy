@@ -17,8 +17,8 @@ def test_initialization():
     )
     m = Mobidai(config)
 
-    assert m.slots[1].color == "red"
-    assert m.slots[3].color == "blue"
+    assert m.slots[1].colour == "red"
+    assert m.slots[3].colour == "blue"
     assert m.slots[2] is None
     assert m.slots[4] is None
 
@@ -32,7 +32,7 @@ def test_step_simple_move():
     m.all_steps()
 
     assert m.slots[1] is None
-    assert m.slots[5].color == "red"
+    assert m.slots[5].colour == "red"
     assert m.braid_word == []
 
 
@@ -48,7 +48,7 @@ def test_step_simple_crossing():
     m.all_steps()
 
     assert m.slots[1] is None
-    assert m.slots[5].color == "red"
+    assert m.slots[5].colour == "red"
     assert m.braid_word == ["s1"]
 
 
@@ -64,7 +64,7 @@ def test_step_multiple_crossings():
     m.all_steps()
 
     assert m.slots[1] is None
-    assert m.slots[5].color == "red"
+    assert m.slots[5].colour == "red"
     assert m.braid_word == ["s1 s2"]
 
 
@@ -80,7 +80,7 @@ def test_step_simple_back_crossing():
     m.all_steps()
 
     assert m.slots[3] is None
-    assert m.slots[1].color == "red"
+    assert m.slots[1].colour == "red"
     assert m.braid_word == ["s1^-1"]
 
 
@@ -96,7 +96,7 @@ def test_step_multiple_back_crossings():
     m.all_steps()
 
     assert m.slots[4] is None
-    assert m.slots[1].color == "red"
+    assert m.slots[1].colour == "red"
     assert m.braid_word == ["s2^-1 s1^-1"]
 
 
@@ -125,8 +125,8 @@ def test_rotation():
     m = Mobidai(config)
     m.all_steps()  # no moves, only rotation
 
-    assert m.slots[3].color == "red"
-    assert m.slots[6].color == "blue"
+    assert m.slots[3].colour == "red"
+    assert m.slots[6].colour == "blue"
 
 
 def test_multiple_steps():
@@ -140,7 +140,7 @@ def test_multiple_steps():
     m = Mobidai(config)
 
     m.all_steps()
-    assert m.slots[5].color == "red"
+    assert m.slots[5].colour == "red"
     assert m.braid_word == []
 
 
@@ -155,7 +155,7 @@ def test_multiple_steps_and_shift():
     m = Mobidai(config)
 
     m.all_steps()
-    assert m.slots[7].color == "red"
+    assert m.slots[7].colour == "red"
     assert m.braid_word == []
 
 

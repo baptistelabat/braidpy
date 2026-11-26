@@ -20,14 +20,14 @@ strands = (b**12).to_parametric_strands()
 p = ParametricBraid(strands)
 p.plot()
 ```
-## Draw colored braid diagram in terminal
-The first basic visualization enables to draw a braid diagram directly in the console, with some colors !
+## Draw coloured braid diagram in terminal
+The first basic visualization enables to draw a braid diagram directly in the console, with some colours !
 
-![colored ASCII braid example](draw_colored_ASCII_braid.png)
+![coloured ASCII braid example](draw_coloured_ASCII_braid.png)
 
-The direction of the arrow indicates the braid of the corresponding color is moving above its neighbour.
+The direction of the arrow indicates the braid of the corresponding colour is moving above its neighbour.
 
-## Plot colored braid diagram
+## Plot coloured braid diagram
 The second type of visualization enables to plot a 2D braid diagram using matplotlib:
 
 ```python

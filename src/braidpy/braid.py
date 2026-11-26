@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from braidpy._renamed import renamed_keywords
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
 from braidpy.parametric_strand import (
     Arc,
@@ -33,7 +34,7 @@ from braidpy.parametric_strand import (
 )
 from braidpy.utils import (
     StrictlyPositiveInt,
-    colorize,
+    colourise,
     int_to_subscript,
     int_to_superscript,
 )
@@ -742,32 +743,32 @@ class Braid:
         strands = list(range(1, self.n_strands + 1))
         perms.append(strands.copy())
         if plot:
-            print(" ".join(colorize(item) for item in strands))
+            print(" ".join(colourise(item) for item in strands))
         for gen in self.generators:
             i = abs(gen) - 1
             if gen > 0:  # Positive crossing (σ_i)
                 if plot:
                     print(
-                        " ".join(colorize(item) for item in strands[: i + 1])
-                        + colorize(">", strands[i] - 1)
-                        + " ".join(colorize(item) for item in strands[i + 1 :])
+                        " ".join(colourise(item) for item in strands[: i + 1])
+                        + colourise(">", strands[i] - 1)
+                        + " ".join(colourise(item) for item in strands[i + 1 :])
                     )
                 strands[i], strands[i + 1] = strands[i + 1], strands[i]
             elif gen < 0:  # Negative crossing (σ_i⁻¹)
                 if plot:
                     print(
-                        " ".join(colorize(item) for item in strands[: i + 1])
-                        + colorize("<", strands[i + 1] - 1)
-                        + " ".join(colorize(item) for item in strands[i + 1 :])
+                        " ".join(colourise(item) for item in strands[: i + 1])
+                        + colourise("<", strands[i + 1] - 1)
+                        + " ".join(colourise(item) for item in strands[i + 1 :])
                     )
                 strands[i + 1], strands[i] = strands[i], strands[i + 1]
 
             elif plot:  # No crossing: the strands stay where they are
-                print(" ".join(colorize(item) for item in strands))
+                print(" ".join(colourise(item) for item in strands))
 
             perms.append(strands.copy())
         if plot:
-            print(" ".join(colorize(item) for item in strands))
+            print(" ".join(colourise(item) for item in strands))
         return perms
 
     def perm(self) -> list[int]:
@@ -993,7 +994,7 @@ class Braid:
     def draw(self) -> "Braid":
         """Draw the braid in the terminal with arrows.
 
-        Allows to better check the different operations (with colors!).
+        Allows to better check the different operations (with colours!).
 
         Returns:
             Braid: Returns self to allow chaining the different steps.
@@ -1002,6 +1003,7 @@ class Braid:
         # Return self to enable chaining the different steps
         return self
 
+    @renamed_keywords(color="colour")
     def plot(
         self,
         n_samples: int = 400,
@@ -1009,7 +1011,7 @@ class Braid:
         gap: float = 0.45,
         amplitude: float = 0.28,
         profile=None,
-        color: Optional[str] = None,
+        colour: Optional[str] = None,
         title: Optional[str] = None,
         save: Optional[str] = None,
         ax=None,
@@ -1037,7 +1039,7 @@ class Braid:
             profile: How a strand travels sideways; smoothstep by default,
                 :data:`~braidpy.parametric_strand.LINEAR` for straight
                 segments.
-            color: One colour for every strand; each takes its own by default.
+            colour: One colour for every strand; each takes its own by default.
             title: Heading; the braid's word by default, and "" for none.
             save: Path to write the figure to, if wanted.
             ax: Axes to draw on; a new figure otherwise.
@@ -1055,7 +1057,7 @@ class Braid:
             gap=gap,
             amplitude=amplitude,
             profile=SMOOTHSTEP if profile is None else profile,
-            color=color,
+            colour=colour,
             title=title,
             save=save,
             ax=ax,

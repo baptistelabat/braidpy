@@ -31,8 +31,10 @@ from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
+from braidpy._renamed import renamed_globals, renamed_keywords
+
 from .parametric_strand import LINEAR, SMOOTHSTEP, Profile, strand_paths
-from .utils import lazy_module, terminal_colors
+from .utils import lazy_module, terminal_colours
 
 if TYPE_CHECKING:
     import matplotlib.pyplot as plt
@@ -41,26 +43,26 @@ else:
     plt = lazy_module("matplotlib.pyplot")
 
 __all__ = [
-    "DIAGRAM_COLORS",
+    "DIAGRAM_COLOURS",
     "LINEAR",
     "SMOOTHSTEP",
     "diagram_segments",
     "draw_diagram",
     "sample_period",
-    "strand_color",
+    "strand_colour",
 ]
 
-# terminal_colors is written for the console and for plotly, and its last
+# terminal_colours is written for the console and for plotly, and its last
 # entry is a plotly colour string that matplotlib cannot read.  Translate the
 # ones that need it and leave the rest alone, so the two palettes stay the
 # same colours in the same order.
-DIAGRAM_COLORS: dict[int, str] = {
+DIAGRAM_COLOURS: dict[int, str] = {
     index: {"rgb(0,128,128)": "teal"}.get(name, name)
-    for index, name in terminal_colors.items()
+    for index, name in terminal_colours.items()
 }
 
 
-def strand_color(index: int) -> str:
+def strand_colour(index: int) -> str:
     """The colour of a strand, matching the one the console draws it in.
 
     Args:
@@ -70,7 +72,7 @@ def strand_color(index: int) -> str:
     Returns:
         A colour matplotlib understands.
     """
-    return DIAGRAM_COLORS[index % len(DIAGRAM_COLORS)]
+    return DIAGRAM_COLOURS[index % len(DIAGRAM_COLOURS)]
 
 
 def sample_period(path, n_samples: int) -> np.ndarray:
@@ -151,6 +153,7 @@ def diagram_segments(
     return pieces
 
 
+@renamed_keywords(color="colour")
 def draw_diagram(
     braid,
     n_samples: int = 400,
@@ -158,7 +161,7 @@ def draw_diagram(
     gap: float = 0.45,
     amplitude: float = 0.28,
     profile: Profile = SMOOTHSTEP,
-    color: Optional[str] = None,
+    colour: Optional[str] = None,
     title: Optional[str] = None,
     save: Optional[str] = None,
     ax: Optional[plt.Axes] = None,
@@ -177,7 +180,7 @@ def draw_diagram(
             is rounder; the crossing is drawn, not just implied.
         profile: How a strand travels sideways — :data:`SMOOTHSTEP` for
             curves, :data:`LINEAR` for straight segments.
-        color: One colour for every strand.  By default each takes its own,
+        colour: One colour for every strand.  By default each takes its own,
             the same colour :meth:`~braidpy.braid.Braid.draw` gives it.
         title: Heading; the braid's word by default, and "" for none.
         save: Path to write the figure to, if wanted.
@@ -195,7 +198,7 @@ def draw_diagram(
         _, ax = plt.subplots(figsize=(1.1 + 0.7 * n_strands, 1.4 + 0.75 * length))
 
     for index, runs in enumerate(pieces):
-        shade = color or strand_color(index)
+        shade = colour or strand_colour(index)
         for run in runs:
             ax.plot(
                 run[:, 0],
@@ -221,3 +224,9 @@ def draw_diagram(
         figure = cast("Figure", ax.figure.figure)
         figure.savefig(save, bbox_inches="tight", dpi=150)
     return ax
+
+
+# The names these went by before braidpy spelled its own in British English.
+__getattr__ = renamed_globals(
+    __name__, {"DIAGRAM_COLORS": "DIAGRAM_COLOURS", "strand_color": "strand_colour"}
+)

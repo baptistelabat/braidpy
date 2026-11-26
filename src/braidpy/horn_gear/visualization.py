@@ -703,7 +703,7 @@ def _punchcard_traces(
     # Plotly — which pairs traces up by index — would slide them about.
     xs: list[float] = []
     ys: list[float] = []
-    colors: list[str] = []
+    colours: list[str] = []
     symbols: list[str] = []
     sizes: list[int] = []
     hovers: list[str] = []
@@ -716,15 +716,15 @@ def _punchcard_traces(
             xs.append(x0 + column * dx + shift)
             ys.append(y)
             if not on:
-                colors.append("rgba(150,150,150,0.45)")
+                colours.append("rgba(150,150,150,0.45)")
                 symbols.append("circle-open")
                 sizes.append(7)
             elif live:
-                colors.append("rgba(35,135,65,0.95)")
+                colours.append("rgba(35,135,65,0.95)")
                 symbols.append("circle")
                 sizes.append(12)
             else:
-                colors.append("rgba(45,45,45,0.85)")
+                colours.append("rgba(45,45,45,0.85)")
                 symbols.append("circle")
                 sizes.append(9)
             hovers.append(
@@ -738,7 +738,7 @@ def _punchcard_traces(
             mode="markers",
             marker=dict(
                 size=sizes,
-                color=colors,
+                color=colours,
                 symbol=symbols,
                 line=dict(width=1, color="rgba(255,255,255,0.8)"),
             ),
@@ -1011,7 +1011,7 @@ def animate(
         )
         title = f"{title} — COLLISION at step {collision_info.step} ({coll_detail})"
 
-    carrier_colors = {
+    carrier_colours = {
         c.carrier_id: PALETTE[i % len(PALETTE)]
         for i, c in enumerate(history[0].carriers)
     }
@@ -1043,7 +1043,7 @@ def animate(
 
     def _carrier_trace(state: MachineState, frac: float) -> go.BaseTraceType:
         t = state.time
-        xs, ys, htexts, colors_list, texts, sizes = [], [], [], [], [], []
+        xs, ys, htexts, colours_list, texts, sizes = [], [], [], [], [], []
         for c in state.carriers:
             x, y = carrier_xy(
                 machine, layout_pos, angles, carrier_radii, c.position, t, frac
@@ -1052,7 +1052,7 @@ def animate(
             xs.append(x)
             ys.append(y)
             htexts.append(f"C{c.carrier_id} @ {c.gear}[{c.slot}]")
-            colors_list.append(carrier_colors[c.carrier_id])
+            colours_list.append(carrier_colours[c.carrier_id])
             texts.append(str(c.carrier_id))
             sizes.append(bobbin_sizes[gear_name])
 
@@ -1062,7 +1062,7 @@ def animate(
             mode="markers+text",
             marker=dict(
                 size=sizes,
-                color=colors_list,
+                color=colours_list,
                 line=dict(width=1.5, color="white"),
             ),
             text=texts,

@@ -21,41 +21,41 @@ import pytest
 
 from braidpy.braid import Braid
 from braidpy.braid_diagram import (
-    DIAGRAM_COLORS,
+    DIAGRAM_COLOURS,
     diagram_segments,
     draw_diagram,
     sample_period,
-    strand_color,
+    strand_colour,
 )
 from braidpy.parametric_strand import LINEAR, SMOOTHSTEP, strand_paths
-from braidpy.utils import terminal_colors
+from braidpy.utils import terminal_colours
 
 # ── Colour: the reason the diagram is drawn here at all ───────────────────────
 
 
 def test_the_diagram_uses_the_same_palette_as_the_console():
     """Same colours, same order, so a strand looks the same in both."""
-    assert list(DIAGRAM_COLORS) == list(terminal_colors)
-    for index, console in terminal_colors.items():
+    assert list(DIAGRAM_COLOURS) == list(terminal_colours)
+    for index, console in terminal_colours.items():
         if console.startswith("rgb("):
             continue  # a plotly spelling, translated below
-        assert DIAGRAM_COLORS[index] == console
+        assert DIAGRAM_COLOURS[index] == console
 
 
 def test_every_colour_is_one_matplotlib_can_actually_draw():
-    """terminal_colors carries a plotly colour string that matplotlib cannot.
+    """terminal_colours carries a plotly colour string that matplotlib cannot.
 
     `rgb(0,128,128)` is fine for plotly and for the console, and is not a
     colour matplotlib knows, so it has to be translated rather than passed
     through.  This is the test that catches a new entry being added raw.
     """
-    for colour in DIAGRAM_COLORS.values():
+    for colour in DIAGRAM_COLOURS.values():
         assert mcolors.is_color_like(colour), f"{colour!r} is not drawable"
 
 
 def test_colours_repeat_once_there_are_more_strands_than_colours():
-    assert strand_color(0) == strand_color(len(DIAGRAM_COLORS))
-    assert strand_color(3) == DIAGRAM_COLORS[3]
+    assert strand_colour(0) == strand_colour(len(DIAGRAM_COLOURS))
+    assert strand_colour(3) == DIAGRAM_COLOURS[3]
 
 
 # ── Breaks: what makes it read as a braid ─────────────────────────────────────
@@ -129,7 +129,7 @@ def test_plot_returns_the_braid_so_calls_can_be_chained():
 
 def test_a_single_colour_overrides_the_palette():
     _, ax = plt.subplots()
-    draw_diagram(Braid([1, -2, 1], n_strands=3), color="black", ax=ax)
+    draw_diagram(Braid([1, -2, 1], n_strands=3), colour="black", ax=ax)
     assert {line.get_color() for line in ax.lines} == {"black"}
     plt.close("all")
 

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_keywords
 from braidpy.utils import lazy_module
 
 from .paths import StrandTrajectories, YarnPaths
@@ -54,6 +55,7 @@ def _outline_traces(trajectories: StrandTrajectories) -> list[go.Scatter3d]:
     ]
 
 
+@renamed_keywords(colors="colours")
 def visualize_yarns(
     paths: YarnPaths,
     output_html: Optional[str] = None,
@@ -61,7 +63,7 @@ def visualize_yarns(
     tube_diameter: Optional[float] = None,
     n_around: int = 12,
     show_deck: bool = True,
-    colors: Optional[Sequence[str]] = None,
+    colours: Optional[Sequence[str]] = None,
     extra_traces: Sequence[go.BaseTraceType] = (),
 ) -> go.Figure:
     """The yarns in 3D, standing on whatever laid them.
@@ -78,17 +80,17 @@ def visualize_yarns(
             yarn diameter the braid was made for, if any; 0 draws lines.
         n_around: Points round each tube, when drawing them.
         show_deck: Draw the source's outlines at z = 0.
-        colors: One colour per yarn, cycled; the horn gear animation's if None,
+        colours: One colour per yarn, cycled; the horn gear animation's if None,
             so a yarn can be matched to its bobbin there.
         extra_traces: Anything else to draw in the same scene.
 
     Returns:
         The figure.
     """
-    if colors is None:
+    if colours is None:
         from braidpy.utils import PALETTE
 
-        colors = PALETTE
+        colours = PALETTE
 
     if title is None:
         if paths.fell_radius is None:
@@ -113,7 +115,7 @@ def visualize_yarns(
         tube_diameter=tube_diameter,
         n_around=n_around,
         opacity=1.0,
-        colors=colors,
+        colours=colours,
         names=names,
         line_width=6,
         z_title="z (take-off)",
@@ -134,7 +136,7 @@ def visualize_yarns(
                 mode="markers",
                 marker=dict(
                     size=6,
-                    color=colors[index % len(colors)],
+                    color=colours[index % len(colours)],
                     line=dict(color="white", width=1),
                 ),
                 name=str(key),

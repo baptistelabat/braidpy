@@ -549,9 +549,9 @@ def _draw_disk_state(
     r_inner: float = 0.5,
     r_strand_circle: float = 0.75,
     arc_pad_frac: float = 0.12,
-    strand_colors: Optional[dict[int, tuple[float, float, float, float]]] = None,
+    strand_colours: Optional[dict[int, tuple[float, float, float, float]]] = None,
 ) -> None:
-    """Draw one frame of the disk with colored strands and optional path arrows.
+    """Draw one frame of the disk with coloured strands and optional path arrows.
 
     Args:
         axis (matplotlib.axes.Axes): Axis to draw on.
@@ -563,8 +563,8 @@ def _draw_disk_state(
         r_inner (float): Inner radius of the annulus.
         r_strand_circle (float): Radius at which strand markers are placed.
         arc_pad_frac (float): Fraction to trim from both ends of each sector arc.
-        strand_colors (Optional[Dict[int, Tuple[float, float, float, float]]]):
-            Mapping from strand ID to RGBA color. If None, uses black.
+        strand_colours (Optional[Dict[int, Tuple[float, float, float, float]]]):
+            Mapping from strand ID to RGBA colour. If None, uses black.
 
     Returns:
         None
@@ -613,12 +613,12 @@ def _draw_disk_state(
                 r_strand_circle * math.cos(th + np.deg2rad(OFFSET_DEG)),
                 r_strand_circle * math.sin(th + np.deg2rad(OFFSET_DEG)),
             )
-            color = (
-                strand_colors.get(strand_index, (0, 0, 0, 1))
-                if strand_colors
+            colour = (
+                strand_colours.get(strand_index, (0, 0, 0, 1))
+                if strand_colours
                 else (0, 0, 0, 1)
             )
-            axis.add_patch(patches.Circle((x, y), 0.02, color=color))
+            axis.add_patch(patches.Circle((x, y), 0.02, color=colour))
             if show_ids:
                 axis.text(
                     x,
@@ -633,7 +633,7 @@ def _draw_disk_state(
     # Move path arrows
     if highlight_path and len(highlight_path) >= 2:
         r_arrow = 1.28
-        centers = {
+        centres = {
             k: (
                 r_arrow
                 * math.cos(2 * math.pi * (k - 0.5) / n_spaces + np.deg2rad(OFFSET_DEG)),
@@ -643,8 +643,8 @@ def _draw_disk_state(
             for k in range(1, n_spaces + 1)
         }
         for a, b in itertools.pairwise(highlight_path):
-            xa, ya = centers[a]
-            xb, yb = centers[b]
+            xa, ya = centres[a]
+            xb, yb = centres[b]
             axis.add_patch(
                 patches.FancyArrowPatch(
                     (xa, ya),
@@ -681,10 +681,10 @@ def visualize_sinnet(
 
     This function draws an initial frame, then a frame per move showing the path
     between sectors, then a final frame after all moves. Each strand ID gets a
-    consistent color derived from `matplotlib.cm.tab20`.
+    consistent colour derived from `matplotlib.cm.tab20`.
 
     Note:
-        Colors are assigned by global strand ID computed from `initial_counts`.
+        Colours are assigned by global strand ID computed from `initial_counts`.
         Since IDs are reconstructed from counts at each step, IDs are not
         persistent across moves. If persistent identity is required, use a
         stateful mapping and explicit crossing simulation.
@@ -709,10 +709,10 @@ def visualize_sinnet(
     os.makedirs(out_dir, exist_ok=True)
     frames: list[str] = []
 
-    # Color map assignment (stable by ID)
+    # Colour map assignment (stable by ID)
     total_strands = sum(initial_counts)
     cmap = matplotlib.colormaps["tab20"].resampled(max(total_strands, 1))
-    strand_colors = {
+    strand_colours = {
         sid: cmap((sid - 1) % cmap.N) for sid in range(1, total_strands + 1)
     }
 
@@ -728,7 +728,7 @@ def visualize_sinnet(
         None,
         r_strand_circle=r_strand_circle,
         arc_pad_frac=arc_pad_frac,
-        strand_colors=strand_colors,
+        strand_colours=strand_colours,
     )
     fig.tight_layout()
     p0 = os.path.join(out_dir, f"{prefix}_00.png")
@@ -749,7 +749,7 @@ def visualize_sinnet(
             highlight_path=path,
             r_strand_circle=r_strand_circle,
             arc_pad_frac=arc_pad_frac,
-            strand_colors=strand_colors,
+            strand_colours=strand_colours,
         )
         fig.tight_layout()
         pi = os.path.join(out_dir, f"{prefix}_{i:02d}.png")
@@ -769,7 +769,7 @@ def visualize_sinnet(
         None,
         r_strand_circle=r_strand_circle,
         arc_pad_frac=arc_pad_frac,
-        strand_colors=strand_colors,
+        strand_colours=strand_colours,
     )
     fig.tight_layout()
     pf = os.path.join(out_dir, "final.png")

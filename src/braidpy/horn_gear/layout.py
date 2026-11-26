@@ -37,6 +37,8 @@ from typing import Optional
 import networkx as nx
 import numpy as np
 
+from braidpy._renamed import renamed_keywords
+
 from .model import Axial, BraidingMachine
 
 
@@ -813,11 +815,12 @@ def axial_clearance(
     )
 
 
+@renamed_keywords(neighbor="neighbour")
 def contact_point(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     gear: str,
-    neighbor: str,
+    neighbour: str,
     scale: float = 1.0,
 ) -> tuple[float, float]:
     """The middle of the notch two gears share.
@@ -828,25 +831,26 @@ def contact_point(
     that middle is the tangent point, so one construction serves both.
     """
     cx, cy = layout[gear]
-    nx_, ny_ = layout[neighbor]
+    nx_, ny_ = layout[neighbour]
     dx, dy = nx_ - cx, ny_ - cy
     dist = math.hypot(dx, dy) or 1.0
 
     radii = gear_radii(machine, scale)
-    along = (dist**2 + radii[gear] ** 2 - radii[neighbor] ** 2) / (2 * dist)
+    along = (dist**2 + radii[gear] ** 2 - radii[neighbour] ** 2) / (2 * dist)
     return cx + along * dx / dist, cy + along * dy / dist
 
 
+@renamed_keywords(neighbor="neighbour")
 def contact_angle(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     gear: str,
-    neighbor: str,
+    neighbour: str,
     scale: float = 1.0,
 ) -> float:
     """Angle (rad) from a gear's centre toward the notch it shares with a neighbour."""
     cx, cy = layout[gear]
-    px, py = contact_point(machine, layout, gear, neighbor, scale)
+    px, py = contact_point(machine, layout, gear, neighbour, scale)
     return math.atan2(py - cy, px - cx)
 
 
@@ -935,7 +939,7 @@ def slot_offsets(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
 ) -> dict[str, float]:
-    """Per-gear rotation offset phi so connection slots point toward their neighbors.
+    """Per-gear rotation offset phi so connection slots point toward their neighbours.
 
     Every connection of a gear is taken into account, via the circular mean of
     the offsets they each ask for.  When the machine's connection slots match

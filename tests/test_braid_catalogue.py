@@ -178,7 +178,7 @@ def test_double_flat3_does_not_pass_off_2971_as_its_parallel_twin():
 def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
     """Each catalogued braid, as the word it repeats, built without drawing:
     repeated as often as the example says, every strand comes home."""
-    import braidpy.braid_catalogue as catalog
+    import braidpy.braid_catalogue as catalogue
     from braidpy.braid_catalogue import CATALOGUE, word_examples
     from braidpy.braidword import parse_word
     from braidpy.pure_braid import is_pure
@@ -188,9 +188,9 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
 
     monkeypatch.setattr(Braid, "draw", no_drawing)
     examples = word_examples()
-    assert len(examples) == len(CATALOGUE) + len(catalog.WORD_EXAMPLES)
+    assert len(examples) == len(CATALOGUE) + len(catalogue.WORD_EXAMPLES)
     for example, name in zip(examples, CATALOGUE):
-        braid, _ = getattr(catalog, name)(draw=False)
+        braid, _ = getattr(catalogue, name)(draw=False)
         unit = parse_word(example["word"])
         times, rest = divmod(len(braid.generators), len(unit))
         assert rest == 0 and tuple(unit * times) == tuple(braid.generators), name

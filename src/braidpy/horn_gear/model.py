@@ -35,6 +35,8 @@ from typing import Optional
 
 import networkx as nx
 
+from braidpy._renamed import renamed_attribute
+
 
 @dataclass(frozen=True)
 class HornGear:
@@ -482,8 +484,8 @@ class BraidingMachine:
         # Handed over by the contacts that do so during the step, then, the
         # gears turned, by those that do so at its end (time + 1).
         gear_name, slot = self._handed_during(pos, time, 1.0)
-        neighbor = self.neighbor_at_slot(gear_name, slot, time + 1)
-        return neighbor if neighbor is not None else (gear_name, slot)
+        neighbour = self.neighbour_at_slot(gear_name, slot, time + 1)
+        return neighbour if neighbour is not None else (gear_name, slot)
 
     def slot_at_connection(self, gear_name: str, slot0_at_t0: int, time: int) -> int:
         """Which slot sits at the contact whose slot at t=0 was ``slot0_at_t0``.
@@ -541,11 +543,14 @@ class BraidingMachine:
             if c.gear_a == gear_name or c.gear_b == gear_name
         ]
 
-    def neighbor_at_slot(
+    # Its name before braidpy spelled its own in British English.
+    neighbor_at_slot = renamed_attribute("neighbour_at_slot")
+
+    def neighbour_at_slot(
         self, gear_name: str, slot: int, time: int
     ) -> tuple[str, int] | None:
         """If slot ``slot`` of gear ``gear_name`` is at a connection at step
-        ``time``, return (neighbor_gear_name, neighbor_slot).  Otherwise None.
+        ``time``, return (neighbour_gear_name, neighbour_slot).  Otherwise None.
 
         Args:
             gear_name: Name of the gear.
@@ -553,7 +558,7 @@ class BraidingMachine:
             time: Current step.
 
         Returns:
-            (neighbor_name, neighbor_slot) or None.
+            (neighbour_name, neighbour_slot) or None.
         """
         for conn in self.connections_of(gear_name):
             if conn.phase:

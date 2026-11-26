@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from braidpy._renamed import renamed_attribute
 from braidpy.utils import lazy_module
 
 if TYPE_CHECKING:
@@ -43,15 +44,18 @@ class Strand:
     """Represents a strand placed on a mobidai slot.
 
     Attributes:
-        color (str): The color of the strand (format as supported by matplotlib).
+        colour (str): The colour of the strand (format as supported by matplotlib).
         position (int): The slot number (1-indexed) where the strand currently sits.
         id (int): A unique identifier for the strand to track it topologically.
                   Defaults to -1 (assigned during initialization).
     """
 
-    color: str
+    colour: str
     position: int
     id: int = -1
+
+    # Its name before braidpy spelled its own in British English.
+    color = renamed_attribute("colour")
 
 
 @dataclass
@@ -277,7 +281,7 @@ class Mobidai:
 
         new_strands = []
         for i, s in enumerate(config.strands):
-            new_s = Strand(s.color, s.position, id=i)
+            new_s = Strand(s.colour, s.position, id=i)
             new_strands.append(new_s)
             if new_s.position in self.slots:
                 self.slots[new_s.position] = new_s
@@ -403,8 +407,8 @@ class Mobidai:
             x = r_outer * np.sin(angle)
             y = r_outer * np.cos(angle)
             strand = self.slots.get(slot)
-            color = strand.color if strand else "white"
-            ax.plot(x, y, "o", color=color, markersize=12, markeredgecolor="black")
+            colour = strand.colour if strand else "white"
+            ax.plot(x, y, "o", color=colour, markersize=12, markeredgecolor="black")
             ax.text(x * 1.15, y * 1.15, str(slot), ha="center", va="center", fontsize=8)
         plt.show()
 

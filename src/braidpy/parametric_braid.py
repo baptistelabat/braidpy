@@ -13,12 +13,13 @@ from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
+from braidpy._renamed import renamed_keywords
 from braidpy.parametric_strand import ParametricStrand
 from braidpy.utils import (
     PositiveFloat,
     StrictlyPositiveInt,
     lazy_module,
-    terminal_colors,
+    terminal_colours,
 )
 
 if TYPE_CHECKING:
@@ -56,8 +57,8 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
-    def _colour(self, index: int, colors: Sequence[str] | None) -> str:
-        palette = colors if colors else terminal_colors
+    def _colour(self, index: int, colours: Sequence[str] | None) -> str:
+        palette = colours if colours else terminal_colours
         return palette[index % len(palette)]
 
     def _name(self, index: int, names: Sequence[str] | None) -> str:
@@ -69,7 +70,7 @@ class ParametricBraid:
         n_sample: int,
         n_around: int,
         opacity: float,
-        colors: Optional[Sequence[str]] = None,
+        colours: Optional[Sequence[str]] = None,
         names: Optional[Sequence[str]] = None,
     ) -> list[go.Surface]:
         """One tube per strand, swept at the strands' real thickness.
@@ -80,7 +81,7 @@ class ParametricBraid:
 
         traces = []
         for index, strand in enumerate(self.strands):
-            colour = self._colour(index, colors)
+            colour = self._colour(index, colours)
             x, y, z = tube_mesh(
                 strand.sample(n_sample), diameter / 2.0, n_around=n_around
             )
@@ -104,7 +105,7 @@ class ParametricBraid:
     def _line_traces(
         self,
         n_sample: int,
-        colors: Optional[Sequence[str]] = None,
+        colours: Optional[Sequence[str]] = None,
         names: Optional[Sequence[str]] = None,
         line_width: float = 10,
     ) -> list[go.Scatter3d]:
@@ -118,7 +119,7 @@ class ParametricBraid:
                     y=y,
                     z=z,
                     mode="lines",
-                    line=dict(width=line_width, color=self._colour(index, colors)),
+                    line=dict(width=line_width, color=self._colour(index, colours)),
                     name=self._name(index, names),
                     legendgroup=self._name(index, names),
                     hoverinfo="name",
@@ -126,6 +127,7 @@ class ParametricBraid:
             )
         return traces
 
+    @renamed_keywords(colors="colours")
     def figure(
         self,
         n_sample: StrictlyPositiveInt = 200,
@@ -133,7 +135,7 @@ class ParametricBraid:
         tube_diameter: Optional[float] = None,
         n_around: int = 16,
         opacity: float = 0.55,
-        colors: Optional[Sequence[str]] = None,
+        colours: Optional[Sequence[str]] = None,
         names: Optional[Sequence[str]] = None,
         line_width: float = 10,
         z_title: str = "Z (time)",
@@ -154,7 +156,7 @@ class ParametricBraid:
             tube_diameter: Draw the strands this thick, rather than as lines.
             n_around: Points round each tube, when drawing them.
             opacity: How far through a tube the one behind shows.
-            colors: One colour per strand, cycled; the terminal colours if None.
+            colours: One colour per strand, cycled; the terminal colours if None.
             names: One legend name per strand; "Strand i" if None.
             line_width: Width of the lines, when not drawing tubes.
             z_title: Title of the z axis.
@@ -166,10 +168,10 @@ class ParametricBraid:
             The figure.
         """
         traces = (
-            self._line_traces(n_sample, colors, names, line_width)
+            self._line_traces(n_sample, colours, names, line_width)
             if tube_diameter is None
             else self._tube_traces(
-                tube_diameter, n_sample, n_around, opacity, colors, names
+                tube_diameter, n_sample, n_around, opacity, colours, names
             )
         )
         heights = [
@@ -226,8 +228,8 @@ class ParametricBraid:
             for i, strand in enumerate(self.strands):
                 path = strand.sample(n_sample)
                 x, y, z = zip(*path)
-                color = terminal_colors[i % len(terminal_colors)]
-                ax.plot(x, y, z, linewidth=10, color=color)
+                colour = terminal_colours[i % len(terminal_colours)]
+                ax.plot(x, y, z, linewidth=10, color=colour)
             ax.set_xlabel("X")
             ax.set_ylabel("Y")
             ax.set_zlabel("Z (time)")

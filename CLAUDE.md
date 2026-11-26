@@ -69,6 +69,11 @@ mistake before:
   added to or changed on Braid Studio, in Python or in JavaScript, gets
   its line in `web/locales/fr.toml` (a pattern for one with numbers or
   names in it); `tests/test_i18n_js.py` checks the pages and catalogues.
+- **British spelling for braidpy's own words.** Names it defines,
+  docstrings, comments and pages say `colour`, `centre`, `neighbour`,
+  `catalogue`; a library's names stay as it spells them (Plotly's `color=`,
+  CSS's `center`). `-ize` is fine (Oxford). A name renamed keeps its old one
+  working, warning (`braidpy._renamed`); `tests/test_spelling.py` checks.
 - **Commit only what you mean to.** `git add` named paths, never a whole
   directory: `web/site/` and `web/node_modules/` are build output.
 

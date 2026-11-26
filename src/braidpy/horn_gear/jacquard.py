@@ -323,9 +323,9 @@ class JacquardLaceMachine(BraidingMachine):
 
         # Idle gear: the neighbour sharing this notch may take the bobbin.
         # Read the contact as it stands now, before either gear moves.
-        neighbor = self.neighbor_at_slot(gear_name, slot, time)
-        if neighbor is not None and neighbor[0] in turning:
-            return neighbor
+        neighbour = self.neighbour_at_slot(gear_name, slot, time)
+        if neighbour is not None and neighbour[0] in turning:
+            return neighbour
 
         return pos
 

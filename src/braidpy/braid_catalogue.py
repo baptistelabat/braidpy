@@ -23,7 +23,7 @@ https://loopbraider.com/track-plans/
 def garside_half_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     """
     Compute the Garside half twist braid also known as Garside element ∆n or (simply ∆ if n=n_strands-1)
-    ∆² is known to generate the "center" of the braid group Bn+1.
+    ∆² is known to generate the "centre" of the braid group Bn+1.
     This is the biggest simple element.
 
     It is sometimes called fundamental braid.
@@ -49,7 +49,7 @@ def full_twist_braid(n_strands: StrictlyPositiveInt) -> braidpy.braid.Braid:
     """
     Compute the full twist braid ∆n² which is the square of Garside half twist braid
     ∆n
-    It is known to generate the "center" of the braid group Bn.
+    It is known to generate the "centre" of the braid group Bn.
 
     Vrille
 
@@ -124,7 +124,7 @@ def square4(draw: bool = True) -> tuple[braidpy.braid.Braid, int]:
     Basic round braid with 4 strands
 
     ABOK 2999. "SQUARE SINNET of four strands. Used for lanyards, whips, whiplashes, quirts and leashes.
-    With strands of two colors, arranged as pictured, the two colors helix around the sinnet,
+    With strands of two colours, arranged as pictured, the two colours helix around the sinnet,
     giving a barber-pole or candy-twist effect.
     The sinnet is made in two movements.
     First, take the top left strand, bring it around to the back of the other strands and then from back to front

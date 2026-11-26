@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_keywords
 from braidpy.utils import lazy_module, play_controls
 
 if TYPE_CHECKING:
@@ -261,12 +262,13 @@ class BraidGrowth:
         )
 
 
+@renamed_keywords(colors="colours")
 def animate_disk(
     trajectories: StrandTrajectories,
     step_labels: Optional[Sequence[str]] = None,
     title: str = "Braiding disk",
     output_html: Optional[str] = None,
-    colors: Optional[Sequence[str]] = None,
+    colours: Optional[Sequence[str]] = None,
     show_ids: bool = True,
     frame_duration_ms: int = 50,
     max_frames: int = 900,
@@ -281,7 +283,7 @@ def animate_disk(
         step_labels: What each step is, shown on the slider as it is made.
         title: Figure title.
         output_html: If given, write the animation to this HTML file.
-        colors: One colour per strand; the horn gear animation's if None.
+        colours: One colour per strand; the horn gear animation's if None.
         show_ids: Name each strand at its carrier.
         frame_duration_ms: How long each frame is shown.
         braid: Show the braid the disk is making beside it, growing below
@@ -292,13 +294,13 @@ def animate_disk(
     Returns:
         The figure, with one frame per sample kept.
     """
-    if colors is None:
+    if colours is None:
         from braidpy.utils import PALETTE
 
-        colors = PALETTE
+        colours = PALETTE
     keys: list[Hashable] = list(trajectories.xy)
     colour: dict[Hashable, str] = {
-        k: colors[i % len(colors)] for i, k in enumerate(keys)
+        k: colours[i % len(colours)] for i, k in enumerate(keys)
     }
     rim = _rim_radius(trajectories)
     centre = trajectories.centre()
@@ -646,7 +648,7 @@ def animate_mobidai(
     )
     kwargs.setdefault(
         "colors",
-        [getattr(s, "color", None) or "#888888" for s in config.strands],
+        [getattr(s, "colour", None) or "#888888" for s in config.strands],
     )
     if side_view:
         kwargs.setdefault(
