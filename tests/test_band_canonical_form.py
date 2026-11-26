@@ -106,3 +106,47 @@ def test_a_disk_braid_is_shorter_in_band_letters():
     unit, _ = _unit(info["info"])
     unit = unit.shortened()
     assert len(unit.band_word()) < len(unit.generators) / 1.5
+
+
+def test_a_band_word_typed_is_read_back():
+    from braidpy.band_canonical_form import band_text
+    from braidpy.braidword import parse_band_word
+
+    letters = band_word([1, -2, 3, 1], 4)
+    assert parse_band_word(band_text(letters)) == letters
+    assert parse_band_word("4:1, 1:3") == [(4, 1), (1, 3)]
+    for bad in ("4-1", "2:2", "0:3"):
+        with pytest.raises(ValueError):
+            parse_band_word(bad)
+
+
+def test_braid_studio_shows_a_band_word_where_it_is_shorter():
+    """A disk braid's card says its band word, and makes it again as the
+    same braid; a plait's, of neighbours crossing, does not."""
+    from braidpy.web import build
+
+    disk = build(
+        {"source": "mobidai", "name": "KONGO_8", "iterations": 0},
+        tighten=False,
+    )["info"]
+    assert "band_word" in disk
+    made = build(
+        {
+            "source": "word",
+            "layout": "band",
+            "word": disk["band_word"],
+            "n_strands": disk["n_strands"],
+            "iterations": 0,
+        },
+        tighten=False,
+    )
+    word = tuple(int(g) for g in disk["word"].split())
+    again = tuple(int(g) for g in made["info"]["word"].split())
+    n = disk["n_strands"]
+    assert Braid(again, n) == Braid(word, n)
+    assert made["title"].startswith("Band word ")
+    plait = build(
+        {"source": "word", "word": "1 -2", "repeat": 3, "iterations": 0},
+        tighten=False,
+    )["info"]
+    assert "band_word" not in plait

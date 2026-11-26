@@ -143,7 +143,8 @@
 "A core down the disk's middle, the braid made round it: on a marudai, it rises up the braid's axis and each move passes beside it." = "Une âme au milieu du disque, la tresse faite autour : sur un marudai, elle monte le long de l'axe de la tresse et chaque mouvement passe à côté."
 "In a row: a braid word" = "En rang : un mot de tresse"
 "Round a ring: a ring word" = "Autour d'un anneau : un mot d'anneau"
-"Signed generators — 1 -2 — or s1 s2^-1, or letters, aB." = "Des générateurs signés — 1 -2 — ou s1 s2^-1, ou des lettres, aB."
+"Round a circle, any two crossing: a band word" = "Autour d'un cercle, deux brins quelconques se croisant : un mot de bande"
+"Signed generators — 1 -2 — or s1 s2^-1, or letters, aB; in band letters, 4:1 crosses strands 4 and 1 in front of those between, 1:4 the other way." = "Des générateurs signés — 1 -2 — ou s1 s2^-1, ou des lettres, aB ; en lettres de bande, 4:1 croise les brins 4 et 1 devant ceux d'entre eux, 1:4 dans l'autre sens."
 "How many" = "Combien"
 "Repeat" = "Répéter"
 "Moves" = "Mouvements"
@@ -213,6 +214,7 @@
 
 # The word as it is typed (diagram.js).
 "Ring word" = "Mot d'anneau"
+"Band word" = "Mot de bande"
 "As a braid word, round a ring of n strands: n crosses the last strand and the first, across the seam; n + 1 turns every strand one place round. Drawn on a cylinder cut at the seam." = "Comme un mot de tresse, autour d'un anneau de n brins : n croise le dernier brin et le premier, à travers la couture ; n + 1 fait tourner chaque brin d'une place. Dessiné sur un cylindre coupé à la couture."
 "Cannot read “{}” as a generator." = "Impossible de lire « {} » comme un générateur."
 "Generators are numbered from 1." = "Les générateurs sont numérotés à partir de 1."
@@ -378,6 +380,7 @@
 "Make from it" = "En faire une tresse"
 "Make this braid word as a braid word, once" = "Faire ce mot de tresse comme un mot de tresse, une fois"
 "Make this ring word as a braid word, once" = "Faire ce mot d'anneau comme un mot de tresse, une fois"
+"Make this band word as a braid word, once" = "Faire ce mot de bande comme un mot de tresse, une fois"
 "Copy" = "Copier"
 "Copy it from here:" = "Copiez-le d'ici :"
 "Copied ✓" = "Copié ✓"
@@ -386,6 +389,7 @@
 
 "Braid word {}, {#} times" = "Mot de tresse {}, {} fois"
 "Ring word {}, {#} times" = "Mot d'anneau {}, {} fois"
+"Band word {}, {#} times" = "Mot de bande {}, {} fois"
 "Kumihimo {} × {#}, {#} strands" = "Kumihimo {} × {}, {} brins"
 "Kumihimo {}, {#} strands" = "Kumihimo {}, {} brins"
 "{}, {#} cycles" = "{}, {} cycles"
@@ -454,7 +458,7 @@
 "This machine has nowhere for a core: a core goes down the hole a ring of gears encloses, where the carriers leave room for it." = "Cette machine n'a pas de place pour une âme : une âme descend par le trou qu'entoure un anneau de poupées arbrées, là où les fuseaux lui laissent la place."
 "Cannot read {}: give each bobbin by its notch, A-B, or as gear:slot." = "Impossible de lire {} : donnez chaque bobine par son cran, A-B, ou comme poupée arbrée:encoche."
 "Two bobbins in the same notch, {}." = "Deux bobines dans le même cran, {}."
-"Strands are either in a row or round a ring." = "Les brins sont soit en rang, soit autour d'un anneau."
+"Strands are in a row, round a ring, or in band letters." = "Les brins sont en rang, autour d'un anneau, ou en lettres de bande."
 "Give a braid word, for example 1 -2." = "Donnez un mot de tresse, par exemple 1 -2."
 "That is over {#} crossings: repeat it fewer times." = "Cela fait plus de {} croisements : répétez-le moins de fois."
 "On a ring of {#} strands, moves go up to {#}, a turn." = "Sur un anneau de {} brins, les mouvements vont jusqu'à {}, un tour."

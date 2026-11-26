@@ -61,6 +61,9 @@ The studio has a form and a 3D view.
   and made on the marudai move by move as written. A turn carries every
   bobbin round together, passing nobody, the braid held: the yarns twist
   into a rope, each as far from its axis as the others.
+- Or a **band word**, its strands round a circle, any two crossing in front
+  of those between: `4:1` crosses strands 4 and 1, `1:4` the other way
+  ([in band generators](braid_representations.md#in-band-generators)).
 - **Your own machine…** is any horn gear machine, written as the gears that
   mesh: `A-B B-C C-D D-A` is four gears in a ring, a gear with its own
   number of slots `A:6`, the others with *Slots per gear* (4 to start
@@ -260,11 +263,11 @@ The studio has a form and a 3D view.
   the braid: its strands; after how many of its words or cycles it is pure
   — every strand back where it started — how many were made, and so
   whether it is; its crossings and word (its ring word too, for a disk
-  braid, and a shorter word for the same braid when one is found:
+  braid, its band word where that is shorter, and a shorter word for the same braid when one is found:
   {doc}`braid_algebra`, *Shortening a word*), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
   normal form and full twists, how close the yarns come.
   Long words show three lines; **Make from it** makes the braid again from
-  its own word or ring word, as a braid word — the same braid, made on the
+  its own word, ring word or band word, as a braid word — the same braid, made on the
   marudai much as the disk made it — and **Copy** copies it. Under them,
   **Also made as** lists every other way the catalogues make the same braid
   — the plait typed as a word is also the three-carrier flat machine's — and

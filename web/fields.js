@@ -49,13 +49,14 @@ const FIELDS = {
       choices: [
         ["row", "In a row: a braid word"],
         ["ring", "Round a ring: a ring word"],
+        ["band", "Round a circle, any two crossing: a band word"],
       ],
     },
     {
       name: "word",
       label: "Braid word",
       kind: "textarea",
-      hint: "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB.",
+      hint: "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB; in band letters, 4:1 crosses strands 4 and 1 in front of those between, 1:4 the other way.",
     },
     { name: "n_strands", label: "How many", kind: "number", min: 2, max: 32 },
     { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },

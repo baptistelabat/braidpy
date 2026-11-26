@@ -261,6 +261,10 @@ What changed in each release of braidpy.
   letters (`Braid.band_word`, `artin_from_band`). Disk braids spell far
   shorter so: Kongo gumi on 8 strands, 81 crossings, is 43 band letters;
   the 16-strand disk braid, 351, is 117.
+  Braid Studio's card gives a braid's band word where it is shorter than
+  its word, as a disk braid's is, and Artin's word elsewhere; a band word
+  can be typed too (layout **band**: `4:1 1:3`), and the MCP server's
+  `describe_braid` gives it.
 - braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
   braid's triviality, and so `==`, falls back on braidpy's own Garside
   normal form when handle reduction takes too long, and the page no longer

@@ -39,6 +39,13 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
             shorter = [int(g) for g in braid.shortened().generators]
             if len(shorter) < len(word):
                 info["shorter_word"] = " ".join(str(g) for g in shorter)
+            # In band letters, where that is shorter still: strands carried
+            # across a disk, each crossing one letter (band_canonical_form).
+            band = braid.band_word()
+            if len(band) < min(len(word), len(shorter)):
+                from braidpy.band_canonical_form import band_text
+
+                info["band_word"] = band_text(band)
         # The Garside normal form costs more the more strands there are:
         # beyond this, minutes in a browser; and taking out each strand in
         # turn to see the braid come apart (Brunnian), more again.

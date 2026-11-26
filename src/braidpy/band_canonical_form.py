@@ -39,6 +39,7 @@ __all__ = [
     "BandLetter",
     "artin_from_band",
     "band_left_normal_form",
+    "band_text",
     "band_word",
     "factor_blocks",
 ]
@@ -238,3 +239,17 @@ def artin_from_band(letters: Sequence[BandLetter]) -> list[int]:
         else:
             word += up + [-s] + [-g for g in reversed(up)]
     return word
+
+
+def band_text(letters: Sequence[BandLetter]) -> str:
+    """Band letters as they are typed, and read back by
+    :func:`~braidpy.braidword.parse_band_word`: ``4:1`` for ``a_41``,
+    ``1:4`` for its inverse.
+
+    Args:
+        letters: The letters.
+
+    Returns:
+        The word.
+    """
+    return " ".join(f"{first}:{second}" for first, second in letters)
