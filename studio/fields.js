@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=598c988b3e";
-import { attachEditor, attachShape } from "./editor.js?v=598c988b3e";
-import { attachMachine } from "./machine.js?v=598c988b3e";
-import { $ } from "./page.js?v=598c988b3e";
-import { submit, worker } from "./workers.js?v=598c988b3e";
+import { attachDiagram } from "./diagram.js?v=7395d32e29";
+import { attachEditor, attachShape } from "./editor.js?v=7395d32e29";
+import { attachMachine } from "./machine.js?v=7395d32e29";
+import { $ } from "./page.js?v=7395d32e29";
+import { submit, worker } from "./workers.js?v=7395d32e29";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -49,13 +49,14 @@ const FIELDS = {
       choices: [
         ["row", "In a row: a braid word"],
         ["ring", "Round a ring: a ring word"],
+        ["band", "Round a circle, any two crossing: a band word"],
       ],
     },
     {
       name: "word",
       label: "Braid word",
       kind: "textarea",
-      hint: "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB.",
+      hint: "Signed generators — 1 -2 — or s1 s2^-1, or letters, aB; in band letters, 4:1 crosses strands 4 and 1 in front of those between, 1:4 the other way.",
     },
     { name: "n_strands", label: "How many", kind: "number", min: 2, max: 32 },
     { name: "repeat", label: "Repeat", kind: "number", min: 1, max: 50 },
