@@ -84,12 +84,14 @@ class Entry(Generic[T]):
 def extended(name: str, own: dict[str, Entry[T]]) -> dict[str, Entry[T]]:
     """A catalogue of braidpy's, with the braids installed packages add to
     it: each entry point of :data:`GROUP` named ``name`` (the catalogue's
-    module, as ``machine_catalog``) loads a dict of :class:`Entry` by name,
+    module, as ``machine_catalog``, or ``lace_machines`` for its lace
+    machines) loads a dict of :class:`Entry` by name,
     listed after braidpy's own.  A package's catalogue imports from braidpy
     what its braids need, but not the catalogue it adds to.
 
     Args:
-        name: The catalogue's module name, without ``braidpy.``.
+        name: The catalogue's module name, without ``braidpy.``; or
+            ``lace_machines``, :data:`braidpy.machine_catalog.LACE`.
         own: braidpy's own entries.
 
     Returns:
