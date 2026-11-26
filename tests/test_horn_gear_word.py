@@ -228,3 +228,97 @@ def test_carriers_crossing_as_the_period_starts_are_counted_once():
     assert len(once) == 12
     assert len(twice) == 2 * len(once)
     assert all(len(cycle) == 1 for cycle in cycles(Braid(tuple(once), 4)))
+
+
+# ── Round an axis, as moves round a ring ──────────────────────────────────────
+
+
+def _round_a_core(machine, axis):
+    """The machine's braid with a yarn fed at ``axis``, read flat: the
+    reading :func:`ring_word` is checked against."""
+    others = [a for a in machine.axials if a.anchor != axis.anchor]
+    return flat_word(machine.with_axials(others + [axis]))
+
+
+@pytest.mark.parametrize(
+    "name, spot",
+    [
+        ("tubular_braid_8", -1),  # round the tube's hole
+        ("tubular_braid_8", 0),  # round a gear of it
+        ("princess_braid", 1),  # round its own axial, carriers in line with it
+        ("flat_braid_3", 0),
+        ("soutache_braid", 1),
+    ],
+)
+def test_the_ring_word_is_the_braid_round_a_core_fed_there(name, spot):
+    """Read round an axis, its core kept as a strand, the ring word is the
+    braid the machine makes round a yarn fed there; the core taken away, the
+    braid it makes with nothing there."""
+    from braidpy.horn_gear.layout import axial_spots
+    from braidpy.horn_gear.word import ring_word
+    from braidpy.ring_program import same_braid
+
+    machine = getattr(ex, name)()
+    axis = axial_spots(machine)[spot]
+    word = ring_word(machine, axis)
+    n = word.n_strands
+    assert same_braid(word.cored(), Braid(_round_a_core(machine, axis), n + 1))
+    others = [a for a in machine.axials if a.anchor != axis.anchor]
+    assert same_braid(word.braid(), Braid(flat_word(machine.with_axials(others)), n))
+
+
+def test_the_default_axis_is_the_core_a_machine_braids_round():
+    """A tube's hole; the axial a machine feeds; else a gear near the
+    middle."""
+    from braidpy.horn_gear.word import default_axis
+
+    assert len(default_axis(ex.tubular_braid_8()).anchor) == 4
+    assert default_axis(ex.princess_braid()).anchor == ("B",)
+    assert len(default_axis(ex.flat_braid_3()).anchor) == 1
+
+
+def test_a_tube_read_round_its_hole_goes_round_it_and_shortens():
+    """Every strand of a tube goes once round its hole a period, half each
+    way, so nothing is left of the turns once moved to the end: the
+    shortened word is the n²/2 crossings, the same braid round the core."""
+    from braidpy.horn_gear.word import ring_word
+
+    word = ring_word(ex.tubular_braid_8())
+    shorter = word.shortened()
+    assert len(shorter.moves) == 8 * 8 // 2 < len(word.moves)
+    assert all(abs(move) <= 8 for move in shorter.moves)
+    assert shorter.cored() == word.cored()
+
+
+def test_a_lace_card_of_a_tube_is_not_a_tube():
+    """The lace card keeps its strands off the ring's seam: made from a
+    tube's braid it makes the same braid, but a flat one curled up, not the
+    tube round its core."""
+    from braidpy.horn_gear.word import ring_word
+    from braidpy.machine_catalog import LACE
+    from braidpy.making.lace import lace_card
+    from braidpy.ring_program import same_braid
+
+    tube = ring_word(LACE["lace_tubular_8"].make().machine())
+    card = lace_card(tube.braid())
+    made = ring_word(card.machine(), carriers=card.threading())
+    assert same_braid(made.braid(), tube.braid())
+    assert not same_braid(made.cored(), tube.cored())
+
+
+@pytest.mark.parametrize(
+    "name, per_cycle", [("tubular_braid_16", 8), ("tubular_braid_8", 2)]
+)
+def test_a_tube_comes_round_long_before_its_cycle(name, per_cycle):
+    """The shortest stretch that, made over and over, makes the cycle: its
+    braid round the core repeated is the cycle's."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.horn_gear.word import ring_unit, ring_word
+    from braidpy.ring_program import same_braid
+
+    machine = getattr(ex, name)()
+    unit, times = ring_unit(machine)
+    assert times == per_cycle
+    n = unit.n_strands
+    repeated = Braid(tuple(cored_word(list(unit.moves) * times, n)), n + 1)
+    assert same_braid(repeated, ring_word(machine).cored())

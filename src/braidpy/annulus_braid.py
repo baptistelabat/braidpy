@@ -239,6 +239,83 @@ def ring_moves(word: Sequence[int], n_strands: int) -> tuple[list[int], bool]:
     return straight, False
 
 
+def cored_word(moves: Sequence[int], n_strands: int) -> list[int]:
+    """The flat braid word of a ring braid round a core: the core kept, as
+    a strand of its own that the others go round.
+
+    :func:`solid_word` fills the middle, and a braid round a core and the
+    same braid lifted off it are then one; a strand going once round the
+    core comes back unlinked.  Kept as a strand, the core tells them apart:
+    a tube is not a flat braid curled up.  The core is strand 1, standing
+    still, and the ring's slots are strands 2 to ``n_strands + 1``:
+
+    - a crossing of slots ``i - 1`` and ``i`` is ``σᵢ₊₁``, of the same sign;
+    - the turn is ``σₙ₊₁…σ₃σ₂σ₁²``: the last strand passes outside every
+      other to the front, as in :func:`solid_word`, and goes round the core;
+    - the crossing whose slots wrap is the turn, ``σ₂``, the turn undone.
+
+    Forgetting the core (strand 1) gives :func:`solid_word` back.
+
+    Args:
+        moves: Crossings ``±1`` to ``±n_strands``, turns ``±(n_strands + 1)``.
+        n_strands: How many slots the ring has.
+
+    Returns:
+        The word on ``n_strands + 1`` strands.
+
+    Raises:
+        ValueError: If a move is not one of the ring's.
+    """
+    n = n_strands
+    turning = list(range(n, 1, -1)) + [1, 1]
+    back = [-g for g in reversed(turning)]
+    word: list[int] = []
+    for move in moves:
+        index, sign = abs(move), (1 if move > 0 else -1)
+        if not 1 <= index <= n + 1:
+            raise ValueError(f"No move {move} on a ring of {n} strands.")
+        if index < n:
+            word.append(sign * (index + 1))
+        elif index == n:
+            word += turning + [sign * 2] + back
+        else:
+            word += turning if sign > 0 else back
+    return word
+
+
+def turns_last(moves: Sequence[int], n_strands: int) -> list[int]:
+    """The same ring braid with its turns all at the end, as few as there are.
+
+    A turn renumbers the slots by one, so a crossing made after it is the
+    crossing of the pair one slot back before it: a turn followed by
+    crossing ``i`` is crossing ``i - 1`` followed by the turn, indices read
+    round the ring.  Moved to the end so, the turns one way and the other
+    cancel, and what is left is the cross-section's net rotation.
+
+    Args:
+        moves: Crossings ``±1`` to ``±n_strands``, turns ``±(n_strands + 1)``.
+        n_strands: How many slots the ring has.
+
+    Returns:
+        The crossings, then the turns, all one way.
+
+    Raises:
+        ValueError: If a move is not one of the ring's.
+    """
+    n = n_strands
+    crossings: list[int] = []
+    turned = 0
+    for move in moves:
+        index, sign = abs(move), (1 if move > 0 else -1)
+        if not 1 <= index <= n + 1:
+            raise ValueError(f"No move {move} on a ring of {n} strands.")
+        if index == n + 1:
+            turned += sign
+        else:
+            crossings.append(sign * ((index - turned - 1) % n + 1))
+    return crossings + [turn(n) if turned > 0 else -turn(n)] * abs(turned)
+
+
 @dataclass(frozen=True)
 class TubularStrandPath:
     """Where one strand goes round a tubular braid, and what it passed.

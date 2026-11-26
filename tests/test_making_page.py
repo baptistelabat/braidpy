@@ -134,3 +134,39 @@ def test_a_link_asks_for_no_more_passes_than_its_source_takes():
     # Followed, it makes a braid rather than being turned away.
     made = build({**sinnet, "iterations": 0}, tighten=False)
     assert made["info"]["n_strands"] == 14
+
+
+def test_a_tube_is_shown_made_as_a_tube():
+    """A braid made round a core on a ring of gears: its card made as a
+    tube, the shortest stretch of the cycle that repeated makes it, round a
+    core; made as the link says, its braid round the core is the
+    machine's, exactly."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.horn_gear.word import ring_word
+    from braidpy.machine_catalog import CATALOGUE
+    from braidpy.making.lace import card_program, gear_number, read_card
+    from braidpy.ring_program import RingProgram
+
+    info = _info({"source": "machine", "name": "tubular_16", "cycles": 1})
+    lace = for_page(info)["lace"]
+    spec = lace["spec"]
+    assert lace["tube"] and spec["core"] == "yarn"
+    assert spec["cycles"] == 8 and lace["steps"] < 10
+    gears = spec["n_gears"]
+    notches = [gear_number(name.split("-")[0]) for name in spec["carriers"].split()]
+    once = card_program(gears, read_card(spec["card"], gears), notches)
+    whole = RingProgram(once.n_places, once.start, once.rows * spec["cycles"])
+    moves, n = whole.ring_word()
+    machine = ring_word(CATALOGUE["tubular_16"].make())
+    assert Braid(tuple(cored_word(moves, n)), n + 1) == machine.cored()
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {"source": "machine", "name": "flat_4", "cycles": 1},
+        PLAIT,
+    ],
+)
+def test_a_braid_not_made_round_a_core_is_shown_as_before(spec):
+    assert not for_page(_info(spec))["lace"]["tube"]

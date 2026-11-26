@@ -233,7 +233,11 @@ export function showMaking(making) {
     "\n";
   item(
     lace.spec ? link("Lace machine", lace.spec) : document.createTextNode("Lace machine"),
-    muted(` ${lace.gears} gears, ${lace.steps} steps a repeat `),
+    muted(
+      lace.tube
+        ? ` ${lace.gears} gears, ${lace.steps} steps a repeat, made as a tube `
+        : ` ${lace.gears} gears, ${lace.steps} steps a repeat `,
+    ),
     small("Copy card", (button) => copyText(card, button)),
     small("Download", () => {
       const file = new Blob([card], { type: "text/plain" });

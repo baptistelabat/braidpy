@@ -126,7 +126,7 @@ def _own_gears(spec: Spec) -> int:
 def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import gear_radii
     from braidpy.horn_gear.tracks import ring_order
-    from braidpy.horn_gear.word import annular_word, flat_word
+    from braidpy.horn_gear.word import annular_word, flat_word, ring_unit
     from braidpy.machine_catalog import CATALOGUE as machines
 
     name = Machine.name.read(spec)
@@ -169,6 +169,11 @@ def _from_machine(spec: Spec) -> Result:
         annular = annular_word(machine, carriers=carriers_at)
         info["annular_word"] = " ".join(str(g) for g in annular.generators)
         info["crossings"] = len(annular.generators)
+        # The tube, round its core, as what is made over and over.
+        unit, per_cycle = ring_unit(machine, carriers=carriers_at)
+        info["ring_unit"] = " ".join(str(g) for g in unit.moves)
+        info["ring_strands"] = unit.n_strands
+        info["ring_repeats"] = per_cycle * cycles
     else:
         # Read over one cycle of the machine.
         info.update(

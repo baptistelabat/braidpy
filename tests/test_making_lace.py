@@ -309,3 +309,66 @@ def test_a_search_is_set_by_its_settings():
     without = lace_card(braid, search=CardSearch(runs=0))
     assert len(lace_card(braid).steps) <= len(without.steps)
     assert lace_card(braid, search=CARD_SEARCH).steps == lace_card(braid).steps
+
+
+def _made_round_the_core(card, passes):
+    """The braid a card makes in so many passes round the ring's core, as
+    the card's own program counts round (RingProgram.ring_word)."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.ring_program import RingProgram
+
+    once = card.program
+    moves, n = RingProgram(once.n_places, once.start, once.rows * passes).ring_word()
+    return Braid(tuple(cored_word(moves, n)), n + 1)
+
+
+@pytest.mark.parametrize("name", ["tubular_braid_8", "tubular_braid_16"])
+def test_a_tube_s_card_makes_it_round_its_core(name):
+    """Made as a tube, its strands across the seam, the card's braid round
+    the ring's core is the ring word's, pass after pass: a pass need not
+    bring a strand home."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.horn_gear import examples as ex
+    from braidpy.horn_gear.word import ring_unit
+    from braidpy.making.lace import ring_card
+
+    unit, _ = ring_unit(getattr(ex, name)())
+    card = ring_card(unit.moves, unit.n_strands)
+    n = unit.n_strands
+    assert _made_round_the_core(card, 3) == Braid(
+        tuple(cored_word(list(unit.moves) * 3, n)), n + 1
+    )
+
+
+def test_the_lace_tube_s_card_is_found_again():
+    """Every gear turning, a bobbin in every notch: the ring word of a pass
+    is made on as many gears, a step a line."""
+    from braidpy.horn_gear.word import ring_unit
+    from braidpy.machine_catalog import LACE
+    from braidpy.making.lace import ring_card
+
+    unit, per_pass = ring_unit(LACE["lace_tubular_8"].make().machine())
+    card = ring_card(unit.moves, unit.n_strands)
+    assert per_pass == 1 and card.n_gears == 8 and len(card.steps) == 2
+
+
+def test_random_ring_words_are_made_round_the_core():
+    """Turns and crossings anywhere: made exactly, three passes, round the
+    core; the machine makes what the card's program does."""
+    import random
+
+    from braidpy.annulus_braid import cored_word, solid_word
+    from braidpy.making.lace import ring_card
+
+    rng = random.Random(2)
+    for _ in range(10):
+        n = rng.randint(3, 6)
+        moves = [
+            rng.choice((-1, 1)) * rng.randint(1, n + 1)
+            for _ in range(rng.randint(4, 10))
+        ]
+        card = ring_card(moves, n)
+        assert _made_round_the_core(card, 3) == Braid(
+            tuple(cored_word(moves * 3, n)), n + 1
+        )
+        assert lace_braid(card) == Braid(tuple(solid_word(moves, n)), n)

@@ -21,6 +21,33 @@ the usual notations:
 
 In letters, `a` is `σ₁`, `b` is `σ₂` and so on; a capital is the inverse.
 
+## A ring word, round a core
+
+A tube's strands go round its axis, and a braid word, its strands in a
+row, cannot say so: a tube and a flat braid curled up have the same word.
+A **ring word** ({mod}`braidpy.annulus_braid`, written as Braid Studio takes
+it, [ring word](braid_studio.md)) can: its strands are in a ring round the
+axis, crossing `n` crosses the two either side of a seam and `n + 1` turns
+the ring a slot. Kept as a strand, the core tells the two apart:
+`cored_word` is the braid word with the core as strand 1, `solid_word` the
+one with the middle filled.
+
+{func}`~braidpy.horn_gear.word.ring_word` reads a machine's braid as a ring
+word round an axis: an axial, or any spot one could be fed at
+({func}`~braidpy.horn_gear.layout.axial_spots`), the core a machine braids
+round if not said ({func}`~braidpy.horn_gear.word.default_axis`). Round
+another axis the same machine makes another braid round its core.
+`shortened()` makes the word shorter, as {func}`~braidpy.shortening.shortened`
+does a braid word, the relations read round the ring:
+
+```python
+from braidpy.horn_gear import examples
+from braidpy.horn_gear.word import ring_word
+
+word = ring_word(examples.tubular_braid_8())  # round the tube's hole
+len(word.moves), len(word.shortened().moves)  # 40, 32: the turns cancel
+```
+
 ## Where the strands go
 
 A braid takes the strand starting in each place to a place at the other end:
