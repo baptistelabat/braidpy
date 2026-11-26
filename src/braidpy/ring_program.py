@@ -147,18 +147,31 @@ class RingProgram:
             held[left], held[right] = b, a
         return start, steps
 
+    def ring_word(self) -> tuple[list[int], int]:
+        """The braid the program makes as moves round its ring
+        (:mod:`braidpy.annulus_braid`), read off its disk moves, as a disk
+        braid is: a strand carried across the seam is a turn.  Round a core
+        (:func:`~braidpy.annulus_braid.cored_word`), it says how far round
+        each strand goes.
+
+        Returns:
+            The moves, and how many strands.
+        """
+        from braidpy.take_off import disk_annular_word
+
+        start, steps = self.disk()
+        return disk_annular_word(start, steps, self.n_places, clockwise=True)
+
     def braid(self) -> Braid:
-        """The braid the program makes, as a braid word: read off its disk
-        moves, as a disk braid is.
+        """The braid the program makes, as a braid word: its ring word
+        (:meth:`ring_word`), the middle filled.
 
         Returns:
             The braid, on the program's strands.
         """
         from braidpy.annulus_braid import solid_word
-        from braidpy.take_off import disk_annular_word
 
-        start, steps = self.disk()
-        annular, n = disk_annular_word(start, steps, self.n_places, clockwise=True)
+        annular, n = self.ring_word()
         return Braid(tuple(solid_word(annular, n)), n)
 
     def ends(self) -> tuple[int | None, ...]:

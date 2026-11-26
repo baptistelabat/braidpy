@@ -173,6 +173,7 @@ def _shortened(text: str, most: int = 32) -> str:
 def _from_word(spec: Spec) -> Result:
     from braidpy.annulus_braid import ring_moves, solid_word
     from braidpy.braid import Braid
+    from braidpy.pure_braid import repeating_unit
     from braidpy.take_off import braid_word_trajectories, lay_yarns
 
     layout = Word.layout.read(spec)
@@ -240,6 +241,11 @@ def _from_word(spec: Spec) -> Result:
     _unit(info, once, n_strands, "repeat")
     if ring:
         info["annular_word"] = " ".join(str(g) for g in moves)
+        # Made round a core, as a tube: the word typed, made over and over.
+        unit = repeating_unit(moves)
+        info["ring_unit"] = " ".join(str(g) for g in unit)
+        info["ring_strands"] = n_strands
+        info["ring_repeats"] = len(moves) // len(unit)
     result = _result(
         ("Ring word " if ring else "Braid word ")
         + _shortened(Word.word.read(spec))

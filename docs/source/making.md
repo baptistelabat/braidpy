@@ -162,6 +162,41 @@ The card is checked on the machine itself
 bobbin is found in its notch, and each gear that turned must have swapped
 its two. Every catalogue braid comes back exactly.
 
+### As a tube
+
+A card made from a braid word keeps its strands off the ring's seam, so it
+makes a flat braid curled up: the same braid with nothing in its middle,
+not a tube round a core (see {doc}`braid_representations`, *A ring word,
+round a core*). {func}`~braidpy.making.lace.ring_card` makes a ring word
+instead, its strands going round across the seam as a tube's do: each
+crossing of two neighbours round the ring made as above, but round it, and
+every strand then walked to where the word takes it, so many notches round
+the ring. A pass need not bring a strand home, only every threaded notch
+filled again, each perhaps by another strand: the card runs round and
+round. The same starts and seeded search are tried as for a word. Checked
+round the core, as the card's own program counts round
+({meth}`~braidpy.ring_program.RingProgram.ring_word`), a ring word comes
+back exactly, pass after pass.
+
+What a tube is made of is short: a tubular machine comes round long before
+its carriers are home. {func}`~braidpy.horn_gear.word.ring_unit` finds the
+fewest steps after which the carriers stand, step after step, where
+carriers stood, and reads them as a ring word round the core: 2 steps of
+the 16-carrier machine's 16, whose 16 crossings repeated 8 times make its
+cycle round the core, exactly. Braid Studio makes a braid made round a core
+— on a ring of gears, or a ring word — so, and links to it round a core of
+yarn:
+
+| Machine | Card of its word | As a tube |
+|---|---|---|
+| Tubular braid, 8 carriers | 14 gears, 27 steps | 12 gears, 10 steps |
+| 12 carriers | 22 gears, 47 steps | 18 gears, 10 steps |
+| 16 carriers | 30 gears, 34 steps | 24 gears, 5 steps |
+| Triaxial, 16 carriers | 44 gears, 85 steps | 40 gears, 8 steps |
+
+The lace machine with every gear turning, read so, is found again: 8
+gears, its pass a step a line.
+
 ## A kumihimo disk
 
 On a kumihimo disk (a mobidai, {mod}`braidpy.mobidai`) a move takes one

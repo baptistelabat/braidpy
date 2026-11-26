@@ -66,6 +66,7 @@ __all__ = [
     "deck_centre",
     "default_axis",
     "flat_word",
+    "ring_unit",
     "ring_word",
 ]
 
@@ -329,6 +330,12 @@ _LEVEL_TURNS = 1e-6
 # the axis itself, by symmetry, are read in line with the point no longer.
 _OFF_AXIS = 0.1
 _ASKEW = 1.0
+# Where carriers stand is compared to so many decimals: places the same
+# but for rounding are one place.
+_PLACE_DIGITS = 6
+# Samples a step at which a stretch of a cycle is compared with the next
+# (ring_unit): between steps, and halfway, where the gears turning show.
+_UNIT_SAMPLES = 2
 
 
 @dataclass(frozen=True)
@@ -493,13 +500,75 @@ def ring_word(
     return RingWord(tuple(moves), len(ids), axis, tuple(ids[k] for k in start))
 
 
+def ring_unit(
+    machine: BraidingMachine,
+    axis: Optional[Axial] = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+) -> tuple[RingWord, int]:
+    """The shortest stretch of a machine's cycle that, repeated, makes it:
+    as few steps as bring the carriers back to where carriers stood, each
+    perhaps where another was, read as a ring word (:func:`ring_word`).
+
+    A tube comes round long before its carriers are home: a tubular
+    braider of 16 does in 2 steps what its 16-step cycle does 8 times.  The
+    stretch need not bring a strand home, nor make a pure braid; made over
+    and over, it makes the machine's braid round its core, exactly.
+
+    Args:
+        machine: The machine.
+        axis: As :func:`ring_word` takes it.
+        carriers: The loading; the machine's own if None.
+
+    Returns:
+        The stretch's ring word, shortened (:meth:`RingWord.shortened`),
+        and how many times a cycle makes it.
+    """
+    program = getattr(machine, "program", None)
+    period = (
+        2 * len(program)
+        if program is not None
+        else state_period(machine, carriers) or simulation_period(machine)
+    )
+    # Where the carriers stand between steps and halfway through each: the
+    # stretch repeats if they stand so, step after step, as they did.
+    tracks = _trajectories(
+        machine.with_axials([]), carriers, period, _UNIT_SAMPLES, 1.0
+    )
+    standing = [
+        sorted(
+            (
+                round(float(xy[sample, 0]), _PLACE_DIGITS),
+                round(float(xy[sample, 1]), _PLACE_DIGITS),
+            )
+            for xy in tracks.xy.values()
+        )
+        for sample in range(period * _UNIT_SAMPLES + 1)
+    ]
+
+    def repeats(p: int) -> bool:
+        shift = p * _UNIT_SAMPLES
+        return period % p == 0 and all(
+            standing[sample] == standing[sample + shift]
+            for sample in range(len(standing) - shift)
+        )
+
+    steps = next(p for p in range(1, period + 1) if repeats(p))
+    word = ring_word(machine, axis, carriers, n_steps=steps)
+    return word.shortened(), period // steps
+
+
 def _recurs(xs: np.ndarray, ys: np.ndarray, samples: int) -> bool:
     """Whether the strands are where they were after ``samples`` samples,
     as a set: the period can then begin at any sample."""
     if len(xs) < samples + 1:
         return False
-    here = sorted(zip(np.round(xs[0], 6), np.round(ys[0], 6)))
-    there = sorted(zip(np.round(xs[samples - 1], 6), np.round(ys[samples - 1], 6)))
+    here = sorted(zip(np.round(xs[0], _PLACE_DIGITS), np.round(ys[0], _PLACE_DIGITS)))
+    there = sorted(
+        zip(
+            np.round(xs[samples - 1], _PLACE_DIGITS),
+            np.round(ys[samples - 1], _PLACE_DIGITS),
+        )
+    )
     return here == there
 
 

@@ -304,3 +304,21 @@ def test_a_lace_card_of_a_tube_is_not_a_tube():
     made = ring_word(card.machine(), carriers=card.threading())
     assert same_braid(made.braid(), tube.braid())
     assert not same_braid(made.cored(), tube.cored())
+
+
+@pytest.mark.parametrize(
+    "name, per_cycle", [("tubular_braid_16", 8), ("tubular_braid_8", 2)]
+)
+def test_a_tube_comes_round_long_before_its_cycle(name, per_cycle):
+    """The shortest stretch that, made over and over, makes the cycle: its
+    braid round the core repeated is the cycle's."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.horn_gear.word import ring_unit, ring_word
+    from braidpy.ring_program import same_braid
+
+    machine = getattr(ex, name)()
+    unit, times = ring_unit(machine)
+    assert times == per_cycle
+    n = unit.n_strands
+    repeated = Braid(tuple(cored_word(list(unit.moves) * times, n)), n + 1)
+    assert same_braid(repeated, ring_word(machine).cored())

@@ -84,6 +84,7 @@ __all__ = [
     "read_card",
     "repeat_floor",
     "ring_braid",
+    "ring_card",
     "step_floor",
 ]
 
@@ -499,6 +500,266 @@ def lace_card(
         best = min(best, trial, key=lambda t: t[:2])
     _, gears, start, swaps = best
     return _card(gears, start, swaps)
+
+
+def ring_card(
+    moves: Sequence[int],
+    n_strands: int,
+    n_gears: Optional[int] = None,
+    search: CardSearch = CARD_SEARCH,
+) -> LaceCard:
+    """A braid round a core, as a ring word, as a lace machine's punchcard:
+    a tube made as a tube.
+
+    :func:`lace_card` keeps its strands off the ring's seam, as a braid
+    word's are in a row, and so makes a flat braid curled up; here they go
+    round, across the seam as a tube's do.  A ring word's moves
+    (:mod:`braidpy.annulus_braid`) say which two neighbours round the ring
+    cross, with which sign, and how far round each strand ends; the
+    crossings are made as :func:`lace_card` makes them — the two strands
+    brought through the empty notches between and beside them to a gear
+    turning the way of the sign, the strands beside pushed along if hemmed
+    in — but round the ring, and every strand then walks to where it ends,
+    as many times round the ring as the word takes it.  A pass of the card
+    need not bring a strand home: the notches threaded are the same, each
+    perhaps holding another strand, so the card runs round and round.
+
+    The same starts and the same seeded search are tried as for
+    :func:`lace_card`, a crossing always at the nearest gear of its sign.
+
+    Args:
+        moves: Crossings ``±1`` to ``±n_strands``, turns ``±(n_strands + 1)``.
+        n_strands: The strands round the ring.
+        n_gears: Gears round the ring, even and at least ``FEWEST_GEARS``;
+            each number from the fewest that hold the strands to
+            ``MOST_GEARS_PER_STRAND`` a strand if None.
+        search: How the card is searched for.
+
+    Returns:
+        The card: made, its braid round the ring's core is the word's
+        (:func:`~braidpy.annulus_braid.cored_word`).
+
+    Raises:
+        ValueError: If no card is found: the strands fill the ring, and its
+            gears do not turn the ways the crossings want.
+    """
+    n = n_strands
+    fewest = max(FEWEST_GEARS, n + n % 2)
+    tried = (
+        [n_gears]
+        if n_gears is not None
+        else list(range(fewest, max(fewest, MOST_GEARS_PER_STRAND * n) + 1, 2))
+    )
+    crossings, ends = _ring_crossings(moves, n)
+    found = [
+        trial
+        for gears in tried
+        for start in _starts(n, gears)
+        if (trial := _ring_tried(crossings, ends, gears, start)) is not None
+    ]
+    if not found:
+        raise ValueError(f"No lace card of {tried} gears makes this ring word.")
+    best = min(found, key=lambda trial: trial[:2])
+    gears_tried = list(
+        dict.fromkeys(trial[1] for trial in sorted(found, key=lambda t: t[:2]))
+    )
+    gears_tried = gears_tried[: search.gears]
+    rng = random.Random(search.seed)
+    for _ in range(_tries(search.runs, search.crossings, len(crossings))):
+        gears = rng.choice(gears_tried)
+        order = (
+            _ring_reordered(crossings, rng)
+            if rng.random() < search.reordered
+            else crossings
+        )
+        start = (
+            tuple(sorted(rng.sample(range(gears), n)))
+            if rng.random() < search.anywhere
+            else rng.choice(_starts(n, gears))
+        )
+        trial = _ring_tried(order, ends, gears, start)
+        if trial is not None:
+            best = min(best, trial, key=lambda t: t[:2])
+    _, gears, start, swaps = best
+    return _card(gears, start, swaps)
+
+
+# A crossing of two neighbours round a ring: the strand first clockwise,
+# the one next to it, and the sign.
+_RingCrossing = tuple[int, int, int]
+
+
+def _ring_crossings(
+    moves: Sequence[int], n: int
+) -> tuple[list[_RingCrossing], list[int]]:
+    """A ring word's crossings, each its two strands — the second the next
+    clockwise — and sign; and where each strand ends, as a slot counted on
+    round the ring: ``n`` more for each time round."""
+    ranked = list(range(n))
+    ends = list(range(n))
+    crossings: list[_RingCrossing] = []
+    for move in moves:
+        index, sign = abs(move), (1 if move > 0 else -1)
+        if index == n + 1:
+            ranked = [ranked[-1]] + ranked[:-1] if sign > 0 else ranked[1:] + ranked[:1]
+            ends = [slot + sign for slot in ends]
+            continue
+        low, high = (index - 1, index) if index < n else (n - 1, 0)
+        first, second = ranked[low], ranked[high]
+        crossings.append((first, second, sign))
+        ends[first] += 1
+        ends[second] -= 1
+        ranked[low], ranked[high] = second, first
+    return crossings, ends
+
+
+def _ring_reordered(
+    crossings: Sequence[_RingCrossing], rng: random.Random
+) -> list[_RingCrossing]:
+    """The crossings in a random order that keeps the braid: each strand's
+    crossings in their order, crossings of other strands moved past them."""
+    later: list[list[int]] = [[] for _ in crossings]
+    waiting = [0] * len(crossings)
+    last: dict[int, int] = {}
+    for k, (first, second, _) in enumerate(crossings):
+        for strand in {first, second} & last.keys():
+            later[last[strand]].append(k)
+            waiting[k] += 1
+        last[first] = last[second] = k
+    ready = [k for k in range(len(crossings)) if not waiting[k]]
+    order = []
+    while ready:
+        k = ready.pop(rng.randrange(len(ready)))
+        order.append(crossings[k])
+        for after in later[k]:
+            waiting[after] -= 1
+            if not waiting[after]:
+                ready.append(after)
+    return order
+
+
+def _ring_tried(
+    crossings: Sequence[_RingCrossing],
+    ends: Sequence[int],
+    gears: int,
+    start: Sequence[int],
+) -> tuple[int, int, tuple[int, ...], list[Swap]] | None:
+    """A ring word's moves on ``gears`` gears from ``start``, and how many
+    steps they take once packed; None if a crossing cannot be made."""
+    n = len(start)
+    moves = _RingMoves(gears, start)
+    for first, second, sign in crossings:
+        if not moves.cross(first, second, sign):
+            return None
+    if not moves.home([start[slot % n] + gears * (slot // n) for slot in ends]):
+        return None
+    return len(_packed(gears, moves.swaps)), gears, tuple(start), moves.swaps
+
+
+class _RingMoves:
+    """The swaps that make a ring word's crossings on a lace ring
+    (:func:`ring_card`): as :class:`_Moves` makes a word's, but round the
+    ring, a strand's notch counted on past the seam — ``gears`` more for
+    each time round — so that how far round each goes is kept."""
+
+    def __init__(self, gears: int, start: Sequence[int]) -> None:
+        self.gears = gears
+        self.at = list(start)
+        self.held: list[int | None] = [None] * gears
+        for strand, notch in enumerate(start):
+            self.held[notch] = strand
+        self.swaps: list[Swap] = []
+
+    def _empty(self, notch: int) -> bool:
+        return self.held[notch % self.gears] is None
+
+    def _step(self, strand: int, way: int) -> None:
+        """A strand moved a notch, ``way`` (-1 or +1), into an empty one."""
+        here = self.at[strand]
+        place = (here if way > 0 else here - 1) % self.gears
+        self.swaps.append(Swap(place, _gear_sign(place + 1)))
+        self.held[here % self.gears] = None
+        self.held[(here + way) % self.gears] = strand
+        self.at[strand] += way
+
+    def _walk(self, strand: int, to: int) -> None:
+        while self.at[strand] != to:
+            self._step(strand, 1 if to > self.at[strand] else -1)
+
+    def _after(self, first: int, second: int) -> int:
+        """Where ``second`` is, counted on from ``first`` round the ring: the
+        first notch it is in clockwise after ``first``'s."""
+        gap = (self.at[second] - self.at[first]) % self.gears
+        return self.at[first] + gap
+
+    def _places(self, x: int, y: int, sign: int) -> list[int]:
+        """As :meth:`_Moves._places`, round the ring."""
+        low, high = x, y
+        while self._empty(low - 1):
+            low -= 1
+        while self._empty(high + 1):
+            high += 1
+        return [p for p in range(low, high) if _gear_sign(p + 1) == sign]
+
+    def _room(self, notch: int, way: int) -> int:
+        """The nearest empty notch from ``notch`` on, ``way``: round the
+        ring there is always one, a notch being spare."""
+        while not self._empty(notch):
+            notch += way
+        return notch
+
+    def cross(self, first: int, second: int, sign: int) -> bool:
+        """Two neighbours, ``second`` the next clockwise, brought to a gear
+        turning the way of ``sign`` and crossed; False if they cannot be:
+        the strands fill the ring."""
+        x, y = self.at[first], self._after(first, second)
+        places = self._places(x, y, sign)
+        if not places:
+            if all(strand is not None for strand in self.held):
+                return False
+            # Hemmed in: the strands beside pushed away, the fewer the
+            # better.  Round the ring the room is reached before the other
+            # of the two: it is not where either is.
+            beside = {-1: x - 1, 1: y + 1}
+            rooms = {way: self._room(notch, way) for way, notch in beside.items()}
+            way = min(rooms, key=lambda w: abs(rooms[w] - beside[w]))
+            for place in range(rooms[way] - way, beside[way] - way, -way):
+                strand = self.held[place % self.gears]
+                assert strand is not None
+                self._step(strand, way)
+            x, y = self.at[first], self._after(first, second)
+            places = self._places(x, y, sign)
+        place = min(places, key=lambda p: abs(x - p) + abs(y - p - 1))
+        # Where the second is counted from, back to its own count.
+        back = self.at[second] - y
+        if place < x:
+            self._walk(first, place)
+            self._walk(second, place + 1 + back)
+        else:
+            self._walk(second, place + 1 + back)
+            self._walk(first, place)
+        notch = place % self.gears
+        self.swaps.append(Swap(notch, sign))
+        self.held[notch], self.held[(notch + 1) % self.gears] = second, first
+        self.at[first] += 1
+        self.at[second] -= 1
+        return True
+
+    def home(self, ends: Sequence[int]) -> bool:
+        """Every strand walked to where it ends, notch counted on as
+        :attr:`at` is: a strand moved whenever the notch it moves into is
+        empty.  Their order round the ring is the ends', so none waits on
+        one waiting on it, but on a ring they fill none can move: False if
+        so, and they must."""
+        moved = True
+        while moved:
+            moved = False
+            for strand, end in enumerate(ends):
+                way = (end > self.at[strand]) - (end < self.at[strand])
+                if way and self._empty(self.at[strand] + way):
+                    self._step(strand, way)
+                    moved = True
+        return self.at == list(ends)
 
 
 def _tries(most: int, crossings: int, per_try: int) -> int:

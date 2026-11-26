@@ -14,6 +14,14 @@ What changed in each release of braidpy.
   yarn fed there: a tube is not a flat braid curled up. `shortened()`
   shortens it, the relations read round the ring
   (`shortening.shortened_ring`, `annulus_braid.turns_last`).
+- A tube made as a tube on a lace machine (`making.lace.ring_card`): a
+  ring word's strands go round across the seam, a pass need not bring
+  them home, and the card's braid round the core is the word's. A
+  machine's tube is the fewest steps that repeat (`horn_gear.word.ring_unit`):
+  2 of the 16-carrier tubular machine's 16. Braid Studio's **Make it as…**
+  makes a braid made round a core so — a ring machine's, a ring word's —
+  in far fewer steps (that machine: 5 a pass instead of 34), round a core
+  of yarn. `RingProgram.ring_word` reads a program round its ring.
 - Catalogues from outside: a package of a site's own adds braids to
   braidpy's catalogues (`braidpy.catalogue.extended`, entry points in
   the group `braidpy.catalogues`), as braid-designer adds machines of its
