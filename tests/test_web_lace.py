@@ -232,3 +232,31 @@ def test_bobbins_on_a_marudai_go_in_the_notches_named():
         for strand, slot in zip(made["strands"], made["disk"]["start"])
     }
     assert notch == {0: 2, 1: 0, 2: 3}
+
+
+def test_your_own_lace_ring_may_have_as_many_gears_as_the_largest_machines():
+    """48 gears and more, as lace machines have: a ring of 48, every gear
+    turning once, builds; one of 74 is refused."""
+    # One step: the anticlockwise gears A, C, E… turning, then none.
+    card = "".join("1" if g % 2 == 0 else "0" for g in range(48)) + " " + "0" * 48
+    result = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 48,
+            "card": card,
+            "cycles": 1,
+            "iterations": 0,
+        }
+    )
+    assert len(result["strands"]) == 48
+    with pytest.raises(ValueError):
+        build(
+            {
+                "source": "lace",
+                "name": "custom",
+                "n_gears": 74,
+                "card": card,
+                "cycles": 1,
+            }
+        )

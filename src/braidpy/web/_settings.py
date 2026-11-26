@@ -273,7 +273,8 @@ class Lace:
     cycles = Count("cycles", 6, low=1, high=24)
     # Your own card: the gears round the ring, an even number, and per step
     # the gears turning anticlockwise, then clockwise, as 0 and 1.
-    n_gears = Count("n_gears", 6, low=4, high=32)
+    # As many gears as the largest lace machines have, 72.
+    n_gears = Count("n_gears", 6, low=4, high=72)
     card = Text("card", "")
     # How it is to be settled: on a marudai, made from its card alone.
     settle = Text("settle", "")

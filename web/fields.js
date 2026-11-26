@@ -206,7 +206,7 @@ const FIELDS = {
   ],
   lace: [
     { name: "name", label: "Lace machine", kind: "entries" },
-    { name: "n_gears", label: "Gears", kind: "number", min: 4, max: 32, step: 2, custom: true },
+    { name: "n_gears", label: "Gears", kind: "number", min: 4, max: 72, step: 2, custom: true },
     {
       name: "card",
       label: "Punchcard",
