@@ -19,8 +19,8 @@
   "use strict";
 
   const { nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads } =
-    root.yarnMechanics || require("./rope.js?v=cba0328c37").yarnMechanics;
-  const frictionForce = root.frictionForce || require("./form.js?v=cba0328c37").frictionForce;
+    root.yarnMechanics || require("./rope.js?v=746e23d191").yarnMechanics;
+  const frictionForce = root.frictionForce || require("./form.js?v=746e23d191").frictionForce;
 
   /**
    * The braid made from a job.

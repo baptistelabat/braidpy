@@ -319,6 +319,7 @@ export const catalogues = {
 "Δ^{#} and {#} permutation braids": "Δ^{} et {} tresses de permutation",
 "Full twists": "Tours complets",
 "Word": "Mot",
+"Shorter word": "Mot plus court",
 "Closest yarns": "Fils les plus proches",
 "{#} for a yarn of {#}": "{} pour un fil de {}",
 "Computed in": "Calculée en",

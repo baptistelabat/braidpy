@@ -6,12 +6,12 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=cba0328c37";
-import { englishText, tr } from "./i18n.js?v=cba0328c37";
-import { $, round } from "./page.js?v=cba0328c37";
-import { lastResult } from "./scene.js?v=cba0328c37";
-import { writeSpec } from "./spec.js?v=cba0328c37";
-import { pending, submit, worker } from "./workers.js?v=cba0328c37";
+import { catalogue } from "./fields.js?v=746e23d191";
+import { englishText, tr } from "./i18n.js?v=746e23d191";
+import { $, round } from "./page.js?v=746e23d191";
+import { lastResult } from "./scene.js?v=746e23d191";
+import { writeSpec } from "./spec.js?v=746e23d191";
+import { pending, submit, worker } from "./workers.js?v=746e23d191";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -51,6 +51,7 @@ export function describe(result, seconds) {
     ],
     ["Full twists", info.garside && info.garside.full_twists],
     ["Word", info.word, { layout: "row" }],
+    ["Shorter word", info.shorter_word, { layout: "row" }],
     ["Ring word", info.annular_word, { layout: "ring" }],
     [
       "Closest yarns",
