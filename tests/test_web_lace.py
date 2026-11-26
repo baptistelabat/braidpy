@@ -113,7 +113,8 @@ def test_your_own_card_is_offered_last():
     [
         (5, "10000 01000", "even number"),
         (4, "1000", "two groups"),
-        (4, "10x0 0000", "0 and 1"),
+        (4, "10x0 0000", "not a gear"),
+        (4, "A C / E", "No gear E"),
         (4, "100 010", "one for each of the 4 gears"),
         (4, "0100 0000", "turns the other way"),
         (4, "", "Give the card"),
@@ -261,3 +262,34 @@ def test_your_own_lace_ring_may_have_as_many_gears_as_the_largest_machines():
                 "cycles": 1,
             }
         )
+
+
+def test_a_card_by_gear_names_is_the_card_in_digits():
+    """The gears each step turns, a step after another: the same machine as
+    the card in 0 and 1."""
+    digits = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 4,
+            "card": "1000 0100 0010 0001",
+            "iterations": 0,
+        }
+    )
+    names = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 4,
+            "card": "A B / C D",
+            "iterations": 0,
+        }
+    )
+    assert names["info"]["word"] == digits["info"]["word"]
+
+
+def test_bobbins_are_named_by_gears_past_z():
+    """On a ring of 30 gears, notch Z-AA and gear AB's first slot."""
+    from braidpy.web.machines import _lace_threading
+
+    assert _lace_threading("Z-AA AB:0 AD-A", 30) == [25, 27, 29]

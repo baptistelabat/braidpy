@@ -255,3 +255,43 @@ def test_a_card_as_typed_is_read_back():
     )
     with pytest.raises(ValueError, match="two groups"):
         read_card("0101", 4)
+
+
+def test_gears_are_named_as_spreadsheet_columns():
+    from braidpy.making.lace import gear_name, gear_number
+
+    assert [gear_name(g) for g in (0, 25, 26, 51, 52, 71)] == [
+        "A",
+        "Z",
+        "AA",
+        "AZ",
+        "BA",
+        "BT",
+    ]
+    assert all(gear_number(gear_name(g)) == g for g in range(200))
+    assert gear_number("ab") == 27
+
+
+def test_a_card_is_written_by_the_gears_each_step_turns():
+    """Far shorter than its digits, and read back the same; a step turning
+    no gear is -."""
+    from braidpy.making.lace import card_digits, card_names, read_card
+
+    card = lace_card(Braid((1, -2, 3, -1) * 3, 4), n_gears=8)
+    names = card_names(card.steps)
+    assert read_card(names, 8) == [tuple(map(tuple, s)) for s in card.steps]
+    assert len(names) < len(card_digits(card.steps)) / 2
+    assert card_names([((False,) * 4, (False,) * 4)]) == "-"
+    assert read_card("- / A", 4)[0] == ((False,) * 4, (False,) * 4)
+    assert card.spec()["card"] == names
+
+
+def test_a_punchcard_past_26_gears_keeps_its_columns():
+    """Gears AA and on: every column as wide as the longest name, each punch
+    under its gear's name."""
+    from braidpy.making.lace import punchcard_text
+
+    turning = tuple(g == 27 for g in range(30))
+    text = punchcard_text([(turning, (False,) * 30)])
+    header, anticlockwise = text.splitlines()[:2]
+    assert header.index("AB") == anticlockwise.index("●")

@@ -112,9 +112,14 @@ The studio has a form and a 3D view.
   ({func}`~braidpy.making.lace.ring_braid`), and the card is in the notes,
   as punched. The gears and the card of the machine chosen are shown, ready
   to change, as a sinnet's moves are: **Your own card…** takes an even
-  number of gears and a card typed a step a line, the gears turning
-  anticlockwise then those turning clockwise, a 0 or 1 a gear —
-  `1000 0100`. A card that cannot drive the machine says why, in the panel.
+  number of gears, up to 72, and a card: the gears each step turns, by
+  name, a step after another with `/` between — `A C / B / -`, `-` a step
+  turning none, and after Z, AA, AB… — or a step a line in 0 and 1, the
+  gears turning anticlockwise then those turning clockwise, a digit a gear
+  — `1010 0100`. The card is written in the address by gear names, far
+  shorter than its digits; the punched card, ● and ○, is in the notes, to
+  copy or download. A card that cannot drive the machine says why, in the
+  panel.
 - A machine can braid round a **core**: its own, as soutache braids round
   its cords, or, for a ring of gears — a tubular machine, a lace machine of
   six gears or more — one down the hole the ring encloses

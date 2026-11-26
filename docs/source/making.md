@@ -82,6 +82,13 @@ card.threading()  # where each strand's bobbin goes
 lace_braid(card) == plait  # True: the card run on the machine
 ```
 
+The gears are named A, B… Z, then AA, AB…, as a spreadsheet names its
+columns ({func}`~braidpy.making.lace.gear_name`); a notch by the two gears
+that cut it, `A-B`. A card is written, in a link and as Braid Studio takes
+it, by the gears each step turns, `/` between steps
+({func}`~braidpy.making.lace.card_names`): a gear always turns its own way,
+so its name says which half of the step it turns in. It is read back so,
+or as 0 and 1, a digit a gear ({func}`~braidpy.making.lace.read_card`).
 A step of the card is two lines over the gears, as the machine reads it:
 those to turn anticlockwise, then those to turn clockwise, the second half
 a punch to the right of the first, as it is driven half a step later and as

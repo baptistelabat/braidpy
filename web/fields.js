@@ -212,7 +212,7 @@ const FIELDS = {
       label: "Punchcard",
       kind: "textarea",
       custom: true,
-      hint: "A step a line: the gears turning anticlockwise, then those turning clockwise, a 0 or 1 for each gear from A, for example 1000 0100. A, C, E… turn anticlockwise, B, D, F… clockwise, and two neighbours never turn on the same line. Change it to make your own: the one chosen stays as it is.",
+      hint: "The gears each step turns, a step after another with / between, for example A C / B / -: A, C, E… turn anticlockwise, first, then B, D, F… clockwise; - is a step turning none, and after Z come AA, AB… Or a step a line in 0 and 1, a digit a gear from A: the gears turning anticlockwise, then those turning clockwise, for example 1010 0100. Change it to make your own: the one chosen stays as it is.",
     },
     {
       name: "carriers",
