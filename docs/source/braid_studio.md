@@ -255,7 +255,8 @@ The studio has a form and a 3D view.
   the braid: its strands; after how many of its words or cycles it is pure
   — every strand back where it started — how many were made, and so
   whether it is; its crossings and word (its ring word too, for a disk
-  braid), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
+  braid, and a shorter word for the same braid when one is found:
+  {doc}`braid_algebra`, *Shortening a word*), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
   normal form and full twists, how close the yarns come.
   Long words show three lines; **Make from it** makes the braid again from
   its own word or ring word, as a braid word — the same braid, made on the
@@ -265,8 +266,8 @@ The studio has a form and a 3D view.
   **Nearest braids** the braids of the catalogues most like it, whatever
   makes them, each with how unlike it is; your own braid too, found by its
   fingerprint ({doc}`comparing_braids`). Each is a link that makes it. And
-  **Make it as…** gives the braid made other ways ({doc}`making`): its
-  moves on a kumihimo disk, to make; a lace machine's punchcard, to make,
+  **Make it as…** gives the braid made other ways ({doc}`making`), from
+  its word shortened: its moves on a kumihimo disk, to make; a lace machine's punchcard, to make,
   copy or download; and, when asked, a sinnet on Ashley's stand, to make. The
   braid is drawn in the middle of what the card leaves free.
 - A braid word or ring word is made on the marudai hanging free, as a disk

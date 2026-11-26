@@ -33,7 +33,9 @@ def test_the_plait_shown_as_a_disk_and_a_lace_card():
     )
     assert same_braid(disk_braid(moves), Braid((1, -2), 3))
     lace = shown["lace"]
-    assert lace["gears"] == 4 and lace["threading"] == "A-B B-C C-D"
+    # Begun a notch along, every crossing on a gear of its sign.
+    assert lace["gears"] == 4 and lace["threading"] == "B-C C-D D-A"
+    assert lace["steps"] == 2
     # The gears named, then two lines a step: anticlockwise, then clockwise.
     assert len(lace["card"].splitlines()) == 1 + 2 * lace["steps"]
 

@@ -56,7 +56,8 @@ def test_the_lace_machines_are_a_source_of_their_own():
 def test_a_lace_machine_is_drawn_and_turned_by_hand():
     shape = machine_geometry("lace_plait")
     assert len(shape["gears"]) == 4
-    assert shape["loading"] == [["A", 0], ["B", 0], ["C", 0]]
+    # Threaded a notch along, every crossing on a gear of its sign.
+    assert shape["loading"] == [["B", 0], ["C", 0], ["D", 0]]
     turned = machine_turned("lace_plait", shape["loading"], 4)
     assert turned["time"] == 4 and turned["met"] == []
 

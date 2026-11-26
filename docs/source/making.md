@@ -89,15 +89,46 @@ the machine's animation draws it. A gear always
 turns the same way, and neighbours turn opposite ways, so which bobbin
 passes over is fixed by where the crossing is made: an anticlockwise gear
 makes a positive crossing, a clockwise one a negative one. A braid word's
-crossings come with any signs, anywhere, so the strands are kept side by
-side with a notch to spare; when a crossing's sign is not its gear's, they
-all move along one notch, into the spare one, crossing nobody, and every
-gear under them is then of the other way. They only ever move between two
-neighbouring positions, keeping off the ring's seam as a word's strands do
-(see above), and end where they began, as a punchcard is run round and
-round. The Dutch braid, whose signs
-alternate as the gears do, needs no moving; the plait moves along at the
-start and back at the end.
+crossings come with any signs, anywhere, so the ring has notches to spare:
+before each crossing its two strands are brought, through the empty
+notches between and beside them, to two notches whose gear turns the way
+of its sign, crossing nobody, and only they move, only if they must; where
+both are hemmed in, the strands beside are pushed towards the nearest empty
+notch. The strands keep their order, keep off the ring's seam as a word's
+strands do (see above), and end in the notches they began in, as a
+punchcard is run round and round. Each move is made in the first step
+after the last that used its notches, so moves of strands apart are made
+at once. The Dutch braid, whose signs alternate as the gears do, needs no
+moving; the plait, on four gears, moves along at the start and back at
+the end.
+
+Spare notches cost gears but save steps. With one, every strand between a
+pair and the spare notch moves for each sign that does not suit: the book's
+#3047, 94 crossings of 19 strands, took 1787 steps so. With a notch beside
+each strand only the pair moves: 121 steps, on 38 gears. Where the strands
+begin matters too: begun a notch along, every crossing of the plait falls
+on a gear of its sign, and it takes a step a crossing without moving at
+all. So the strands are tried packed together from every notch, spread a
+notch apart, and spread evenly round the ring, on each number of gears from
+the fewest to two a strand (or on those asked for). Then a search, on the
+numbers of gears that did best: the crossings taken in other orders, where
+they commute; the strands begun anywhere; a crossing now and then made at
+the next nearest gear of its sign. It is seeded, so a braid always has the
+same card, and kept to a few hundred tries, a fraction of a second. The
+card of fewest steps is kept, of fewest gears if two tie. Braid Studio
+shortens the word first ({doc}`braid_algebra`, *Shortening a word*): fewer
+crossings, fewer moves.
+
+How near the fewest steps there are? No card can take fewer steps than the
+longest chain of crossings each waiting for the last, and a strand crossing
+two strands one after the other the same way and with the same sign must
+move a notch between, its two gears being of the same way, so must wait a
+step more. On the small braids of the catalogue, every turn of every gear
+tried shows the card found is the fewest there are; on the book's sinnets,
+with a notch beside each strand, it is within a few steps of that bound
+(#3047: 121, the bound 119; #3072: 168 and 166). With fewer gears than two a
+strand, it takes far more (#3047 on 20 gears: about 270), and how many fewer
+it could take is not known: the bound counts no strand hemmed in.
 
 The card is checked on the machine itself
 ({func}`~braidpy.making.lace.lace_braid`): it is run, after each step every

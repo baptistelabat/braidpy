@@ -51,6 +51,7 @@ export function describe(result, seconds) {
     ],
     ["Full twists", info.garside && info.garside.full_twists],
     ["Word", info.word, { layout: "row" }],
+    ["Shorter word", info.shorter_word, { layout: "row" }],
     ["Ring word", info.annular_word, { layout: "ring" }],
     [
       "Closest yarns",

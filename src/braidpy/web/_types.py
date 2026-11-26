@@ -101,6 +101,9 @@ class Info(TypedDict, total=False):
 
     n_strands: int
     word: str
+    # The same braid in fewer crossings, if a shorter word is found
+    # (Braid.shortened).
+    shorter_word: str
     annular_word: str
     crossings: int
     exponent_sum: int
