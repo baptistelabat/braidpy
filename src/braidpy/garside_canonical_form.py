@@ -10,11 +10,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    # math_braid imports sympy, slow to import: only named here for types.
-    from math_braid.canonical_factor import CanonicalFactor
 
 from braidpy.utils import PositiveInt, StrictlyPositiveInt
 
@@ -29,8 +24,6 @@ class GarsideCanonicalFactors:
 
     Attributes:
         n_half_twist (int): The exponent of the Garside element Δ (number of half-twists).
-            From :meth:`~braidpy.braid.Braid.get_band_canonical_factors` it
-            is instead the band generators' δ, a ``1/n_strands`` turn.
         n_strands (int): The number of strands in the braid.
         Ai (Tuple[int]): The sequence of simple elements (as indices or identifiers). Also known as Garside generators.
             From :func:`artin_left_normal_form`, each is a permutation: ``A[j]`` is where strand j ends.
@@ -38,7 +31,7 @@ class GarsideCanonicalFactors:
 
     n_half_twist: int
     n_strands: StrictlyPositiveInt
-    Ai: tuple[CanonicalFactor | tuple[int, ...], ...]
+    Ai: tuple[tuple[int, ...], ...]
 
     @property
     def dehornoy_floor(self) -> int:

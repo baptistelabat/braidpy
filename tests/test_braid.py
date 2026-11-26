@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import pytest
-from math_braid.canonical_factor import CanonicalFactor
 from sympy import Matrix, symbols
 
 from braidpy import Braid
@@ -218,25 +217,6 @@ class TestBraid:
         assert f.n_strands == 3
         assert [permutation_word(a) for a in f.Ai] == [[1], [1, 2]]
 
-    def test_band_canonical_form(self):
-        """math_braid's own form: band generators, whose twist is δ."""
-        f = Braid([2, -1]).get_band_canonical_factors()
-        assert isinstance(f.Ai[0], CanonicalFactor)
-        assert f.Ai[0].array_form == [
-            1,
-            0,
-            2,
-        ]  # This describes the permutation of first and second strands
-        assert f.Ai[1].array_form == [
-            0,
-            2,
-            1,
-        ]  # This describes the permutation of second and third strands
-        assert f.n_half_twist == -1
-        # A full twist on three strands is three of its δ.
-        full = Braid([1, -1], n_strands=3).full_twist()
-        assert full.get_band_canonical_factors().n_half_twist == 3
-
     def test_canonical_form_is_the_braid_and_only_it(self):
         """Δ^k · A_1 ⋯ A_r spells the braid, and equal braids spell it alike."""
         import random
@@ -268,9 +248,9 @@ class TestBraid:
     def test_canonical_form_counts_half_twists(self):
         """n_half_twist is the number of half twists Δ in front, as documented.
 
-        It used to be the exponent of math_braid's band generator twist δ, a
-        1/n turn: a full twist read as n_strands rather than 2, and a single
-        half twist as 1 with factors still after it.
+        It used to be the exponent of math_braid's twist δ, a 1/n turn of
+        the band generators' form: a full twist read as n_strands rather
+        than 2, and a single half twist as 1 with factors still after it.
         """
         for n in (2, 3, 4, 5):
             half = Braid([1, -1], n_strands=n).half_twist()
@@ -387,16 +367,6 @@ class TestBraid:
                 assert changed.is_trivial() == (
                     not math_braid.Braid(list(changed.generators), n)
                 )
-
-    def test_the_band_form_asks_for_its_extra(self, monkeypatch):
-        """math_braid is an extra: without it, the band form says how to
-        get it, and nothing else needs it."""
-        import sys
-
-        monkeypatch.setitem(sys.modules, "math_braid", None)
-        with pytest.raises(ImportError, match=r"braidpy\[band\]"):
-            Braid([2, -1]).get_band_canonical_factors()
-        assert Braid([1, 2, -1, -2, 1, -1, 2, 1, -2, -1], 3).is_trivial()
 
     @pytest.mark.slow
     def test_a_long_braid_of_many_strands_is_decided_by_its_normal_form(self):

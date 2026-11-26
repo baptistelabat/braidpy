@@ -234,7 +234,6 @@ Releases are on PyPI:
 ```bash
 pip install braidpy        # or: uv add braidpy, poetry add braidpy
 pip install "braidpy[viz]" # with what it draws with: matplotlib, plotly
-pip install "braidpy[band]" # with math-braid, for the band generator normal form
 ```
 
 braidpy alone computes everything; drawing braids (diagrams, 3D plots,

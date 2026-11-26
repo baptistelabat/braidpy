@@ -592,41 +592,6 @@ class Braid:
         k, factors = artin_left_normal_form(self.generators, n)
         return GarsideCanonicalFactors(n_half_twist=k, n_strands=n, Ai=factors)
 
-    def get_band_canonical_factors(self) -> GarsideCanonicalFactors:
-        """
-        Get decomposition in the Birman–Ko–Lee (band generator) left normal form
-
-        Relies on math_braid implementation (an extra, ``braidpy[band]``) from J. Cha et al, "An Efficient Implementation of Braid Groups",
-        Advances in Cryptology: Proceedings of ASIACRYPT 2001,
-        Lecture Notes in Computer Science (2001), 144--156.
-        https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
-
-        Not Artin's form: the twist in front is the band generators' δ, a
-        ``1/n_strands`` turn of every strand together, so ``n_half_twist``
-        here counts those rather than half twists — a full twist is
-        ``n_strands`` of them — and the factors are math_braid's.
-
-        Returns:
-            GarsideCanonicalFactors: the band generator decomposition
-        """
-        br = self.no_zero()
-        if br.generators:
-            try:
-                import math_braid
-            except ImportError as missing:
-                raise ImportError(
-                    "The band generator form is math_braid's: pip install "
-                    "'braidpy[band]'."
-                ) from missing
-
-            b = math_braid.Braid(list(self.generators), self.n_strands)
-            b.cleanUpFactors()
-            return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, Ai=b.a)
-        else:
-            return GarsideCanonicalFactors(
-                n_half_twist=0, n_strands=StrictlyPositiveInt(br.n_strands), Ai=()
-            )
-
     def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
 

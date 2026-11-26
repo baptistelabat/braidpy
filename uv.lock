@@ -139,9 +139,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-band = [
-    { name = "math-braid" },
-]
 mcp = [
     { name = "mcp" },
 ]
@@ -155,9 +152,10 @@ viz = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "braidpy", extra = ["band", "viz"] },
+    { name = "braidpy", extra = ["viz"] },
     { name = "coverage", version = "7.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "coverage", version = "7.17.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "math-braid" },
     { name = "monkeytype" },
     { name = "mypy" },
     { name = "myst" },
@@ -177,7 +175,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "imageio", marker = "extra == 'viz'", specifier = ">=2.37.2" },
-    { name = "math-braid", marker = "extra == 'band'", specifier = ">=0.8,<0.9" },
     { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.7.5" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2" },
     { name = "networkx", specifier = ">=3.4.2" },
@@ -185,12 +182,13 @@ requires-dist = [
     { name = "plotly", marker = "extra == 'viz'", specifier = ">=6.1.2" },
     { name = "sympy", specifier = ">=1.14.0" },
 ]
-provides-extras = ["viz", "mcp", "band"]
+provides-extras = ["viz", "mcp"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "braidpy", extras = ["viz", "band"] },
+    { name = "braidpy", extras = ["viz"] },
     { name = "coverage", specifier = ">=7.8.2" },
+    { name = "math-braid", specifier = ">=0.8,<0.9" },
     { name = "monkeytype", specifier = ">=23.3.0" },
     { name = "mypy", specifier = ">=1.16.0" },
     { name = "myst", specifier = ">=1.0.4" },

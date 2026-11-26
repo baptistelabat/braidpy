@@ -219,12 +219,13 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- `Braid.get_band_canonical_factors`, the Birman–Ko–Lee (band generator)
+  normal form, is removed: math-braid's, and used by nothing in braidpy.
+  Artin's normal form (`get_canonical_factors`) is braidpy's own.
 - braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
   braid's triviality, and so `==`, falls back on braidpy's own Garside
   normal form when handle reduction takes too long, and the page no longer
-  installs it. Only the band generator form
-  (`Braid.get_band_canonical_factors`) uses it, as an extra:
-  `pip install "braidpy[band]"`. The normal form
+  installs it; the tests still check braidpy against it. The normal form
   (`artin_left_normal_form`, `left_weighted`) is the same, worked out
   another way: the half twists kept at the word's end, each factor made
   left-weighted with those before it in one pass back, the crossings each
