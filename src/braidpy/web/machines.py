@@ -95,39 +95,13 @@ def _machine(name: str) -> Any:
     return made.machine() if isinstance(made, LaceRing) else made
 
 
-def _read_card(text: str, n_gears: int) -> list[tuple[str, str]]:
-    """A card as typed: groups of 0 and 1, a digit a gear, taken two by two
-    — the gears turning anticlockwise, then clockwise — however the steps
-    are laid out on lines."""
-    groups = re.findall(r"\S+", text)
-    for group in groups:
-        if not re.fullmatch(r"[01]+", group):
-            raise ValueError(
-                f"Cannot read {group!r}: a card is 0 and 1, a digit a gear."
-            )
-        if len(group) != n_gears:
-            raise ValueError(
-                f"{group!r} has {len(group)} digits: give one for each of the "
-                f"{n_gears} gears."
-            )
-    if not groups:
-        raise ValueError(
-            "Give the card: per step, the gears turning anticlockwise, then clockwise."
-        )
-    if len(groups) % 2:
-        raise ValueError(
-            "A step is two groups: the gears turning anticlockwise, then those "
-            "turning clockwise."
-        )
-    return [(groups[k], groups[k + 1]) for k in range(0, len(groups), 2)]
-
-
 def _own_lace(spec: Spec) -> Any:
     """A lace machine of your own: its gears, an even number, and its card."""
     from braidpy.horn_gear.jacquard import jacquard_lace_ring
+    from braidpy.making.lace import read_card
 
     n_gears = _own_gears(spec)
-    return jacquard_lace_ring(n_gears, _read_card(Lace.card.read(spec), n_gears))
+    return jacquard_lace_ring(n_gears, read_card(Lace.card.read(spec), n_gears))
 
 
 def _own_machine(spec: Spec) -> Any:
@@ -482,14 +456,12 @@ def _lace_card(spec: Spec) -> tuple[str, int, list[Any], list[int] | None]:
     notches threaded, strand after strand (every one if None).  Read without
     building the machine."""
     from braidpy.machine_catalog import LACE
+    from braidpy.making.lace import read_card
 
     name = Lace.name.read(spec)
     if name == OWN:
         n_gears = _own_gears(spec)
-        steps = [
-            (tuple(c == "1" for c in ccw), tuple(c == "1" for c in cw))
-            for ccw, cw in _read_card(Lace.card.read(spec), n_gears)
-        ]
+        steps = read_card(Lace.card.read(spec), n_gears)
         threaded: list[int] | None = None
         title = f"Your own card, {n_gears} gears"
     elif name in LACE:

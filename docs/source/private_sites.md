@@ -125,7 +125,11 @@ MACHINES = {
 }
 ```
 
-with `packages = ["designer"]` in the profile. Its machines are listed after
+with `packages = ["designer"]` in the profile. A lace machine is added the
+same way, under the name `lace_machines`, as a dict of `Entry` making a
+`braidpy.machine_catalog.LaceRing`: its gears, its card (a card typed as
+Braid Studio takes it is read by `braidpy.making.lace.read_card`) and the
+notches threaded. Its machines are listed after
 braidpy's, as if braidpy had them: shown, made, premade, catalogued by
 topology. A name braidpy has already is refused. The package imports from
 braidpy what its braids need, but not the catalogue it adds to, which

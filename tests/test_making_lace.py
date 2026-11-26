@@ -240,3 +240,18 @@ def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
     found = card_conjugate(braid)
     assert same_braid(found, braid)
     assert len(lace_card(found).steps) < 0.7 * len(lace_card(braid).steps)
+
+
+def test_a_card_as_typed_is_read_back():
+    """A card written as Braid Studio takes it is read back step for step,
+    however its steps are laid out on lines."""
+    from braidpy.making.lace import card_digits, read_card
+
+    card = lace_card(Braid((1, -2, 3, -1), 4))
+    typed = card_digits(card.steps)
+    assert read_card(typed, card.n_gears) == [tuple(map(tuple, s)) for s in card.steps]
+    assert read_card(typed.replace("\n", " "), card.n_gears) == read_card(
+        typed, card.n_gears
+    )
+    with pytest.raises(ValueError, match="two groups"):
+        read_card("0101", 4)

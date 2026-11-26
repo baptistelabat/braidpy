@@ -5,6 +5,8 @@
 """A braid as a sinnet on Ashley's stand, found by searching:
 braidpy.making.ashley."""
 
+import math
+
 import pytest
 
 from braidpy import Braid
@@ -324,6 +326,60 @@ def test_a_shape_on_a_grid_is_drawn_as_the_book_draws_it():
     assert on_grid.moves == sinnet_from_shape(oblong(10, 2)).moves
 
 
+def test_a_skewed_shape_without_its_halfway_lines_is_the_square_one():
+    """Skewed, a shape keeps its lines' order round the outline: without
+    the lines halfway, it makes the square grid's sinnet."""
+    from braidpy.making.ashley import grid_outline, grid_shape, sinnet_from_shape
+
+    for shape, size, height in (("oblong", 3, 5), ("L", 5, 2), ("frame", 6, 2)):
+        square, *square_holes = grid_outline(
+            "square", grid_shape("square", shape, size, height)
+        )
+        skew, *skew_holes = grid_outline(
+            "skew", grid_shape("skew", shape, size, height)
+        )
+        assert (
+            sinnet_from_shape(skew, holes=skew_holes).moves
+            == sinnet_from_shape(square, holes=square_holes).moves
+        )
+
+
+@pytest.mark.parametrize("size, height", [(2, 2), (3, 5), (4, 6), (3, 8), (6, 3)])
+def test_lines_halfway_end_between_the_others_and_cross_one(size, height):
+    """A parallelogram of a by b lines has a + b - 2 more halfway between
+    their crossings, the two at its corners crossing nothing left out:
+    each meets the outline between two lines' ends, and crosses a line."""
+    from braidpy.making.ashley import (
+        _crossing,
+        grid_halfway,
+        grid_outline,
+        grid_shape,
+        shape_lines,
+    )
+
+    (outline,) = grid_outline("skew", grid_shape("skew", "oblong", size, height))
+    lines = shape_lines(outline, halfway=grid_halfway("skew"))
+    halfway = [
+        line for line in lines if line.direction == max(ln.direction for ln in lines)
+    ]
+    others = [line for line in lines if line not in halfway]
+    assert (len(others), len(halfway)) == (size + height, size + height - 2)
+    ends = {end for line in others for end in line.ends}
+    for line in halfway:
+        assert not any(
+            math.dist(end, other) < 1e-6 for end in line.ends for other in ends
+        )
+        assert any(_crossing(line, other) for other in others)
+
+
+def test_lines_halfway_need_lines_two_ways():
+    """Halfway between the crossings of a triangle's three ways: no."""
+    from braidpy.making.ashley import shape_lines
+
+    with pytest.raises(ValueError, match="two ways"):
+        shape_lines(triangle(3), halfway=0.0)
+
+
 def test_a_line_is_cut_where_the_outline_turns_back():
     """Across a U, a line through both arms is two lines, one an arm."""
     from braidpy.making.ashley import grid_outline, shape_lines
@@ -408,6 +464,7 @@ def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
     from braidpy.making.ashley import (
         _drawn,
         corner_spaces,
+        grid_halfway,
         grid_lines,
         grid_outline,
         grid_shape,
@@ -422,7 +479,8 @@ def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
     )
     outline, *holes = grid_outline(grid, cells)
     across = grid_lines(grid)
-    corners = corner_spaces(outline, holes, across)
+    halfway = grid_halfway(grid)
+    corners = corner_spaces(outline, holes, across, halfway)
     n = len(book.initial_counts_per_space)
     made = sinnet_from_shape(
         outline,
@@ -430,6 +488,7 @@ def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
         order=str(drawn.get("order", "book")),
         holes=holes,
         across=across,
+        halfway=halfway,
     )
     assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])
     if drawn["makes"]:

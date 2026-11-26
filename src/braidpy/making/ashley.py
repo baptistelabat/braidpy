@@ -67,6 +67,7 @@ __all__ = [
     "cell_outline",
     "corner_spaces",
     "grid_across",
+    "grid_halfway",
     "grid_lines",
     "grid_outline",
     "grid_shape",
@@ -257,12 +258,15 @@ def shape_lines(
     outline: Sequence[tuple[float, float]],
     holes: Sequence[Sequence[tuple[float, float]]] = (),
     across: Optional[Sequence[float]] = None,
+    halfway: Optional[float] = None,
 ) -> list[ShapeLine]:
     """The lines Ashley draws across a shape: parallel to each side, the
     first ``FIRST_LINE`` in from it, the others a spacing on, as many as fit
     strictly inside.  Parallel sides share their lines.  Where the outline
     turns back, as round the arms of an L or a U, or round a hole, a line
-    is cut in pieces, each a line of its own.
+    is cut in pieces, each a line of its own.  With ``halfway``, a third
+    way too, halfway between the crossings of the other two
+    (:func:`_halfway_lines`), as in #3078.
 
     Args:
         outline: The shape's corners, anticlockwise, in spacings: any
@@ -271,11 +275,24 @@ def shape_lines(
         across: Directions, as angles, to draw the lines in instead, a
             spacing apart through the origin, as on a grid whose outline
             may run on a slant (:func:`grid_lines`); none if None.
+        halfway: The direction, as an angle, of lines drawn halfway
+            between the crossings of the others, which run two ways
+            (:func:`grid_halfway`); none if None.
 
     Returns:
-        The lines, by direction, then from the side inwards.
+        The lines, by direction, then from the side inwards; those halfway
+        last.
     """
     loops = _loops(outline, holes)
+    lines = _lines(loops, across)
+    if halfway is not None:
+        lines += _halfway_lines(loops, lines, halfway)
+    return lines
+
+
+def _lines(loops, across) -> list[ShapeLine]:
+    """The lines parallel to the sides, or in each direction ``across``
+    (:func:`shape_lines`)."""
     corners = loops[0]
     sides = _sides(loops)
     if across is not None:
@@ -310,6 +327,90 @@ def shape_lines(
                 )
             distance += 1
     return [lines[key] for key in sorted(lines)]
+
+
+def _halfway_lines(loops, lines: list[ShapeLine], angle: float) -> list[ShapeLine]:
+    """Lines in the direction ``angle``, each halfway between two crossings
+    of the others, which run two ways, and its ends moved on round the
+    outline half the way to the next line's end: Ashley's third way across
+    #3078, a parallelogram of two triangles base to base, his lines
+    parallel to its sides and between them along its short diagonal.  So
+    moved, each meets the outline between two lines' ends, a bight with
+    one, rather than at a line's end; those that would cross no line, at
+    the corners, are left out.
+
+    Args:
+        loops: The shape's outline and its holes' (:func:`_loops`).
+        lines: The lines, two ways.
+        angle: Their direction.
+
+    Returns:
+        The lines halfway, their direction one more than the others'.
+
+    Raises:
+        ValueError: If the lines do not run two ways.
+    """
+    ways = sorted({line.direction for line in lines})
+    if len(ways) != 2:
+        raise ValueError("Lines halfway between crossings need lines two ways.")
+    first, second = (next(ln for ln in lines if ln.direction == w) for w in ways)
+    p, u = _start_along(first)
+    q, v = _start_along(second)
+    t, _ = np.linalg.solve(np.array([u, -v]).T, q - p)
+    crossing = p + t * u
+    # From a crossing to the next along a line, and so between two lines'
+    # ends on a side parallel to either.
+    step = 1 / abs(_cross2(u, v))
+    along = np.array([math.cos(angle), math.sin(angle)])
+    normal = np.array([-along[1], along[0]])
+    gap = abs(float(np.dot(u * step, normal)))
+    middle = float(np.dot(crossing, normal)) + gap / 2
+    reach = np.concatenate(loops) @ normal
+    sides = _sides(loops)
+    direction = ways[-1] + 1
+    halfway = []
+    for k in range(
+        math.floor((reach.min() - middle) / gap),
+        math.ceil((reach.max() - middle) / gap) + 1,
+    ):
+        for ends in _pieces(sides, normal * (middle + k * gap), along):
+            moved = tuple(_point(_moved_on(loops, end, step / 2)) for end in ends)
+            line = ShapeLine((moved[0], moved[1]), direction)
+            if any(_crossing(line, other) for other in lines):
+                halfway.append(line)
+    return halfway
+
+
+def _start_along(line: ShapeLine) -> tuple[np.ndarray, np.ndarray]:
+    """A line's first end, and the way along it, a unit vector."""
+    start, end = (np.asarray(e, dtype=float) for e in line.ends)
+    return start, (end - start) / np.linalg.norm(end - start)
+
+
+def _crossing(first: ShapeLine, second: ShapeLine) -> bool:
+    """Whether two lines cross, inside the shape, not at an end."""
+    p, q = (np.asarray(e, dtype=float) for e in first.ends)
+    r, t = (np.asarray(e, dtype=float) for e in second.ends)
+    matrix = np.array([q - p, r - t]).T
+    if abs(np.linalg.det(matrix)) < SAME_POINT:
+        return False
+    a, b = np.linalg.solve(matrix, r - p)
+    return bool(SAME_POINT < a < 1 - SAME_POINT and SAME_POINT < b < 1 - SAME_POINT)
+
+
+def _moved_on(loops, point, distance: float) -> np.ndarray:
+    """A point on a shape's outline, or a hole's, moved so far on round it,
+    the way it runs."""
+    loop, travelled, _ = _round_the_outline(loops, np.asarray(point, dtype=float))
+    corners = loops[loop]
+    edges = list(zip(corners, np.roll(corners, -1, axis=0)))
+    left = (travelled + distance) % sum(float(np.linalg.norm(b - a)) for a, b in edges)
+    for a, b in edges:
+        length = float(np.linalg.norm(b - a))
+        if left <= length:
+            return a + (b - a) * left / length
+        left -= length
+    return corners[0]
 
 
 def _point(xy) -> tuple[float, float]:
@@ -506,6 +607,7 @@ def shape_diagram(
     outline: Sequence[tuple[float, float]],
     holes: Sequence[Sequence[tuple[float, float]]] = (),
     across: Optional[Sequence[float]] = None,
+    halfway: Optional[float] = None,
 ) -> tuple[list[ShapeLine], list[tuple[int, int]], list[tuple[float, float]]]:
     """Ashley's diagram of a shape: its lines (:func:`shape_lines`), the two
     spaces each joins, and where each bight is, space 1 first
@@ -515,11 +617,13 @@ def shape_diagram(
         outline: The shape's corners, anticlockwise, in spacings.
         holes: The corners of each hole in it, clockwise.
         across: The lines' directions, if not the sides' (:func:`shape_lines`).
+        halfway: The direction of lines halfway between the others'
+            crossings, if any (:func:`shape_lines`).
 
     Returns:
         The lines, the spaces each joins, and the bights.
     """
-    lines = shape_lines(outline, holes, across)
+    lines = shape_lines(outline, holes, across, halfway)
     bights, joins = _spaces(_loops(outline, holes), lines)
     return lines, joins, bights
 
@@ -683,6 +787,7 @@ def corner_spaces(
     outline: Sequence[tuple[float, float]],
     holes: Sequence[Sequence[tuple[float, float]]] = (),
     across: Optional[Sequence[float]] = None,
+    halfway: Optional[float] = None,
 ) -> list[int]:
     """The spaces at a shape's corners, where the book adds strands to
     sharpen its edges: each bight turning a corner, its two lines ending on
@@ -694,11 +799,13 @@ def corner_spaces(
         outline: The shape's corners, anticlockwise, in spacings.
         holes: The corners of each hole in it, clockwise.
         across: The lines' directions, if not the sides' (:func:`shape_lines`).
+        halfway: The direction of lines halfway between the others'
+            crossings, if any (:func:`shape_lines`).
 
     Returns:
         The spaces, numbered as :func:`sinnet_from_shape` numbers them.
     """
-    lines, joins, _ = shape_diagram(outline, holes, across)
+    lines, joins, _ = shape_diagram(outline, holes, across, halfway)
     loops = _loops(outline, holes)
     sides: dict[int, set[int]] = {}
     for line, spaces in enumerate(joins):
@@ -747,6 +854,7 @@ def sinnet_from_shape(
     order: str = "book",
     holes: Sequence[Sequence[tuple[float, float]]] = (),
     across: Optional[Sequence[float]] = None,
+    halfway: Optional[float] = None,
 ) -> AshleySolidSinnet:
     """The sinnet the book's method makes of a shape.
 
@@ -782,6 +890,8 @@ def sinnet_from_shape(
             from the middle (:func:`shape_diagram`).
         across: The lines' directions, if not the sides', as on the
             diagonal grid (:func:`shape_lines`).
+        halfway: The direction of lines halfway between the others'
+            crossings, as on the skewed grid (:func:`shape_lines`).
 
     Returns:
         The sinnet.
@@ -789,7 +899,7 @@ def sinnet_from_shape(
     Raises:
         ValueError: If the lines cannot be made into moves in that order.
     """
-    lines, joins, bights = shape_diagram(outline, holes, across)
+    lines, joins, bights = shape_diagram(outline, holes, across, halfway)
     n = len(bights)
     corners = np.asarray(outline, dtype=float)
     first_side = corners[1] - corners[0]
@@ -993,14 +1103,16 @@ def triangle(lines_per_side: int) -> list[tuple[float, float]]:
 # The grids a shape is drawn on, its cells: squares, Ashley's lines running
 # across and up; squares cut on their diagonals, his lines across and up
 # but the outline free to run on a slant, as round a square standing on a
-# corner (#3073); or triangles, his lines in three directions a third of a
-# half turn apart.  Each way the lines run a spacing apart, through the
+# corner (#3073); triangles, his lines in three directions a third of a
+# half turn apart; or squares skewed into rhombs of two triangles base to
+# base, his lines along their sides and, a third way, halfway between their
+# crossings (#3078).  Each way the lines run a spacing apart, through the
 # grid's points, and the outline half a spacing beyond the cells.
-GRIDS = ("square", "diagonal", "triangle")
+GRIDS = ("square", "diagonal", "triangle", "skew")
 # The height of a row of triangles, a spacing, and so the side of one.
 TRIANGLE_SIDE = 2 / math.sqrt(3)
 
-# A cell: on the square grid, its bottom left point (i, j); on the diagonal
+# A cell: on the square and skewed grids, its bottom left point (i, j); on the diagonal
 # one, the same square's quarter cut off by its diagonals, 0 below, then 1,
 # 2, 3 anticlockwise; on the triangular one, the point (i, j) and 0 for the
 # triangle pointing up from it, 1 for the one pointing down beside it.
@@ -1015,15 +1127,29 @@ def _grid_point(grid: str, node: tuple[int, int]) -> np.ndarray:
         return np.array([float(i), float(j)])
     if grid == "diagonal":
         return np.array([i / 2, j / 2])
+    if grid == "skew":
+        return np.array([(i - j / 2) * TRIANGLE_SIDE, float(j)])
     return np.array([(i + j / 2) * TRIANGLE_SIDE, float(j)])
 
 
 def grid_across(grid: str) -> tuple[float, ...]:
     """The directions of Ashley's lines on a grid, as angles: across and up,
-    or a third of a half turn apart on the triangular grid."""
+    a third of a half turn apart on the triangular grid, and across and
+    two thirds of a half turn on the skewed grid, along its rhombs' sides
+    (and halfway between, :func:`grid_halfway`)."""
     if grid == "triangle":
         return (0.0, math.pi / 3, 2 * math.pi / 3)
+    if grid == "skew":
+        return (0.0, 2 * math.pi / 3)
     return (0.0, math.pi / 2)
+
+
+def grid_halfway(grid: str) -> float | None:
+    """The direction of the lines a grid draws halfway between the others'
+    crossings (:func:`shape_lines`'s ``halfway``): along its rhombs' short
+    diagonals on the skewed grid, a third of a half turn; None on the
+    others."""
+    return math.pi / 3 if grid == "skew" else None
 
 
 def grid_lines(grid: str) -> tuple[float, ...] | None:
@@ -1037,7 +1163,7 @@ def grid_lines(grid: str) -> tuple[float, ...] | None:
 
 def _cell_points(grid: str, cell: Cell) -> list[tuple[int, int]]:
     """A cell's corners, as grid points, anticlockwise."""
-    if grid == "square":
+    if grid in ("square", "skew"):
         i, j = cell
         return [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)]
     if grid == "diagonal":
@@ -1179,7 +1305,9 @@ def grid_shape(grid: str, name: str, size: int, height: int) -> list[Cell]:
         name: On the square grid, "oblong", ``size`` lines across and
             ``height`` up; "L" and "U", ``size`` lines across and up, their
             arms ``height`` thick; "frame", a hollow square, ``size``
-            lines across, its sides ``height`` thick.  On the diagonal
+            lines across, its sides ``height`` thick.  The same on the
+            skewed grid, skewed: #3078 is an oblong of 3 by 5, a
+            parallelogram.  On the diagonal
             grid, a "square" or an "oblong" standing on a corner, ``size``
             lines along its sides, and an oblong's ``height`` across:
             #3073 is a square of 6, #3074 of 8, #3075 an oblong of 10 by 2.
@@ -1195,6 +1323,7 @@ def grid_shape(grid: str, name: str, size: int, height: int) -> list[Cell]:
         raise ValueError("A shape on a grid is two lines or more each way.")
     shapes = {
         "square": {"oblong", "L", "U", "frame"},
+        "skew": {"oblong", "L", "U", "frame"},
         "diagonal": {"square", "oblong"},
         "triangle": {"triangle", "hexagon"},
     }
