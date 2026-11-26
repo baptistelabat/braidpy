@@ -75,6 +75,9 @@ __all__ = [
     "ConjugateSearch",
     "LaceCard",
     "card_conjugate",
+    "card_names",
+    "gear_name",
+    "gear_number",
     "lace_braid",
     "lace_card",
     "punchcard_text",
@@ -84,6 +87,10 @@ __all__ = [
     "step_floor",
 ]
 
+# Letters to name gears with, A to Z (gear_name), and how a card by gear
+# names writes a step that turns no gear (card_names).
+LETTERS = 26
+STILL = "-"
 # The most gears a card is tried on, for each strand: a notch spare beside
 # every strand, so that only a crossing's two strands ever move.
 MOST_GEARS_PER_STRAND = 2
@@ -209,10 +216,9 @@ class LaceCard:
         Returns:
             The notches threaded, strand after strand.
         """
-        names = [chr(ord("A") + g) for g in range(self.n_gears)]
         where = {k: place for place, k in enumerate(self.bobbins) if k is not None}
         return [
-            f"{names[where[k]]}-{names[(where[k] + 1) % self.n_gears]}"
+            f"{gear_name(where[k])}-{gear_name((where[k] + 1) % self.n_gears)}"
             for k in sorted(where)
         ]
 
@@ -235,7 +241,7 @@ class LaceCard:
             "source": "lace",
             "name": "custom",
             "n_gears": self.n_gears,
-            "card": card_digits(self.steps),
+            "card": card_names(self.steps),
             "carriers": " ".join(self.notches()),
             "cycles": cycles,
         }
@@ -259,12 +265,72 @@ def card_digits(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
     )
 
 
+def gear_name(gear: int) -> str:
+    """A lace ring's gear by name, as its card and its notches name it: A
+    to Z, then AA, AB… as a spreadsheet names its columns.
+
+    Args:
+        gear: The gear, from 0.
+
+    Returns:
+        Its name.
+    """
+    name = ""
+    gear += 1
+    while gear:
+        gear, letter = divmod(gear - 1, LETTERS)
+        name = chr(ord("A") + letter) + name
+    return name
+
+
+def gear_number(name: str) -> int:
+    """The gear a name names (:func:`gear_name`), from 0, whatever its case.
+
+    Args:
+        name: The name.
+
+    Returns:
+        The gear.
+
+    Raises:
+        ValueError: If the name is not letters.
+    """
+    if not re.fullmatch(r"[A-Za-z]+", name):
+        raise ValueError(f"{name!r} is not a gear: gears are named A, B… Z, AA, AB…")
+    gear = 0
+    for letter in name.upper():
+        gear = gear * LETTERS + ord(letter) - ord("A") + 1
+    return gear - 1
+
+
+def card_names(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
+    """A lace machine's card by the gears each step turns, as a link writes
+    it and Braid Studio takes it: a step after another, ``/`` between, its
+    gears by name, ``-`` for none.  A gear always turns its own way, so the
+    names say which line of the step each is on: A, C, E… anticlockwise,
+    first; B, D, F… clockwise, after.  Far shorter than its digits
+    (:func:`card_digits`), mostly 0.
+
+    Args:
+        steps: Per step, whether each gear turns anticlockwise, then
+            clockwise.
+
+    Returns:
+        The card.
+    """
+    return " / ".join(
+        " ".join(gear_name(g) for g in range(len(ccw)) if ccw[g] or cw[g]) or STILL
+        for ccw, cw in steps
+    )
+
+
 def read_card(
     text: str, n_gears: int
 ) -> list[tuple[tuple[bool, ...], tuple[bool, ...]]]:
-    """A card as it is typed (:func:`card_digits`): groups of 0 and 1, a
-    digit a gear, taken two by two — the gears turning anticlockwise, then
-    clockwise — however the steps are laid out on lines.
+    """A card as it is typed: by the gears each step turns
+    (:func:`card_names`), or as digits (:func:`card_digits`), groups of 0
+    and 1, a digit a gear, taken two by two — the gears turning
+    anticlockwise, then clockwise — however the steps are laid out on lines.
 
     Args:
         text: The card.
@@ -275,14 +341,13 @@ def read_card(
 
     Raises:
         ValueError: If a group is not of 0 and 1, a digit a gear, or the
-            groups do not make whole steps.
+            groups do not make whole steps; or a gear named is not on the
+            ring.
     """
     groups = re.findall(r"\S+", text)
+    if groups and not all(re.fullmatch(r"[01]+", group) for group in groups):
+        return _read_names(text, n_gears)
     for group in groups:
-        if not re.fullmatch(r"[01]+", group):
-            raise ValueError(
-                f"Cannot read {group!r}: a card is 0 and 1, a digit a gear."
-            )
         if len(group) != n_gears:
             raise ValueError(
                 f"{group!r} has {len(group)} digits: give one for each of the "
@@ -303,6 +368,29 @@ def read_card(
     ]
 
 
+def _read_names(
+    text: str, n_gears: int
+) -> list[tuple[tuple[bool, ...], tuple[bool, ...]]]:
+    """A card by the gears each step turns (:func:`read_card`)."""
+    steps = []
+    for step in text.strip().strip("/").split("/"):
+        turning = set()
+        for name in step.split():
+            if name == STILL:
+                continue
+            gear = gear_number(name)
+            if gear >= n_gears:
+                raise ValueError(f"No gear {name} on a ring of {n_gears} gears.")
+            turning.add(gear)
+        steps.append(
+            (
+                tuple(g in turning and g % 2 == 0 for g in range(n_gears)),
+                tuple(g in turning and g % 2 == 1 for g in range(n_gears)),
+            )
+        )
+    return steps
+
+
 def punchcard_text(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> str:
     """A lace machine's card as it is punched and as the machine's animation
     draws it (:func:`~braidpy.horn_gear.visualization.animate`): a column
@@ -315,19 +403,26 @@ def punchcard_text(steps: Sequence[tuple[Sequence[bool], Sequence[bool]]]) -> st
             clockwise.
 
     Returns:
-        The card, the gears named along the top.
+        The card, the gears named along the top (:func:`gear_name`), a
+        column as wide as the longest name: AA and on, past 26 gears.
     """
     n_gears = len(steps[0][0])
-    names = " ".join(chr(ord("A") + g) for g in range(n_gears))
+    names = [gear_name(g) for g in range(n_gears)]
+    column = max(map(len, names))
     width = len(str(len(steps) - 1))
-    lines = [f"{'':>{width}}    {names}"]
+    # The clockwise line half a column to the right.
+    half = " " * ((column + 1) // 2)
+
+    def row(marks: Sequence[str]) -> str:
+        return " ".join(mark.ljust(column) for mark in marks).rstrip()
 
     def punched(line: Sequence[bool]) -> str:
-        return " ".join("●" if on else "○" for on in line)
+        return row(["●" if on else "○" for on in line])
 
+    lines = [f"{'':>{width}}    {row(names)}"]
     for number, (ccw, cw) in enumerate(steps):
         lines.append(f"{number:>{width}} ↺  {punched(ccw)}")
-        lines.append(f"{'':>{width}} ↻   {punched(cw)}")
+        lines.append(f"{'':>{width}} ↻  {half}{punched(cw)}")
     return "\n".join(lines)
 
 

@@ -418,8 +418,9 @@ def _size_note(machine: Any, room: Any, bobbin_mm: float) -> str:
 def _notch_names(n_gears: int) -> dict[str, int]:
     """A lace ring's notches by name, ``A-B``, as its card names them: the
     notch gears A and B cut is notch 0, and so round."""
-    names = [chr(ord("A") + g) for g in range(n_gears)]
-    return {f"{names[k]}-{names[(k + 1) % n_gears]}": k for k in range(n_gears)}
+    from braidpy.making.lace import gear_name
+
+    return {f"{gear_name(k)}-{gear_name((k + 1) % n_gears)}": k for k in range(n_gears)}
 
 
 def _lace_threading(text: Any, n_gears: int) -> list[int] | None:
@@ -430,14 +431,16 @@ def _lace_threading(text: Any, n_gears: int) -> list[int] | None:
         return None
     if str(text).strip().lower() == "none":
         raise ValueError("Give at least one bobbin.")
+    from braidpy.making.lace import gear_number
+
     named = _notch_names(n_gears)
     threaded: list[int] = []
     for token in re.split(r"[\s,;]+", str(text).strip()):
-        match = re.fullmatch(r"([A-Za-z]):([01])", token)
+        match = re.fullmatch(r"([A-Za-z]+):([01])", token)
         if token in named:
             notch = named[token]
-        elif match and ord(match.group(1).upper()) - ord("A") < n_gears:
-            gear = ord(match.group(1).upper()) - ord("A")
+        elif match and gear_number(match.group(1)) < n_gears:
+            gear = gear_number(match.group(1))
             notch = gear if match.group(2) == "0" else (gear - 1) % n_gears
         else:
             raise ValueError(
@@ -855,7 +858,7 @@ def _machine_entry() -> Source:
 
 def _lace_entry() -> Source:
     from braidpy.machine_catalog import LACE
-    from braidpy.making.lace import card_digits
+    from braidpy.making.lace import card_names
 
     entries: list[Any] = []
     for name, entry in LACE.items():
@@ -864,7 +867,7 @@ def _lace_entry() -> Source:
             {
                 "name": name,
                 "title": entry.title,
-                "pattern": {"n_gears": ring.n_gears, "card": card_digits(ring.steps)},
+                "pattern": {"n_gears": ring.n_gears, "card": card_names(ring.steps)},
             }
         )
     return {

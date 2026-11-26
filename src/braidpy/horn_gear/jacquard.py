@@ -401,7 +401,9 @@ def jacquard_lace_ring(
             "Neighbouring gears mesh, so they must turn opposite ways."
         )
 
-    names = [chr(ord("A") + i) for i in range(n_gears)]
+    from braidpy.making.lace import gear_name
+
+    names = [gear_name(i) for i in range(n_gears)]
     gears = [
         HornGear(name, n_slots, direction=+1 if i % 2 == 0 else -1)
         for i, name in enumerate(names)
