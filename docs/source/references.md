@@ -223,6 +223,20 @@ empty slots at full load are mechanism, not choice. *Half load* is 25% of slots.
   what `soutache_braid()` models as two `Axial` columns.
 
 ---
+## Lace braiding machines
+Early patents of the machine behind
+[the Jacquard lace machine](making.md#the-jacquard-lace-machine); their
+words (quoit, race-circle, pattern bar) are in the {doc}`glossary`.
+
+- Rahm, *Lace braiding machine*, US 1,446,127 (1923):
+  https://patents.google.com/patent/US1446127A/en
+- Rahm, *Lace-braiding-carrier drive*, US 1,282,945 (1918):
+  https://patents.google.com/patent/US1282945A/en
+- Staub, *Carrier drive for lace braiders*, US 1,512,146 (1924):
+  https://patents.google.com/patent/US1512146A/en
+- Sandweg, *Braiding and lace-making machine*, US 1,488,064 (1924):
+  https://patents.google.com/patent/US1488064A/en
+
 ## Braiding machine control
 https://github.com/stiganielsen/BraidOMatic
 https://github.com/Brandon-Key5113/BraidyBunch
