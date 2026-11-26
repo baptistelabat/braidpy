@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalogue,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=746e23d191";
-import { attachEditor, attachShape } from "./editor.js?v=746e23d191";
-import { attachMachine } from "./machine.js?v=746e23d191";
-import { $ } from "./page.js?v=746e23d191";
-import { submit, worker } from "./workers.js?v=746e23d191";
+import { attachDiagram } from "./diagram.js?v=027bc7447f";
+import { attachEditor, attachShape } from "./editor.js?v=027bc7447f";
+import { attachMachine } from "./machine.js?v=027bc7447f";
+import { $ } from "./page.js?v=027bc7447f";
+import { submit, worker } from "./workers.js?v=027bc7447f";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -206,7 +206,7 @@ const FIELDS = {
   ],
   lace: [
     { name: "name", label: "Lace machine", kind: "entries" },
-    { name: "n_gears", label: "Gears", kind: "number", min: 4, max: 32, step: 2, custom: true },
+    { name: "n_gears", label: "Gears", kind: "number", min: 4, max: 72, step: 2, custom: true },
     {
       name: "card",
       label: "Punchcard",

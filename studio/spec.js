@@ -5,10 +5,10 @@
 // The braid asked for, read from the form, written into the address, and
 // read back from it: a link makes the same braid.
 
-import { chosenColours, useColours } from "./colours.js?v=746e23d191";
-import { CHOICES, guessChoices } from "./defaults.js?v=746e23d191";
-import { catalogue, renderFields } from "./fields.js?v=746e23d191";
-import { $ } from "./page.js?v=746e23d191";
+import { chosenColours, useColours } from "./colours.js?v=027bc7447f";
+import { CHOICES, guessChoices } from "./defaults.js?v=027bc7447f";
+import { catalogue, renderFields } from "./fields.js?v=027bc7447f";
+import { $ } from "./page.js?v=027bc7447f";
 
 // Fields filled with what the machine does itself -- its loading, its
 // axial yarns -- which the link leaves to it while they are left so.
@@ -55,5 +55,9 @@ export function specFromHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const spec = Object.fromEntries(params.entries());
   if (!catalogue[spec.source]) return null;
+  // A lace card without its gears has them in its rows, a digit a gear.
+  if (spec.source === "lace" && spec.card?.trim() && !spec.n_gears) {
+    spec.n_gears = String(spec.card.trim().split(/\s+/)[0].length);
+  }
   return spec;
 }
