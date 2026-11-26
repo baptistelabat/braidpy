@@ -209,6 +209,16 @@ empty slot beyond it, which is the crossing; the neighbour moves into the
 place it left, and the lifted strand settles into the neighbour's old place,
 neither crossing anything. A 32-slot disk takes up to 15 strands.
 
+The two strands need not be neighbours: lifted over every strand between,
+strands `t` and `s` cross in three moves however far apart, a band letter
+`a_ts` ([in band generators](braid_representations.md#in-band-generators))
+where crossings of neighbours take `2(t - s) - 1` crossings. A braid is
+made in band letters where they take fewer moves: its band normal form, or
+its word with each run spelling a band letter read as one. A disk braid,
+its strands carried across the disk, is far quicker so — Kongo gumi, 243
+moves a crossing at a time, is 129 — and a machine's braid of neighbours
+crossing is made as before.
+
 ```python
 from braidpy.making.disk import disk_braid, disk_moves
 

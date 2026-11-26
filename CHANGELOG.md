@@ -265,6 +265,14 @@ What changed in each release of braidpy.
   its word, as a disk braid's is, and Artin's word elsewhere; a band word
   can be typed too (layout **band**: `4:1 1:3`), and the MCP server's
   `describe_braid` gives it.
+- A braid is made on a kumihimo disk in band letters where that takes
+  fewer moves (`making.disk.disk_moves`): two strands far apart cross in
+  three moves, lifted over those between, where crossings of neighbours
+  take three each. Kongo gumi takes 129 moves instead of 243, the 12-strand
+  disk braid 261 instead of 567, the 8-carrier tubular machine's 78 instead
+  of 96; a braid no shorter so, as a flat machine's, is made as before,
+  move for move. `band_canonical_form.band_letters` reads a word as band
+  letters as it stands.
 - braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
   braid's triviality, and so `==`, falls back on braidpy's own Garside
   normal form when handle reduction takes too long, and the page no longer

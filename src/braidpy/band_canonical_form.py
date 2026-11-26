@@ -39,6 +39,7 @@ __all__ = [
     "BandLetter",
     "artin_from_band",
     "band_left_normal_form",
+    "band_letters",
     "band_text",
     "band_word",
     "factor_blocks",
@@ -239,6 +240,53 @@ def artin_from_band(letters: Sequence[BandLetter]) -> list[int]:
         else:
             word += up + [-s] + [-g for g in reversed(up)]
     return word
+
+
+def band_letters(generators: Sequence[int]) -> list[BandLetter]:
+    """A braid word read as band letters as it stands: each run
+    ``σ_{t-1} ⋯ σ_{s+1} σ_s^±1 σ_{s+1}⁻¹ ⋯ σ_{t-1}⁻¹`` one letter, the
+    longest first, and every other crossing ``σ_i^±1`` the letter
+    ``a_{i+1,i}^±1``.  Never longer than the word, where
+    :func:`band_word` may be; the same braid, crossing for crossing.
+
+    Args:
+        generators: Signed Artin generators.
+
+    Returns:
+        The letters, as :func:`band_word` gives them.
+    """
+    word = [g for g in generators if g]
+    letters: list[BandLetter] = []
+    at = 0
+    while at < len(word):
+        # The longest run up, σ_{t-1} σ_{t-2} ⋯, from here.
+        up = 1
+        while (
+            at + up < len(word)
+            and word[at + up] > 0
+            and word[at + up] == word[at + up - 1] - 1
+        ):
+            up += 1
+        if word[at] < 0:
+            up = 0
+        for length in range(up, 0, -1):
+            middle = at + length
+            s = word[middle - 1] - 1
+            down = [-g for g in reversed(word[at:middle])]
+            if (
+                middle < len(word)
+                and abs(word[middle]) == s
+                and word[middle + 1 : middle + 1 + length] == down
+            ):
+                t = word[at] + 1
+                letters.append((t, s) if word[middle] > 0 else (s, t))
+                at = middle + 1 + length
+                break
+        else:
+            g = abs(word[at])
+            letters.append((g + 1, g) if word[at] > 0 else (g, g + 1))
+            at += 1
+    return letters
 
 
 def band_text(letters: Sequence[BandLetter]) -> str:
