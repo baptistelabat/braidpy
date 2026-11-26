@@ -493,3 +493,24 @@ def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
     assert _drawn(made.moves) == _drawn([tuple(move) for move in book.moves])
     if drawn["makes"]:
         assert same_braid(made.braid(1), book.braid(1))
+
+
+@pytest.mark.parametrize("name", ["abok_3047", "abok_3059"])
+def test_moves_whose_lines_do_not_cross_can_be_made_either_way_round(name):
+    """Two moves made one after the other, swapped: the same braid exactly
+    when their lines in Ashley's diagram do not cross, another when they
+    do.  A group of parallel lines is so moves made in any order."""
+    from braidpy import solid_sinnets_catalog as books
+    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
+    from braidpy.making.ashley import _cross
+
+    sinnet = getattr(books, name)
+    moves = list(sinnet.moves)
+    braid = sinnet.braid(1)
+    for k in range(len(moves) - 1):
+        crossing = _cross(moves[k], moves[k + 1])
+        if crossing is None:
+            continue
+        swapped = moves[:k] + [moves[k + 1], moves[k]] + moves[k + 2 :]
+        other = AshleySolidSinnet(list(sinnet.initial_counts_per_space), swapped)
+        assert (other.braid(1) == braid) == (not crossing), (k, moves[k], moves[k + 1])

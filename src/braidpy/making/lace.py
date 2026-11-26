@@ -70,11 +70,14 @@ Position = tuple[str, int]
 __all__ = [
     "MOST_GEARS_PER_STRAND",
     "LaceCard",
+    "card_conjugate",
     "lace_braid",
     "lace_card",
     "punchcard_text",
     "read_card",
+    "repeat_floor",
     "ring_braid",
+    "step_floor",
 ]
 
 # The most gears a card is tried on, for each strand: a notch spare beside
@@ -99,6 +102,16 @@ SEED = 0
 # so many of them, and begins the strands anywhere so often.
 SEARCH_GEARS = 3
 ANYWHERE = 0.3
+# The search for a conjugate of fewer steps (card_conjugate): so many words
+# tried, a hundredth of a second each on the book's sinnets; and the
+# temperature it begins at, in steps, and how fast it cools, each try.
+CONJUGATE_TRIES = 3000
+# At most so many crossings counted in all, each try counting three times
+# the word's: a second or two in a browser.
+CONJUGATE_CROSSINGS = 300000
+WARM = 1.0
+COOLING = 0.999
+COLD = 0.05
 
 
 @dataclass(frozen=True)
@@ -591,6 +604,117 @@ def card_program(
                 )
             rows.append(tuple(Swap((g - 1) % n_gears, _gear_sign(g)) for g in turning))
     return RingProgram(n_gears, tuple(start), tuple(rows))
+
+
+def _finishes(word: Sequence[int], n_strands: int) -> list[int]:
+    """The earliest step each crossing of a word can be made at on a lace
+    ring (:func:`step_floor`)."""
+    order = list(range(n_strands))
+    last: list[int | None] = [None] * n_strands
+    went = [0] * n_strands
+    finish = [0] * len(word)
+    for k, g in enumerate(word):
+        i = abs(g) - 1
+        earliest = 0
+        for strand, way in ((order[i], 1), (order[i + 1], -1)):
+            j = last[strand]
+            if j is not None:
+                # The same way again, with the same sign: a notch to move.
+                again = went[strand] == way and (word[j] > 0) == (g > 0)
+                earliest = max(earliest, finish[j] + again)
+        finish[k] = earliest + 1
+        for strand, way in ((order[i], 1), (order[i + 1], -1)):
+            last[strand], went[strand] = k, way
+        order[i], order[i + 1] = order[i + 1], order[i]
+    return finish
+
+
+def step_floor(word: Sequence[int], n_strands: int) -> int:
+    """The fewest steps any card for a word can take, on any lace ring: no
+    fewer than its longest chain of crossings each waiting for the last,
+    a crossing waiting a step more when a strand of it crossed last the
+    same way with the same sign.  Neighbouring gears turn opposite ways,
+    so its two gears are of the same way, a notch apart: it must move a
+    notch between.  On the small braids of the catalogue, the fewest steps
+    there are, found by trying every turn of every gear, are this or a
+    few more.
+
+    Args:
+        word: The crossings, ``i`` for ``σᵢ`` and ``-i`` for ``σᵢ⁻¹``.
+        n_strands: The strands.
+
+    Returns:
+        The floor, in steps.
+    """
+    return max(_finishes(word, n_strands), default=0)
+
+
+def repeat_floor(word: Sequence[int], n_strands: int) -> int:
+    """The fewest steps a repeat of a word can take on a card run round and
+    round (:func:`step_floor`), once the repeats follow one another: what
+    a third repeat adds to two.  It does not depend on where the word is
+    cut: every rotation of a word has the same.
+
+    Args:
+        word: The crossings of one repeat.
+        n_strands: The strands.
+
+    Returns:
+        The floor, in steps a repeat.
+    """
+    word = list(word)
+    finish = _finishes(word * 3, n_strands)
+    return max(finish, default=0) - max(finish[: 2 * len(word)], default=0)
+
+
+def card_conjugate(
+    braid: Braid, tries: int = CONJUGATE_TRIES, seed: int = SEED
+) -> Braid:
+    """A conjugate of a braid whose repeats a lace card makes in fewer
+    steps: the same braid, once repeated, seen another way.
+
+    The word is read round, as a card runs it, and rewritten by the braid
+    relations (:mod:`braidpy.shortening`), wherever the word is cut:
+    crossings of strands apart swapped, three crossings of three strands
+    made the other way round.  Reading it from elsewhere conjugates it, and
+    a relation keeps it, so each word met is a conjugate.  A rewrite that
+    lowers the floor a repeat (:func:`repeat_floor`) is kept, one that
+    raises it now and then, less and less often, so as to cross what does
+    not change it.  Seeded, so a braid always has the same conjugate.  The
+    book's sinnets, written as cascades of one strand crossing many, come
+    out with a floor a third of theirs or less.
+
+    Args:
+        braid: The braid.
+        tries: How many rewrites are tried, at most: fewer for a long word
+            (``CONJUGATE_CROSSINGS``).
+        seed: The search's seed.
+
+    Returns:
+        The conjugate of lowest floor found: the braid if none is lower.
+    """
+    from braidpy.shortening import _rewrites
+
+    n = braid.n_strands
+    current = tuple(int(g) for g in braid.generators)
+    floor = repeat_floor(current, n)
+    best = (floor, current)
+    rng = random.Random(seed)
+    warmth = WARM
+    budget = min(tries, CONJUGATE_CROSSINGS // max(1, 3 * len(current)))
+    for _ in range(budget if len(current) > 2 else 0):
+        cut = rng.randrange(len(current))
+        rewrites = list(_rewrites(current[cut:] + current[:cut]))
+        if not rewrites:
+            continue
+        candidate = rng.choice(rewrites)
+        lower = repeat_floor(candidate, n)
+        if lower <= floor or rng.random() < math.exp((floor - lower) / warmth):
+            current, floor = candidate, lower
+            if floor < best[0]:
+                best = (floor, current)
+        warmth = max(COLD, warmth * COOLING)
+    return Braid(best[1], n)
 
 
 def lace_braid(card: LaceCard) -> Braid:
