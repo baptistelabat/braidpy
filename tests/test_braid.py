@@ -62,13 +62,37 @@ class TestBraid:
         assert len(b) == 4
 
     def test_hash(self):
-        """Test braid hash"""
+        """Equal braids hash alike, however written: a zero generator, the
+        braid relation, a crossing and its inverse."""
         b = Braid([1, 2, -1], n_strands=3)
         b2 = Braid([1, 2, -1], n_strands=3).inverse().inverse()
-        # Test braid length with zero generator
         bz = Braid([1, 2, 0, -1], n_strands=3)
-        assert hash(b) != hash(bz)
+        assert b == bz and hash(b) == hash(bz)
         assert hash(b) == hash(b2)
+        assert hash(Braid([1, 2, 1], 3)) == hash(Braid([2, 1, 2], 3))
+        assert hash(Braid([1, -1, 2], 3)) == hash(Braid([2], 3))
+
+    def test_a_braid_is_one_key_however_written(self):
+        """In a set or as a key, equal braids are one."""
+        words = ([1, 2, 1], [2, 1, 2], [1, 2, 1, 2, -2], [1, 3, -3, 2, 1], [2, 1, 2])
+        assert len({Braid(w, 4) for w in words}) == 1
+        assert {Braid([1, 2, 1], 4): "a"}[Braid([2, 1, 2], 4)] == "a"
+        # Different braids stay apart, even where their hashes meet.
+        assert len({Braid([1, 2], 3), Braid([2, 1], 3)}) == 2
+
+    def test_equal_random_braids_hash_alike(self):
+        import random
+
+        from braidpy.shortening import rewrites
+
+        rng = random.Random(0)
+        for _ in range(100):
+            n = rng.randint(2, 6)
+            word = tuple(rng.choice((-1, 1)) * rng.randint(1, n - 1) for _ in range(10))
+            for other in rewrites(word):
+                assert hash(Braid(other, n)) == hash(Braid(word, n))
+            padded = word[:3] + (1, -1) + word[3:]
+            assert hash(Braid(padded, n)) == hash(Braid(word, n))
 
     def test_wordeq(self):
         b = Braid([1, 2, -1], n_strands=3)

@@ -265,6 +265,11 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- `hash(Braid)` agrees with `==`: two words for one braid hash alike,
+  so a braid is one key in a dict or a set however it is written. It
+  hashed the word, while `==` compares the braid itself; it now hashes
+  what every word for a braid shares (strands, exponent sum,
+  permutation). `word_eq` still compares words.
 - The package says where braidpy lives: its repository, documentation,
   Braid Studio, changelog and issues (`project.urls`), for PyPI to show.
   Modules that began with a form (file name, author, date) say what they

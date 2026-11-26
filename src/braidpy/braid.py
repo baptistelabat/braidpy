@@ -331,7 +331,7 @@ class Braid:
             return (self ** (-n)).inverse()
 
     def __key(self) -> tuple:
-        """Get a key on the braid (used by hash function).
+        """Get a key on the braid's word (used by :meth:`word_eq`).
 
         Returns:
             tuple: Key constructed with the Artin's generators and the number of strands.
@@ -350,12 +350,21 @@ class Braid:
         return self.__key() == other.__key()
 
     def __hash__(self) -> int:
-        """Hash the braid based on its word representation.
+        """Hash the braid by what every word for it shares: its strands, the
+        sum of its crossings' signs and its permutation.
+
+        ``==`` is the braid's topology (:meth:`__eq__`), so two words for one
+        braid must hash alike, as Python asks of anything kept in a set or
+        used as a key: hashing the word, ``σ₁σ₂σ₁`` and ``σ₂σ₁σ₂`` would be
+        two keys for one braid.  Braids that hash alike may still differ;
+        ``==`` tells them apart.  For the word itself, compare with
+        :meth:`word_eq`.
 
         Returns:
             int: Hash value for the braid.
         """
-        return hash(self.__key())
+        signs = sum((g > 0) - (g < 0) for g in self.generators)
+        return hash((self.n_strands, signs, tuple(self.perm())))
 
     def __eq__(self, other: object) -> bool:
         """Check if two braids are topologically equivalent: the same braid,
