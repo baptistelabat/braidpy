@@ -224,26 +224,18 @@ empty slots at full load are mechanism, not choice. *Half load* is 25% of slots.
 
 ---
 ## Lace braiding machines
-The patents of the American lace braiders of the 1910s and 1920s describe
-the machine braidpy's lace ring stands for
-([the Jacquard lace machine](making.md#the-jacquard-lace-machine)); their words are in the
-{doc}`glossary` (**quoit**, **race-circle**, **pattern bar**).
+Early patents of the machine behind
+[the Jacquard lace machine](making.md#the-jacquard-lace-machine); their
+words (quoit, race-circle, pattern bar) are in the {doc}`glossary`.
 
-- R. C. Rahm, *Lace braiding machine*, US 1,446,127, filed 1919, granted
-  1923, Berks Engineering Co.: a single-thread lace braiding machine, each
-  carrier swung a half revolution at a time in a series of intersecting
-  race-circles grouped round a braiding centre; quoits clutched by a
-  pattern-worked bar to continuously turning drive gears, each stopping
-  itself after a half turn.
+- Rahm, *Lace braiding machine*, US 1,446,127 (1923):
   https://patents.google.com/patent/US1446127A/en
-- R. C. Rahm, *Lace-braiding-carrier drive*, US 1,282,945, filed 1918,
-  granted 1918, Textile Machine Works: the same inventor's earlier carrier
-  drive. https://patents.google.com/patent/US1282945A/en
-- H. Staub, *Carrier drive for lace braiders*, US 1,512,146, filed 1923,
-  granted 1924, Textile Machine Works: a later carrier drive.
+- Rahm, *Lace-braiding-carrier drive*, US 1,282,945 (1918):
+  https://patents.google.com/patent/US1282945A/en
+- Staub, *Carrier drive for lace braiders*, US 1,512,146 (1924):
   https://patents.google.com/patent/US1512146A/en
-- C. Sandweg, *Braiding and lace-making machine*, US 1,488,064, filed 1920,
-  granted 1924. https://patents.google.com/patent/US1488064A/en
+- Sandweg, *Braiding and lace-making machine*, US 1,488,064 (1924):
+  https://patents.google.com/patent/US1488064A/en
 
 ## Braiding machine control
 https://github.com/stiganielsen/BraidOMatic
