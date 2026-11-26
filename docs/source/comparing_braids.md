@@ -25,7 +25,7 @@ similar(mine, count=3)
 ## Four kinds of "the same"
 
 "The same braid" can mean four things, each coarser than a word, and
-{mod}`braidpy.kinds` gives each its own type, its own `==` and its own hash,
+braidpy gives each its own type, its own `==` and its own hash,
 so that a set or a dict of them keeps one of each:
 
 | Kind | The same when | Told |

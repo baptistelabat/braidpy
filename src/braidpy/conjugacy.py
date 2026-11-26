@@ -267,7 +267,7 @@ def same_pattern(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
     written: their patterns (:func:`~braidpy.similarity.home`) conjugate.
     Not whether they are the same braid, which :meth:`Braid.__eq__
     <braidpy.braid.Braid.__eq__>` tells: ``σ₁σ₂`` and ``σ₂σ₁`` are one
-    pattern and two braids (:mod:`braidpy.kinds`).
+    pattern and two braids (:mod:`braidpy.braid_pattern`).
 
     Home braids repeated as often are conjugate exactly when their units
     are, a braid's roots being unique up to conjugacy (González-Meneses):
@@ -300,5 +300,5 @@ def same_pattern(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
     return are_conjugate(whole, other, limit)
 
 
-# The name it had: what it tells is the pattern (braidpy.kinds).
+# The name it had: what it tells is the pattern (braidpy.braid_pattern).
 same_braid = same_pattern

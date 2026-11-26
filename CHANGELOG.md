@@ -7,7 +7,8 @@ What changed in each release of braidpy.
 ### New
 
 - Four kinds of "the same braid", each with its own `==` and hash
-  (`braidpy.kinds`): `BraidWord` (`braid.word()`), the same crossings;
+  (`braidpy.braid_word`, `braid_pattern`, `closed_braid`): `BraidWord`
+  (`braid.word()`), the same crossings;
   `Braid`, the same braid; `BraidPattern` (`braid.pattern()`), the same
   braid made over and over, proven by conjugacy where it can be; and
   `ClosedBraid` (`braid.closed()`), the same knot or link, by its loops,

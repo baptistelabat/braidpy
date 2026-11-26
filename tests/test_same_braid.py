@@ -2,11 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""What "the same braid" means: braidpy.kinds."""
+"""What "the same braid" means: braid words, braids, patterns and closed
+braids, each with its own == and hash."""
 
 from braidpy import Braid
+from braidpy.braid_pattern import BraidPattern
+from braidpy.braid_word import BraidWord
+from braidpy.closed_braid import ClosedBraid
 from braidpy.conjugacy import same_braid, same_pattern
-from braidpy.kinds import BraidPattern, BraidWord, ClosedBraid
 
 # σ₁σ₂σ₁ and σ₂σ₁σ₂: two words, one braid.
 ONE = Braid((1, 2, 1), 3)

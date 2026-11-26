@@ -49,7 +49,7 @@ polynomials do not change either when the strands are numbered otherwise.  Equal
 fingerprints do not prove two braids the same — no handful of invariants
 can — but different ones prove them different.
 :func:`braidpy.conjugacy.same_pattern` proves either way, more slowly;
-:class:`braidpy.kinds.BraidPattern` is a braid compared so.
+:class:`braidpy.braid_pattern.BraidPattern` is a braid compared so.
 """
 
 from __future__ import annotations
@@ -233,7 +233,7 @@ def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
 def exact_part(mark: Fingerprint) -> tuple:
     """What :func:`same_fingerprint` compares: the parts of a fingerprint
     taken exactly, not sampled in floating point.  Hashable: a key for
-    braids by their pattern (:class:`braidpy.kinds.BraidPattern`).
+    braids by their pattern (:class:`braidpy.braid_pattern.BraidPattern`).
 
     Args:
         mark: A fingerprint.
