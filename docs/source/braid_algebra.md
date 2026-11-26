@@ -41,8 +41,11 @@ braid (`is_trivial()`), and braidpy answers that two ways:
   braids, but no good bound on it is proven, and on long words of many
   strands it can blow up.
 - So it is given a few seconds, and if it has not decided, the braids'
-  **Garside normal forms** do ({doc}`braid_representations`), through
-  math-braid (Cha et al., 2001).
+  **Garside normal forms** do ({doc}`braid_representations`), braidpy's own
+  ({mod}`braidpy.garside_canonical_form`): the word read with its half twists
+  kept at its end, each factor made left-weighted with those before it in one
+  pass back. ABOK #3082, 61 strands, against itself rewritten, takes three
+  seconds so.
 
 ## Shortening a word
 
