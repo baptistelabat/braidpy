@@ -1,0 +1,49 @@
+# braidpy
+
+> A Python library for working with braids, from braid theory to the braids
+> people make: by hand on a kumihimo disk, a marudai or Ashley's stand, or on
+> a braiding or lace machine.
+
+A braid is a braid word in Artin's generators. braidpy reads and writes the
+common notations, works with braids (product, inverse, normal forms,
+conjugacy, invariants), says which known braids one is like, draws it in the
+console, in 2D and in 3D, and says how to make it by hand or on a machine.
+It installs from PyPI as `braidpy`, with `braidpy[viz]` to draw and
+`braidpy[mcp]` to serve an AI assistant; in the browser it is
+[Braid Studio](https://baptistelabat.github.io/braidpy/studio/), with
+nothing to install.
+
+## Guides
+
+- [Getting started](https://baptistelabat.github.io/braidpy/develop/usage.html): a braid word, the first braids, a braid's operations.
+- [Drawing braids](https://baptistelabat.github.io/braidpy/develop/visualization.html): the console, 2D diagrams, 3D plots, animations.
+- [Braid Studio](https://baptistelabat.github.io/braidpy/develop/braid_studio.html): braidpy on a web page, how to use it.
+- [Making a braid](https://baptistelabat.github.io/braidpy/develop/making.html): from a braid word to a kumihimo disk's moves, a lace machine's punchcard, or Ashley's stand.
+- [braidpy for AI assistants](https://baptistelabat.github.io/braidpy/develop/ai_assistants.html): the front door `braidpy.tools` and the MCP server `braidpy-mcp`.
+- [Glossary](https://baptistelabat.github.io/braidpy/develop/glossary.html): the words of braiding, in braidpy's sense.
+- [Reference](https://baptistelabat.github.io/braidpy/develop/reference.html): every module, its functions and their docstrings.
+- [Changelog](https://baptistelabat.github.io/braidpy/develop/changelog.html): what changed in each release.
+
+## How braids are written and compared
+
+- [Braid representations](https://baptistelabat.github.io/braidpy/develop/braid_representations.html): braid words, permutations, the Burau representation.
+- [Braid algebra](https://baptistelabat.github.io/braidpy/develop/braid_algebra.html): product, inverse, powers, normal forms.
+- [Comparing braids](https://baptistelabat.github.io/braidpy/develop/comparing_braids.html): whether two words are the same braid, and the braids most like one.
+
+## The shape a braid takes
+
+- [The shape of a laid rope](https://baptistelabat.github.io/braidpy/develop/laid_rope.html): the closed form, worked through.
+- [The shape of a braided tube](https://baptistelabat.github.io/braidpy/develop/braided_tube.html): radius and clearances, in closed form.
+- [Why a braid's shape has no closed form](https://baptistelabat.github.io/braidpy/develop/why_no_closed_form.html): what stops most braids.
+- [Solving a braid's shape numerically](https://baptistelabat.github.io/braidpy/develop/solving_numerically.html): how braidpy tightens the others.
+
+## Machines and the hand
+
+- [Horn gear machines](https://baptistelabat.github.io/braidpy/develop/horn_gear_layout.html): maypole machines, their gears, tracks, collisions and threading.
+- [Rope physics](https://baptistelabat.github.io/braidpy/develop/rope_physics.html): yarns that settle and tighten, as braidpy models them.
+- [A marudai](https://baptistelabat.github.io/braidpy/develop/marudai.html): a braid made move by move, round a core or not.
+
+## Working on braidpy
+
+- [Developer guide](https://baptistelabat.github.io/braidpy/develop/developer_guide.html): setting up, the rules, the tests, the releases.
+- [References](https://baptistelabat.github.io/braidpy/develop/references.html): the papers and books behind the mathematics.

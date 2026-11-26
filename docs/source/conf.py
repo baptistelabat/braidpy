@@ -42,6 +42,9 @@ intersphinx_mapping = {
 }
 intersphinx_disabled_domains = ["std"]
 
+# A page for assistants that browse: the documentation listed, one line each.
+html_extra_path = ["llms.txt"]
+
 templates_path = ["_templates"]
 
 # -- Options for HTML output
