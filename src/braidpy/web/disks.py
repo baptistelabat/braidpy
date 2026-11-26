@@ -336,9 +336,11 @@ def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
     right of, above or left of its middle on the diagonal grid; ``i,j^``
     for the triangle pointing up from point (i, j) of the triangular grid,
     ``i,jv`` for the one pointing down beside it."""
+    from braidpy.making.ashley import CELL_PARTS
+
     cells: list[tuple[int, ...]] = []
     for i, j, which in _CELL.findall(text):
-        if grid in ("square", "skew"):
+        if not CELL_PARTS[grid]:
             cells.append((int(i), int(j)))
         elif grid == "diagonal":
             cells.append((int(i), int(j), _QUARTERS.index(which or "b")))
@@ -349,14 +351,14 @@ def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
 
 def _cell_text(grid: str, cell: tuple[int, ...]) -> str:
     """A cell as :func:`_cells` reads it."""
-    which = {"square": "", "skew": "", "diagonal": _QUARTERS, "triangle": "^v"}[grid]
+    which = {"diagonal": _QUARTERS, "triangle": "^v"}.get(grid, "")
     return f"{cell[0]},{cell[1]}" + (which[cell[2]] if which else "")
 
 
 def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
     """The cells sharing a side with these, not among them: those a shape
     can grow by."""
-    from braidpy.making.ashley import _cell_points
+    from braidpy.making.ashley import CELL_PARTS, _cell_points
 
     def sides(cell):
         points = _cell_points(grid, cell)
@@ -364,18 +366,13 @@ def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
 
     taken = set(cells)
     edges = set().union(*(sides(cell) for cell in cells))
-    kinds: dict[str, list[tuple[int, ...]]] = {
-        "square": [()],
-        "skew": [()],
-        "diagonal": [(q,) for q in range(4)],
-        "triangle": [(0,), (1,)],
-    }
+    parts: list[tuple[int, ...]] = [(part,) for part in CELL_PARTS[grid]] or [()]
     near = {
         (cell[0] + di, cell[1] + dj, *which)
         for cell in cells
         for di in (-1, 0, 1)
         for dj in (-1, 0, 1)
-        for which in kinds[grid]
+        for which in parts
     }
     return sorted(cell for cell in near - taken if sides(cell) & edges)
 

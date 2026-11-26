@@ -348,7 +348,7 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
     # braid always has the same card.
     gears_tried = list(dict.fromkeys(tried_[1] for tried_ in found))[:SEARCH_GEARS]
     rng = random.Random(SEED)
-    runs = min(SEARCH_RUNS, SEARCH_CROSSINGS // max(1, len(word)))
+    runs = _tries(SEARCH_RUNS, SEARCH_CROSSINGS, len(word))
     for run in range(runs):
         gears = gears_tried[run % len(gears_tried)]
         order = _reordered(word, rng) if rng.random() < REORDERED else word
@@ -360,6 +360,12 @@ def lace_card(braid: Braid, n_gears: Optional[int] = None) -> LaceCard:
         best = min(best, _tried(order, gears, start, rng), key=lambda t: t[:2])
     _, gears, start, swaps = best
     return _card(gears, start, swaps)
+
+
+def _tries(most: int, crossings: int, per_try: int) -> int:
+    """How many tries a search makes: at most ``most``, and no more than
+    ``crossings`` made or counted in all, ``per_try`` in each."""
+    return min(most, crossings // max(1, per_try))
 
 
 def _starts(n: int, gears: int) -> list[tuple[int, ...]]:
@@ -693,7 +699,7 @@ def card_conjugate(
     Returns:
         The conjugate of lowest floor found: the braid if none is lower.
     """
-    from braidpy.shortening import _rewrites
+    from braidpy.shortening import rewrites
 
     n = braid.n_strands
     current = tuple(int(g) for g in braid.generators)
@@ -701,13 +707,14 @@ def card_conjugate(
     best = (floor, current)
     rng = random.Random(seed)
     warmth = WARM
-    budget = min(tries, CONJUGATE_CROSSINGS // max(1, 3 * len(current)))
+    # Each try counts three repeats of the word (repeat_floor).
+    budget = _tries(tries, CONJUGATE_CROSSINGS, 3 * len(current))
     for _ in range(budget if len(current) > 2 else 0):
         cut = rng.randrange(len(current))
-        rewrites = list(_rewrites(current[cut:] + current[:cut]))
-        if not rewrites:
+        found = list(rewrites(current[cut:] + current[:cut]))
+        if not found:
             continue
-        candidate = rng.choice(rewrites)
+        candidate = rng.choice(found)
         lower = repeat_floor(candidate, n)
         if lower <= floor or rng.random() < math.exp((floor - lower) / warmth):
             current, floor = candidate, lower

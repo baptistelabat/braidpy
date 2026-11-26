@@ -9,7 +9,7 @@ import random
 import pytest
 
 from braidpy import Braid
-from braidpy.shortening import _rewrites, free_reduced, shortened
+from braidpy.shortening import free_reduced, rewrites, shortened
 
 
 def test_a_crossing_and_its_inverse_side_by_side_cancel():
@@ -25,7 +25,7 @@ def test_each_rewrite_is_the_same_braid(word):
     """Swapping crossings of strands apart, and the three of three strands
     the other way round, signs mixed or not: the braid does not change."""
     braid = Braid(word, 4)
-    rewritten = list(_rewrites(word))
+    rewritten = list(rewrites(word))
     assert rewritten
     for other in rewritten:
         assert len(other) == len(word)

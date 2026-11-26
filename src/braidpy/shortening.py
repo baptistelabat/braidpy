@@ -37,7 +37,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from braidpy.braid import Braid
 
-__all__ = ["SEARCH_BUDGET", "WINDOW", "free_reduced", "shortened"]
+__all__ = ["SEARCH_BUDGET", "WINDOW", "free_reduced", "rewrites", "shortened"]
 
 # How many crossings of the word are rewritten at once: a crossing and its
 # inverse further apart than this are not brought together.
@@ -48,7 +48,7 @@ WINDOW = 10
 SEARCH_BUDGET = 500
 # How long handle reduction is given, in seconds: its word is seldom the
 # shorter, so not long.
-HANDLE_REDUCTION_S = 1.0
+HANDLES_SHORTENED_S = 1.0
 
 Word = tuple[int, ...]
 
@@ -72,10 +72,19 @@ def free_reduced(word: Sequence[int]) -> Word:
     return tuple(out)
 
 
-def _rewrites(word: Word) -> Iterator[Word]:
+def rewrites(word: Word) -> Iterator[Word]:
     """The words one braid relation away, as long as this one: two
     neighbouring crossings of strands far apart swapped, or three crossings
-    of three strands made the other way round."""
+    of three strands made the other way round, signs mixed too.  Each is the
+    same braid; read round a word, as a card runs it, they are what
+    :func:`braidpy.making.lace.card_conjugate` searches.
+
+    Args:
+        word: The crossings, ``i`` for ``σᵢ`` and ``-i`` for ``σᵢ⁻¹``.
+
+    Yields:
+        Each word one relation away.
+    """
     for k in range(len(word) - 1):
         a, b = word[k], word[k + 1]
         if abs(abs(a) - abs(b)) >= 2:
@@ -106,7 +115,7 @@ def _shorter_piece(piece: Word, budget: int) -> Word | None:
         reduced = free_reduced(word)
         if len(reduced) < len(piece):
             return reduced
-        for other in _rewrites(word):
+        for other in rewrites(word):
             if other not in seen:
                 if len(seen) >= budget:
                     return None
@@ -157,7 +166,7 @@ def shortened(braid: Braid, window: int = WINDOW, budget: int = SEARCH_BUDGET) -
     best = _searched(word, window, budget)
     try:
         handled = dehornoy_reduce_core(
-            list(word), HandleReductionMode.FULL, time_out_s=HANDLE_REDUCTION_S
+            list(word), HandleReductionMode.FULL, time_out_s=HANDLES_SHORTENED_S
         ).generators
     except FunctionalException:
         handled = None
