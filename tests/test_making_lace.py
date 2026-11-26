@@ -212,7 +212,7 @@ def test_a_card_conjugate_is_the_same_braid_once_repeated():
     import random
 
     from braidpy.conjugacy import are_conjugate
-    from braidpy.making.lace import card_conjugate, repeat_floor
+    from braidpy.making.lace import ConjugateSearch, card_conjugate, repeat_floor
 
     rng = random.Random(0)
     for _ in range(10):
@@ -220,12 +220,15 @@ def test_a_card_conjugate_is_the_same_braid_once_repeated():
         braid = Braid(
             [rng.choice((-1, 1)) * rng.randint(1, n - 1) for _ in range(10)], n
         )
-        found = card_conjugate(braid, tries=300)
+        found = card_conjugate(braid, ConjugateSearch(tries=300))
         assert are_conjugate(found, braid)
         assert repeat_floor(list(found.generators), n) <= repeat_floor(
             list(braid.generators), n
         )
-        assert card_conjugate(braid, tries=300).generators == found.generators
+        assert (
+            card_conjugate(braid, ConjugateSearch(tries=300)).generators
+            == found.generators
+        )
 
 
 def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
@@ -255,3 +258,14 @@ def test_a_card_as_typed_is_read_back():
     )
     with pytest.raises(ValueError, match="two groups"):
         read_card("0101", 4)
+
+
+def test_a_search_is_set_by_its_settings():
+    """No tries after the first ways of beginning: a card no shorter than
+    the search's own; the same settings, the same card."""
+    from braidpy.making.lace import CARD_SEARCH, CardSearch
+
+    braid = Braid((1, -2, 3, -1, 2, -3) * 2, 4)
+    without = lace_card(braid, search=CardSearch(runs=0))
+    assert len(lace_card(braid).steps) <= len(without.steps)
+    assert lace_card(braid, search=CARD_SEARCH).steps == lace_card(braid).steps
