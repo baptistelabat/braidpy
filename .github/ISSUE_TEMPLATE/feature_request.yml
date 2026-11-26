@@ -1,0 +1,23 @@
+name: A feature
+description: Something braidpy does not answer, draw or make yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What it should do
+      description: >
+        The question it should answer, or the braid it should draw or make.
+        An example of the words you would like to write is the clearest way
+        to say it.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Where it would be used
+      description: >
+        In a script, in Braid Studio, by an assistant, or on the machine you
+        run the braid on.
+    validations:
+      required: false

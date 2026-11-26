@@ -24,7 +24,9 @@ source offered:
     letters (``aB``, ``a`` for σ₁ and ``A`` its inverse).  With ``"layout":
     "ring"``, a ring word, the strands round a circle: ``n`` crosses the
     last strand and the first, across the seam, and ``n + 1`` turns them
-    all one place round.
+    all one place round.  With ``"layout": "band"``, a band word
+    (:mod:`braidpy.band_canonical_form`): ``4:1`` crosses strands 4 and 1
+    in front of those between, ``1:4`` the other way.
 ``{"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 8}``
     Kumihimo's own moves: swap top and bottom, rotate a quarter.
 ``{"source": "mobidai", "name": "KONGO_8", "cycles": 8}``

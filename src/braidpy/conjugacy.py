@@ -24,7 +24,7 @@ Meneses made it practical:
 - two braids are conjugate exactly when their super summit sets are the
   same, and so when one holds a braid of the other's.
 
-:func:`same_braid` asks this of two braids' patterns, their
+:func:`same_pattern` asks this of two braids' patterns, their
 :func:`~braidpy.similarity.home` braids.  Strands numbered from the other
 side, ``σ_i`` read as ``σ_{n-i}``, need no asking: that is conjugation by
 ``Δ``.
@@ -58,6 +58,7 @@ __all__ = [
     "SuperSummitSetTooLarge",
     "are_conjugate",
     "same_braid",
+    "same_pattern",
     "super_summit_set",
 ]
 
@@ -261,9 +262,12 @@ def are_conjugate(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
     return y in _search(x, n, limit)
 
 
-def same_braid(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
-    """Whether two braids are the same braid however written: their
-    patterns (:func:`~braidpy.similarity.home`) conjugate.
+def same_pattern(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
+    """Whether two braids are the same pattern, made over and over, however
+    written: their patterns (:func:`~braidpy.similarity.home`) conjugate.
+    Not whether they are the same braid, which :meth:`Braid.__eq__
+    <braidpy.braid.Braid.__eq__>` tells: ``σ₁σ₂`` and ``σ₂σ₁`` are one
+    pattern and two braids (:mod:`braidpy.braid_pattern`).
 
     Home braids repeated as often are conjugate exactly when their units
     are, a braid's roots being unique up to conjugacy (González-Meneses):
@@ -294,3 +298,7 @@ def same_braid(a: Braid, b: Braid, limit: int | None = 10000) -> bool:
     ) * len(unit.generators):
         return are_conjugate(unit, other_unit, limit)
     return are_conjugate(whole, other, limit)
+
+
+# The name it had: what it tells is the pattern (braidpy.braid_pattern).
+same_braid = same_pattern

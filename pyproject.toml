@@ -33,7 +33,6 @@ classifiers = [
 dependencies = [
     "numpy>=1.21.0",
     "sympy>=1.14.0",
-    "math-braid (>=0.8,<0.9)",
     "networkx>=3.4.2",
 ]
 
@@ -62,6 +61,9 @@ braidpy-mcp = "braidpy.mcp_server:main"
 dev = [
     # Working on braidpy, its drawings are tested too.
     "braidpy[viz]",
+    # An independent check of braidpy's normal form and triviality, in the
+    # tests only: braidpy itself does not use it.
+    "math-braid (>=0.8,<0.9)",
     "ruff>=0.17.2",
     "pytest>=8.3.5",
     "coverage>=7.8.2",

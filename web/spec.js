@@ -55,9 +55,11 @@ export function specFromHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const spec = Object.fromEntries(params.entries());
   if (!catalogue[spec.source]) return null;
-  // A lace card without its gears has them in its rows, a digit a gear.
-  if (spec.source === "lace" && spec.card?.trim() && !spec.n_gears) {
-    spec.n_gears = String(spec.card.trim().split(/\s+/)[0].length);
+  // A lace card in digits without its gears has them in its rows, a digit
+  // a gear; one by gear names does not say, and a link gives them.
+  const row = spec.card?.trim().split(/\s+/)[0];
+  if (spec.source === "lace" && /^[01]+$/.test(row ?? "") && !spec.n_gears) {
+    spec.n_gears = String(row.length);
   }
   return spec;
 }

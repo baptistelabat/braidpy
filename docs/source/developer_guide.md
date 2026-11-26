@@ -24,7 +24,9 @@ make help                  # every target, with what it does
 ```
 
 The project's Python is in `.python-version`; every Python braidpy supports
-is tested daily (see below).
+is tested daily (see below). It is 3.12, a version everything installs on
+without building from source; CI runs the quick tests on the newest Python
+supported.
 
 ## Where things are
 
@@ -89,3 +91,7 @@ Releases are made by hand, from `main`:
 4. Build and publish the package: `uv build`, then `uv publish` with a PyPI
    token.
 5. Publish its documentation: `make doc-deploy`.
+
+A release is cut every two or three weeks while the API still moves: each
+break costs less made sooner, and `CHANGELOG.md` is what the people using
+braidpy read to follow it.

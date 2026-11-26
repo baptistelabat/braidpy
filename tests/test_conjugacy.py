@@ -14,7 +14,7 @@ from braidpy.conjugacy import (
     SuperSummitSetTooLarge,
     _word,
     are_conjugate,
-    same_braid,
+    same_pattern,
     super_summit_set,
 )
 from braidpy.garside_canonical_form import artin_left_normal_form, left_weighted
@@ -73,8 +73,8 @@ def test_every_braid_of_a_super_summit_set_finds_the_same_set():
 def test_the_plait_is_its_own_mirror_read_another_way():
     """σ₁σ₂⁻¹ and σ₂⁻¹σ₁ are one braid read from two starting points;
     σ₁σ₂ is another braid."""
-    assert same_braid(Braid([1, -2], 3), Braid([-2, 1], 3))
-    assert not same_braid(Braid([1, -2], 3), Braid([1, 2], 3))
+    assert same_pattern(Braid([1, -2], 3), Braid([-2, 1], 3))
+    assert not same_pattern(Braid([1, -2], 3), Braid([1, 2], 3))
 
 
 def test_numbering_the_strands_from_the_other_side_is_conjugation():
@@ -106,7 +106,7 @@ def test_braids_alike_in_every_number_measured_are_proven_different(a, b, n):
     Alexander polynomials vanish: the fingerprint told them apart only once
     it held the Burau polynomial.  The search tells them apart without it."""
     assert not are_conjugate(Braid(a, n), Braid(b, n))
-    assert not same_braid(Braid(a, n), Braid(b, n))
+    assert not same_pattern(Braid(a, n), Braid(b, n))
 
 
 def test_a_search_too_large_says_so():
@@ -122,4 +122,4 @@ def test_braids_repeated_as_often_are_compared_by_their_units():
     unit = [7, 6, 5, 4, 3, 7, 6, 5, 4, -6, -7, -8, 4, 3, 2, 1, -3, -4, -5]
     unit += [-2, -3, -4, -5]
     turned = unit[5:] + unit[:5]
-    assert same_braid(Braid(unit * 2, 9), Braid(turned, 9))
+    assert same_pattern(Braid(unit * 2, 9), Braid(turned, 9))

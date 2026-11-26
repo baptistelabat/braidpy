@@ -6,7 +6,8 @@ already gives the braid it makes, as a braid word. {mod}`braidpy.making`
 goes the other way: from a braid — a braid word, say — to how to make it.
 
 Two braids are the same braid, here, when nothing braidpy measures
-of their topology tells them apart ({func}`~braidpy.ring_program.same_braid`,
+of their topology tells them apart: their patterns are alike
+({func}`~braidpy.braid_pattern.alike`,
 see {doc}`comparing_braids`): a way of making a braid need not make its very
 word, only the same braid. Each way is checked by reading the braid back
 off what it made, with the code that reads it off that way of making
@@ -82,6 +83,13 @@ card.threading()  # where each strand's bobbin goes
 lace_braid(card) == plait  # True: the card run on the machine
 ```
 
+The gears are named A, B… Z, then AA, AB…, as a spreadsheet names its
+columns ({func}`~braidpy.making.lace.gear_name`); a notch by the two gears
+that cut it, `A-B`. A card is written, in a link and as Braid Studio takes
+it, by the gears each step turns, `/` between steps
+({func}`~braidpy.making.lace.card_names`): a gear always turns its own way,
+so its name says which half of the step it turns in. It is read back so,
+or as 0 and 1, a digit a gear ({func}`~braidpy.making.lace.read_card`).
 A step of the card is two lines over the gears, as the machine reads it:
 those to turn anticlockwise, then those to turn clockwise, the second half
 a punch to the right of the first, as it is driven half a step later and as
@@ -155,6 +163,41 @@ The card is checked on the machine itself
 bobbin is found in its notch, and each gear that turned must have swapped
 its two. Every catalogue braid comes back exactly.
 
+### As a tube
+
+A card made from a braid word keeps its strands off the ring's seam, so it
+makes a flat braid curled up: the same braid with nothing in its middle,
+not a tube round a core (see {doc}`braid_representations`, *A ring word,
+round a core*). {func}`~braidpy.making.lace.ring_card` makes a ring word
+instead, its strands going round across the seam as a tube's do: each
+crossing of two neighbours round the ring made as above, but round it, and
+every strand then walked to where the word takes it, so many notches round
+the ring. A pass need not bring a strand home, only every threaded notch
+filled again, each perhaps by another strand: the card runs round and
+round. The same starts and seeded search are tried as for a word. Checked
+round the core, as the card's own program counts round
+({meth}`~braidpy.ring_program.RingProgram.ring_word`), a ring word comes
+back exactly, pass after pass.
+
+What a tube is made of is short: a tubular machine comes round long before
+its carriers are home. {func}`~braidpy.horn_gear.word.ring_unit` finds the
+fewest steps after which the carriers stand, step after step, where
+carriers stood, and reads them as a ring word round the core: 2 steps of
+the 16-carrier machine's 16, whose 16 crossings repeated 8 times make its
+cycle round the core, exactly. Braid Studio makes a braid made round a core
+— on a ring of gears, or a ring word — so, and links to it round a core of
+yarn:
+
+| Machine | Card of its word | As a tube |
+|---|---|---|
+| Tubular braid, 8 carriers | 14 gears, 27 steps | 12 gears, 10 steps |
+| 12 carriers | 22 gears, 47 steps | 18 gears, 10 steps |
+| 16 carriers | 30 gears, 34 steps | 24 gears, 5 steps |
+| Triaxial, 16 carriers | 44 gears, 85 steps | 40 gears, 8 steps |
+
+The lace machine with every gear turning, read so, is found again: 8
+gears, its pass a step a line.
+
 ## A kumihimo disk
 
 On a kumihimo disk (a mobidai, {mod}`braidpy.mobidai`) a move takes one
@@ -165,6 +208,16 @@ slot either side of it: the strand lifted goes over its neighbour into the
 empty slot beyond it, which is the crossing; the neighbour moves into the
 place it left, and the lifted strand settles into the neighbour's old place,
 neither crossing anything. A 32-slot disk takes up to 15 strands.
+
+The two strands need not be neighbours: lifted over every strand between,
+strands `t` and `s` cross in three moves however far apart, a band letter
+`a_ts` ([in band generators](braid_representations.md#in-band-generators))
+where crossings of neighbours take `2(t - s) - 1` crossings. A braid is
+made in band letters where they take fewer moves: its band normal form, or
+its word with each run spelling a band letter read as one. A disk braid,
+its strands carried across the disk, is far quicker so — Kongo gumi, 243
+moves a crossing at a time, is 129 — and a machine's braid of neighbours
+crossing is made as before.
 
 ```python
 from braidpy.making.disk import disk_braid, disk_moves

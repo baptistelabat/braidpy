@@ -27,7 +27,8 @@ from braidpy import tools
 
 tools.describe_braid("1 -2")["permutation"]  # [2, 3, 1]
 tools.compare_braids("1 2 3 -6 -5 -4", "3 2 1 -4 -5 -6", n_strands=7)
-# {'same_braid': True, 'distance': 0.0}: the flat sinnet of 7, read backwards
+# {'same_braid': True, 'proven': True, 'distance': 0.0}: the flat sinnet of 7,
+# read backwards: alike, and proven the same pattern
 tools.ways_to_make("1 -2 -2 1")["ashley"]["a_sinnet"]  # False: one strand a space
 ```
 
@@ -53,6 +54,19 @@ catalogue of braids by topology, which
 {func}`~braidpy.tools.similar_braids` uses, takes a minute or so to make: the
 server starts making it as it starts.
 
+The server is declared in `server.json`, at the root of the repository, as
+the [MCP registries](https://github.com/modelcontextprotocol/registry) read
+it: the package to install, the command to run, the tools' summary. When a
+release changes the tools, it changes `server.json`'s version with it.
+
+## What an assistant reads
+
+Beside these pages, the documentation is listed in
+[`llms.txt`](llms.txt), one line each: the convention for telling an
+assistant where to read. It is served beside the pages themselves
+(`https://baptistelabat.github.io/braidpy/develop/llms.txt`), and a page
+added to the guide adds its line there.
+
 ## What else would help, and what would not
 
 - **Restructuring: not needed.** The modules are many but each is one idea,
@@ -60,9 +74,6 @@ server starts making it as it starts.
   for little gain; the front door is the short way in, and the rest stays as
   it is. If anything, a few old modules could gain the plain docstrings the
   newer ones have.
-- **An `llms.txt`** beside the documentation: a page listing the
-  documentation's pages in a sentence each, the convention for telling an
-  assistant where to read. Cheap, and useful to assistants that browse.
 - **A command line**, `braidpy describe "1 -2"` printing JSON: the front
   door again, for shell scripts and for assistants that run commands rather
   than call tools.

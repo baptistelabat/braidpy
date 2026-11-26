@@ -212,7 +212,7 @@ def test_a_card_conjugate_is_the_same_braid_once_repeated():
     import random
 
     from braidpy.conjugacy import are_conjugate
-    from braidpy.making.lace import card_conjugate, repeat_floor
+    from braidpy.making.lace import ConjugateSearch, card_conjugate, repeat_floor
 
     rng = random.Random(0)
     for _ in range(10):
@@ -220,25 +220,28 @@ def test_a_card_conjugate_is_the_same_braid_once_repeated():
         braid = Braid(
             [rng.choice((-1, 1)) * rng.randint(1, n - 1) for _ in range(10)], n
         )
-        found = card_conjugate(braid, tries=300)
+        found = card_conjugate(braid, ConjugateSearch(tries=300))
         assert are_conjugate(found, braid)
         assert repeat_floor(list(found.generators), n) <= repeat_floor(
             list(braid.generators), n
         )
-        assert card_conjugate(braid, tries=300).generators == found.generators
+        assert (
+            card_conjugate(braid, ConjugateSearch(tries=300)).generators
+            == found.generators
+        )
 
 
 def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
     """#3047, a cascade of one strand crossing many after another: a
     conjugate of it, the same braid by its topology, takes a card far
     shorter."""
+    from braidpy.braid_pattern import alike
     from braidpy.making.lace import card_conjugate
-    from braidpy.ring_program import same_braid
     from braidpy.solid_sinnets_catalogue import abok_3047
 
     braid = abok_3047.braid(1)
     found = card_conjugate(braid)
-    assert same_braid(found, braid)
+    assert alike(found, braid)
     assert len(lace_card(found).steps) < 0.7 * len(lace_card(braid).steps)
 
 
@@ -255,3 +258,117 @@ def test_a_card_as_typed_is_read_back():
     )
     with pytest.raises(ValueError, match="two groups"):
         read_card("0101", 4)
+
+
+def test_gears_are_named_as_spreadsheet_columns():
+    from braidpy.making.lace import gear_name, gear_number
+
+    assert [gear_name(g) for g in (0, 25, 26, 51, 52, 71)] == [
+        "A",
+        "Z",
+        "AA",
+        "AZ",
+        "BA",
+        "BT",
+    ]
+    assert all(gear_number(gear_name(g)) == g for g in range(200))
+    assert gear_number("ab") == 27
+
+
+def test_a_card_is_written_by_the_gears_each_step_turns():
+    """Far shorter than its digits, and read back the same; a step turning
+    no gear is -."""
+    from braidpy.making.lace import card_digits, card_names, read_card
+
+    card = lace_card(Braid((1, -2, 3, -1) * 3, 4), n_gears=8)
+    names = card_names(card.steps)
+    assert read_card(names, 8) == [tuple(map(tuple, s)) for s in card.steps]
+    assert len(names) < len(card_digits(card.steps)) / 2
+    assert card_names([((False,) * 4, (False,) * 4)]) == "-"
+    assert read_card("- / A", 4)[0] == ((False,) * 4, (False,) * 4)
+    assert card.spec()["card"] == names
+
+
+def test_a_punchcard_past_26_gears_keeps_its_columns():
+    """Gears AA and on: every column as wide as the longest name, each punch
+    under its gear's name."""
+    from braidpy.making.lace import punchcard_text
+
+    turning = tuple(g == 27 for g in range(30))
+    text = punchcard_text([(turning, (False,) * 30)])
+    header, anticlockwise = text.splitlines()[:2]
+    assert header.index("AB") == anticlockwise.index("●")
+
+
+def test_a_search_is_set_by_its_settings():
+    """No tries after the first ways of beginning: a card no shorter than
+    the search's own; the same settings, the same card."""
+    from braidpy.making.lace import CARD_SEARCH, CardSearch
+
+    braid = Braid((1, -2, 3, -1, 2, -3) * 2, 4)
+    without = lace_card(braid, search=CardSearch(runs=0))
+    assert len(lace_card(braid).steps) <= len(without.steps)
+    assert lace_card(braid, search=CARD_SEARCH).steps == lace_card(braid).steps
+
+
+def _made_round_the_core(card, passes):
+    """The braid a card makes in so many passes round the ring's core, as
+    the card's own program counts round (RingProgram.ring_word)."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.ring_program import RingProgram
+
+    once = card.program
+    moves, n = RingProgram(once.n_places, once.start, once.rows * passes).ring_word()
+    return Braid(tuple(cored_word(moves, n)), n + 1)
+
+
+@pytest.mark.parametrize("name", ["tubular_braid_8", "tubular_braid_16"])
+def test_a_tube_s_card_makes_it_round_its_core(name):
+    """Made as a tube, its strands across the seam, the card's braid round
+    the ring's core is the ring word's, pass after pass: a pass need not
+    bring a strand home."""
+    from braidpy.annulus_braid import cored_word
+    from braidpy.horn_gear import examples as ex
+    from braidpy.horn_gear.word import ring_unit
+    from braidpy.making.lace import ring_card
+
+    unit, _ = ring_unit(getattr(ex, name)())
+    card = ring_card(unit.moves, unit.n_strands)
+    n = unit.n_strands
+    assert _made_round_the_core(card, 3) == Braid(
+        tuple(cored_word(list(unit.moves) * 3, n)), n + 1
+    )
+
+
+def test_the_lace_tube_s_card_is_found_again():
+    """Every gear turning, a bobbin in every notch: the ring word of a pass
+    is made on as many gears, a step a line."""
+    from braidpy.horn_gear.word import ring_unit
+    from braidpy.machine_catalogue import LACE
+    from braidpy.making.lace import ring_card
+
+    unit, per_pass = ring_unit(LACE["lace_tubular_8"].make().machine())
+    card = ring_card(unit.moves, unit.n_strands)
+    assert per_pass == 1 and card.n_gears == 8 and len(card.steps) == 2
+
+
+def test_random_ring_words_are_made_round_the_core():
+    """Turns and crossings anywhere: made exactly, three passes, round the
+    core; the machine makes what the card's program does."""
+    import random
+
+    from braidpy.annulus_braid import cored_word, solid_word
+    from braidpy.making.lace import ring_card
+
+    rng = random.Random(2)
+    for _ in range(10):
+        n = rng.randint(3, 6)
+        moves = [
+            rng.choice((-1, 1)) * rng.randint(1, n + 1)
+            for _ in range(rng.randint(4, 10))
+        ]
+        card = ring_card(moves, n)
+        assert _made_round_the_core(card, 3) == Braid(
+            tuple(cored_word(moves * 3, n)), n + 1
+        )
+        assert lace_braid(card) == Braid(tuple(solid_word(moves, n)), n)

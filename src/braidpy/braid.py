@@ -16,6 +16,11 @@ if TYPE_CHECKING:
     # sympy is only needed for the Burau matrices, and is slow to import —
     # seconds, in a browser: imported there, when they are asked for.
     from sympy import Matrix
+
+    from braidpy.braid_pattern import BraidPattern
+    from braidpy.braid_word import BraidWord
+    from braidpy.closed_braid import ClosedBraid
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from braidpy.garside_canonical_form import GarsideCanonicalFactors
@@ -31,15 +36,7 @@ from braidpy.utils import (
     colorize,
     int_to_subscript,
     int_to_superscript,
-    lazy_module,
 )
-
-if TYPE_CHECKING:
-    import math_braid
-else:
-    # It imports sympy, slow to import: only when braids are compared.
-    math_braid = lazy_module("math_braid")
-from collections.abc import Iterable
 
 
 def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> list[list]:
@@ -79,7 +76,7 @@ def reduced_burau_generator(generator: int, n_strands: int, t, one, zero) -> lis
 
 
 # How long handle reduction is given to say whether a braid is trivial,
-# before math_braid's normal form decides instead (Braid.is_trivial).
+# before its Garside normal form decides instead (Braid.is_trivial).
 HANDLE_REDUCTION_S = 5.0
 
 # Define a type alias for clarity
@@ -114,7 +111,7 @@ def single_crossing_braiding_process(
         else:
             sequential_single_crossings_index.append(
                 int(step)
-            )  # Force int type to be able to use with math_braid
+            )  # Plain ints, whatever the generators were given as
     return sequential_single_crossings_index
 
 
@@ -331,7 +328,7 @@ class Braid:
             return (self ** (-n)).inverse()
 
     def __key(self) -> tuple:
-        """Get a key on the braid (used by hash function).
+        """Get a key on the braid's word (used by :meth:`word_eq`).
 
         Returns:
             tuple: Key constructed with the Artin's generators and the number of strands.
@@ -349,13 +346,42 @@ class Braid:
         """
         return self.__key() == other.__key()
 
+    def word(self) -> "BraidWord":
+        """The braid's word, compared as a word (:mod:`braidpy.braid_word`)."""
+        from braidpy.braid_word import BraidWord
+
+        return BraidWord(tuple(int(g) for g in self.generators), self.n_strands)
+
+    def pattern(self) -> "BraidPattern":
+        """The braid made over and over, compared as a pattern
+        (:mod:`braidpy.braid_pattern`)."""
+        from braidpy.braid_pattern import BraidPattern
+
+        return BraidPattern(self)
+
+    def closed(self) -> "ClosedBraid":
+        """The braid closed, each strand's end tied to its start: a knot or
+        a link, compared as one (:mod:`braidpy.closed_braid`)."""
+        from braidpy.closed_braid import ClosedBraid
+
+        return ClosedBraid(self)
+
     def __hash__(self) -> int:
-        """Hash the braid based on its word representation.
+        """Hash the braid by what every word for it shares: its strands, the
+        sum of its crossings' signs and its permutation.
+
+        ``==`` is the braid's topology (:meth:`__eq__`), so two words for one
+        braid must hash alike, as Python asks of anything kept in a set or
+        used as a key: hashing the word, ``σ₁σ₂σ₁`` and ``σ₂σ₁σ₂`` would be
+        two keys for one braid.  Braids that hash alike may still differ;
+        ``==`` tells them apart.  For the word itself, compare with
+        :meth:`word_eq`.
 
         Returns:
             int: Hash value for the braid.
         """
-        return hash(self.__key())
+        signs = sum((g > 0) - (g < 0) for g in self.generators)
+        return hash((self.n_strands, signs, tuple(self.perm())))
 
     def __eq__(self, other: object) -> bool:
         """Check if two braids are topologically equivalent: the same braid,
@@ -364,7 +390,7 @@ class Braid:
         By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`):
         two braids are the same exactly when one followed by the other's
         inverse is trivial (:meth:`is_trivial`, which falls back on
-        math_braid's normal form for the rare braids handle reduction is slow
+        the Garside normal form for the rare braids handle reduction is slow
         on).  PATRICK DEHORNOY AND BERT WIEST, "On word reversing in braid groups",
         https://dehornoy.lmno.cnrs.fr/Papers/Dhg.pdf
 
@@ -591,31 +617,37 @@ class Braid:
         return GarsideCanonicalFactors(n_half_twist=k, n_strands=n, Ai=factors)
 
     def get_band_canonical_factors(self) -> GarsideCanonicalFactors:
-        """
-        Get decomposition in the Birman–Ko–Lee (band generator) left normal form
+        """Get decomposition in Birman, Ko and Lee's left normal form, in
+        band generators, δ^p · A_1 ⋯ A_r
+        (:func:`~braidpy.band_canonical_form.band_left_normal_form`).
 
-        Relies on math_braid implementation from J. Cha et al, "An Efficient Implementation of Braid Groups",
-        Advances in Cryptology: Proceedings of ASIACRYPT 2001,
-        Lecture Notes in Computer Science (2001), 144--156.
-        https://www.iacr.org/archive/asiacrypt2001/22480144.pdf
-
-        Not Artin's form: the twist in front is the band generators' δ, a
-        ``1/n_strands`` turn of every strand together, so ``n_half_twist``
-        here counts those rather than half twists — a full twist is
-        ``n_strands`` of them — and the factors are math_braid's.
+        Not Artin's form: ``n_half_twist`` here counts δ, every strand a
+        place round, a ``1/n_strands`` turn — a full twist is
+        ``n_strands`` of them — and each factor is strands in blocks round
+        the circle (:func:`~braidpy.band_canonical_form.factor_blocks`).
 
         Returns:
-            GarsideCanonicalFactors: the band generator decomposition
+            GarsideCanonicalFactors: the band generator decomposition.
         """
-        br = self.no_zero()
-        if br.generators:
-            b = math_braid.Braid(list(self.generators), self.n_strands)
-            b.cleanUpFactors()
-            return GarsideCanonicalFactors(n_half_twist=b.p, n_strands=b.n, Ai=b.a)
-        else:
-            return GarsideCanonicalFactors(
-                n_half_twist=0, n_strands=StrictlyPositiveInt(br.n_strands), Ai=()
-            )
+        from braidpy.band_canonical_form import band_left_normal_form
+
+        n = StrictlyPositiveInt(self.n_strands)
+        p, factors = band_left_normal_form(self.generators, n)
+        return GarsideCanonicalFactors(n_half_twist=p, n_strands=n, Ai=factors)
+
+    def band_word(self) -> list[tuple[int, int]]:
+        """The braid in band generators, as its band normal form spells it
+        (:func:`~braidpy.band_canonical_form.band_word`): ``(t, s)`` for
+        ``a_ts``, strands ``t > s`` crossing in front of those between,
+        ``(s, t)`` for its inverse.  A disk braid's is far shorter than its
+        word.
+
+        Returns:
+            The band letters.
+        """
+        from braidpy.band_canonical_form import band_word
+
+        return band_word(self.generators, self.n_strands)
 
     def to_matrix(self) -> "Matrix":
         """Convert braid to its (unreduced) Burau matrix representation.
@@ -674,16 +706,19 @@ class Braid:
 
         By Dehornoy's handle reduction (:mod:`braidpy.handles_reduction`): a
         braid is trivial exactly when its Dehornoy sign is 0.  It is the
-        faster on most braids, several times faster than math_braid's normal
-        form; but it can blow up on long words of many strands (ABOK #3082's,
-        61 strands and 2400 crossings: five minutes, where math_braid takes
-        half a minute).  So it is given ``HANDLE_REDUCTION_S`` seconds, and
-        math_braid's normal form decides if it has not.
+        faster on most braids; but it can blow up on long words of many
+        strands (ABOK #3082's, 61 strands and 1800 crossings: minutes).  So
+        it is given ``HANDLE_REDUCTION_S`` seconds, and then the braid's
+        left normal form decides
+        (:func:`~braidpy.garside_canonical_form.artin_left_normal_form`):
+        trivial exactly when it is no half twist and no factor (three
+        seconds there).
 
         Returns:
             bool: True if the braid is trivial.
         """
         # Here: handles_reduction itself imports this module.
+        from braidpy.garside_canonical_form import artin_left_normal_form
         from braidpy.handles_reduction import (
             HandleReducedButUnexpectedResult,
             HandleReductionMode,
@@ -698,7 +733,7 @@ class Braid:
                 crossings, HandleReductionMode.COMPARE, time_out_s=HANDLE_REDUCTION_S
             )
         except HandleReducedButUnexpectedResult:
-            return not math_braid.Braid(list(crossings), self.n_strands)
+            return artin_left_normal_form(crossings, self.n_strands) == (0, ())
         return reduced.sign == 0
 
     def permutations(self, plot: bool = False) -> list[list[int]]:

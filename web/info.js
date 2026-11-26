@@ -53,6 +53,8 @@ export function describe(result, seconds) {
     ["Word", info.word, { layout: "row" }],
     ["Shorter word", info.shorter_word, { layout: "row" }],
     ["Ring word", info.annular_word, { layout: "ring" }],
+    // The same braid in band letters, where that is shorter (Braid.band_word).
+    ["Band word", info.band_word, { layout: "band" }],
     [
       "Closest yarns",
       info.closest_approach === undefined
@@ -233,7 +235,11 @@ export function showMaking(making) {
     "\n";
   item(
     lace.spec ? link("Lace machine", lace.spec) : document.createTextNode("Lace machine"),
-    muted(` ${lace.gears} gears, ${lace.steps} steps a repeat `),
+    muted(
+      lace.tube
+        ? ` ${lace.gears} gears, ${lace.steps} steps a repeat, made as a tube `
+        : ` ${lace.gears} gears, ${lace.steps} steps a repeat `,
+    ),
     small("Copy card", (button) => copyText(card, button)),
     small("Download", () => {
       const file = new Blob([card], { type: "text/plain" });
@@ -255,7 +261,8 @@ function wordActions(word, layout, strands) {
   const make = document.createElement("button");
   make.type = "button";
   make.textContent = "Make from it";
-  make.title = `Make this ${layout === "ring" ? "ring word" : "braid word"} as a braid word, once`;
+  const kind = { ring: "ring word", band: "band word" }[layout] ?? "braid word";
+  make.title = `Make this ${kind} as a braid word, once`;
   make.addEventListener("click", () => {
     // The same yarn, for the same look.
     const yarn = lastResult?.yarn_diameter;

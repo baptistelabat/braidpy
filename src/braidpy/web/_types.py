@@ -104,7 +104,16 @@ class Info(TypedDict, total=False):
     # The same braid in fewer crossings, if a shorter word is found
     # (Braid.shortened).
     shorter_word: str
+    # The same braid in band letters (Braid.band_word), if shorter than
+    # either word.
+    band_word: str
     annular_word: str
+    # A braid made round a core, as a tube (horn_gear.word.ring_unit): the
+    # ring word of what is made over and over, round how many strands, and
+    # how many times it was made.
+    ring_unit: str
+    ring_strands: int
+    ring_repeats: int
     crossings: int
     exponent_sum: int
     permutation: list[int]

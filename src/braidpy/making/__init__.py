@@ -17,6 +17,9 @@ from typing import Any
 # Longest repeating unit the page is shown how to make: a card or a list of
 # moves longer than this is no help to a braider, and slow in a browser.
 _MOST_CROSSINGS = 400
+# The core a tube's lace card is made round, in Braid Studio
+# (braidpy.web._settings.CORE_KINDS): one of yarn, down the ring's hole.
+TUBE_CORE = "yarn"
 
 
 def _unit(info: Mapping[str, Any]):
@@ -70,7 +73,11 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
     Returns:
         ``disk``: Braid Studio's description of the disk braid, and the
         moves; ``lace``: the card, the gears, how the bobbins are threaded
-        and Braid Studio's description of the lace machine.  Empty for a braid with no braid word, or too long.
+        and Braid Studio's description of the lace machine, and whether it
+        makes the braid as a tube — for a braid made round a core, its
+        strands going round across the ring's seam, its card's unit the
+        shortest stretch that, repeated, makes it (:func:`_tube_card`).
+        Empty for a braid with no braid word, or too long.
     """
     from braidpy.making.disk import disk_moves
     from braidpy.making.lace import card_conjugate, lace_card
@@ -90,9 +97,17 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
             "spec": {**moves.spec(), "cycles": _passes("mobidai", repeats)},
             "moves": moves.text(),
         }
-    # The card repeats the unit: a conjugate of it is the same braid once
-    # repeated, and may take far fewer steps (card_conjugate).
-    card = lace_card(card_conjugate(unit))
+    tube = _tube_card(info)
+    if tube is not None:
+        card, repeats = tube
+    else:
+        # The card repeats the unit: a conjugate of it is the same braid
+        # once repeated, and may take far fewer steps (card_conjugate).
+        card = lace_card(card_conjugate(unit))
+    spec = card.spec(cycles=_passes("lace", repeats))
+    if tube is not None:
+        # Round a core, so that the tube is seen as one.
+        spec["core"] = TUBE_CORE
     shown["lace"] = {
         "gears": card.n_gears,
         "steps": len(card.steps),
@@ -101,9 +116,30 @@ def for_page(info: Mapping[str, Any]) -> dict[str, Any]:
         "threading": " ".join(card.notches()),
         # Made as many times as the braid shown repeats its unit, as far
         # as the machine will take (:func:`_passes`).
-        "spec": card.spec(cycles=_passes("lace", repeats)),
+        "spec": spec,
+        "tube": tube is not None,
     }
     return shown
+
+
+def _tube_card(info: Mapping[str, Any]):
+    """For a braid made round a core, as a tube — on a ring of gears, or a
+    ring word — its lace card made as a tube
+    (:func:`~braidpy.making.lace.ring_card`), and how many times the braid
+    shown makes its card's unit; None for any other braid, or one no card
+    makes so."""
+    from braidpy.making.lace import ring_card
+
+    if not info.get("ring_unit"):
+        return None
+    moves = [int(g) for g in str(info["ring_unit"]).split()]
+    if len(moves) > _MOST_CROSSINGS:
+        return None
+    try:
+        card = ring_card(moves, int(info["ring_strands"]))
+    except ValueError:
+        return None
+    return card, int(info["ring_repeats"])
 
 
 def sinnet_for_page(

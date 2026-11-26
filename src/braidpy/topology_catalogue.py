@@ -270,21 +270,18 @@ def _braid(method: Method) -> Braid | None:
 
 @lru_cache(maxsize=1)
 def _topologies() -> tuple[Topology, ...]:
-    grouped: list[tuple[Fingerprint, list[Method]]] = []
+    # The methods by the pattern their braid makes: alike when nothing
+    # measured tells them apart (BraidPattern.key), in the order first made.
+    grouped: dict[tuple, tuple[Fingerprint, list[Method]]] = {}
     for method in methods():
         braid = _braid(method)
         if braid is None:
             continue
-        mark = fingerprint(braid)
-        for known, members in grouped:
-            if same_fingerprint(known, mark):
-                members.append(method)
-                break
-        else:
-            grouped.append((mark, [method]))
+        pattern = braid.pattern()
+        grouped.setdefault(pattern.key(), (pattern.fingerprint, []))[1].append(method)
     return tuple(
         Topology(members[0].name, members[0].title, mark, tuple(members))
-        for mark, members in grouped
+        for mark, members in grouped.values()
     )
 
 

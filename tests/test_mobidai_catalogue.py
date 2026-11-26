@@ -158,7 +158,7 @@ def test_edo_yatsu_is_not_ashleys_8_strand_square():
     writhe and linking numbers, and their Alexander polynomials both vanish;
     but the Burau polynomials of their braids differ, so they are not the
     same braid however written, and are not listed as each other's."""
-    from braidpy.ring_program import same_braid
+    from braidpy.braid_pattern import alike
     from braidpy.topology_catalogue import braid_of
     from braidpy.web import build
 
@@ -167,4 +167,4 @@ def test_edo_yatsu_is_not_ashleys_8_strand_square():
 
     edo = braid({"source": "mobidai", "name": "EDO_YATSU"})
     ashley = braid({"source": "sinnet", "name": "abok_3070"})
-    assert not same_braid(edo, ashley)
+    assert not alike(edo, ashley)

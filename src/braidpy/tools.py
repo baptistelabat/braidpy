@@ -108,8 +108,9 @@ def list_braids(source: Optional[str] = None) -> dict[str, Any]:
 def describe_braid(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
     """What is known of a braid from its word: strands, crossings, the
     permutation it makes, whether it is pure and after how many repeats,
-    what it closes up into, its Garside normal form — as Braid Studio's
-    card shows it (:mod:`braidpy.web`) — and a link to see it.
+    what it closes up into, its Garside normal form, its band word where
+    that is shorter (:meth:`braidpy.braid.Braid.band_word`) — as Braid
+    Studio's card shows it (:mod:`braidpy.web`) — and a link to see it.
 
     Args:
         word: The braid word, for example ``"1 -2"``.
@@ -135,10 +136,12 @@ def describe_braid(word: str, n_strands: Optional[int] = None) -> dict[str, Any]
 
 
 def compare_braids(a: str, b: str, n_strands: Optional[int] = None) -> dict[str, Any]:
-    """Whether two braid words make the same braid, as braidpy compares
-    braids — by their topology, however written
-    (:func:`braidpy.ring_program.same_braid`) — and how unlike they are
-    (:func:`braidpy.similarity.distance`: 0 the same, up to 6).
+    """Whether two braid words make the same braid pattern, however written:
+    alike, as braidpy's ways of making a braid check it — by their
+    fingerprints (:meth:`braidpy.braid_pattern.BraidPattern.alike`) — and,
+    if so, proven or not (:meth:`~braidpy.braid_pattern.BraidPattern.proven`);
+    and how unlike they are (:func:`braidpy.similarity.distance`: 0 the
+    same, up to 6).
 
     Args:
         a: A braid word.
@@ -146,15 +149,19 @@ def compare_braids(a: str, b: str, n_strands: Optional[int] = None) -> dict[str,
         n_strands: The strands of both; as many as they need if None.
 
     Returns:
-        ``same_braid`` and ``distance``.
+        ``same_braid``, whether they are alike; ``proven``, whether they are
+        proven the same pattern — None if the proof would take too long, or
+        they are not alike, which proves them different; and ``distance``.
     """
-    from braidpy.similarity import distance, fingerprint, same_fingerprint
+    from braidpy.similarity import distance
 
     n = n_strands or max(_braid(a).n_strands, _braid(b).n_strands)
-    one, other = fingerprint(_braid(a, n)), fingerprint(_braid(b, n))
+    one, other = _braid(a, n).pattern(), _braid(b, n).pattern()
+    alike = one.alike(other)
     return {
-        "same_braid": same_fingerprint(one, other),
-        "distance": round(float(distance(one, other)), 3),
+        "same_braid": alike,
+        "proven": one.proven(other) if alike else False,
+        "distance": round(float(distance(one.fingerprint, other.fingerprint)), 3),
     }
 
 

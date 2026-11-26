@@ -6,6 +6,32 @@ What changed in each release of braidpy.
 
 ### New
 
+- A machine's braid as a ring word round an axis
+  (`braidpy.horn_gear.word.ring_word`): an axial, or any spot one could be
+  fed at, the core the machine braids round if not said (`default_axis`).
+  The turns are kept, so with the core kept as a strand
+  (`annulus_braid.cored_word`) it is the braid the machine makes round a
+  yarn fed there: a tube is not a flat braid curled up. `shortened()`
+  shortens it, the relations read round the ring
+  (`shortening.shortened_ring`, `annulus_braid.turns_last`).
+- A tube made as a tube on a lace machine (`making.lace.ring_card`): a
+  ring word's strands go round across the seam, a pass need not bring
+  them home, and the card's braid round the core is the word's. A
+  machine's tube is the fewest steps that repeat (`horn_gear.word.ring_unit`):
+  2 of the 16-carrier tubular machine's 16. Braid Studio's **Make it as…**
+  makes a braid made round a core so — a ring machine's, a ring word's —
+  in far fewer steps (that machine: 5 a pass instead of 34), round a core
+  of yarn. `RingProgram.ring_word` reads a program round its ring.
+- Four kinds of "the same braid", each with its own `==` and hash
+  (`braidpy.braid_word`, `braid_pattern`, `closed_braid`): `BraidWord`
+  (`braid.word()`), the same crossings;
+  `Braid`, the same braid; `BraidPattern` (`braid.pattern()`), the same
+  braid made over and over, proven by conjugacy where it can be; and
+  `ClosedBraid` (`braid.closed()`), the same knot or link, by its loops,
+  linking numbers and Alexander polynomial, however many strands.
+  `conjugacy.same_braid` is now `same_pattern`, which is what it tells;
+  the old name is kept. The topology catalogue groups braids by pattern
+  key, with the same 91 topologies as before.
 - Catalogues from outside: a package of a site's own adds braids to
   braidpy's catalogues (`braidpy.catalogue.extended`, entry points in
   the group `braidpy.catalogues`), as braid-designer adds machines of its
@@ -225,6 +251,44 @@ What changed in each release of braidpy.
   `mobidai_catalogue`, `solid_sinnets_catalogue` and `topology_catalogue`,
   after `catalogue.py`.  The older names go on working as modules that say
   so with a `DeprecationWarning` and answer as the new ones do.
+- Braids are compared as patterns (`braidpy.braid_pattern`) where braidpy
+  compares them: `BraidPattern.alike`, and `braid_pattern.alike(a, b)` for
+  two braids, say nothing measured tells two patterns apart — fast, the
+  fingerprints — where `==` proves it. The ways of making a braid, the
+  Ashley search and `similarity.similar` check by it, with the same
+  results as before. `ring_program.same_braid` is its old name, kept.
+  `tools.compare_braids`, and so the MCP server, now also says whether
+  two braids are `proven` the same pattern.
+- Braids in band generators, braidpy's own
+  (`braidpy.band_canonical_form`): `a_ts`, strands t and s crossing in
+  front of those between, as round a kumihimo disk or a marudai. Birman,
+  Ko and Lee's normal form (`Braid.get_band_canonical_factors`, before
+  math-braid's: the same, checked against it, faster) and a braid as band
+  letters (`Braid.band_word`, `artin_from_band`). Disk braids spell far
+  shorter so: Kongo gumi on 8 strands, 81 crossings, is 43 band letters;
+  the 16-strand disk braid, 351, is 117.
+  Braid Studio's card gives a braid's band word where it is shorter than
+  its word, as a disk braid's is, and Artin's word elsewhere; a band word
+  can be typed too (layout **band**: `4:1 1:3`), and the MCP server's
+  `describe_braid` gives it.
+- A braid is made on a kumihimo disk in band letters where that takes
+  fewer moves (`making.disk.disk_moves`): two strands far apart cross in
+  three moves, lifted over those between, where crossings of neighbours
+  take three each. Kongo gumi takes 129 moves instead of 243, the 12-strand
+  disk braid 261 instead of 567, the 8-carrier tubular machine's 78 instead
+  of 96; a braid no shorter so, as a flat machine's, is made as before,
+  move for move. `band_canonical_form.band_letters` reads a word as band
+  letters as it stands.
+- braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
+  braid's triviality, and so `==`, falls back on braidpy's own Garside
+  normal form when handle reduction takes too long, and the page no longer
+  installs it; the tests still check braidpy against it. The normal form
+  (`artin_left_normal_form`, `left_weighted`) is the same, worked out
+  another way: the half twists kept at the word's end, each factor made
+  left-weighted with those before it in one pass back, the crossings each
+  can begin and end with changed only where a crossing moves. Fifty times
+  faster: ABOK #3082 on 61 strands against itself rewritten, three seconds
+  (math-braid: seventeen).
 
 - In a ring of gears timed so that every contact is on a horn
   (`described`, `layout.time_ring`), the parts of a split gear are
@@ -272,6 +336,11 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- `hash(Braid)` agrees with `==`: two words for one braid hash alike,
+  so a braid is one key in a dict or a set however it is written. It
+  hashed the word, while `==` compares the braid itself; it now hashes
+  what every word for a braid shares (strands, exponent sum,
+  permutation). `word_eq` still compares words.
 - The package says where braidpy lives: its repository, documentation,
   Braid Studio, changelog and issues (`project.urls`), for PyPI to show.
   Modules that began with a form (file name, author, date) say what they

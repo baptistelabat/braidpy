@@ -5,12 +5,11 @@
 """Assemble Braid Studio as a static site.
 
 The page is plain files: the page itself, three.js, and braidpy as a wheel
-for Pyodide to install in the browser — with math_braid, which braidpy
-needs and PyPI has only as a source package.  Pyodide itself is loaded from
+for Pyodide to install in the browser.  Pyodide itself is loaded from
 its CDN, or from wherever ``?pyodide=`` says.  With them, what braidpy
 would otherwise say in every browser, said here once: what the page can
 make, so that its form is filled before Python has started, and the
-catalogue of braids by topology (:mod:`braidpy.topology_catalog`), some ten
+catalogue of braids by topology (:mod:`braidpy.topology_catalogue`), some ten
 seconds here, minutes there.
 
 Run from the repository root, after ``npm install`` in ``web/``::
@@ -32,13 +31,11 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 
 try:
     import tomllib
 except ModuleNotFoundError:  # Python 3.10: tomllib's forerunner
     import tomli as tomllib
-import urllib.request
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -104,7 +101,6 @@ PROFILE = WEB / "profile.toml"
 # by the page's menu.
 LOCALES = WEB / "locales"
 THREE = WEB / "node_modules" / "three"
-MATH_BRAID = "math-braid==0.8"
 
 
 def _wheel(source: str | Path, out: Path) -> Path:
@@ -120,18 +116,6 @@ def _wheel(source: str | Path, out: Path) -> Path:
     if len(made) != 1:
         raise RuntimeError(f"Expected one wheel from {source}, got {made}.")
     return made.pop()
-
-
-def _math_braid_sdist(into: Path) -> Path:
-    """math_braid's source package, from PyPI: it has no wheel there."""
-    name, version = MATH_BRAID.split("==")
-    with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{version}/json") as r:
-        release = json.load(r)
-    (url,) = [f["url"] for f in release["urls"] if f["packagetype"] == "sdist"]
-    sdist = into / url.rsplit("/", 1)[1]
-    with urllib.request.urlopen(url) as r:
-        sdist.write_bytes(r.read())
-    return sdist
 
 
 # A page file named in another, in double quotes, as a module's imports, a
@@ -347,7 +331,7 @@ def _data(site: Path, packages: Sequence[str] = ()) -> None:
     needs, in the project's own environment."""
     script = (
         "import json, sys; from braidpy import web; "
-        "from braidpy.topology_catalog import export; "
+        "from braidpy.topology_catalogue import export; "
         "topologies = export(); "
         "json.dump({'catalogue': web.catalogue(), 'topologies': topologies, "
         "'braids': web.braids(topologies)}, sys.stdout)"
@@ -389,8 +373,6 @@ def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:
     wheels = site / "wheels"
     wheels.mkdir()
     braidpy = _wheel(ROOT, wheels)
-    with tempfile.TemporaryDirectory() as scratch:
-        math_braid = _wheel(_math_braid_sdist(Path(scratch)), wheels)
     # The site's own packages, installed after braidpy, whose catalogues
     # they add to (braidpy.catalogue.extended).
     own = [_wheel(package, wheels) for package in described["packages"]]
@@ -399,7 +381,7 @@ def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:
         json.dumps(
             {
                 "version": version,
-                "wheels": [math_braid.name, braidpy.name, *(w.name for w in own)],
+                "wheels": [braidpy.name, *(w.name for w in own)],
             },
             indent=2,
         )

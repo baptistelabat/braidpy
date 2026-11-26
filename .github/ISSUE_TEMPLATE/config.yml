@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Braid Studio
+    url: https://baptistelabat.github.io/braidpy/studio/
+    about: See a braid laid and tightened in 3D, with nothing to install.

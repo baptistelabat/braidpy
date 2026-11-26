@@ -48,7 +48,8 @@ None of these changes when a braid is read from another starting point
 polynomials do not change either when the strands are numbered otherwise.  Equal
 fingerprints do not prove two braids the same — no handful of invariants
 can — but different ones prove them different.
-:func:`braidpy.conjugacy.same_braid` proves either way, more slowly.
+:func:`braidpy.conjugacy.same_pattern` proves either way, more slowly;
+:class:`braidpy.braid_pattern.BraidPattern` is a braid compared so.
 """
 
 from __future__ import annotations
@@ -62,6 +63,7 @@ from braidpy.braid import Braid
 __all__ = [
     "Fingerprint",
     "distance",
+    "exact_part",
     "fingerprint",
     "home",
     "same_fingerprint",
@@ -225,13 +227,22 @@ def same_fingerprint(a: Fingerprint, b: Fingerprint) -> bool:
     Returns:
         True if they are the same.
     """
-    return (a.n_strands, a.loops, a.writhe, a.linking, a.burau_mod) == (
-        b.n_strands,
-        b.loops,
-        b.writhe,
-        b.linking,
-        b.burau_mod,
-    )
+    return exact_part(a) == exact_part(b)
+
+
+def exact_part(mark: Fingerprint) -> tuple:
+    """What :func:`same_fingerprint` compares: the parts of a fingerprint
+    taken exactly, not sampled in floating point.  Hashable: a key for
+    braids by their pattern (:class:`braidpy.braid_pattern.BraidPattern`).
+
+    Args:
+        mark: A fingerprint.
+
+    Returns:
+        Its strands, loops, writhe, linking numbers and Burau polynomials
+        modulo a prime.
+    """
+    return (mark.n_strands, mark.loops, mark.writhe, mark.linking, mark.burau_mod)
 
 
 def catalogue_braids() -> dict[str, Braid]:
@@ -260,12 +271,16 @@ def similar(
     """
     if candidates is None:
         candidates = catalogue_braids()
-    mine = fingerprint(braid)
+    mine = braid.pattern()
     found = []
     for name, other in candidates.items():
-        theirs = fingerprint(other)
+        theirs = other.pattern()
         found.append(
-            Match(name, distance(mine, theirs), same_fingerprint(mine, theirs))
+            Match(
+                name,
+                distance(mine.fingerprint, theirs.fingerprint),
+                mine.alike(theirs),
+            )
         )
     found.sort(key=lambda m: (not m.same_fingerprint, m.distance, m.name))
     return found[:count]
