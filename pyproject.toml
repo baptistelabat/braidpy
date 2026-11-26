@@ -33,7 +33,6 @@ classifiers = [
 dependencies = [
     "numpy>=1.21.0",
     "sympy>=1.14.0",
-    "math-braid (>=0.8,<0.9)",
     "networkx>=3.4.2",
 ]
 
@@ -54,6 +53,9 @@ viz = [
 ]
 # braidpy as an MCP server, for AI assistants (braidpy.mcp_server).
 mcp = ["mcp>=2"]
+# The Birman–Ko–Lee (band generator) normal form,
+# Braid.get_band_canonical_factors: math_braid's.  Nothing else needs it.
+band = ["math-braid (>=0.8,<0.9)"]
 
 [project.scripts]
 braidpy-mcp = "braidpy.mcp_server:main"
@@ -61,7 +63,7 @@ braidpy-mcp = "braidpy.mcp_server:main"
 [dependency-groups]
 dev = [
     # Working on braidpy, its drawings are tested too.
-    "braidpy[viz]",
+    "braidpy[viz,band]",
     "ruff>=0.17.2",
     "pytest>=8.3.5",
     "coverage>=7.8.2",

@@ -219,6 +219,19 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
+  braid's triviality, and so `==`, falls back on braidpy's own Garside
+  normal form when handle reduction takes too long, and the page no longer
+  installs it. Only the band generator form
+  (`Braid.get_band_canonical_factors`) uses it, as an extra:
+  `pip install "braidpy[band]"`. The normal form
+  (`artin_left_normal_form`, `left_weighted`) is the same, worked out
+  another way: the half twists kept at the word's end, each factor made
+  left-weighted with those before it in one pass back, the crossings each
+  can begin and end with changed only where a crossing moves. Fifty times
+  faster: ABOK #3082 on 61 strands against itself rewritten, three seconds
+  (math-braid: seventeen).
+
 - In a ring of gears timed so that every contact is on a horn
   (`described`, `layout.time_ring`), the parts of a split gear are
   stacked on their axle, each keeping its own time, the axle as large as

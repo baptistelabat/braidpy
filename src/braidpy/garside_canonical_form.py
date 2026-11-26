@@ -131,6 +131,14 @@ def artin_left_normal_form(
 ) -> tuple[int, tuple[Permutation, ...]]:
     """A braid word in Artin's left normal form, Δ^k · A_1 ⋯ A_r.
 
+    The half twists are kept at the word's end as it is read: there a
+    crossing passes them by turning over (``Δ σᵢ = σₙ₋ᵢ Δ``), and an inverse
+    crossing is a half twist less and a permutation braid more
+    (``σᵢ⁻¹ = (σᵢ⁻¹Δ) Δ⁻¹``), so no factor read before is touched.  Each
+    factor is then made left-weighted with those before it
+    (:func:`left_weighted`), and the half twists brought to the front,
+    turning the factors over once.
+
     Args:
         generators: Signed Artin generators, ``+i`` for σ_i and ``-i`` for its
             inverse; 0 is ignored.
@@ -143,26 +151,35 @@ def artin_left_normal_form(
     n = n_strands
     delta = _delta(n)
     k = 0
-    factors: list = []
+    factors: list[Permutation] = []
     for g in generators:
         if g == 0:
             continue
-        i = abs(g)
+        # Past the k half twists behind it, σ_i is σ_{n-i} if k is odd.
+        i = abs(g) if k % 2 == 0 else n - abs(g)
         if g > 0:
             factors.append(_swap(n, i))
         else:
-            # σ_i⁻¹ = Δ⁻¹ · (Δ σ_i⁻¹), and the Δ⁻¹ moves to the front through
-            # what came before, turning each factor over as it goes.
-            factors = [_flip(f) for f in factors]
-            factors.append(_compose(delta, _swap(n, i)))
+            factors.append(_compose(_swap(n, i), delta))
             k -= 1
-    return left_weighted(k, factors)
+    # F_1 ⋯ F_m · Δ^k = Δ^k · τ^k(F_1) ⋯ τ^k(F_m), τ turning a factor over.
+    lead, form = left_weighted(0, factors)
+    if k % 2:
+        form = tuple(_flip(f) for f in form)
+    return k + lead, form
 
 
 def left_weighted(
     k: int, factors: Sequence[Permutation]
 ) -> tuple[int, tuple[Permutation, ...]]:
     """Δ^k · F_1 ⋯ F_m, for any permutation braids F_i, in left normal form.
+
+    The factors are taken one at a time, each made left-weighted with the
+    one before it, and that one with the one before it, back until a pair
+    is left as it was: one pass back is enough for a left normal form
+    followed by one permutation braid (Thurston; Epstein et al., *Word
+    Processing in Groups*, chapter 9).  Half twists the form begins with go
+    into ``k``, and factors left empty go.
 
     Args:
         k: Half twists in front.
@@ -171,33 +188,67 @@ def left_weighted(
     Returns:
         ``k`` and the factors, as :func:`artin_left_normal_form` gives them.
     """
-    factors = list(factors)
     if not factors:
         return k, ()
     n = len(factors[0])
     identity = tuple(range(n))
     delta = _delta(n)
-    # Make every neighbouring pair left-weighted, until nothing moves.
-    changed = True
-    while changed:
-        changed = False
-        for j in range(len(factors) - 1):
-            a, b = factors[j], factors[j + 1]
-            while True:
-                free = _starts_with(b) - _ends_with(a)
-                if not free:
-                    break
-                i = min(free)
-                s = _swap(n, i)
-                a, b = _compose(a, s), _compose(s, b)
-                changed = True
-            factors[j], factors[j + 1] = a, b
-        # Whole half twists at the front go into k; empty factors go.
-        while factors and factors[0] == delta:
-            factors.pop(0)
-            k += 1
-        factors = [f for f in factors if f != identity]
-    return k, tuple(factors)
+    form: list[Permutation] = []
+    for factor in factors:
+        form.append(factor)
+        at = len(form) - 2
+        while at >= 0:
+            moved = _weighted(form[at], form[at + 1])
+            if moved is None:
+                break
+            form[at], form[at + 1] = moved
+            at -= 1
+        while form and form[-1] == identity:
+            form.pop()
+    lead = 0
+    while lead < len(form) and form[lead] == delta:
+        lead += 1
+    return k + lead, tuple(f for f in form[lead:] if f != identity)
+
+
+def _weighted(a: Permutation, b: Permutation) -> tuple[Permutation, Permutation] | None:
+    """The pair ``a · b`` made left-weighted: every crossing ``b`` can begin
+    with that ``a`` can end with, and stay a permutation braid, moved from
+    ``b`` to ``a``; None if there is none.
+
+    A crossing moved changes which crossings each can begin or end with
+    only beside it, so those are kept, and changed there.
+    """
+    n = len(a)
+    ends = list(a)
+    strand_at = [0] * n  # the strand ending in each place, in a
+    for strand, place in enumerate(ends):
+        strand_at[place] = strand
+    starts = list(b)
+    # σ_i: a ends with it if the strands ending at i-1, i crossed, b
+    # begins with it if those starting at i-1, i cross.
+    a_ends = {i for i in range(1, n) if strand_at[i - 1] > strand_at[i]}
+    b_starts = {i for i in range(1, n) if starts[i - 1] > starts[i]}
+    free = b_starts - a_ends
+    if not free:
+        return None
+    while free:
+        i = min(free)
+        # a · σ_i: the strands ending at i-1 and i swap ends; σ_i · b: the
+        # strands starting at i-1 and i swap starts.
+        x, y = strand_at[i - 1], strand_at[i]
+        strand_at[i - 1], strand_at[i] = y, x
+        ends[x], ends[y] = i, i - 1
+        starts[i - 1], starts[i] = starts[i], starts[i - 1]
+        for p in (i - 1, i, i + 1):
+            if not 1 <= p < n:
+                continue
+            ended = strand_at[p - 1] > strand_at[p]
+            begun = starts[p - 1] > starts[p]
+            (a_ends.add if ended else a_ends.discard)(p)
+            (b_starts.add if begun else b_starts.discard)(p)
+            (free.add if begun and not ended else free.discard)(p)
+    return tuple(ends), tuple(starts)
 
 
 def permutation_word(a: Permutation) -> list:

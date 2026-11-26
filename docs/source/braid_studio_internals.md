@@ -29,7 +29,7 @@ static files, published with the documentation.
   result and its timeline (`_result`), and what is known of a braid
   (`_info`).
 - `web/worker.js` loads Pyodide and numpy from Pyodide's CDN, and braidpy
-  and math_braid as wheels from the site. It then answers each description:
+  as a wheel from the site. It then answers each description:
   braidpy lays the yarns, the page shows them at once, and the settle
   worker, `web/settle.js`, settles them: sideways (`web/tighten.js`), on a
   marudai (`web/marudai.js`), or by physics (`web/rope.js`, `web/form.js`).
@@ -58,8 +58,7 @@ static files, published with the documentation.
   see [A site of your own](private_sites.md#in-another-language).
 - `web/build.py` assembles the site in `web/site/`. It copies the page, each
   of its files naming the others with the page's version, so a browser never
-  mixes old files with new ones, and three.js; builds the wheels, math_braid's from its source package,
-  since PyPI has no wheel of it; and writes `catalogue.json`, what the page
+  mixes old files with new ones, and three.js; builds the wheels; and writes `catalogue.json`, what the page
   can make, and `topologies.json`, the catalogue of braids by topology, made
   once here rather than in every browser.
 - `web/smoke_test.py` serves the site, opens it in a headless browser,
@@ -97,7 +96,7 @@ tightening, the hot loop, ported to JavaScript and tested against braidpy.
 Drawing libraries — plotly, matplotlib, imageio — are tens of megabytes in a
 browser, and the page does not need them: it draws with three.js. braidpy
 therefore imports them only when something is drawn with them
-(`braidpy.utils.lazy_module`), and so with sympy and math_braid, seconds to
+(`braidpy.utils.lazy_module`), and so with sympy, seconds to
 import in a browser and needed only for Burau matrices and comparing braids;
 a test checks that building any braid loads none of them. The page loads
 numpy, plus networkx for the machines when one is first chosen.

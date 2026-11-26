@@ -360,15 +360,67 @@ class TestBraid:
                     )
                     assert (b == other) == expected
 
-    def test_math_braid_decides_when_handle_reduction_takes_too_long(self, monkeypatch):
+    def test_the_normal_form_decides_when_handle_reduction_takes_too_long(
+        self, monkeypatch
+    ):
         """Given no time at all, handle reduction gives up on a long word:
-        math_braid's normal form then says whether it is trivial."""
+        the braid's own left normal form then says whether it is trivial,
+        as math_braid's does, without math_braid."""
+        import random
+
+        import math_braid
+
         import braidpy.braid
 
         monkeypatch.setattr(braidpy.braid, "HANDLE_REDUCTION_S", 0.0)
         b = Braid([1, 2, -1, 3, -2, 1, 2, 3, -1, 2] * 3, n_strands=4)
         assert (b * b.inverse()).is_trivial()
         assert not b.is_trivial()
+        rng = random.Random(3)
+        for n in (3, 5, 8):
+            for _ in range(10):
+                word = [rng.choice((1, -1)) * rng.randint(1, n - 1) for _ in range(20)]
+                again = word[:7] + [1, -1] + word[7:]
+                other = Braid(word, n) * Braid(again, n).inverse()
+                assert other.is_trivial()
+                changed = Braid(word, n) * Braid(word[:-1] + [-word[-1]], n).inverse()
+                assert changed.is_trivial() == (
+                    not math_braid.Braid(list(changed.generators), n)
+                )
+
+    def test_the_band_form_asks_for_its_extra(self, monkeypatch):
+        """math_braid is an extra: without it, the band form says how to
+        get it, and nothing else needs it."""
+        import sys
+
+        monkeypatch.setitem(sys.modules, "math_braid", None)
+        with pytest.raises(ImportError, match=r"braidpy\[band\]"):
+            Braid([2, -1]).get_band_canonical_factors()
+        assert Braid([1, 2, -1, -2, 1, -1, 2, 1, -2, -1], 3).is_trivial()
+
+    @pytest.mark.slow
+    def test_a_long_braid_of_many_strands_is_decided_by_its_normal_form(self):
+        """ABOK #3082, 61 strands, against itself rewritten: handle
+        reduction takes minutes, its normal form seconds."""
+        import random
+        import time
+
+        from braidpy.annulus_braid import solid_word
+        from braidpy.garside_canonical_form import artin_left_normal_form
+        from braidpy.solid_sinnets_catalog import abok_3082
+
+        n = abok_3082.n_strands
+        word = solid_word(abok_3082.annular_word(1), n)
+        rewritten = list(word)
+        rng = random.Random(0)
+        for _ in range(3000):
+            k = rng.randrange(len(rewritten) - 1)
+            if abs(abs(rewritten[k]) - abs(rewritten[k + 1])) >= 2:
+                rewritten[k], rewritten[k + 1] = rewritten[k + 1], rewritten[k]
+        start = time.perf_counter()
+        both = word + [-g for g in reversed(rewritten)]
+        assert artin_left_normal_form(both, n) == (0, ())
+        assert time.perf_counter() - start < 60
 
     def test_a_braid_compares_with_the_trivial_braid(self):
         """Compared with a braid of no crossings, either way round, a braid
