@@ -9,7 +9,7 @@ import json
 import pytest
 
 from braidpy import Braid
-from braidpy.topology_catalog import (
+from braidpy.topology_catalogue import (
     Topology,
     braid_of,
     catalogue,
@@ -148,7 +148,7 @@ def test_a_tubular_machine_s_braid_is_its_ring_word_filled_in():
 def test_a_shape_s_example_is_known_only_as_it_is():
     """A sinnet from a shape is the example it is described as only if
     every setting agrees: a track turned round is another braid."""
-    from braidpy.topology_catalog import methods
+    from braidpy.topology_catalogue import methods
 
     triangle = next(
         m for m in methods() if m.source == "shape" and m.title.startswith("ABOK #3047")

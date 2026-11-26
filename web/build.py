@@ -9,7 +9,7 @@ for Pyodide to install in the browser.  Pyodide itself is loaded from
 its CDN, or from wherever ``?pyodide=`` says.  With them, what braidpy
 would otherwise say in every browser, said here once: what the page can
 make, so that its form is filled before Python has started, and the
-catalogue of braids by topology (:mod:`braidpy.topology_catalog`), some ten
+catalogue of braids by topology (:mod:`braidpy.topology_catalogue`), some ten
 seconds here, minutes there.
 
 Run from the repository root, after ``npm install`` in ``web/``::
@@ -331,7 +331,7 @@ def _data(site: Path, packages: Sequence[str] = ()) -> None:
     needs, in the project's own environment."""
     script = (
         "import json, sys; from braidpy import web; "
-        "from braidpy.topology_catalog import export; "
+        "from braidpy.topology_catalogue import export; "
         "topologies = export(); "
         "json.dump({'catalogue': web.catalogue(), 'topologies': topologies, "
         "'braids': web.braids(topologies)}, sys.stdout)"

@@ -11,10 +11,10 @@ import pytest
 from braidpy.catalogue import Entry
 
 CATALOGUES = {
-    "braidpy.braid_catalog": "braidpy.braid.Braid",
-    "braidpy.mobidai_catalog": "braidpy.mobidai_catalog.CataloguedMobidai",
-    "braidpy.solid_sinnets_catalog": "braidpy.ashley_solid_sinnet.AshleySolidSinnet",
-    "braidpy.machine_catalog": "braidpy.horn_gear.model.BraidingMachine",
+    "braidpy.braid_catalogue": "braidpy.braid.Braid",
+    "braidpy.mobidai_catalogue": "braidpy.mobidai_catalogue.CataloguedMobidai",
+    "braidpy.solid_sinnets_catalogue": "braidpy.ashley_solid_sinnet.AshleySolidSinnet",
+    "braidpy.machine_catalogue": "braidpy.horn_gear.model.BraidingMachine",
 }
 
 
@@ -42,6 +42,6 @@ def test_a_catalogue_names_titles_and_makes_each_braid(module, kind, monkeypatch
 
 
 def test_the_mobidai_braid_keeps_its_old_name():
-    from braidpy.mobidai_catalog import CataloguedBraid, CataloguedMobidai
+    from braidpy.mobidai_catalogue import CataloguedBraid, CataloguedMobidai
 
     assert CataloguedBraid is CataloguedMobidai

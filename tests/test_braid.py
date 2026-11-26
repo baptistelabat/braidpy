@@ -377,7 +377,7 @@ class TestBraid:
 
         from braidpy.annulus_braid import solid_word
         from braidpy.garside_canonical_form import artin_left_normal_form
-        from braidpy.solid_sinnets_catalog import abok_3082
+        from braidpy.solid_sinnets_catalogue import abok_3082
 
         n = abok_3082.n_strands
         word = solid_word(abok_3082.annular_word(1), n)

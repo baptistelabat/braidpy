@@ -11,7 +11,7 @@ from braidpy.braid import Braid
 from braidpy.horn_gear import BraidingMachine
 from braidpy.horn_gear.described import graph_of, machine_from_graph
 from braidpy.horn_gear.word import annular_word, flat_word
-from braidpy.machine_catalog import CATALOGUE
+from braidpy.machine_catalogue import CATALOGUE
 from braidpy.similarity import fingerprint, same_fingerprint
 
 # Every machine of the catalogue but the lace machines, whose gears a card

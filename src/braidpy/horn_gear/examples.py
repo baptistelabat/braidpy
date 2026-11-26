@@ -10,7 +10,7 @@ Classic braiding machine configurations as factory functions.
 
 Each function returns a ready-to-use BraidingMachine, written as its graph
 (:func:`~braidpy.horn_gear.described.machine_from_graph`): the gears that
-mesh and where it feeds axial yarns.  Each loads itself.  :mod:`braidpy.machine_catalog` lists the braids
+mesh and where it feeds axial yarns.  Each loads itself.  :mod:`braidpy.machine_catalogue` lists the braids
 they make.
 
 References

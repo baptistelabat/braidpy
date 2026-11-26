@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from braidpy import Braid
-from braidpy.braid_catalog import square4
+from braidpy.braid_catalogue import square4
 from braidpy.braidword import braidword_alpha_to_numeric
 from braidpy.handles_reduction import dehornoy_reduce_core
 

@@ -10,7 +10,7 @@ import pytest
 
 from braidpy import Braid
 from braidpy.annulus_braid import cored_word, turn, turns_last, wrap_crossing
-from braidpy.braid_catalog import garside_half_twist_braid
+from braidpy.braid_catalogue import garside_half_twist_braid
 
 
 @pytest.mark.parametrize("n", [2, 3, 5])

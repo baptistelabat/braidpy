@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from braidpy.machine_catalog import CATALOGUE as MACHINES
+from braidpy.machine_catalogue import CATALOGUE as MACHINES
 from braidpy.web import build
 
 

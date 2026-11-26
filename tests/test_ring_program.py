@@ -8,7 +8,7 @@ the step between a braid and the ways of making it."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalog import word_examples
+from braidpy.braid_catalogue import word_examples
 from braidpy.braid_pattern import alike
 from braidpy.ring_program import RingProgram, Swap, from_braid
 

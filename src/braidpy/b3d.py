@@ -5,7 +5,7 @@
 """A braid designed in braid3d, the 3D braid designer of craftdesignonline.com
 (see the references page), read from its file as a mobidai braid: the disk's
 slots, where each yarn starts, and the moves of a cycle
-(:class:`~braidpy.mobidai_catalog.CataloguedMobidai`).
+(:class:`~braidpy.mobidai_catalogue.CataloguedMobidai`).
 
 The file (``.b3d``) is URL-encoded JSON: each yarn's colour, and the steps
 the braid was designed by, each a group of moves of yarns from one angle
@@ -52,7 +52,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from braidpy.mobidai_catalog import CataloguedMobidai
+    from braidpy.mobidai_catalogue import CataloguedMobidai
 
 __all__ = ["MOST_SLOTS", "Design", "mobidai_from_b3d", "read_b3d", "write_b3d"]
 
@@ -352,7 +352,7 @@ def mobidai_from_b3d(
         ValueError: If the file holds no braid3d design, or one that does
             what is not read here.
     """
-    from braidpy.mobidai_catalog import CataloguedMobidai
+    from braidpy.mobidai_catalogue import CataloguedMobidai
 
     design = Design.read(text)
     if design.prelude or design.times == 1:

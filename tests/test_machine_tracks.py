@@ -10,7 +10,7 @@ import numpy as np
 from braidpy import web
 from braidpy.horn_gear.layout import compute_layout
 from braidpy.horn_gear.visualization import track_curves
-from braidpy.machine_catalog import CATALOGUE
+from braidpy.machine_catalogue import CATALOGUE
 from braidpy.web.machines import machine_geometry
 
 

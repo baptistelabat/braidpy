@@ -295,7 +295,7 @@ def test_a_lace_card_of_a_tube_is_not_a_tube():
     tube's braid it makes the same braid, but a flat one curled up, not the
     tube round its core."""
     from braidpy.horn_gear.word import ring_word
-    from braidpy.machine_catalog import LACE
+    from braidpy.machine_catalogue import LACE
     from braidpy.making.lace import lace_card
     from braidpy.ring_program import same_braid
 

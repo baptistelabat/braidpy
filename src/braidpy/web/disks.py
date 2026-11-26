@@ -51,13 +51,13 @@ from braidpy.web._types import (
 
 
 def _sinnets():
-    from braidpy.solid_sinnets_catalog import CATALOGUE
+    from braidpy.solid_sinnets_catalogue import CATALOGUE
 
     return CATALOGUE
 
 
 def _mobidais():
-    from braidpy.mobidai_catalog import CATALOGUE
+    from braidpy.mobidai_catalogue import CATALOGUE
 
     return CATALOGUE
 
@@ -215,7 +215,7 @@ def _from_kumihimo(spec: Spec) -> Result:
 
 
 def _from_mobidai(spec: Spec) -> Result:
-    from braidpy.mobidai_catalog import CataloguedMobidai
+    from braidpy.mobidai_catalogue import CataloguedMobidai
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     mobidais = _mobidais()
@@ -649,9 +649,9 @@ def _shape_entry() -> Source:
 
 def _shape_examples() -> list[Example]:
     """The braids a sinnet from a shape offers: the book's that a shape
-    draws (:data:`braidpy.solid_sinnets_catalog.DRAWN`), named as the
+    draws (:data:`braidpy.solid_sinnets_catalogue.DRAWN`), named as the
     catalogue names them, then braidpy's own (``Shape.examples``)."""
-    from braidpy.solid_sinnets_catalog import DRAWN
+    from braidpy.solid_sinnets_catalogue import DRAWN
 
     sinnets = _sinnets()
     book: dict[tuple, Example] = {}

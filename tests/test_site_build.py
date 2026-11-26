@@ -159,7 +159,7 @@ name = "own-braids"
 version = "0.1"
 
 [project.entry-points."braidpy.catalogues"]
-machine_catalog = "own_braids:MACHINES"
+machine_catalogue = "own_braids:MACHINES"
 
 [build-system]
 requires = ["setuptools>=61"]

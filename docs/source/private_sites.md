@@ -40,7 +40,7 @@ in the pages and the build, the files both sides change most.
    `build.py --profile` fills the pages with another (see below).
 2. **Catalogues from outside** — done. The machines, disk braids and
    sinnets the studio offers come from braidpy's catalogues
-   (`machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog`), each
+   (`machine_catalogue`, `mobidai_catalogue`, `solid_sinnets_catalogue`), each
    extended with what installed packages add to it
    ({func}`~braidpy.catalogue.extended`): a package of the site's own names,
    by [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
@@ -112,7 +112,7 @@ name = "designer-braids"
 version = "0.1"
 
 [project.entry-points."braidpy.catalogues"]
-machine_catalog = "designer_braids:MACHINES"
+machine_catalogue = "designer_braids:MACHINES"
 ```
 
 ```python
@@ -127,7 +127,7 @@ MACHINES = {
 
 with `packages = ["designer"]` in the profile. A lace machine is added the
 same way, under the name `lace_machines`, as a dict of `Entry` making a
-`braidpy.machine_catalog.LaceRing`: its gears, its card (a card typed as
+`braidpy.machine_catalogue.LaceRing`: its gears, its card (a card typed as
 Braid Studio takes it is read by `braidpy.making.lace.read_card`) and the
 notches threaded. Its machines are listed after
 braidpy's, as if braidpy had them: shown, made, premade, catalogued by

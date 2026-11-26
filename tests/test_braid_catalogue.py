@@ -6,7 +6,7 @@ import pytest
 
 from braidpy.artin_generators import a
 from braidpy.braid import Braid, slide_strand
-from braidpy.braid_catalog import (
+from braidpy.braid_catalogue import (
     abok_2974,
     asymmetric_flat4,
     double_flat3,
@@ -178,8 +178,8 @@ def test_double_flat3_does_not_pass_off_2971_as_its_parallel_twin():
 def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
     """Each catalogued braid, as the word it repeats, built without drawing:
     repeated as often as the example says, every strand comes home."""
-    import braidpy.braid_catalog as catalog
-    from braidpy.braid_catalog import CATALOGUE, word_examples
+    import braidpy.braid_catalogue as catalog
+    from braidpy.braid_catalogue import CATALOGUE, word_examples
     from braidpy.braidword import parse_word
     from braidpy.pure_braid import is_pure
 
@@ -208,7 +208,7 @@ def test_the_rectangular_braid_of_14_runs_on_two_tracks_of_seven():
     any arrangement behind it.  As many crossings go one way as the other,
     so nothing twists.
     """
-    from braidpy.braid_catalog import rectangular14
+    from braidpy.braid_catalogue import rectangular14
     from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
 
     braid, home = rectangular14(draw=False)
@@ -232,7 +232,7 @@ def test_the_rectangular_braid_of_20_is_not_a_wider_copy_of_the_14():
     by its cycle gives ABBABAABABBABAABABBA, in threes and pairs where the
     braid of fourteen is in pairs throughout.
     """
-    from braidpy.braid_catalog import rectangular20
+    from braidpy.braid_catalogue import rectangular20
     from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
 
     braid, home = rectangular20(draw=False)
