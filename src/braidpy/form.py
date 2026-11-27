@@ -353,7 +353,7 @@ def form(
 
         keys_here: set[int] = set()
 
-        def neighbours() -> None:
+        def neighbors() -> None:
             nonlocal pairs, keys_here
             pairs = near_pairs(x, segs, yarn_of, gap, reach, cells, movable)
             built[:] = x
@@ -433,11 +433,11 @@ def form(
         v_block = 0.0
         working = [1 if k == 1 else 0 for k in kind]
         sums = [0.0] * 4
-        neighbours()
+        neighbors()
         step = 0
         while step < max_steps:
             if stale(x, built):
-                neighbours()
+                neighbors()
             forces(dt)
             state["deepestEver"] = max(state["deepestEver"], now["deepest"])
             block_force = now["blockForce"]

@@ -9,18 +9,18 @@ from urllib.parse import urlparse
 import pytest
 
 from braidpy import (
-    braid_catalogue,
-    machine_catalogue,
-    mobidai_catalogue,
-    solid_sinnets_catalogue,
+    braid_catalog,
+    machine_catalog,
+    mobidai_catalog,
+    solid_sinnets_catalog,
 )
-from braidpy.catalogue import KINDS, Link, ashley
+from braidpy.catalog import KINDS, Link, ashley
 
-CATALOGUES = [
-    braid_catalogue,
-    mobidai_catalogue,
-    solid_sinnets_catalogue,
-    machine_catalogue,
+CATALOGS = [
+    braid_catalog,
+    mobidai_catalog,
+    solid_sinnets_catalog,
+    machine_catalog,
 ]
 
 
@@ -34,11 +34,11 @@ def test_ashley_names_the_book_and_the_number():
     assert ashley(3042) == Link("The Ashley Book of Knots, #3042", "book")
 
 
-@pytest.mark.parametrize("catalogue", CATALOGUES, ids=lambda m: m.__name__)
-def test_every_link_is_whole(catalogue):
+@pytest.mark.parametrize("catalog", CATALOGS, ids=lambda m: m.__name__)
+def test_every_link_is_whole(catalog):
     """A title, a known kind, and a web address if it has one: a book on
     paper, or a post known only by where it was, has none."""
-    for name, entry in catalogue.CATALOGUE.items():
+    for name, entry in catalog.CATALOG.items():
         assert isinstance(entry.links, tuple), name
         for link in entry.links:
             assert link.title and link.kind in KINDS, (name, link)
@@ -52,7 +52,7 @@ def test_every_link_is_whole(catalogue):
 
 
 def test_the_reference_is_the_first_link():
-    entry = solid_sinnets_catalogue.CATALOGUE["abok_3051"]
+    entry = solid_sinnets_catalog.CATALOG["abok_3051"]
     assert entry.reference == "The Ashley Book of Knots, #3051"
     assert [link.kind for link in entry.links] == ["book", "video", "video", "post"]
 
@@ -60,7 +60,7 @@ def test_the_reference_is_the_first_link():
 @pytest.mark.slow
 def test_the_links_go_with_the_topologies_they_make():
     """Exported with the topology catalogue, and read back alike."""
-    from braidpy.topology_catalogue import export, load
+    from braidpy.topology_catalog import export, load
 
     data = export()
     linked = [m for t in data for m in t["methods"] if m["links"]]
@@ -84,7 +84,7 @@ def test_a_package_adds_its_braids_after_braidpy_s_and_none_twice(monkeypatch):
 
     import pytest
 
-    from braidpy.catalogue import GROUP, Entry, extended
+    from braidpy.catalog import GROUP, Entry, extended
 
     class Point:
         value = "own_braids:MACHINES"
@@ -98,9 +98,7 @@ def test_a_package_adds_its_braids_after_braidpy_s_and_none_twice(monkeypatch):
     def points(entries):
         def found(group, name):
             return (
-                [Point(entries)]
-                if (group, name) == (GROUP, "machine_catalogue")
-                else []
+                [Point(entries)] if (group, name) == (GROUP, "machine_catalog") else []
             )
 
         return found
@@ -109,10 +107,10 @@ def test_a_package_adds_its_braids_after_braidpy_s_and_none_twice(monkeypatch):
     monkeypatch.setattr(
         metadata, "entry_points", points({"mine": Entry("Mine", lambda: None)})
     )
-    assert list(extended("machine_catalogue", theirs)) == ["tubular_8", "mine"]
-    assert list(extended("mobidai_catalogue", theirs)) == ["tubular_8"]
+    assert list(extended("machine_catalog", theirs)) == ["tubular_8", "mine"]
+    assert list(extended("mobidai_catalog", theirs)) == ["tubular_8"]
     monkeypatch.setattr(
         metadata, "entry_points", points({"tubular_8": Entry("Mine", lambda: None)})
     )
     with pytest.raises(ValueError, match="tubular_8"):
-        extended("machine_catalogue", theirs)
+        extended("machine_catalog", theirs)

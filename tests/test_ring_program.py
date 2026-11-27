@@ -8,7 +8,7 @@ the step between a braid and the ways of making it."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalogue import word_examples
+from braidpy.braid_catalog import word_examples
 from braidpy.braid_pattern import alike
 from braidpy.ring_program import RingProgram, Swap, from_braid
 
@@ -22,7 +22,7 @@ def _words():
 
 
 @pytest.mark.parametrize("extra", [0, 3])
-def test_every_catalogue_word_comes_back_exactly(extra):
+def test_every_catalog_word_comes_back_exactly(extra):
     """Made into a ring program and read back off its disk moves, with or
     without empty places round the ring: the very braid, its crossings in
     another order only where they commute."""

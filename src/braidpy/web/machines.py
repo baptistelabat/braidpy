@@ -34,7 +34,7 @@ from braidpy.web._result import (
 )
 from braidpy.web._settings import (
     CORE,
-    CORE_COLOUR,
+    CORE_COLOR,
     CORE_KINDS,
     DISK_ITERATIONS,
     OLD_CORES,
@@ -59,9 +59,9 @@ from braidpy.web._types import (
 def _machines():
     """Every catalogued machine the page can draw and turn by hand, by
     name: the horn gear machines and the lace machines."""
-    from braidpy.machine_catalogue import CATALOGUE, LACE
+    from braidpy.machine_catalog import CATALOG, LACE
 
-    return {**CATALOGUE, **LACE}
+    return {**CATALOG, **LACE}
 
 
 # A lace machine with a card of your own goes by its gears and card, for
@@ -86,7 +86,7 @@ def _machine(name: str) -> Any:
     if name.startswith(OWN_GEARS):
         n_slots, _, graph = name[len(OWN_GEARS) :].partition(":")
         return _own_machine({"n_slots": n_slots, "graph": graph})
-    from braidpy.machine_catalogue import LaceRing
+    from braidpy.machine_catalog import LaceRing
 
     machines = _machines()
     if name not in machines:
@@ -127,7 +127,7 @@ def _from_machine(spec: Spec) -> Result:
     from braidpy.horn_gear import gear_radii
     from braidpy.horn_gear.tracks import ring_order
     from braidpy.horn_gear.word import annular_word, flat_word, ring_unit
-    from braidpy.machine_catalogue import CATALOGUE as machines
+    from braidpy.machine_catalog import CATALOG as machines
 
     name = Machine.name.read(spec)
     if name == OWN:
@@ -192,14 +192,14 @@ def _from_machine(spec: Spec) -> Result:
         ]
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
-    own = machine.carrier_colours(carriers_at) or {}
-    colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
-    colour.update({k: CORE_COLOUR for k in cores})
+    own = machine.carrier_colors(carriers_at) or {}
+    color = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
+    color.update({k: CORE_COLOR for k in cores})
     result = _result(
         title + f", {cycles} cycles",
         paths,
         diameter,
-        colours=[colour[k] for k in keys],
+        colors=[color[k] for k in keys],
         names=[f"Core {k}" if k in cores else f"Yarn {k}" for k in keys],
         info=info,
         notes=notes,
@@ -463,7 +463,7 @@ def _lace_card(spec: Spec) -> tuple[str, int, list[Any], list[int] | None]:
     step whether each gear turns anticlockwise, then clockwise, and the
     notches threaded, strand after strand (every one if None).  Read without
     building the machine."""
-    from braidpy.machine_catalogue import LACE
+    from braidpy.machine_catalog import LACE
     from braidpy.making.lace import read_card
 
     name = Lace.name.read(spec)
@@ -544,7 +544,7 @@ def _lace_on_disk(spec: Spec) -> Result:
         title + f", {cycles} passes",
         paths,
         diameter,
-        colours=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
+        colors=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
         names=[f"Bobbin {k}" for k in keys],
         info=info,
         notes=[
@@ -566,7 +566,7 @@ def _from_lace(spec: Spec) -> Result:
     if Lace.settle.read(spec) == "marudai":
         return _lace_on_disk(spec)
     from braidpy.horn_gear import gear_radii
-    from braidpy.machine_catalogue import LACE
+    from braidpy.machine_catalog import LACE
     from braidpy.making.lace import punchcard_text, ring_braid
 
     name = Lace.name.read(spec)
@@ -615,13 +615,13 @@ def _from_lace(spec: Spec) -> Result:
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
     bobbins = [k for k in keys if k not in cores]
-    colour = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(bobbins)}
-    colour.update({k: CORE_COLOUR for k in cores})
+    color = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(bobbins)}
+    color.update({k: CORE_COLOR for k in cores})
     result = _result(
         title + f", {cycles} passes",
         paths,
         diameter,
-        colours=[colour[k] for k in keys],
+        colors=[color[k] for k in keys],
         names=[f"Core {k}" if k in cores else f"Bobbin {k}" for k in keys],
         info=info,
         notes=notes,
@@ -731,12 +731,12 @@ def machine_geometry(name: str) -> MachineGeometry:
             for x, y in [axial_position(machine, layout, spot)]
         ],
         "own_axials": [axial_text(axial) for axial in machine.axials],
-        "core_colour": CORE_COLOUR,
+        "core_colour": CORE_COLOR,
         # A lace machine, turned by its card, is not written as a graph.
         "graph": _graph(machine) if machine.has_fixed_tracks else None,
         "tracks": [
-            {"colour": colour, "points": np.round(points, 4).tolist()}
-            for colour, points in tracks(machine, layout)
+            {"colour": color, "points": np.round(points, 4).tolist()}
+            for color, points in tracks(machine, layout)
         ],
     }
 
@@ -764,16 +764,16 @@ def tracks(machine: Any, layout: Any = None) -> list[tuple[str, Any]]:
         layout's plane — the carriers' too.
     """
     from braidpy.horn_gear.layout import compute_layout
-    from braidpy.horn_gear.visualization import coloured_tracks
+    from braidpy.horn_gear.visualization import colored_tracks
 
     if layout is None:
         layout = compute_layout(machine)
     found = []
-    for _, colour, points in coloured_tracks(machine, layout):
+    for _, color, points in colored_tracks(machine, layout):
         # One point in so many, the last kept: the track stays closed.
         every = max(1, math.ceil(len(points) / _TRACK_POINTS))
         kept = np.vstack([points[:-1:every], points[-1:]])
-        found.append((colour, kept))
+        found.append((color, kept))
     return found
 
 
@@ -846,13 +846,13 @@ def machine_origin(name: str, place: list[Any], time: int) -> list[Any] | None:
 
 
 def _machine_entry() -> Source:
-    from braidpy.machine_catalogue import CATALOGUE
+    from braidpy.machine_catalog import CATALOG
 
     # Your own starts from the machine drawn before, written as its graph
     # (machine_geometry): the catalogue makes no machine, which would load
     # networkx before one is asked for.
     entries: list[Any] = [
-        {"name": name, "title": entry.title} for name, entry in CATALOGUE.items()
+        {"name": name, "title": entry.title} for name, entry in CATALOG.items()
     ]
     return {
         "title": "Horn gear braiding machine",
@@ -862,7 +862,7 @@ def _machine_entry() -> Source:
 
 
 def _lace_entry() -> Source:
-    from braidpy.machine_catalogue import LACE
+    from braidpy.machine_catalog import LACE
     from braidpy.making.lace import card_names
 
     entries: list[Any] = []

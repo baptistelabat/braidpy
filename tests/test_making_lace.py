@@ -10,7 +10,7 @@ import itertools
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalogue import word_examples
+from braidpy.braid_catalog import word_examples
 from braidpy.making.lace import _gear_sign, lace_braid, lace_card
 
 
@@ -22,7 +22,7 @@ def _words():
         yield example["title"], Braid(word, example["n_strands"])
 
 
-def test_every_catalogue_word_is_made_on_the_lace_machine():
+def test_every_catalog_word_is_made_on_the_lace_machine():
     """The card run on the machine makes the very braid."""
     for title, braid in _words():
         card = lace_card(braid)
@@ -70,11 +70,11 @@ def test_the_search_finds_the_fewest_steps_of_small_braids():
     (scratch work): the square sinnet of 4 on six gears in 8, though it has
     6 crossings, as two of them must wait for a strand to move; the
     asymmetric flat braid of 4 in 4."""
-    from braidpy.braid_catalogue import CATALOGUE
+    from braidpy.braid_catalog import CATALOG
     from braidpy.pure_braid import repeating_unit
 
     for name, gears, fewest in (("square4", 6, 8), ("asymmetric_flat4", 6, 4)):
-        made = CATALOGUE[name].make()
+        made = CATALOG[name].make()
         unit = Braid(tuple(repeating_unit(made.generators)), made.n_strands)
         assert len(lace_card(unit, n_gears=gears).steps) == fewest, name
 
@@ -83,7 +83,7 @@ def test_strands_spread_out_move_only_in_pairs():
     """With a notch spare beside each strand, a crossing whose sign is not
     its gear's moves its two strands only: the book's #3047, 94 crossings
     of 19 strands, in a few steps a crossing rather than twenty."""
-    from braidpy.solid_sinnets_catalogue import abok_3047
+    from braidpy.solid_sinnets_catalog import abok_3047
 
     braid = abok_3047.braid(1)
     card = lace_card(braid)
@@ -152,10 +152,10 @@ def test_a_ring_that_cannot_hold_the_strands_is_refused(gears):
 def test_a_card_run_on_its_ring_is_the_braid_the_machine_reads():
     """Each gear's turn its two notches swapping bobbins, the crossing the
     sign of its turn: the braid the machine itself makes, word for word,
-    for every card of the catalogue and for cards made from braid words."""
+    for every card of the catalog and for cards made from braid words."""
     import random
 
-    from braidpy.machine_catalogue import LACE
+    from braidpy.machine_catalog import LACE
     from braidpy.making.lace import card_program, ring_braid
 
     for entry in LACE.values():
@@ -182,11 +182,11 @@ def test_no_card_takes_fewer_steps_than_its_floor():
     """The floor is no more than the steps of any card found, and the
     fewest there are for the square sinnet of 4 (8, by trying every turn
     of every gear): two of its crossings wait for a strand to move."""
-    from braidpy.braid_catalogue import CATALOGUE
+    from braidpy.braid_catalog import CATALOG
     from braidpy.making.lace import step_floor
     from braidpy.pure_braid import repeating_unit
 
-    for name, entry in CATALOGUE.items():
+    for name, entry in CATALOG.items():
         made = entry.make()
         unit = Braid(tuple(repeating_unit(made.generators)), made.n_strands)
         word = [int(g) for g in unit.generators]
@@ -196,7 +196,7 @@ def test_no_card_takes_fewer_steps_than_its_floor():
 
 def test_the_floor_a_repeat_does_not_depend_on_where_the_word_is_cut():
     from braidpy.making.lace import repeat_floor, step_floor
-    from braidpy.solid_sinnets_catalogue import abok_3059
+    from braidpy.solid_sinnets_catalog import abok_3059
 
     word = [int(g) for g in abok_3059.braid(1).generators]
     n = abok_3059.n_strands
@@ -237,7 +237,7 @@ def test_the_book_s_sinnets_rewritten_take_far_fewer_steps():
     shorter."""
     from braidpy.braid_pattern import alike
     from braidpy.making.lace import card_conjugate
-    from braidpy.solid_sinnets_catalogue import abok_3047
+    from braidpy.solid_sinnets_catalog import abok_3047
 
     braid = abok_3047.braid(1)
     found = card_conjugate(braid)
@@ -344,7 +344,7 @@ def test_the_lace_tube_s_card_is_found_again():
     """Every gear turning, a bobbin in every notch: the ring word of a pass
     is made on as many gears, a step a line."""
     from braidpy.horn_gear.word import ring_unit
-    from braidpy.machine_catalogue import LACE
+    from braidpy.machine_catalog import LACE
     from braidpy.making.lace import ring_card
 
     unit, per_pass = ring_unit(LACE["lace_tubular_8"].make().machine())

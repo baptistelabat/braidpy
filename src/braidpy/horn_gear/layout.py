@@ -164,8 +164,8 @@ def ring_geometry(
     solved = _RING_GEOMETRY.setdefault(machine, {})
     if key not in solved:
         solved[key] = _ring_geometry(machine, scale, seed, iterations)
-    centres, radii = solved[key]
-    return dict(centres), dict(radii)
+    centers, radii = solved[key]
+    return dict(centers), dict(radii)
 
 
 # Each machine's ring geometry, worked out once: the layout and the radii
@@ -199,7 +199,7 @@ def _ring_geometry(machine, scale, seed, iterations):
     if math.isfinite(min_ratio) and min_ratio > 0:
         pos = {n: xy * min_ratio for n, xy in pos.items()}
     names = list(g.nodes)
-    centres = np.array([pos[n] for n in names], dtype=float)
+    centers = np.array([pos[n] for n in names], dtype=float)
     radii = np.array([convention[n] for n in names])
     index = {n: i for i, n in enumerate(names)}
     meshes = [(index[u], index[v]) for u, v in g.edges()]
@@ -209,15 +209,15 @@ def _ring_geometry(machine, scale, seed, iterations):
         for v in names[i + 1 :]
         if not g.has_edge(u, v)
     ]
-    if _worst(centres, radii, meshes, others) > RELAX_TOLERANCE:
-        centres, radii = min(
+    if _worst(centers, radii, meshes, others) > RELAX_TOLERANCE:
+        centers, radii = min(
             (
                 _relax(start, radii, meshes, others)
-                for start in _starts(g, names, centres, meshes, radii, seed)
+                for start in _starts(g, names, centers, meshes, radii, seed)
             ),
             key=lambda solved: _worst(*solved, meshes, others),
         )
-    placed = {n: (float(x), float(y)) for n, (x, y) in zip(names, centres)}
+    placed = {n: (float(x), float(y)) for n, (x, y) in zip(names, centers)}
     return _orient(machine, placed), {n: float(r) for n, r in zip(names, radii)}
 
 
@@ -227,12 +227,12 @@ def _ring_geometry(machine, scale, seed, iterations):
 SPRING_STARTS = 3
 
 
-def _starts(g, names, centres, meshes, radii, seed):
+def _starts(g, names, centers, meshes, radii, seed):
     """Layouts to relax a ring from (:func:`ring_geometry`), each scaled so
     that its middle mesh is as long as it should be: Kamada-Kawai's, a
     planar one where the gears can be drawn without crossing, and
     ``SPRING_STARTS`` spring layouts."""
-    shapes = [centres]
+    shapes = [centers]
     if nx.check_planarity(g)[0]:
         planar = nx.planar_layout(g)
         shapes.append(np.array([planar[n] for n in names], dtype=float))
@@ -245,50 +245,50 @@ def _starts(g, names, centres, meshes, radii, seed):
         yield shape * float(np.median(ratio))
 
 
-def _pairs(centres: np.ndarray, pairs: list) -> tuple[np.ndarray, ...]:
+def _pairs(centers: np.ndarray, pairs: list) -> tuple[np.ndarray, ...]:
     """Two index arrays for ``pairs``, the unit vector from the first of each
     to the second, and their distance."""
     a = np.array([p[0] for p in pairs], dtype=int)
     b = np.array([p[1] for p in pairs], dtype=int)
-    gap = centres[b] - centres[a]
+    gap = centers[b] - centers[a]
     distance = np.linalg.norm(gap, axis=1)
     return a, b, gap / np.maximum(distance, 1e-12)[:, None], distance
 
 
-def _worst(centres, radii, meshes, others) -> float:
+def _worst(centers, radii, meshes, others) -> float:
     """The worst error of a layout, as a share of the length it should be:
     a mesh too long or too short, or two gears that do not mesh closer than
     touching, past ``CLEARANCE``."""
     worst = 0.0
     if meshes:
-        a, b, _, distance = _pairs(centres, meshes)
+        a, b, _, distance = _pairs(centers, meshes)
         wanted = radii[a] + radii[b]
         worst = float(np.max(np.abs(distance - wanted) / wanted))
     if others:
-        a, b, _, distance = _pairs(centres, others)
+        a, b, _, distance = _pairs(centers, others)
         wanted = (radii[a] + radii[b]) * (1 + CLEARANCE)
         worst = max(worst, float(np.max((wanted - distance) / wanted)))
     return worst
 
 
-def _relax(centres, radii, meshes, others):
+def _relax(centers, radii, meshes, others):
     """Draw gears that mesh to touch and push the others apart, a round at a
     time, every constraint at once and each gear moved by the mean of what
     its constraints ask, till the worst is within ``RELAX_TOLERANCE`` or
     ``RELAX_ROUNDS`` have passed.  A mesh's error goes to its centres and,
     ``RADIUS_GIVE`` of it, to the radii, kept within ``RADIUS_RANGE`` of
     where they started."""
-    centres = centres.copy()
+    centers = centers.copy()
     least, most = radii * RADIUS_RANGE[0], radii * RADIUS_RANGE[1]
     radii = radii.copy()
     n = len(radii)
     for _ in range(RELAX_ROUNDS):
-        if _worst(centres, radii, meshes, others) <= RELAX_TOLERANCE:
+        if _worst(centers, radii, meshes, others) <= RELAX_TOLERANCE:
             break
-        moves = np.zeros_like(centres)
+        moves = np.zeros_like(centers)
         counts = np.zeros(n)
         grows = np.zeros(n)
-        a, b, unit, distance = _pairs(centres, meshes)
+        a, b, unit, distance = _pairs(centers, meshes)
         error = distance - (radii[a] + radii[b])
         push = unit * (error * (1 - RADIUS_GIVE) / 2)[:, None]
         np.add.at(moves, a, push)
@@ -298,7 +298,7 @@ def _relax(centres, radii, meshes, others):
         np.add.at(grows, a, error * RADIUS_GIVE / 2)
         np.add.at(grows, b, error * RADIUS_GIVE / 2)
         if others:
-            a, b, unit, distance = _pairs(centres, others)
+            a, b, unit, distance = _pairs(centers, others)
             short = np.maximum((radii[a] + radii[b]) * (1 + CLEARANCE) - distance, 0)
             push = unit * (short / 2)[:, None]
             np.add.at(moves, a, -push)
@@ -307,9 +307,9 @@ def _relax(centres, radii, meshes, others):
             np.add.at(counts, a, pushed)
             np.add.at(counts, b, pushed)
         counts = np.maximum(counts, 1)
-        centres += moves / counts[:, None]
+        centers += moves / counts[:, None]
         radii = np.clip(radii + grows / counts, least, most)
-    return centres, radii
+    return centers, radii
 
 
 # Rounds of :func:`time_ring`, at most, and the error at which it stops, as
@@ -410,17 +410,17 @@ class _Timing:
         n = self.n
         return z[: 2 * n].reshape(n, 2), z[2 * n : 3 * n], z[3 * n :]
 
-    def angle(self, centres):
+    def angle(self, centers):
         """Each contact's angle, seen from its first gear, and the vector
         from that gear's centre to the second's."""
         c = self.contacts
-        gap = centres[c.second] - centres[c.first]
+        gap = centers[c.second] - centers[c.first]
         return np.arctan2(gap[:, 1], gap[:, 0]), gap
 
     def miss(self, z):
         """How far each contact's two horns miss each other, in steps."""
-        centres, _, turned = self.split(z)
-        alpha, _ = self.angle(centres)
+        centers, _, turned = self.split(z)
+        alpha, _ = self.angle(centers)
         wanted = self.slope * alpha + self.offset
         return _wrap(turned[self.timed_first] - turned[self.timed_second] - wanted)
 
@@ -428,10 +428,10 @@ class _Timing:
         """Every error, as a share of what it is measured against: each mesh
         too long or too short, each two gears that do not mesh closer than
         ``CLEARANCE``, each contact's two horns missing each other."""
-        centres, radii, _ = self.split(z)
-        a, b, _, apart = _pairs(centres, self.meshes)
+        centers, radii, _ = self.split(z)
+        a, b, _, apart = _pairs(centers, self.meshes)
         mesh = apart / (radii[a] + radii[b]) - 1
-        a, b, _, apart = _pairs(centres, self.others)
+        a, b, _, apart = _pairs(centers, self.others)
         clear = (1 + CLEARANCE) * (radii[a] + radii[b])
         overlap = np.maximum(clear - apart, 0) / clear
         return np.concatenate([mesh, overlap, self.contacts.weight * self.miss(z)])
@@ -439,10 +439,10 @@ class _Timing:
     def jacobian(self, z):
         """The derivative of each error of :meth:`residuals` with respect to
         each number of ``z``, one row an error."""
-        centres, radii, _ = self.split(z)
+        centers, radii, _ = self.split(z)
         n = self.n
         rows = []
-        a, b, unit, apart = _pairs(centres, self.meshes)
+        a, b, unit, apart = _pairs(centers, self.meshes)
         apart = np.maximum(apart, SAME_PLACE)
         touch = radii[a] + radii[b]
         mesh = np.zeros((len(a), 3 * n + self.m))
@@ -452,7 +452,7 @@ class _Timing:
             mesh[k, 2 * a + axis] -= unit[:, axis] / touch
         mesh[k, 2 * n + a] = mesh[k, 2 * n + b] = -apart / touch**2
         rows.append(mesh)
-        a, b, unit, apart = _pairs(centres, self.others)
+        a, b, unit, apart = _pairs(centers, self.others)
         apart = np.maximum(apart, SAME_PLACE)
         clear = (1 + CLEARANCE) * (radii[a] + radii[b])
         near = apart < clear
@@ -473,7 +473,7 @@ class _Timing:
         )
         rows.append(overlap)
         c = self.contacts
-        _, gap = self.angle(centres)
+        _, gap = self.angle(centers)
         gx, gy = gap[:, 0], gap[:, 1]
         square = np.maximum(gx * gx + gy * gy, SAME_PLACE**2)
         turn = np.stack([-gy / square, gx / square], axis=1)
@@ -496,11 +496,11 @@ class _Timing:
         z[2 * n : 3 * n] = np.clip(z[2 * n : 3 * n], self.least, self.most)
         return z
 
-    def start(self, centres):
+    def start(self, centers):
         """Each timer's start from a spanning tree of its contacts, the rest
         of the contacts left to the fit."""
         turned = np.zeros(self.m)
-        alpha, _ = self.angle(centres)
+        alpha, _ = self.angle(centers)
         wanted = self.slope * alpha + self.offset
         placed = {0}
         while len(placed) < self.m:
@@ -521,7 +521,7 @@ class _Timing:
 
 
 def time_ring(
-    centres: np.ndarray,
+    centers: np.ndarray,
     radii: np.ndarray,
     convention: np.ndarray,
     meshes: list[tuple[int, int]],
@@ -542,7 +542,7 @@ def time_ring(
     of it, by Levenberg-Marquardt with exact derivatives.
 
     Args:
-        centres: Each gear's centre, ``(n, 2)``.
+        centers: Each gear's centre, ``(n, 2)``.
         radii: Each gear's radius as drawn.
         convention: Each gear's radius by the drawing convention
             (:func:`_gear_radius`), which its radius may leave by
@@ -557,7 +557,7 @@ def time_ring(
         of a step.
     """
     fit = _Timing(convention, meshes, others, contacts)
-    z = np.concatenate([centres.ravel(), radii, fit.start(centres)])
+    z = np.concatenate([centers.ravel(), radii, fit.start(centers)])
     damping = DAMPING
     error = fit.residuals(z)
     for _ in range(TIMING_ROUNDS):
@@ -579,9 +579,9 @@ def time_ring(
             damping = max(damping / DAMPING_EASE, DAMPING_LEAST)
         else:
             damping *= DAMPING_STIFFEN
-    centres, radii, turned = fit.split(z)
+    centers, radii, turned = fit.split(z)
     turned = _set_apart(turned.copy(), fit, contacts.apart)
-    alpha, _ = fit.angle(centres)
+    alpha, _ = fit.angle(centers)
     c = contacts
     # When the first gear's part comes round, the miss shared with the
     # second's by halves.
@@ -590,7 +590,7 @@ def time_ring(
         0.0 if min(phase, 1 - phase) < WHOLE_STEP else phase
         for phase in ((own + fit.miss(z) / 2) % 1.0).tolist()
     ]
-    return centres.copy(), radii.copy(), turned.copy(), phases
+    return centers.copy(), radii.copy(), turned.copy(), phases
 
 
 def _set_apart(
@@ -665,14 +665,14 @@ def _orient(
     previous = None
     current = start
     while len(walk) < len(ring):
-        neighbours = sorted(
+        neighbors = sorted(
             n
             for n in machine.graph.neighbors(current)
             if n in members and n != previous
         )
-        if not neighbours:
+        if not neighbors:
             return placed
-        previous, current = current, neighbours[0]
+        previous, current = current, neighbors[0]
         walk.append(current)
 
     area = 0.0
@@ -1149,13 +1149,13 @@ def tube_axials(
 
 # Gear centres as many decimals alike as this are one axle: a split gear's
 # parts, placed on it by the same sums.
-_CENTRE_DIGITS = 9
+_CENTER_DIGITS = 9
 
 
 def _axle(layout: dict[str, tuple[float, float]], name: str) -> tuple[float, float]:
     """The axle a gear turns on, the same for a split gear's parts."""
     x, y = layout[name]
-    return round(x, _CENTRE_DIGITS), round(y, _CENTRE_DIGITS)
+    return round(x, _CENTER_DIGITS), round(y, _CENTER_DIGITS)
 
 
 def axial_spots(
@@ -1180,12 +1180,12 @@ def axial_spots(
     if layout is None:
         layout = compute_layout(machine)
     spots: list[Axial] = []
-    centres: set[tuple[float, float]] = set()
+    centers: set[tuple[float, float]] = set()
     for name in machine.gears:
-        centre = _axle(layout, name)
-        if centre in centres:
+        center = _axle(layout, name)
+        if center in centers:
             continue
-        centres.add(centre)
+        centers.add(center)
         spots.append(Axial(f"axial_{name}", (name,)))
     return spots + tube_axials(machine, layout)
 

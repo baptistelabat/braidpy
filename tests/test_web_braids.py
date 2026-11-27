@@ -6,7 +6,7 @@
 
 from braidpy import web
 
-# A catalogue of braids by topology, as topology_catalogue.export writes it,
+# A catalogue of braids by topology, as topology_catalog.export writes it,
 # of one braid made two ways.
 TOPOLOGIES = [
     {

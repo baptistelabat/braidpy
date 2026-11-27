@@ -15,7 +15,7 @@ and the braid, as small as it is beside them.  See :mod:`braidpy.carried`.
 import time
 
 from braidpy.carried import braid_by_carriers, figure
-from braidpy.machine_catalogue import CATALOGUE
+from braidpy.machine_catalog import CATALOG
 
 #: The machine, and its steps to make.
 MACHINE = "flat_3"
@@ -25,7 +25,7 @@ N_STEPS = 12
 def main() -> None:
     started = time.time()
     braid = braid_by_carriers(
-        CATALOGUE[MACHINE].make(),
+        CATALOG[MACHINE].make(),
         N_STEPS,
         progress=lambda p: print(
             f"step {p['step']} of {p['of']}, {time.time() - started:.0f} s"

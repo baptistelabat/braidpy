@@ -6,7 +6,7 @@ import pytest
 
 from braidpy.artin_generators import a
 from braidpy.braid import Braid, slide_strand
-from braidpy.braid_catalogue import (
+from braidpy.braid_catalog import (
     abok_2974,
     asymmetric_flat4,
     double_flat3,
@@ -99,7 +99,7 @@ def test_full_twist_braid():
 
 
 def _drawn(make):
-    """A catalogued braid, drawn as it is made: a braid, and how many times
+    """A cataloged braid, drawn as it is made: a braid, and how many times
     to repeat it."""
     braid, repeat = make()
     assert isinstance(braid, Braid) and braid.generators
@@ -176,11 +176,11 @@ def test_double_flat3_does_not_pass_off_2971_as_its_parallel_twin():
         double_flat3(parallel=True, draw=False)
 
 
-def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
-    """Each catalogued braid, as the word it repeats, built without drawing:
+def test_the_catalog_s_braids_are_words_to_try(monkeypatch):
+    """Each cataloged braid, as the word it repeats, built without drawing:
     repeated as often as the example says, every strand comes home."""
-    import braidpy.braid_catalogue as catalog
-    from braidpy.braid_catalogue import CATALOGUE, word_examples
+    import braidpy.braid_catalog as catalog
+    from braidpy.braid_catalog import CATALOG, word_examples
     from braidpy.braidword import parse_word
     from braidpy.pure_braid import is_pure
 
@@ -189,9 +189,9 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
 
     monkeypatch.setattr(Braid, "draw", no_drawing)
     examples = word_examples()
-    assert len(examples) == len(CATALOGUE) + len(catalog.WORD_EXAMPLES)
-    for example, name in zip(examples, CATALOGUE):
-        braid = CATALOGUE[name].make()
+    assert len(examples) == len(CATALOG) + len(catalog.WORD_EXAMPLES)
+    for example, name in zip(examples, CATALOG):
+        braid = CATALOG[name].make()
         unit = parse_word(example["word"])
         times, rest = divmod(len(braid.generators), len(unit))
         assert rest == 0 and tuple(unit * times) == tuple(braid.generators), name
@@ -209,7 +209,7 @@ def test_the_rectangular_braid_of_14_runs_on_two_tracks_of_seven():
     any arrangement behind it.  As many crossings go one way as the other,
     so nothing twists.
     """
-    from braidpy.braid_catalogue import rectangular14
+    from braidpy.braid_catalog import rectangular14
     from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
 
     braid, home = rectangular14(draw=False)
@@ -233,7 +233,7 @@ def test_the_rectangular_braid_of_20_is_not_a_wider_copy_of_the_14():
     by its cycle gives ABBABAABABBABAABABBA, in threes and pairs where the
     braid of fourteen is in pairs throughout.
     """
-    from braidpy.braid_catalogue import rectangular20
+    from braidpy.braid_catalog import rectangular20
     from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
 
     braid, home = rectangular20(draw=False)
@@ -253,20 +253,20 @@ def test_the_rectangular_braid_of_20_is_not_a_wider_copy_of_the_14():
 def test_ashley_s_plats_are_the_sinnets_the_book_says_are_alike():
     """Made as the book's text says, the plats agree with what it says of
     them: #2999 by the square method is the square sinnet already
-    catalogued, and #2965, #2967 and #2968 the flat sinnets; #3018, Smith's
+    cataloged, and #2965, #2967 and #2968 the flat sinnets; #3018, Smith's
     method, is #3001 ("structurally it is identical"); #2989's method, six
     strands equally divided, gives #3003, turned end for end."""
-    from braidpy.braid_catalogue import ASHLEY_PLATS, CATALOGUE, AshleyPlat
+    from braidpy.braid_catalog import ASHLEY_PLATS, CATALOG, AshleyPlat
 
     def alike(a: Braid, b: Braid) -> bool:
         return a.pattern() == b.pattern()
 
     square = AshleyPlat("square", 4, 2, ("o1", "o1"), "square").braid()
-    assert alike(square, CATALOGUE["square4"].make())
+    assert alike(square, CATALOG["square4"].make())
     for n, name in ((3, "flat3"), (5, "flat_sinnet5"), (7, "flat_sinnet7")):
         lead = f"o{n // 2}"
         flat = AshleyPlat("flat", n, n // 2, (lead, lead), first="right").braid()
-        assert alike(flat, CATALOGUE[name].make()), name
+        assert alike(flat, CATALOG[name].make()), name
     assert alike(ASHLEY_PLATS[3018].braid(), ASHLEY_PLATS[3001].braid())
     equal = AshleyPlat("duplex", 6, 3, ("o2", "o3", "u2", "u3")).braid()
     turned = Braid(tuple(reversed(equal.generators)), 6)
@@ -276,7 +276,7 @@ def test_ashley_s_plats_are_the_sinnets_the_book_says_are_alike():
 def test_a_plat_s_lead_passes_the_strands_it_can():
     """A lead to the centre passes every sister; a lead round the back
     comes forward among the opposing strands, not past them."""
-    from braidpy.braid_catalogue import AshleyPlat
+    from braidpy.braid_catalog import AshleyPlat
 
     with pytest.raises(ValueError, match="sisters"):
         AshleyPlat("flat", 5, 3, ("o1", "o2")).braid()

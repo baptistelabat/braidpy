@@ -45,6 +45,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_attribute
 from braidpy.form import _Bead, friction_force
 from braidpy.rope import (
     fire_mix,
@@ -132,7 +133,7 @@ class CarriedBraid:
         eyes: Each carrier's eye, where it is at the end.
         frames: Moments of the making, for an animation: each
             ``{"time", "yarns", "made", "eyes"}`` as above.
-        colours: One colour per yarn.
+        colors: One colour per yarn.
         machine: The deck: gear centres and radii, to scale.
         ring: The forming ring: ``radius``, ``height``, ``wire``.
         deepest: The deepest any two yarns' cores pressed into each other.
@@ -142,11 +143,14 @@ class CarriedBraid:
     made: list[int]
     eyes: np.ndarray
     frames: list[dict[str, Any]]
-    colours: list[str]
+    colors: list[str]
     machine: dict[str, Any]
     ring: dict[str, float]
     deepest: float = 0.0
     settings: dict[str, float] = field(default_factory=dict)
+
+    # Its name before braidpy's code took American spelling.
+    colours = renamed_attribute("colors")
 
 
 def braid_by_carriers(
@@ -191,7 +195,7 @@ def braid_by_carriers(
             }
             for frame in made["frames"]
         ],
-        colours=job["colours"],
+        colors=job["colours"],
         machine=job["deck"],
         ring=job["ring"],
         deepest=made["deepest"],
@@ -243,9 +247,9 @@ def carriers_job(
     radii = gear_radii(machine)
     scale = gear_diameter / (2 * float(np.mean(list(radii.values()))))
     traj = carrier_trajectories(machine, n_steps, carriers, n_substeps=substeps)
-    centre = np.asarray(traj.centre(), dtype=float)
+    center = np.asarray(traj.center(), dtype=float)
     keys = list(traj.xy)
-    eyes = np.stack([(traj.xy[k] - centre) * scale for k in keys], axis=1)
+    eyes = np.stack([(traj.xy[k] - center) * scale for k in keys], axis=1)
     n_yarns = len(keys)
 
     # The yarns start tied round a circle a little more than touching, the
@@ -272,7 +276,7 @@ def carriers_job(
             points += [a + (b - a) * (i / count) for i in range(1, count + 1)]
         starts.append([float(c) for p in points for c in p])
 
-    own: dict[Any, str] = dict(machine.carrier_colours(carriers) or {})
+    own: dict[Any, str] = dict(machine.carrier_colors(carriers) or {})
     return {
         "eyes": eyes.tolist(),
         "start": starts,
@@ -302,7 +306,7 @@ def carriers_job(
         "deck": {
             "gear_diameter": gear_diameter,
             "centres": {
-                g: ((np.asarray(c) - centre) * scale).tolist()
+                g: ((np.asarray(c) - center) * scale).tolist()
                 for g, c in traj.layout.items()
             },
             "radii": {g: r * scale for g, r in traj.radii.items()},
@@ -460,7 +464,7 @@ def _settle(
     def accept(g: int, h: int) -> bool:
         return bool(moves[g] or moves[g + 1] or moves[h] or moves[h + 1])
 
-    def neighbours() -> None:
+    def neighbors() -> None:
         nonlocal pairs, keys_here
         pairs = near_pairs(x, segs, yarn_of, gap, reach, cells, accept)
         built[:] = x
@@ -530,11 +534,11 @@ def _settle(
 
     dt, alpha, downhill = fire["dt"], fire["alpha"], 0
     none: list[float] = []
-    neighbours()
+    neighbors()
     deepest = 0.0
     for _ in range(st["most_steps"]):
         if stale(x, built):
-            neighbours()
+            neighbors()
         now["dt"] = dt
         forces()
         deepest = max(deepest, now["deepest"])
@@ -587,7 +591,7 @@ def figure(braid: CarriedBraid, view: str = "braid", n_around: int = 12) -> go.F
     traces: list[go.BaseTraceType] = []
     ring = braid.ring
     for k, yarn in enumerate(braid.yarns):
-        colour = braid.colours[k]
+        color = braid.colors[k]
         shown = yarn if view == "machine" else yarn[yarn[:, 2] > ring["height"] - BELOW]
         if len(shown) >= 2:
             tx, ty, tz = tube_mesh(shown, RADIUS, n_around)
@@ -596,7 +600,7 @@ def figure(braid: CarriedBraid, view: str = "braid", n_around: int = 12) -> go.F
                     x=tx,
                     y=ty,
                     z=tz,
-                    colorscale=[[0, colour], [1, colour]],
+                    colorscale=[[0, color], [1, color]],
                     showscale=False,
                     name=f"Yarn {k}",
                     lighting={"ambient": 0.5, "diffuse": 0.8, "specular": 0.3},
@@ -611,7 +615,7 @@ def figure(braid: CarriedBraid, view: str = "braid", n_around: int = 12) -> go.F
                     y=run[:, 1],
                     z=run[:, 2],
                     mode="lines",
-                    line={"color": colour, "width": 2},
+                    line={"color": color, "width": 2},
                     showlegend=False,
                 )
             )
@@ -622,7 +626,7 @@ def figure(braid: CarriedBraid, view: str = "braid", n_around: int = 12) -> go.F
                 y=braid.eyes[:, 1],
                 z=braid.eyes[:, 2],
                 mode="markers",
-                marker={"size": 4, "color": braid.colours},
+                marker={"size": 4, "color": braid.colors},
                 name="Carriers",
             )
         )

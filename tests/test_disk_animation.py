@@ -175,7 +175,7 @@ def test_strands_are_plain_svg_and_named_above_them():
 
 
 def test_the_braid_grows_below_the_disk_as_it_is_worked():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
     from braidpy.take_off import disk_crossing_steps, mobidai_steps
 
     config = KONGO_8.to_config()
@@ -188,17 +188,17 @@ def test_the_braid_grows_below_the_disk_as_it_is_worked():
     _, _, made_at = disk_crossing_steps(start, steps, config.n_slots)
     assert [growth.rows_at(t) % 1 for t in made_at] == [0.5] * len(made_at)
     assert growth.rows_at(0.0) == 0.0
-    colour = {k: "red" for k in growth.keys}
+    color = {k: "red" for k in growth.keys}
     # Nothing yet is still something to draw: Plotly leaves a trace alone
     # when a frame gives it no points.
     for time in (0.0, len(steps) / 2, len(steps)):
-        traces = growth.traces(time, colour)
+        traces = growth.traces(time, color)
         assert len(traces) == len(start)
         assert all(len(t.z) >= 1 for t in traces)
         # The newest row at the fell, the older ones below it.
         assert max(max(t.z) for t in traces) == pytest.approx(0.0, abs=1e-3)
         assert min(min(t.z) for t in traces) >= -growth.window * growth.per_row
-    assert min(min(t.z) for t in growth.traces(len(steps), colour)) < 0
+    assert min(min(t.z) for t in growth.traces(len(steps), color)) < 0
 
 
 def test_the_braid_turns_to_hang_under_its_carriers():

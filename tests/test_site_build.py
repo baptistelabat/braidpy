@@ -23,6 +23,17 @@ def _build():
     return module
 
 
+def test_the_catalog_is_served_under_its_new_name_and_its_old_one(tmp_path):
+    """`catalog.json`, with `catalogue.json` of the very same bytes beside
+    it, while the sites built before it fetch that one."""
+    build = _build()
+    build._as_json(tmp_path, {"catalog": {"word": {"title": "Words"}}})
+    assert (tmp_path / "catalog.json").read_text() == '{"word": {"title": "Words"}}'
+    assert (tmp_path / "catalogue.json").read_text() == (
+        tmp_path / "catalog.json"
+    ).read_text()
+
+
 def test_the_braids_made_with_the_site_are_kept_gzipped(tmp_path):
     """Gzipped, each braid made with the site unpacks to the very bytes it
     was made as, the index names the gzipped files, and the same braids
@@ -137,18 +148,16 @@ def test_a_profile_s_packages_are_found_from_where_it_is(tmp_path):
 
 def test_a_package_s_own_words_reach_the_page_and_braidpy_s_stay(tmp_path):
     """The words of a site's own braids come from its package's locales/,
-    beside braidpy's, so that braidpy's catalogue names none of them."""
+    beside braidpy's, so that braidpy's catalog names none of them."""
     import json
 
     build = _build()
     (tmp_path / "locales").mkdir()
     (tmp_path / "locales" / "fr.toml").write_text('"My own machine" = "Ma machine"\n')
     text = build.locale("en", [str(tmp_path)])
-    catalogues = json.loads(
-        text.split("export const catalogues = ", 1)[1].rstrip(";\n")
-    )
-    assert catalogues["fr"]["My own machine"] == "Ma machine"
-    assert catalogues["fr"]["Strands"] == "Brins"
+    catalogs = json.loads(text.split("export const catalogs = ", 1)[1].rstrip(";\n"))
+    assert catalogs["fr"]["My own machine"] == "Ma machine"
+    assert catalogs["fr"]["Strands"] == "Brins"
 
 
 # A site's own package, as small as can be: one machine added to braidpy's.
@@ -158,15 +167,15 @@ PACKAGE = {
 name = "own-braids"
 version = "0.1"
 
-[project.entry-points."braidpy.catalogues"]
-machine_catalogue = "own_braids:MACHINES"
+[project.entry-points."braidpy.catalogs"]
+machine_catalog = "own_braids:MACHINES"
 
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 """,
     "own_braids/__init__.py": """
-from braidpy.catalogue import Entry
+from braidpy.catalog import Entry
 from braidpy.horn_gear.described import machine_from_graph
 
 MACHINES = {"own_ring": Entry("My own ring", lambda: machine_from_graph("A-B B-C C-D D-A"))}
@@ -177,7 +186,7 @@ MACHINES = {"own_ring": Entry("My own ring", lambda: machine_from_graph("A-B B-C
 @pytest.mark.slow
 def test_a_site_s_package_adds_its_machines_where_the_build_reads_them(tmp_path):
     """The build runs braidpy with the site's packages: a machine a package
-    adds is in the catalogue the page offers, after braidpy's own."""
+    adds is in the catalog the page offers, after braidpy's own."""
     if shutil.which("uv") is None:
         pytest.skip("needs uv")
     build = _build()
@@ -186,7 +195,7 @@ def test_a_site_s_package_adds_its_machines_where_the_build_reads_them(tmp_path)
         (tmp_path / name).write_text(text)
     script = (
         "import json; from braidpy import web; "
-        "print(json.dumps([e['name'] for e in web.catalogue()['machine']['entries']]))"
+        "print(json.dumps([e['name'] for e in web.catalog()['machine']['entries']]))"
     )
     names = json.loads(build._braidpy(script, [str(tmp_path)]).stdout)
     # Braidpy's machines, then the package's, then your own.

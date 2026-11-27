@@ -241,12 +241,12 @@ def test_the_family_is_not_the_classical_flat_sinnet_of_five():
     import contextlib
     import io
 
-    from braidpy.braid_catalogue import flat_sinnet5
+    from braidpy.braid_catalog import flat_sinnet5
     from braidpy.handles_reduction import dehornoy_reduce_core
 
     with contextlib.redirect_stdout(io.StringIO()):
-        catalogue, _ = flat_sinnet5()
-        theirs = list(catalogue.generators)
+        catalog, _ = flat_sinnet5()
+        theirs = list(catalog.generators)
         mine = braid_word(
             figure_eight_strands(-1.0, -0.3, 1.0, n_strands=5), n_samples=60000
         )

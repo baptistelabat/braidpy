@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from js_maths import rounded_math
 
-from braidpy.machine_catalogue import CATALOGUE
+from braidpy.machine_catalog import CATALOG
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs Node.js")
 
@@ -33,7 +33,7 @@ STEPS = 12
 def _job(steps, substeps):
     from braidpy.carried import carriers_job
 
-    return carriers_job(CATALOGUE["flat_3"].make(), steps, substeps=substeps)
+    return carriers_job(CATALOG["flat_3"].make(), steps, substeps=substeps)
 
 
 def _js(case, tmp_path, job):
@@ -82,9 +82,7 @@ def test_the_page_makes_the_plait_the_machine_lays(tmp_path):
     laid = _crossings(
         [
             np.asarray(p)
-            for p in yarn_paths(
-                CATALOGUE["flat_3"].make(), n_steps=STEPS
-            ).points.values()
+            for p in yarn_paths(CATALOG["flat_3"].make(), n_steps=STEPS).points.values()
         ]
     )
     assert len(made) >= STEPS // 2

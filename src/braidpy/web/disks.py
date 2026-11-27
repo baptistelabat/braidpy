@@ -26,7 +26,7 @@ from braidpy.web._result import (
     _with_core,
 )
 from braidpy.web._settings import (
-    CORE_COLOUR,
+    CORE_COLOR,
     DISK_CORE,
     DISK_CORE_KINDS,
     DISK_ITERATIONS,
@@ -51,15 +51,15 @@ from braidpy.web._types import (
 
 
 def _sinnets():
-    from braidpy.solid_sinnets_catalogue import CATALOGUE
+    from braidpy.solid_sinnets_catalog import CATALOG
 
-    return CATALOGUE
+    return CATALOG
 
 
 def _mobidais():
-    from braidpy.mobidai_catalogue import CATALOGUE
+    from braidpy.mobidai_catalog import CATALOG
 
-    return CATALOGUE
+    return CATALOG
 
 
 def _disk_program(
@@ -152,7 +152,7 @@ def _cored(result: Result, core: str, keys: Sequence[Hashable], program) -> Resu
     for strand, key in zip(result["strands"], keys):
         if key == CORE_NAME:
             strand["name"] = "Core"
-            strand["colour"] = CORE_COLOUR
+            strand["colour"] = CORE_COLOR
     kind = "rigid, it stays straight" if core == "rigid" else "of yarn, it gives way"
     result["notes"] = [
         *result["notes"],
@@ -196,7 +196,7 @@ def _from_kumihimo(spec: Spec) -> Result:
         f"Kumihimo {pattern} × {repeat}, {n_strands} strands",
         paths,
         diameter,
-        colours=_hues(n_strands),
+        colors=_hues(n_strands),
         info=_disk_unit(
             _disk_info(start, steps, n_slots, clockwise=False),
             lambda k: _kumihimo_cycles(pattern * k, n_strands),
@@ -215,7 +215,7 @@ def _from_kumihimo(spec: Spec) -> Result:
 
 
 def _from_mobidai(spec: Spec) -> Result:
-    from braidpy.mobidai_catalogue import CataloguedMobidai
+    from braidpy.mobidai_catalog import CatalogedMobidai
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     mobidais = _mobidais()
@@ -230,7 +230,7 @@ def _from_mobidai(spec: Spec) -> Result:
         moves = parse_moves(str(spec.get("moves", "")))
         if not all(1 <= p <= n_slots for move in moves for p in move):
             raise ValueError(f"Moves are between slots 1 to {n_slots}.")
-        entry = CataloguedMobidai(
+        entry = CatalogedMobidai(
             name="your own disk braid",
             n_slots=n_slots,
             initial_slots=tuple(zip(slots, _hues(len(slots)))),
@@ -258,8 +258,8 @@ def _from_mobidai(spec: Spec) -> Result:
         core=core,
     )
     # Coloured by strand, in the order the braid gives them.
-    colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
-    colour_of[CORE_NAME] = CORE_COLOUR
+    color_of = {k: color for k, (_, color) in zip(start, entry.initial_slots)}
+    color_of[CORE_NAME] = CORE_COLOR
     disk = mobidai_trajectories(config, n_cycles=cycles, slot_offset=0.5)
     if core != "none":
         disk = _with_core(disk, CORE_NAME)
@@ -267,7 +267,7 @@ def _from_mobidai(spec: Spec) -> Result:
         f"{entry.name[0].upper()}{entry.name[1:]}, {cycles} cycles",
         paths,
         diameter,
-        colours=[colour_of[k] for k in paths.points],
+        colors=[color_of[k] for k in paths.points],
         info=_disk_unit(
             _disk_info(start, steps, config.n_slots, clockwise),
             lambda k: (*mobidai_steps(config, k), config.n_slots),
@@ -319,7 +319,7 @@ def from_b3d(text: str) -> Spec:
             "moves": _moves_text(entry.moves),
             "shift": 0,
             "cycles": cycles,
-            "colours": ",".join(colour for _, colour in entry.initial_slots),
+            "colours": ",".join(color for _, color in entry.initial_slots),
         },
     )
 
@@ -503,7 +503,7 @@ def _from_sinnet(spec: Spec) -> Result:
 
 def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
     """A sinnet made on its disk, so many cycles, called so."""
-    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.ashley_solid_sinnet import strand_colors
     from braidpy.take_off import disk_trajectories
 
     diameter = DISK_YARN.read(spec)
@@ -554,7 +554,7 @@ def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
         f"{cycles} cycles",
         paths,
         diameter,
-        colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
+        colors=[strand_colors(sinnet.n_strands)[int(k) - 1] for k in paths.points],
         info=info,
         notes=notes,
         timeline=_timeline(seen, list(paths.points), "disk", clock, ring),
@@ -597,7 +597,7 @@ def _mobidai_entry() -> Source:
     entries: list[Entry] = [
         {
             "name": key,
-            "title": catalogued.title,
+            "title": cataloged.title,
             "pattern": {
                 "n_slots": braid.n_slots,
                 "slots": " ".join(str(slot) for slot, _ in braid.initial_slots),
@@ -605,8 +605,8 @@ def _mobidai_entry() -> Source:
                 "shift": braid.n_shift_after_cycle,
             },
         }
-        for key, catalogued in _mobidais().items()
-        for braid in [catalogued.make()]
+        for key, cataloged in _mobidais().items()
+        for braid in [cataloged.make()]
     ]
     return {
         "title": "Kumihimo disk (mobidai)",
@@ -619,15 +619,15 @@ def _sinnet_entry() -> Source:
     entries: list[Entry] = [
         {
             "name": name,
-            "title": catalogued.title,
+            "title": cataloged.title,
             "shape": sinnet.shape,
             "pattern": {
                 "counts": " ".join(str(c) for c in sinnet.initial_counts_per_space),
                 "moves": _moves_text(sinnet.moves),
             },
         }
-        for name, catalogued in _sinnets().items()
-        for sinnet in [catalogued.make()]
+        for name, cataloged in _sinnets().items()
+        for sinnet in [cataloged.make()]
     ]
     return {
         "title": "Ashley solid sinnet",
@@ -649,9 +649,9 @@ def _shape_entry() -> Source:
 
 def _shape_examples() -> list[Example]:
     """The braids a sinnet from a shape offers: the book's that a shape
-    draws (:data:`braidpy.solid_sinnets_catalogue.DRAWN`), named as the
+    draws (:data:`braidpy.solid_sinnets_catalog.DRAWN`), named as the
     catalogue names them, then braidpy's own (``Shape.examples``)."""
-    from braidpy.solid_sinnets_catalogue import DRAWN
+    from braidpy.solid_sinnets_catalog import DRAWN
 
     sinnets = _sinnets()
     book: dict[tuple, Example] = {}

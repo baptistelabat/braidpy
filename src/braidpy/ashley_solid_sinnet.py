@@ -45,6 +45,7 @@ from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
+from braidpy._renamed import renamed_globals
 from braidpy.annulus_braid import solid_word
 from braidpy.take_off import disk_annular_word, disk_braid
 from braidpy.utils import lazy_module
@@ -312,9 +313,9 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
     from braidpy.mobidai import MobidaiConfig, Move, Strand
 
     disk = sinnet_disk(sinnet, 1)
-    colours = strand_colours(sinnet.n_strands)
+    colors = strand_colors(sinnet.n_strands)
     where = {cast(int, k): slot for k, slot in disk.start.items()}
-    strands = [Strand(colours[k - 1], slot) for k, slot in sorted(where.items())]
+    strands = [Strand(colors[k - 1], slot) for k, slot in sorted(where.items())]
     moves: list[Move] = []
     for step in disk.steps:
         delta = next(iter(step.values()))
@@ -332,7 +333,7 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
     )
 
 
-def strand_colours(n: int) -> list[str]:
+def strand_colors(n: int) -> list[str]:
     """A colour per strand, evenly round the hue circle."""
     import colorsys
 
@@ -801,3 +802,9 @@ if __name__ == "__main__":
         arc_pad_frac=0.10,
     )
     print(output)
+
+# The names these went by before braidpy's code took American spelling.
+__getattr__ = renamed_globals(
+    __name__,
+    {"strand_colours": "strand_colors"},
+)

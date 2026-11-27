@@ -5,33 +5,33 @@
 """The braids transcribed from the Delage-Calvet book.
 
 Transcribed data is data that can be mistyped, and a slot number out by one
-shows up as a braid that cannot be made.  Running each catalogued braid is
+shows up as a braid that cannot be made.  Running each cataloged braid is
 therefore the check that matters: it exercises every slot and every move.
 """
 
 import pytest
 
 from braidpy.mobidai import Mobidai
-from braidpy.mobidai_catalogue import CATALOGUE
+from braidpy.mobidai_catalog import CATALOG
 
 
-@pytest.mark.parametrize("name", sorted(CATALOGUE))
-def test_every_catalogued_braid_can_actually_be_made(name):
+@pytest.mark.parametrize("name", sorted(CATALOG))
+def test_every_cataloged_braid_can_actually_be_made(name):
     """The disk accepts the threading and every move in the cycle.
 
     A mistyped slot shows up here as a collision or an invalid slot, which is
     the whole reason for running them rather than only storing them.
     """
-    braid = CATALOGUE[name].make()
+    braid = CATALOG[name].make()
     disk = Mobidai(braid.to_config())
     disk.all_steps()
     assert len(disk.generators) > 0, "a braid with no crossings is not a braid"
 
 
-@pytest.mark.parametrize("name", sorted(CATALOGUE))
+@pytest.mark.parametrize("name", sorted(CATALOG))
 def test_every_strand_keeps_its_slot_to_itself(name):
     """No two strands start in the same place."""
-    braid = CATALOGUE[name].make()
+    braid = CATALOG[name].make()
     slots = [slot for slot, _ in braid.initial_slots]
     assert len(set(slots)) == len(slots)
     assert braid.n_strands == len(braid.initial_slots)
@@ -43,22 +43,22 @@ def test_all_four_braids_from_the_book_are_reachable():
     Only the last braid survived import, so three of the four could not be
     used at all.  This is the test that would have caught it.
     """
-    book = [e.make() for e in CATALOGUE.values() if "Delage-Calvet" in e.reference]
+    book = [e.make() for e in CATALOG.values() if "Delage-Calvet" in e.reference]
     assert sorted(braid.n_strands for braid in book) == [7, 8, 12, 16]
 
 
 def test_the_braid_that_needs_a_turn_between_cycles_records_it():
     """One braid is a cycle of moves *plus* a rotation, and says so."""
-    seven = next(b for b in (e.make() for e in CATALOGUE.values()) if b.n_strands == 7)
+    seven = next(b for b in (e.make() for e in CATALOG.values()) if b.n_strands == 7)
     assert seven.n_slots == 8
     assert seven.n_shift_after_cycle == -3
 
 
-@pytest.mark.parametrize("name", sorted(CATALOGUE))
-def test_a_catalogued_braid_gives_a_word_braidpy_understands(name):
+@pytest.mark.parametrize("name", sorted(CATALOG))
+def test_a_cataloged_braid_gives_a_word_braidpy_understands(name):
     from braidpy.braid import Braid
 
-    braid = CATALOGUE[name].make()
+    braid = CATALOG[name].make()
     disk = Mobidai(braid.to_config())
     disk.all_steps()
     word = disk.generators
@@ -66,7 +66,7 @@ def test_a_catalogued_braid_gives_a_word_braidpy_understands(name):
     assert Braid(tuple(word), n_strands=braid.n_strands).format()
 
 
-@pytest.mark.parametrize("name", sorted(CATALOGUE))
+@pytest.mark.parametrize("name", sorted(CATALOG))
 def test_every_cycle_is_made_from_where_the_last_left_off(name):
     """Cycle after cycle, every move finds a strand to move.
 
@@ -75,7 +75,7 @@ def test_every_cycle_is_made_from_where_the_last_left_off(name):
     moves from the same slots instead finds them empty by the second cycle,
     and the braid stops being made.
     """
-    braid = CATALOGUE[name].make()
+    braid = CATALOG[name].make()
     disk = Mobidai(braid.to_config())
     disk.all_steps()
     per_cycle = len(disk.braid_word)
@@ -134,21 +134,21 @@ SHARED = {
 
 @pytest.mark.parametrize("name", sorted(SHARED))
 def test_a_shared_braid_is_the_braid_its_link_makes(name):
-    """Picked from the catalogue, each braid is the braid made from its link:
+    """Picked from the catalog, each braid is the braid made from its link:
     the same strands, laid the same way, in the same colours."""
     from braidpy.web import build
 
-    slots, moves, colours = SHARED[name]
+    slots, moves, colors = SHARED[name]
     link = {"source": "mobidai", "name": "custom", "slots": slots, "moves": moves}
     link |= {"n_slots": 32, "shift": 0, "cycles": 2}
-    if colours:
-        link["colours"] = colours
+    if colors:
+        link["colours"] = colors
     shared = build(link, tighten=False)
-    catalogued = build({"source": "mobidai", "name": name, "cycles": 2}, tighten=False)
-    assert [s["colour"] for s in catalogued["strands"]] == [
+    cataloged = build({"source": "mobidai", "name": name, "cycles": 2}, tighten=False)
+    assert [s["colour"] for s in cataloged["strands"]] == [
         s["colour"] for s in shared["strands"]
     ]
-    assert [s["points"] for s in catalogued["strands"]] == [
+    assert [s["points"] for s in cataloged["strands"]] == [
         s["points"] for s in shared["strands"]
     ]
 
@@ -159,7 +159,7 @@ def test_edo_yatsu_is_not_ashleys_8_strand_square():
     but the Burau polynomials of their braids differ, so they are not the
     same braid however written, and are not listed as each other's."""
     from braidpy.braid_pattern import alike
-    from braidpy.topology_catalogue import braid_of
+    from braidpy.topology_catalog import braid_of
     from braidpy.web import build
 
     def braid(spec):
