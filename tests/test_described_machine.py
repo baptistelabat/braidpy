@@ -11,15 +11,13 @@ from braidpy.braid import Braid
 from braidpy.horn_gear import BraidingMachine
 from braidpy.horn_gear.described import graph_of, machine_from_graph
 from braidpy.horn_gear.word import annular_word, flat_word
-from braidpy.machine_catalogue import CATALOGUE
+from braidpy.machine_catalog import CATALOG
 from braidpy.similarity import fingerprint, same_fingerprint
 
-# Every machine of the catalogue but the lace machines, whose gears a card
+# Every machine of the catalog but the lace machines, whose gears a card
 # turns: split gears too.
 GEARED = [
-    name
-    for name, entry in CATALOGUE.items()
-    if isinstance(entry.make(), BraidingMachine)
+    name for name, entry in CATALOG.items() if isinstance(entry.make(), BraidingMachine)
 ]
 
 
@@ -102,18 +100,18 @@ def test_a_graph_that_is_no_machine_is_refused_saying_why(text, said):
 
 
 @pytest.mark.parametrize("name", GEARED)
-def test_a_catalogued_machine_written_as_its_graph_is_the_same_machine(name):
+def test_a_cataloged_machine_written_as_its_graph_is_the_same_machine(name):
     """Read back, the gears, their directions and how far apart their
-    contacts are are the catalogue's: the same machine, its slots perhaps
+    contacts are are the catalog's: the same machine, its slots perhaps
     named from another one round."""
-    machine = CATALOGUE[name].make()
+    machine = CATALOG[name].make()
     back = machine_from_graph(*graph_of(machine))
     assert _renaming(machine, back) is not None
 
 
 @pytest.mark.parametrize("name", ["tubular_12", "flat_3"])
 def test_the_same_machine_loaded_alike_makes_the_same_braid(name):
-    machine = CATALOGUE[name].make()
+    machine = CATALOG[name].make()
     back = machine_from_graph(*graph_of(machine))
     turned = _renaming(machine, back)
     load = machine.default_carriers()
@@ -131,8 +129,8 @@ def test_the_same_machine_loaded_alike_makes_the_same_braid(name):
 
 
 def test_graph_of_writes_a_gear_with_other_slots_with_its_own():
-    assert graph_of(CATALOGUE["flat_9"].make()) == ("A-B:4 B-C:4 C-D", 5)
-    assert graph_of(CATALOGUE["tubular_8"].make()) == ("A-B B-C C-D D-A", 4)
+    assert graph_of(CATALOG["flat_9"].make()) == ("A-B:4 B-C:4 C-D", 5)
+    assert graph_of(CATALOG["tubular_8"].make()) == ("A-B B-C C-D D-A", 4)
 
 
 def test_braid_studio_makes_a_machine_of_your_own():
@@ -154,7 +152,7 @@ def test_braid_studio_draws_each_geared_machine_with_its_graph():
     from braidpy import web
     from braidpy.web.machines import machine_geometry
 
-    entries = {e["name"]: e for e in web.catalogue()["machine"]["entries"]}
+    entries = {e["name"]: e for e in web.catalog()["machine"]["entries"]}
     assert entries["custom"]["title"] == "Your own machine…"
     assert machine_geometry("tubular_8")["graph"] == {
         "graph": "A-B B-C C-D D-A",
@@ -245,14 +243,14 @@ def test_a_machine_drawn_larger_keeps_its_carriers_further_apart():
     assert small.scale_for(small.distance * 3) == pytest.approx(3)
 
 
-@pytest.mark.parametrize("name", sorted(CATALOGUE))
-def test_no_catalogued_machine_brings_two_carriers_to_one_point(name):
+@pytest.mark.parametrize("name", sorted(CATALOG))
+def test_no_cataloged_machine_brings_two_carriers_to_one_point(name):
     """None is stopped: its carriers clear each other on a machine large
     enough for its bobbins, a horn gap of at most two bobbins across."""
     from braidpy.horn_gear.simulation import state_period
     from braidpy.horn_gear.take_off import clearance
 
-    machine = CATALOGUE[name].make()
+    machine = CATALOG[name].make()
     carriers = machine.default_carriers()
     room = clearance(machine, min(state_period(machine, carriers) or 1, 64), carriers)
     if room is not None:
@@ -272,7 +270,7 @@ def test_a_tree_of_gears_branches_rather_than_piling_up():
     for i, p in enumerate(others):
         for q in others[i + 1 :]:
             assert math.dist(p, q) > 1.0
-    chain = compute_layout(CATALOGUE["flat_9"].make())
+    chain = compute_layout(CATALOG["flat_9"].make())
     assert all(y == 0.0 for _, y in chain.values())
 
 
@@ -291,7 +289,7 @@ def test_a_split_gear_that_cannot_be_is_refused_saying_why(text, said):
         machine_from_graph(text, n_slots=3)
 
 
-# The catalogue's machines as they were built gear by gear, before they were
+# The catalog's machines as they were built gear by gear, before they were
 # written as graphs: each gear's slots and direction, each contact's slots,
 # and the gears fed an axial yarn.
 _BUILT = {
@@ -344,13 +342,13 @@ def _built(name):
 
 
 @pytest.mark.parametrize("name", list(_BUILT))
-def test_a_catalogued_machine_written_as_its_graph_is_the_one_built(name):
-    """Written as its graph, each catalogued machine is the one built gear by
+def test_a_cataloged_machine_written_as_its_graph_is_the_one_built(name):
+    """Written as its graph, each cataloged machine is the one built gear by
     gear, its slots perhaps numbered from another one round, or, a ring that
     hands over between steps, its gears meshing alike: it feeds its axials
     where that one did, and loads itself with as many carriers."""
     built = _built(name)
-    machine = CATALOGUE[name].make()
+    machine = CATALOG[name].make()
     if any(c.phase for c in machine.connections):
         # A ring that whole slots cannot put on its horns hands over between
         # steps, at other slots than the one built: the same gears turning
@@ -401,7 +399,7 @@ def test_a_ring_handing_over_between_steps_makes_the_same_braid(name):
     as often as on the machine built with whole steps."""
     from braidpy.horn_gear.layout import compute_layout, offset_residuals
 
-    machine, built = CATALOGUE[name].make(), _built(name)
+    machine, built = CATALOG[name].make(), _built(name)
     assert max(offset_residuals(built, compute_layout(built)).values()) > 0.3
     assert max(offset_residuals(machine, compute_layout(machine)).values()) < 1e-3
     assert _windings(machine) == _windings(built)

@@ -59,7 +59,7 @@ from braidpy.horn_gear.tracks import (
     walk,
 )
 from braidpy.horn_gear.visualization import animate, visualize_machine
-from braidpy.machine_catalogue import CATALOGUE as MACHINES
+from braidpy.machine_catalog import CATALOG as MACHINES
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 

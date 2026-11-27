@@ -169,7 +169,7 @@ def sinnets() -> None:
     import contextlib
     import io
 
-    from braidpy.braid_catalogue import flat_sinnet5
+    from braidpy.braid_catalog import flat_sinnet5
 
     with contextlib.redirect_stdout(io.StringIO()):
         braid, _ = flat_sinnet5()

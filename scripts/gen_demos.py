@@ -44,8 +44,8 @@ from braidpy.horn_gear.examples import (
     tubular_braid_12,
     tubular_braid_16,
 )
-from braidpy.mobidai_catalogue import KONGO_8
-from braidpy.solid_sinnets_catalogue import abok_3042
+from braidpy.mobidai_catalog import KONGO_8
+from braidpy.solid_sinnets_catalog import abok_3042
 from braidpy.take_off import (
     braid_word_trajectories,
     lay_yarns,

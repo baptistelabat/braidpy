@@ -7,7 +7,7 @@
 
 import { chosenColors, useColors } from "./colours.js";
 import { CHOICES, guessChoices } from "./defaults.js";
-import { catalogue, renderFields } from "./fields.js";
+import { catalog, renderFields } from "./fields.js";
 import { $ } from "./page.js";
 
 // Fields filled with what the machine does itself -- its loading, its
@@ -16,7 +16,7 @@ const MACHINE_OWN = new Set(["carriers", "axials"]);
 
 export function readSpec() {
   const spec = { source: $("source").value };
-  // A catalogued braid is named; what it is made of is the catalogue's.
+  // A catalogued braid is named; what it is made of is the catalog's.
   const named = $("form").querySelector("select[name=name]")?.value !== "custom";
   for (const element of $("form").elements) {
     if (!element.name || element.name === "source") continue;
@@ -54,7 +54,7 @@ export function specFromHash() {
   if (!location.hash.slice(1)) return null;
   const params = new URLSearchParams(location.hash.slice(1));
   const spec = Object.fromEntries(params.entries());
-  if (!catalogue[spec.source]) return null;
+  if (!catalog[spec.source]) return null;
   // A lace card in digits without its gears has them in its rows, a digit
   // a gear; one by gear names does not say, and a link gives them.
   const row = spec.card?.trim().split(/\s+/)[0];

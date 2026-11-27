@@ -160,14 +160,14 @@ polynomial, where both can be computed, to six digits.
 
 ## A catalogue by topology
 
-{mod}`braidpy.topology_catalogue` lists braids by what they are rather than by
+{mod}`braidpy.topology_catalog` lists braids by what they are rather than by
 how they are made. It makes every braid of every other catalogue — braid
 words, kumihimo, kumihimo disks, sinnets, braiding machines — and groups those
 with the same fingerprint. Each topology points to every way of making it, and
-each way back to its topology ({func}`~braidpy.topology_catalogue.topology_of`):
+each way back to its topology ({func}`~braidpy.topology_catalog.topology_of`):
 
 ```python
-from braidpy.topology_catalogue import topology_of
+from braidpy.topology_catalog import topology_of
 
 plait = topology_of("machine", "flat_3")
 [m.key for m in plait.methods]
@@ -177,7 +177,7 @@ plait = topology_of("machine", "flat_3")
 The plait is a braid word, the Dutch braid (the plait seen from behind),
 Ashley's #2965 worked on his stand, and what a three-carrier flat braiding
 machine makes. For a braid of your own,
-{func}`~braidpy.topology_catalogue.related` gives the topologies nearest it, and
+{func}`~braidpy.topology_catalog.related` gives the topologies nearest it, and
 with each the ways to make it.
 
 A disk braid that creeps round the disk from cycle to cycle, as kongo gumi
@@ -189,9 +189,9 @@ catalogue is built once, when first asked for.
 
 Braid Studio shows it beside every braid it makes: **Also made as**, the
 other ways of making the same braid, and **Nearest braids**. The catalogue
-is made with the site, as JSON ({func}`~braidpy.topology_catalogue.export`),
-and read back in the browser ({func}`~braidpy.topology_catalogue.load`);
-{func}`~braidpy.topology_catalogue.for_page` finds a catalogue's braid by its
+is made with the site, as JSON ({func}`~braidpy.topology_catalog.export`),
+and read back in the browser ({func}`~braidpy.topology_catalog.load`);
+{func}`~braidpy.topology_catalog.for_page` finds a catalogue's braid by its
 description, and any other by the fingerprint of the braid made.
 
 ## Limits

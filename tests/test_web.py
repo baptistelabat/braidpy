@@ -11,7 +11,7 @@ import sys
 
 import pytest
 
-from braidpy.web import build, catalogue
+from braidpy.web import build, catalog
 from braidpy.web._settings import COLORS
 
 
@@ -40,12 +40,12 @@ def test_moves_that_cannot_be_read_say_so(text, message):
     "source",
     [
         pytest.param(s, marks=pytest.mark.slow) if s == "sinnet" else s
-        for s, about in catalogue().items()
+        for s, about in catalog().items()
         if "entries" in about
     ],
 )
-def test_every_catalogue_entry_is_made(source):
-    for entry in catalogue()[source]["entries"]:
+def test_every_catalog_entry_is_made(source):
+    for entry in catalog()[source]["entries"]:
         if entry["name"] == "custom":
             continue  # made from what is typed in: see below
         result = build(
@@ -55,8 +55,8 @@ def test_every_catalogue_entry_is_made(source):
         json.dumps(result)
 
 
-def test_the_catalogue_is_plain_data_with_defaults():
-    entries = catalogue()
+def test_the_catalog_is_plain_data_with_defaults():
+    entries = catalog()
     json.dumps(entries)
     for source, about in entries.items():
         build({"source": source, **about["defaults"], "iterations": 1, "cycles": 1})
@@ -78,8 +78,8 @@ def test_nothing_heavy_is_loaded_to_build_a_braid():
     """No drawing library: in a browser they would be tens of megabytes; nor
     sympy, seconds to import there."""
     code = (
-        "import sys; from braidpy.web import build, catalogue\n"
-        "for source, about in catalogue().items():\n"
+        "import sys; from braidpy.web import build, catalog\n"
+        "for source, about in catalog().items():\n"
         "    build({'source': source, **about['defaults'], 'iterations': 1,"
         " 'cycles': 1})\n"
         "print([m for m in ('plotly', 'matplotlib', 'imageio', 'sympy', 'math_braid')"
@@ -91,12 +91,12 @@ def test_nothing_heavy_is_loaded_to_build_a_braid():
     assert out.stdout.strip() == "[]"
 
 
-def test_the_catalogue_is_listed_before_any_machine_is_loaded():
-    """The page lists the catalogue as soon as braidpy is in, and only loads
+def test_the_catalog_is_listed_before_any_machine_is_loaded():
+    """The page lists the catalog as soon as braidpy is in, and only loads
     networkx, for the machines, once one is asked for."""
     code = (
-        "import json, sys; from braidpy.web import catalogue\n"
-        "json.dumps(catalogue())\n"
+        "import json, sys; from braidpy.web import catalog\n"
+        "json.dumps(catalog())\n"
         "print('networkx' in sys.modules)"
     )
     out = subprocess.run(
@@ -105,9 +105,9 @@ def test_the_catalogue_is_listed_before_any_machine_is_loaded():
     assert out.stdout.strip() == "False"
 
 
-@pytest.mark.parametrize("source", sorted(catalogue()))
+@pytest.mark.parametrize("source", sorted(catalog()))
 def test_what_made_the_braid_comes_with_it_in_step(source):
-    about = catalogue()[source]
+    about = catalog()[source]
     result = build(
         {"source": source, **about["defaults"], "iterations": 5, "cycles": 2}
     )
@@ -239,12 +239,12 @@ def test_every_kind_of_braid_can_be_recolored(source):
 
 
 def test_every_braid_offered_as_it_comes_is_made_with_the_site():
-    """Each catalogued braid and each example, a braid word's or a shape's,
+    """Each cataloged braid and each example, a braid word's or a shape's,
     nothing of your own."""
     from braidpy.web import premade_specs
 
     specs = premade_specs()
-    listed = catalogue()
+    listed = catalog()
     for source, about in listed.items():
         for entry in about.get("entries", []):
             wanted = {"source": source, "name": entry["name"]}

@@ -230,10 +230,10 @@ def test_the_smallest_multiband_braids_two_plaits():
 
 
 def test_the_whole_machine_and_the_smallest_are_in_braid_studio():
-    from braidpy.machine_catalogue import CATALOGUE
+    from braidpy.machine_catalog import CATALOG
 
     for name in ("twin_plait", "multiband_10_15_10"):
-        assert CATALOGUE[name].make().total_slots() in (12, 86)
+        assert CATALOG[name].make().total_slots() in (12, 86)
 
 
 def test_each_band_is_drawn_in_one_color():

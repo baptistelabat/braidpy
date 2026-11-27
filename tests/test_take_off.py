@@ -358,7 +358,7 @@ def test_mobidai_is_laid_and_tightened():
 
 
 def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
 
     # The drift is read off the cycle: no one has to say it.
     start, steps = mobidai_steps(KONGO_8.to_config(), n_cycles=32)
@@ -510,7 +510,7 @@ def test_ring_refuses_crossings_of_strangers():
 
 
 def test_kongo_comes_out_round():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
     from braidpy.take_off import mobidai_braid
 
     d = 0.12

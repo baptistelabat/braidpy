@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// The form: what each source asks for, filled in from braidpy's catalogue,
+// The form: what each source asks for, filled in from braidpy's catalog,
 // and the examples a source offers.
 
 import { attachDiagram } from "./diagram.js";
@@ -39,7 +39,7 @@ const DISK_CORE = {
 };
 
 // What each source asks for.  ``entries`` and ``examples`` come from
-// braidpy's own catalogue once it has loaded.
+// braidpy's own catalog once it has loaded.
 const FIELDS = {
   word: [
     {
@@ -226,11 +226,11 @@ const FIELDS = {
   ],
 };
 
-export let catalogue = null;
+export let catalog = null;
 
 // Set once braidpy has loaded and said what it can make.
-export function setCatalogue(value) {
-  catalogue = value;
+export function setCatalog(value) {
+  catalog = value;
 }
 // Sources left out of the "Made by" menu for now.
 export const UNLISTED = new Set(["kumihimo"]);
@@ -238,7 +238,7 @@ export const UNLISTED = new Set(["kumihimo"]);
 const ALWAYS_SHOWN = new Set(["mobidai", "sinnet", "lace"]);
 
 export function renderFields(source, values = {}) {
-  const about = catalogue[source];
+  const about = catalog[source];
   const defaults = { ...about.defaults, ...values };
   const holder = $("fields");
   holder.replaceChildren();
@@ -376,7 +376,7 @@ export function renderFields(source, values = {}) {
 }
 
 // A source's examples, chosen from a list at the top of its fields, as a
-// catalogue's braids are: choosing one makes it.  Changing what it is made
+// catalog's braids are: choosing one makes it.  Changing what it is made
 // of makes it your own.
 function attachExamples(source, examples, holder) {
   const label = document.createElement("label");

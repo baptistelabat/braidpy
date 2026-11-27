@@ -12,7 +12,7 @@ License: Mozilla Public License 2.0
 
 The braidpy web page runs braidpy itself, in the browser, through Pyodide,
 and draws what it computes with three.js.  This package is everything the
-page asks of braidpy: what can be made (:func:`catalogue`), and the braid a
+page asks of braidpy: what can be made (:func:`catalog`), and the braid a
 description makes (:func:`build`), both as plain JSON-ready data — lists,
 numbers and strings — so the page needs nothing of Python's to draw it.
 
@@ -30,9 +30,9 @@ source offered:
 ``{"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 8}``
     Kumihimo's own moves: swap top and bottom, rotate a quarter.
 ``{"source": "mobidai", "name": "KONGO_8", "cycles": 8}``
-    A disk braid from the catalogue (:mod:`braidpy.mobidai_catalogue`).
+    A disk braid from the catalogue (:mod:`braidpy.mobidai_catalog`).
 ``{"source": "sinnet", "name": "abok_3042", "cycles": 4}``
-    An Ashley solid sinnet (:mod:`braidpy.solid_sinnets_catalogue`).
+    An Ashley solid sinnet (:mod:`braidpy.solid_sinnets_catalog`).
 ``{"source": "machine", "name": "tubular_8", "cycles": 3}``
     A horn gear braiding machine (:mod:`braidpy.horn_gear.examples`).
 
@@ -63,7 +63,7 @@ __all__ = [
     "Spec",
     "braids",
     "build",
-    "catalogue",
+    "catalog",
     "from_b3d",
     "machine_geometry",
     "machine_origin",
@@ -79,7 +79,7 @@ __all__ = [
 _SOURCES = {**words.SOURCES, **disks.SOURCES, **machines.SOURCES}
 
 
-def catalogue() -> dict[str, Source]:
+def catalog() -> dict[str, Source]:
     """What the page can make, with sensible defaults for each source.
 
     Returns:
@@ -87,6 +87,12 @@ def catalogue() -> dict[str, Source]:
         entries to choose from, each with a name and a title.
     """
     return {source: entry() for source, (entry, _) in _SOURCES.items()}
+
+
+# The function's name as 0.3.0 shipped it, kept working.
+from braidpy._renamed import renamed_globals
+
+__getattr__ = renamed_globals(__name__, {"catalogue": "catalog"})
 
 
 def build(spec: Spec, tighten: bool = True) -> Result:
@@ -139,7 +145,7 @@ def premade_specs() -> list[Spec]:
         source's defaults is left to them.
     """
     specs: list[Spec] = []
-    for source, about in catalogue().items():
+    for source, about in catalog().items():
         for entry in about.get("entries", []):
             if entry["name"] != OWN:
                 specs.append(cast(Spec, {"source": source, "name": entry["name"]}))
@@ -166,12 +172,12 @@ def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
 
     Args:
         topologies: The catalogue of braids by topology, as
-            :func:`braidpy.topology_catalogue.export` writes it.
+            :func:`braidpy.topology_catalog.export` writes it.
 
     Returns:
         Per braid: ``key``, a name for its files; ``title``; ``source``;
         ``spec``, what :func:`build` makes it from; ``links``, as
-        :class:`braidpy.catalogue.Link` has them; and, if its topology is
+        :class:`braidpy.catalog.Link` has them; and, if its topology is
         known, ``topology``, its name, ``n_strands``, ``loops``, the sizes
         of the loops its closure makes, ``writhe``, and ``same``, the
         titles of the other braids of the catalogue it is.  A braid the
@@ -180,12 +186,12 @@ def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """
     from dataclasses import asdict
 
-    from braidpy.topology_catalogue import links_of, load
+    from braidpy.topology_catalog import links_of, load
 
     known = load(topologies)
     titles = {
         (source, entry["name"]): entry["title"]
-        for source, about in catalogue().items()
+        for source, about in catalog().items()
         for entry in about.get("entries", [])
     }
     examples = {
@@ -193,7 +199,7 @@ def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             {"source": source, **{k: v for k, v in e.items() if k != "title"}},
             sort_keys=True,
         ): e["title"]
-        for source, about in catalogue().items()
+        for source, about in catalog().items()
         for e in about.get("examples", [])
     }
     rows: list[dict[str, Any]] = []

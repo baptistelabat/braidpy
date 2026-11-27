@@ -76,7 +76,7 @@ def test_a_note_keeps_the_lines_of_its_card(tmp_path):
     assert not missing
 
 
-def test_what_the_catalogue_lacks_stays_in_english_and_is_listed(tmp_path):
+def test_what_the_catalog_lacks_stays_in_english_and_is_listed(tmp_path):
     out, missing = shown(["No such words here", "3 · 4", "Brins"], tmp_path=tmp_path)
     assert out == ["No such words here", "3 · 4", "Brins"]
     assert missing == {"No such words here"}
@@ -157,9 +157,9 @@ def test_every_braid_the_studio_offers_is_named_in_french(tmp_path):
         ):
             texts.append(x)
 
-    catalogue = web.catalogue()
-    titles(catalogue)
-    for about in catalogue.values():
+    catalog = web.catalog()
+    titles(catalog)
+    for about in catalog.values():
         for key in ("grids", "orders"):
             texts += list(about.get(key, {}).values())
         for shapes in about.get("shapes", {}).values():

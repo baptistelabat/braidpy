@@ -3,15 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """braidpy's names are spelled in American English, as Python's and its
-libraries' are (``color``, ``center``, ``neighbor``); its prose — comments,
-docstrings, pages — is spelled as its writer likes, and is not checked.
+libraries' are (``color``, ``center``, ``neighbor``, ``catalog``); its prose —
+comments, docstrings, pages — is spelled as its writer likes, and is not
+checked.
 
 Checked: in Python, every name braidpy defines (a module, function, class,
 argument, variable or attribute set); in JavaScript, every name declared.
 Not checked, being data rather than names: strings, the keys of the JSON
 the page reads (a ``TypedDict``'s fields), and an old name kept working
-after a rename (``braidpy._renamed``).  ``catalogue`` is braidpy's own word,
-in its modules and their ``CATALOGUE``.
+after a rename (``braidpy._renamed``).
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # British spelling in a name: the American one.
 AMERICAN = {
     "behaviour": "behavior",
+    "catalogue": "catalog",
     "centre": "center",
     "colour": "color",
     "favour": "favor",
@@ -40,11 +41,8 @@ AMERICAN = {
 }
 _BRITISH = re.compile("|".join(AMERICAN), re.IGNORECASE)
 
-# The old module names kept working after a rename: data, not names.
-KEPT = {
-    f"src/braidpy/{name}_catalog.py"
-    for name in ("braid", "machine", "mobidai", "solid_sinnets", "topology")
-}
+# The old module name kept working after a rename: data, not names.
+KEPT = {"src/braidpy/catalog.py"}
 
 
 def _british(name: str) -> str | None:

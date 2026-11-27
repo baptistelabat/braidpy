@@ -130,7 +130,7 @@ def test_a_braid_saved_for_braid3d_reads_back_as_the_same_braid(tmp_path, spec):
     """Saved for braid3d and read back (braidpy.b3d), a disk braid or a
     sinnet is the same braid, crossing for crossing: its yarns sliding
     along together in a step, and a sinnet's repeat, read as made."""
-    from braidpy.topology_catalogue import braid_of
+    from braidpy.topology_catalog import braid_of
     from braidpy.web import from_b3d
 
     laid, _, saved = _saved(tmp_path, spec)
@@ -147,7 +147,7 @@ def test_a_kumihimo_braid_reads_back_as_made_with_the_disk_turning_along(tmp_pat
     left out, by every measure of its fingerprint."""
     from braidpy.similarity import fingerprint, same_fingerprint
     from braidpy.take_off import kumihimo_steps
-    from braidpy.topology_catalogue import braid_of
+    from braidpy.topology_catalog import braid_of
     from braidpy.web import from_b3d
     from braidpy.web._info import _disk_info
 

@@ -4,23 +4,23 @@
 
 // The page in the visitor's language.  braidpy, in Python and in the page,
 // writes English; this puts each text into the language chosen as it is
-// shown, from the catalogues in web/locales/ (written by build.py into
+// shown, from the catalogs in web/locales/ (written by build.py into
 // locale.js).  The site's profile says which language it opens in; the
 // menu of every page (a select marked data-language) changes it there and
 // then, every text put back into the new one from its English, and the
 // choice is kept for the next visit, or given in the address as ?lang=fr.
 //
 // A text is looked up whole, its spaces run together: as it is, or as one
-// of the catalogue's patterns, "{}" standing for any words (a braid's
+// of the catalog's patterns, "{}" standing for any words (a braid's
 // name), themselves looked up, and "{#}" for a number.  A translation
 // takes them in turn, or as "{1}", "{2}"… where its words come in another
-// order.  A text the catalogue does not have stays in English, and is
-// listed in `untranslated` for whoever completes the catalogue (in the
+// order.  A text the catalog does not have stays in English, and is
+// listed in `untranslated` for whoever completes the catalog (in the
 // browser's console: [...untranslated].join("\n")).  An element marked
-// translate="no" keeps its own words, as a braid word.  A catalogue's
+// translate="no" keeps its own words, as a braid word.  A catalog's
 // translation of "English" is its language's own name, in the menu.
 
-import { catalogues, language as siteLanguage } from "./locale.js";
+import { catalogs, language as siteLanguage } from "./locale.js";
 
 const PLACE = /\{#?\}/g;
 
@@ -31,7 +31,7 @@ const literal = (text) =>
     .map((word) => word.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&"))
     .join("\\s+");
 
-/** A catalogue made ready to look texts up in. */
+/** A catalog made ready to look texts up in. */
 function compiled(texts) {
   const wholes = new Map(Object.entries(texts).filter(([english]) => !english.match(PLACE)));
   const patterns = Object.entries(texts)
@@ -60,12 +60,12 @@ function compiled(texts) {
   return { wholes, patterns, shown: new Set(wholes.values()) };
 }
 
-const books = new Map(Object.entries(catalogues).map(([code, texts]) => [code, compiled(texts)]));
+const books = new Map(Object.entries(catalogs).map(([code, texts]) => [code, compiled(texts)]));
 
 /** The languages the page can be shown in, each by its own name. */
 export const languages = new Map([
   ["en", "English"],
-  ...Object.entries(catalogues).map(([code, texts]) => [code, texts.English ?? code]),
+  ...Object.entries(catalogs).map(([code, texts]) => [code, texts.English ?? code]),
 ]);
 
 // Where the visitor's choice is kept between visits.
@@ -91,7 +91,7 @@ globalThis.untranslated = untranslated;
 const WORDY = /\p{L}{2}/u;
 const COLOR = /#[0-9a-f]{3,8}\b/gi;
 
-/** A text in the page's language, or as it is if the catalogue lacks it. */
+/** A text in the page's language, or as it is if the catalog lacks it. */
 export function tr(text) {
   const book = books.get(current);
   if (!book) return text;

@@ -9,7 +9,7 @@ import math
 import pytest
 from web_checks import check
 
-from braidpy.web import build, catalogue
+from braidpy.web import build, catalog
 
 
 def test_a_kumihimo_pattern():
@@ -41,7 +41,7 @@ def test_what_cannot_be_made_is_explained(spec, message):
 
 
 def test_a_disk_braid_is_made_in_step_with_its_crossings():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
     from braidpy.take_off import disk_crossing_steps, mobidai_steps
 
     result = build(
@@ -57,9 +57,9 @@ def test_a_disk_braid_is_made_in_step_with_its_crossings():
 
 
 @pytest.mark.parametrize("source", ["mobidai", "sinnet"])
-def test_a_catalogued_braid_typed_in_is_the_same_braid(source):
-    """What the catalogue shows of a braid, made as your own, is that braid."""
-    entry = catalogue()[source]["entries"][0]
+def test_a_cataloged_braid_typed_in_is_the_same_braid(source):
+    """What the catalog shows of a braid, made as your own, is that braid."""
+    entry = catalog()[source]["entries"][0]
     as_listed = build(
         {"source": source, "name": entry["name"], "cycles": 2, "iterations": 5}
     )
@@ -74,7 +74,7 @@ def test_a_catalogued_braid_typed_in_is_the_same_braid(source):
     )
     assert typed["info"]["word"] == as_listed["info"]["word"]
     assert typed["strands"][0]["points"] == as_listed["strands"][0]["points"]
-    assert catalogue()[source]["entries"][-1]["name"] == "custom"
+    assert catalog()[source]["entries"][-1]["name"] == "custom"
 
 
 @pytest.mark.parametrize(
@@ -183,11 +183,11 @@ def test_a_braid_says_how_many_repeats_were_made(spec, made):
 
 
 @pytest.mark.parametrize("source", ["kumihimo", "mobidai", "sinnet"])
-def test_a_disk_braid_made_from_its_catalogue_defaults_is_made_by_default(source):
-    """The page starts from the catalogue's defaults; a description that
+def test_a_disk_braid_made_from_its_catalog_defaults_is_made_by_default(source):
+    """The page starts from the catalog's defaults; a description that
     gives none of them makes the same braid: both read one table."""
     given = build(
-        {"source": source, **catalogue()[source]["defaults"], "iterations": 1},
+        {"source": source, **catalog()[source]["defaults"], "iterations": 1},
         tighten=False,
     )
     assumed = build({"source": source, "iterations": 1}, tighten=False)
@@ -257,7 +257,7 @@ def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
     """A triangle of four lines a side, from the page, is the book's #3047,
     its strands and moves, and comes drawn: its lines, each a move on a
     track, and its spaces."""
-    from braidpy.solid_sinnets_catalogue import abok_3047
+    from braidpy.solid_sinnets_catalog import abok_3047
 
     spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
     result = build({**spec, "cycles": 1, "iterations": 0})
@@ -266,7 +266,7 @@ def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
     assert drawn["counts"] == abok_3047.initial_counts_per_space
     assert len(drawn["lines"]) == len(drawn["spaces"]) == 12
     assert drawn["tracks"] == 3
-    shapes = catalogue()["shape"]["shapes"]
+    shapes = catalog()["shape"]["shapes"]
     assert set(shapes) == {"square", "diagonal", "triangle", "skew"}
     assert set(shapes["square"]) >= {"oblong", "L", "U", "frame"}
 
@@ -315,7 +315,7 @@ def test_a_sinnet_from_a_shape_is_checked(spec, message):
 def test_a_shape_s_corners_take_strands_more():
     """A strand more at each corner of a triangle of four lines a side is
     the book's #3049."""
-    from braidpy.solid_sinnets_catalogue import abok_3049
+    from braidpy.solid_sinnets_catalog import abok_3049
 
     spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
     result = build({**spec, "corners": 1, "cycles": 1, "iterations": 0})

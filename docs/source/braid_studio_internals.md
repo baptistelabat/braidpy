@@ -21,7 +21,7 @@ static files, published with the documentation.
      three.js tubes                     form.js or marudai.js
 ```
 
-- `braidpy.web` is everything the page asks of braidpy: `catalogue()`,
+- `braidpy.web` is everything the page asks of braidpy: `catalog()`,
   what can be made, and `build(spec)`, the braid a description makes. Both
   answer in plain data, lists and numbers, so the page needs nothing of
   Python's to draw. It is a module per source — `disks`, `words`,

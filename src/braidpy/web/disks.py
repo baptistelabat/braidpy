@@ -51,15 +51,15 @@ from braidpy.web._types import (
 
 
 def _sinnets():
-    from braidpy.solid_sinnets_catalogue import CATALOGUE
+    from braidpy.solid_sinnets_catalog import CATALOG
 
-    return CATALOGUE
+    return CATALOG
 
 
 def _mobidais():
-    from braidpy.mobidai_catalogue import CATALOGUE
+    from braidpy.mobidai_catalog import CATALOG
 
-    return CATALOGUE
+    return CATALOG
 
 
 def _disk_program(
@@ -215,7 +215,7 @@ def _from_kumihimo(spec: Spec) -> Result:
 
 
 def _from_mobidai(spec: Spec) -> Result:
-    from braidpy.mobidai_catalogue import CataloguedMobidai
+    from braidpy.mobidai_catalog import CatalogedMobidai
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     mobidais = _mobidais()
@@ -230,7 +230,7 @@ def _from_mobidai(spec: Spec) -> Result:
         moves = parse_moves(str(spec.get("moves", "")))
         if not all(1 <= p <= n_slots for move in moves for p in move):
             raise ValueError(f"Moves are between slots 1 to {n_slots}.")
-        entry = CataloguedMobidai(
+        entry = CatalogedMobidai(
             name="your own disk braid",
             n_slots=n_slots,
             initial_slots=tuple(zip(slots, _hues(len(slots)))),
@@ -597,7 +597,7 @@ def _mobidai_entry() -> Source:
     entries: list[Entry] = [
         {
             "name": key,
-            "title": catalogued.title,
+            "title": cataloged.title,
             "pattern": {
                 "n_slots": braid.n_slots,
                 "slots": " ".join(str(slot) for slot, _ in braid.initial_slots),
@@ -605,8 +605,8 @@ def _mobidai_entry() -> Source:
                 "shift": braid.n_shift_after_cycle,
             },
         }
-        for key, catalogued in _mobidais().items()
-        for braid in [catalogued.make()]
+        for key, cataloged in _mobidais().items()
+        for braid in [cataloged.make()]
     ]
     return {
         "title": "Kumihimo disk (mobidai)",
@@ -619,15 +619,15 @@ def _sinnet_entry() -> Source:
     entries: list[Entry] = [
         {
             "name": name,
-            "title": catalogued.title,
+            "title": cataloged.title,
             "shape": sinnet.shape,
             "pattern": {
                 "counts": " ".join(str(c) for c in sinnet.initial_counts_per_space),
                 "moves": _moves_text(sinnet.moves),
             },
         }
-        for name, catalogued in _sinnets().items()
-        for sinnet in [catalogued.make()]
+        for name, cataloged in _sinnets().items()
+        for sinnet in [cataloged.make()]
     ]
     return {
         "title": "Ashley solid sinnet",
@@ -649,9 +649,9 @@ def _shape_entry() -> Source:
 
 def _shape_examples() -> list[Example]:
     """The braids a sinnet from a shape offers: the book's that a shape
-    draws (:data:`braidpy.solid_sinnets_catalogue.DRAWN`), named as the
+    draws (:data:`braidpy.solid_sinnets_catalog.DRAWN`), named as the
     catalogue names them, then braidpy's own (``Shape.examples``)."""
-    from braidpy.solid_sinnets_catalogue import DRAWN
+    from braidpy.solid_sinnets_catalog import DRAWN
 
     sinnets = _sinnets()
     book: dict[tuple, Example] = {}

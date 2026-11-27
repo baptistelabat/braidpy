@@ -1210,9 +1210,9 @@ def machine_size_survey(png_dir: Path | None) -> None:
     from braidpy.horn_gear.described import machine_from_graph
     from braidpy.horn_gear.simulation import state_period
     from braidpy.horn_gear.take_off import clearance
-    from braidpy.machine_catalogue import CATALOGUE
+    from braidpy.machine_catalog import CATALOG
 
-    machines = {name: entry.make for name, entry in sorted(CATALOGUE.items())}
+    machines = {name: entry.make for name, entry in sorted(CATALOG.items())}
     machines.update(
         {
             "split in three": lambda: machine_from_graph("H1-A H2-B H3-C H1+H2+H3", 3),
@@ -1233,9 +1233,9 @@ def machine_size_survey(png_dir: Path | None) -> None:
         assert room.met is None, name
         names.append(name)
         needed.append(1 / room.share)
-    catalogued = needed[: len([n for n in names if n in CATALOGUE])]
+    cataloged = needed[: len([n for n in names if n in CATALOG])]
     fig, ax = plt.subplots(figsize=(8, 4.2))
-    colors = [LIMIT if n not in CATALOGUE else MUTED for n in names]
+    colors = [LIMIT if n not in CATALOG else MUTED for n in names]
     ax.barh(names, needed, color=colors)
     ax.invert_yaxis()
     ax.set_xlabel("smallest horn gap needed, in bobbin diameters")
@@ -1244,8 +1244,8 @@ def machine_size_survey(png_dir: Path | None) -> None:
         "machine_size_survey",
         png_dir,
         _wrapped(
-            f"Catalogued machines need horns {min(catalogued):.1f} to "
-            f"{max(catalogued):.1f} bobbin diameters apart for their carriers to "
+            f"Cataloged machines need horns {min(cataloged):.1f} to "
+            f"{max(cataloged):.1f} bobbin diameters apart for their carriers to "
             "clear each other; in red, the machines of your own this page "
             "describes."
         ),
@@ -1312,7 +1312,7 @@ def ashley_shapes(png_dir: Path | None) -> None:
     sinnet_from_shape draws them: the lines, the bights numbered as the
     spaces, and the moves in his order."""
     from braidpy.making.ashley import oblong, triangle
-    from braidpy.solid_sinnets_catalogue import abok_3047
+    from braidpy.solid_sinnets_catalog import abok_3047
 
     shapes = {"triangle, #3047": triangle(4), "oblong, #3071": oblong(6, 2)}
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8), width_ratios=[1.1, 1.3])
@@ -1343,7 +1343,7 @@ def ashley_grids(png_dir: Path | None) -> None:
     spaces round its hole numbered between the outer ones; a square on a
     corner on the diagonal grid, the lines of the book's #3073."""
     from braidpy.making.ashley import _drawn, grid_lines, grid_outline, grid_shape
-    from braidpy.solid_sinnets_catalogue import abok_3073
+    from braidpy.solid_sinnets_catalog import abok_3073
 
     shapes = {
         "an L, 5 lines, arms 2": ("square", "L", 5, 2),

@@ -9,7 +9,7 @@ for Pyodide to install in the browser.  Pyodide itself is loaded from
 its CDN, or from wherever ``?pyodide=`` says.  With them, what braidpy
 would otherwise say in every browser, said here once: what the page can
 make, so that its form is filled before Python has started, and the
-catalogue of braids by topology (:mod:`braidpy.topology_catalogue`), some ten
+catalog of braids by topology (:mod:`braidpy.topology_catalog`), some ten
 seconds here, minutes there.
 
 Run from the repository root, after ``npm install`` in ``web/``::
@@ -174,19 +174,19 @@ def locale(language: str, packages: Sequence[str] = ()) -> str:
     ``<code>.toml`` a text by its English; English needs none.  Each of the
     site's ``packages`` adds the words of its own braids from its own
     ``locales/``, kept out of braidpy's."""
-    catalogues: dict[str, dict[str, str]] = {}
+    catalogs: dict[str, dict[str, str]] = {}
     for folder in [LOCALES, *(Path(p) / "locales" for p in packages)]:
         for source in sorted(folder.glob("*.toml")):
-            catalogues.setdefault(source.stem, {}).update(
+            catalogs.setdefault(source.stem, {}).update(
                 tomllib.loads(source.read_text())
             )
-    if language != "en" and language not in catalogues:
+    if language != "en" and language not in catalogs:
         raise SystemExit(f"No words in {language!r}: no {LOCALES}/{language}.toml.")
     return (
         "// The page's words in each language, written by web/build.py from\n"
         "// web/locales/: see web/i18n.js.\n"
         f"export const language = {json.dumps(language)};\n"
-        f"export const catalogues = {json.dumps(catalogues, ensure_ascii=False, indent=0)};\n"
+        f"export const catalogs = {json.dumps(catalogs, ensure_ascii=False, indent=0)};\n"
     )
 
 
@@ -325,15 +325,15 @@ def _compressed(site: Path) -> None:
 
 def _data(site: Path, packages: Sequence[str] = ()) -> None:
     """What braidpy says once, for every visit, as JSON: the page's
-    catalogue — what it can make, offered before Python has started — the
-    catalogue of braids by topology, and the table of braids the front
+    catalog — what it can make, offered before Python has started — the
+    catalog of braids by topology, and the table of braids the front
     page lists (``braids.json``).  Made by braidpy with all it
     needs, in the project's own environment."""
     script = (
         "import json, sys; from braidpy import web; "
-        "from braidpy.topology_catalogue import export; "
+        "from braidpy.topology_catalog import export; "
         "topologies = export(); "
-        "json.dump({'catalogue': web.catalogue(), 'topologies': topologies, "
+        "json.dump({'catalogue': web.catalog(), 'topologies': topologies, "
         "'braids': web.braids(topologies)}, sys.stdout)"
     )
     data = json.loads(_braidpy(script, packages).stdout)
@@ -373,8 +373,8 @@ def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:
     wheels = site / "wheels"
     wheels.mkdir()
     braidpy = _wheel(ROOT, wheels)
-    # The site's own packages, installed after braidpy, whose catalogues
-    # they add to (braidpy.catalogue.extended).
+    # The site's own packages, installed after braidpy, whose catalogs
+    # they add to (braidpy.catalog.extended).
     own = [_wheel(package, wheels) for package in described["packages"]]
     version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
     (wheels / "manifest.json").write_text(

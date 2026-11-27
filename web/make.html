@@ -27,10 +27,10 @@
         worker.postMessage({ type: "init", pyodideUrl });
         // What can be made, made with the site: the form is filled from it
         // at once, not when Python is ready.
-        const catalogue = fetch("catalogue.json", { cache: "no-cache" })
+        const catalog = fetch("catalogue.json", { cache: "no-cache" })
           .then((response) => (response.ok ? response.json() : null))
           .catch(() => null);
-        return { worker, early, catalogue };
+        return { worker, early, catalog };
       })();
     </script>
     <script type="importmap">

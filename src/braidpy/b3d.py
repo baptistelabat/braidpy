@@ -5,7 +5,7 @@
 """A braid designed in braid3d, the 3D braid designer of craftdesignonline.com
 (see the references page), read from its file as a mobidai braid: the disk's
 slots, where each yarn starts, and the moves of a cycle
-(:class:`~braidpy.mobidai_catalogue.CataloguedMobidai`).
+(:class:`~braidpy.mobidai_catalog.CatalogedMobidai`).
 
 The file (``.b3d``) is URL-encoded JSON: each yarn's colour, and the steps
 the braid was designed by, each a group of moves of yarns from one angle
@@ -54,7 +54,7 @@ from typing import TYPE_CHECKING, Any
 from braidpy._renamed import renamed_attribute
 
 if TYPE_CHECKING:
-    from braidpy.mobidai_catalogue import CataloguedMobidai
+    from braidpy.mobidai_catalog import CatalogedMobidai
 
 __all__ = ["MOST_SLOTS", "Design", "mobidai_from_b3d", "read_b3d", "write_b3d"]
 
@@ -341,7 +341,7 @@ def _in_turn(
 
 def mobidai_from_b3d(
     text: str, name: str = "braid3d design", most_slots: int = MOST_SLOTS
-) -> tuple[CataloguedMobidai, int]:
+) -> tuple[CatalogedMobidai, int]:
     """A braid3d design as a mobidai braid, and how many cycles make it.
 
     Args:
@@ -357,7 +357,7 @@ def mobidai_from_b3d(
         ValueError: If the file holds no braid3d design, or one that does
             what is not read here.
     """
-    from braidpy.mobidai_catalogue import CataloguedMobidai
+    from braidpy.mobidai_catalog import CatalogedMobidai
 
     design = Design.read(text)
     if design.prelude or design.times == 1:
@@ -385,7 +385,7 @@ def mobidai_from_b3d(
         targets = [(yarn, _slot_of(end, n)) for yarn, _, end in moved]
         moves += _in_turn(group, targets, slot, n)
     return (
-        CataloguedMobidai(
+        CatalogedMobidai(
             name=name,
             n_slots=n,
             initial_slots=tuple(zip(starts, (design.colors[y] for y in yarns))),

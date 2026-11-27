@@ -8,7 +8,7 @@ braidpy reads any mobidai."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalogue import word_examples
+from braidpy.braid_catalog import word_examples
 from braidpy.making.disk import disk_braid, disk_moves
 
 
@@ -20,7 +20,7 @@ def _words():
         yield example["title"], Braid(word, example["n_strands"])
 
 
-def test_every_catalogue_word_is_made_on_the_disk():
+def test_every_catalog_word_is_made_on_the_disk():
     """On a disk with room for it: a strand wants two slots, with room
     either side, so the 32-slot disk of the shops holds fifteen strands and
     a wider braid needs a wider disk."""

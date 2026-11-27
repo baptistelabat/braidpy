@@ -8,12 +8,12 @@ loaded by hand, turned by the handle."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalogue import CATALOGUE as BRAIDS
+from braidpy.braid_catalog import CATALOG as BRAIDS
 from braidpy.horn_gear.jacquard import jacquard_lace_ring
-from braidpy.machine_catalogue import LACE
+from braidpy.machine_catalog import LACE
 from braidpy.making.lace import punchcard_text, ring_braid
 from braidpy.pure_braid import repeating_unit
-from braidpy.web import build, catalogue, machine_geometry, machine_turned
+from braidpy.web import build, catalog, machine_geometry, machine_turned
 
 
 @pytest.mark.parametrize("name", list(LACE))
@@ -37,7 +37,7 @@ def test_every_lace_machine_is_made_and_its_word_read(name):
         ("lace_flat6", "regular_flat6"),
     ],
 )
-def test_a_card_makes_its_catalogue_braid(name, braid):
+def test_a_card_makes_its_catalog_braid(name, braid):
     """A pass of the card is a repeat of the braid it was punched for."""
     made = BRAIDS[braid].make()
     unit = Braid(
@@ -48,7 +48,7 @@ def test_a_card_makes_its_catalogue_braid(name, braid):
 
 
 def test_the_lace_machines_are_a_source_of_their_own():
-    listed = catalogue()
+    listed = catalog()
     assert [e["name"] for e in listed["lace"]["entries"]] == [*LACE, "custom"]
     assert not set(LACE) & {e["name"] for e in listed["machine"]["entries"]}
 
@@ -88,21 +88,21 @@ def test_a_ring_threaded_in_some_notches():
 
 
 @pytest.mark.parametrize(
-    "entry", catalogue()["lace"]["entries"][:-1], ids=lambda e: e["name"]
+    "entry", catalog()["lace"]["entries"][:-1], ids=lambda e: e["name"]
 )
-def test_a_catalogued_card_typed_in_as_your_own_is_the_same_braid(entry):
-    """Each catalogued machine shows its gears and card, ready to change:
+def test_a_cataloged_card_typed_in_as_your_own_is_the_same_braid(entry):
+    """Each cataloged machine shows its gears and card, ready to change:
     as they are, they make the same braid."""
     machine = LACE[entry["name"]].make().machine()
     threading = " ".join(f"{g}:{s}" for g, s in machine.default_carriers().values())
     own = {"source": "lace", "name": "custom", "carriers": threading, "iterations": 0}
     made = build({**own, **entry["pattern"]})
-    catalogued = build({"source": "lace", "name": entry["name"], "iterations": 0})
-    assert made["info"]["word"] == catalogued["info"]["word"]
+    cataloged = build({"source": "lace", "name": entry["name"], "iterations": 0})
+    assert made["info"]["word"] == cataloged["info"]["word"]
 
 
 def test_your_own_card_is_offered_last():
-    assert catalogue()["lace"]["entries"][-1] == {
+    assert catalog()["lace"]["entries"][-1] == {
         "name": "custom",
         "title": "Your own card…",
     }
@@ -126,7 +126,7 @@ def test_a_card_that_cannot_drive_the_machine_says_why(n_gears, card, message):
 
 
 def test_your_own_lace_machine_is_drawn_and_turned_by_hand():
-    """The page asks for it by its gears and card, as for a catalogued one."""
+    """The page asks for it by its gears and card, as for a cataloged one."""
     name = "lace:6:101010 010101"
     shape = machine_geometry(name)
     assert len(shape["gears"]) == 6 and len(shape["loading"]) == 6

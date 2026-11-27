@@ -59,7 +59,7 @@ class Word:
     settle = Text("settle", "")
     by_physics = ("physics", "crossing")
     # What the page starts from; the words it offers are
-    # braidpy.braid_catalogue.word_examples().
+    # braidpy.braid_catalog.word_examples().
     starts: ClassVar[dict[str, Default]] = {"word": "1 -2", "n_strands": 3, "repeat": 6}
 
 
@@ -168,11 +168,11 @@ class Shape:
     }
     shown = (grid, shape, size, height, order, corners, cycles)
     # What makes the braid what it is: two descriptions alike in these are
-    # of one braid (braidpy.topology_catalogue).
+    # of one braid (braidpy.topology_catalog).
     defining = (grid, shape, size, height, cells, order, turned, extra, corners)
     # Braids made so, offered as they come, each as it is described.
     # Braids made so, offered as they come, each as it is described,
-    # after the book's that a shape draws (solid_sinnets_catalogue.DRAWN).
+    # after the book's that a shape draws (solid_sinnets_catalog.DRAWN).
     examples: ClassVar[list[dict[str, Default]]] = [
         {
             "title": "Hexagon, 3 lines a side",

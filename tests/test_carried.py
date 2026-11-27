@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from braidpy.carried import RADIUS, braid_by_carriers, figure
-from braidpy.machine_catalogue import CATALOGUE
+from braidpy.machine_catalog import CATALOG
 
 # Steps of the flat plait, enough for its first crossings to be taken off.
 STEPS = 8
@@ -18,7 +18,7 @@ STEPS = 8
 
 @pytest.fixture(scope="module")
 def plait():
-    return braid_by_carriers(CATALOGUE["flat_3"].make(), STEPS)
+    return braid_by_carriers(CATALOG["flat_3"].make(), STEPS)
 
 
 def _crossings(yarns, n=4000):
@@ -62,9 +62,7 @@ def test_the_plait_made_has_the_machines_crossings(plait):
     laid = _crossings(
         [
             np.asarray(p)
-            for p in yarn_paths(
-                CATALOGUE["flat_3"].make(), n_steps=STEPS
-            ).points.values()
+            for p in yarn_paths(CATALOG["flat_3"].make(), n_steps=STEPS).points.values()
         ]
     )
     assert len(made) >= STEPS // 3

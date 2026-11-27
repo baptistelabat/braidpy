@@ -175,7 +175,7 @@ def test_strands_are_plain_svg_and_named_above_them():
 
 
 def test_the_braid_grows_below_the_disk_as_it_is_worked():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
     from braidpy.take_off import disk_crossing_steps, mobidai_steps
 
     config = KONGO_8.to_config()
