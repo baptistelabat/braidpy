@@ -10,7 +10,7 @@ import numpy as np
 from braidpy import web
 from braidpy.horn_gear.layout import compute_layout
 from braidpy.horn_gear.visualization import track_curves
-from braidpy.machine_catalogue import CATALOGUE
+from braidpy.machine_catalog import CATALOG
 from braidpy.web.machines import machine_geometry
 
 
@@ -18,7 +18,7 @@ def test_a_tubular_braid_has_a_track_each_way_round_and_a_plait_one():
     """The ring's carriers go round it both ways; the plait's all follow one
     figure of eight."""
     for name, count in [("tubular_8", 2), ("flat_3", 1)]:
-        machine = CATALOGUE[name].make()
+        machine = CATALOG[name].make()
         curves = track_curves(machine, compute_layout(machine))
         assert len(curves) == count, name
         for _, points in curves:
@@ -44,12 +44,12 @@ def test_braid_studio_draws_the_tracks_on_the_machine_to_load():
     drawn = machine_geometry("tubular_8")
     assert [t["colour"] for t in drawn["tracks"]] == ["#e41a1c", "#377eb8"]
     # In the plane the gears are drawn in, round them.
-    centres = np.array([[g["x"], g["y"]] for g in drawn["gears"]])
+    centers = np.array([[g["x"], g["y"]] for g in drawn["gears"]])
     for track in drawn["tracks"]:
         points = np.asarray(track["points"])
         assert np.allclose(points[0], points[-1])
         nearest = np.min(
-            np.hypot(*(points[:, None] - centres[None]).transpose(2, 0, 1)), axis=1
+            np.hypot(*(points[:, None] - centers[None]).transpose(2, 0, 1)), axis=1
         )
         # The points are rounded to 1e-4.
         assert np.max(nearest) <= max(g["radius"] for g in drawn["gears"]) + 1e-3

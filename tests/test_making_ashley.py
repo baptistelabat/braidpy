@@ -10,7 +10,7 @@ import math
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalogue import word_examples
+from braidpy.braid_catalog import word_examples
 from braidpy.braid_pattern import alike
 from braidpy.making.ashley import (
     ashley_moves,
@@ -19,7 +19,7 @@ from braidpy.making.ashley import (
     sinnet_spec,
     triangle,
 )
-from braidpy.solid_sinnets_catalogue import abok_2965, abok_2999
+from braidpy.solid_sinnets_catalog import abok_2965, abok_2999
 
 
 def test_the_plait_is_ashley_s_2965():
@@ -104,7 +104,7 @@ def test_a_triangle_is_made_as_the_book_makes_it(number, lines):
     each space start with.  With an odd number of lines a side the moves
     cannot alternate, and are made space by space, as the book makes
     #3059."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import sinnet_from_shape
 
     book = getattr(books, f"abok_{number}")
@@ -118,7 +118,7 @@ def test_a_triangle_with_sharper_edges_has_a_strand_more_at_each_corner():
     triangle, spaces 1, 5 and 9: "a corner in a diagram represents an
     edge"."""
     from braidpy.making.ashley import sinnet_from_shape
-    from braidpy.solid_sinnets_catalogue import abok_3049
+    from braidpy.solid_sinnets_catalog import abok_3049
 
     corners = [1 if space in (1, 5, 9) else 0 for space in range(1, 13)]
     made = sinnet_from_shape(triangle(4), extra=corners)
@@ -132,7 +132,7 @@ def test_an_oblong_is_the_book_s_braid(number, width, ends):
     space 1 where the book starts on the move into it; with a strand more at
     each chisel edge, the two ends of its long loop, it is the book's
     braid."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import sinnet_from_shape
 
     book = getattr(books, f"abok_{number}")
@@ -149,7 +149,7 @@ def test_the_square_has_the_book_s_lines_in_the_order_of_the_others():
     """#3070's two loops are the book's; the book moves opposite strands
     together there, 1-3 with 3-1, where the others alternate."""
     from braidpy.making.ashley import sinnet_from_shape
-    from braidpy.solid_sinnets_catalogue import abok_3070
+    from braidpy.solid_sinnets_catalog import abok_3070
 
     made = sinnet_from_shape(oblong(2, 2))
     assert sorted(made.moves) == sorted(tuple(move) for move in abok_3070.moves)
@@ -253,7 +253,7 @@ def test_the_book_s_moves_find_its_shape(number):
     """The book's triangles and oblongs drawn as the book draws them find
     the shape that draws their lines, however their moves are ordered or
     made, and with whatever strands."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import shapes_from_moves
 
     book = getattr(books, f"abok_{number}")
@@ -263,7 +263,7 @@ def test_the_book_s_moves_find_its_shape(number):
 def test_moves_drawn_otherwise_find_no_shape():
     """A pentagon of four lines a side is not drawn as these shapes are."""
     from braidpy.making.ashley import shapes_from_moves
-    from braidpy.solid_sinnets_catalogue import abok_3079
+    from braidpy.solid_sinnets_catalog import abok_3079
 
     assert shapes_from_moves(abok_3079.moves) == []
 
@@ -294,7 +294,7 @@ def test_a_shape_s_tracks_can_be_turned_round():
 def test_the_book_s_strands_more_are_at_the_corners(number, outline):
     """The spaces where the book adds strands are a shape's corners: its
     bights turning a corner, or alone on a side."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import corner_spaces, sinnet_from_shape
 
     book = getattr(books, f"abok_{number}")
@@ -394,7 +394,7 @@ def test_space_by_space_is_the_book_s_other_order():
     """Made space by space, a triangle of two lines a side is the book's
     #3057 and #3058."""
     from braidpy.making.ashley import sinnet_from_shape
-    from braidpy.solid_sinnets_catalogue import abok_3057
+    from braidpy.solid_sinnets_catalog import abok_3057
 
     made = sinnet_from_shape(triangle(2), order="spaces")
     assert made.moves == [tuple(move) for move in abok_3057.moves]
@@ -436,7 +436,7 @@ def test_a_shape_on_its_corner_has_the_book_s_lines(number, shape, size, height)
     """On the diagonal grid, a square or an oblong standing on a corner,
     its lines across and up, is drawn as the book draws #3073, #3074 and
     #3075: the same spaces joined, if not in the same order."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import (
         _drawn,
         grid_lines,
@@ -455,12 +455,12 @@ def test_a_shape_on_its_corner_has_the_book_s_lines(number, shape, size, height)
 
 @pytest.mark.parametrize(
     "name",
-    sorted(__import__("braidpy.solid_sinnets_catalogue", fromlist=["DRAWN"]).DRAWN),
+    sorted(__import__("braidpy.solid_sinnets_catalog", fromlist=["DRAWN"]).DRAWN),
 )
-def test_the_book_s_sinnets_are_drawn_as_the_catalogue_says(name):
-    """Each of the book's sinnets the catalogue says a shape draws: the
+def test_the_book_s_sinnets_are_drawn_as_the_catalog_says(name):
+    """Each of the book's sinnets the catalog says a shape draws: the
     shape draws its lines, and makes its braid where it says so."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.making.ashley import (
         _drawn,
         corner_spaces,
@@ -500,7 +500,7 @@ def test_moves_whose_lines_do_not_cross_can_be_made_either_way_round(name):
     """Two moves made one after the other, swapped: the same braid exactly
     when their lines in Ashley's diagram do not cross, another when they
     do.  A group of parallel lines is so moves made in any order."""
-    from braidpy import solid_sinnets_catalogue as books
+    from braidpy import solid_sinnets_catalog as books
     from braidpy.ashley_solid_sinnet import AshleySolidSinnet
     from braidpy.making.ashley import _cross
 

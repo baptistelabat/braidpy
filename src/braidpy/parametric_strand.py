@@ -420,13 +420,13 @@ def transported_frame(points):
     """
     import numpy as np
 
-    centre = np.asarray(points, dtype=float)
+    center = np.asarray(points, dtype=float)
 
     # Tangents by central differences, so a sample is not biased forwards.
-    ahead = np.roll(centre, -1, axis=0)
-    behind = np.roll(centre, 1, axis=0)
-    ahead[-1] = centre[-1] + (centre[-1] - centre[-2])
-    behind[0] = centre[0] - (centre[1] - centre[0])
+    ahead = np.roll(center, -1, axis=0)
+    behind = np.roll(center, 1, axis=0)
+    ahead[-1] = center[-1] + (center[-1] - center[-2])
+    behind[0] = center[0] - (center[1] - center[0])
     tangents = ahead - behind
     tangents /= np.linalg.norm(tangents, axis=1)[:, None]
 
@@ -456,7 +456,7 @@ def transported_frame(points):
         normals.append(carried / np.linalg.norm(carried))
 
     normals = np.array(normals)
-    return centre, normals, np.cross(tangents, normals)
+    return center, normals, np.cross(tangents, normals)
 
 
 def tube_rings(points, radius: float, n_around: int = 16):
@@ -477,13 +477,13 @@ def tube_rings(points, radius: float, n_around: int = 16):
     """
     import numpy as np
 
-    centre, normals, binormals = transported_frame(points)
+    center, normals, binormals = transported_frame(points)
     around = np.linspace(0.0, 2.0 * math.pi, n_around + 1)
     ring = (
         radius * np.cos(around)[None, :, None] * normals[:, None, :]
         + radius * np.sin(around)[None, :, None] * binormals[:, None, :]
     )
-    return centre[:, None, :] + ring
+    return center[:, None, :] + ring
 
 
 def tube_mesh(points, radius: float, n_around: int = 16):

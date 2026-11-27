@@ -410,10 +410,10 @@ def _crossing(first: ShapeLine, second: ShapeLine) -> bool:
 def _moved_on(loops, point, distance: float) -> np.ndarray:
     """A point on a shape's outline, or a hole's, moved so far on round it,
     the way it runs."""
-    loop, travelled, _ = _round_the_outline(loops, np.asarray(point, dtype=float))
+    loop, traveled, _ = _round_the_outline(loops, np.asarray(point, dtype=float))
     corners = loops[loop]
     edges = list(zip(corners, np.roll(corners, -1, axis=0)))
-    left = (travelled + distance) % sum(float(np.linalg.norm(b - a)) for a, b in edges)
+    left = (traveled + distance) % sum(float(np.linalg.norm(b - a)) for a, b in edges)
     for a, b in edges:
         length = float(np.linalg.norm(b - a))
         if left <= length:
@@ -485,15 +485,15 @@ def _round_the_outline(loops, point) -> tuple[int, float, int]:
     sides numbered round every outline in turn."""
     index = 0
     for loop, corners in enumerate(loops):
-        travelled = 0.0
+        traveled = 0.0
         for a, b in zip(corners, np.roll(corners, -1, axis=0)):
             side = b - a
             length = float(np.linalg.norm(side))
             t = float(np.dot(point - a, side)) / length**2
             off = abs(side[0] * (point - a)[1] - side[1] * (point - a)[0]) / length
             if -SAME_POINT <= t <= 1 + SAME_POINT and off < SAME_POINT:
-                return loop, travelled + t * length, index
-            travelled += length
+                return loop, traveled + t * length, index
+            traveled += length
             index += 1
     raise ValueError(f"{tuple(point)} is not on the outline.")
 
@@ -554,11 +554,11 @@ def _spaces(
         )
         placed = placed[first:] + placed[:first]
     else:
-        centre = loops[0].mean(axis=0)
-        start = math.atan2(*(loops[0][0] - centre)[::-1])
+        center = loops[0].mean(axis=0)
+        start = math.atan2(*(loops[0][0] - center)[::-1])
 
         def bearing(pair) -> float:
-            y, x = (middle(pair) - centre)[::-1]
+            y, x = (middle(pair) - center)[::-1]
             return round((math.atan2(y, x) - start) % (2 * math.pi), 9)
 
         placed = sorted(pairs, key=bearing)

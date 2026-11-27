@@ -276,12 +276,30 @@ a core, and steps through a disk's or a sinnet's moves.
 
 ### Changed
 
-- One spelling for the catalogues: the modules `braid_catalog`,
+- braidpy's names are spelled in American English, as Python's and its
+  libraries' are (`color`, `center`, `neighbor`, `catalog`) — one rule, no
+  exceptions; prose may be British. A test keeps it so
+  (`tests/test_spelling.py`). Renamed, the old names still answering with
+  a `DeprecationWarning` (`braidpy._renamed`), each for the release that
+  renames it and one more:
+  `ashley_solid_sinnet.strand_colors`,
+  `horn_gear.visualization.colored_tracks`, `horn_gear.word.deck_center`,
+  `BraidingMachine.carrier_colors`, `StrandTrajectories.center`,
+  `DescribedMachine(centers=)` and its `centers`, the `color=` of
+  `BraidGrowth.traces`, and the attributes `b3d.Design.colors`,
+  `CarriedBraid.colors` and `AnnularWord.center` (built with the old
+  keyword, these three no longer are); the module `braidpy.catalogue` and
+  `web.catalogue()` are `braidpy.catalog` and `web.catalog()`, the
+  topology catalogue's `catalogue()` is `catalog()`, `similarity`'s
+  `catalogue_braids()` is `catalog_braids()`, the mobidai catalogue's
+  `CataloguedMobidai` and `CataloguedBraid` are `CatalogedMobidai` and
+  `CatalogedBraid`, and each catalogue's `CATALOGUE` is `CATALOG`; the
+  catalogue modules keep the names 0.3.0 shipped them — `braid_catalog`,
   `machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog` and
-  `topology_catalog` are now `braid_catalogue`, `machine_catalogue`,
-  `mobidai_catalogue`, `solid_sinnets_catalogue` and `topology_catalogue`,
-  after `catalogue.py`.  The older names go on working as modules that say
-  so with a `DeprecationWarning` and answer as the new ones do.
+  `topology_catalog`. Braid Studio's links and the JSON its pages serve
+  are unchanged, but the site writes its catalog as `catalog.json`,
+  keeping `catalogue.json` beside it for the sites built before it (a few
+  months, a release at least), each to be dropped in a later one.
 - Braids are compared as patterns (`braidpy.braid_pattern`) where braidpy
   compares them: `BraidPattern.alike`, and `braid_pattern.alike(a, b)` for
   two braids, say nothing measured tells two patterns apart — fast, the

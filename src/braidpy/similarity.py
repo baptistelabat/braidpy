@@ -245,11 +245,11 @@ def exact_part(mark: Fingerprint) -> tuple:
     return (mark.n_strands, mark.loops, mark.writhe, mark.linking, mark.burau_mod)
 
 
-def catalogue_braids() -> dict[str, Braid]:
-    """The braids of :mod:`braidpy.braid_catalogue`, by name."""
-    from braidpy.braid_catalogue import CATALOGUE
+def catalog_braids() -> dict[str, Braid]:
+    """The braids of :mod:`braidpy.braid_catalog`, by name."""
+    from braidpy.braid_catalog import CATALOG
 
-    return {name: entry.make() for name, entry in CATALOGUE.items()}
+    return {name: entry.make() for name, entry in CATALOG.items()}
 
 
 def similar(
@@ -262,7 +262,7 @@ def similar(
     Args:
         braid: The braid — your own, say.
         candidates: The braids to look among, by name; by default those of
-            :mod:`braidpy.braid_catalogue`.
+            :mod:`braidpy.braid_catalog`.
         count: How many to give.
 
     Returns:
@@ -270,7 +270,7 @@ def similar(
         where nothing measured tells the two apart.
     """
     if candidates is None:
-        candidates = catalogue_braids()
+        candidates = catalog_braids()
     mine = braid.pattern()
     found = []
     for name, other in candidates.items():
@@ -284,3 +284,9 @@ def similar(
         )
     found.sort(key=lambda m: (not m.same_fingerprint, m.distance, m.name))
     return found[:count]
+
+
+# The function's name as 0.3.0 shipped it, kept working.
+from braidpy._renamed import renamed_globals
+
+__getattr__ = renamed_globals(__name__, {"catalogue_braids": "catalog_braids"})

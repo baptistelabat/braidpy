@@ -6,7 +6,7 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js";
+import { catalog } from "./fields.js";
 import { englishText, tr } from "./i18n.js";
 import { $, round } from "./page.js";
 import { lastResult } from "./scene.js";
@@ -103,7 +103,7 @@ export function describe(result, seconds) {
   );
 }
 
-// The braid's kin (braidpy.topology_catalogue.for_page): every other way of
+// The braid's kin (braidpy.topology_catalog.for_page): every other way of
 // making the same braid, and the braids nearest it, each a button to make
 // it.  None: nothing known yet, nothing shown.
 export function showKin(kin) {
@@ -119,7 +119,7 @@ export function showKin(kin) {
     [
       "Nearest braids",
       kin.near,
-      "Braids of the catalogues most like this one, by their topology — strands, loops, crossings, linking and Alexander polynomial — whatever way each is made",
+      "Braids of the catalogs most like this one, by their topology — strands, loops, crossings, linking and Alexander polynomial — whatever way each is made",
     ],
   ];
   for (const [heading, methods, about] of lists) {
@@ -141,7 +141,7 @@ export function showKin(kin) {
       });
       const from = document.createElement("span");
       from.className = "muted";
-      const source = catalogue[method.source]?.title ?? method.source;
+      const source = catalog[method.source]?.title ?? method.source;
       from.textContent =
         method.distance === undefined ? ` ${source}` : ` ${source} · ${method.distance}`;
       if (method.distance !== undefined) from.title = "How unlike: 0 the same, up to 5";

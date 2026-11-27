@@ -2,112 +2,26 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""What every catalogue of braids in braidpy has in common.
+"""`braidpy.catalogue` was renamed `braidpy.catalog`: one spelling for the catalogues.
 
-Each catalogue — :mod:`braidpy.braid_catalogue` (braid words),
-:mod:`braidpy.mobidai_catalogue` (kumihimo disk braids),
-:mod:`braidpy.solid_sinnets_catalogue` (Ashley's solid sinnets) and
-:mod:`braidpy.machine_catalogue` (braiding machines) — keeps its braids as
-it likes best, and lists them in a ``CATALOGUE``: an :class:`Entry` per
-braid, by the name it is known by, in the order to offer them.
-
-A site built from braidpy can add braids of its own to a catalogue without
-braidpy knowing them (:func:`extended`): a package of the site's names,
-in the entry point group :data:`GROUP`, a ``CATALOGUE`` to add to one of
-braidpy's, by that catalogue's module name (docs: *A site of your own*).
+Kept so the older imports go on working.  Anything this module answers,
+`braidpy.catalog` answers, under its own name.
 """
 
-from __future__ import annotations
+import warnings
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Generic, TypeVar
+from braidpy import catalog
 
-__all__ = ["GROUP", "KINDS", "Entry", "Link", "ashley", "extended"]
-
-T = TypeVar("T")
-
-# What a link can be: where a braid is described, shown or made.
-KINDS = ("book", "article", "video", "page", "post")
-
-# The entry point group through which packages add to braidpy's catalogues.
-GROUP = "braidpy.catalogues"
+_warned = False
 
 
-@dataclass(frozen=True)
-class Link:
-    """Where a braid comes from, or is shown being made.
-
-    Args:
-        title: What it is, to show: a book and its number, a video's title.
-        kind: One of :data:`KINDS`.
-        url: Where it is on the web; none for a book on paper, or a post
-            known only by where it was.
-    """
-
-    title: str
-    kind: str = "book"
-    url: str = ""
-
-    def __post_init__(self) -> None:
-        if self.kind not in KINDS:
-            raise ValueError(f"kind must be one of {KINDS}, got {self.kind!r}")
-
-
-def ashley(number: int | str) -> Link:
-    """The Ashley Book of Knots, at a knot's number."""
-    return Link(f"The Ashley Book of Knots, #{number}")
-
-
-@dataclass(frozen=True)
-class Entry(Generic[T]):
-    """One braid of a catalogue.
-
-    Args:
-        title: What it is called, to show.
-        make: Makes it, as its catalogue keeps it: a braid, a disk braid's
-            moves, a sinnet, a machine.  Nothing is drawn.
-        links: Where it comes from, and where it is shown: a book and its
-            number, a video, a page.
-    """
-
-    title: str
-    make: Callable[[], T]
-    links: tuple[Link, ...] = ()
-
-    @property
-    def reference(self) -> str:
-        """Where it comes from, as one line: the first link's title."""
-        return self.links[0].title if self.links else ""
-
-
-def extended(name: str, own: dict[str, Entry[T]]) -> dict[str, Entry[T]]:
-    """A catalogue of braidpy's, with the braids installed packages add to
-    it: each entry point of :data:`GROUP` named ``name`` (the catalogue's
-    module, as ``machine_catalogue``, or ``lace_machines`` for its lace
-    machines) loads a dict of :class:`Entry` by name,
-    listed after braidpy's own.  A package's catalogue imports from braidpy
-    what its braids need, but not the catalogue it adds to.
-
-    Args:
-        name: The catalogue's module name, without ``braidpy.``; or
-            ``lace_machines``, :data:`braidpy.machine_catalogue.LACE`.
-        own: braidpy's own entries.
-
-    Returns:
-        braidpy's entries, then every package's.
-
-    Raises:
-        ValueError: If a package names a braid the catalogue has already.
-    """
-    from importlib.metadata import entry_points
-
-    merged = dict(own)
-    for point in entry_points(group=GROUP, name=name):
-        for key, entry in point.load().items():
-            if key in merged:
-                raise ValueError(
-                    f"{point.value} adds {key!r} to {name}, which has one already."
-                )
-            merged[key] = entry
-    return merged
+def __getattr__(name: str):
+    global _warned
+    if not _warned:
+        _warned = True
+        warnings.warn(
+            "braidpy.catalogue is now braidpy.catalog; import it under its new name.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    return getattr(catalog, name)

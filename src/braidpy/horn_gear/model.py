@@ -35,6 +35,8 @@ from typing import Optional
 
 import networkx as nx
 
+from braidpy._renamed import renamed_attribute
+
 
 @dataclass(frozen=True)
 class HornGear:
@@ -441,7 +443,10 @@ class BraidingMachine:
 
         return load_carriers(self)
 
-    def carrier_colours(
+    # Its name before braidpy's code took American spelling.
+    carrier_colours = renamed_attribute("carrier_colors")
+
+    def carrier_colors(
         self, carriers: Optional[dict[int, tuple[str, int]]] = None
     ) -> dict[int, str] | None:
         """The colours a loading's carriers are drawn in, if the machine has

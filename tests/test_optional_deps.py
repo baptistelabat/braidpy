@@ -34,7 +34,7 @@ def test_braidpy_computes_without_its_drawing_libraries():
 from braidpy import Braid, tools, web
 from braidpy.horn_gear.examples import tubular_braid_8
 from braidpy.horn_gear.tracks import compute_tracks
-from braidpy.solid_sinnets_catalogue import abok_3042
+from braidpy.solid_sinnets_catalog import abok_3042
 b = Braid([1, 2, -1])
 b.draw()
 print(b.format_to_notation(target="alpha"))

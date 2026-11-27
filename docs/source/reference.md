@@ -104,17 +104,17 @@ Whether braids are alike, and the braids braidpy knows.
    :members:
    :show-inheritance:
 
-.. automodule:: braidpy.topology_catalogue
+.. automodule:: braidpy.topology_catalog
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.catalogue
+.. automodule:: braidpy.catalog
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.braid_catalogue
+.. automodule:: braidpy.braid_catalog
    :members:
    :undoc-members:
    :show-inheritance:
@@ -135,7 +135,7 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.mobidai_catalogue
+.. automodule:: braidpy.mobidai_catalog
    :members:
    :undoc-members:
    :show-inheritance:
@@ -150,7 +150,7 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.solid_sinnets_catalogue
+.. automodule:: braidpy.solid_sinnets_catalog
    :members:
    :undoc-members:
    :show-inheritance:
@@ -229,7 +229,7 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.machine_catalogue
+.. automodule:: braidpy.machine_catalog
    :members:
    :undoc-members:
    :show-inheritance:

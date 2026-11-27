@@ -98,7 +98,7 @@ def test_where_carriers_met_is_ringed_in_plotly():
     assert len(rings) == 1 and len(rings[0].x) == 2
 
 
-def test_braid_studio_turns_a_catalogued_machine():
+def test_braid_studio_turns_a_cataloged_machine():
     from braidpy.web import machine_geometry, machine_origin, machine_turned
 
     loading = machine_geometry("flat_9")["loading"]

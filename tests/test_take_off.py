@@ -105,7 +105,7 @@ def test_default_take_off_is_the_mean_speed():
     still = np.ones((5, 2))
     traj = StrandTrajectories(times, {0: moving, 1: still})
     assert default_take_off(traj) == pytest.approx((4.0 / 2.0) / 2)
-    assert traj.centre() == pytest.approx(np.concatenate([moving, still]).mean(0))
+    assert traj.center() == pytest.approx(np.concatenate([moving, still]).mean(0))
 
 
 def test_parametric_braid_is_read_as_it_is_drawn():
@@ -358,7 +358,7 @@ def test_mobidai_is_laid_and_tightened():
 
 
 def test_kongo_creeps_one_slot_a_cycle_and_comes_round():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
 
     # The drift is read off the cycle: no one has to say it.
     start, steps = mobidai_steps(KONGO_8.to_config(), n_cycles=32)
@@ -510,7 +510,7 @@ def test_ring_refuses_crossings_of_strangers():
 
 
 def test_kongo_comes_out_round():
-    from braidpy.mobidai_catalogue import KONGO_8
+    from braidpy.mobidai_catalog import KONGO_8
     from braidpy.take_off import mobidai_braid
 
     d = 0.12
@@ -585,6 +585,6 @@ def test_yarns_passing_nearly_the_same_point_are_lifted_to_fit():
     trajectories = StrandTrajectories(times, xy)
     take_off = least_take_off(trajectories, yarn_diameter=1.0, take_off=0.1)
     assert take_off == pytest.approx(np.sqrt(1 - near**2), rel=0.02)
-    centre = np.asarray(trajectories.centre())
-    rel = np.stack([p - centre for p in xy.values()])
+    center = np.asarray(trajectories.center())
+    rel = np.stack([p - center for p in xy.values()])
     assert jammed_contraction(rel, take_off, 1.0) <= 1.0

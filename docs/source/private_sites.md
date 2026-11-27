@@ -40,12 +40,12 @@ in the pages and the build, the files both sides change most.
    `build.py --profile` fills the pages with another (see below).
 2. **Catalogues from outside** — done. The machines, disk braids and
    sinnets the studio offers come from braidpy's catalogues
-   (`machine_catalogue`, `mobidai_catalogue`, `solid_sinnets_catalogue`), each
+   (`machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog`), each
    extended with what installed packages add to it
-   ({func}`~braidpy.catalogue.extended`): a package of the site's own names,
+   ({func}`~braidpy.catalog.extended`): a package of the site's own names,
    by [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
    in the group `braidpy.catalogues`, a dict of
-   {class}`~braidpy.catalogue.Entry` to add to a catalogue, by its module
+   {class}`~braidpy.catalog.Entry` to add to a catalogue, by its module
    name. The profile's `packages` name the site's packages, and the build
    runs braidpy with them, so that the page, the braids made with the site
    and the catalogue of braids by topology all have their braids, and puts
@@ -112,12 +112,12 @@ name = "designer-braids"
 version = "0.1"
 
 [project.entry-points."braidpy.catalogues"]
-machine_catalogue = "designer_braids:MACHINES"
+machine_catalog = "designer_braids:MACHINES"
 ```
 
 ```python
 # designer_braids/__init__.py
-from braidpy.catalogue import Entry
+from braidpy.catalog import Entry
 from braidpy.horn_gear.described import machine_from_graph
 
 MACHINES = {
@@ -127,7 +127,7 @@ MACHINES = {
 
 with `packages = ["designer"]` in the profile. A lace machine is added the
 same way, under the name `lace_machines`, as a dict of `Entry` making a
-`braidpy.machine_catalogue.LaceRing`: its gears, its card (a card typed as
+`braidpy.machine_catalog.LaceRing`: its gears, its card (a card typed as
 Braid Studio takes it is read by `braidpy.making.lace.read_card`) and the
 notches threaded. Its machines are listed after
 braidpy's, as if braidpy had them: shown, made, premade, catalogued by

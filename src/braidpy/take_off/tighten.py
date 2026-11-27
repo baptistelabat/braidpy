@@ -369,7 +369,7 @@ def tighten_yarns(
     offsets = list(_offsets(spacing, yarn_diameter, n))
     max_move = yarn_diameter / 5
     slack = tolerance * yarn_diameter
-    centre = np.asarray(paths.axis)
+    center = np.asarray(paths.axis)
     # One row per sample, yarn after yarn: sample i of yarn a is row a * n + i.
     xy = formed[:, :, :2].reshape(-1, 2)
     level = np.tile(np.arange(n), n_yarns)
@@ -441,7 +441,7 @@ def tighten_yarns(
         size = np.linalg.norm(move, axis=-1, keepdims=True)
         return move * np.minimum(1.0, max_move / np.maximum(size, 1e-300))
 
-    def neighbours() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def neighbors() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Pairs of samples that could touch before the list is rebuilt.
 
         Every pair within a diameter of touching.  The list is rebuilt once
@@ -497,7 +497,7 @@ def tighten_yarns(
                     np.add.at(push, p[hit], share * gap)
                     np.add.at(push, q[hit], -(1 - share) * gap)
             if core_radius is not None:
-                rel = xy - centre
+                rel = xy - center
                 r = np.linalg.norm(rel, axis=-1)
                 inner = core_radius + yarn_diameter / 2
                 low = r < inner
@@ -540,7 +540,7 @@ def tighten_yarns(
         return along + float(np.sum(np.sqrt(across**2 + spacing**2)))
 
     history: dict[str, list[float]] = {"length": [], "closest": []}
-    p, q, need, rise = movable(neighbours())
+    p, q, need, rise = movable(neighbors())
     built = xy.copy()
     separate(p, q, need)
     inner = ~held
@@ -552,7 +552,7 @@ def tighten_yarns(
         # The push itself can carry a sample out of the list's reach, so the
         # check comes after it, and a rebuilt list is pushed against again.
         while np.max(np.linalg.norm(xy - built, axis=-1)) > yarn_diameter / 4:
-            p, q, need, rise = movable(neighbours())
+            p, q, need, rise = movable(neighbors())
             built = xy.copy()
             separate(p, q, need)
         history["length"].append(total_length())

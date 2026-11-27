@@ -83,9 +83,9 @@ def test_a_mirror_image_is_told_apart_by_its_writhe():
     assert distance(s_twist, z_twist) > 0.5
 
 
-def test_your_own_braid_finds_the_catalogue_braid_it_is():
+def test_your_own_braid_finds_the_catalog_braid_it_is():
     """The plait, typed from its second crossing and repeated five times:
-    the catalogue's plait comes first, the same fingerprint, at distance 0."""
+    the catalog's plait comes first, the same fingerprint, at distance 0."""
     mine = Braid((PLAIT[1:] + PLAIT[:1]) * 5, 3)
     found = similar(mine, count=3)
     assert found[0].name in {"flat3", "inverted_flat3"}

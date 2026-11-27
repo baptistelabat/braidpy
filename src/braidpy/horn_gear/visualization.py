@@ -46,6 +46,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_globals
 from braidpy.pure_braid import repeating_unit
 from braidpy.utils import PALETTE, lazy_module, play_controls
 
@@ -130,7 +131,7 @@ if (gd) {
 }
 """
 
-_GEAR_COLOURS = {
+_GEAR_COLORS = {
     "clockwise": ("rgba(60,170,90,0.20)", "rgba(35,135,65,0.85)"),
     "trigonometric": ("rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"),
     "held": ("rgba(140,140,140,0.14)", "rgba(110,110,110,0.65)"),
@@ -391,7 +392,7 @@ def track_curves(
     return curves
 
 
-def coloured_tracks(
+def colored_tracks(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     tracks: Optional[list[Track]] = None,
@@ -419,18 +420,18 @@ def _track_traces(
     width: float = 2.5,
     opacity: float = 1.0,
 ) -> list[go.BaseTraceType]:
-    """Each carrier track (:func:`coloured_tracks`) as a Plotly trace."""
+    """Each carrier track (:func:`colored_tracks`) as a Plotly trace."""
     return [
         go.Scatter(
             x=points[:, 0].tolist(),
             y=points[:, 1].tolist(),
             mode="lines",
-            line=dict(color=colour, width=width),
+            line=dict(color=color, width=width),
             opacity=opacity,
             name=label,
             hoverinfo="skip",
         )
-        for label, colour, points in coloured_tracks(machine, layout, tracks, scale)
+        for label, color, points in colored_tracks(machine, layout, tracks, scale)
     ]
 
 
@@ -459,7 +460,7 @@ def _disc_traces(
     for name in machine.gears:
         cx, cy = layout[name]
         r = radii[name]
-        fill, edge = _GEAR_COLOURS[
+        fill, edge = _GEAR_COLORS[
             _gear_state(machine.gears[name].direction, name in turning)
         ]
         traces.append(
@@ -1211,3 +1212,10 @@ def animate(
             post_script=_LOOP_SCRIPT.replace("__DURATION__", str(frame_duration_ms)),
         )
     return fig
+
+
+# The names these went by before braidpy's code took American spelling.
+__getattr__ = renamed_globals(
+    __name__,
+    {"coloured_tracks": "colored_tracks"},
+)

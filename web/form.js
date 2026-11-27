@@ -252,7 +252,7 @@
         const movable = (g, h) =>
           kind[g] === 1 || kind[g + 1] === 1 || kind[h] === 1 || kind[h + 1] === 1 ||
           ((kind[g] === 2 || kind[h] === 2) && kind[g] !== kind[h]);
-        function neighbours() {
+        function neighbors() {
           pairs = nearPairs(x, segs, yarnOf, gap, reach, cells, movable);
           built.set(x);
         }
@@ -313,12 +313,12 @@
         let dt = 0.01, alpha = 0.1, downhill = 0, step = 0, largest = Infinity;
         const working = kind.map((k) => (k === 1 ? 1 : 0));
         const sums = new Float64Array(4);
-        neighbours();
+        neighbors();
         keysHere = new Set();
         for (let e = 0; e < pairs.length; e += 2) keysHere.add(ids[pairs[e]] * 4194304 + ids[pairs[e + 1]]);
         for (; step < maxSteps; step++) {
           if (stale(x, built)) {
-            neighbours();
+            neighbors();
             keysHere = new Set();
             for (let e = 0; e < pairs.length; e += 2) keysHere.add(ids[pairs[e]] * 4194304 + ids[pairs[e + 1]]);
           }

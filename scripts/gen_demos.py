@@ -15,7 +15,7 @@ import sys
 
 sys.path.insert(0, "src")
 
-from braidpy.ashley_solid_sinnet import strand_colours
+from braidpy.ashley_solid_sinnet import strand_colors
 from braidpy.disk_animation import (
     animate_kumihimo,
     animate_mobidai,
@@ -44,8 +44,8 @@ from braidpy.horn_gear.examples import (
     tubular_braid_12,
     tubular_braid_16,
 )
-from braidpy.mobidai_catalogue import KONGO_8
-from braidpy.solid_sinnets_catalogue import abok_3042
+from braidpy.mobidai_catalog import KONGO_8
+from braidpy.solid_sinnets_catalog import abok_3042
 from braidpy.take_off import (
     braid_word_trajectories,
     lay_yarns,
@@ -168,7 +168,7 @@ def other_sources() -> int:
     visualize_yarns_from(
         braid,
         title="Kumihimo, kongo gumi on 8 strands — tightened",
-        colors=[colour for _, colour in KONGO_8.initial_slots],
+        colors=[color for _, color in KONGO_8.initial_slots],
         output_html="demo_kumihimo_8_braid.html",
     )
     print("demo_kumihimo_8_braid.html")
@@ -192,7 +192,7 @@ def other_sources() -> int:
     visualize_yarns_from(
         abok_3042.braid_3d(0.12, n_cycles=4),
         title="ABOK #3042, 8-strand round sinnet — tightened",
-        colors=strand_colours(abok_3042.n_strands),
+        colors=strand_colors(abok_3042.n_strands),
         output_html="demo_sinnet_3042_braid.html",
     )
     print("demo_sinnet_3042_braid.html")

@@ -418,7 +418,7 @@
       const built = new Float64Array(3 * n);
       const cells = new Int32Array(3 * n);
       const segs = Int32Array.from({ length: n }, (_, g) => g).filter((g) => !isTop[g]);
-      function neighbours() {
+      function neighbors() {
         pairs = nearPairs(x, segs, yarnOf, gap, reach, cells);
         built.set(x);
       }
@@ -462,11 +462,11 @@
       let restarts = 0;
       const sums = new Float64Array(4);
       placeTops();
-      neighbours();
+      neighbors();
       for (; step < steps; step++) {
         // Every step: two beads moving a tenth of a diameter each, apart,
         // would otherwise close the list's margin unseen.
-        if (stale(x, built)) neighbours();
+        if (stale(x, built)) neighbors();
         forces();
         let up = force;
         let torque = 0;

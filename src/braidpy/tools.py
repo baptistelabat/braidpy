@@ -74,7 +74,7 @@ def studio_link(spec: dict[str, Any]) -> str:
 def list_braids(source: Optional[str] = None) -> dict[str, Any]:
     """The braids braidpy knows by name, by what makes them: braid words,
     kumihimo disks, Ashley's sinnets, braiding machines, lace machines
-    (:func:`braidpy.web.catalogue`).
+    (:func:`braidpy.web.catalog`).
 
     Args:
         source: Only this one, for example ``"sinnet"``; all if None.
@@ -83,7 +83,7 @@ def list_braids(source: Optional[str] = None) -> dict[str, Any]:
         Per source, its title and its braids — each a ``name`` and a
         ``title`` — and the settings it takes, with their defaults.
     """
-    from braidpy.web import catalogue
+    from braidpy.web import catalog
 
     listed = {
         name: {
@@ -96,7 +96,7 @@ def list_braids(source: Optional[str] = None) -> dict[str, Any]:
             ]
             + [dict(e) for e in about.get("examples", [])],
         }
-        for name, about in catalogue().items()
+        for name, about in catalog().items()
     }
     if source is None:
         return listed
@@ -171,7 +171,7 @@ def similar_braids(
 ) -> list[dict[str, Any]]:
     """The braids of braidpy's catalogues most like this one, nearest first,
     each with every way braidpy knows of making it
-    (:func:`braidpy.topology_catalogue.related`).
+    (:func:`braidpy.topology_catalog.related`).
 
     Args:
         word: The braid word.
@@ -182,7 +182,7 @@ def similar_braids(
         Per braid: its ``title``, ``distance`` (0 is this very braid), and
         ``made_as``, each way of making it with a ``studio`` link.
     """
-    from braidpy.topology_catalogue import related
+    from braidpy.topology_catalog import related
 
     found = []
     for topology, apart in related(_braid(word, n_strands), count=count):
