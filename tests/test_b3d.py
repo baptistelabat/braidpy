@@ -43,8 +43,8 @@ def test_a_sinnet_is_saved_with_its_yarns_and_every_move(tmp_path):
     )
     n = len(laid["strands"])
     assert saved["nThreads"] == n
-    colours = [int(s["colour"][1:], 16) for s in laid["strands"]]
-    assert [t["colour"] for t in saved["threadStates"]] == colours
+    colors = [int(s["colour"][1:], 16) for s in laid["strands"]]
+    assert [t["colour"] for t in saved["threadStates"]] == colors
     assert [len(t["poss"]) for t in saved["threadStates"]] == made["beads"]
     moving = [step for step in laid["disk"]["steps"] if any(d for _, d in step)]
     steps = saved["steps"]

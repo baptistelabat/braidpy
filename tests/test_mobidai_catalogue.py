@@ -138,11 +138,11 @@ def test_a_shared_braid_is_the_braid_its_link_makes(name):
     the same strands, laid the same way, in the same colours."""
     from braidpy.web import build
 
-    slots, moves, colours = SHARED[name]
+    slots, moves, colors = SHARED[name]
     link = {"source": "mobidai", "name": "custom", "slots": slots, "moves": moves}
     link |= {"n_slots": 32, "shift": 0, "cycles": 2}
-    if colours:
-        link["colours"] = colours
+    if colors:
+        link["colours"] = colors
     shared = build(link, tighten=False)
     catalogued = build({"source": "mobidai", "name": name, "cycles": 2}, tighten=False)
     assert [s["colour"] for s in catalogued["strands"]] == [

@@ -13,6 +13,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from braidpy._renamed import renamed_attribute
+
 from .contact import _closest_approach
 
 
@@ -57,7 +59,10 @@ class StrandTrajectories:
             if np.shape(xy) != (len(self.times), 2):
                 raise ValueError(f"Strand {key!r}: expected {len(self.times)} (x, y).")
 
-    def centre(self) -> tuple[float, float]:
+    # Its name before braidpy's code took American spelling.
+    centre = renamed_attribute("center")
+
+    def center(self) -> tuple[float, float]:
         """The braid's axis: the source's, or the middle of every sample."""
         if self.axis is not None:
             return self.axis

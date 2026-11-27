@@ -26,7 +26,7 @@ from braidpy.web._result import (
     _with_core,
 )
 from braidpy.web._settings import (
-    CORE_COLOUR,
+    CORE_COLOR,
     DISK_CORE,
     DISK_CORE_KINDS,
     DISK_ITERATIONS,
@@ -152,7 +152,7 @@ def _cored(result: Result, core: str, keys: Sequence[Hashable], program) -> Resu
     for strand, key in zip(result["strands"], keys):
         if key == CORE_NAME:
             strand["name"] = "Core"
-            strand["colour"] = CORE_COLOUR
+            strand["colour"] = CORE_COLOR
     kind = "rigid, it stays straight" if core == "rigid" else "of yarn, it gives way"
     result["notes"] = [
         *result["notes"],
@@ -196,7 +196,7 @@ def _from_kumihimo(spec: Spec) -> Result:
         f"Kumihimo {pattern} × {repeat}, {n_strands} strands",
         paths,
         diameter,
-        colours=_hues(n_strands),
+        colors=_hues(n_strands),
         info=_disk_unit(
             _disk_info(start, steps, n_slots, clockwise=False),
             lambda k: _kumihimo_cycles(pattern * k, n_strands),
@@ -258,8 +258,8 @@ def _from_mobidai(spec: Spec) -> Result:
         core=core,
     )
     # Coloured by strand, in the order the braid gives them.
-    colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
-    colour_of[CORE_NAME] = CORE_COLOUR
+    color_of = {k: color for k, (_, color) in zip(start, entry.initial_slots)}
+    color_of[CORE_NAME] = CORE_COLOR
     disk = mobidai_trajectories(config, n_cycles=cycles, slot_offset=0.5)
     if core != "none":
         disk = _with_core(disk, CORE_NAME)
@@ -267,7 +267,7 @@ def _from_mobidai(spec: Spec) -> Result:
         f"{entry.name[0].upper()}{entry.name[1:]}, {cycles} cycles",
         paths,
         diameter,
-        colours=[colour_of[k] for k in paths.points],
+        colors=[color_of[k] for k in paths.points],
         info=_disk_unit(
             _disk_info(start, steps, config.n_slots, clockwise),
             lambda k: (*mobidai_steps(config, k), config.n_slots),
@@ -319,7 +319,7 @@ def from_b3d(text: str) -> Spec:
             "moves": _moves_text(entry.moves),
             "shift": 0,
             "cycles": cycles,
-            "colours": ",".join(colour for _, colour in entry.initial_slots),
+            "colours": ",".join(color for _, color in entry.initial_slots),
         },
     )
 
@@ -503,7 +503,7 @@ def _from_sinnet(spec: Spec) -> Result:
 
 def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
     """A sinnet made on its disk, so many cycles, called so."""
-    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.ashley_solid_sinnet import strand_colors
     from braidpy.take_off import disk_trajectories
 
     diameter = DISK_YARN.read(spec)
@@ -554,7 +554,7 @@ def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
         f"{cycles} cycles",
         paths,
         diameter,
-        colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
+        colors=[strand_colors(sinnet.n_strands)[int(k) - 1] for k in paths.points],
         info=info,
         notes=notes,
         timeline=_timeline(seen, list(paths.points), "disk", clock, ring),

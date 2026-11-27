@@ -84,9 +84,9 @@ def lay_yarns(
     """
     traj = trajectories
     if axis is None:
-        axis = traj.centre()
-    centre = np.asarray(axis, dtype=float)
-    rel = np.stack([xy - centre for xy in traj.xy.values()])
+        axis = traj.center()
+    center = np.asarray(axis, dtype=float)
+    rel = np.stack([xy - center for xy in traj.xy.values()])
     if take_off is None:
         take_off = default_take_off(traj)
         if yarn_diameter is not None:
@@ -127,7 +127,7 @@ def lay_yarns(
     level_k = k_fell + (k - k_fell) * (3 * u**2 - 2 * u**3)
     points: dict[Hashable, np.ndarray] = {}
     for cid, r in zip(traj.xy, rel):
-        formed = np.column_stack([centre + level_k[:, None] * r, heights])
+        formed = np.column_stack([center + level_k[:, None] * r, heights])
         if fell_height > 0:
             # Straight from the fell down to the carrier, which sits on the
             # deck where the yarn's last sample was taken.
@@ -150,7 +150,7 @@ def lay_yarns(
         trajectories=traj,
         fell_height=fell_height,
         fell_radius=k_fell * deck_radius if converging else None,
-        axis=(float(centre[0]), float(centre[1])),
+        axis=(float(center[0]), float(center[1])),
         contraction=k,
         n_formed=n_formed,
         yarn_diameter=yarn_diameter,

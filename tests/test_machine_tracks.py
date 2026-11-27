@@ -44,12 +44,12 @@ def test_braid_studio_draws_the_tracks_on_the_machine_to_load():
     drawn = machine_geometry("tubular_8")
     assert [t["colour"] for t in drawn["tracks"]] == ["#e41a1c", "#377eb8"]
     # In the plane the gears are drawn in, round them.
-    centres = np.array([[g["x"], g["y"]] for g in drawn["gears"]])
+    centers = np.array([[g["x"], g["y"]] for g in drawn["gears"]])
     for track in drawn["tracks"]:
         points = np.asarray(track["points"])
         assert np.allclose(points[0], points[-1])
         nearest = np.min(
-            np.hypot(*(points[:, None] - centres[None]).transpose(2, 0, 1)), axis=1
+            np.hypot(*(points[:, None] - centers[None]).transpose(2, 0, 1)), axis=1
         )
         # The points are rounded to 1e-4.
         assert np.max(nearest) <= max(g["radius"] for g in drawn["gears"]) + 1e-3

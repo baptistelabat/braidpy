@@ -236,23 +236,23 @@ def test_the_whole_machine_and_the_smallest_are_in_braid_studio():
         assert CATALOGUE[name].make().total_slots() in (12, 86)
 
 
-def test_each_band_is_drawn_in_one_colour():
+def test_each_band_is_drawn_in_one_color():
     """The bands braid together to one fell; a colour for each tells them
     apart in the braid: 10, 15 and 10 carriers in three colours, and a band
     shown alone in the colour it has in the whole machine."""
     from collections import Counter
 
     whole = multiband_10_15_10()
-    colours = whole.carrier_colours()
-    assert sorted(Counter(colours.values()).values()) == [10, 10, 15]
+    colors = whole.carrier_colors()
+    assert sorted(Counter(colors.values()).values()) == [10, 10, 15]
     for k, (gear, _) in whole.default_carriers().items():
-        assert colours[k] == PALETTE[whole.band_of(gear)]
+        assert colors[k] == PALETTE[whole.band_of(gear)]
     alone = multiband_band(1)
-    assert set(alone.carrier_colours().values()) == {PALETTE[1]}
-    assert sorted(Counter(twin_plait().carrier_colours().values()).values()) == [3, 3]
+    assert set(alone.carrier_colors().values()) == {PALETTE[1]}
+    assert sorted(Counter(twin_plait().carrier_colors().values()).values()) == [3, 3]
 
 
-def test_braid_studio_draws_the_bands_in_their_colours():
+def test_braid_studio_draws_the_bands_in_their_colors():
     from collections import Counter
 
     from braidpy.web import build
@@ -266,7 +266,7 @@ def test_braid_studio_draws_the_bands_in_their_colours():
     }
 
 
-def test_an_ordinary_machine_leaves_its_colours_to_the_palette():
+def test_an_ordinary_machine_leaves_its_colors_to_the_palette():
     from braidpy.horn_gear.examples import flat_braid_9
 
-    assert flat_braid_9().carrier_colours() is None
+    assert flat_braid_9().carrier_colors() is None

@@ -149,12 +149,12 @@ def carrier_trajectories(
         )
         for name, (cx, cy) in layout.items()
     )
-    centres = np.array(list(layout.values()))
+    centers = np.array(list(layout.values()))
     return CarrierTrajectories(
         times=np.asarray(times),
         xy={cid: np.asarray(points) for cid, points in xy.items()},
         outlines=gears,
-        axis=(float(centres[:, 0].mean()), float(centres[:, 1].mean())),
+        axis=(float(centers[:, 0].mean()), float(centers[:, 1].mean())),
         label="Yarn C",
         outline_name="Gears",
         layout=layout,

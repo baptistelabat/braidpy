@@ -249,7 +249,7 @@ class MultibandLine(BraidingMachine):
                 return band
         return None
 
-    def carrier_colours(
+    def carrier_colors(
         self, carriers: Optional[dict[int, tuple[str, int]]] = None
     ) -> dict[int, str] | None:
         """Every carrier in its band's colour, so the bands can be told
@@ -298,21 +298,21 @@ class MultibandLine(BraidingMachine):
         radii = [_gear_radius(n, scale) for n in self.slots]
         bends = [i for i in range(1, len(self.slots) - 1) if i not in self.split]
         turn = self.TURN / len(bends) if bends else 0.0
-        centres = [(0.0, 0.0)]
+        centers = [(0.0, 0.0)]
         # Its ends at the bottom, as in the drawing.
         heading = math.pi - self.TURN / 2
         for i in range(len(self.slots) - 1):
             if i in bends:
                 heading += turn
             step = radii[i] + radii[i + 1]
-            x, y = centres[-1]
-            centres.append((x + step * math.cos(heading), y + step * math.sin(heading)))
+            x, y = centers[-1]
+            centers.append((x + step * math.cos(heading), y + step * math.sin(heading)))
         # Centred on the middle of the gears, so the fold sits in the picture.
-        cx = sum(x for x, _ in centres) / len(centres)
-        cy = sum(y for _, y in centres) / len(centres)
+        cx = sum(x for x, _ in centers) / len(centers)
+        cy = sum(y for _, y in centers) / len(centers)
         layout = {}
         for name in self.gears:
-            x, y = centres[int(name[1:].rstrip("ab"))]
+            x, y = centers[int(name[1:].rstrip("ab"))]
             layout[name] = (x - cx, y - cy)
         return layout
 

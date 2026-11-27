@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from braidpy.web._spec import Colours, Count, Number, Text
+from braidpy.web._spec import Colors, Count, Number, Text
 from braidpy.web._types import Default
 
 # A catalogued braid's name, for the braid typed in instead.
@@ -23,7 +23,7 @@ ITERATIONS = Count("iterations", 150, low=0, high=2000)
 
 # The colours chosen for the strands, whatever made the braid.  Every braid
 # can be recoloured, so this belongs to none of the sources in particular.
-COLOURS = Colours("colours")
+COLORS = Colors("colours")
 
 # The longest braid word a shorter one is looked for, in crossings, for the
 # info card of any braid (braidpy.shortening): a second or so in a browser.
@@ -70,7 +70,7 @@ class Word:
 # own, or one down the hole of a ring of gears.
 CORE = Text("core", "own")
 CORE_KINDS = ("own", "none", "yarn", "rigid")
-CORE_COLOUR = "#8a857c"
+CORE_COLOR = "#8a857c"
 # Links made before: the stiffness, yarn or rigid, of a machine's own cores.
 OLD_CORES = Text("cores", "yarn")
 # A disk has no core of its own: none, or one down its middle.

@@ -71,7 +71,7 @@ class CataloguedMobidai:
 
         settings = {
             "n_slots": self.n_slots,
-            "strands": [Strand(colour, slot) for slot, colour in self.initial_slots],
+            "strands": [Strand(color, slot) for slot, color in self.initial_slots],
             "moves": [Move(source, target) for source, target in self.moves],
             "n_shift_after_cycle": self.n_shift_after_cycle,
         }

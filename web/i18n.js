@@ -89,7 +89,7 @@ globalThis.untranslated = untranslated;
 
 // Something worth translating: a word in it, not a colour as #4daf4a.
 const WORDY = /\p{L}{2}/u;
-const COLOUR = /#[0-9a-f]{3,8}\b/gi;
+const COLOR = /#[0-9a-f]{3,8}\b/gi;
 
 /** A text in the page's language, or as it is if the catalogue lacks it. */
 export function tr(text) {
@@ -111,7 +111,7 @@ export function tr(text) {
 // translated where they can be — a file's name, a value typed in.
 function translated(book, text, whole) {
   const core = text.replace(/\s+/g, " ");
-  if (!WORDY.test(core.replace(COLOUR, "")) || book.shown.has(core)) return text;
+  if (!WORDY.test(core.replace(COLOR, "")) || book.shown.has(core)) return text;
   const found = book.wholes.get(core);
   if (found !== undefined) return found;
   for (const { match, translation } of book.patterns) {

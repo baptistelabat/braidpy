@@ -42,18 +42,18 @@ def test_the_diagram_uses_the_same_palette_as_the_console():
         assert DIAGRAM_COLORS[index] == console
 
 
-def test_every_colour_is_one_matplotlib_can_actually_draw():
+def test_every_color_is_one_matplotlib_can_actually_draw():
     """terminal_colors carries a plotly colour string that matplotlib cannot.
 
     `rgb(0,128,128)` is fine for plotly and for the console, and is not a
     colour matplotlib knows, so it has to be translated rather than passed
     through.  This is the test that catches a new entry being added raw.
     """
-    for colour in DIAGRAM_COLORS.values():
-        assert mcolors.is_color_like(colour), f"{colour!r} is not drawable"
+    for color in DIAGRAM_COLORS.values():
+        assert mcolors.is_color_like(color), f"{color!r} is not drawable"
 
 
-def test_colours_repeat_once_there_are_more_strands_than_colours():
+def test_colors_repeat_once_there_are_more_strands_than_colors():
     assert strand_color(0) == strand_color(len(DIAGRAM_COLORS))
     assert strand_color(3) == DIAGRAM_COLORS[3]
 
@@ -127,7 +127,7 @@ def test_plot_returns_the_braid_so_calls_can_be_chained():
     plt.close("all")
 
 
-def test_a_single_colour_overrides_the_palette():
+def test_a_single_color_overrides_the_palette():
     _, ax = plt.subplots()
     draw_diagram(Braid([1, -2, 1], n_strands=3), color="black", ax=ax)
     assert {line.get_color() for line in ax.lines} == {"black"}

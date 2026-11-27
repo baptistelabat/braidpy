@@ -114,9 +114,9 @@ def _crossings(
         if other.direction == one.direction:
             continue
         for wrap in range(2):
-            travelled = (other.phase - one.phase + turn * wrap) / 2.0
-            if 0.0 <= travelled < turn:
-                height = travelled * one.radius / math.tan(one.braid_angle)
+            traveled = (other.phase - one.phase + turn * wrap) / 2.0
+            if 0.0 <= traveled < turn:
+                height = traveled * one.radius / math.tan(one.braid_angle)
                 found.append((height, other_index))
     return sorted(found)
 
@@ -754,9 +754,9 @@ def rope_ends(png_dir: Path | None) -> None:
 
     fig, ax = plt.subplots(figsize=(7.6, 4.6))
     z = np.linspace(0, 6, 300)
-    for k, colour in enumerate(YARN[:4]):
+    for k, color in enumerate(YARN[:4]):
         x = 0.9 * np.sin(2.1 * z + k * math.pi / 2)
-        ax.plot(x, z, color=colour, lw=2.4, alpha=0.85)
+        ax.plot(x, z, color=color, lw=2.4, alpha=0.85)
     ax.add_patch(Rectangle((-1.6, -0.35), 3.2, 0.35, color=MUTED, alpha=0.35, lw=0))
     ax.text(
         -1.75,
@@ -792,20 +792,20 @@ def rope_ends(png_dir: Path | None) -> None:
         ),
     )
     ax.text(1.35, 6.75, "free to turn", color=MUTED, fontsize=8)
-    for k, colour in enumerate(YARN[:4]):
+    for k, color in enumerate(YARN[:4]):
         x0 = 0.9 * math.sin(2.1 * 6 + k * math.pi / 2)
         bx = 2.6 + 0.55 * k
-        ax.plot([x0, bx], [6.12, 6.12 + 0.15 * (k + 1)], color=colour, lw=1.0, ls=":")
+        ax.plot([x0, bx], [6.12, 6.12 + 0.15 * (k + 1)], color=color, lw=1.0, ls=":")
         ax.plot(
             [bx, bx],
             [6.12 + 0.15 * (k + 1), 3.6 - 0.25 * k],
-            color=colour,
+            color=color,
             lw=1.0,
             ls=":",
         )
         ax.add_patch(
             Rectangle(
-                (bx - 0.13, 3.3 - 0.25 * k), 0.26, 0.3, color=colour, alpha=0.8, lw=0
+                (bx - 0.13, 3.3 - 0.25 * k), 0.26, 0.3, color=color, alpha=0.8, lw=0
             )
         )
     ax.add_patch(
@@ -883,17 +883,15 @@ def rope_results(png_dir: Path | None) -> None:
     fig = plt.figure(figsize=(11, 7.4))
     grid = fig.add_gridspec(2, 6, height_ratios=[1, 1.05])
 
-    def side(ax, yarns, title, colours=YARN):
+    def side(ax, yarns, title, colors=YARN):
         for k, y in enumerate(yarns):
             p = _xyz(y)
-            ax.plot(
-                p[:, 0], p[:, 2], color=colours[k % len(colours)], lw=2.2, alpha=0.9
-            )
+            ax.plot(p[:, 0], p[:, 2], color=colors[k % len(colors)], lw=2.2, alpha=0.9)
         ax.set_aspect("equal")
         ax.set_title(title, fontsize=9)
         ax.tick_params(labelsize=7)
 
-    def section(ax, yarns, title, colours=YARN):
+    def section(ax, yarns, title, colors=YARN):
         tops = [_xyz(y)[:, 2].max() for y in yarns]
         height = min(tops)
         lo, hi, mid = 0.3 * height, 0.7 * height, 0.5 * height
@@ -906,8 +904,8 @@ def rope_results(png_dir: Path | None) -> None:
         for k, y in enumerate(yarns):
             p = _xyz(y)
             m = (p[:, 2] > lo) & (p[:, 2] < hi)
-            colour = colours[k % len(colours)]
-            ax.plot(p[m, 0] - cx, p[m, 1] - cy, color=colour, lw=0.8, alpha=0.6)
+            color = colors[k % len(colors)]
+            ax.plot(p[m, 0] - cx, p[m, 1] - cy, color=color, lw=0.8, alpha=0.6)
             for i in range(len(p) - 1):
                 if (p[i, 2] - mid) * (p[i + 1, 2] - mid) <= 0 and p[i, 2] != p[
                     i + 1, 2
@@ -916,7 +914,7 @@ def rope_results(png_dir: Path | None) -> None:
                     c = p[i] + f * (p[i + 1] - p[i])
                     ax.add_patch(
                         Circle(
-                            (c[0] - cx, c[1] - cy), 0.5, color=colour, alpha=0.75, lw=0
+                            (c[0] - cx, c[1] - cy), 0.5, color=color, alpha=0.75, lw=0
                         )
                     )
                     break
@@ -988,10 +986,10 @@ def _axles(machine) -> tuple[dict, dict, list]:
     that mesh, the parts of a split gear being one axle."""
     from braidpy.horn_gear.layout import compute_layout, gear_radii
 
-    centres, radii = compute_layout(machine), gear_radii(machine)
-    axle = {name: name.rstrip("ab") if name[-1] in "ab" else name for name in centres}
-    at = {axle[n]: centres[n] for n in centres}
-    size = {axle[n]: radii[n] for n in centres}
+    centers, radii = compute_layout(machine), gear_radii(machine)
+    axle = {name: name.rstrip("ab") if name[-1] in "ab" else name for name in centers}
+    at = {axle[n]: centers[n] for n in centers}
+    size = {axle[n]: radii[n] for n in centers}
     meshes = sorted(
         {tuple(sorted((axle[c.gear_a], axle[c.gear_b]))) for c in machine.connections}
     )
@@ -1015,13 +1013,13 @@ def _draw_gears(ax, at, size, meshes) -> tuple[float, float]:
             if (a, b) in meshes:
                 error = abs(apart - touching) / touching
                 worst_mesh = max(worst_mesh, error)
-                colour = MARK if error < 0.01 else LIMIT
+                color = MARK if error < 0.01 else LIMIT
             elif apart < touching:
                 worst_overlap = max(worst_overlap, (touching - apart) / touching)
-                colour = LIMIT
+                color = LIMIT
             else:
                 continue
-            ax.plot(*zip(at[a], at[b]), color=colour, lw=1.4)
+            ax.plot(*zip(at[a], at[b]), color=color, lw=1.4)
     ax.set_aspect("equal")
     ax.autoscale_view()
     ax.axis("off")
@@ -1164,8 +1162,8 @@ def split_axles_meet(png_dir: Path | None) -> None:
     ca, cb = np.array([-radius, 0.0]), np.array([radius, 0.0])
     contact = np.array([0.0, 0.0])
 
-    def horn(centre, angle):
-        return centre + radius * np.array([math.cos(angle), math.sin(angle)])
+    def horn(center, angle):
+        return center + radius * np.array([math.cos(angle), math.sin(angle)])
 
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.6))
     for ax, t in zip(axes, (0.0, 0.5)):
@@ -1173,10 +1171,10 @@ def split_axles_meet(png_dir: Path | None) -> None:
         # A anticlockwise, B clockwise, horn 0 of each, part a, at the
         # contact as the step begins.
         there = []
-        for centre, start, turn in ((ca, 0.0, 1), (cb, math.pi, -1)):
-            ax.add_patch(plt.Circle(centre, radius, fill=False, color=MUTED, lw=0.8))
+        for center, start, turn in ((ca, 0.0, 1), (cb, math.pi, -1)):
+            ax.add_patch(plt.Circle(center, radius, fill=False, color=MUTED, lw=0.8))
             for k in range(horns):
-                point = horn(centre, start + turn * (k * pitch + t * 2 * pitch))
+                point = horn(center, start + turn * (k * pitch + t * 2 * pitch))
                 part = "a" if k % 2 == 0 else "b"
                 ax.plot(*point, "o", color=OUT if part == "a" else IN, ms=6)
                 if math.dist(point, contact) < 1e-9:
@@ -1237,8 +1235,8 @@ def machine_size_survey(png_dir: Path | None) -> None:
         needed.append(1 / room.share)
     catalogued = needed[: len([n for n in names if n in CATALOGUE])]
     fig, ax = plt.subplots(figsize=(8, 4.2))
-    colours = [LIMIT if n not in CATALOGUE else MUTED for n in names]
-    ax.barh(names, needed, color=colours)
+    colors = [LIMIT if n not in CATALOGUE else MUTED for n in names]
+    ax.barh(names, needed, color=colors)
     ax.invert_yaxis()
     ax.set_xlabel("smallest horn gap needed, in bobbin diameters")
     _save(
@@ -1266,7 +1264,7 @@ def _ashley_panel(ax, title, outline, holes=(), across=None) -> list[tuple[int, 
         sinnet_from_shape,
     )
 
-    colours = [OUT, IN, MARK]
+    colors = [OUT, IN, MARK]
     lines, joins, bights = shape_diagram(outline, holes, across)
     loops = _loops(outline, holes)
     for corners in loops:
@@ -1274,7 +1272,7 @@ def _ashley_panel(ax, title, outline, holes=(), across=None) -> list[tuple[int, 
         ax.plot(closed[:, 0], closed[:, 1], color=MUTED, lw=1)
     for line in lines:
         (x0, y0), (x1, y1) = line.ends
-        ax.plot([x0, x1], [y0, y1], color=colours[line.direction % 3], lw=1.6)
+        ax.plot([x0, x1], [y0, y1], color=colors[line.direction % 3], lw=1.6)
     sides = _sides(loops)
     ends: dict[int, list] = {}
     for line, join in zip(lines, joins):

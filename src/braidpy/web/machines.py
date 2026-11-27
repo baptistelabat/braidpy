@@ -34,7 +34,7 @@ from braidpy.web._result import (
 )
 from braidpy.web._settings import (
     CORE,
-    CORE_COLOUR,
+    CORE_COLOR,
     CORE_KINDS,
     DISK_ITERATIONS,
     OLD_CORES,
@@ -192,14 +192,14 @@ def _from_machine(spec: Spec) -> Result:
         ]
     keys = list(paths.points)
     carriers = [k for k in keys if k not in cores]
-    own = machine.carrier_colours(carriers_at) or {}
-    colour = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
-    colour.update({k: CORE_COLOUR for k in cores})
+    own = machine.carrier_colors(carriers_at) or {}
+    color = {k: own.get(k, PALETTE[i % len(PALETTE)]) for i, k in enumerate(carriers)}
+    color.update({k: CORE_COLOR for k in cores})
     result = _result(
         title + f", {cycles} cycles",
         paths,
         diameter,
-        colours=[colour[k] for k in keys],
+        colors=[color[k] for k in keys],
         names=[f"Core {k}" if k in cores else f"Yarn {k}" for k in keys],
         info=info,
         notes=notes,
@@ -544,7 +544,7 @@ def _lace_on_disk(spec: Spec) -> Result:
         title + f", {cycles} passes",
         paths,
         diameter,
-        colours=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
+        colors=[PALETTE[i % len(PALETTE)] for i in range(len(keys))],
         names=[f"Bobbin {k}" for k in keys],
         info=info,
         notes=[
@@ -615,13 +615,13 @@ def _from_lace(spec: Spec) -> Result:
         info["pure"] = cycles % (info.get("pure_after") or 1) == 0
     keys = list(paths.points)
     bobbins = [k for k in keys if k not in cores]
-    colour = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(bobbins)}
-    colour.update({k: CORE_COLOUR for k in cores})
+    color = {k: PALETTE[i % len(PALETTE)] for i, k in enumerate(bobbins)}
+    color.update({k: CORE_COLOR for k in cores})
     result = _result(
         title + f", {cycles} passes",
         paths,
         diameter,
-        colours=[colour[k] for k in keys],
+        colors=[color[k] for k in keys],
         names=[f"Core {k}" if k in cores else f"Bobbin {k}" for k in keys],
         info=info,
         notes=notes,
@@ -731,12 +731,12 @@ def machine_geometry(name: str) -> MachineGeometry:
             for x, y in [axial_position(machine, layout, spot)]
         ],
         "own_axials": [axial_text(axial) for axial in machine.axials],
-        "core_colour": CORE_COLOUR,
+        "core_colour": CORE_COLOR,
         # A lace machine, turned by its card, is not written as a graph.
         "graph": _graph(machine) if machine.has_fixed_tracks else None,
         "tracks": [
-            {"colour": colour, "points": np.round(points, 4).tolist()}
-            for colour, points in tracks(machine, layout)
+            {"colour": color, "points": np.round(points, 4).tolist()}
+            for color, points in tracks(machine, layout)
         ],
     }
 
@@ -764,16 +764,16 @@ def tracks(machine: Any, layout: Any = None) -> list[tuple[str, Any]]:
         layout's plane — the carriers' too.
     """
     from braidpy.horn_gear.layout import compute_layout
-    from braidpy.horn_gear.visualization import coloured_tracks
+    from braidpy.horn_gear.visualization import colored_tracks
 
     if layout is None:
         layout = compute_layout(machine)
     found = []
-    for _, colour, points in coloured_tracks(machine, layout):
+    for _, color, points in colored_tracks(machine, layout):
         # One point in so many, the last kept: the track stays closed.
         every = max(1, math.ceil(len(points) / _TRACK_POINTS))
         kept = np.vstack([points[:-1:every], points[-1:]])
-        found.append((colour, kept))
+        found.append((color, kept))
     return found
 
 
