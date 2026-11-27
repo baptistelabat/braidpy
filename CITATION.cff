@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use braidpy in your work, please cite it as below."
+title: braidpy
+abstract: >-
+  A Python library for working with braids, from braid theory to the braids
+  people make: by hand on a kumihimo disk, a marudai or Ashley's stand, or on
+  a braiding or lace machine. It computes with braids as braid words, works
+  out their invariants and their normal forms, says how to make them, and
+  lays and tightens them in 3D.
+authors:
+  - given-names: Baptiste
+    family-names: Labat
+    email: baptiste.labat@gmail.com
+    website: "https://github.com/baptistelabat"
+keywords:
+  - braid theory
+  - braiding
+  - kumihimo
+  - marudai
+  - sinnet
+  - knot theory
+  - topology
+  - textile engineering
+license: MPL-2.0
+repository-code: "https://github.com/baptistelabat/braidpy"
+version: 0.4.0
+date-released: "2026-11-27"
