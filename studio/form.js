@@ -51,7 +51,7 @@
   "use strict";
 
   const { relay, nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads } =
-    root.yarnMechanics || require("./rope.js?v=7395d32e29").yarnMechanics;
+    root.yarnMechanics || require("./rope.js?v=e7b54acf59").yarnMechanics;
 
   /**
    * Friction at a contact: the tangential spring between the segments at

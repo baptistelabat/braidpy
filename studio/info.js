@@ -6,12 +6,12 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=7395d32e29";
-import { englishText, tr } from "./i18n.js?v=7395d32e29";
-import { $, round } from "./page.js?v=7395d32e29";
-import { lastResult } from "./scene.js?v=7395d32e29";
-import { writeSpec } from "./spec.js?v=7395d32e29";
-import { pending, submit, worker } from "./workers.js?v=7395d32e29";
+import { catalogue } from "./fields.js?v=e7b54acf59";
+import { englishText, tr } from "./i18n.js?v=e7b54acf59";
+import { $, round } from "./page.js?v=e7b54acf59";
+import { lastResult } from "./scene.js?v=e7b54acf59";
+import { writeSpec } from "./spec.js?v=e7b54acf59";
+import { pending, submit, worker } from "./workers.js?v=e7b54acf59";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -93,7 +93,7 @@ export function describe(result, seconds) {
   );
 }
 
-// The braid's kin (braidpy.topology_catalog.for_page): every other way of
+// The braid's kin (braidpy.topology_catalogue.for_page): every other way of
 // making the same braid, and the braids nearest it, each a button to make
 // it.  None: nothing known yet, nothing shown.
 export function showKin(kin) {

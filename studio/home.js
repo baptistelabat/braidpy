@@ -7,7 +7,7 @@
 // (braids.json, braidpy.web.braids); this only shows it.  Each braid opens
 // in the studio (make.html), made with the site, so shown at once.
 
-import { tr } from "./i18n.js?v=7395d32e29";
+import { tr } from "./i18n.js?v=e7b54acf59";
 
 const $ = (id) => document.getElementById(id);
 

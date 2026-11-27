@@ -28,7 +28,7 @@
 //                {type: "sinnet", id, sinnet}
 //                  a sinnet on Ashley's stand, searched for when asked
 //                  the braid's other ways of being made, and the braids
-//                  nearest it (braidpy.topology_catalog.for_page)
+//                  nearest it (braidpy.topology_catalogue.for_page)
 //                {type: "geometry", name, shape}
 //                {type: "b3d", spec}
 //                  the design read, as a description to make
@@ -100,8 +100,8 @@ from braidpy import web
     if (found?.ok) {
       pyodide.globals.set("topologies_json", await found.text());
       await pyodide.runPythonAsync(`
-from braidpy import topology_catalog
-topologies = topology_catalog.load(json.loads(topologies_json))
+from braidpy import topology_catalogue
+topologies = topology_catalogue.load(json.loads(topologies_json))
 del topologies_json
 `);
       topologies = true;
@@ -210,7 +210,7 @@ async function kin(id, info) {
   pyodide.globals.set("info_json", JSON.stringify(info));
   try {
     const text = await pyodide.runPythonAsync(
-      "json.dumps(topology_catalog.for_page(json.loads(spec_json), json.loads(info_json), topologies))",
+      "json.dumps(topology_catalogue.for_page(json.loads(spec_json), json.loads(info_json), topologies))",
     );
     self.postMessage({ type: "kin", id, kin: JSON.parse(text) });
   } catch {
