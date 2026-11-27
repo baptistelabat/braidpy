@@ -1,6 +1,6 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "wheels": [
-    "braidpy-0.3.0-py3-none-any.whl"
+    "braidpy-0.4.0-py3-none-any.whl"
   ]
 }

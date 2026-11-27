@@ -7,12 +7,12 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onChosen, paint } from "./colours.js?v=73cce557c0";
-import { wholeFrame } from "./frames.js?v=73cce557c0";
-import { describe } from "./info.js?v=73cce557c0";
-import { drawSection, drawTop } from "./insets.js?v=73cce557c0";
-import { $ } from "./page.js?v=73cce557c0";
-import { pending } from "./workers.js?v=73cce557c0";
+import { onChosen, paint } from "./colours.js?v=aa8993d4af";
+import { wholeFrame } from "./frames.js?v=aa8993d4af";
+import { describe } from "./info.js?v=aa8993d4af";
+import { drawSection, drawTop } from "./insets.js?v=aa8993d4af";
+import { $ } from "./page.js?v=aa8993d4af";
+import { pending } from "./workers.js?v=aa8993d4af";
 
 export let lastResult = null;
 
@@ -72,14 +72,14 @@ export function awake(now) {
 }
 controls.addEventListener("change", wake);
 
-function stageColour() {
+function stageColor() {
   return getComputedStyle(document.documentElement)
     .getPropertyValue("--stage")
     .trim();
 }
-scene.background = new THREE.Color(stageColour());
+scene.background = new THREE.Color(stageColor());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-  scene.background = new THREE.Color(stageColour());
+  scene.background = new THREE.Color(stageColor());
   wake();
 });
 
@@ -343,7 +343,7 @@ function mirrorMesh({ z, radius, hole }) {
 // A moment in the making on a marudai, in place of the braid as made:
 // every yarn whole, from the start of the braid out over the mirror to its
 // bobbin, one tube each, and the mirror.
-export function showFrame(frame, disk, colours) {
+export function showFrame(frame, disk, colors) {
   wake();
   if (!braid) return;
   clearFrame();
@@ -359,11 +359,11 @@ export function showFrame(frame, disk, colours) {
       tubes
         ? new THREE.Mesh(
             new THREE.TubeGeometry(curve, segments, braid.radius, 8, false),
-            new THREE.MeshStandardMaterial({ color: colours[i], roughness: 0.55, metalness: 0.05 }),
+            new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.55, metalness: 0.05 }),
           )
         : new THREE.Line(
             new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
-            new THREE.LineBasicMaterial({ color: colours[i] }),
+            new THREE.LineBasicMaterial({ color: colors[i] }),
           ),
     );
   });
@@ -497,7 +497,7 @@ export function fit(close = false, frame = null) {
   wake();
   if (!braid) return;
   const box = frame ?? braid.box;
-  const centre = box.getCenter(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const height = size.z;
   const across = Math.max(size.x, size.y);
@@ -522,11 +522,11 @@ export function fit(close = false, frame = null) {
     : new THREE.Vector3(1, -0.45, 0.25)
         .normalize()
         .applyAxisAngle(new THREE.Vector3(0, 0, 1), VIEW_TURN[braid.source] ?? 0);
-  camera.position.copy(centre).addScaledVector(direction, distance);
+  camera.position.copy(center).addScaledVector(direction, distance);
   camera.near = distance / 100;
   camera.far = distance * 100;
   camera.updateProjectionMatrix();
-  controls.target.copy(centre);
+  controls.target.copy(center);
   controls.update();
 }
 

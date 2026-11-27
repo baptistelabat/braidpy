@@ -7,7 +7,7 @@
 // (braids.json, braidpy.web.braids); this only shows it.  Each braid opens
 // in the studio (make.html), made with the site, so shown at once.
 
-import { tr } from "./i18n.js?v=73cce557c0";
+import { tr } from "./i18n.js?v=aa8993d4af";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,16 +18,22 @@ const KIND = { book: "Book", article: "Article", video: "Video", page: "Page", p
 // (web/snapshots.py); a braid without one shows none.
 const picture = (key) => `snapshots/${key}.webp`;
 
-const loading = (name) =>
+const loading = (name, fallback) =>
   fetch(name, { cache: "no-cache" })
+    .then((response) =>
+      response.ok || !fallback ? response : fetch(fallback, { cache: "no-cache" })
+    )
     .then((response) => (response.ok ? response.json() : null))
     .catch(() => null);
 
-const [braids, catalogue] = await Promise.all([loading("braids.json"), loading("catalogue.json")]);
+const [braids, catalog] = await Promise.all([
+  loading("braids.json"),
+  loading("catalog.json", "catalogue.json"),
+]);
 const rows = (braids ?? []).map((braid) => ({ ...braid, n_loops: braid.loops?.length }));
 
 // The sources, by the names the studio gives them.
-const sourceName = (source) => catalogue?.[source]?.title ?? source;
+const sourceName = (source) => catalog?.[source]?.title ?? source;
 for (const source of [...new Set(rows.map((row) => row.source))]) {
   $("source").append(new Option(sourceName(source), source));
 }

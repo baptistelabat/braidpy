@@ -219,7 +219,7 @@
     let q = new Int32Array(0);
     let need = new Float64Array(0);
     let rise = new Float64Array(0);
-    function neighbours() {
+    function neighbors() {
       const ps = [];
       const qs = [];
       const needs = [];
@@ -339,7 +339,7 @@
       return Math.sqrt(best);
     }
 
-    neighbours();
+    neighbors();
     let built = Float64Array.from(xy);
     separate();
     const column = new Float64Array(n);
@@ -375,7 +375,7 @@
       separate();
       // The push itself can carry a sample out of the list's reach.
       while (movedSince(built) > d / 4) {
-        neighbours();
+        neighbors();
         built = Float64Array.from(xy);
         separate();
       }

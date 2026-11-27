@@ -9,7 +9,7 @@
 // changes no move; a move clicked goes in after the cursor, and Undo takes
 // out the one at it.
 
-import { inTime } from "./page.js?v=73cce557c0";
+import { inTime } from "./page.js?v=aa8993d4af";
 
 function hue(i, n) {
   return `hsl(${(360 * i) / Math.max(n, 1)}, 100%, 50%)`;
@@ -482,14 +482,14 @@ export function attachShape(holder) {
       );
     }
     for (const line of shape.lines) {
-      const colour = hue(line.track - 1, shape.tracks);
+      const color = hue(line.track - 1, shape.tracks);
       const [a, b] = [flip(line.start), flip(line.end)];
       const group = svg("g", clicking === "tracks" ? { cursor: "pointer" } : { "pointer-events": "none" });
       const title = svg("title");
       title.textContent = `Track ${line.track}: click to turn it round`;
       group.append(title);
       group.append(
-        svg("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: colour, "stroke-width": LINE_WIDTH }),
+        svg("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: color, "stroke-width": LINE_WIDTH }),
         // A wider line, unseen, easier to click.
         svg("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: "transparent", "stroke-width": CLICK_WIDTH }),
       );
@@ -503,7 +503,7 @@ export function attachShape(holder) {
           points: [tip, [back[0] + side[0], back[1] + side[1]], [back[0] - side[0], back[1] - side[1]]]
             .map((p) => p.join(","))
             .join(" "),
-          fill: colour,
+          fill: color,
         }),
       );
       if (clicking === "tracks") group.addEventListener("click", () => toggle(line.track));

@@ -34,10 +34,10 @@
   // The angle of a slot, as marudai.js turns it (loaded before this in the
   // page, required beside it in Node).
   const slotAngle =
-    typeof module !== "undefined" && module.exports ? require("./marudai.js?v=73cce557c0").slotAngle : root.slotAngleOnMarudai;
+    typeof module !== "undefined" && module.exports ? require("./marudai.js?v=aa8993d4af").slotAngle : root.slotAngleOnMarudai;
 
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
-  const colourNumber = (colour) => (/^#[0-9a-f]{6}$/i.test(colour ?? "") ? parseInt(colour.slice(1), 16) : 0xcccccc);
+  const colorNumber = (color) => (/^#[0-9a-f]{6}$/i.test(color ?? "") ? parseInt(color.slice(1), 16) : 0xcccccc);
 
   /**
    * The .b3d text of a braid made on the marudai.
@@ -48,7 +48,7 @@
    * @param {string[]} colours  Each yarn's colour, as "#rrggbb".
    * @returns {string}
    */
-  function b3dText(job, making, colours) {
+  function b3dText(job, making, colors) {
     const n = job.start.length;
     const sense = job.clockwise ? -1 : 1;
     const twists = job.twists ?? !!job.held;
@@ -117,7 +117,7 @@
     const machine = making.machine;
     // braid3dmin has no core: the yarns alone.
     const threadStates = machine.threads.slice(0, n).map((thread, t) => ({
-      colour: colourNumber(colours[t]),
+      colour: colorNumber(colors[t]),
       dir: wrap(thread.dir - turned),
       poss: machine.positions(t).map(([x, y, z]) => ({ x: x * c + z * s, y, z: -x * s + z * c })),
     }));

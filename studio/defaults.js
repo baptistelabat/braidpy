@@ -5,8 +5,8 @@
 // Settings left empty, and choices not made, take the braid's own: shown
 // greyed with "default" once it is made.
 
-import { englishText } from "./i18n.js?v=73cce557c0";
-import { $, round } from "./page.js?v=73cce557c0";
+import { englishText } from "./i18n.js?v=aa8993d4af";
+import { $, round } from "./page.js?v=aa8993d4af";
 
 // A setting left empty takes the braid's own default, shown greyed with
 // "default" once the braid is made.  Going into the field puts the default

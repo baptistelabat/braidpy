@@ -6,10 +6,10 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour, trueColour } from "./colours.js?v=73cce557c0";
-import { drawTracks } from "./insets.js?v=73cce557c0";
-import { inTime } from "./page.js?v=73cce557c0";
-import { worker } from "./workers.js?v=73cce557c0";
+import { PALETTE, strandColor, trueColor } from "./colours.js?v=aa8993d4af";
+import { drawTracks } from "./insets.js?v=aa8993d4af";
+import { inTime } from "./page.js?v=aa8993d4af";
+import { worker } from "./workers.js?v=aa8993d4af";
 
 // A machine seen from above, to load by hand: its gears, the contacts
 // between them, and every slot, a carrier on it or not.  Clicking a slot
@@ -473,7 +473,7 @@ export function attachMachine(holder) {
     }
     for (const c of carriers) {
       // In the colour its yarn was made in: the machine may choose its own.
-      ctx.fillStyle = strandColour(c.i, trueColour(c.i, PALETTE[c.i % PALETTE.length]));
+      ctx.fillStyle = strandColor(c.i, trueColor(c.i, PALETTE[c.i % PALETTE.length]));
       ctx.beginPath();
       ctx.arc(c.x, c.y, dot, 0, 2 * Math.PI);
       ctx.fill();

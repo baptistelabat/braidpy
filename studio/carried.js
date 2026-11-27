@@ -19,8 +19,8 @@
   "use strict";
 
   const { nearPairs, stale, touching, spread, stretchAndBend, fireSums, fireMix, steer, moveBeads } =
-    root.yarnMechanics || require("./rope.js?v=73cce557c0").yarnMechanics;
-  const frictionForce = root.frictionForce || require("./form.js?v=73cce557c0").frictionForce;
+    root.yarnMechanics || require("./rope.js?v=aa8993d4af").yarnMechanics;
+  const frictionForce = root.frictionForce || require("./form.js?v=aa8993d4af").frictionForce;
 
   /**
    * The braid made from a job.
@@ -160,7 +160,7 @@
     let keysHere = new Set();
     const accept = (g, h) => !!(moves[g] || moves[g + 1] || moves[h] || moves[h + 1]);
 
-    function neighbours() {
+    function neighbors() {
       pairs = nearPairs(x, segs, yarnOf, gap, reach, cells, accept);
       built = x.slice();
       keysHere = new Set();
@@ -231,10 +231,10 @@
 
     let dt = fire.dt, alpha = fire.alpha, downhill = 0;
     const none = [];
-    neighbours();
+    neighbors();
     let deepest = 0;
     for (let step = 0; step < st.most_steps; step++) {
-      if (stale(x, built)) neighbours();
+      if (stale(x, built)) neighbors();
       now.dt = dt;
       forces();
       deepest = Math.max(deepest, now.deepest);

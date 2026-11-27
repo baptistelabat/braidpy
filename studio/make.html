@@ -9,13 +9,13 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet, a braiding machine or a lace machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=73cce557c0" />
+    <link rel="stylesheet" href="style.css?v=aa8993d4af" />
     <script>
       // braidpy's worker starts first, while three.js and the page's
       // modules load: Python is the slowest to start.  What it says before
       // the page is ready to hear it is kept for workers.js to read.
       window.braidpy = (() => {
-        const worker = new Worker("worker.js?v=73cce557c0");
+        const worker = new Worker("worker.js?v=aa8993d4af");
         const early = [];
         worker.onmessage = ({ data }) => early.push(data);
         const pyodideUrl =
@@ -24,10 +24,13 @@
         worker.postMessage({ type: "init", pyodideUrl });
         // What can be made, made with the site: the form is filled from it
         // at once, not when Python is ready.
-        const catalogue = fetch("catalogue.json", { cache: "no-cache" })
+        const catalog = fetch("catalog.json", { cache: "no-cache" })
+          .then((response) =>
+            response.ok ? response : fetch("catalogue.json", { cache: "no-cache" })
+          )
           .then((response) => (response.ok ? response.json() : null))
           .catch(() => null);
-        return { worker, early, catalogue };
+        return { worker, early, catalog };
       })();
     </script>
     <script type="importmap">
@@ -39,8 +42,8 @@
       }
     </script>
     <!-- First, on its own: the page is shown once its words are in the site's language. -->
-    <script type="module" src="i18n.js?v=73cce557c0"></script>
-    <script type="module" src="app.js?v=73cce557c0"></script>
+    <script type="module" src="i18n.js?v=aa8993d4af"></script>
+    <script type="module" src="app.js?v=aa8993d4af"></script>
   </head>
   <body>
     <aside class="panel">

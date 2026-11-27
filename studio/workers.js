@@ -7,16 +7,16 @@
 // are kept, a dozen of them, to go back to at once; one being made goes on
 // from where it was when more of it is asked for.
 
-import { onChosen, rebase } from "./colours.js?v=73cce557c0";
-import { showMaking, showKin } from "./info.js?v=73cce557c0";
+import { onChosen, rebase } from "./colours.js?v=aa8993d4af";
+import { showMaking, showKin } from "./info.js?v=aa8993d4af";
 import * as THREE from "three";
-import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=73cce557c0";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js?v=73cce557c0";
-import { unpack } from "./frames.js?v=73cce557c0";
-import { machineShapes, machineWanted } from "./machine.js?v=73cce557c0";
-import { $ } from "./page.js?v=73cce557c0";
-import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=73cce557c0";
-import { readSpec, specFromHash, writeSpec } from "./spec.js?v=73cce557c0";
+import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js?v=aa8993d4af";
+import { UNLISTED, catalog, renderFields, setCatalog } from "./fields.js?v=aa8993d4af";
+import { unpack } from "./frames.js?v=aa8993d4af";
+import { machineShapes, machineWanted } from "./machine.js?v=aa8993d4af";
+import { $ } from "./page.js?v=aa8993d4af";
+import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js?v=aa8993d4af";
+import { readSpec, specFromHash, writeSpec } from "./spec.js?v=aa8993d4af";
 
 // Started by the page itself, before its modules (make.html).
 export const worker = window.braidpy.worker;
@@ -37,7 +37,7 @@ let b3dAsked = null;
 let b3dCount = 0;
 function startSettler() {
   if (settler) settler.terminate();
-  settler = new Worker("settle.js?v=73cce557c0");
+  settler = new Worker("settle.js?v=aa8993d4af");
   settling = null;
   b3dAsked?.reject(new Error("another braid was asked for"));
   b3dAsked = null;
@@ -105,7 +105,7 @@ function heard(data) {
   if (data.type === "status") {
     setStatus(shownAtOnce && shownAtOnce === pending ? `${AT_ONCE} ${data.text}` : data.text);
   } else if (data.type === "ready") {
-    offer(data.catalogue);
+    offer(data.catalog);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     // Unless a braid made with the site is already being shown.
@@ -185,16 +185,16 @@ function heard(data) {
 }
 
 // The form, filled with what can be made as soon as that is known: from
-// the site (catalogue.json), long before braidpy is ready to make any of
+// the site (catalog.json), long before braidpy is ready to make any of
 // it — or, without it, from braidpy when it is.
 let offered = false;
 function offer(sources) {
   if (offered || !sources) return;
   offered = true;
-  setCatalogue(sources);
+  setCatalog(sources);
   const select = $("source");
-  const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
-  for (const [source, about] of Object.entries(catalogue)) {
+  const spec = specFromHash() || { source: "word", ...catalog.word.defaults };
+  for (const [source, about] of Object.entries(catalog)) {
     // Out of the menu for now, but still made from a link to it.
     if (UNLISTED.has(source) && spec.source !== source) continue;
     select.append(new Option(about.title, source));
@@ -226,7 +226,7 @@ function same(a, b) {
 // asked, or the source's default where it was not.  Its index entry: the
 // file it was laid in, and the one it was settled in, if it was.
 async function premadeFor(spec) {
-  const defaults = catalogue?.[spec.source]?.defaults;
+  const defaults = catalog?.[spec.source]?.defaults;
   if (!defaults) return null;
   for (const entry of await premadeIndex) {
     const made = entry.spec;
@@ -267,7 +267,7 @@ async function premade(spec) {
   const laid = await fetched(entry.file);
   return laid ? { laid } : null;
 }
-window.braidpy.catalogue.then(offer);
+window.braidpy.catalog.then(offer);
 
 // What braidpy said while the page loaded, then the rest as it comes.
 worker.onmessage = fromBraidpy;

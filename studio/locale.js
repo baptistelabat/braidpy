@@ -1,7 +1,7 @@
 // The page's words in each language, written by web/build.py from
 // web/locales/: see web/i18n.js.
 export const language = "en";
-export const catalogues = {
+export const catalogs = {
 "fr": {
 "English": "Français",
 "Language": "Langue",
