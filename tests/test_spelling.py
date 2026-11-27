@@ -42,7 +42,7 @@ AMERICAN = {
 _BRITISH = re.compile("|".join(AMERICAN), re.IGNORECASE)
 
 # The old module name kept working after a rename: data, not names.
-KEPT = {"src/braidpy/catalog.py"}
+KEPT = {"src/braidpy/catalogue.py"}
 
 
 def _british(name: str) -> str | None:

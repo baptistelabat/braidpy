@@ -302,12 +302,10 @@ def catalog() -> dict[str, Entry[Topology]]:
     return {topology.name: entry(topology) for topology in _topologies()}
 
 
-# The names as 0.3.0 shipped them, kept working.
+# The function's name as 0.3.0 shipped it, kept working.
 from braidpy._renamed import renamed_globals
 
-__getattr__ = renamed_globals(
-    __name__, {"CATALOGUE": "CATALOG", "catalogue": "catalog"}
-)
+__getattr__ = renamed_globals(__name__, {"catalogue": "catalog"})
 
 
 def topology_of(
@@ -489,9 +487,3 @@ def for_page(
         elif len(near) < count:
             near.append({**card(topology.methods[0]), "distance": round(apart, 2)})
     return {"same": same, "near": near}
-
-
-# The catalogue's name as 0.3.0 shipped it, kept working.
-from braidpy._renamed import renamed_globals
-
-__getattr__ = renamed_globals(__name__, {"CATALOGUE": "CATALOG"})

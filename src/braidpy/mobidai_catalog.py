@@ -394,16 +394,14 @@ CATALOG: dict[str, Entry[CatalogedMobidai]] = {
 CATALOG = extended("mobidai_catalog", CATALOG)
 
 
-# The catalogue's name as 0.3.0 shipped it, kept working.
-from braidpy._renamed import renamed_globals
-
-__getattr__ = renamed_globals(__name__, {"CATALOGUE": "CATALOG"})
-
-
 # The classes' names as 0.3.0 shipped them, kept working.
 from braidpy._renamed import renamed_globals
 
 __getattr__ = renamed_globals(
     __name__,
-    {"CataloguedMobidai": "CatalogedMobidai", "CataloguedBraid": "CatalogedBraid"},
+    {
+        "CATALOGUE": "CATALOG",
+        "CataloguedMobidai": "CatalogedMobidai",
+        "CataloguedBraid": "CatalogedBraid",
+    },
 )
