@@ -9,8 +9,10 @@ What changed in each release of braidpy.
 - `braidpy-mcp --http [host:]port`: braidpy's tools served over streamable
   HTTP, for the client that reaches the server across the network — a
   hosted one, a registry's runner. `braidpy-mcp` alone serves them over
-  stdio, as before. A test drives the server as a client does
-  (`tests/test_mcp_server.py`).
+  stdio, as before. With `--token SECRET`, or the `BRAIDPY_MCP_TOKEN`
+  environment variable, the HTTP server answers only the clients giving
+  that token as their `Authorization: Bearer` header. A test drives the
+  server as a client does (`tests/test_mcp_server.py`).
 
 ## 0.4.0 — 2026-11-27
 

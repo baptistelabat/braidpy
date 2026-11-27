@@ -52,7 +52,10 @@ claude mcp add braidpy -- braidpy-mcp      # Claude Code; other clients alike
 It runs on the assistant's machine, over stdio, and needs nothing else. A
 client that reaches the server across the network — a hosted one, a
 registry's runner — is served over streamable HTTP instead:
-`braidpy-mcp --http 0.0.0.0:8000` (127.0.0.1 if no host is given). The
+`braidpy-mcp --http 0.0.0.0:8000` (127.0.0.1 if no host is given). A server
+open to the network may ask who calls: `--token SECRET`, or the
+`BRAIDPY_MCP_TOKEN` environment variable, and it answers only the clients
+giving that token as their `Authorization: Bearer` header. The
 catalogue of braids by topology, which
 {func}`~braidpy.tools.similar_braids` uses, takes a minute or so to make: the
 server starts making it as it starts.

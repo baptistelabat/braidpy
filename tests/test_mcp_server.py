@@ -63,3 +63,36 @@ def test_the_http_option_serves_streamable_http(monkeypatch):
     assert seen[-1] == (("streamable-http",), {"host": "127.0.0.1", "port": 8123})
     mcp_server.main([])
     assert seen[-1] == ((), {})
+
+
+def test_the_token_guards_the_http_server(monkeypatch):
+    """With a token, given or in the environment, the HTTP server runs
+    behind the check of it; without one, it is open as before."""
+    from braidpy import mcp_server
+
+    seen = []
+
+    class PretendServer:
+        def run(self, *args, **kwargs):
+            seen.append(("open", args, kwargs))
+
+    def pretend_guarded(made, host, port, token):
+        seen.append(("guarded", host, port, token))
+
+    monkeypatch.setattr(mcp_server, "server", PretendServer)
+    monkeypatch.setattr(mcp_server, "_serve_guarded", pretend_guarded)
+
+    mcp_server.main(["--http", "0.0.0.0:8123", "--token", "s3cret"])
+    assert seen[-1] == ("guarded", "0.0.0.0", 8123, "s3cret")
+
+    monkeypatch.setenv("BRAIDPY_MCP_TOKEN", "from-environment")
+    mcp_server.main(["--http", "8123"])
+    assert seen[-1] == ("guarded", "127.0.0.1", 8123, "from-environment")
+
+    monkeypatch.delenv("BRAIDPY_MCP_TOKEN")
+    mcp_server.main(["--http", "8123"])
+    assert seen[-1] == (
+        "open",
+        ("streamable-http",),
+        {"host": "127.0.0.1", "port": 8123},
+    )

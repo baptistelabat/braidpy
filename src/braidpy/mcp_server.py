@@ -20,6 +20,10 @@ is served over streamable HTTP instead::
 
     braidpy-mcp --http 0.0.0.0:8000    # 127.0.0.1 if no host is given
 
+An HTTP server open to the network asks who is calling: with ``--token``,
+or the ``BRAIDPY_MCP_TOKEN`` environment variable, it answers only the
+clients that give the token as their ``Authorization: Bearer`` header.
+
 The tools are :mod:`braidpy.tools`'s functions as they are, their
 docstrings what the assistant reads of them: nothing here but the wiring,
 so what a person reads in the library and what an assistant is told are
@@ -28,6 +32,7 @@ the same words.
 
 from __future__ import annotations
 
+import os
 import threading
 from argparse import ArgumentParser
 from collections.abc import Callable, Sequence
@@ -83,6 +88,37 @@ def server() -> Any:
     return made
 
 
+def _serve_guarded(made: Any, host: str, port: int, token: str) -> None:
+    """The server behind a check of the token: a client that gives it as
+    its ``Authorization: Bearer`` header is answered; the rest are refused
+    at the door, before braidpy spends anything."""
+    import uvicorn
+
+    expected = f"Bearer {token}".encode()
+    app = made.streamable_http_app()
+
+    async def guarded(scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] == "http":
+            headers = dict(scope.get("headers") or [])
+            if headers.get(b"authorization") != expected:
+                body = b'{"error": "unauthorized"}'
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 401,
+                        "headers": [
+                            (b"content-type", b"application/json"),
+                            (b"content-length", str(len(body)).encode()),
+                        ],
+                    }
+                )
+                await send({"type": "http.response.body", "body": body})
+                return
+        await app(scope, receive, send)
+
+    uvicorn.run(guarded, host=host, port=port)
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     """Run the server: over stdio, as ``braidpy-mcp``, or, with ``--http``,
     over streamable HTTP, for the client that reaches a server across the
@@ -94,6 +130,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         "--http",
         metavar="[HOST:]PORT",
         help="serve streamable HTTP there (127.0.0.1 if no host is given), rather than stdio",
+    )
+    parser.add_argument(
+        "--token",
+        metavar="TOKEN",
+        help="answer only the clients giving this token as their Authorization: "
+        "Bearer header ($BRAIDPY_MCP_TOKEN does as much)",
     )
     given = parser.parse_args(argv)
     try:
@@ -108,7 +150,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         made.run()
         return
     host, _, port = given.http.rpartition(":")
-    made.run("streamable-http", host=host or "127.0.0.1", port=int(port))
+    host, port = host or "127.0.0.1", int(port)
+    token = given.token or os.environ.get("BRAIDPY_MCP_TOKEN")
+    if token:
+        _serve_guarded(made, host, port, token)
+        return
+    made.run("streamable-http", host=host, port=port)
 
 
 if __name__ == "__main__":
