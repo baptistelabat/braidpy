@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Making a braid on a marudai &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Further reading" href="references.html" />
+    <link rel="prev" title="Settling a braid by physics" href="rope_physics.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="theory_manual.html">Theory manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html">Comparing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Making a braid on a marudai</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-yarns">The yarns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-move">A move</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-braid">The braid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#round-a-core">Round a core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-comes-out">What comes out</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="theory_manual.html">Theory manual</a></li>
+      <li class="breadcrumb-item active">Making a braid on a marudai</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/marudai.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="making-a-braid-on-a-marudai">
+<h1>Making a braid on a marudai<a class="headerlink" href="#making-a-braid-on-a-marudai" title="Link to this heading"></a></h1>
+<p>Braid Studio makes a disk braid — a kumihimo or mobidai braid, an Ashley
+sinnet, a braid word rolled onto a ring of bobbins — move by move, as it
+would be made on a marudai: each moved yarn carried over the others to its
+new place and drawn tight, the braid settling below. <code class="docutils literal notranslate"><span class="pre">web/marudai.js</span></code> does it
+in the browser, and <code class="docutils literal notranslate"><span class="pre">braidpy.marudai</span></code> is the same algorithm in Python, to
+read and to check it by.</p>
+<p>The method is that of braid3dmin, a kumihimo simulation in three.js: yarns
+as chains of beads, pulled by their bobbins, relaxed a bead at a time. This
+page describes braidpy’s own implementation of it, in its own terms; the code
+is this project’s own, and none of braid3dmin’s is in it.</p>
+<section id="the-yarns">
+<h2>The yarns<a class="headerlink" href="#the-yarns" title="Link to this heading"></a></h2>
+<p>Each yarn is a chain of <strong>beads</strong> a unit apart and two units thick: a unit is
+half a yarn diameter. Inside, lengths are in units and y is up; what comes
+out is in yarn diameters, z up.</p>
+<ul class="simple">
+<li><p><strong>A link</strong> between two beads of a yarn pulls them together only when it is
+stretched beyond a unit, as a rope does: a slack yarn pushes nothing.</p></li>
+<li><p><strong>Two beads</strong> less than two units apart, of the same yarn or not, push each
+other apart. Links and contacts have the same stiffness (10).</p></li>
+<li><p><strong>A yarn’s end</strong> is drawn towards its <strong>carrier</strong>, on the rim of the
+marudai’s mirror and above the braid’s tip, by a constant pull (1.2): its
+bobbin. The carriers stand on a circle of radius 19 units, half the rim’s
+reach (20) above the tip.</p></li>
+</ul>
+</section>
+<section id="a-move">
+<h2>A move<a class="headerlink" href="#a-move" title="Link to this heading"></a></h2>
+<p>A move takes a yarn’s end from its carrier to another, round the rim:</p>
+<ol class="arabic simple">
+<li><p><strong>Laid over the top.</strong> The yarn’s new stretch goes from where it leaves
+the braid up over everything in its way — a map of the yarns’ heights
+says how high — and down to its new carrier, a bead a unit.</p></li>
+<li><p><strong>Drawn tight.</strong> The new stretch is then drawn as a string would go: each
+bead moved to between its neighbours or, where a yarn is in the way,
+round it, to whichever side has room.</p></li>
+<li><p><strong>Relaxed.</strong> The beads that moved are queued. One at a time, each is moved
+by the forces on it — its links, its contacts, its bobbin — by a step
+that shrinks as the relaxation goes on, and its neighbours and the beads
+near it are queued in turn. It stops when the queue dies down.</p></li>
+</ol>
+<p>A move of more than nine tenths of a half turn goes in two halves, so that it
+passes over what lies on its own side of the braid. When every yarn moves
+alike, the disk itself turns: the braid turns with it, or, held, the bobbins
+turn round it and twist the yarns in.</p>
+</section>
+<section id="the-braid">
+<h2>The braid<a class="headerlink" href="#the-braid" title="Link to this heading"></a></h2>
+<ul>
+<li><p><strong>Turning to balance.</strong> Hanging free, after each move the braid turns
+about its axis until its yarns’ ends pull it no way round: the angle is
+found by a search up to an eighth of a turn either way.</p></li>
+<li><p><strong>More than 30 yarns.</strong> The method was made for marudai braids of a few
+dozen yarns at most. Beyond 30, two things change, and braids of 30 yarns
+or fewer are made exactly as before:</p>
+<ul class="simple">
+<li><p>The yarns are tied round rings of at most 30, one ring 2 units under the
+next, the yarns taken in turn round the disk. A single ring, a third of
+a unit across per yarn, would be so wide that the yarns rose from it as
+a hollow tube and were never drawn into a braid.</p></li>
+<li><p>Each yarn’s pull on the braid is taken along its whole way, from the
+braid’s tip out to its end, instead of along its last link alone. A
+link just laid can point any way, and with so many yarns the braid
+swung back and forth by more each move, then grew without end.</p></li>
+</ul>
+<p>ABOK #3063, #3077, #3079 and #3081 (31 to 45 strands) are then made a few
+diameters long. #3082 (61 strands) still is not: 61 yarns side by side do
+not fit round the carriers’ circle.</p>
+</li>
+<li><p><strong>Made, frozen.</strong> Well behind each yarn’s end — 40 beads behind the last
+that moved — the braid is made: its beads are frozen, and only the newest
+rows move. A frozen bead moves only as the whole braid turns.</p></li>
+<li><p><strong>Neighbours found in a grid.</strong> Beads are kept in flat arrays, and a bead’s
+neighbours are found in a grid of cells 2.6 units wide; the made braid,
+well below anything free, leaves the grid.</p></li>
+</ul>
+</section>
+<section id="round-a-core">
+<h2>Round a core<a class="headerlink" href="#round-a-core" title="Link to this heading"></a></h2>
+<p>A braid can be made round a core (<code class="docutils literal notranslate"><span class="pre">job.core</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;yarn&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;rigid&quot;</span></code>): a chain
+of beads up the braid’s axis, from where the braid begins to 20 units above
+its tip, past the carriers, kept growing as the braid grows. This is
+braidpy’s own; braid3dmin has no core, and a braid saved for it is saved
+without one.</p>
+<ul class="simple">
+<li><p><strong>Of yarn,</strong> its end is drawn straight up, and it gives way to the yarns
+pressing on it; its beads freeze as the braid is made round them.
+<strong>Rigid,</strong> every bead is held where it stands.</p></li>
+<li><p><strong>Passed beside.</strong> The core is left out of the heights a yarn is carried
+over, so a moved yarn goes past it, not over its top. A move of more than
+nine tenths of a half turn is made in two halves already, so a yarn
+goes round the core on the side it is moving to. It is then drawn tight
+round the core, as round any yarn in its way, and pushed off it as off
+any other.</p></li>
+<li><p><strong>Turning about it.</strong> The braid turns to balance about the core, the axis,
+rather than about its yarns’ ends.</p></li>
+<li><p>The yarns are tied clear of it: a tenth further from it than touching, as
+they are tied clear of each other.</p></li>
+</ul>
+<p>The core comes after the yarns in everything returned, and has no carrier:
+the carriers’ circle is the yarns’ alone.</p>
+</section>
+<section id="what-comes-out">
+<h2>What comes out<a class="headerlink" href="#what-comes-out" title="Link to this heading"></a></h2>
+<p>The yarns, cut at the braid’s tip, and their tails from the tip out to their
+carriers; how far the braid has turned; and, for Grow, the moments of the
+making — each yarn carried over, drawn tight, the braid settled — kept as
+their beads still free (<a class="reference internal" href="braid_studio.html"><span class="std std-doc">Braid Studio</span></a>).</p>
+<p>How it compares with braid3dmin run on the same moves, and with the other
+ways Braid Studio settles a braid, is in
+<a class="reference internal" href="rope_physics.html"><span class="std std-doc">Settling a braid by physics</span></a>, under “Made on a marudai, move by move”.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="rope_physics.html" class="btn btn-neutral float-left" title="Settling a braid by physics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="references.html" class="btn btn-neutral float-right" title="Further reading" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

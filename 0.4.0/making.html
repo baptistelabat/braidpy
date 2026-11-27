@@ -1,0 +1,549 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Making a braid by hand or on a machine &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="braidpy for AI assistants" href="ai_assistants.html" />
+    <link rel="prev" title="Braid Studio: braidpy on the web" href="braid_studio.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_manual.html">User manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="usage.html">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_studio.html">Braid Studio: braidpy on the web</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Making a braid by hand or on a machine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#neighbours-swapping-places-round-a-ring">Neighbours swapping places round a ring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-jacquard-lace-machine">The Jacquard lace machine</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#as-a-tube">As a tube</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#a-kumihimo-disk">A kumihimo disk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ashley-s-stand">Ashley’s stand</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#from-the-shape-it-is-to-take">From the shape it is to take</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#in-braid-studio">In Braid Studio</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ai_assistants.html">braidpy for AI assistants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_manual.html">User manual</a></li>
+      <li class="breadcrumb-item active">Making a braid by hand or on a machine</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/making.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="making-a-braid-by-hand-or-on-a-machine">
+<h1>Making a braid by hand or on a machine<a class="headerlink" href="#making-a-braid-by-hand-or-on-a-machine" title="Link to this heading"></a></h1>
+<p>braidpy makes a braid many ways: as a braid word, on a kumihimo disk, on
+Ashley’s stand, on a braiding machine, on a Jacquard lace machine. Each
+already gives the braid it makes, as a braid word. <a class="reference internal" href="reference.html#module-braidpy.making" title="braidpy.making"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.making</span></code></a>
+goes the other way: from a braid — a braid word, say — to how to make it.</p>
+<p>Two braids are the same braid, here, when nothing braidpy measures
+of their topology tells them apart: their patterns are alike
+(<a class="reference internal" href="reference.html#braidpy.braid_pattern.alike" title="braidpy.braid_pattern.alike"><code class="xref py py-func docutils literal notranslate"><span class="pre">alike()</span></code></a>,
+see <a class="reference internal" href="comparing_braids.html"><span class="doc">Comparing braids</span></a>): a way of making a braid need not make its very
+word, only the same braid. Each way is checked by reading the braid back
+off what it made, with the code that reads it off that way of making
+braids, and comparing.</p>
+<section id="neighbours-swapping-places-round-a-ring">
+<h2>Neighbours swapping places round a ring<a class="headerlink" href="#neighbours-swapping-places-round-a-ring" title="Link to this heading"></a></h2>
+<p>A braid word, a kumihimo disk and a lace machine all make a braid by
+moving strands round a ring of places, two neighbours at a time. A
+<a class="reference internal" href="reference.html#braidpy.ring_program.RingProgram" title="braidpy.ring_program.RingProgram"><code class="xref py py-class docutils literal notranslate"><span class="pre">RingProgram</span></code></a> says so once, for all of them:</p>
+<ul class="simple">
+<li><p>the places round the ring, and which strand starts where — a place may be
+empty;</p></li>
+<li><p>rows of <strong>swaps</strong>: two neighbouring places exchanging what they hold, the
+swaps of a row sharing no place, so made at once. Two strands swapping
+make a crossing; a strand and an empty place make none, the strand only
+moving on by a place.</p></li>
+</ul>
+<p>The ring is seen from above, from the side the braider works from on a
+kumihimo disk, and the braid is made downwards, away from the eye, as it
+hangs below a disk. Places are numbered clockwise from 0, the ring’s seam
+between the last and place 0, and the swap of place <code class="docutils literal notranslate"><span class="pre">p</span></code> exchanges places
+<code class="docutils literal notranslate"><span class="pre">p</span></code> and <code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">+</span> <span class="pre">1</span></code>. Its sign is the crossing’s, as a braid word writes it:</p>
+<ul class="simple">
+<li><p><strong>+1</strong>: the strand at <code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">+</span> <span class="pre">1</span></code> goes first, anticlockwise, lifted over the
+one at <code class="docutils literal notranslate"><span class="pre">p</span></code> — over seen from above, so passing inside it, nearer the
+braid’s axis — and the strand at <code class="docutils literal notranslate"><span class="pre">p</span></code> moves clockwise into the place it
+left. With the strands at places 1 to n counted from the seam, the
+positive swap of place <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">-</span> <span class="pre">1</span></code> is σᵢ.</p></li>
+<li><p><strong>−1</strong>: the strand at <code class="docutils literal notranslate"><span class="pre">p</span></code> goes first, clockwise, over the one at <code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">+</span> <span class="pre">1</span></code>:
+σᵢ⁻¹.</p></li>
+</ul>
+<p>A swap with an empty place crosses nothing, and its sign changes nothing.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.ring_program</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_braid</span>
+
+<span class="n">plait</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">program</span> <span class="o">=</span> <span class="n">from_braid</span><span class="p">(</span><span class="n">plait</span><span class="p">,</span> <span class="n">n_places</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>  <span class="c1"># three strands, three empty places</span>
+<span class="n">program</span><span class="o">.</span><span class="n">braid</span><span class="p">()</span> <span class="o">==</span> <span class="n">plait</span>  <span class="c1"># True: read back off its disk moves</span>
+<span class="n">program</span><span class="o">.</span><span class="n">disk</span><span class="p">()</span>  <span class="c1"># the same, as a disk's moves</span>
+</pre></div>
+</div>
+<p>A braid word becomes a ring program crossing by crossing
+(<a class="reference internal" href="reference.html#braidpy.ring_program.from_braid" title="braidpy.ring_program.from_braid"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_braid()</span></code></a>), the crossings packed into rows
+where they commute. It is read back as a disk braid is
+(<a class="reference internal" href="reference.html#braidpy.take_off.disk_annular_word" title="braidpy.take_off.disk_annular_word"><code class="xref py py-func docutils literal notranslate"><span class="pre">disk_annular_word()</span></code></a>): a swap is the lifted strand
+moved over its neighbour, then the neighbour into the place it left.</p>
+<p>The ring has a seam, between its last place and its first. Strands carried
+across it twist the braid below them, as carriers going round a tubular
+braiding machine do: every strand once round the ring is a full twist. That
+is still a braid, and often a shorter way to make one; but a braid word has
+its strands in a row from the seam, so the ways made from a word keep them off
+it for now, and make that very word. Shorter programs, going over the seam,
+are for later.</p>
+</section>
+<section id="the-jacquard-lace-machine">
+<h2>The Jacquard lace machine<a class="headerlink" href="#the-jacquard-lace-machine" title="Link to this heading"></a></h2>
+<p>braidpy’s lace machine (<a class="reference internal" href="reference.html#braidpy.horn_gear.jacquard.jacquard_lace_ring" title="braidpy.horn_gear.jacquard.jacquard_lace_ring"><code class="xref py py-func docutils literal notranslate"><span class="pre">jacquard_lace_ring()</span></code></a>)
+is a ring of 2-slot gears. A bobbin sits in a <strong>notch</strong>, cut where two
+neighbouring gears overlap, and a gear’s half turn swaps the bobbins of its
+two notches: the notches are the ring’s places, a half turn a swap.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.making.lace</span><span class="w"> </span><span class="kn">import</span> <span class="n">lace_braid</span><span class="p">,</span> <span class="n">lace_card</span>
+
+<span class="n">plait</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">card</span> <span class="o">=</span> <span class="n">lace_card</span><span class="p">(</span><span class="n">plait</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">card</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>  <span class="c1"># the punchcard, two lines a step, as animated</span>
+<span class="n">card</span><span class="o">.</span><span class="n">threading</span><span class="p">()</span>  <span class="c1"># where each strand's bobbin goes</span>
+<span class="n">lace_braid</span><span class="p">(</span><span class="n">card</span><span class="p">)</span> <span class="o">==</span> <span class="n">plait</span>  <span class="c1"># True: the card run on the machine</span>
+</pre></div>
+</div>
+<p>The gears are named A, B… Z, then AA, AB…, as a spreadsheet names its
+columns (<a class="reference internal" href="reference.html#braidpy.making.lace.gear_name" title="braidpy.making.lace.gear_name"><code class="xref py py-func docutils literal notranslate"><span class="pre">gear_name()</span></code></a>); a notch by the two gears
+that cut it, <code class="docutils literal notranslate"><span class="pre">A-B</span></code>. A card is written, in a link and as Braid Studio takes
+it, by the gears each step turns, <code class="docutils literal notranslate"><span class="pre">/</span></code> between steps
+(<a class="reference internal" href="reference.html#braidpy.making.lace.card_names" title="braidpy.making.lace.card_names"><code class="xref py py-func docutils literal notranslate"><span class="pre">card_names()</span></code></a>): a gear always turns its own way,
+so its name says which half of the step it turns in. It is read back so,
+or as 0 and 1, a digit a gear (<a class="reference internal" href="reference.html#braidpy.making.lace.read_card" title="braidpy.making.lace.read_card"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_card()</span></code></a>).
+A step of the card is two lines over the gears, as the machine reads it:
+those to turn anticlockwise, then those to turn clockwise, the second half
+a punch to the right of the first, as it is driven half a step later and as
+the machine’s animation draws it. A gear always
+turns the same way, and neighbours turn opposite ways, so which bobbin
+passes over is fixed by where the crossing is made: an anticlockwise gear
+makes a positive crossing, a clockwise one a negative one. A braid word’s
+crossings come with any signs, anywhere, so the ring has notches to spare:
+before each crossing its two strands are brought, through the empty
+notches between and beside them, to two notches whose gear turns the way
+of its sign, crossing nobody, and only they move, only if they must; where
+both are hemmed in, the strands beside are pushed towards the nearest empty
+notch. The strands keep their order, keep off the ring’s seam as a word’s
+strands do (see above), and end in the notches they began in, as a
+punchcard is run round and round. Each move is made in the first step
+after the last that used its notches, so moves of strands apart are made
+at once. The Dutch braid, whose signs alternate as the gears do, needs no
+moving; the plait, on four gears, moves along at the start and back at
+the end.</p>
+<p>Spare notches cost gears but save steps. With one, every strand between a
+pair and the spare notch moves for each sign that does not suit: the book’s
+#3047, 94 crossings of 19 strands, took 1787 steps so. With a notch beside
+each strand only the pair moves: 121 steps, on 38 gears. Where the strands
+begin matters too: begun a notch along, every crossing of the plait falls
+on a gear of its sign, and it takes a step a crossing without moving at
+all. So the strands are tried packed together from every notch, spread a
+notch apart, and spread evenly round the ring, on each number of gears from
+the fewest to two a strand (or on those asked for). Then a search, on the
+numbers of gears that did best: the crossings taken in other orders, where
+they commute; the strands begun anywhere; a crossing now and then made at
+the next nearest gear of its sign. It is seeded, so a braid always has the
+same card, and kept to a few hundred tries, a fraction of a second. The
+card of fewest steps is kept, of fewest gears if two tie. Braid Studio
+shortens the word first (<a class="reference internal" href="braid_algebra.html"><span class="doc">Braid algebra</span></a>, <em>Shortening a word</em>): fewer
+crossings, fewer moves.</p>
+<p>How near the fewest steps there are? No card can take fewer steps than the
+longest chain of crossings each waiting for the last, and a strand crossing
+two strands one after the other the same way and with the same sign must
+move a notch between, its two gears being of the same way, so must wait a
+step more. On the small braids of the catalogue, every turn of every gear
+tried shows the card found is the fewest there are; on the book’s sinnets,
+with a notch beside each strand, it is within a few steps of that bound
+(#3047: 121, the bound 119; #3072: 168 and 166). With fewer gears than two a
+strand, it takes far more (#3047 on 20 gears: about 270), and how many fewer
+it could take is not known: the bound counts no strand hemmed in.</p>
+<p>That bound is <a class="reference internal" href="reference.html#braidpy.making.lace.step_floor" title="braidpy.making.lace.step_floor"><code class="xref py py-func docutils literal notranslate"><span class="pre">step_floor()</span></code></a>; a card is run round
+and round, so what counts is what each repeat adds once they follow one
+another, <a class="reference internal" href="reference.html#braidpy.making.lace.repeat_floor" title="braidpy.making.lace.repeat_floor"><code class="xref py py-func docutils literal notranslate"><span class="pre">repeat_floor()</span></code></a>, which does not depend
+on where the word is cut. And a card need not make the very word: any
+conjugate is the same braid once repeated, seen another way.
+<a class="reference internal" href="reference.html#braidpy.making.lace.card_conjugate" title="braidpy.making.lace.card_conjugate"><code class="xref py py-func docutils literal notranslate"><span class="pre">card_conjugate()</span></code></a> looks for one of lower floor:
+the word read round as the card runs it, rewritten by the braid relations
+wherever it is cut, the rewrites that lower the floor kept and, now and
+then less and less often, one that raises it, to cross what does not
+change it (seeded, so a braid always has the same). The book’s sinnets are
+written as cascades, one strand crossing many one after another with the
+same sign, each crossing waiting a step for a notch: rewritten, their
+cascades are no fewer, but overlap. #3047’s floor a repeat goes from 106 to
+about 45, its card on 48 gears from 121 steps to about 55; #3072’s from 168
+to about 70. Braid Studio makes its card of a conjugate so, within a budget
+of a second or two. For one braid, an exact search (a SAT solver, outside
+braidpy) took the dual matrix of braid-designer, 68 crossings of 28 strands,
+from 20 steps for its word, the fewest there are for it, to 16 for a
+conjugate, which 15 cannot do.</p>
+<p>The card is checked on the machine itself
+(<a class="reference internal" href="reference.html#braidpy.making.lace.lace_braid" title="braidpy.making.lace.lace_braid"><code class="xref py py-func docutils literal notranslate"><span class="pre">lace_braid()</span></code></a>): it is run, after each step every
+bobbin is found in its notch, and each gear that turned must have swapped
+its two. Every catalogue braid comes back exactly.</p>
+<section id="as-a-tube">
+<h3>As a tube<a class="headerlink" href="#as-a-tube" title="Link to this heading"></a></h3>
+<p>A card made from a braid word keeps its strands off the ring’s seam, so it
+makes a flat braid curled up: the same braid with nothing in its middle,
+not a tube round a core (see <a class="reference internal" href="braid_representations.html"><span class="doc">Braid representations</span></a>, <em>A ring word,
+round a core</em>). <a class="reference internal" href="reference.html#braidpy.making.lace.ring_card" title="braidpy.making.lace.ring_card"><code class="xref py py-func docutils literal notranslate"><span class="pre">ring_card()</span></code></a> makes a ring word
+instead, its strands going round across the seam as a tube’s do: each
+crossing of two neighbours round the ring made as above, but round it, and
+every strand then walked to where the word takes it, so many notches round
+the ring. A pass need not bring a strand home, only every threaded notch
+filled again, each perhaps by another strand: the card runs round and
+round. The same starts and seeded search are tried as for a word. Checked
+round the core, as the card’s own program counts round
+(<a class="reference internal" href="reference.html#braidpy.ring_program.RingProgram.ring_word" title="braidpy.ring_program.RingProgram.ring_word"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ring_word()</span></code></a>), a ring word comes
+back exactly, pass after pass.</p>
+<p>What a tube is made of is short: a tubular machine comes round long before
+its carriers are home. <a class="reference internal" href="reference.html#braidpy.horn_gear.word.ring_unit" title="braidpy.horn_gear.word.ring_unit"><code class="xref py py-func docutils literal notranslate"><span class="pre">ring_unit()</span></code></a> finds the
+fewest steps after which the carriers stand, step after step, where
+carriers stood, and reads them as a ring word round the core: 2 steps of
+the 16-carrier machine’s 16, whose 16 crossings repeated 8 times make its
+cycle round the core, exactly. Braid Studio makes a braid made round a core
+— on a ring of gears, or a ring word — so, and links to it round a core of
+yarn:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Machine</p></th>
+<th class="head"><p>Card of its word</p></th>
+<th class="head"><p>As a tube</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Tubular braid, 8 carriers</p></td>
+<td><p>14 gears, 27 steps</p></td>
+<td><p>12 gears, 10 steps</p></td>
+</tr>
+<tr class="row-odd"><td><p>12 carriers</p></td>
+<td><p>22 gears, 47 steps</p></td>
+<td><p>18 gears, 10 steps</p></td>
+</tr>
+<tr class="row-even"><td><p>16 carriers</p></td>
+<td><p>30 gears, 34 steps</p></td>
+<td><p>24 gears, 5 steps</p></td>
+</tr>
+<tr class="row-odd"><td><p>Triaxial, 16 carriers</p></td>
+<td><p>44 gears, 85 steps</p></td>
+<td><p>40 gears, 8 steps</p></td>
+</tr>
+</tbody>
+</table>
+<p>The lace machine with every gear turning, read so, is found again: 8
+gears, its pass a step a line.</p>
+</section>
+</section>
+<section id="a-kumihimo-disk">
+<h2>A kumihimo disk<a class="headerlink" href="#a-kumihimo-disk" title="Link to this heading"></a></h2>
+<p>On a kumihimo disk (a mobidai, <a class="reference internal" href="reference.html#module-braidpy.mobidai" title="braidpy.mobidai"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.mobidai</span></code></a>) a move takes one
+strand from a slot to another, the short way round, lifted over every
+strand it passes. Each crossing becomes three moves, the strands kept two
+slots apart — strand <code class="docutils literal notranslate"><span class="pre">k</span></code> from slot <code class="docutils literal notranslate"><span class="pre">2k</span> <span class="pre">+</span> <span class="pre">3</span></code> — so every strand has an empty
+slot either side of it: the strand lifted goes over its neighbour into the
+empty slot beyond it, which is the crossing; the neighbour moves into the
+place it left, and the lifted strand settles into the neighbour’s old place,
+neither crossing anything. A 32-slot disk takes up to 15 strands.</p>
+<p>The two strands need not be neighbours: lifted over every strand between,
+strands <code class="docutils literal notranslate"><span class="pre">t</span></code> and <code class="docutils literal notranslate"><span class="pre">s</span></code> cross in three moves however far apart, a band letter
+<code class="docutils literal notranslate"><span class="pre">a_ts</span></code> (<a class="reference internal" href="braid_representations.html#in-band-generators"><span class="std std-ref">in band generators</span></a>)
+where crossings of neighbours take <code class="docutils literal notranslate"><span class="pre">2(t</span> <span class="pre">-</span> <span class="pre">s)</span> <span class="pre">-</span> <span class="pre">1</span></code> crossings. A braid is
+made in band letters where they take fewer moves: its band normal form, or
+its word with each run spelling a band letter read as one. A disk braid,
+its strands carried across the disk, is far quicker so — Kongo gumi, 243
+moves a crossing at a time, is 129 — and a machine’s braid of neighbours
+crossing is made as before.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.making.disk</span><span class="w"> </span><span class="kn">import</span> <span class="n">disk_braid</span><span class="p">,</span> <span class="n">disk_moves</span>
+
+<span class="n">moves</span> <span class="o">=</span> <span class="n">disk_moves</span><span class="p">(</span><span class="n">plait</span><span class="p">)</span>
+<span class="n">moves</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>  <span class="c1"># "5&gt;2, 3&gt;5, 2&gt;3, 5&gt;8, 7&gt;5, 8&gt;7, …"</span>
+<span class="n">disk_braid</span><span class="p">(</span><span class="n">moves</span><span class="p">)</span> <span class="o">==</span> <span class="n">plait</span>  <span class="c1"># True: read as braidpy reads any mobidai</span>
+<span class="n">moves</span><span class="o">.</span><span class="n">spec</span><span class="p">()</span>  <span class="c1"># the disk braid as Braid Studio makes it</span>
+</pre></div>
+</div>
+</section>
+<section id="ashley-s-stand">
+<h2>Ashley’s stand<a class="headerlink" href="#ashley-s-stand" title="Link to this heading"></a></h2>
+<p>On Ashley’s stand (<a class="reference internal" href="reference.html#module-braidpy.ashley_solid_sinnet" title="braidpy.ashley_solid_sinnet"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.ashley_solid_sinnet</span></code></a>) the strands lie in
+spaces round the rim, and a move carries a strand from one space to another,
+over every strand it passes: not a swap of neighbours. From an odd space
+it goes to the right, from an even one to the left, unless the book says
+all go to the right (<code class="docutils literal notranslate"><span class="pre">all_right</span></code>, as #3058 does with #3057’s table): the
+way round, not the braid, since a strand carried over all can swing over
+the top. So braidpy
+searches for a sinnet that makes the braid
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.ashley_sinnet" title="braidpy.making.ashley.ashley_sinnet"><code class="xref py py-func docutils literal notranslate"><span class="pre">ashley_sinnet()</span></code></a>): the strands shared out
+among the spaces, and a cycle of moves in which every space gives a strand
+and receives one, as the book’s sinnets do. Fewer spaces are tried first;
+a sinnet is found when its braid has the topology wanted.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.making.ashley</span><span class="w"> </span><span class="kn">import</span> <span class="n">ashley_sinnet</span><span class="p">,</span> <span class="n">sinnet_spec</span>
+
+<span class="n">search</span> <span class="o">=</span> <span class="n">ashley_sinnet</span><span class="p">(</span><span class="n">plait</span><span class="p">)</span>
+<span class="n">search</span><span class="o">.</span><span class="n">sinnet</span><span class="o">.</span><span class="n">initial_counts_per_space</span><span class="p">,</span> <span class="n">search</span><span class="o">.</span><span class="n">sinnet</span><span class="o">.</span><span class="n">moves</span>
+<span class="c1"># ([2, 1], [(1, 2), (2, 1)]): Ashley's #2965</span>
+<span class="n">sinnet_spec</span><span class="p">(</span><span class="n">search</span><span class="o">.</span><span class="n">sinnet</span><span class="p">)</span>  <span class="c1"># the sinnet as Braid Studio makes it</span>
+</pre></div>
+</div>
+<p>Of the fifteen braid words Braid Studio offers, twelve are made by a sinnet
+of this kind, found in under a second; among them the plait and the square
+sinnet are found as Ashley’s own #2965 and #2999. The other three, the weave
+of 3 (#2973), the four-strand sinnet (#2974) and the four-strand flat, are
+not: every sinnet of up to as many spaces as strands was tried — one strand
+per space among them — and the nearest is given, with how far it is. What
+rules them out is the sinnet’s own rule, every space giving one strand and
+taking one in a cycle, with no space empty.</p>
+<p>Without that rule, any braid can be made on the stand
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.ashley_moves" title="braidpy.making.ashley.ashley_moves"><code class="xref py py-func docutils literal notranslate"><span class="pre">ashley_moves()</span></code></a>): one strand per space with an
+empty space after each, and each crossing made in three or four moves
+through the empty spaces, every space then holding what it held before. It
+is the braid itself, exactly, though not a sinnet of the book’s kind.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.making.ashley</span><span class="w"> </span><span class="kn">import</span> <span class="n">ashley_moves</span>
+
+<span class="n">weave</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># the weave of 3, #2973</span>
+<span class="n">made</span> <span class="o">=</span> <span class="n">ashley_moves</span><span class="p">(</span><span class="n">weave</span><span class="p">)</span>
+<span class="n">made</span><span class="o">.</span><span class="n">initial_counts_per_space</span>  <span class="c1"># [1, 0, 1, 0, 1, 0]</span>
+<span class="n">made</span><span class="o">.</span><span class="n">braid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">weave</span>  <span class="c1"># True</span>
+</pre></div>
+</div>
+<section id="from-the-shape-it-is-to-take">
+<h3>From the shape it is to take<a class="headerlink" href="#from-the-shape-it-is-to-take" title="Link to this heading"></a></h3>
+<p>The book draws a solid sinnet as its cross-section, crossed by straight
+lines, each turning at the outline in a bight into the next. The bights are
+the stand’s spaces and the lines its moves
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.sinnet_from_shape" title="braidpy.making.ashley.sinnet_from_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">sinnet_from_shape()</span></code></a>):</p>
+<ul class="simple">
+<li><p><strong>The lines</strong> run parallel to the shape’s sides, the first half a spacing
+in from a side, the next a spacing on, as many as fit.</p></li>
+<li><p><strong>The bights</strong>: two lines meeting the outline at one point turn into each
+other there; otherwise neighbouring ends on a side, whose lines are
+parallel or would meet beyond the outline, and round a corner the two
+left there. They are numbered anticlockwise from the bottom left.</p></li>
+<li><p><strong>The order</strong>: from space 1, along the line across the first side. Each
+next move starts beside where the last ended, one space back, then one
+on, and so on, along the line parallel to the last while there is one,
+so that each direction is crossed line by line, its moves alternating in
+sense. A space that has given its strand gives none again: its line is
+taken towards it.</p></li>
+<li><p><strong>The strands</strong>: each space starts with the fewest that order lets it, two
+where a space gives before it is given; the book adds one at a corner to
+sharpen an edge (<code class="docutils literal notranslate"><span class="pre">extra</span></code>).</p></li>
+</ul>
+<p>Two moves whose lines do not cross can be made either way round, the braid
+the same exactly; two whose lines cross cannot, the strand of one passing
+over the other’s. A group of parallel lines is so moves made in any order:
+crossing by crossing, the braid relations let one cascade slide through
+the other. It is what a lace card makes of a sinnet, its moves overlapping
+(<a class="reference internal" href="reference.html#braidpy.making.lace.card_conjugate" title="braidpy.making.lace.card_conjugate"><code class="xref py py-func docutils literal notranslate"><span class="pre">card_conjugate()</span></code></a>).</p>
+<p><img alt="Ashley's diagrams of a triangle and an oblong" src="_images/ashley_shapes.svg" /></p>
+<p>Drawn so, a triangle is the book’s table exactly, moves, order and strands:
+#3045, #3047 and #3051, with two, four and six lines a side; #3049 is
+#3047 with a strand more at each corner. With three lines a side the moves
+cannot alternate, and are made space by space, 1, 2, 3 and on, each curve
+of lines run one way: the book’s #3059. A flat chisel-edge oblong, 2 by 6
+or 10 spacings, is the book’s cycle (#3071, #3072), its braid the book’s
+with a strand more at each chisel edge. The square, #3070, has the book’s
+two loops, but the book moves its opposite strands together.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.making.ashley</span><span class="w"> </span><span class="kn">import</span> <span class="n">oblong</span><span class="p">,</span> <span class="n">sinnet_from_shape</span><span class="p">,</span> <span class="n">triangle</span>
+
+<span class="n">made</span> <span class="o">=</span> <span class="n">sinnet_from_shape</span><span class="p">(</span><span class="n">triangle</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>  <span class="c1"># four lines a side</span>
+<span class="n">made</span><span class="o">.</span><span class="n">moves</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># [(1, 9), (8, 2), (3, 7), (6, 4)]: #3047</span>
+<span class="n">sinnet_from_shape</span><span class="p">(</span><span class="n">oblong</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># #3071's moves</span>
+</pre></div>
+</div>
+<p>The lines, each turning at a bight into the next, make closed tracks
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.shape_tracks" title="braidpy.making.ashley.shape_tracks"><code class="xref py py-func docutils literal notranslate"><span class="pre">shape_tracks()</span></code></a>): three round the triangle of
+four lines a side. A track’s moves can all be made the other way round
+(<code class="docutils literal notranslate"><span class="pre">turned</span></code>), every space still giving one strand and taking one, and strands
+added to any space (<code class="docutils literal notranslate"><span class="pre">extra</span></code>): the book adds them at the corners
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.corner_spaces" title="braidpy.making.ashley.corner_spaces"><code class="xref py py-func docutils literal notranslate"><span class="pre">corner_spaces()</span></code></a>), the bights turning a corner
+or alone on a side, making #3049 of #3047 and the chisel edges of #3071 and
+#3072. The moves can also be made space by space (<code class="docutils literal notranslate"><span class="pre">order=&quot;spaces&quot;</span></code>), as
+the book makes them where it cannot alternate: a triangle of two lines a
+side so is #3057.</p>
+<p>A shape can be any outline that does not cross itself: a line across an L
+or a U is cut in pieces where the outline turns back, each a line of its
+own. On a grid, a shape is its cells, squares or triangles
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.grid_shape" title="braidpy.making.ashley.grid_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">grid_shape()</span></code></a>), outlined half a spacing beyond
+them (<a class="reference internal" href="reference.html#braidpy.making.ashley.grid_outline" title="braidpy.making.ashley.grid_outline"><code class="xref py py-func docutils literal notranslate"><span class="pre">grid_outline()</span></code></a>): rows of triangles so are
+the book’s triangles, line for line. On the diagonal grid, squares cut on
+their diagonals, the outline may run on a slant while the lines run across
+and up (<a class="reference internal" href="reference.html#braidpy.making.ashley.grid_lines" title="braidpy.making.ashley.grid_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">grid_lines()</span></code></a>): a square standing on a
+corner so has the lines of the book’s #3073 and #3074, an oblong on a
+corner those of #3075.</p>
+<p>On the skewed grid, squares skewed into rhombs of two triangles base to
+base, the lines run along their sides, and a third way along their short
+diagonals, halfway between their crossings
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.grid_halfway" title="braidpy.making.ashley.grid_halfway"><code class="xref py py-func docutils literal notranslate"><span class="pre">grid_halfway()</span></code></a>). Each of these meets the
+outline between two lines’ ends, its ends moved on half the way to the
+next: the bights join it to a line beside it, not to the line ending where
+it would have. The two at the acute corners, crossing nothing, are left
+out, and two lines turn there into each other instead. A parallelogram of
+3 by 5 lines so has the lines of the book’s #3078, the “ellipse” Ashley
+finds “a bit irregular”; the book lists its moves in an order of its own.
+Any size can be drawn so, or any shape of the square grid skewed: the same
+lines, by their order round the outline, with the third way among them.</p>
+<p><img alt="Shapes on a grid: an L, a hollow square, a square on a corner" src="_images/ashley_grids.svg" /> A shape may have a hole, as a hollow
+square: its lines are cut by it, and the bights round the hole are spaces
+too, numbered with the outline’s by the way they lie from the middle, an
+inner one between two outer ones. A line across the wall then joins two
+spaces side by side, and the sinnet goes round the hole as a tube does.
+<a class="reference internal" href="braid_studio.html"><span class="std std-doc">Braid Studio</span></a> makes a sinnet so, from a shape chosen,
+its cells, tracks and spaces clicked on its drawing.</p>
+<p>And back, from a sinnet’s moves to its shape, without searching. Lines of
+one direction never cross, so the moves fall into groups, one a direction
+(<a class="reference internal" href="reference.html#braidpy.making.ashley.move_groups" title="braidpy.making.ashley.move_groups"><code class="xref py py-func docutils literal notranslate"><span class="pre">move_groups()</span></code></a>):</p>
+<ul class="simple">
+<li><p>across an oblong, joining every two moves whose lines do not cross
+leaves the directions;</p></li>
+<li><p>across a triangle, whose lines of different directions miss each other
+near its corners, moves are parallel when their spaces add up to the same
+number round the stand: with the spaces evenly spaced, the line from
+space <em>a</em> to space <em>b</em> runs at (<em>a</em> + <em>b</em>)π/<em>n</em>.</p></li>
+</ul>
+<p>The groups, as shares of the spaces, are the same for a shape drawn on the
+same principle at any size: every triangle has three directions a third of
+a half turn apart, each with a third of the moves. From them
+<a class="reference internal" href="reference.html#braidpy.making.ashley.shapes_from_moves" title="braidpy.making.ashley.shapes_from_moves"><code class="xref py py-func docutils literal notranslate"><span class="pre">shapes_from_moves()</span></code></a> finds the shape:</p>
+<ul class="simple">
+<li><p>on a grid: two groups at right angles say the square or the diagonal
+grid, three a third of a half turn apart the triangular one, and the
+moves say how many lines the shape has. The shapes of that grid with as
+many lines are drawn, and kept if they join the very spaces the moves
+join. An L’s or a hollow square’s lines of different directions miss
+each other, so their groups say little: every grid is tried, the count
+of lines still narrowing it to a few shapes;</p></li>
+<li><p>off a grid: a side, or a pair of parallel sides, to each direction, as
+far across as its moves need.</p></li>
+</ul>
+<p>Every shape on a grid comes back so, an L, a U or a hollow square too, and
+so do the book’s #3045 to #3051, #3059 and #3070 to #3075, however their
+moves are ordered. A pentagon drawn as #3079 is, on no grid, is not found
+yet.</p>
+<p>The book’s sinnets that a shape draws say so in the catalogue
+(<code class="xref py py-data docutils literal notranslate"><span class="pre">DRAWN</span></code>): its grid, shape and size,
+and whether the sinnet so made is the book’s braid or only draws its lines,
+its moves made in another order (#3070, #3073 to #3075).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.making.ashley</span><span class="w"> </span><span class="kn">import</span> <span class="n">move_groups</span><span class="p">,</span> <span class="n">shapes_from_moves</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.solid_sinnets_catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">abok_3047</span><span class="p">,</span> <span class="n">abok_3073</span>
+
+<span class="n">move_groups</span><span class="p">(</span><span class="n">abok_3047</span><span class="o">.</span><span class="n">moves</span><span class="p">)</span><span class="o">.</span><span class="n">family</span>  <span class="c1"># three directions, a third of the moves each</span>
+<span class="n">shapes_from_moves</span><span class="p">(</span><span class="n">abok_3047</span><span class="o">.</span><span class="n">moves</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># 'triangle, 4 by 2 on the triangle grid'</span>
+<span class="n">shapes_from_moves</span><span class="p">(</span><span class="n">abok_3073</span><span class="o">.</span><span class="n">moves</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># 'square, 6 by 2 on the diagonal grid'</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="in-braid-studio">
+<h2>In Braid Studio<a class="headerlink" href="#in-braid-studio" title="Link to this heading"></a></h2>
+<p>Beside every braid it makes, Braid Studio’s card offers <strong>Make it as…</strong>:
+its repeating unit as moves on a kumihimo disk, a link that makes them;
+as a lace machine’s punchcard, with the notches to thread, a link that
+makes it on your own lace machine
+(<a class="reference internal" href="reference.html#braidpy.making.lace.LaceCard.spec" title="braidpy.making.lace.LaceCard.spec"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spec()</span></code></a>) and to copy or download; and,
+when asked, a sinnet on Ashley’s stand, searched for in the
+browser for a few seconds, a link that makes it — or the nearest, if no
+sinnet makes the braid (<a class="reference internal" href="reference.html#braidpy.making.for_page" title="braidpy.making.for_page"><code class="xref py py-func docutils literal notranslate"><span class="pre">for_page()</span></code></a>,
+<a class="reference internal" href="reference.html#braidpy.making.sinnet_for_page" title="braidpy.making.sinnet_for_page"><code class="xref py py-func docutils literal notranslate"><span class="pre">sinnet_for_page()</span></code></a>).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="braid_studio.html" class="btn btn-neutral float-left" title="Braid Studio: braidpy on the web" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ai_assistants.html" class="btn btn-neutral float-right" title="braidpy for AI assistants" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

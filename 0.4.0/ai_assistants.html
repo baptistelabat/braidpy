@@ -1,0 +1,226 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>braidpy for AI assistants &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API reference" href="reference.html" />
+    <link rel="prev" title="Making a braid by hand or on a machine" href="making.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_manual.html">User manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="usage.html">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_studio.html">Braid Studio: braidpy on the web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="making.html">Making a braid by hand or on a machine</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">braidpy for AI assistants</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-front-door-braidpy-tools">The front door: <code class="docutils literal notranslate"><span class="pre">braidpy.tools</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-mcp-server-braidpy-mcp">The MCP server: <code class="docutils literal notranslate"><span class="pre">braidpy-mcp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-an-assistant-reads">What an assistant reads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-else-would-help-and-what-would-not">What else would help, and what would not</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_manual.html">User manual</a></li>
+      <li class="breadcrumb-item active">braidpy for AI assistants</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/ai_assistants.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="braidpy-for-ai-assistants">
+<h1>braidpy for AI assistants<a class="headerlink" href="#braidpy-for-ai-assistants" title="Link to this heading"></a></h1>
+<p>An AI assistant can already read braidpy: its modules say in plain English
+what they do and why, and its functions are typed. What it lacks is a short
+way in. braidpy has some fifty modules, and the answer to “is this braid the
+same as that one?” or “how do I make it on a kumihimo disk?” is spread across
+several of them. So there is now one front door, kept as readable for a
+person as for an assistant, and an MCP server that offers it as tools.</p>
+<section id="the-front-door-braidpy-tools">
+<h2>The front door: <code class="docutils literal notranslate"><span class="pre">braidpy.tools</span></code><a class="headerlink" href="#the-front-door-braidpy-tools" title="Link to this heading"></a></h2>
+<p>A handful of questions, each a function taking and giving only text, numbers,
+lists and dicts — JSON as it is:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Answers</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="reference.html#braidpy.tools.list_braids" title="braidpy.tools.list_braids"><code class="xref py py-func docutils literal notranslate"><span class="pre">list_braids()</span></code></a></p></td>
+<td><p>the braids braidpy knows by name, by what makes them</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference.html#braidpy.tools.describe_braid" title="braidpy.tools.describe_braid"><code class="xref py py-func docutils literal notranslate"><span class="pre">describe_braid()</span></code></a></p></td>
+<td><p>a braid word’s strands, permutation, purity, closure, normal form</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="reference.html#braidpy.tools.compare_braids" title="braidpy.tools.compare_braids"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_braids()</span></code></a></p></td>
+<td><p>whether two words make the same braid, and how unlike they are</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference.html#braidpy.tools.similar_braids" title="braidpy.tools.similar_braids"><code class="xref py py-func docutils literal notranslate"><span class="pre">similar_braids()</span></code></a></p></td>
+<td><p>the catalogue’s braids nearest one, with every way of making each</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="reference.html#braidpy.tools.ways_to_make" title="braidpy.tools.ways_to_make"><code class="xref py py-func docutils literal notranslate"><span class="pre">ways_to_make()</span></code></a></p></td>
+<td><p>a kumihimo disk’s moves, a lace machine’s punchcard, Ashley’s stand</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference.html#braidpy.tools.make_braid" title="braidpy.tools.make_braid"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_braid()</span></code></a></p></td>
+<td><p>a braid made as Braid Studio makes it, told in words</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="reference.html#braidpy.tools.studio_link" title="braidpy.tools.studio_link"><code class="xref py py-func docutils literal notranslate"><span class="pre">studio_link()</span></code></a></p></td>
+<td><p>the Braid Studio link that shows a braid in 3D</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">tools</span>
+
+<span class="n">tools</span><span class="o">.</span><span class="n">describe_braid</span><span class="p">(</span><span class="s2">"1 -2"</span><span class="p">)[</span><span class="s2">"permutation"</span><span class="p">]</span>  <span class="c1"># [2, 3, 1]</span>
+<span class="n">tools</span><span class="o">.</span><span class="n">compare_braids</span><span class="p">(</span><span class="s2">"1 2 3 -6 -5 -4"</span><span class="p">,</span> <span class="s2">"3 2 1 -4 -5 -6"</span><span class="p">,</span> <span class="n">n_strands</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="c1"># {'same_braid': True, 'proven': True, 'distance': 0.0}: the flat sinnet of 7,</span>
+<span class="c1"># read backwards: alike, and proven the same pattern</span>
+<span class="n">tools</span><span class="o">.</span><span class="n">ways_to_make</span><span class="p">(</span><span class="s2">"1 -2 -2 1"</span><span class="p">)[</span><span class="s2">"ashley"</span><span class="p">][</span><span class="s2">"a_sinnet"</span><span class="p">]</span>  <span class="c1"># False: one strand a space</span>
+</pre></div>
+</div>
+<p>None of them computes anything of its own: each asks the module that knows
+and says which, so there is still one implementation of everything. Every
+answer naming a braid carries a Braid Studio link, so an assistant can hand a
+person something to look at rather than a list of numbers.</p>
+</section>
+<section id="the-mcp-server-braidpy-mcp">
+<h2>The MCP server: <code class="docutils literal notranslate"><span class="pre">braidpy-mcp</span></code><a class="headerlink" href="#the-mcp-server-braidpy-mcp" title="Link to this heading"></a></h2>
+<p>The <a class="reference external" href="https://modelcontextprotocol.io">Model Context Protocol</a> is how an
+assistant — Claude, or any other client — is given tools. braidpy’s is the
+front door’s functions, as they are: the docstring a person reads is the
+description the assistant is given.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"braidpy[mcp]"</span>
+claude<span class="w"> </span>mcp<span class="w"> </span>add<span class="w"> </span>braidpy<span class="w"> </span>--<span class="w"> </span>braidpy-mcp<span class="w">      </span><span class="c1"># Claude Code; other clients alike</span>
+</pre></div>
+</div>
+<p>It runs on the assistant’s machine, over stdio, and needs nothing else. The
+catalogue of braids by topology, which
+<a class="reference internal" href="reference.html#braidpy.tools.similar_braids" title="braidpy.tools.similar_braids"><code class="xref py py-func docutils literal notranslate"><span class="pre">similar_braids()</span></code></a> uses, takes a minute or so to make: the
+server starts making it as it starts.</p>
+<p>The server is declared in <code class="docutils literal notranslate"><span class="pre">server.json</span></code>, at the root of the repository, as
+the <a class="reference external" href="https://github.com/modelcontextprotocol/registry">MCP registries</a> read
+it: the package to install, the command to run, the tools’ summary. When a
+release changes the tools, it changes <code class="docutils literal notranslate"><span class="pre">server.json</span></code>’s version with it.</p>
+</section>
+<section id="what-an-assistant-reads">
+<h2>What an assistant reads<a class="headerlink" href="#what-an-assistant-reads" title="Link to this heading"></a></h2>
+<p>Beside these pages, the documentation is listed in
+<a class="reference download internal" download="" href="_downloads/c24a7d34349eaa54e19e6b860828b573/llms.txt"><span class="xref download myst"><code class="docutils literal notranslate"><span class="pre">llms.txt</span></code></span></a>, one line each: the convention for telling an
+assistant where to read. It is served beside the pages themselves
+(<code class="docutils literal notranslate"><span class="pre">https://baptistelabat.github.io/braidpy/develop/llms.txt</span></code>), and a page
+added to the guide adds its line there.</p>
+</section>
+<section id="what-else-would-help-and-what-would-not">
+<h2>What else would help, and what would not<a class="headerlink" href="#what-else-would-help-and-what-would-not" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Restructuring: not needed.</strong> The modules are many but each is one idea,
+and their names say which. Moving them would break every link and import
+for little gain; the front door is the short way in, and the rest stays as
+it is. If anything, a few old modules could gain the plain docstrings the
+newer ones have.</p></li>
+<li><p><strong>A command line</strong>, <code class="docutils literal notranslate"><span class="pre">braidpy</span> <span class="pre">describe</span> <span class="pre">&quot;1</span> <span class="pre">-2&quot;</span></code> printing JSON: the front
+door again, for shell scripts and for assistants that run commands rather
+than call tools.</p></li>
+<li><p><strong>MCP resources</strong>: the catalogues as documents an assistant can read whole,
+rather than tools it calls. Worth adding if assistants turn out to list the
+catalogue often.</p></li>
+<li><p><strong>A hosted server</strong>, so an assistant needs nothing installed: possible, but
+a service to run and pay for; the local one costs nothing.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="making.html" class="btn btn-neutral float-left" title="Making a braid by hand or on a machine" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="reference.html" class="btn btn-neutral float-right" title="API reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer guide &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Braid Studio’s internals" href="braid_studio_internals.html" />
+    <link rel="prev" title="Further reading" href="references.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="braid_studio_internals.html">Braid Studio’s internals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="private_sites.html">A site of your own, built from braidpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up">Setting up</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#where-things-are">Where things are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-braidpy-is-written">How braidpy is written</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#before-writing-anything-look-for-it">Before writing anything, look for it</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rules">Rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#before-pushing">Before pushing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tests-and-ci">Tests and CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#releasing">Releasing</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Developer guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/developer_guide.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="developer-guide">
+<h1>Developer guide<a class="headerlink" href="#developer-guide" title="Link to this heading"></a></h1>
+<p>How braidpy is worked on: setting it up, the rules it is written by, its
+tests, its documentation and its releases. Braid Studio, the web page, has a
+page of its own: <a class="reference internal" href="braid_studio_internals.html"><span class="std std-doc">Braid Studio’s internals</span></a>.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="braid_studio_internals.html">Braid Studio’s internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="private_sites.html">A site of your own, built from braidpy</a></li>
+</ul>
+</div>
+<section id="setting-up">
+<h2>Setting up<a class="headerlink" href="#setting-up" title="Link to this heading"></a></h2>
+<p>From a clone of the repository (on the <code class="docutils literal notranslate"><span class="pre">develop</span></code> branch), with
+<a class="reference external" href="https://docs.astral.sh/uv/">uv</a>, the project’s package manager:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>install-uv<span class="w">            </span><span class="c1"># uv itself, if missing</span>
+uv<span class="w"> </span>sync<span class="w"> </span>--all-extras<span class="w"> </span>--dev<span class="w"> </span><span class="c1"># braidpy, its extras and the tools to work on it</span>
+pre-commit<span class="w"> </span>install<span class="w">         </span><span class="c1"># format and lint each commit</span>
+make<span class="w"> </span><span class="nb">help</span><span class="w">                  </span><span class="c1"># every target, with what it does</span>
+</pre></div>
+</div>
+<p>The project’s Python is in <code class="docutils literal notranslate"><span class="pre">.python-version</span></code>; every Python braidpy supports
+is tested daily (see below). It is 3.12, a version everything installs on
+without building from source; CI runs the quick tests on the newest Python
+supported.</p>
+</section>
+<section id="where-things-are">
+<h2>Where things are<a class="headerlink" href="#where-things-are" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/braidpy/</span></code> — the library. A module per idea; each module’s docstring
+says what it is for, and <a class="reference internal" href="reference.html"><span class="doc">API reference</span></a> lists them by area.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web/</span></code> — Braid Studio: the page, its workers, and <code class="docutils literal notranslate"><span class="pre">build.py</span></code>, which makes
+the site.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/</span></code> — pytest tests; <code class="docutils literal notranslate"><span class="pre">tests/js/</span></code> runs the page’s JavaScript in Node for
+them.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/source/</span></code> — these pages.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/</span></code> — short scripts using braidpy, and the console tour <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">demo</span></code> runs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code> — the documentation’s figures (<code class="docutils literal notranslate"><span class="pre">gen_docs_figures.py</span></code>) and the
+demo pages (<code class="docutils literal notranslate"><span class="pre">gen_demos.py</span></code>, <code class="docutils literal notranslate"><span class="pre">gen_braid_geometry_demo.py</span></code>), each run from
+the repository’s root.</p></li>
+</ul>
+</section>
+<section id="how-braidpy-is-written">
+<h2>How braidpy is written<a class="headerlink" href="#how-braidpy-is-written" title="Link to this heading"></a></h2>
+<p>These are the rules braidpy is worked on by, for people and for Claude
+alike; they are kept in <code class="docutils literal notranslate"><span class="pre">CLAUDE.md</span></code>, at the root of the repository.</p>
+<section id="before-writing-anything-look-for-it">
+<h3>Before writing anything, look for it<a class="headerlink" href="#before-writing-anything-look-for-it" title="Link to this heading"></a></h3>
+<p>Most things braidpy needs already exist somewhere in it. Search first (by
+name and by idea: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">grep</span></code>, the module docstrings), and extend what is
+there rather than write a second one. Places that have been rewritten by
+mistake before:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Need</p></th>
+<th class="head"><p>Already in</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Read a braid word from text</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">braidword.parse_word</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Permutation, purity, cycles, closing repeats</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pure_braid</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Ring words, turns, <code class="docutils literal notranslate"><span class="pre">solid_word</span></code> / <code class="docutils literal notranslate"><span class="pre">ring_moves</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">annulus_braid</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Lay a word as curves or points, read a word back</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">parametric_strand</span></code> (<code class="docutils literal notranslate"><span class="pre">strand_paths</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_strands</span></code>, <code class="docutils literal notranslate"><span class="pre">SampledStrand</span></code>), <code class="docutils literal notranslate"><span class="pre">symmetric_braid.braid_word</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Linking numbers, from a word or from yarns</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">linking</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Alexander polynomial, Burau matrix</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">properties</span></code>, <code class="docutils literal notranslate"><span class="pre">braid.reduced_burau_generator</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Compare braids, find similar ones</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">similarity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Braids by topology, and every way of making each</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topology_catalog</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>A braid as neighbours swapping places round a ring: the step to other ways of making it</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ring_program</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>A braid as a punchcard for the Jacquard lace machine</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">making.lace</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>A braid as moves on a kumihimo disk</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">making.disk</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>A braid as a sinnet on Ashley’s stand, found by searching</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">making.ashley</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>A sinnet from the shape it takes, as Ashley draws it</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">making.ashley.sinnet_from_shape</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>A shape as cells on a grid (square, diagonal, triangular), its outline</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">making.ashley.grid_shape</span></code>, <code class="docutils literal notranslate"><span class="pre">grid_outline</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>From a sinnet’s moves back to its shape</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">making.ashley.move_groups</span></code>, <code class="docutils literal notranslate"><span class="pre">shapes_from_moves</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Which of the book’s sinnets a shape draws</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">solid_sinnets_catalog.DRAWN</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>A word’s repeating unit</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pure_braid.repeating_unit</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Yarn physics, a marudai, in Python</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rope</span></code>, <code class="docutils literal notranslate"><span class="pre">form</span></code>, <code class="docutils literal notranslate"><span class="pre">marudai</span></code> (ports of <code class="docutils literal notranslate"><span class="pre">web/*.js</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p>Colours, Plotly play/pause controls</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">utils.PALETTE</span></code>, <code class="docutils literal notranslate"><span class="pre">utils.play_controls</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>A catalogue of braids</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">catalog.Entry</span></code>, each catalogue’s <code class="docutils literal notranslate"><span class="pre">CATALOG</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Defaults and limits for the web page</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">web/_settings.py</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>The page in another language: a text by its English</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">web/i18n.js</span></code>, <code class="docutils literal notranslate"><span class="pre">web/locales/</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rules">
+<h3>Rules<a class="headerlink" href="#rules" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>One implementation.</strong> Do not copy code between modules, nor between
+Python and JavaScript. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">duplicates</span></code> checks both and runs in CI.</p></li>
+<li><p><strong>JavaScript only where the browser needs speed.</strong> When a Python algorithm
+must also run in the page (as <code class="docutils literal notranslate"><span class="pre">web/tighten.js</span></code> does <code class="docutils literal notranslate"><span class="pre">take_off.tighten_yarns</span></code>),
+the Python is the reference and a test runs both and compares them
+(<code class="docutils literal notranslate"><span class="pre">tests/test_tighten_js.py</span></code>). Where the JavaScript came first, a Python
+port step for step is checked the same way, bead for bead with the maths
+library rounded alike (<code class="docutils literal notranslate"><span class="pre">tests/js_maths.py</span></code>; <code class="docutils literal notranslate"><span class="pre">braidpy.marudai</span></code>,
+<code class="docutils literal notranslate"><span class="pre">braidpy.rope</span></code>, <code class="docutils literal notranslate"><span class="pre">braidpy.form</span></code>): change one, change the other. JavaScript test cases run only what is
+JavaScript’s: geometry going in and checks coming out are done in Python,
+with braidpy (<code class="docutils literal notranslate"><span class="pre">tests/test_rope.py</span></code>).</p></li>
+<li><p><strong>Documentation links, it does not restate.</strong> If a method is described on
+one page, other pages link to it and say only what differs.</p></li>
+<li><p><strong>Data apart from code.</strong> Defaults, limits, titles and catalogues are data
+(<code class="docutils literal notranslate"><span class="pre">web/_settings.py</span></code>, the <code class="docutils literal notranslate"><span class="pre">CATALOG</span></code>s), not literals inside functions.</p></li>
+<li><p><strong>No magic numbers.</strong> A number that means something (a size, a margin, a
+factor) gets a name and a comment saying what it is, once, beside its
+kin (<code class="docutils literal notranslate"><span class="pre">REACH</span></code>, <code class="docutils literal notranslate"><span class="pre">THICK</span></code>, <code class="docutils literal notranslate"><span class="pre">CLEAR</span></code> in <code class="docutils literal notranslate"><span class="pre">marudai</span></code>), and is written as that
+name, or derived from it, wherever it is used: <code class="docutils literal notranslate"><span class="pre">CLEAR</span> <span class="pre">*</span> <span class="pre">THICK</span></code>, never
+<code class="docutils literal notranslate"><span class="pre">2.2</span></code>.</p></li>
+<li><p><strong>A unit in the name, unless SI.</strong> A quantity in another unit carries it
+as a suffix: <code class="docutils literal notranslate"><span class="pre">bobbin_diameter_mm</span></code>, <code class="docutils literal notranslate"><span class="pre">mm_per_unit</span></code>. One in the drawing’s own
+units, or in whatever unit it is given, says so in its docstring.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">Optional[X]</span></code> for an optional argument, <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">|</span> <span class="pre">None</span></code> for the rest.</strong> A
+parameter whose default is <code class="docutils literal notranslate"><span class="pre">None</span></code>, meaning “not given”, is <code class="docutils literal notranslate"><span class="pre">Optional[X]</span></code>.
+A parameter that takes <code class="docutils literal notranslate"><span class="pre">None</span></code> as a value of its own (with no default, or
+another default, as <code class="docutils literal notranslate"><span class="pre">limit:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">10000</span></code>, None for no limit), a
+return, an attribute and an element type are <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">|</span> <span class="pre">None</span></code>.</p></li>
+<li><p><strong>Refactoring keeps results.</strong> Check outputs are the same before and after
+(for <code class="docutils literal notranslate"><span class="pre">braidpy.web</span></code>, the same JSON for every build); say so in the PR, and
+say what changes when something does.</p></li>
+<li><p><strong>The page’s words are English, their French beside them.</strong> A sentence
+added to or changed on Braid Studio, in Python or in JavaScript, gets
+its line in <code class="docutils literal notranslate"><span class="pre">web/locales/fr.toml</span></code> (a pattern for one with numbers or
+names in it); <code class="docutils literal notranslate"><span class="pre">tests/test_i18n_js.py</span></code> checks the pages and catalogues.</p></li>
+<li><p><strong>American spelling for names, prose as you like.</strong> Names braidpy
+defines, in Python and JavaScript, say <code class="docutils literal notranslate"><span class="pre">color</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span></code>, <code class="docutils literal notranslate"><span class="pre">neighbor</span></code>,
+<code class="docutils literal notranslate"><span class="pre">catalog</span></code>, as Python and its libraries do — no exceptions. Comments,
+docstrings and pages may be British. Strings and JSON keys are data and
+keep their spelling. A name renamed keeps its old one working, warning
+(<code class="docutils literal notranslate"><span class="pre">braidpy._renamed</span></code>), for the release that renames it and one more, and
+goes at the next; <code class="docutils literal notranslate"><span class="pre">tests/test_spelling.py</span></code> checks the spelling.</p></li>
+<li><p><strong>Commit only what you mean to.</strong> <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">add</span></code> named paths, never a whole
+directory: <code class="docutils literal notranslate"><span class="pre">web/site/</span></code> and <code class="docutils literal notranslate"><span class="pre">web/node_modules/</span></code> are build output.</p></li>
+</ul>
+</section>
+<section id="before-pushing">
+<h3>Before pushing<a class="headerlink" href="#before-pushing" title="Link to this heading"></a></h3>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>lint<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>typecheck<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>duplicates
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code> is the quick run CI makes on every push: every test but those
+marked <code class="docutils literal notranslate"><span class="pre">slow</span></code>, in parallel. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-all</span></code> runs the slow ones too, as CI
+does daily; run it when a change touches what they test. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-changed</span></code> runs only the tests touching code changed since they last ran
+(pytest-testmon). A test that takes seconds is marked
+<code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.slow</span></code>.</p>
+<p>Code and comments are in English, with Google-style docstrings and type
+hints throughout.</p>
+</section>
+</section>
+<section id="tests-and-ci">
+<h2>Tests and CI<a class="headerlink" href="#tests-and-ci" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code> runs the quick tests, in parallel: every test but those marked
+<code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.slow</span></code>, in a couple of minutes. CI runs them on every push.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-all</span></code> runs every test, as CI does daily on every Python
+supported, and on demand (<code class="docutils literal notranslate"><span class="pre">workflow_dispatch</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-changed</span></code> runs only the tests touching code changed since they
+last ran (pytest-testmon).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">typecheck</span></code>, <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">lint</span></code> and <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">duplicates</span></code> check types, style and
+code copied rather than shared, in Python and JavaScript.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/braid_studio.yml</span></code> builds Braid Studio and makes a braid
+of every kind in a browser on every pull request touching braidpy or the
+page; on <code class="docutils literal notranslate"><span class="pre">develop</span></code> it publishes the site.</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">docs</span></code> builds these pages in <code class="docutils literal notranslate"><span class="pre">docs/build/html</span></code>, with Sphinx and MyST.
+They are in three parts — the user manual, the theory manual and this
+guide — and each page links to others rather than repeat them. The figures
+are drawn by <code class="docutils literal notranslate"><span class="pre">scripts/gen_docs_figures.py</span></code> from braidpy’s own functions: change one,
+draw them again. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">doc-deploy</span></code> publishes the pages to GitHub Pages, under
+the branch’s name, or under the release’s tag from <code class="docutils literal notranslate"><span class="pre">main</span></code>.</p>
+</section>
+<section id="releasing">
+<h2>Releasing<a class="headerlink" href="#releasing" title="Link to this heading"></a></h2>
+<p>Releases are made by hand, from <code class="docutils literal notranslate"><span class="pre">main</span></code>:</p>
+<ol class="arabic simple">
+<li><p>Merge <code class="docutils literal notranslate"><span class="pre">develop</span></code> into <code class="docutils literal notranslate"><span class="pre">main</span></code>.</p></li>
+<li><p>Set the version in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, and say what changed in
+<code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code>, its date in place of “unreleased”.
+The version is also in <code class="docutils literal notranslate"><span class="pre">server.json</span></code> (twice) and <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> (<code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">lock</span></code>).</p></li>
+<li><p>Tag the release with its version (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">tag</span> <span class="pre">0.4.0</span></code>), as the earlier ones
+are, and push the tag: the release workflow (<code class="docutils literal notranslate"><span class="pre">release.yml</span></code>) builds the
+package and publishes it on PyPI, refusing a tag that is not the version
+<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> gives.</p></li>
+<li><p>Publish its documentation: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">doc-deploy</span></code>.</p></li>
+</ol>
+<p>A release is cut every two or three weeks while the API still moves: each
+break costs less made sooner, and <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code> is what the people using
+braidpy read to follow it.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="references.html" class="btn btn-neutral float-left" title="Further reading" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="braid_studio_internals.html" class="btn btn-neutral float-right" title="Braid Studio’s internals" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

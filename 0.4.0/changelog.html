@@ -1,0 +1,718 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Theory manual" href="theory_manual.html" />
+    <link rel="prev" title="Glossary" href="glossary.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_manual.html">User manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="usage.html">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_studio.html">Braid Studio: braidpy on the web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="making.html">Making a braid by hand or on a machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ai_assistants.html">braidpy for AI assistants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">API reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">0.4.0 — 2026-11-27</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#new">New</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fixed">Fixed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">0.3.0 — 2026-10-24</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">New</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Changed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5">Fixed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id6">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">0.2.2</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_manual.html">User manual</a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/changelog.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<p>What changed in each release of braidpy.</p>
+<section id="id1">
+<h2>0.4.0 — 2026-11-27<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>braidpy tells braids apart by what they are, and makes them more ways.
+Four kinds of “the same braid” — the same word, the same braid, the same
+pattern repeated, the same knot or link — each with its own <code class="docutils literal notranslate"><span class="pre">==</span></code>; normal
+forms of its own, Artin’s and the band generators’, so math-braid is no
+longer needed; whether a braid is periodic, reducible or pseudo-Anosov.
+Horn gear machines are written as their graphs, with split gears, cores and
+axials anywhere, sized for their bobbins; a tube is made as a tube on a lace
+machine; disk moves are made in band letters where that is quicker;
+Ashley’s sinnets come from the shape they take, and 37 more of his plat
+sinnets join the catalogue. Braid Studio speaks French, makes braids round
+a core, and steps through a disk’s or a sinnet’s moves. braidpy’s names now
+take American spelling (<code class="docutils literal notranslate"><span class="pre">color</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span></code>, <code class="docutils literal notranslate"><span class="pre">catalog</span></code>), the old ones still
+answering, with a warning.</p>
+<section id="new">
+<h3>New<a class="headerlink" href="#new" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>37 more of Ashley’s plat sinnets as braid words (<code class="docutils literal notranslate"><span class="pre">braid_catalog.ASHLEY_PLATS</span></code>,
+#2976–#3019): French, flat, twill, duplex and doubled-edge sinnets led to
+the centre, and square, half-round, ellipse and round sinnets by the square
+sinnet’s method, each written as the book gives its leads (“u3 o1”, under
+three, over one) and made by <code class="docutils literal notranslate"><span class="pre">AshleyPlat</span></code>. What the book says of them holds:
+#3018 is #3001, #2989 divided equally is #3003 turned end for end, and #2999,
+#2965, #2967 and #2968 are the sinnets already catalogued.</p></li>
+<li><p>Which of periodic, reducible or pseudo-Anosov a braid is, on Braid
+Studio’s card and in <code class="docutils literal notranslate"><span class="pre">tools.describe_braid</span></code> (<code class="docutils literal notranslate"><span class="pre">nielsen_thurston</span></code>): said
+of braids of few strands and crossings, the super summit set looked
+through only so far — past that, the card says it cannot tell.</p></li>
+<li><p>Whether a braid is reducible (<code class="docutils literal notranslate"><span class="pre">Braid.is_reducible</span></code>): some of its strands
+gathered into groups, fewer groups than strands, each running inside one
+tube, the tubes themselves free to braid — a round curve round consecutive
+strands, two of them at least, all but two at most, brought back to itself.
+Asked of the super summit set <code class="docutils literal notranslate"><span class="pre">conjugacy</span></code> computes, a reducible braid
+having a conjugate there that keeps a round curve (Benardete, Gutiérrez
+and Nitecki 1993; Calvez 2014, theorem 10).  With <code class="docutils literal notranslate"><span class="pre">Braid.is_periodic</span></code>,
+this says which of periodic, reducible or pseudo-Anosov a braid is.</p></li>
+<li><p>A machine’s braid as a ring word round an axis
+(<code class="docutils literal notranslate"><span class="pre">braidpy.horn_gear.word.ring_word</span></code>): an axial, or any spot one could be
+fed at, the core the machine braids round if not said (<code class="docutils literal notranslate"><span class="pre">default_axis</span></code>).
+The turns are kept, so with the core kept as a strand
+(<code class="docutils literal notranslate"><span class="pre">annulus_braid.cored_word</span></code>) it is the braid the machine makes round a
+yarn fed there: a tube is not a flat braid curled up. <code class="docutils literal notranslate"><span class="pre">shortened()</span></code>
+shortens it, the relations read round the ring
+(<code class="docutils literal notranslate"><span class="pre">shortening.shortened_ring</span></code>, <code class="docutils literal notranslate"><span class="pre">annulus_braid.turns_last</span></code>).</p></li>
+<li><p>A tube made as a tube on a lace machine (<code class="docutils literal notranslate"><span class="pre">making.lace.ring_card</span></code>): a
+ring word’s strands go round across the seam, a pass need not bring
+them home, and the card’s braid round the core is the word’s. A
+machine’s tube is the fewest steps that repeat (<code class="docutils literal notranslate"><span class="pre">horn_gear.word.ring_unit</span></code>):
+2 of the 16-carrier tubular machine’s 16. Braid Studio’s <strong>Make it as…</strong>
+makes a braid made round a core so — a ring machine’s, a ring word’s —
+in far fewer steps (that machine: 5 a pass instead of 34), round a core
+of yarn. <code class="docutils literal notranslate"><span class="pre">RingProgram.ring_word</span></code> reads a program round its ring.</p></li>
+<li><p>Four kinds of “the same braid”, each with its own <code class="docutils literal notranslate"><span class="pre">==</span></code> and hash
+(<code class="docutils literal notranslate"><span class="pre">braidpy.braid_word</span></code>, <code class="docutils literal notranslate"><span class="pre">braid_pattern</span></code>, <code class="docutils literal notranslate"><span class="pre">closed_braid</span></code>): <code class="docutils literal notranslate"><span class="pre">BraidWord</span></code>
+(<code class="docutils literal notranslate"><span class="pre">braid.word()</span></code>), the same crossings;
+<code class="docutils literal notranslate"><span class="pre">Braid</span></code>, the same braid; <code class="docutils literal notranslate"><span class="pre">BraidPattern</span></code> (<code class="docutils literal notranslate"><span class="pre">braid.pattern()</span></code>), the same
+braid made over and over, proven by conjugacy where it can be; and
+<code class="docutils literal notranslate"><span class="pre">ClosedBraid</span></code> (<code class="docutils literal notranslate"><span class="pre">braid.closed()</span></code>), the same knot or link, by its loops,
+linking numbers and Alexander polynomial, however many strands.
+<code class="docutils literal notranslate"><span class="pre">conjugacy.same_braid</span></code> is now <code class="docutils literal notranslate"><span class="pre">same_pattern</span></code>, which is what it tells;
+the old name is kept. The topology catalogue groups braids by pattern
+key, with the same 91 topologies as before.</p></li>
+<li><p>Catalogues from outside: a package of a site’s own adds braids to
+braidpy’s catalogues (<code class="docutils literal notranslate"><span class="pre">braidpy.catalog.extended</span></code>, entry points in
+the group <code class="docutils literal notranslate"><span class="pre">braidpy.catalogues</span></code>), as braid-designer adds machines of its
+own without braidpy knowing them. A profile’s <code class="docutils literal notranslate"><span class="pre">packages</span></code> name the
+site’s packages: the build runs braidpy with them, installs their
+wheels in the page, and merges the words of their braids from their own
+<code class="docutils literal notranslate"><span class="pre">locales/</span></code>. A profile must now give <code class="docutils literal notranslate"><span class="pre">packages</span></code>.</p></li>
+<li><p>Braid Studio in French, or another language: a profile’s <code class="docutils literal notranslate"><span class="pre">language</span></code>
+(<code class="docutils literal notranslate"><span class="pre">web/profile.toml</span></code>) names the catalogue its pages are shown in,
+<code class="docutils literal notranslate"><span class="pre">web/locales/fr.toml</span></code> for French, each text braidpy writes in English,
+in Python or in the page, put into it as it is shown (<code class="docutils literal notranslate"><span class="pre">web/i18n.js</span></code>).
+A site opens in its profile’s language, braidpy’s in English,
+braid-designer’s in French with <code class="docutils literal notranslate"><span class="pre">language</span> <span class="pre">=</span> <span class="pre">&quot;fr&quot;</span></code>; a menu at the top of
+each page switches between them there and then, the braid on show kept,
+and remembers the choice (or <code class="docutils literal notranslate"><span class="pre">?lang=fr</span></code> in a link). A profile must now
+give <code class="docutils literal notranslate"><span class="pre">language</span></code>.</p></li>
+<li><p>A design saved by braid3d (<code class="docutils literal notranslate"><span class="pre">.b3d</span></code>) read as a mobidai braid
+(<code class="docutils literal notranslate"><span class="pre">braidpy.b3d.mobidai_from_b3d</span></code>, <code class="docutils literal notranslate"><span class="pre">braidpy.web.from_b3d</span></code>): its yarns in
+their colours, its moves and its repeat, on a disk of as few slots as
+hold its yarns. In Braid Studio, <strong>Import a braid3d design</strong> under the
+mobidai braids fills your own with it and makes it. Ashley’s #3054, as
+designed in braid3d, is the sinnet the catalogue has from his drawing;
+disk braids and sinnets saved for braid3d read back as the same braid.
+<code class="docutils literal notranslate"><span class="pre">braidpy.b3d</span></code> is braidpy’s one reader of the format (<code class="docutils literal notranslate"><span class="pre">read_b3d</span></code>,
+<code class="docutils literal notranslate"><span class="pre">write_b3d</span></code>): <code class="docutils literal notranslate"><span class="pre">braidpy.craft_design_online</span></code> and its <code class="docutils literal notranslate"><span class="pre">BraidModel</span></code> are
+gone, and with them the dependency on <code class="docutils literal notranslate"><span class="pre">dataclasses-json</span></code>.</p></li>
+<li><p>A braid saved for braid3dmin writes, with each step, where the yarns are
+before it, as braid3dmin’s own files do; and a strand moved half a turn
+or more, as kumihimo takes one across the disk, as two steps each less
+than half a turn, since a move’s angles say only the short way round: it
+was written going the other way round. The angle of a disk’s slot is
+one rule, <code class="docutils literal notranslate"><span class="pre">slotAngle</span></code> in <code class="docutils literal notranslate"><span class="pre">web/marudai.js</span></code> (<code class="docutils literal notranslate"><span class="pre">braidpy.marudai.slot_angle</span></code>),
+which <code class="docutils literal notranslate"><span class="pre">web/b3d.js</span></code> and <code class="docutils literal notranslate"><span class="pre">braidpy.b3d</span></code> use.</p></li>
+<li><p>Braid Studio built under another name, crediting and linking otherwise:
+what the site calls itself, whom it credits, where it links and whether
+search engines are welcome are a profile (<code class="docutils literal notranslate"><span class="pre">web/profile.toml</span></code>), and
+<code class="docutils literal notranslate"><span class="pre">web/build.py</span> <span class="pre">--profile</span></code> builds the site with another. With braidpy’s
+own, the pages are as before. How a private site would build on braidpy
+without forking it: <em>A site of your own</em> in the developer guide. The
+studio no longer names braidpy while loading, nor in <em>Also made as</em>.</p></li>
+<li><p>The catalogue’s horn gear machines written as their graphs, as a machine
+of your own is (<code class="docutils literal notranslate"><span class="pre">machine_catalog</span></code>): the gears that mesh, where they feed
+axial yarns, and, should it be given one, the carriers it starts with
+(<code class="docutils literal notranslate"><span class="pre">machine_from_graph(...,</span> <span class="pre">axials=,</span> <span class="pre">loading=)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">described.read_axials</span></code>, <code class="docutils literal notranslate"><span class="pre">read_loading</span></code>, <code class="docutils literal notranslate"><span class="pre">BraidingMachine.with_loading</span></code>).
+<code class="docutils literal notranslate"><span class="pre">horn_gear.examples</span></code> builds them so. Each is the machine it was, with as
+many carriers, but its slots may be numbered from another one round and
+it loads itself: the tubular braids of 12 and 16 now start on other
+slots, and a loading written for a machine as it was may load it
+otherwise. The machines braiding
+several bands at once are built as before. A soutache’s or princess
+braid’s cords are named after their gear (<code class="docutils literal notranslate"><span class="pre">axial_A</span></code>).</p></li>
+<li><p>A machine written as its graph puts a gear’s contacts where the layout
+has them whenever whole slots can say so exactly, and only otherwise as
+evenly as its slots allow: the ring of four gears now has each gear’s
+contacts a slot apart, as they are, rather than two.</p></li>
+<li><p>Every place a horn gear machine could feed an axial yarn
+(<code class="docutils literal notranslate"><span class="pre">layout.axial_spots</span></code>: up each gear, down each ring of gears with room),
+drawn in Braid Studio on the machine: a click loads a spool there or
+takes it off (<strong>Axial yarns</strong>, <code class="docutils literal notranslate"><span class="pre">axials</span></code> in a link, <code class="docutils literal notranslate"><span class="pre">none</span></code> for none).</p></li>
+<li><p>Split gears in a machine of your own: a gear split into parts on one
+axle, written <code class="docutils literal notranslate"><span class="pre">A-B1</span> <span class="pre">B2-C</span> <span class="pre">B1+B2</span></code>, in two parts or more (<code class="docutils literal notranslate"><span class="pre">H1+H2+H3</span></code>),
+anywhere in the graph; each part’s neighbour stands where that part’s
+horns come round. Every catalogued machine, the twin plait and the
+three-band machine among them, is written as its graph, and “Your own
+machine…” starts from any. A tree of gears now branches round a gear
+meshing with three or more, rather than piling them on one another; and
+a machine’s yarns are drawn off fast enough that two passing the same
+point, as a split gear’s parts’ carriers do, are a diameter apart.</p></li>
+<li><p>A machine braiding round cores has a braid word: each core is a strand
+of it, standing still where it rises through the deck, which the
+carriers pass in front of or behind (<code class="docutils literal notranslate"><span class="pre">horn_gear.word.flat_word</span></code>,
+<code class="docutils literal notranslate"><span class="pre">annular_word</span></code>; they refused such machines). Soutache, princess and the
+triaxial braid now have their word, crossings and permutation in Braid
+Studio, and join the catalogue of braids by topology. Soutache’s word
+read off the machine is the one read off its yarns hanging in space,
+cords and all.</p></li>
+<li><p>Any horn gear machine, written as the gears that mesh: <code class="docutils literal notranslate"><span class="pre">A-B</span> <span class="pre">B-C</span> <span class="pre">C-D</span> <span class="pre">D-A</span></code>,
+a gear with its own slots <code class="docutils literal notranslate"><span class="pre">A:6</span></code> (<code class="docutils literal notranslate"><span class="pre">horn_gear.described.machine_from_graph</span></code>;
+<code class="docutils literal notranslate"><span class="pre">graph_of</span></code> writes a machine back so). Each gear’s direction and contacts
+are worked out from the graph; a ring of an odd number of gears, or gears
+in separate machines, are refused saying why. In Braid Studio, <strong>Your own
+machine…</strong>, starting from the machine chosen before. Studio now reads a
+machine’s braid round its ring whenever its gears make one, not by its
+name.</p></li>
+<li><p>A machine’s carrier tracks in Braid Studio, as the demo draws them: on
+the machine to load, and in the view of it turning, each track in a
+colour of its own (<code class="docutils literal notranslate"><span class="pre">horn_gear.visualization.track_curves</span></code>, which the
+demo now draws its tracks with too). A machine’s braid gives them in its
+timeline (<code class="docutils literal notranslate"><span class="pre">tracks</span></code>); otherwise every build is as before.</p></li>
+<li><p>Braid Studio’s front page: every braid it offers as it comes, in a table
+to filter by name, by what makes it, by strands, by the loops it closes
+into and by writhe, each with a picture of it settled, its links (the
+book, videos, pages) and what else makes the same braid, and opened in
+the studio at once (<code class="docutils literal notranslate"><span class="pre">braidpy.web.braids</span></code>, <code class="docutils literal notranslate"><span class="pre">web/home.js</span></code>,
+<code class="docutils literal notranslate"><span class="pre">web/snapshots.py</span></code>). The studio itself is now <code class="docutils literal notranslate"><span class="pre">make.html</span></code>; old addresses
+naming a braid go on there.</p></li>
+<li><p>Each catalogued braid’s links, as data: where it comes from and where it
+is shown made, each a title, a kind (book, article, video, page, post)
+and a web address (<code class="docutils literal notranslate"><span class="pre">catalog.Link</span></code>, <code class="docutils literal notranslate"><span class="pre">Entry.links</span></code>; <code class="docutils literal notranslate"><span class="pre">Entry.reference</span></code> is
+now the first link’s title). The addresses that were in the catalogues’
+docstrings and notes are there now, and go out with the topology
+catalogue (<code class="docutils literal notranslate"><span class="pre">topology_catalog.export</span></code>), for Braid Studio to show.</p></li>
+<li><p>Tightening a braid as a window on an endless one rather than a piece
+held at both ends (<code class="docutils literal notranslate"><span class="pre">take_off.Periodic</span></code>, <code class="docutils literal notranslate"><span class="pre">tighten_yarns(periodic=...)</span></code>):
+the yarn leaving the fell end of the window runs on into the top of it,
+so the braid is not pinched where it was held. The window must be a
+whole number of periods; <code class="docutils literal notranslate"><span class="pre">take_off.Periodic.closing</span></code> finds the wrap a laid braid
+closes on. Without it, tightening is as before. In Braid Studio,
+<strong>Sideways, endless</strong> under <em>Settle the yarns</em> (<code class="docutils literal notranslate"><span class="pre">web/tighten.js</span></code>, tested
+against braidpy step for step).</p></li>
+<li><p>Whether a braid is Brunnian: pure, and trivial once any one of its
+strands is taken out, as the Borromean rings’ braid (<code class="docutils literal notranslate"><span class="pre">Braid.is_brunnian</span></code>,
+with <code class="docutils literal notranslate"><span class="pre">Braid.without_strand</span></code>; it raised NotImplementedError). Braid
+Studio’s card says so of a pure braid.</p></li>
+<li><p>A braid made by its carriers (<code class="docutils literal notranslate"><span class="pre">braidpy.carried</span></code>): a horn gear machine’s
+carriers go round at the machine’s real size, each pulling its yarn at a
+steady tension up through a forming ring into the braid taken off above,
+the yarns held where they cross by friction. Drawn near, and to scale
+beside the machine (<code class="docutils literal notranslate"><span class="pre">examples/demo_carried.py</span></code>).</p></li>
+<li><p>A triaxial braid among the machines: the tubular braid of 16 round an
+axial yarn up each of its eight gears, as a triaxial braider feeds them
+up its hollow horn gear spindles (<code class="docutils literal notranslate"><span class="pre">horn_gear.triaxial_braid_16</span></code>; J. H.
+van Ravenhorst’s thesis on the references page). At every axial the
+carriers going round one way pass it on one side and those going the
+other way on the other, so it lies between the two sets. Braid Studio
+says how many cores a machine braids round, where it said “a core” of
+the soutache’s two cords and now these eight.</p></li>
+<li><p>A kumihimo or mobidai braid can be made round a core in Braid Studio,
+down the disk’s middle, of yarn or rigid, as a machine’s core is.</p></li>
+<li><p>The marudai makes a braid round a core: up the braid’s axis, of yarn or
+rigid, each move passing beside it (<code class="docutils literal notranslate"><span class="pre">braidpy.marudai</span></code>, <code class="docutils literal notranslate"><span class="pre">web/marudai.js</span></code>).
+A disk braid, a lace braid made from its card, or a lace machine’s round
+its core, is made on the marudai with it.</p></li>
+<li><p>A tubular machine, or a lace machine of six gears or more, can braid
+round a core in Braid Studio, of yarn or rigid, down the hole its ring of
+gears encloses (<code class="docutils literal notranslate"><span class="pre">horn_gear.ring_core</span></code>); soutache can braid without its
+cords. <strong>Core</strong> replaces <strong>Cores</strong>, which said only how stiff a machine’s
+own cores were: links made with it make the same braid.</p></li>
+<li><p>A lace machine’s braid can be made on a marudai in Braid Studio: the
+braid grows at the fell as the card turns the gears, each gear’s turn its
+two notches swapping bobbins. Worked out from the card alone
+(<code class="docutils literal notranslate"><span class="pre">making.lace.card_program</span></code>), without building the machine or loading
+what it needs.</p></li>
+<li><p>The multiband machines draw every carrier of a band in that band’s colour,
+so the bands can be told apart in the braid they make together; a band
+shown alone keeps its colour (<code class="docutils literal notranslate"><span class="pre">BraidingMachine.carrier_colors</span></code>).</p></li>
+<li><p>A line of horn gears that braids three bands at once: the 10-15-10
+machine of the Atelier de Tressage (<code class="docutils literal notranslate"><span class="pre">braidpy.horn_gear.multiband</span></code>). Where
+two bands meet, a six-horn gear is split between them, three horns each, so
+each band turns its carriers back on a gear of its own and the bands never
+meet. Its 35 carriers run the whole machine, shown in Braid Studio whole
+or a band at a time, with the smallest such machine beside it: two plaits
+braided at once on three gears, the middle one split.</p></li>
+<li><p>Braid Studio’s <strong>Make it as…</strong> makes the braid on a lace machine too: the
+card it shows is a link to your own lace machine, loaded with that card and
+its bobbins, at an address of its own. Bobbins can be named by their
+notch, <code class="docutils literal notranslate"><span class="pre">A-B</span></code>, as the card names them.</p></li>
+<li><p>Four kumihimo disk braids shared by Richard Buenger: edo yatsu, naiki,
+hira-naiki and uneri-maru-genji (<code class="docutils literal notranslate"><span class="pre">braidpy.mobidai_catalog</span></code>).</p></li>
+<li><p>Braid Studio steps through a disk’s or a sinnet’s moves, as through a
+machine’s: ⏮ ◀ ▶ ⏭ or the caret in the moves typed show the strands after
+any move, without undoing it. A move clicked goes in at the cursor.</p></li>
+<li><p>Whether two braids are the same braid however written, proven rather than
+measured: <code class="docutils literal notranslate"><span class="pre">braidpy.conjugacy.same_braid</span></code> decides conjugacy by the super
+summit set. It proves edo yatsu and ABOK #3070 different, and the flat
+braid of 6 and ABOK #3021.</p></li>
+<li><p>A sinnet from the shape it is to take, as Ashley draws it
+(<code class="docutils literal notranslate"><span class="pre">braidpy.making.ashley.sinnet_from_shape</span></code>): lines across the shape
+parallel to its sides, turning at the outline in bights, the bights the
+stand’s spaces and the lines its moves, in the book’s order or space by
+space. Triangles are the book’s #3045, #3047, #3051 and #3059 exactly,
+#3049 with a strand more at each corner (<code class="docutils literal notranslate"><span class="pre">corner_spaces</span></code>), #3057 made
+space by space; flat oblongs, with their chisel edges, #3071 and #3072. A
+shape may turn back, as an L or a U, its lines cut in pieces, or have a
+hole, its bights numbered with the outline’s, an inner one between two
+outer ones, so that the sinnet goes round the hole as a tube does. Its
+tracks (<code class="docutils literal notranslate"><span class="pre">shape_tracks</span></code>) can each be made the other way round. On a grid,
+a shape is its cells, squares, squares cut on their diagonals or
+triangles (<code class="docutils literal notranslate"><span class="pre">grid_shape</span></code>, <code class="docutils literal notranslate"><span class="pre">grid_outline</span></code>); on the diagonal grid its
+outline may run on a slant, its lines across and up (<code class="docutils literal notranslate"><span class="pre">grid_lines</span></code>): a
+square standing on a corner has the lines of #3073 and #3074, an oblong
+on a corner those of #3075.</p></li>
+<li><p>And back, from a sinnet’s moves to its shape: the moves grouped by the
+direction of their lines (<code class="docutils literal notranslate"><span class="pre">move_groups</span></code>), the same at any size for shapes
+drawn on one principle, say the grid, and their number the size; the
+shapes of that grid with as many lines are kept if they join the very
+spaces the moves join (<code class="docutils literal notranslate"><span class="pre">shapes_from_moves</span></code>). Every shape on a grid comes
+back so, and the book’s #3045 to #3051, #3059 and #3070 to #3075. The
+book’s sinnets that a shape draws say so in the catalogue
+(<code class="docutils literal notranslate"><span class="pre">solid_sinnets_catalog.DRAWN</span></code>), and Braid Studio’s list of shapes’ braids
+is made from it.</p></li>
+<li><p>In Braid Studio, <strong>Ashley’s method, from a shape</strong>: a grid, square,
+diamond or hexagonal, and a shape it offers to start from (an oblong, an
+L, a U, a hollow square; a square or an oblong on a corner; a triangle or
+a hexagon), or one of thirteen braids made so; drawn once made, its
+cells, tracks and spaces clicked to change the shape, turn a track round
+or add a strand.</p></li>
+<li><p>Two split gears may mesh once for each pairing of their parts
+(<code class="docutils literal notranslate"><span class="pre">A1-B1</span> <span class="pre">A2-B2</span> <span class="pre">A1+A2</span> <span class="pre">B1+B2</span></code>), as a matrix of split gears wants: they touch
+at one contact, the pairing named first handing over at the end of each
+step, the next part way through it (<code class="docutils literal notranslate"><span class="pre">Connection.phase</span></code>). A carrier handed
+on twice in a step is stopped where it meets another.</p></li>
+<li><p>A machine is sized for its bobbins: drawn larger, sizes and places
+together, it keeps its carriers further apart in proportion
+(<code class="docutils literal notranslate"><span class="pre">horn_gear.take_off.clearance</span></code>, <code class="docutils literal notranslate"><span class="pre">Clearance.scale_for</span></code>). Braid Studio sizes every
+machine for bobbins of 20 mm (<code class="docutils literal notranslate"><span class="pre">Machine.bobbin_diameter_mm</span></code>) and says how
+large its horns, gears and deck come out; it stops a machine only where
+two carriers come to one point (<code class="docutils literal notranslate"><span class="pre">horn_gear.take_off.too_close</span></code>), which no size
+keeps apart.</p></li>
+</ul>
+</section>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>braidpy’s names are spelled in American English, as Python’s and its
+libraries’ are (<code class="docutils literal notranslate"><span class="pre">color</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span></code>, <code class="docutils literal notranslate"><span class="pre">neighbor</span></code>, <code class="docutils literal notranslate"><span class="pre">catalog</span></code>) — one rule, no
+exceptions; prose may be British. A test keeps it so
+(<code class="docutils literal notranslate"><span class="pre">tests/test_spelling.py</span></code>). Renamed, the old names still answering with
+a <code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code> (<code class="docutils literal notranslate"><span class="pre">braidpy._renamed</span></code>), each for the release that
+renames it and one more:
+<code class="docutils literal notranslate"><span class="pre">ashley_solid_sinnet.strand_colors</span></code>,
+<code class="docutils literal notranslate"><span class="pre">horn_gear.visualization.colored_tracks</span></code>, <code class="docutils literal notranslate"><span class="pre">horn_gear.word.deck_center</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BraidingMachine.carrier_colors</span></code>, <code class="docutils literal notranslate"><span class="pre">StrandTrajectories.center</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DescribedMachine(centers=)</span></code> and its <code class="docutils literal notranslate"><span class="pre">centers</span></code>, the <code class="docutils literal notranslate"><span class="pre">color=</span></code> of
+<code class="docutils literal notranslate"><span class="pre">BraidGrowth.traces</span></code>, and the attributes <code class="docutils literal notranslate"><span class="pre">b3d.Design.colors</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CarriedBraid.colors</span></code> and <code class="docutils literal notranslate"><span class="pre">AnnularWord.center</span></code> (built with the old
+keyword, these three no longer are); the module <code class="docutils literal notranslate"><span class="pre">braidpy.catalogue</span></code> and
+<code class="docutils literal notranslate"><span class="pre">web.catalogue()</span></code> are <code class="docutils literal notranslate"><span class="pre">braidpy.catalog</span></code> and <code class="docutils literal notranslate"><span class="pre">web.catalog()</span></code>, the
+topology catalogue’s <code class="docutils literal notranslate"><span class="pre">catalogue()</span></code> is <code class="docutils literal notranslate"><span class="pre">catalog()</span></code>, <code class="docutils literal notranslate"><span class="pre">similarity</span></code>’s
+<code class="docutils literal notranslate"><span class="pre">catalogue_braids()</span></code> is <code class="docutils literal notranslate"><span class="pre">catalog_braids()</span></code>, the mobidai catalogue’s
+<code class="docutils literal notranslate"><span class="pre">CataloguedMobidai</span></code> and <code class="docutils literal notranslate"><span class="pre">CataloguedBraid</span></code> are <code class="docutils literal notranslate"><span class="pre">CatalogedMobidai</span></code> and
+<code class="docutils literal notranslate"><span class="pre">CatalogedBraid</span></code>, and each catalogue’s <code class="docutils literal notranslate"><span class="pre">CATALOGUE</span></code> is <code class="docutils literal notranslate"><span class="pre">CATALOG</span></code>; the
+catalogue modules keep the names 0.3.0 shipped them — <code class="docutils literal notranslate"><span class="pre">braid_catalog</span></code>,
+<code class="docutils literal notranslate"><span class="pre">machine_catalog</span></code>, <code class="docutils literal notranslate"><span class="pre">mobidai_catalog</span></code>, <code class="docutils literal notranslate"><span class="pre">solid_sinnets_catalog</span></code> and
+<code class="docutils literal notranslate"><span class="pre">topology_catalog</span></code>. Braid Studio’s links and the JSON its pages serve
+are unchanged, but the site writes its catalog as <code class="docutils literal notranslate"><span class="pre">catalog.json</span></code>,
+keeping <code class="docutils literal notranslate"><span class="pre">catalogue.json</span></code> beside it for the sites built before it (a few
+months, a release at least), each to be dropped in a later one.</p></li>
+<li><p>Braids are compared as patterns (<code class="docutils literal notranslate"><span class="pre">braidpy.braid_pattern</span></code>) where braidpy
+compares them: <code class="docutils literal notranslate"><span class="pre">BraidPattern.alike</span></code>, and <code class="docutils literal notranslate"><span class="pre">braid_pattern.alike(a,</span> <span class="pre">b)</span></code> for
+two braids, say nothing measured tells two patterns apart — fast, the
+fingerprints — where <code class="docutils literal notranslate"><span class="pre">==</span></code> proves it. The ways of making a braid, the
+Ashley search and <code class="docutils literal notranslate"><span class="pre">similarity.similar</span></code> check by it, with the same
+results as before. <code class="docutils literal notranslate"><span class="pre">ring_program.same_braid</span></code> is its old name, kept.
+<code class="docutils literal notranslate"><span class="pre">tools.compare_braids</span></code>, and so the MCP server, now also says whether
+two braids are <code class="docutils literal notranslate"><span class="pre">proven</span></code> the same pattern.</p></li>
+<li><p>Braids in band generators, braidpy’s own
+(<code class="docutils literal notranslate"><span class="pre">braidpy.band_canonical_form</span></code>): <code class="docutils literal notranslate"><span class="pre">a_ts</span></code>, strands t and s crossing in
+front of those between, as round a kumihimo disk or a marudai. Birman,
+Ko and Lee’s normal form (<code class="docutils literal notranslate"><span class="pre">Braid.get_band_canonical_factors</span></code>, before
+math-braid’s: the same, checked against it, faster) and a braid as band
+letters (<code class="docutils literal notranslate"><span class="pre">Braid.band_word</span></code>, <code class="docutils literal notranslate"><span class="pre">artin_from_band</span></code>). Disk braids spell far
+shorter so: Kongo gumi on 8 strands, 81 crossings, is 43 band letters;
+the 16-strand disk braid, 351, is 117.
+Braid Studio’s card gives a braid’s band word where it is shorter than
+its word, as a disk braid’s is, and Artin’s word elsewhere; a band word
+can be typed too (layout <strong>band</strong>: <code class="docutils literal notranslate"><span class="pre">4:1</span> <span class="pre">1:3</span></code>), and the MCP server’s
+<code class="docutils literal notranslate"><span class="pre">describe_braid</span></code> gives it.</p></li>
+<li><p>A braid is made on a kumihimo disk in band letters where that takes
+fewer moves (<code class="docutils literal notranslate"><span class="pre">making.disk.disk_moves</span></code>): two strands far apart cross in
+three moves, lifted over those between, where crossings of neighbours
+take three each. Kongo gumi takes 129 moves instead of 243, the 12-strand
+disk braid 261 instead of 567, the 8-carrier tubular machine’s 78 instead
+of 96; a braid no shorter so, as a flat machine’s, is made as before,
+move for move. <code class="docutils literal notranslate"><span class="pre">band_canonical_form.band_letters</span></code> reads a word as band
+letters as it stands.</p></li>
+<li><p>braidpy no longer needs math-braid (PyPI 0.8, 2018, unmaintained): a
+braid’s triviality, and so <code class="docutils literal notranslate"><span class="pre">==</span></code>, falls back on braidpy’s own Garside
+normal form when handle reduction takes too long, and the page no longer
+installs it; the tests still check braidpy against it. The normal form
+(<code class="docutils literal notranslate"><span class="pre">artin_left_normal_form</span></code>, <code class="docutils literal notranslate"><span class="pre">left_weighted</span></code>) is the same, worked out
+another way: the half twists kept at the word’s end, each factor made
+left-weighted with those before it in one pass back, the crossings each
+can begin and end with changed only where a crossing moves. Fifty times
+faster: ABOK #3082 on 61 strands against itself rewritten, three seconds
+(math-braid: seventeen).</p></li>
+<li><p>In a ring of gears timed so that every contact is on a horn
+(<code class="docutils literal notranslate"><span class="pre">described</span></code>, <code class="docutils literal notranslate"><span class="pre">layout.time_ring</span></code>), the parts of a split gear are
+stacked on their axle, each keeping its own time, the axle as large as
+one part; the bands they join are laid out each alone and put
+together, each split gear’s parts half a pitch apart (or j/k of k).
+Two matrices of gears joined by split gears, the split ladder, now each
+braid as they do alone: 28 carriers rather than 14, clear of each other.
+Machines without split gears in a ring are as before.</p></li>
+<li><p>A sinnet whose strands all move to the right (<code class="docutils literal notranslate"><span class="pre">AshleySolidSinnet.all_right</span></code>),
+as the book’s #3058, #3059 and #3066 to #3069 do: a strand from an even
+space is led anticlockwise too, still from the left of its space. The
+disk, its animation and the mobidai pattern go round as the book says;
+the braid is the same, a strand carried over all being free to swing
+over the top. #3057 and #3058, given one table in the book, now differ
+as the book has them, in this alone.</p></li>
+<li><p>Every contact of a horn gear machine hands over when a horn of each gear
+comes round to it: round a ring of six or eight gears of four slots, or a
+matrix of gears of several sizes, the gears are moved and sized so that
+they do (<code class="docutils literal notranslate"><span class="pre">layout.time_ring</span></code>), a contact handing over part way through a
+step where it must. tubular_12, tubular_16 and triaxial_16 build so, with
+the same carriers, period and braid.</p></li>
+<li><p>Gears in a ring are drawn to touch, those that do not mesh kept clear
+(<code class="docutils literal notranslate"><span class="pre">layout.ring_geometry</span></code>), rather than shrunk from a spring layout till no
+mesh was too long, which left gears of several sizes running through each
+other.</p></li>
+<li><p>A quantity not in SI units carries its unit in its name:
+<code class="docutils literal notranslate"><span class="pre">making.ashley_sinnet</span></code> and <code class="docutils literal notranslate"><span class="pre">making.sinnet_for_page</span></code> take <code class="docutils literal notranslate"><span class="pre">time_limit_s</span></code>.</p></li>
+<li><p>Leftovers removed: <code class="docutils literal notranslate"><span class="pre">braidpy.operations</span></code> (its one function, <code class="docutils literal notranslate"><span class="pre">conjugate(b,</span> <span class="pre">c)</span></code>, is <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">*</span> <span class="pre">b</span> <span class="pre">*</span> <span class="pre">c.inverse()</span></code>), <code class="docutils literal notranslate"><span class="pre">braidpy.material_braid</span></code> (an early sketch;
+yarns with a thickness are <code class="docutils literal notranslate"><span class="pre">take_off</span></code>’s and <code class="docutils literal notranslate"><span class="pre">rope</span></code>’s), the empty
+<code class="docutils literal notranslate"><span class="pre">braid_catalog.triangle_sinnet_9</span></code> and <code class="docutils literal notranslate"><span class="pre">triangle_sinnet_10</span></code> (ABOK #3057,
+#3058 and #3045 are in <code class="docutils literal notranslate"><span class="pre">solid_sinnets_catalog</span></code>), and <code class="docutils literal notranslate"><span class="pre">src/braidpy/analytic/</span></code>,
+which held only a pointer to <em>Why there is no closed form</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">braidpy.take_off</span></code> is a package rather than one module of 1734 lines:
+the trajectories laid and the yarns (<code class="docutils literal notranslate"><span class="pre">paths</span></code>), laying (<code class="docutils literal notranslate"><span class="pre">laying</span></code>),
+contact between yarns (<code class="docutils literal notranslate"><span class="pre">contact</span></code>), tightening (<code class="docutils literal notranslate"><span class="pre">tighten</span></code>), drawing
+(<code class="docutils literal notranslate"><span class="pre">drawing</span></code>), where each source’s strands go (<code class="docutils literal notranslate"><span class="pre">sources</span></code>) and a disk’s
+braid laid round a ring (<code class="docutils literal notranslate"><span class="pre">ring</span></code>). Every name is imported from
+<code class="docutils literal notranslate"><span class="pre">braidpy.take_off</span></code> as before, and every braid Braid Studio makes with the
+site comes out the same.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The nearness of a band’s new axles to those placed, on a machine of
+split gears, comes out a plain float: it was numpy’s, as <code class="docutils literal notranslate"><span class="pre">np.linalg.norm</span></code>
+gave it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Braid.is_periodic()</span></code> answers the theorem it quoted: a braid is periodic
+when its nth power or its (n − 1)st power is a power of the half-twist
+Δ, read in the Garside canonical form.  It asked only whether such a
+power was pure, so σ₁² kept every strand’s place and was said periodic,
+as was the catalogue’s asymmetric_flat4, which is not; a rotation’s
+braid, as σ₁σ₂ on three strands, is.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hash(Braid)</span></code> agrees with <code class="docutils literal notranslate"><span class="pre">==</span></code>: two words for one braid hash alike,
+so a braid is one key in a dict or a set however it is written. It
+hashed the word, while <code class="docutils literal notranslate"><span class="pre">==</span></code> compares the braid itself; it now hashes
+what every word for a braid shares (strands, exponent sum,
+permutation). <code class="docutils literal notranslate"><span class="pre">word_eq</span></code> still compares words.</p></li>
+<li><p>The package says where braidpy lives: its repository, documentation,
+Braid Studio, changelog and issues (<code class="docutils literal notranslate"><span class="pre">project.urls</span></code>), for PyPI to show.
+Modules that began with a form (file name, author, date) say what they
+hold instead; <code class="docutils literal notranslate"><span class="pre">horn_gear.multiband</span></code> is in the API reference; and the
+documentation’s one link to a section, the marudai round a core, leads
+there.</p></li>
+<li><p>Tightening warns when a braid is laid too coarsely for it: it looks for
+contact between samples only, so two yarns whose sideways steps between
+two levels add up to two diameters can cross there unseen, as the
+three-band machine’s did. A step of a diameter or more is warned of
+(<code class="docutils literal notranslate"><span class="pre">take_off.SAFE_STEP</span></code>, <code class="docutils literal notranslate"><span class="pre">longest_step</span></code>), for the page’s tightening too.
+Every machine is laid well inside it; a two-strand word settled by
+physics, and a lace braid made on a marudai round a core, are not.</p></li>
+<li><p>Carriers no longer jump where a line of gears bends. On the three-band
+machine, folded round, and on the 12- and 16-carrier tubular braiders, a
+gear’s horns turned rigidly cannot meet both its contacts, so a carrier
+was drawn jumping, by up to a third of a gear, as it was handed on. The
+jump left yarns too long between samples for tightening to see one pass
+through another, and at the three-band machine’s seams, where the bands
+pull apart, the yarns twisted together there slipped through each other,
+so the bands came apart into three. Such a gear’s horns are now drawn
+spread unevenly, the one at a contact always on it
+(<code class="docutils literal notranslate"><span class="pre">horn_gear.layout.slot_angles</span></code>, <code class="docutils literal notranslate"><span class="pre">GearAngles</span></code>): carriers are handed on
+where they are, and the bands stay one braid when tightened. Which
+carrier crosses which is unchanged; machines whose horns met their
+contacts are drawn as before.</p></li>
+<li><p>The 10-15-10 machine is loaded as its drawing is: each eight-horn gear
+carries one carrier each way, as drawn, where both went the same way
+(<code class="docutils literal notranslate"><span class="pre">MULTIBAND_10_15_10_LOADING</span></code>: G3 and G5 carry on slots 2 and 5, G10 and
+G12 on 1 and 4). Every other gear was already as drawn. The braid it
+makes changes; how the bands join does not.</p></li>
+<li><p>Braid Studio stepped a big machine’s braid, the three-band machine’s,
+badly: the page drew the whole braid again at every frame, even when
+nothing moved, so it was slow to answer, and the handle, pressed a few
+times meanwhile, then turned on by itself. The view is drawn only while
+something changes, and a press the page could not answer in time is let
+go. The slider under the view goes a sub-step at a time, an eighth of a
+machine’s step or a disk’s move, the arrow keys a sub-step and with
+Shift a step, and says which step it is at.</p></li>
+<li><p>Braid Studio’s machine handle, held part way through a step (▸), went
+back to the step’s start to turn it whole when pressed on, ▸ or ▶: it
+now turns on from where it is held.</p></li>
+<li><p>A Braid Studio link could carry colours for strands its braid does not
+have: colours chosen on a braid of twenty strands stayed when one of
+sixteen was made after it, and its link listed all twenty. They are let go
+once the braid is made, and empty places after the last colour are not
+written.</p></li>
+<li><p>Braids were taken for the same braid when their Alexander polynomial
+vanished and the rest of their fingerprint agreed: edo yatsu with ABOK
+#3070, and the flat braid of 6 with ABOK #3021. The fingerprint now holds
+the characteristic polynomial of the braid’s Burau matrix too
+(<code class="docutils literal notranslate"><span class="pre">properties.burau_polynomial_on_circle</span></code>), which tells them apart.</p></li>
+<li><p>A braid with a long home braid, read from another starting point, could
+seem another braid: the Alexander polynomial was taken from the Burau
+matrix raised to the repeats, whose entries reach 1e19 for ABOK #3057, and
+lost the digits it cancelled. It is now taken from the matrix’s
+eigenvalues, as the Burau polynomial is.</p></li>
+<li><p>A braid’s fingerprint took a minute when its home braid was hundreds of
+repeats of a long unit (the three-band machine: 210 repeats of 34515
+crossings). Its linking numbers are now summed from the unit once, the
+repeats at once (<code class="docutils literal notranslate"><span class="pre">linking.linking_matrix(braid,</span> <span class="pre">repeats)</span></code>), and the Burau
+matrix is built a column update per crossing: five seconds.</p></li>
+<li><p>Two words of one long braid could have fingerprints apart, their
+polynomials sampled in floating point: fingerprints now compare the
+Burau matrix’s characteristic polynomial computed exactly, modulo a prime
+(<code class="docutils literal notranslate"><span class="pre">burau_mod</span></code>).</p></li>
+<li><p>A word of tens of thousands of crossings overflowed its floating-point
+Burau matrix, and <code class="docutils literal notranslate"><span class="pre">fingerprint()</span></code> raised: the matrix is scaled down as it
+grows.</p></li>
+<li><p>A machine’s flat word missed a carrier passing several others in one
+sample, every later crossing given to the wrong strands; and carriers
+crossing just as a period starts were counted at neither end (flat_4’s
+word is twelve crossings, pure every period). A word is read over the
+loading’s own period: flat_9’s is 18 steps, not 180.</p></li>
+<li><p>Yarns passing nearly the same point, as on one split axle, are lifted by
+the take-off rather than drawn out a hundredfold to part them.</p></li>
+<li><p>A machine’s carrier track is drawn round its loop once: on a machine with
+a long period, the points kept fell laps apart and were joined across the
+deck.</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><em>Laying out a horn gear machine</em>: how gears are placed, sized and timed,
+with figures and equations.</p></li>
+</ul>
+</section>
+</section>
+<section id="id2">
+<h2>0.3.0 — 2026-10-24<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<p>braidpy grows from braid words to the braids people make: on braiding and
+lace machines, kumihimo disks, a marudai and Ashley’s stand, laid and
+settled in 3D, compared by their topology, and shown in Braid Studio, in the
+browser.</p>
+<section id="id3">
+<h3>New<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Braid Studio</strong>, a web page where braidpy runs in the browser: describe a
+braid — a word, a kumihimo or mobidai pattern, an Ashley sinnet, a braiding
+or lace machine — and see it laid, tightened and made in 3D, with nothing
+installed. The braids it offers are made and settled with the site, and
+shown at once. A braid made on a disk can be saved for braid3dmin (B3D),
+bead for bead, its moves as braid3dmin lists them.</p></li>
+<li><p><strong>Braiding machines</strong> (<code class="docutils literal notranslate"><span class="pre">braidpy.horn_gear</span></code>): horn gear (maypole) machines,
+flat, tubular and soutache, and the Jacquard lace machine driven by its
+punchcard; their tracks, collisions, threading and animation, and their
+handle turned by hand.</p></li>
+<li><p><strong>Kumihimo and mobidai disks</strong>, animated from above, and <strong>43 of Ashley’s
+solid sinnets</strong> (ABOK #2965–#3082), each worked on its stand, with its
+braid word and its mobidai pattern.</p></li>
+<li><p><strong>A braid made move by move on a marudai</strong> (<code class="docutils literal notranslate"><span class="pre">braidpy.marudai</span></code>), each yarn
+carried over the others and drawn tight.</p></li>
+<li><p><strong>Ways of making a braid</strong> (<code class="docutils literal notranslate"><span class="pre">braidpy.making</span></code>): from a braid word to how to make it — moves
+on a kumihimo disk, a Jacquard lace punchcard, a sinnet on Ashley’s stand —
+each checked by reading the braid back off what it makes.</p></li>
+<li><p><strong>Comparing braids</strong> (<code class="docutils literal notranslate"><span class="pre">braidpy.similarity</span></code>, <code class="docutils literal notranslate"><span class="pre">braidpy.topology_catalog</span></code>): a
+fingerprint that does not change however a braid is written, the braids
+most like one, and a catalogue of braids by topology with every way of
+making each.</p></li>
+<li><p><strong>The shape of a braid</strong>: laid in 3D as it comes off whatever made it, and
+tightened; closed forms for the shapes that have one (a laid rope, a
+braided tube, the flat braid); yarns settled by their own physics
+(<code class="docutils literal notranslate"><span class="pre">braidpy.rope</span></code>, <code class="docutils literal notranslate"><span class="pre">braidpy.form</span></code>), in Python and in the page.</p></li>
+<li><p><strong>For AI assistants</strong>: <code class="docutils literal notranslate"><span class="pre">braidpy.tools</span></code>, a few questions answered in plain
+data, and <code class="docutils literal notranslate"><span class="pre">braidpy-mcp</span></code>, an MCP server offering them (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;braidpy[mcp]&quot;</span></code>).</p></li>
+<li><p>Linking numbers, pure braids and their closures, full twists, the braid
+word read in any of its notations (<code class="docutils literal notranslate"><span class="pre">braidword.parse_word</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">braidpy.__version__</span></code>.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Changed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p>These may need changes to code using 0.2.2.</p>
+<ul class="simple">
+<li><p><strong>Drawing is an extra</strong>: matplotlib, plotly and imageio are installed with
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;braidpy[viz]&quot;</span></code>; <code class="docutils literal notranslate"><span class="pre">pyqt6</span></code> and <code class="docutils literal notranslate"><span class="pre">tornado</span></code> are no longer
+required. braidpy alone installs in 100 MB rather than 489 MB, and a
+drawing library missing says what to install.</p></li>
+<li><p><strong>Python 3.10 to 3.15</strong> are supported, and tested daily.</p></li>
+<li><p>The 2D braid diagram is drawn by braidpy itself, in its own colours.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GarsideCanonicalFactors.n_half_twist</span></code> counts half twists (it counted full
+ones).</p></li>
+<li><p>Handle reduction (<code class="docutils literal notranslate"><span class="pre">braidpy.handles_reduction</span></code>) has a new interface.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Braid</span> <span class="pre">==</span></code> and <code class="docutils literal notranslate"><span class="pre">is_trivial()</span></code> are decided by handle reduction, math-braid’s
+normal form only when it is slow: faster on most braids.</p></li>
+<li><p>Drawing libraries, sympy and math-braid are imported only when used.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">braidpy.ordered_strands</span></code>, a stub nothing used, is removed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">double_flat3</span></code> makes ABOK 2971 by default; <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code>, asking for
+ABOK 2972, raises <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code>, as 2972 is not made yet.</p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Fixed<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Comparing a braid with the trivial braid crashed; <code class="docutils literal notranslate"><span class="pre">is_trivial()</span></code> looked
+only at the word, so <code class="docutils literal notranslate"><span class="pre">σ₁σ₁⁻¹</span></code> was not trivial.</p></li>
+<li><p>Parametric strands stopped short of their end.</p></li>
+<li><p>The documentation’s 3D example passed a braid where an amplitude was
+expected (issue #8).</p></li>
+<li><p>Sinnets of more than 30 strands, made on a marudai, grew hundreds of yarn
+diameters long instead of a few.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">double_flat3(parallel=True)</span></code> gave ABOK 2971, not the 2972 it asked for.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">braidpy-mcp</span></code> without the <code class="docutils literal notranslate"><span class="pre">mcp</span></code> extra ended in a traceback; it now says
+what to install.</p></li>
+</ul>
+</section>
+<section id="id6">
+<h3>Documentation<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>In three parts: a user manual, a theory manual and a developer guide, with
+an API reference covering every module.</p></li>
+</ul>
+</section>
+</section>
+<section id="id7">
+<h2>0.2.2<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<p>The release before these notes were kept: braids as words in Artin’s
+generators, their operations and properties, handle reduction, and their
+drawing in the console, in 2D and in 3D.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="glossary.html" class="btn btn-neutral float-left" title="Glossary" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="theory_manual.html" class="btn btn-neutral float-right" title="Theory manual" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,426 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comparing braids &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The shape of a laid rope" href="laid_rope.html" />
+    <link rel="prev" title="Braid algebra" href="braid_algebra.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="theory_manual.html">Theory manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Comparing braids</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#four-kinds-of-the-same">Four kinds of “the same”</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deciding-it-exactly">Deciding it exactly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-fingerprint">The fingerprint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-the-alexander-polynomial-alone-is-not-enough">Why the Alexander polynomial alone is not enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-burau-polynomial-where-the-alexander-polynomial-vanishes">The Burau polynomial, where the Alexander polynomial vanishes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-alexander-polynomial-sampled">The Alexander polynomial, sampled</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-catalogue-by-topology">A catalogue by topology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limits">Limits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="theory_manual.html">Theory manual</a></li>
+      <li class="breadcrumb-item active">Comparing braids</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/comparing_braids.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="comparing-braids">
+<h1>Comparing braids<a class="headerlink" href="#comparing-braids" title="Link to this heading"></a></h1>
+<p>A braid made on a machine, a braid typed as a word and a braid read off a
+kumihimo pattern can be the same braid and look nothing alike on paper. The
+same braid can be written from another starting point, with far crossings
+swapped, made of more or fewer repeats, its strands numbered from the other
+side. To say whether two braids are alike — and to suggest, for a braid of your
+own, the braids it is most like — the comparison has to be about the braid’s
+<em>topology</em>, not about how it happens to have been written.</p>
+<p><a class="reference internal" href="reference.html#module-braidpy.similarity" title="braidpy.similarity"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.similarity</span></code></a> does so with a <strong>fingerprint</strong>: a few numbers that
+do not change however the braid is written, and a distance between
+fingerprints.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.similarity</span><span class="w"> </span><span class="kn">import</span> <span class="n">similar</span>
+
+<span class="c1"># The plait, typed from its second crossing and repeated five times.</span>
+<span class="n">mine</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">similar</span><span class="p">(</span><span class="n">mine</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="c1"># [Match(name='flat3', distance=0.0, same_fingerprint=True), ...]</span>
+</pre></div>
+</div>
+<section id="four-kinds-of-the-same">
+<h2>Four kinds of “the same”<a class="headerlink" href="#four-kinds-of-the-same" title="Link to this heading"></a></h2>
+<p>“The same braid” can mean four things, each coarser than a word, and
+braidpy gives each its own type, its own <code class="docutils literal notranslate"><span class="pre">==</span></code> and its own hash,
+so that a set or a dict of them keeps one of each:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Kind</p></th>
+<th class="head"><p>The same when</p></th>
+<th class="head"><p>Told</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BraidWord</span></code> (<code class="docutils literal notranslate"><span class="pre">braid.word()</span></code>)</p></td>
+<td><p>the same crossings in the same order</p></td>
+<td><p>exactly</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Braid</span></code></p></td>
+<td><p>the same braid, its ends held where they are</p></td>
+<td><p>exactly</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BraidPattern</span></code> (<code class="docutils literal notranslate"><span class="pre">braid.pattern()</span></code>)</p></td>
+<td><p>the same braid made over and over: read from another start, or a power of it</p></td>
+<td><p>proven where it can be, else by fingerprint</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ClosedBraid</span></code> (<code class="docutils literal notranslate"><span class="pre">braid.closed()</span></code>)</p></td>
+<td><p>the same knot or link once each strand’s end is tied back to its start, however many strands</p></td>
+<td><p>by invariants</p></td>
+</tr>
+</tbody>
+</table>
+<p>A pattern and a closed braid are both coarser than a braid, but neither is
+coarser than the other: the plait and the plait twice are one pattern and
+close into two knots (a plain loop, the figure-eight knot); σ₁ on two strands
+and a single strand close into one loop and are two patterns. Grommets and
+Turk’s heads are closed braids.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">3</span><span class="p">),</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">==</span> <span class="n">b</span>  <span class="c1"># False: two braids</span>
+<span class="n">a</span><span class="o">.</span><span class="n">pattern</span><span class="p">()</span> <span class="o">==</span> <span class="n">b</span><span class="o">.</span><span class="n">pattern</span><span class="p">()</span>  <span class="c1"># True: one read from the other's second crossing</span>
+<span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">closed</span><span class="p">()</span> <span class="o">==</span> <span class="n">Braid</span><span class="p">([],</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">closed</span><span class="p">()</span>  <span class="c1"># True: one loop</span>
+</pre></div>
+</div>
+</section>
+<section id="deciding-it-exactly">
+<h2>Deciding it exactly<a class="headerlink" href="#deciding-it-exactly" title="Link to this heading"></a></h2>
+<p>“The same braid, read from another starting point” is conjugacy in the braid
+group, and <a class="reference internal" href="reference.html#module-braidpy.conjugacy" title="braidpy.conjugacy"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.conjugacy</span></code></a> decides it for patterns:
+<a class="reference internal" href="reference.html#braidpy.conjugacy.same_pattern" title="braidpy.conjugacy.same_pattern"><code class="xref py py-func docutils literal notranslate"><span class="pre">same_pattern()</span></code></a> (once called <code class="docutils literal notranslate"><span class="pre">same_braid</span></code>, a name
+kept) says yes or no, a proof, where fingerprints only ever prove braids
+different.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.braid</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.conjugacy</span><span class="w"> </span><span class="kn">import</span> <span class="n">same_pattern</span>
+
+<span class="n">same_pattern</span><span class="p">(</span><span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="mi">3</span><span class="p">),</span> <span class="n">Braid</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span>  <span class="c1"># True</span>
+</pre></div>
+</div>
+<p>It goes by summit sets (Elrifai and Morton https://nsalter.science.nd.edu/teaching/braidsspring2024/elrifaimorton.pdf): each braid is cycled to its
+<em>super summit set</em>, the conjugates as short as any in Garside’s normal form,
+and that finite set is searched whole; two braids are conjugate exactly when
+their sets meet. A first implementation of that conjugated by every
+permutation braid, n! of them, and took minutes on 6 and 8 strands. This one
+follows only the least permutation braids that keep a braid in the set, at
+most one for each crossing σᵢ (Franco and González-Meneses): edo yatsu’s
+set, 472 braids on 8 strands, is found in about 3 seconds. The set can still
+grow exponentially with the strands, so the search stops at a limit and
+says so (<a class="reference internal" href="reference.html#braidpy.conjugacy.SuperSummitSetTooLarge" title="braidpy.conjugacy.SuperSummitSetTooLarge"><code class="xref py py-class docutils literal notranslate"><span class="pre">SuperSummitSetTooLarge</span></code></a>).</p>
+<p>A yes or no does not suggest braids <em>like</em> yours: for that, a distance is
+wanted, and the fingerprint gives one.</p>
+</section>
+<section id="the-fingerprint">
+<h2>The fingerprint<a class="headerlink" href="#the-fingerprint" title="Link to this heading"></a></h2>
+<p>It is of the braid’s pattern, not its length: the word’s repeating unit, and
+that unit repeated until every strand is back where it started — the <em>home</em>
+braid, whose closure makes a loop of each strand.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>What it says</p></th>
+<th class="head"><p>Tells apart</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>strands</p></td>
+<td><p>how many</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p>loops</p></td>
+<td><p>the sizes of the loops the unit’s closure makes: how it takes the strands round</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p>writhe</p></td>
+<td><p>the unit’s crossings counted with their signs</p></td>
+<td><p>a braid from its mirror image</p></td>
+</tr>
+<tr class="row-odd"><td><p>linking numbers</p></td>
+<td><p>how many times each two strands wind round each other in a repeat, sorted</p></td>
+<td><p>how the strands are interlaced</p></td>
+</tr>
+<tr class="row-even"><td><p>Alexander polynomial</p></td>
+<td><p>of the home braid’s closure, sampled on the unit circle</p></td>
+<td><p>what linking numbers miss</p></td>
+</tr>
+<tr class="row-odd"><td><p>Burau polynomial</p></td>
+<td><p>the characteristic polynomial of the home braid’s Burau matrix, sampled on the unit circle</p></td>
+<td><p>what the Alexander polynomial misses where it vanishes</p></td>
+</tr>
+</tbody>
+</table>
+<p>None of them changes when the braid is read from another starting point, and
+none but the writhe when its strands are numbered from the other side. The
+distance adds a share from 0 to 1 for each, 0 for the same fingerprint.</p>
+</section>
+<section id="why-the-alexander-polynomial-alone-is-not-enough">
+<h2>Why the Alexander polynomial alone is not enough<a class="headerlink" href="#why-the-alexander-polynomial-alone-is-not-enough" title="Link to this heading"></a></h2>
+<p>The Alexander polynomial Δ(t) of a braid’s closure is one of the strongest
+of the six, and it is computed from the word through the Burau matrix
+(<a class="reference internal" href="reference.html#braidpy.properties.alexander_polynomial" title="braidpy.properties.alexander_polynomial"><code class="xref py py-func docutils literal notranslate"><span class="pre">braidpy.properties.alexander_polynomial()</span></code></a>). But on its own:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Braid</p></th>
+<th class="head"><p>Δ(t)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>trefoil, σ₁³</p></td>
+<td><p>t² − t + 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>its mirror image, σ₁⁻³</p></td>
+<td><p>t² − t + 1</p></td>
+</tr>
+<tr class="row-even"><td><p>two-ply rope σ₁⁸, and twisted the other way, σ₁⁻⁸</p></td>
+<td><p>t⁷ − t⁶ + t⁵ − t⁴ + t³ − t² + t − 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>one loop, unknotted, on 1 or 3 strands</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>three straight strands</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>the plait (σ₁σ₂⁻¹)⁶</p></td>
+<td><p>t¹⁰ − 7t⁹ + … + 1</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p>It does not tell a braid from its <strong>mirror image</strong>: a rope laid S from one
+laid Z. The writhe does.</p></li>
+<li><p>It loses the braid itself: it is an invariant of the <strong>closure</strong>, the same
+for braids on different numbers of strands that close up alike (Markov’s
+theorem). The number of strands and the loops keep that.</p></li>
+<li><p>It <strong>vanishes</strong> for loops that could be pulled apart, and for some links
+that cannot: then it says nothing. Linking numbers still do.</p></li>
+<li><p>No handful of invariants is complete: different links can share one.</p></li>
+</ul>
+<p>Linking numbers alone are not enough either: the plait and three strands
+hanging straight both have all their linking numbers 0, and the Alexander
+polynomial tells them apart.</p>
+</section>
+<section id="the-burau-polynomial-where-the-alexander-polynomial-vanishes">
+<h2>The Burau polynomial, where the Alexander polynomial vanishes<a class="headerlink" href="#the-burau-polynomial-where-the-alexander-polynomial-vanishes" title="Link to this heading"></a></h2>
+<p>The Alexander polynomial of a closed braid is det(1 − B), B the braid’s
+Burau matrix, up to a factor: the characteristic polynomial det(x − B) of
+the matrix at x = 1. Where B has the eigenvalue 1, it is 0, as for many
+braids whose closure makes several loops, and it tells nothing apart. The
+whole characteristic polynomial does not vanish; like the Alexander
+polynomial, it does not change when the braid is read from another starting
+point. Sampled at x = 2, on the same circle
+(<a class="reference internal" href="reference.html#braidpy.properties.burau_polynomial_on_circle" title="braidpy.properties.burau_polynomial_on_circle"><code class="xref py py-func docutils literal notranslate"><span class="pre">braidpy.properties.burau_polynomial_on_circle()</span></code></a>), it tells apart
+braids that agree on everything else:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Braids</p></th>
+<th class="head"><p>Same loops, writhe, linking numbers</p></th>
+<th class="head"><p>Alexander</p></th>
+<th class="head"><p>Burau polynomial</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>edo yatsu on a kumihimo disk, ABOK #3070</p></td>
+<td><p>yes</p></td>
+<td><p>0, both</p></td>
+<td><p>differ</p></td>
+</tr>
+<tr class="row-odd"><td><p>the flat braid of 6, ABOK #3021</p></td>
+<td><p>yes</p></td>
+<td><p>0, both</p></td>
+<td><p>differ</p></td>
+</tr>
+</tbody>
+</table>
+<p>Before the Burau polynomial was in the fingerprint, these were catalogued as
+the same braids. It is computed from the eigenvalues of the unit’s Burau
+matrix, raised to the number of repeats, so that a home braid of thousands
+of crossings overflows nothing.</p>
+</section>
+<section id="the-alexander-polynomial-sampled">
+<h2>The Alexander polynomial, sampled<a class="headerlink" href="#the-alexander-polynomial-sampled" title="Link to this heading"></a></h2>
+<p>The home braid of a long sinnet is long: ABOK #3048’s 85-crossing unit
+repeated 60 times. Its polynomial, expanded, takes minutes. Its modulus on the
+unit circle, |Δ(e^{iθ})|, is exactly an invariant — on the circle |±tᵏ| = 1,
+nothing is left to normalise — and is computed numerically from the unit’s
+Burau matrix at t = e^{iθ}, raised to the number of repeats
+(<a class="reference internal" href="reference.html#braidpy.properties.alexander_on_circle" title="braidpy.properties.alexander_on_circle"><code class="xref py py-func docutils literal notranslate"><span class="pre">braidpy.properties.alexander_on_circle()</span></code></a>): milliseconds. It matches the
+polynomial, where both can be computed, to six digits.</p>
+</section>
+<section id="a-catalogue-by-topology">
+<h2>A catalogue by topology<a class="headerlink" href="#a-catalogue-by-topology" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="reference.html#module-braidpy.topology_catalog" title="braidpy.topology_catalog"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.topology_catalog</span></code></a> lists braids by what they are rather than by
+how they are made. It makes every braid of every other catalogue — braid
+words, kumihimo, kumihimo disks, sinnets, braiding machines — and groups those
+with the same fingerprint. Each topology points to every way of making it, and
+each way back to its topology (<a class="reference internal" href="reference.html#braidpy.topology_catalog.topology_of" title="braidpy.topology_catalog.topology_of"><code class="xref py py-func docutils literal notranslate"><span class="pre">topology_of()</span></code></a>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.topology_catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">topology_of</span>
+
+<span class="n">plait</span> <span class="o">=</span> <span class="n">topology_of</span><span class="p">(</span><span class="s2">"machine"</span><span class="p">,</span> <span class="s2">"flat_3"</span><span class="p">)</span>
+<span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">plait</span><span class="o">.</span><span class="n">methods</span><span class="p">]</span>
+<span class="c1"># ['word:flat3', 'word:inverted_flat3', 'sinnet:abok_2965', 'machine:flat_3']</span>
+</pre></div>
+</div>
+<p>The plait is a braid word, the Dutch braid (the plait seen from behind),
+Ashley’s #2965 worked on his stand, and what a three-carrier flat braiding
+machine makes. For a braid of your own,
+<a class="reference internal" href="reference.html#braidpy.topology_catalog.related" title="braidpy.topology_catalog.related"><code class="xref py py-func docutils literal notranslate"><span class="pre">related()</span></code></a> gives the topologies nearest it, and
+with each the ways to make it.</p>
+<p>A disk braid that creeps round the disk from cycle to cycle, as kongo gumi
+does, is fingerprinted over as many cycles as bring every strand home, not
+its first. A machine braiding round cores counts each core as a strand of
+its word, one standing still, which the others pass in front of or behind.
+Making every braid takes some ten seconds, so the
+catalogue is built once, when first asked for.</p>
+<p>Braid Studio shows it beside every braid it makes: <strong>Also made as</strong>, the
+other ways of making the same braid, and <strong>Nearest braids</strong>. The catalogue
+is made with the site, as JSON (<a class="reference internal" href="reference.html#braidpy.topology_catalog.export" title="braidpy.topology_catalog.export"><code class="xref py py-func docutils literal notranslate"><span class="pre">export()</span></code></a>),
+and read back in the browser (<a class="reference internal" href="reference.html#braidpy.topology_catalog.load" title="braidpy.topology_catalog.load"><code class="xref py py-func docutils literal notranslate"><span class="pre">load()</span></code></a>);
+<a class="reference internal" href="reference.html#braidpy.topology_catalog.for_page" title="braidpy.topology_catalog.for_page"><code class="xref py py-func docutils literal notranslate"><span class="pre">for_page()</span></code></a> finds a catalogue’s braid by its
+description, and any other by the fingerprint of the braid made.</p>
+</section>
+<section id="limits">
+<h2>Limits<a class="headerlink" href="#limits" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Equal fingerprints do not prove two braids the same.</strong> Different ones
+prove them different; <a class="reference internal" href="reference.html#braidpy.conjugacy.same_pattern" title="braidpy.conjugacy.same_pattern"><code class="xref py py-func docutils literal notranslate"><span class="pre">same_pattern()</span></code></a> proves either.</p></li>
+<li><p><strong>A braid seen from behind is the same braid.</strong> The Dutch braid,
+σ₁⁻¹σ₂, is the plait σ₁σ₂⁻¹ with its strands numbered from the other side,
+and has its fingerprint.</p></li>
+<li><p><strong>The distance’s weights are a choice</strong>: each part counts the same.</p></li>
+</ul>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>W. Burau, “Über Zopfgruppen und gleichsinnig verdrillte Verkettungen”,
+<em>Abh. Math. Sem. Hamburg</em> 11, 179 (1935): the Burau matrix, and the
+Alexander polynomial of a closed braid from it.</p></li>
+<li><p>J. W. Alexander, “Topological invariants of knots and links”, <em>Trans. Amer.
+Math. Soc.</em> 30, 275 (1928).</p></li>
+<li><p>D. Rolfsen, <em>Knots and Links</em> (Publish or Perish, 1976): Alexander
+polynomials, linking numbers, the tables checked against.</p></li>
+<li><p>J. S. Birman, <em>Braids, Links, and Mapping Class Groups</em> (Princeton, 1974):
+closed braids, and Markov’s theorem.</p></li>
+<li><p>E. A. Elrifai and H. R. Morton, “Algorithms for positive braids”, <em>Quart. J.
+Math.</em> 45, 479 (1994): conjugacy, decided exactly.</p></li>
+<li><p>N. Franco and J. González-Meneses, “Conjugacy problem for braid groups and
+Garside groups”, <em>J. Algebra</em> 266, 112 (2003): the super summit set found
+through minimal simple elements.</p></li>
+<li><p>J. González-Meneses, “The nth root of a braid is unique up to conjugacy”,
+<em>Algebr. Geom. Topol.</em> 3, 1103 (2003): why braids repeated as often can be
+compared by what is repeated.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="braid_algebra.html" class="btn btn-neutral float-left" title="Braid algebra" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="laid_rope.html" class="btn btn-neutral float-right" title="The shape of a laid rope" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

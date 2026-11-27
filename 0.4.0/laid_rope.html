@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The shape of a laid rope &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The shape of a braided tube" href="braided_tube.html" />
+    <link rel="prev" title="Comparing braids" href="comparing_braids.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="theory_manual.html">Theory manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html">Comparing braids</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The shape of a laid rope</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-rope-has-no-crossings">A rope has no crossings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-strands-are-one-curve-repeated">The strands are one curve, repeated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nothing-holds-the-strands-out">Nothing holds the strands out</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-close-two-strands-come">How close two strands come</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-two-bounds">The two bounds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#where-the-rope-settles">Where the rope settles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-this-one-is-a-search">Why this one is a search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="theory_manual.html">Theory manual</a></li>
+      <li class="breadcrumb-item active">The shape of a laid rope</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/laid_rope.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="the-shape-of-a-laid-rope">
+<h1>The shape of a laid rope<a class="headerlink" href="#the-shape-of-a-laid-rope" title="Link to this heading"></a></h1>
+<p>A rope is the one braid in braidpy whose shape can be written down. This page
+says what the shape is, where each formula comes from, and — since it matters
+for reading the code — which of them is exact and which is a search.</p>
+<p>Everything here lives in <a class="reference internal" href="reference.html#module-braidpy.annulus_braid" title="braidpy.annulus_braid"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.annulus_braid</span></code></a>.</p>
+<section id="a-rope-has-no-crossings">
+<h2>A rope has no crossings<a class="headerlink" href="#a-rope-has-no-crossings" title="Link to this heading"></a></h2>
+<p>On a ring of slots there are two kinds of move. A <strong>crossing</strong> puts two
+neighbouring strands past each other, one passing outside the other. A
+<strong>turn</strong> carries every strand round one slot together — nobody passes anybody.</p>
+<p>Laying up a rope is turns, and only turns:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.annulus_braid</span><span class="w"> </span><span class="kn">import</span> <span class="n">rope</span><span class="p">,</span> <span class="n">tubular_paths</span>
+
+<span class="n">paths</span> <span class="o">=</span> <span class="n">tubular_paths</span><span class="p">(</span><span class="n">rope</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">sign</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span> <span class="k">for</span> <span class="n">sign</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">signs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Every sign is zero: no strand is outside or inside any other at any step. That
+is what separates a rope from a braid, and it is the reason a rope has a shape
+anyone can write down. The strands never have to get past one another, so
+their shape is a one-parameter family — helices of radius <span class="math notranslate nohighlight">\(R\)</span> — and symmetry
+says where they touch without anyone having to search a surface for it.</p>
+</section>
+<section id="the-strands-are-one-curve-repeated">
+<h2>The strands are one curve, repeated<a class="headerlink" href="#the-strands-are-one-curve-repeated" title="Link to this heading"></a></h2>
+<p>In an evenly laid rope, strand <span class="math notranslate nohighlight">\(k\)</span> is strand 0 slid along the axis by <span class="math notranslate nohighlight">\(k\)</span>
+n-ths of a lay. The strands are not merely alike; they are the same curve at
+<span class="math notranslate nohighlight">\(n\)</span> phases.</p>
+<p><img alt="One helix at three phases, on the cut-open surface" src="_images/rope_one_curve_repeated.svg" /></p>
+<p>The picture is the rope’s surface cut down one side and laid flat, which is
+the view where a helix becomes a straight line and the repeat is obvious. Be
+careful reading distances off it: flattening preserves the repeat but not the
+clearances, which are measured through the rope rather than across the sheet.</p>
+<p>That one fact — one curve, repeated — is what every formula below rests on.</p>
+</section>
+<section id="nothing-holds-the-strands-out">
+<h2>Nothing holds the strands out<a class="headerlink" href="#nothing-holds-the-strands-out" title="Link to this heading"></a></h2>
+<p>The radius is not something you choose. A helix of smaller radius is shorter,
+so tension pulls the strands inward, and what stops them is each other. The
+radius is an <strong>output</strong>: the value at which they just touch.</p>
+<p>So the question is only ever “how close do two of them come?”.</p>
+</section>
+<section id="how-close-two-strands-come">
+<h2>How close two strands come<a class="headerlink" href="#how-close-two-strands-come" title="Link to this heading"></a></h2>
+<p>Because the strands are one helix repeated, the distance between two of them
+depends on a single variable: how far along the axis one is slid relative to
+the other. Call that <span class="math notranslate nohighlight">\(w\)</span>. Then</p>
+<div class="math notranslate nohighlight">
+\[D(w)^2 = 4R^2\sin^2\!\left(\frac{\pi w}{\lambda}\right)
+         + \left(\frac{k\lambda}{n} - w\right)^2\]</div>
+<p>The first term is the chord across the circle between two points whose angles
+differ by <span class="math notranslate nohighlight">\(2\pi w/\lambda\)</span>; the second is what remains of the axial offset
+after sliding by <span class="math notranslate nohighlight">\(w\)</span>. Their clearance is this minimised over <span class="math notranslate nohighlight">\(w\)</span> — one
+variable, no surface to search. <a class="reference internal" href="reference.html#braidpy.annulus_braid.helix_clearance" title="braidpy.annulus_braid.helix_clearance"><code class="xref py py-func docutils literal notranslate"><span class="pre">helix_clearance()</span></code></a>
+scans it and then refines by golden section.</p>
+<p><img alt="D(w) for a three-strand rope" src="_images/rope_clearance.svg" /></p>
+<p>Two points on that curve have names, and the figure’s point is that <strong>neither
+of them is the answer</strong>:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Where</p></th>
+<th class="head"><p>What it is</p></th>
+<th class="head"><p>Which function sees it</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(w = k\lambda/n\)</span></p></td>
+<td><p>the chord between neighbours at equal height</p></td>
+<td><p><a class="reference internal" href="reference.html#braidpy.annulus_braid.packing_radius" title="braidpy.annulus_braid.packing_radius"><code class="xref py py-func docutils literal notranslate"><span class="pre">packing_radius()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(w = 0\)</span></p></td>
+<td><p>the pure axial offset <span class="math notranslate nohighlight">\(\lambda/n\)</span></p></td>
+<td><p><a class="reference internal" href="reference.html#braidpy.annulus_braid.minimum_lay" title="braidpy.annulus_braid.minimum_lay"><code class="xref py py-func docutils literal notranslate"><span class="pre">minimum_lay()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>in between</p></td>
+<td><p>the actual nearest approach</p></td>
+<td><p><a class="reference internal" href="reference.html#braidpy.annulus_braid.lay_radius" title="braidpy.annulus_braid.lay_radius"><code class="xref py py-func docutils literal notranslate"><span class="pre">lay_radius()</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<p>A strand’s nearest neighbour is not alongside it. It is a little further along
+the neighbour’s <em>other</em> turn.</p>
+</section>
+<section id="the-two-bounds">
+<h2>The two bounds<a class="headerlink" href="#the-two-bounds" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="reference.html#braidpy.annulus_braid.packing_radius" title="braidpy.annulus_braid.packing_radius"><code class="xref py py-func docutils literal notranslate"><span class="pre">packing_radius()</span></code></a> is the familiar
+cross-section answer, <span class="math notranslate nohighlight">\(R = d / (2\sin(\pi/n))\)</span>: evenly spaced round a circle,
+neighbours touch when the chord between them is one diameter. It is exact —
+for strands that run straight. Give the rope any lay at all and the strands
+come closer than it says, because winding brings a strand nearer to its
+neighbour’s other turns. At the tightest lay they can be made at,
+three strands at the packing radius clear 0.76 of a diameter, and the
+shortfall barely eases with more strands — 0.71 at twelve.</p>
+<p><a class="reference internal" href="reference.html#braidpy.annulus_braid.minimum_lay" title="braidpy.annulus_braid.minimum_lay"><code class="xref py py-func docutils literal notranslate"><span class="pre">minimum_lay()</span></code></a> is the other bound,</p>
+<div class="math notranslate nohighlight">
+\[\lambda \ge n\,d\]</div>
+<p>and it follows directly from the repeat. Take a point on one strand and the
+matching point on another: they are at the same place across the rope and
+differ only by <span class="math notranslate nohighlight">\(\lambda/n\)</span> of height. Widening the rope does not separate
+them, because they are the same point of the same curve. Below <span class="math notranslate nohighlight">\(n d\)</span> no radius
+keeps the strands apart and the rope cannot be made.</p>
+<p>Note what that argument needs: the evenness, not ropes in general. A rope
+whose strands differ from one another is outside it. The bound is also not
+attained — clearing a diameter <em>at</em> it would take an infinite radius — and it
+is rarely what bites first. Crowding round the circle usually does. Its use is
+that it is cheap and exact.</p>
+</section>
+<section id="where-the-rope-settles">
+<h2>Where the rope settles<a class="headerlink" href="#where-the-rope-settles" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="reference.html#braidpy.annulus_braid.lay_radius" title="braidpy.annulus_braid.lay_radius"><code class="xref py py-func docutils literal notranslate"><span class="pre">lay_radius()</span></code></a> puts the two together. The
+clearance rises with the radius, so bisection finds where it equals a
+diameter, bracketed below by the packing radius.</p>
+<p><img alt="Settling radius against lay length" src="_images/rope_settling_radius.svg" /></p>
+<p>The curve is the whole story: at a long lay the rope approaches the packing
+radius from above, and as the lay tightens towards <span class="math notranslate nohighlight">\(n d\)</span> the radius runs away
+to infinity. A tighter rope is a fatter one.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.annulus_braid</span><span class="w"> </span><span class="kn">import</span> <span class="n">lay_radius</span><span class="p">,</span> <span class="n">packing_radius</span>
+
+<span class="n">packing_radius</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">)</span>  <span class="c1"># 0.231 — the zero-lay limit</span>
+<span class="n">lay_radius</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">lay</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>  <span class="c1"># 0.259 — where it actually settles</span>
+<span class="n">lay_radius</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">lay</span><span class="o">=</span><span class="mf">1.34</span><span class="p">)</span>  <span class="c1"># 0.432 — a tight lay, much fatter</span>
+</pre></div>
+</div>
+</section>
+<section id="why-this-one-is-a-search">
+<h2>Why this one is a search<a class="headerlink" href="#why-this-one-is-a-search" title="Link to this heading"></a></h2>
+<p>It is worth being explicit, because the braided tube next door <em>does</em> have a
+closed form. The difference is where the nearest approach sits.</p>
+<p>A crossing of a braided tube is a point of symmetry for <strong>both</strong> strands, so
+it is automatically a critical point of the distance between them, and only
+the second-order behaviour around it matters — which is algebra. Two helices
+of a rope have no such point. Their nearest approach is not where the chord
+between them is, as the <span class="math notranslate nohighlight">\(D(w)\)</span> figure shows, and its location moves with the
+lay. There is nothing to expand around.</p>
+<p>Concretely, the minimum of <span class="math notranslate nohighlight">\(D(w)\)</span> is where its derivative vanishes, which for
+neighbouring strands reads</p>
+<div class="math notranslate nohighlight">
+\[\frac{4\pi R^{2}}{\lambda}\sin\!\left(\frac{2\pi w}{\lambda}\right)
+    = 2\left(\frac{\lambda}{n} - w\right)\]</div>
+<p>— a transcendental equation, with <span class="math notranslate nohighlight">\(w\)</span> inside a sine on one side and linear on
+the other. It has no closed-form root, which is why
+<a class="reference internal" href="reference.html#braidpy.annulus_braid.lay_radius" title="braidpy.annulus_braid.lay_radius"><code class="xref py py-func docutils literal notranslate"><span class="pre">lay_radius()</span></code></a> bisects.</p>
+<p>So <a class="reference internal" href="reference.html#braidpy.annulus_braid.lay_radius" title="braidpy.annulus_braid.lay_radius"><code class="xref py py-func docutils literal notranslate"><span class="pre">lay_radius()</span></code></a> bisects. The problem is
+well-posed and the answer is exact to tolerance; it simply is not a formula.
+The general version of this argument is in
+<a class="reference internal" href="why_no_closed_form.html"><span class="std std-doc">Why a braid’s shape has no closed form</span></a>.</p>
+</section>
+<section id="see-also">
+<h2>See also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="braided_tube.html"><span class="std std-doc">The shape of a braided tube</span></a> — the same questions where
+there <em>are</em> crossings, and where the radius does come out in closed form.</p></li>
+<li><p><a class="reference internal" href="reference.html#braidpy.annulus_braid.rope_helices" title="braidpy.annulus_braid.rope_helices"><code class="xref py py-func docutils literal notranslate"><span class="pre">rope_helices()</span></code></a> builds the curves themselves.</p></li>
+<li><p><a class="reference internal" href="reference.html#braidpy.parametric_braid.closest_approach" title="braidpy.parametric_braid.closest_approach"><code class="xref py py-func docutils literal notranslate"><span class="pre">closest_approach()</span></code></a> measures the clearance
+of any set of strands numerically, which is how the formulas above are
+checked in the tests.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="comparing_braids.html" class="btn btn-neutral float-left" title="Comparing braids" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="braided_tube.html" class="btn btn-neutral float-right" title="The shape of a braided tube" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

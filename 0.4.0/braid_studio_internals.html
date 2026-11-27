@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Braid Studio’s internals &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="A site of your own, built from braidpy" href="private_sites.html" />
+    <link rel="prev" title="Developer guide" href="developer_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="developer_guide.html">Developer guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Braid Studio’s internals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-it-is-built">How it is built</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#why-not-a-javascript-port-or-a-python-server">Why not a JavaScript port, or a Python server?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#keeping-it-light">Keeping it light</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#trying-it-locally">Trying it locally</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-comes-next">What comes next</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="private_sites.html">A site of your own, built from braidpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#setting-up">Setting up</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#where-things-are">Where things are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#how-braidpy-is-written">How braidpy is written</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#tests-and-ci">Tests and CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#releasing">Releasing</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="developer_guide.html">Developer guide</a></li>
+      <li class="breadcrumb-item active">Braid Studio’s internals</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/braid_studio_internals.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="braid-studio-s-internals">
+<h1>Braid Studio’s internals<a class="headerlink" href="#braid-studio-s-internals" title="Link to this heading"></a></h1>
+<p>How <a class="reference internal" href="braid_studio.html"><span class="std std-doc">Braid Studio</span></a> is built: braidpy in the browser, the
+page’s modules and workers, the site and how it is published.</p>
+<section id="how-it-is-built">
+<h2>How it is built<a class="headerlink" href="#how-it-is-built" title="Link to this heading"></a></h2>
+<p><strong>Everything runs in the browser.</strong> braidpy itself — the same code, tested by
+the same tests — runs in a Web Worker through <a class="reference external" href="https://pyodide.org">Pyodide</a>,
+CPython compiled to WebAssembly. The page draws what it computes with
+<a class="reference external" href="https://threejs.org">three.js</a>. There is no server to run: the site is
+static files, published with the documentation.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> page (app.js) ── spec ──▶ worker (worker.js) ── braidpy.web.build(spec)
+     ▲                                                   │
+     │      ◀──── the braid as laid, as points ──────────┘
+     │                          │
+     │                          ▼
+     └── as it settles ── settle worker (settle.js): tighten.js, rope.js,
+     three.js tubes                     form.js or marudai.js
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">braidpy.web</span></code> is everything the page asks of braidpy: <code class="docutils literal notranslate"><span class="pre">catalog()</span></code>,
+what can be made, and <code class="docutils literal notranslate"><span class="pre">build(spec)</span></code>, the braid a description makes. Both
+answer in plain data, lists and numbers, so the page needs nothing of
+Python’s to draw. It is a module per source — <code class="docutils literal notranslate"><span class="pre">disks</span></code>, <code class="docutils literal notranslate"><span class="pre">words</span></code>,
+<code class="docutils literal notranslate"><span class="pre">machines</span></code> — beside what they share: reading descriptions (<code class="docutils literal notranslate"><span class="pre">_spec</span></code>), the
+result and its timeline (<code class="docutils literal notranslate"><span class="pre">_result</span></code>), and what is known of a braid
+(<code class="docutils literal notranslate"><span class="pre">_info</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web/worker.js</span></code> loads Pyodide and numpy from Pyodide’s CDN, and braidpy
+as a wheel from the site. It then answers each description:
+braidpy lays the yarns, the page shows them at once, and the settle
+worker, <code class="docutils literal notranslate"><span class="pre">web/settle.js</span></code>, settles them: sideways (<code class="docutils literal notranslate"><span class="pre">web/tighten.js</span></code>), on a
+marudai (<code class="docutils literal notranslate"><span class="pre">web/marudai.js</span></code>), or by physics (<code class="docutils literal notranslate"><span class="pre">web/rope.js</span></code>, <code class="docutils literal notranslate"><span class="pre">web/form.js</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web/tighten.js</span></code> is <code class="docutils literal notranslate"><span class="pre">braidpy.take_off.tighten_yarns</span></code>, step for step, in
+JavaScript. Tightening is the one slow part of making a braid: its inner
+loop runs over a hundred thousand pairs of samples hundreds of times, and
+as numpy calls in WebAssembly each pass pays a price that compiled
+JavaScript does not. It is some 20 times faster there. braidpy stays the
+reference: a test tightens the same braid both ways, and they agree to
+the last digits for the first tens of steps, and come out as tight and as
+clear as each other after hundreds.</p></li>
+<li><p>The front page, <code class="docutils literal notranslate"><span class="pre">web/index.html</span></code> with <code class="docutils literal notranslate"><span class="pre">web/home.js</span></code>, is a table of
+braids, written by braidpy when the site is built
+(<a class="reference internal" href="reference.html#braidpy.web.braids" title="braidpy.web.braids"><code class="xref py py-func docutils literal notranslate"><span class="pre">braids()</span></code></a>, <code class="docutils literal notranslate"><span class="pre">braids.json</span></code>), each with its picture
+(<code class="docutils literal notranslate"><span class="pre">snapshots/</span></code>, below). It filters and sorts that table, and opens a braid
+in the studio, <code class="docutils literal notranslate"><span class="pre">web/make.html</span></code>. An address naming a braid
+(<code class="docutils literal notranslate"><span class="pre">studio/#source=…</span></code>), from before the front page, is sent on to the
+studio.</p></li>
+<li><p>The studio is in modules, <code class="docutils literal notranslate"><span class="pre">web/app.js</span></code> loading them: the form (<code class="docutils literal notranslate"><span class="pre">fields.js</span></code>,
+with <code class="docutils literal notranslate"><span class="pre">diagram.js</span></code>, <code class="docutils literal notranslate"><span class="pre">machine.js</span></code> and <code class="docutils literal notranslate"><span class="pre">editor.js</span></code> for drawing a word,
+loading a machine and editing a disk’s moves), the braid asked for in the
+address (<code class="docutils literal notranslate"><span class="pre">spec.js</span></code>), the workers (<code class="docutils literal notranslate"><span class="pre">workers.js</span></code>), the braid’s own defaults
+(<code class="docutils literal notranslate"><span class="pre">defaults.js</span></code>), the 3D view (<code class="docutils literal notranslate"><span class="pre">scene.js</span></code>) and its insets (<code class="docutils literal notranslate"><span class="pre">insets.js</span></code>), the
+info card (<code class="docutils literal notranslate"><span class="pre">info.js</span></code>) and the view’s controls (<code class="docutils literal notranslate"><span class="pre">controls.js</span></code>). The page’s
+words are put into the site’s language as they are shown (<code class="docutils literal notranslate"><span class="pre">i18n.js</span></code>):
+see <a class="reference internal" href="private_sites.html#in-another-language"><span class="std std-ref">A site of your own</span></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web/build.py</span></code> assembles the site in <code class="docutils literal notranslate"><span class="pre">web/site/</span></code>. It copies the page, each
+of its files naming the others with the page’s version, so a browser never
+mixes old files with new ones, and three.js; builds the wheels; and writes <code class="docutils literal notranslate"><span class="pre">catalog.json</span></code>, what the page
+can make — <code class="docutils literal notranslate"><span class="pre">catalogue.json</span></code> too, while sites built before it fetch it —
+and <code class="docutils literal notranslate"><span class="pre">topologies.json</span></code>, the catalogue of braids by topology, made
+once here rather than in every browser.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web/smoke_test.py</span></code> serves the site, opens it in a headless browser,
+checks the front page lists and filters its braids, and makes a braid of
+every kind in the studio.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web/snapshots.py</span></code> opens every braid the front page lists in the studio,
+in a headless browser, and keeps the 3D view of it settled as a small
+picture, <code class="docutils literal notranslate"><span class="pre">snapshots/&lt;key&gt;.webp</span></code>. A site built without a browser has no
+pictures, and its front page shows none.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/braid_studio.yml</span></code> builds and smoke-tests the site on
+every pull request touching braidpy or the page. On <code class="docutils literal notranslate"><span class="pre">develop</span></code>, it publishes
+the site to <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> under <code class="docutils literal notranslate"><span class="pre">studio/</span></code>, beside the documentation. Run by
+hand on any other branch (Actions, Braid Studio, Run workflow), it
+publishes that branch under <code class="docutils literal notranslate"><span class="pre">studio-beta/</span></code>, replacing whatever beta was
+there.</p></li>
+</ul>
+<section id="why-not-a-javascript-port-or-a-python-server">
+<h3>Why not a JavaScript port, or a Python server?<a class="headerlink" href="#why-not-a-javascript-port-or-a-python-server" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>Pyodide (chosen)</p></th>
+<th class="head"><p>Port to JavaScript</p></th>
+<th class="head"><p>Python server</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>One source of truth</p></td>
+<td><p>yes: braidpy, tested</p></td>
+<td><p>no: two implementations to keep in step</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Runs without a server</p></td>
+<td><p>yes, static files</p></td>
+<td><p>yes</p></td>
+<td><p>no: hosting, scaling, cost</p></td>
+</tr>
+<tr class="row-even"><td><p>First visit</p></td>
+<td><p>~15 MB to download, then cached</p></td>
+<td><p>small</p></td>
+<td><p>small</p></td>
+</tr>
+<tr class="row-odd"><td><p>Speed</p></td>
+<td><p>~1 s a braid, tightening in JavaScript</p></td>
+<td><p>as fast</p></td>
+<td><p>fast, but a round trip</p></td>
+</tr>
+<tr class="row-even"><td><p>Effort</p></td>
+<td><p>small, done</p></td>
+<td><p>large: laying, tightening, every source</p></td>
+<td><p>moderate, plus operations</p></td>
+</tr>
+</tbody>
+</table>
+<p>A port would make the page lighter, but every algorithm — reading moves into
+crossings, laying, tightening, the Garside form — would then exist twice and
+drift apart. Pyodide keeps the page exactly as right as braidpy is, and every
+improvement to braidpy reaches the page by itself. The one exception is the
+tightening, the hot loop, ported to JavaScript and tested against braidpy.</p>
+</section>
+<section id="keeping-it-light">
+<h3>Keeping it light<a class="headerlink" href="#keeping-it-light" title="Link to this heading"></a></h3>
+<p>Drawing libraries — plotly, matplotlib, imageio — are tens of megabytes in a
+browser, and the page does not need them: it draws with three.js. braidpy
+therefore imports them only when something is drawn with them
+(<code class="docutils literal notranslate"><span class="pre">braidpy.utils.lazy_module</span></code>), and so with sympy, seconds to
+import in a browser and needed only for Burau matrices and comparing braids;
+a test checks that building any braid loads none of them. The page loads
+numpy, plus networkx for the machines when one is first chosen.</p>
+<p>A first visit still downloads some 9 MB, compressed: Python itself (3 MB),
+its standard library (2 MB), numpy (3 MB), braidpy and three.js. The
+browser keeps them — Pyodide’s CDN lets it for a year — so a later visit
+starts from its cache, and shows a braid in some three seconds, most of it
+Python starting. So that the downloads overlap rather than follow one
+another, braidpy’s worker is started by the page’s first lines, before
+three.js and the page’s own modules load, and it fetches numpy, braidpy and
+the catalogue by topology while Python starts. The form does not wait for
+Python at all: what the page can make — every source, its braids and
+defaults — is written with the site (<code class="docutils literal notranslate"><span class="pre">catalog.json</span></code>), so the menu and
+fields are there at once, and a braid chosen before Python is ready is the
+one made when it is.</p>
+<p>Every braid the page offers as it comes — each catalogued braid, each braid
+word example — is also made once, when the site is built
+(<a class="reference internal" href="reference.html#braidpy.web.premade" title="braidpy.web.premade"><code class="xref py py-func docutils literal notranslate"><span class="pre">premade()</span></code></a>), and kept with it, laid as braidpy lays it for
+the page to tighten. Chosen as it comes, such a braid is shown at once, before
+Python has started, and its kin and other ways follow when Python is ready;
+changed in any way, it is made in the page. That spares a visitor what the
+biggest braids cost to lay — a sinnet of 36 strands took a minute natively,
+many in the browser. Each is settled with the site too, by the page’s own
+settling run in Node (<code class="docutils literal notranslate"><span class="pre">web/settle_node.js</span></code>): on a marudai if it is made move
+by move, sideways if not, as the page would settle it. Chosen as it comes, it
+is shown settled at once, rather than after the minutes its tightening takes
+in the browser; a twist or another settling asked for is done in the page.
+Settled braids are kept in <code class="docutils literal notranslate"><span class="pre">web/.settled</span></code>, filed under a hash of the settling
+code and of the braid laid, so a build settles only what changed; without
+Node, braids are kept laid only. Laid and settled, they are kept gzipped, a
+tenth of their size or less, and the page unpacks each as it fetches it
+(<code class="docutils literal notranslate"><span class="pre">DecompressionStream</span></code>): as JSON they came to some 300 MB, more than GitHub
+Pages takes, and its deployments timed out. <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">web/build.py</span> <span class="pre">--no-premade</span></code> leaves them all out, to try the page sooner.</p>
+</section>
+</section>
+<section id="trying-it-locally">
+<h2>Trying it locally<a class="headerlink" href="#trying-it-locally" title="Link to this heading"></a></h2>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>web<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>install<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..<span class="w">        </span><span class="c1"># three.js, once</span>
+python<span class="w"> </span>web/build.py<span class="w">                  </span><span class="c1"># writes web/site/</span>
+python<span class="w"> </span>-m<span class="w"> </span>http.server<span class="w"> </span>-d<span class="w"> </span>web/site<span class="w">    </span><span class="c1"># then open http://localhost:8000</span>
+</pre></div>
+</div>
+<p>or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">studio</span></code> and <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">studio-serve</span></code>. To use a Pyodide of your own rather than its CDN, add
+<code class="docutils literal notranslate"><span class="pre">?pyodide=&lt;url</span> <span class="pre">of</span> <span class="pre">its</span> <span class="pre">full/</span> <span class="pre">directory&gt;</span></code> to the address.</p>
+<p>Under another name, crediting and linking otherwise, or in another
+language: <code class="docutils literal notranslate"><span class="pre">--profile</span></code>, see <a class="reference internal" href="private_sites.html"><span class="std std-doc">A site of your own</span></a>.</p>
+</section>
+<section id="what-comes-next">
+<h2>What comes next<a class="headerlink" href="#what-comes-next" title="Link to this heading"></a></h2>
+<p>Done so far, beyond making and drawing a braid: watching it being made with
+what made it seen from above, the braid turning with its disk; your own disk
+braids and sinnets, typed or clicked; the braid’s closure, normal form and
+full twists; a cache of recent braids; STL, OBJ and JSON export.</p>
+<ol class="arabic simple">
+<li><p><strong>Your own machines, drawn.</strong> A machine of your own is written as the
+gears that mesh; drawing it, gears placed by clicking, would be the
+next step.</p></li>
+<li><p><strong>More about the braid.</strong> Its Alexander polynomial — once braidpy’s is
+mended: it fails on negative crossings, and takes the determinant of the
+Burau matrix rather than of the identity less it — and its closure drawn
+as a knot or link.</p></li>
+<li><p><strong>Speed for big braids.</strong> With the tightening in JavaScript, an 8-strand
+braid takes well under a second; a 22-strand sinnet still takes several,
+and its time grows with the strands squared. That is where the GPU
+earns its keep: WebGPU compute shaders running the contact pushes over
+every pair at once, several rounds per dispatch so the page is not
+waiting on each, with the JavaScript kept for browsers without WebGPU.
+The Garside form for big braids (beyond 12 strands it is not computed
+here) is the other slow step.</p></li>
+<li><p><strong>Printable.</strong> Tubes closed at their ends, and merged where they touch,
+for an STL a slicer takes as it is.</p></li>
+<li><p><strong>Offline.</strong> As a progressive web app, it could work with no connection
+once visited.</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="developer_guide.html" class="btn btn-neutral float-left" title="Developer guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="private_sites.html" class="btn btn-neutral float-right" title="A site of your own, built from braidpy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solving a braid’s shape numerically &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Laying out a horn gear machine" href="horn_gear_layout.html" />
+    <link rel="prev" title="Why a braid’s shape has no closed form" href="why_no_closed_form.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="theory_manual.html">Theory manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html">Comparing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Solving a braid’s shape numerically</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-problem-to-pose">The problem to pose</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#variables">Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#objective">Objective</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#constraints">Constraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#method">Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-initial-guess">The initial guess</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-to-know-it-worked">How to know it worked</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#a-first-restricted-version-a-braid-as-it-is-made">A first, restricted version: a braid as it is made</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#periodicity-instead-of-holding-both-ends">Periodicity, instead of holding both ends</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#another-approach-beads-on-springs">Another approach: beads on springs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="theory_manual.html">Theory manual</a></li>
+      <li class="breadcrumb-item active">Solving a braid’s shape numerically</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/solving_numerically.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="solving-a-braid-s-shape-numerically">
+<h1>Solving a braid’s shape numerically<a class="headerlink" href="#solving-a-braid-s-shape-numerically" title="Link to this heading"></a></h1>
+<p><a class="reference internal" href="why_no_closed_form.html"><span class="std std-doc">Why a braid’s shape has no closed form</span></a> argues that a
+braid word does not map to a tightened shape by any formula. That rules out an
+analytic answer; it does not rule out an answer.</p>
+<p>This page states the numerical problem worth posing if this is picked up
+again — the variables, the objective, the constraints, the method, where to
+start it, and how to tell whether it worked. Nothing here is implemented in
+braidpy. It is a specification, not a description.</p>
+<hr class="docutils" />
+<section id="the-problem-to-pose">
+<h2>The problem to pose<a class="headerlink" href="#the-problem-to-pose" title="Link to this heading"></a></h2>
+<section id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Link to this heading"></a></h3>
+<p>Each strand as a periodic curve, discretised however suits the solver — say
+<em>m</em> points per strand per period, or a Fourier truncation if smooth curves are
+wanted for free. Fourier is a reasonable basis <em>for representing</em> the answer
+even though it does not deliver it.</p>
+</section>
+<section id="objective">
+<h3>Objective<a class="headerlink" href="#objective" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Total length</strong> Σᵢ ∫ |rᵢ′| — the right objective for limp yarn pulled
+tight, which is most braids and all rope.</p></li>
+<li><p><strong>Length + bending</strong>, Σᵢ ∫ (T|rᵢ′| + B κᵢ²) — for cord, wire or anything
+with stiffness of its own. The ratio √(B/T) is a length: how far bending can
+resist tension, and therefore how sharply a strand may turn. It is the one
+number that decides whether a braid looks taut or lazy.</p></li>
+</ul>
+<p>Minimising per strand independently is not enough. The strands are coupled
+through the contact constraint, and it is the contact that sets the braid’s
+size — so it is one problem over all <em>n</em> strands, not <em>n</em> problems.</p>
+</section>
+<section id="constraints">
+<h3>Constraints<a class="headerlink" href="#constraints" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Periodicity and the permutation</strong>: rᵢ(L) = r_σ(i)(0), σ from the word.</p></li>
+<li><p><strong>Non-interpenetration</strong>: |rᵢ(z) − rⱼ(z)| ≥ d, enforced at the
+discretisation points.</p></li>
+<li><p><strong>Topology</strong>: <em>not</em> as a constraint. Enforce it by starting inside the right
+class and never letting a crossing pass through a strand. Non-interpenetration
+does that on its own if the steps are small enough: two curves cannot swap
+sides without passing through each other. So a feasible descent path from a
+correctly braided start stays correctly braided — which makes the initial
+guess part of the specification rather than a convenience.</p></li>
+</ul>
+</section>
+<section id="method">
+<h3>Method<a class="headerlink" href="#method" title="Link to this heading"></a></h3>
+<p>Active-set contact iteration is the obvious first thing: solve with the
+currently touching pairs held at exactly <em>d</em>, find new violations, add them,
+repeat. Each iteration is a smooth problem. Alternatively a barrier or penalty
+on the separation, which is easier to implement and harder to trust near
+contact.</p>
+<p>Expect local minima. Report which one you found rather than calling it <em>the</em>
+shape.</p>
+</section>
+<section id="the-initial-guess">
+<h3>The initial guess<a class="headerlink" href="#the-initial-guess" title="Link to this heading"></a></h3>
+<p>The drawn geometry in <code class="docutils literal notranslate"><span class="pre">parametric_strand.strand_paths</span></code> — strands stepping
+between slots along a profile, lifting over and dipping under — is a good
+starting configuration. It is in the right braid class by construction, and it is
+cheap. That is its honest use: not a shape, a starting point.</p>
+</section>
+<section id="how-to-know-it-worked">
+<h3>How to know it worked<a class="headerlink" href="#how-to-know-it-worked" title="Link to this heading"></a></h3>
+<p>Three checks, all already in the package or its tests:</p>
+<ol class="arabic simple">
+<li><p><strong>Closest approach equals the diameter.</strong> If it is larger, the braid has
+not finished tightening. If it is smaller, the shape is not physical at all
+and nothing else about it matters.</p></li>
+<li><p><strong>Total length decreases monotonically</strong> as the solver iterates, and
+converges under refinement of the discretisation.</p></li>
+<li><p><strong>The rope limit.</strong> Run the solver on a word of turns with no crossings
+and it must reproduce plain helices at the radius <code class="docutils literal notranslate"><span class="pre">lay_radius</span></code> finds for
+that lay — <em>not</em> the packing radius d/(2 sin(π/n)), which is only the limit
+of no lay at all — see <a class="reference internal" href="laid_rope.html"><span class="std std-doc">The shape of a laid rope</span></a>. It is the
+case with a known answer, so it is the
+test that can catch a solver that is confidently wrong. Get it to agree
+with <code class="docutils literal notranslate"><span class="pre">packing_radius</span></code> as the lay is stretched out, too: that is a second
+known point, and a free one.</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="a-first-restricted-version-a-braid-as-it-is-made">
+<h2>A first, restricted version: a braid as it is made<a class="headerlink" href="#a-first-restricted-version-a-braid-as-it-is-made" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">braidpy.take_off</span></code> poses a restricted form of this problem for a braid as it
+comes off whatever made it, and solves it. All it needs is where each strand’s
+carrier was, in a plane, over time (<code class="docutils literal notranslate"><span class="pre">take_off.StrandTrajectories</span></code>), and
+several things can say that:</p>
+<ul class="simple">
+<li><p>a horn gear machine, through <code class="docutils literal notranslate"><span class="pre">horn_gear.take_off.carrier_trajectories</span></code>;</p></li>
+<li><p>a parametric braid, through <code class="docutils literal notranslate"><span class="pre">take_off.parametric_trajectories</span></code>, and so a
+braid word, through <code class="docutils literal notranslate"><span class="pre">take_off.braid_word_trajectories</span></code> — anything that
+makes a word can be laid, kumihimo sequences included;</p></li>
+<li><p>strands moved between the slots of a disk, through
+<code class="docutils literal notranslate"><span class="pre">take_off.disk_trajectories</span></code>; a mobidai’s configuration through
+<code class="docutils literal notranslate"><span class="pre">take_off.mobidai_trajectories</span></code>, and a kumihimo sequence through
+<code class="docutils literal notranslate"><span class="pre">take_off.kumihimo_trajectories</span></code>. A strand that moves while the others stay
+passes over them — over as seen from above the disk, where the braider
+works, with the braid going down through the middle — which is <em>inside</em>
+the rim. Read in slot order, inside as over, that gives the crossings the
+mobidai and the kumihimo write down for themselves. It is the opposite way
+round from <code class="docutils literal notranslate"><span class="pre">annulus_braid</span></code>, which looks at a tube from outside.</p></li>
+</ul>
+<p>From there it is the same for all of them:</p>
+<ul class="simple">
+<li><p><strong>The initial guess</strong> is the source itself: each yarn lies over the path its
+carrier traced, lifted along the axis by the braid taken off since
+(<code class="docutils literal notranslate"><span class="pre">take_off.lay_yarns</span></code>). It is in the right braid class by construction, which is
+what this page asks of a start.</p></li>
+<li><p><strong>Drawing in.</strong> The braid is formed on a fell — a ring about the braid’s
+own size, yarns being as thick as they are, or, as an idealisation, a
+braiding point — and is the carrier footprint scaled toward the axis by a
+factor <em>k</em>.
+Scaling the plane at fixed height cannot pass one yarn through another, so
+every <em>k</em> &gt; 0 keeps the topology. Given a yarn diameter, the smallest <em>k</em>
+with no two yarns closer than <em>d</em> has a closed form over the samples
+(<code class="docutils literal notranslate"><span class="pre">take_off.jammed_contraction</span></code>): for two samples a height <em>dz</em> apart and <em>s</em> apart
+sideways, <em>k</em> = √(<em>d</em>² − <em>dz</em>²) / <em>s</em>, and the braid jams at the largest.</p></li>
+<li><p><strong>The fell is only a boundary.</strong> A fell circle, or a braiding point, sets
+the size where the braid starts; a short distance above it the braid is
+drawn to its jammed size instead, by a scale that varies with height. Any
+positive scale at each level keeps the topology, so how it varies does not
+matter.</p></li>
+<li><p><strong>Tightening</strong> (<code class="docutils literal notranslate"><span class="pre">take_off.tighten_yarns</span></code>) minimises length with
+each sample held at its height — the small-slope form of the length
+objective — and enforces non-interpenetration by pushing apart any two
+samples of different yarns closer than <em>d</em>. The tension is integrated
+implicitly (one backward-Euler step along the curve-shortening flow per
+iteration, a tridiagonal system solved in time proportional to the
+yarn’s length), which settles a yarn in tens of
+iterations rather than thousands, but no sample moves more than <em>d</em>/5 per
+iteration, so a feasible path from the start stays in the same braid
+class, as argued above. The yarn is held at the fell and at its oldest end.
+Contact is looked for between samples only, so this holds only while the
+braid is sampled finely enough: two yarns can cross between two levels
+unseen if their sideways steps there add up to two diameters, and
+tightening warns when any step reaches one (<code class="docutils literal notranslate"><span class="pre">take_off.SAFE_STEP</span></code>).
+Carriers drawn jumping as they were handed on once did this, and the
+three-band machine’s bands came apart.</p></li>
+</ul>
+<p>The check that matters is that the result does not depend on the start. Far
+enough from the fell, a braid made at a braiding point, at the jammed fell,
+or at a fell twice that size tightens to the same cross-section — and a flat
+braid comes out as a ribbon (nine carriers: about 4.6 <em>d</em> wide by 1.8 <em>d</em>
+thick) while a tubular one stays round. And laying a braid word, drawing it
+in and tightening it, then reading the word back off the yarns, gives the
+word it started from — less any crossing that undoes itself, which tension
+pulls out. Both are in the tests.</p>
+<section id="periodicity-instead-of-holding-both-ends">
+<h3>Periodicity, instead of holding both ends<a class="headerlink" href="#periodicity-instead-of-holding-both-ends" title="Link to this heading"></a></h3>
+<p>A braid off a machine repeats, so a length of it is a window on something
+endless. Holding both ends still is a boundary the real braid does not have,
+and it is felt for a few periods in from each end — the braid is wider in the
+middle than at the pins, which is the boundary, not the braid.</p>
+<p><code class="docutils literal notranslate"><span class="pre">take_off.Periodic</span></code> says instead that the yarn leaving the fell end of the
+window arrives at the top of it. The window must be a whole number of periods,
+and its partner mapping says which yarn each one runs into: the period’s
+permutation of the strands, or the identity where the window is a whole
+number of full cycles. <code class="docutils literal notranslate"><span class="pre">take_off.Periodic.closing</span></code> reads it from the laid braid: laid
+over a whole number of periods, each yarn’s last sample sits on some yarn’s
+first, as every braid Braid Studio lays does. A window that does not close on
+itself, as one over which the pattern turns part way about the axis, has
+none.</p>
+<p>Following a yarn into its partner comes back where it started after one cycle
+of the permutation, so the samples fall into one closed loop per cycle, and
+each loop is settled on its own. Round a loop the backward-Euler matrix is
+tridiagonal but for two corners, joining the last sample to the first;
+Sherman and Morrison’s formula solves it as the open system with its first and
+last diagonal terms changed, swept as a held yarn is, then corrected by one
+column worked out once. It is exact, and as fast as the held yarn’s solve.</p>
+<p>One subtlety. <code class="docutils literal notranslate"><span class="pre">take_off.lay_yarns</span></code> gives one sample more than the window has intervals,
+so over a whole period the last level is the first over again. It is not an
+unknown of its own, and counting it as one would lengthen the braid by a level
+in every period, so it is tied to the level it repeats rather than left free.
+Being a copy, it takes no part in contact either: the samples just above the
+fell end are kept clear of those at the top of the next copy instead, as they
+would be in the endless braid. Without that, nothing kept them apart across
+the wrap, and a tubular braid came out with its yarns overlapping there by a
+twentieth of a diameter.</p>
+<p>What it does not yet do: let samples move along the axis, which a full length
+minimisation would; bending stiffness; a window that turns about the axis; and
+the check against the rope limit.</p>
+</section>
+<section id="another-approach-beads-on-springs">
+<h3>Another approach: beads on springs<a class="headerlink" href="#another-approach-beads-on-springs" title="Link to this heading"></a></h3>
+<p>The braid simulator at craftdesignonline.com (braid3d) models each thread
+as a chain of beads one unit apart, joined by springs, with beads of
+different threads repelling inside a contact distance and a weight pulling
+each thread toward its bobbin. The beads move freely in three dimensions and
+are relaxed from a queue, so it gets axial sliding for free — the first
+thing missing above. Its price is a step size that has to be kept small for
+stability, where the implicit step here does not.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="why_no_closed_form.html" class="btn btn-neutral float-left" title="Why a braid’s shape has no closed form" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="horn_gear_layout.html" class="btn btn-neutral float-right" title="Laying out a horn gear machine" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Theory manual &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Braid representations" href="braid_representations.html" />
+    <link rel="prev" title="Changelog" href="changelog.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Theory manual</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html">Comparing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Theory manual</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/theory_manual.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="theory-manual">
+<h1>Theory manual<a class="headerlink" href="#theory-manual" title="Link to this heading"></a></h1>
+<p>The ideas behind braidpy: braids as words and as a group, how braids are
+compared, the shape a braid takes and why it has no formula, and how its
+yarns are settled by physics. Each page says what braidpy computes and why,
+with the code that does it.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Braids</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="braid_representations.html">Braid representations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#a-braid-word">A braid word</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#a-ring-word-round-a-core">A ring word, round a core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#in-band-generators">In band generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#where-the-strands-go">Where the strands go</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#a-matrix">A matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#a-normal-form">A normal form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#a-shape-in-space">A shape in space</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html#a-way-of-making-it">A way of making it</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="braid_algebra.html">Braid algebra</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html#artin-s-relations">Artin’s relations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html#deciding-whether-two-words-are-the-same-braid">Deciding whether two words are the same braid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html#shortening-a-word">Shortening a word</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html#twists-and-conjugates">Twists and conjugates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html#further">Further</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comparing_braids.html">Comparing braids</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#four-kinds-of-the-same">Four kinds of “the same”</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#deciding-it-exactly">Deciding it exactly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#the-fingerprint">The fingerprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#why-the-alexander-polynomial-alone-is-not-enough">Why the Alexander polynomial alone is not enough</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#the-burau-polynomial-where-the-alexander-polynomial-vanishes">The Burau polynomial, where the Alexander polynomial vanishes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#the-alexander-polynomial-sampled">The Alexander polynomial, sampled</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#a-catalogue-by-topology">A catalogue by topology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#limits">Limits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">The shape a braid takes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#a-rope-has-no-crossings">A rope has no crossings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#the-strands-are-one-curve-repeated">The strands are one curve, repeated</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#nothing-holds-the-strands-out">Nothing holds the strands out</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#how-close-two-strands-come">How close two strands come</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#the-two-bounds">The two bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#where-the-rope-settles">Where the rope settles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#why-this-one-is-a-search">Why this one is a search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#the-curve">The curve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#two-things-the-formula-does-not-say">Two things the formula does not say</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#at-a-crossing">At a crossing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#where-the-radius-comes-from">Where the radius comes from</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#which-condition-binds">Which condition binds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#why-this-one-has-a-formula-and-the-rope-does-not">Why this one has a formula and the rope does not</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#what-the-model-will-not-give-you">What the model will not give you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html#what-the-shape-means">1. What “the shape” means</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html#why-there-is-no-closed-form">2. Why there is no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html#where-closed-form-does-survive">3. Where closed form does survive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html#what-is-in-the-package-and-what-it-is-for">5. What is in the package, and what it is for</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html#the-problem-to-pose">The problem to pose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html#a-first-restricted-version-a-braid-as-it-is-made">A first, restricted version: a braid as it is made</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Horn gear machines</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html#gears-that-mesh-touch-no-others-overlap">Gears that mesh touch, no others overlap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html#relaxing-the-layout">Relaxing the layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html#every-contact-on-a-horn">Every contact on a horn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html#how-large-a-machine-must-be-for-its-bobbins">How large a machine must be for its bobbins</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Settling a braid</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#the-model">The model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#what-it-gives-and-how-it-is-checked">What it gives, and how it is checked</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#making-it-crossing-by-crossing-with-friction">Making it crossing by crossing, with friction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#made-on-a-marudai-move-by-move">Made on a marudai, move by move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#limits-and-what-is-next">Limits, and what is next</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#references">References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html#made-by-its-carriers">Made by its carriers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html#the-yarns">The yarns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html#a-move">A move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html#the-braid">The braid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html#round-a-core">Round a core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html#what-comes-out">What comes out</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Further reading</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="changelog.html" class="btn btn-neutral float-left" title="Changelog" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="braid_representations.html" class="btn btn-neutral float-right" title="Braid representations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

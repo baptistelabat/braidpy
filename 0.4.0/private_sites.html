@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A site of your own, built from braidpy &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Braid Studio’s internals" href="braid_studio_internals.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="developer_guide.html">Developer guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_studio_internals.html">Braid Studio’s internals</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">A site of your own, built from braidpy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-idea-one-engine-thin-sites">The idea: one engine, thin sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-makes-it-work">What makes it work</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-profile">The profile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#braids-of-the-site-s-own">Braids of the site’s own</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#in-another-language">In another language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-it-hides-and-what-it-cannot">What it hides, and what it cannot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#licence">Licence</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#setting-up">Setting up</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#where-things-are">Where things are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#how-braidpy-is-written">How braidpy is written</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#tests-and-ci">Tests and CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#releasing">Releasing</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="developer_guide.html">Developer guide</a></li>
+      <li class="breadcrumb-item active">A site of your own, built from braidpy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/private_sites.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="a-site-of-your-own-built-from-braidpy">
+<h1>A site of your own, built from braidpy<a class="headerlink" href="#a-site-of-your-own-built-from-braidpy" title="Link to this heading"></a></h1>
+<p>How to run a second Braid Studio, under another name, showing braids and
+machines that are not public, while every change made to braidpy reaches it.
+This page is a proposal: the first step is done (the profile), the others are
+to come.</p>
+<section id="the-idea-one-engine-thin-sites">
+<h2>The idea: one engine, thin sites<a class="headerlink" href="#the-idea-one-engine-thin-sites" title="Link to this heading"></a></h2>
+<p>braidpy and its Braid Studio stay public, here, and stay the only place the
+engine, the pages and the build are changed. A private site is not a fork
+but a small private repository that <strong>uses</strong> braidpy and adds only what is
+its own:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>braid-designer/              private
+├── braidpy/                 this repository, a git submodule pinned to a commit
+├── profile.toml             what the site calls itself, whom it credits
+├── acme_braids/             a Python package: the customer's catalogues
+├── pyproject.toml           acme_braids, with braidpy as a dependency
+└── .github/workflows/site.yml
+</pre></div>
+</div>
+<p>and builds the site with braidpy’s own build:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>braidpy/web/build.py<span class="w"> </span>--profile<span class="w"> </span>profile.toml<span class="w"> </span>--out<span class="w"> </span>site
+</pre></div>
+</div>
+<p>Taking braidpy’s latest is moving the submodule to a newer commit (Dependabot
+does it, as a pull request in the private repository, with its
+<code class="docutils literal notranslate"><span class="pre">gitsubmodule</span></code> ecosystem). Nothing of braidpy is copied, so there is nothing
+to merge: a fork, kept apart for long, would turn each update into conflicts
+in the pages and the build, the files both sides change most.</p>
+</section>
+<section id="what-makes-it-work">
+<h2>What makes it work<a class="headerlink" href="#what-makes-it-work" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>The profile</strong> — done. What the site calls itself, whom it credits and
+where it links are data (<code class="docutils literal notranslate"><span class="pre">web/profile.toml</span></code>), not words in the pages:
+<code class="docutils literal notranslate"><span class="pre">build.py</span> <span class="pre">--profile</span></code> fills the pages with another (see below).</p></li>
+<li><p><strong>Catalogues from outside</strong> — done. The machines, disk braids and
+sinnets the studio offers come from braidpy’s catalogues
+(<code class="docutils literal notranslate"><span class="pre">machine_catalog</span></code>, <code class="docutils literal notranslate"><span class="pre">mobidai_catalog</span></code>, <code class="docutils literal notranslate"><span class="pre">solid_sinnets_catalog</span></code>), each
+extended with what installed packages add to it
+(<a class="reference internal" href="reference.html#braidpy.catalog.extended" title="braidpy.catalog.extended"><code class="xref py py-func docutils literal notranslate"><span class="pre">extended()</span></code></a>): a package of the site’s own names,
+by <a class="reference external" href="https://packaging.python.org/en/latest/specifications/entry-points/">entry points</a>
+in the group <code class="docutils literal notranslate"><span class="pre">braidpy.catalogues</span></code>, a dict of
+<a class="reference internal" href="reference.html#braidpy.catalog.Entry" title="braidpy.catalog.Entry"><code class="xref py py-class docutils literal notranslate"><span class="pre">Entry</span></code></a> to add to a catalogue, by its module
+name. The profile’s <code class="docutils literal notranslate"><span class="pre">packages</span></code> name the site’s packages, and the build
+runs braidpy with them, so that the page, the braids made with the site
+and the catalogue of braids by topology all have their braids, and puts
+each package’s wheel beside braidpy’s (<code class="docutils literal notranslate"><span class="pre">wheels/manifest.json</span></code>), for
+Pyodide to install it too. braidpy gains a way in, and keeps no
+customer’s name (see below).</p></li>
+<li><p><strong>A build per customer</strong> — to come. A customer’s braids are seen by
+whoever opens the site (see below), so each customer has a build of their
+own: the profile says which catalogues it carries, and each build goes to
+its own address.</p></li>
+<li><p><strong>Pages leaner of their source</strong> — optional. The pages ship as written,
+comments and all; minified, they would say less of where they come from.</p></li>
+</ol>
+</section>
+<section id="the-profile">
+<h2>The profile<a class="headerlink" href="#the-profile" title="Link to this heading"></a></h2>
+<p>Every key is given, by every profile: a key added to braidpy’s profile makes
+another site’s build stop until it decides that key too, rather than take
+braidpy’s value unseen.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>braidpy’s</p></th>
+<th class="head"><p>What it is; empty to leave it out</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>Braid Studio</p></td>
+<td><p>The site’s name, in its titles and headings</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">by</span></code>, <code class="docutils literal notranslate"><span class="pre">by_url</span></code></p></td>
+<td><p>braidpy, its repository</p></td>
+<td><p>What computes it, credited in titles and text, and its link</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">documentation</span></code>, <code class="docutils literal notranslate"><span class="pre">documentation_title</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">../</span></code>, braidpy’s documentation</p></td>
+<td><p>The documentation linked from the front page</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sponsor</span></code></p></td>
+<td><p>GitHub Sponsors</p></td>
+<td><p>The studio’s sponsor button</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">language</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">en</span></code></p></td>
+<td><p>The language its pages open in, as <code class="docutils literal notranslate"><span class="pre">web/locales/</span></code> names it (see below)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">packages</span></code></p></td>
+<td><p>none</p></td>
+<td><p>The site’s own packages, folders from the profile’s: their braids join braidpy’s catalogues (see below)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">indexed</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code> asks search engines to leave the site out</p></td>
+</tr>
+</tbody>
+</table>
+<p>A site naming nothing of braidpy:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Braid Designer"</span>
+<span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span>
+<span class="n">by_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span>
+<span class="n">documentation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span>
+<span class="n">documentation_title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span>
+<span class="n">sponsor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span>
+<span class="n">language</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"fr"</span>
+<span class="n">packages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="n">indexed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+</pre></div>
+</div>
+<p>In the pages, <code class="docutils literal notranslate"><span class="pre">{{key}}</span></code> is replaced by its value, and
+<code class="docutils literal notranslate"><span class="pre">&lt;!--</span> <span class="pre">if</span> <span class="pre">key</span> <span class="pre">--&gt;…&lt;!--</span> <span class="pre">end</span> <span class="pre">if</span> <span class="pre">--&gt;</span></code> (or <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">not</span> <span class="pre">key</span></code>) kept only when the key is
+set; <code class="docutils literal notranslate"><span class="pre">tests/test_site_build.py</span></code> checks that such a site’s pages name neither
+braidpy, nor its repository, nor its sponsoring.</p>
+</section>
+<section id="braids-of-the-site-s-own">
+<h2>Braids of the site’s own<a class="headerlink" href="#braids-of-the-site-s-own" title="Link to this heading"></a></h2>
+<p>A site’s package is an ordinary Python package beside its profile:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>designer/
+├── pyproject.toml
+├── locales/fr.toml           the words of its braids, in French
+└── designer_braids/__init__.py
+</pre></div>
+</div>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pyproject.toml</span>
+<span class="k">[project]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"designer-braids"</span>
+<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.1"</span>
+
+<span class="k">[project.entry-points.</span><span class="s2">"braidpy.catalogues"</span><span class="k">]</span>
+<span class="n">machine_catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"designer_braids:MACHINES"</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># designer_braids/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.horn_gear.described</span><span class="w"> </span><span class="kn">import</span> <span class="n">machine_from_graph</span>
+
+<span class="n">MACHINES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"my_matrix"</span><span class="p">:</span> <span class="n">Entry</span><span class="p">(</span><span class="s2">"Matrix of gears"</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">machine_from_graph</span><span class="p">(</span><span class="s2">"A0-A1 …"</span><span class="p">)),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>with <code class="docutils literal notranslate"><span class="pre">packages</span> <span class="pre">=</span> <span class="pre">[&quot;designer&quot;]</span></code> in the profile. A lace machine is added the
+same way, under the name <code class="docutils literal notranslate"><span class="pre">lace_machines</span></code>, as a dict of <code class="docutils literal notranslate"><span class="pre">Entry</span></code> making a
+<code class="docutils literal notranslate"><span class="pre">braidpy.machine_catalog.LaceRing</span></code>: its gears, its card (a card typed as
+Braid Studio takes it is read by <code class="docutils literal notranslate"><span class="pre">braidpy.making.lace.read_card</span></code>) and the
+notches threaded. Its machines are listed after
+braidpy’s, as if braidpy had them: shown, made, premade, catalogued by
+topology. A name braidpy has already is refused. The package imports from
+braidpy what its braids need, but not the catalogue it adds to, which
+reads it as it loads. The words of its braids, in another language, are
+in its own <code class="docutils literal notranslate"><span class="pre">locales/&lt;code&gt;.toml</span></code>, merged with braidpy’s when the page is
+built: braidpy’s catalogue of words names none of them.</p>
+</section>
+<section id="in-another-language">
+<h2>In another language<a class="headerlink" href="#in-another-language" title="Link to this heading"></a></h2>
+<p>braidpy writes English, in Python and in the page alike. The page puts
+each text into the language chosen as it shows it (<code class="docutils literal notranslate"><span class="pre">web/i18n.js</span></code>), from a
+catalogue of the texts by their English: <code class="docutils literal notranslate"><span class="pre">web/locales/fr.toml</span></code> for
+French, every catalogue there written into the page by <code class="docutils literal notranslate"><span class="pre">build.py</span></code> as
+<code class="docutils literal notranslate"><span class="pre">locale.js</span></code>. Neither braidpy’s Python nor its JavaScript changes: an
+English sentence is the key to its translation, wherever it is made.</p>
+<p>A site opens in its profile’s language (<code class="docutils literal notranslate"><span class="pre">language</span> <span class="pre">=</span> <span class="pre">&quot;fr&quot;</span></code>). A menu at the
+top of each page offers every language the site has, each by its own name
+(a catalogue’s translation of “English”), and switches the page there and
+then: each text keeps its English, and is put into the new language from
+it, so nothing is made again — the braid on show stays as it is. The
+choice is kept for the next visit, in the browser, and a link can give one
+as <code class="docutils literal notranslate"><span class="pre">?lang=en</span></code> or <code class="docutils literal notranslate"><span class="pre">?lang=fr</span></code>.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="s2">"Strands"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Brins"</span>
+<span class="s2">"Kongo gumi"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Kongo gumi"</span>
+<span class="c1"># {} any words, themselves looked up; {#} a number.</span>
+<span class="s2">"{}, {#} cycles"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"{}, {} cycles"</span>
+<span class="c1"># {1}, {2}… where the words come in another order.</span>
+<span class="s2">"ABOK #{#}, {#}-strand {}"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ABOK n° {1}, tresse {3} à {2} brins"</span>
+</pre></div>
+</div>
+<p>A text is looked up whole, then against the patterns, those ending in
+words of their own first, and the first whose words all translate is
+taken. What the catalogue lacks stays in English, and is listed for
+whoever completes it: in the browser’s console,
+<code class="docutils literal notranslate"><span class="pre">[...untranslated].join(&quot;\n&quot;)</span></code>. What is read back from the page is read
+in English (<code class="docutils literal notranslate"><span class="pre">englishText</span></code>), and what is drawn rather than written is drawn
+again when the language changes (the <code class="docutils literal notranslate"><span class="pre">language</span></code> event). An element marked <code class="docutils literal notranslate"><span class="pre">translate=&quot;no&quot;</span></code> keeps
+its words, as a book’s title among a braid’s links. The page is hidden
+until its first pass is done, so nothing is seen in English first.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_i18n_js.py</span></code> runs the translator in Node: every text of the
+pages and every braid the studio offers must be in the French catalogue,
+and every translation must use the words its English leaves open. A
+sentence added to braidpy is added to the catalogue too, or stays in
+English on a French site until it is.</p>
+</section>
+<section id="what-it-hides-and-what-it-cannot">
+<h2>What it hides, and what it cannot<a class="headerlink" href="#what-it-hides-and-what-it-cannot" title="Link to this heading"></a></h2>
+<p><strong>From search engines</strong>: with <code class="docutils literal notranslate"><span class="pre">indexed</span> <span class="pre">=</span> <span class="pre">false</span></code>, every page asks not to be
+indexed, and the site carries a <code class="docutils literal notranslate"><span class="pre">robots.txt</span></code> turning crawlers away (read only
+at a host’s root: serve the site at one). Search engines find sites through
+links, too: link the private site from nowhere public, and give it an address
+of its own, not one under braidpy’s (a <code class="docutils literal notranslate"><span class="pre">github.io</span></code> address names its owner).</p>
+<p><strong>The source, from a visitor</strong>: not wholly. The site computes in the
+browser, so the browser is sent braidpy itself, as a wheel of Python
+modules, each beginning with its licence. Anyone opening the browser’s tools
+sees its files called <code class="docutils literal notranslate"><span class="pre">braidpy-….whl</span></code>, and can unpack them. The profile
+takes braidpy’s name off what the site shows; it cannot take it off what the
+site sends. Only a site computing on a server of its own, sending pictures
+and not the engine, would keep it all back, at the cost of a server and of
+the page’s speed.</p>
+<p><strong>A customer’s braids, from others</strong>: whatever a build carries, whoever opens
+it can read, so it carries one customer’s braids (step 3), and sits behind a
+login: a hosting service’s access control (Cloudflare Access, Netlify’s
+password protection), or a server of one’s own. GitHub Pages publishes a
+private repository’s site publicly, except on GitHub Enterprise Cloud.</p>
+</section>
+<section id="licence">
+<h2>Licence<a class="headerlink" href="#licence" title="Link to this heading"></a></h2>
+<p>braidpy is under the Mozilla Public License 2.0, whose copyleft goes file by
+file: files of the private site’s own, its profile and its catalogues, may
+stay closed. braidpy’s own files, sent to the browser, stay under the MPL and
+keep their notices, and a change to one of them must be open to those who
+receive the site: one more reason to make every change to braidpy here,
+upstream. (The author of a file may license it otherwise as well; files
+others contributed stay under the MPL. This is not legal advice.)</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="braid_studio_internals.html" class="btn btn-neutral float-left" title="Braid Studio’s internals" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

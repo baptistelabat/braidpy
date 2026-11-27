@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laying out a horn gear machine &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Settling a braid by physics" href="rope_physics.html" />
+    <link rel="prev" title="Solving a braid’s shape numerically" href="solving_numerically.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="theory_manual.html">Theory manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html">Comparing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Laying out a horn gear machine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#gears-that-mesh-touch-no-others-overlap">Gears that mesh touch, no others overlap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#relaxing-the-layout">Relaxing the layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#every-contact-on-a-horn">Every contact on a horn</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#two-split-axles-meshing-twice">Two split axles meshing twice</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#split-gears-in-a-timed-ring">Split gears in a timed ring</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#how-large-a-machine-must-be-for-its-bobbins">How large a machine must be for its bobbins</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="rope_physics.html">Settling a braid by physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="theory_manual.html">Theory manual</a></li>
+      <li class="breadcrumb-item active">Laying out a horn gear machine</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/horn_gear_layout.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="laying-out-a-horn-gear-machine">
+<h1>Laying out a horn gear machine<a class="headerlink" href="#laying-out-a-horn-gear-machine" title="Link to this heading"></a></h1>
+<p>A horn gear machine is written as the gears that mesh
+(<a class="reference internal" href="reference.html#module-braidpy.horn_gear.described" title="braidpy.horn_gear.described"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.horn_gear.described</span></code></a>). Which slots meet is all the simulation
+needs, but everything drawn and laid from it — where each carrier is, the
+yarns it lays, the braid word read from them — comes from where the gears
+stand and how large they are. This page says how braidpy places them in a
+machine whose gears make rings, as a matrix of gears does, when each contact
+hands over, and how large a machine must be for its bobbins.</p>
+<section id="gears-that-mesh-touch-no-others-overlap">
+<h2>Gears that mesh touch, no others overlap<a class="headerlink" href="#gears-that-mesh-touch-no-others-overlap" title="Link to this heading"></a></h2>
+<p>Gear <span class="math notranslate nohighlight">\(i\)</span> stands at <span class="math notranslate nohighlight">\(p_i\)</span> and is drawn with radius <span class="math notranslate nohighlight">\(r_i\)</span>, by convention
+<span class="math notranslate nohighlight">\(\sqrt{h_i}\)</span> for <span class="math notranslate nohighlight">\(h_i\)</span> horns (<a class="reference internal" href="reference.html#braidpy.horn_gear.layout.gear_radii" title="braidpy.horn_gear.layout.gear_radii"><code class="xref py py-func docutils literal notranslate"><span class="pre">gear_radii()</span></code></a>),
+a convention for drawing and not a constraint of the machine. Two gears that
+mesh should just touch, and two that do not should stay clear of each other:</p>
+<div class="math notranslate nohighlight">
+\[
+\lVert p_i - p_j \rVert = r_i + r_j \quad \text{for } i, j \text{ meshing},
+\qquad
+\lVert p_i - p_j \rVert \ge (1 + c)\,(r_i + r_j) \quad \text{otherwise},
+\]</div>
+<p>with <span class="math notranslate nohighlight">\(c\)</span> = <code class="docutils literal notranslate"><span class="pre">CLEARANCE</span></code> = 0.1, room for the carriers going by.</p>
+<p>A chain or a tree of gears is placed gear by gear, each mesh exact. A single
+ring of gears alike, as a tubular braider is, is a regular polygon, also
+exact. A ring of gears of several sizes, or rings sharing gears, can rarely be
+both. The graph used to be laid out with a spring layout (Kamada–Kawai where
+SciPy is installed) aiming each mesh at <span class="math notranslate nohighlight">\(r_i + r_j\)</span>, then shrunk until no mesh
+was <em>longer</em> than that. Every other mesh then came out <em>shorter</em>: gears ran
+through each other.</p>
+<p><img alt="The split ladder before and after" src="_images/gear_layout_ladder.svg" /></p>
+</section>
+<section id="relaxing-the-layout">
+<h2>Relaxing the layout<a class="headerlink" href="#relaxing-the-layout" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="reference.html#braidpy.horn_gear.layout.ring_geometry" title="braidpy.horn_gear.layout.ring_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">ring_geometry()</span></code></a> starts from that layout,
+unshrunk, and relaxes it a round at a time.</p>
+<p><img alt="One round of the relaxation" src="_images/gear_layout_relax.svg" /></p>
+<p>For each pair of meshing gears, the error and the unit vector between them are</p>
+<div class="math notranslate nohighlight">
+\[
+e_{ij} = \lVert p_j - p_i \rVert - (r_i + r_j),
+\qquad
+u_{ij} = \frac{p_j - p_i}{\lVert p_j - p_i \rVert},
+\]</div>
+<p>A share <span class="math notranslate nohighlight">\(1 - \gamma\)</span> of the error moves the centres, half each, and <span class="math notranslate nohighlight">\(\gamma\)</span>
+(<code class="docutils literal notranslate"><span class="pre">RADIUS_GIVE</span></code> = 0.2) grows or shrinks the radii:</p>
+<div class="math notranslate nohighlight">
+\[
+\Delta p_i = +\tfrac{1 - \gamma}{2}\, e_{ij}\, u_{ij}, \qquad
+\Delta p_j = -\tfrac{1 - \gamma}{2}\, e_{ij}\, u_{ij}, \qquad
+\Delta r_i = \Delta r_j = \frac{\gamma\, e_{ij}}{2}.
+\]</div>
+<p>For each pair that does not mesh but is too close,</p>
+<div class="math notranslate nohighlight">
+\[
+s_{ij} = (1 + c)(r_i + r_j) - \lVert p_j - p_i \rVert &gt; 0
+\quad\Rightarrow\quad
+\Delta p_i = -\tfrac{s_{ij}}{2}\, u_{ij}, \quad \Delta p_j = +\tfrac{s_{ij}}{2}\, u_{ij}.
+\]</div>
+<p>All pairs are taken at once, each gear moved by the mean of what its pairs
+ask. Each radius stays within <code class="docutils literal notranslate"><span class="pre">RADIUS_RANGE</span></code>, 0.75 to 1.3 times its
+convention: sizes change only as far as needed for the gears to touch. It
+stops when the worst error,
+as a share of the length it should be, is under <code class="docutils literal notranslate"><span class="pre">RELAX_TOLERANCE</span></code> (0.1%), or
+after <code class="docutils literal notranslate"><span class="pre">RELAX_ROUNDS</span></code>.</p>
+<p>A start can fold a ring into a bow-tie, two of its sides crossing, which no
+relaxing undoes. So it is relaxed from several starts — the spring layout, a
+planar one where the gears can be drawn without crossing, and <code class="docutils literal notranslate"><span class="pre">SPRING_STARTS</span></code>
+more spring layouts — and the best is kept. A layout already within the
+tolerance is kept as it is, so a tubular braider does not move. It is not an
+exact solution, only one with no gear through another.</p>
+</section>
+<section id="every-contact-on-a-horn">
+<h2>Every contact on a horn<a class="headerlink" href="#every-contact-on-a-horn" title="Link to this heading"></a></h2>
+<p>A gear turns one slot a step, so a horn of it comes round to each of its
+contacts once a step. Where every contact of a gear is a whole number of
+slots from the others, as round a ring of four gears, a turning puts a horn
+on each at the end of every step, and they all hand over then. Often none
+does:</p>
+<ul class="simple">
+<li><p>round a ring of six or eight gears of four slots, a gear’s two contacts
+are <span class="math notranslate nohighlight">\(180 - 360/N\)</span> = 120 or 135 degrees apart, its horns 90;</p></li>
+<li><p>in a matrix of gears, the angles at the corners of a square, each a whole
+number of slots, have to add up to a turn: on the split ladder’s squares
+of 3- and 4-slot gears they add up to <span class="math notranslate nohighlight">\(90 + 120 + 120 + 90 = 420\)</span> degrees.</p></li>
+</ul>
+<p>So each contact hands over when a horn of each of its two gears comes round
+to it, a fraction of a step in
+(<a class="reference internal" href="reference.html#braidpy.horn_gear.model.Connection" title="braidpy.horn_gear.model.Connection"><code class="xref py py-class docutils literal notranslate"><span class="pre">Connection</span></code></a>’s <code class="docutils literal notranslate"><span class="pre">phase</span></code>). Gear <span class="math notranslate nohighlight">\(u\)</span>, of <span class="math notranslate nohighlight">\(n_u\)</span>
+slots a part, turning <span class="math notranslate nohighlight">\(d_u = \pm 1\)</span> and turned <span class="math notranslate nohighlight">\(\psi_u\)</span> to start with,
+brings its part <span class="math notranslate nohighlight">\(p_u\)</span> of <span class="math notranslate nohighlight">\(k_u\)</span> to a contact at angle <span class="math notranslate nohighlight">\(\alpha_u\)</span> at the times
+<span class="math notranslate nohighlight">\(t\)</span> with</p>
+<div class="math notranslate nohighlight">
+\[
+d_u \left( \frac{(\alpha_u - \psi_u)\, n_u}{2\pi} - \frac{p_u}{k_u} \right)
+\equiv t \pmod 1 .
+\]</div>
+<p>Two gears hand over when their times agree. Written with
+<span class="math notranslate nohighlight">\(x_u = d_u n_u \psi_u / 2\pi\)</span>, a contact between <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span>, where
+<span class="math notranslate nohighlight">\(\alpha_v = \alpha_u + \pi\)</span>, asks</p>
+<div class="math notranslate nohighlight">
+\[
+x_u - x_v \equiv \frac{d_u n_u \alpha_u - d_v n_v \alpha_v}{2\pi}
+- \frac{d_u p_u}{k_u} + \frac{d_v p_v}{k_v} \pmod 1 .
+\]</div>
+<p>There is one <span class="math notranslate nohighlight">\(x\)</span> a gear and one equation a contact, so round each ring of
+gears one equation is left over, and the layout has to meet it. Round a
+single ring of gears alike it cancels: no gear moves.
+<a class="reference internal" href="reference.html#braidpy.horn_gear.layout.time_ring" title="braidpy.horn_gear.layout.time_ring"><code class="xref py py-func docutils literal notranslate"><span class="pre">time_ring()</span></code></a> moves and sizes the gears
+from the relaxed layout till every two that mesh touch, no two others come
+within <code class="docutils literal notranslate"><span class="pre">CLEARANCE</span></code>, and every contact’s two horns arrive at once: a
+least-squares fit of all three, by Levenberg–Marquardt with exact
+derivatives. A ring whose whole-slot contacts miss their horns by more than
+<code class="docutils literal notranslate"><span class="pre">OFF_HORN</span></code> is timed so (<a class="reference internal" href="reference.html#module-braidpy.horn_gear.described" title="braidpy.horn_gear.described"><code class="xref py py-mod docutils literal notranslate"><span class="pre">described</span></code></a>). Its carriers
+make the same braid; they are only drawn, and handed over, where the horns
+are.</p>
+<section id="two-split-axles-meshing-twice">
+<h3>Two split axles meshing twice<a class="headerlink" href="#two-split-axles-meshing-twice" title="Link to this heading"></a></h3>
+<p>Two split axles of <span class="math notranslate nohighlight">\(h\)</span> horns each, parts <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span> taking turns round each,
+meshing twice (<code class="docutils literal notranslate"><span class="pre">A1-B1</span> <span class="pre">A2-B2</span> <span class="pre">A1+A2</span> <span class="pre">B1+B2</span></code>), touch at one contact, and their
+parts’ <span class="math notranslate nohighlight">\(p_u / k_u\)</span> take them round to it in turn. A step turns
+each part one of its slots, two pitches <span class="math notranslate nohighlight">\(2\pi/h\)</span> of the axle, the two axles
+opposite ways, so a horn of each comes round to the contact every half step,
+the parts in turn. A step is then two ticks, a pitch each: the <span class="math notranslate nohighlight">\(a\)</span> horns meet
+at the contact and hand over at the end of the step, the <span class="math notranslate nohighlight">\(b\)</span> horns half a
+step on, at the same point
+(<a class="reference internal" href="reference.html#braidpy.horn_gear.model.Connection" title="braidpy.horn_gear.model.Connection"><code class="xref py py-class docutils literal notranslate"><span class="pre">Connection</span></code></a>’s <code class="docutils literal notranslate"><span class="pre">phase</span></code>). The two bands share
+the contact, never there at the same time. With <span class="math notranslate nohighlight">\(k\)</span> parts a step is <span class="math notranslate nohighlight">\(k\)</span>
+ticks.</p>
+<p><img alt="The a horns meet at the contact, then the b horns" src="_images/split_axles_meet.svg" /></p>
+</section>
+<section id="split-gears-in-a-timed-ring">
+<h3>Split gears in a timed ring<a class="headerlink" href="#split-gears-in-a-timed-ring" title="Link to this heading"></a></h3>
+<p>In a ring timed so, the parts of a split gear are stacked on their axle,
+each a horn plate of its own meeting only its own neighbours. Each keeps
+its own time, its own <span class="math notranslate nohighlight">\(x\)</span>, its <span class="math notranslate nohighlight">\(p_u / k_u\)</span> then 0: its plate set on the axle
+where its contacts want it, as when the machine is assembled. The axle is
+as large as one part, not all of them. Where no contact ties two parts’
+bands, as two matrices of gears joined by a column of split gears, each
+band is laid out alone first and the next turned, and mirrored if that
+leaves it clearer, so that the split axles it shares come where they stand;
+then each band’s times are shifted together, which changes none of its
+contacts, so that each split gear’s parts stand <span class="math notranslate nohighlight">\(j / k\)</span> of a pitch apart,
+their carriers out of each other’s way. Each band then braids as it does
+alone: two matrices of 14 carriers joined so hold 28.</p>
+</section>
+</section>
+<section id="how-large-a-machine-must-be-for-its-bobbins">
+<h2>How large a machine must be for its bobbins<a class="headerlink" href="#how-large-a-machine-must-be-for-its-bobbins" title="Link to this heading"></a></h2>
+<p>The simulation stops a machine where two carriers would take one slot
+(<a class="reference internal" href="reference.html#braidpy.horn_gear.simulation.CollisionError" title="braidpy.horn_gear.simulation.CollisionError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CollisionError</span></code></a>). Two carriers in
+different slots can still come close in space. Drawn larger, gear sizes and
+places together, a machine keeps every two carriers further apart in
+proportion, so any two that do not come to one point clear each other on a
+machine large enough for its bobbins.
+<a class="reference internal" href="reference.html#braidpy.horn_gear.take_off.clearance" title="braidpy.horn_gear.take_off.clearance"><code class="xref py py-func docutils literal notranslate"><span class="pre">clearance()</span></code></a> follows the carriers as they
+are drawn and finds the closest two come, <span class="math notranslate nohighlight">\(d\)</span>. Bobbins of diameter <span class="math notranslate nohighlight">\(b\)</span> clear
+each other on the machine drawn <span class="math notranslate nohighlight">\(b / d\)</span> times as large, where the smallest
+gap between two neighbouring horns of a gear,</p>
+<div class="math notranslate nohighlight">
+\[
+g = \min_i \, 2\, r_i \sin\frac{\pi}{h_i}
+\]</div>
+<p>(round a split gear whose parts take turns, all its parts’ horns count;
+stacked, a part’s own), is <span class="math notranslate nohighlight">\(g \, b / d\)</span>: <span class="math notranslate nohighlight">\(g / d\)</span>
+bobbin diameters. Braid Studio sizes every machine so for bobbins of
+<code class="docutils literal notranslate"><span class="pre">bobbin_diameter_mm</span></code> (20 unless the link says otherwise), and says how
+large its horns, gears and deck come out.</p>
+<p>Two carriers closer than <code class="docutils literal notranslate"><span class="pre">MEET</span></code> of <span class="math notranslate nohighlight">\(g\)</span> are at one point, as far as the
+samples, <code class="docutils literal notranslate"><span class="pre">CLOSEST_SUBSTEPS</span></code> a step, can tell: they would hit on a machine of
+any size, and the machine stops there
+(<a class="reference internal" href="reference.html#braidpy.horn_gear.take_off.too_close" title="braidpy.horn_gear.take_off.too_close"><code class="xref py py-func docutils literal notranslate"><span class="pre">too_close()</span></code></a>). Machines driven by a card,
+as lace machines are, swap two bobbins by passing one by the other, and are
+not looked at.</p>
+<p><img alt="How large each machine must be for its bobbins" src="_images/machine_size_survey.svg" /></p>
+<p>A gear split in three meshing with ordinary gears brings a carrier leaving
+for a neighbour close by the next part’s horn coming round to the same
+contact: it has to be large for its bobbins, its horns about twelve bobbin
+diameters apart.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="solving_numerically.html" class="btn btn-neutral float-left" title="Solving a braid’s shape numerically" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="rope_physics.html" class="btn btn-neutral float-right" title="Settling a braid by physics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

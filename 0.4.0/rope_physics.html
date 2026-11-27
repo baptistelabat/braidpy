@@ -1,0 +1,554 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settling a braid by physics &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Making a braid on a marudai" href="marudai.html" />
+    <link rel="prev" title="Laying out a horn gear machine" href="horn_gear_layout.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="theory_manual.html">Theory manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="braid_representations.html">Braid representations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braid_algebra.html">Braid algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comparing_braids.html">Comparing braids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laid_rope.html">The shape of a laid rope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="braided_tube.html">The shape of a braided tube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why_no_closed_form.html">Why a braid’s shape has no closed form</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solving_numerically.html">Solving a braid’s shape numerically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="horn_gear_layout.html">Laying out a horn gear machine</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Settling a braid by physics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-model">The model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#forces-between-yarns-and-the-vertical">Forces between yarns, and the vertical</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-ends">The ends</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-solver">The solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#getting-there">Getting there</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#what-it-gives-and-how-it-is-checked">What it gives, and how it is checked</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#making-it-crossing-by-crossing-with-friction">Making it crossing by crossing, with friction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#made-on-a-marudai-move-by-move">Made on a marudai, move by move</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limits-and-what-is-next">Limits, and what is next</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#made-by-its-carriers">Made by its carriers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marudai.html">Making a braid on a marudai</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html">Further reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="theory_manual.html">Theory manual</a></li>
+      <li class="breadcrumb-item active">Settling a braid by physics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/rope_physics.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="settling-a-braid-by-physics">
+<h1>Settling a braid by physics<a class="headerlink" href="#settling-a-braid-by-physics" title="Link to this heading"></a></h1>
+<p>Braid Studio can tighten a braid two ways. <strong>Sideways</strong> (<code class="docutils literal notranslate"><span class="pre">web/tighten.js</span></code>,
+the JavaScript twin of <code class="docutils literal notranslate"><span class="pre">braidpy.take_off.tighten_yarns</span></code>) moves each sample of
+each yarn sideways only, so every sample keeps the height it was laid at: the
+braid keeps the pitch it was laid with, and a braid laid loose stays loose —
+and round, whatever its pattern. A real braid is not made so. Each new crossing
+is beaten up against the ones before, until the crossings jam; the pitch, and
+the shape of the cross-section — round, square, triangular — are what jamming
+leaves.</p>
+<p><strong>By physics</strong> (<code class="docutils literal notranslate"><span class="pre">web/rope.js</span></code>, in beta, for disk braids and braid words) lets the braid find
+that state itself. This page explains how, and what it does and does not do
+yet. <strong>Made on a marudai</strong> (<code class="docutils literal notranslate"><span class="pre">web/marudai.js</span></code>, last below) makes the braid as
+a braider would, move by move: so far, the one that gives sinnets their
+shapes.</p>
+<section id="the-model">
+<h2>The model<a class="headerlink" href="#the-model" title="Link to this heading"></a></h2>
+<p><img alt="The model: beads, contact, force law" src="_images/rope_model.svg" /></p>
+<p>Each yarn is a chain of beads on its centreline, half a diameter apart. Its
+energy is the sum of</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>term</p></th>
+<th class="head"><p>per</p></th>
+<th class="head"><p>energy</p></th>
+<th class="head"><p>in the page</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>stretching</p></td>
+<td><p>link</p></td>
+<td><p><span class="math notranslate nohighlight">\(\tfrac{k_s}{2}\,(\lvert x_{i+1}-x_i\rvert - s)^2\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(k_s = 100\)</span>: yarn stretches 1 % under its tension</p></td>
+</tr>
+<tr class="row-odd"><td><p>bending</p></td>
+<td><p>bead</p></td>
+<td><p><span class="math notranslate nohighlight">\(\tfrac{k_b}{2}\,\lvert x_{i-1}-2x_i+x_{i+1}\rvert^2/s^2\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(k_b = 0.5\)</span>: slight</p></td>
+</tr>
+<tr class="row-even"><td><p>contact, surfaces</p></td>
+<td><p>pair of segments</p></td>
+<td><p><span class="math notranslate nohighlight">\(\tfrac{k_r}{2}\,(d - r)^2\)</span> when <span class="math notranslate nohighlight">\(r &lt; d\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(k_r = 5\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>contact, cores</p></td>
+<td><p>pair of segments</p></td>
+<td><p><span class="math notranslate nohighlight">\(\tfrac{k_c}{2}\,(d - w - r)^2\)</span> when <span class="math notranslate nohighlight">\(r &lt; d - w\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(k_c = 100\)</span>, <span class="math notranslate nohighlight">\(w = 0.1\,d\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>where <span class="math notranslate nohighlight">\(r\)</span> is the distance between the closest points of two segments, of two
+different yarns or of one yarn far apart along it. A yarn is a firm core in a
+soft surface: two yarns feel each other coming, meet gently, and touch at about
+a diameter. Lengths are in yarn diameters, <span class="math notranslate nohighlight">\(d = 1\)</span>.</p>
+<section id="forces-between-yarns-and-the-vertical">
+<h3>Forces between yarns, and the vertical<a class="headerlink" href="#forces-between-yarns-and-the-vertical" title="Link to this heading"></a></h3>
+<p>The contact force between two segments acts along the line joining their
+closest points, in three dimensions. Where one yarn passes over another — at a
+crossing — that line is mostly vertical, so the push between them is mostly
+vertical: this is what carries the beating from crossing to crossing down the
+braid, and what jams them. Where two yarns lie side by side, the line is
+horizontal, and the push packs the cross-section.</p>
+<p>There is no force along the yarns’ surfaces: <strong>no friction</strong>. Yarns slide
+freely along each other, and along themselves through the crossings (see
+<em>feeding</em>, below). That is the simplest model that has a single energy; what
+friction would add is discussed under <em>Friction</em>, below.</p>
+</section>
+<section id="the-ends">
+<h3>The ends<a class="headerlink" href="#the-ends" title="Link to this heading"></a></h3>
+<p><img alt="The ends: clamp, plate, weight and feed" src="_images/rope_ends.svg" /></p>
+<ul class="simple">
+<li><p><strong>The fell.</strong> Each yarn’s newest end is clamped where it was laid.</p></li>
+<li><p><strong>The end plate.</strong> Each yarn’s oldest end is fixed to a plate. The plate
+rises or sinks, and may turn about the axis, but never lets the ends move
+with respect to one another: nothing can come unbraided at the end. A force
+<span class="math notranslate nohighlight">\(W\)</span> draws it up: the weight the braid is drawn off with.</p></li>
+<li><p><strong>Feeding.</strong> Each yarn slides through its place on the plate, from a bobbin
+pulling it back with a tension <span class="math notranslate nohighlight">\(T\)</span>, as a braid’s yarns come from their
+carriers. The yarn inside the braid then costs <span class="math notranslate nohighlight">\(T\)</span> per unit length, and how
+much of it there is becomes an unknown too: each yarn’s link rest length <span class="math notranslate nohighlight">\(s\)</span>.
+When the links grow too long or too short, the yarn is laid out again with
+new beads.</p></li>
+</ul>
+<p>With <span class="math notranslate nohighlight">\(n\)</span> yarns at an angle <span class="math notranslate nohighlight">\(\alpha\)</span> to the axis, the yarns pull the plate down
+by <span class="math notranslate nohighlight">\(n\,T\cos\alpha\)</span>. While the weight is lighter, the plate sinks, drawing the
+yarns round, until the crossings jam and the contacts take the rest. The page
+uses <span class="math notranslate nohighlight">\(T = 1\)</span> and <span class="math notranslate nohighlight">\(W = n/4\)</span>: braids beaten up hard.</p>
+</section>
+<section id="the-solver">
+<h3>The solver<a class="headerlink" href="#the-solver" title="Link to this heading"></a></h3>
+<p>The minimum of the total energy, including the work of the weight and of the
+bobbins, is the braid at rest. It is found by <strong>FIRE</strong> (Bitzek et al., <em>Phys.
+Rev. Lett.</em> 97, 170201, 2006): damped dynamics that speed up while going
+downhill and stop dead when going up. Every force is the gradient of the one
+energy, so at rest they balance. Each step:</p>
+<ol class="arabic simple">
+<li><p>Rebuild the list of segment pairs near enough to touch, if any bead has
+moved a quarter diameter since it was built.</p></li>
+<li><p>Compute the forces: stretching, bending, contact, on each bead; on the
+plate, the weight and the pull of the yarns’ last links; on each yarn’s
+rest length, its tension against its bobbin’s.</p></li>
+<li><p>FIRE: turn the velocities towards the forces; if the power (force times
+velocity) is negative, stop everything, halve the time step, and start
+again from rest; if it has been positive for a while, lengthen the step.</p></li>
+<li><p>Move every bead, no bead more than a tenth of a diameter in one step, so no
+yarn can pass through another between two checks.</p></li>
+<li><p>Lay a yarn out again with new beads if its links have grown too long or too
+short.</p></li>
+</ol>
+<p>It stops when no force is larger than <span class="math notranslate nohighlight">\(10^{-3}\)</span>.</p>
+</section>
+<section id="getting-there">
+<h3>Getting there<a class="headerlink" href="#getting-there" title="Link to this heading"></a></h3>
+<p>The laid yarns are first pulled clear of each other sideways (100 steps of
+<code class="docutils literal notranslate"><span class="pre">tighten.js</span></code>, or more if asked): laid as braidpy lays them, two crossing yarns
+may pass through the same point, and an overlap left for the physics to push
+apart could part the wrong way.</p>
+</section>
+</section>
+<section id="what-it-gives-and-how-it-is-checked">
+<h2>What it gives, and how it is checked<a class="headerlink" href="#what-it-gives-and-how-it-is-checked" title="Link to this heading"></a></h2>
+<p><img alt="Results: a rope, a plait, a sinnet" src="_images/rope_results.svg" /></p>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_rope.py</span></code> checks the solver against physics:</p>
+<ul class="simple">
+<li><p><strong>A two-ply rope</strong>, its end held from turning, pulled taut: it closes until
+the yarns touch, a helix of radius half a diameter, and rises as far as the
+yarns’ length lets it.</p></li>
+<li><p><strong>The same rope, free to turn</strong>: it untwists, as a frictionless rope must.</p></li>
+<li><p><strong>A plait, free to turn</strong>: it stays the same plait — the braid word read
+back off the settled yarns is the one laid — and barely turns. braidpy lays
+the plait (<code class="docutils literal notranslate"><span class="pre">braidpy.parametric_strand.strand_paths</span></code>) and reads the word
+back (<code class="docutils literal notranslate"><span class="pre">braidpy.symmetric_braid.braid_word</span></code>).</p></li>
+<li><p><strong>A sinnet beaten up, and one made crossing by crossing</strong>: no yarn has
+passed through another. That is checked on the braid’s closure, each
+yarn’s top end joined round the outside to the bottom end beside it: the
+<strong>linking numbers</strong> of its loops, computed exactly from the yarns as
+polylines (<code class="docutils literal notranslate"><span class="pre">braidpy.linking</span></code>), must not change. A yarn passing through a
+yarn of another loop changes their linking number by one, however the
+yarns fold — and beaten-up yarns do fold, so a braid word read off them
+would not do.</p></li>
+</ul>
+<p>The tests run the physics in Node and check its results with braidpy. ABOK
+#3044 over 4 cycles beats up from 55 to 11 diameters long in about 5 s in
+Node; a browser takes about the same.</p>
+<p><strong>In Python.</strong> <code class="docutils literal notranslate"><span class="pre">braidpy.rope</span></code> and <code class="docutils literal notranslate"><span class="pre">braidpy.form</span></code> are <code class="docutils literal notranslate"><span class="pre">rope.js</span></code> and
+<code class="docutils literal notranslate"><span class="pre">form.js</span></code> in Python, step for step, to read and to check them by; pure
+Python, they are tens of times slower. Given the same numbers from the
+maths library — cos and sin rounded to single precision on both sides, and
+JavaScript’s <code class="docutils literal notranslate"><span class="pre">Math.hypot</span></code> — they settle and make the same yarns bead for
+bead, through 37 467 steps to rest and through every re-laying of the beads
+(<code class="docutils literal notranslate"><span class="pre">tests/test_rope_python.py</span></code>). Each with its own library, unlike the
+marudai’s shuffled moves, the physics forgets the last digit as it comes to
+rest: a plait of six crossings beaten up ends with its beads within 0.004
+diameters of JavaScript’s, and made crossing by crossing, beaten up as far,
+12 diameters, within 0.012 of each other; both read back as the plait laid.</p>
+</section>
+<section id="making-it-crossing-by-crossing-with-friction">
+<h2>Making it crossing by crossing, with friction<a class="headerlink" href="#making-it-crossing-by-crossing-with-friction" title="Link to this heading"></a></h2>
+<p>Beaten up all at once, under one weight, a long braid takes a long while: the
+weight must draw the whole laid length down, and the solver’s steps are short.
+And friction would only freeze it part way. A braid is not made so: it is
+made a crossing at a time, each new one beaten up against the made braid,
+and friction holds what is made. <code class="docutils literal notranslate"><span class="pre">web/form.js</span></code> makes it so — the third
+<strong>Settle</strong> choice, <em>made crossing by crossing, with friction, then settled</em>.</p>
+<p>The yarns, as braidpy laid them (their crossings in the order they are made),
+are in three parts:</p>
+<ul class="simple">
+<li><p><strong>made</strong>: below a working window, the braid beaten up so far, frozen;</p></li>
+<li><p><strong>working</strong>: the window, about two rows, where the yarns move, with the
+stretching, bending and contact above, plus friction;</p></li>
+<li><p><strong>to come</strong>: above it, the rest of the braid as laid, moving as one block.
+The yarns’ tension draws it down onto the window and a weight draws it up,
+as the end plate above: while the yarns pull harder, the newest row is
+beaten up against the made braid, until its crossings jam.</p></li>
+</ul>
+<p>Each yarn slides into the window from the block at its tension, as from a
+bobbin. Once the window is at rest, all but its top two diameters are frozen
+into the made braid, and the window takes in the next row from the block.
+The block only moves as one, and nothing in the window passes through what
+is above or below it, so the braid made is the braid laid: the linking
+numbers check it, as above.</p>
+<p><strong>Friction.</strong> Two yarns in contact hold each other along their surfaces with
+a spring, from where they first touched, until its pull reaches <span class="math notranslate nohighlight">\(\mu\)</span> times
+the push between them, when they slip: Coulomb’s law, as the discrete element
+method has it (<span class="math notranslate nohighlight">\(\mu = 0.3\)</span>, spring stiffness 20). The springs are kept from
+step to step and from row to row: the window remembers. Friction is not the
+gradient of any energy, but FIRE needs only forces, so the window is settled
+the same way.</p>
+<p><strong>Then settled.</strong> The made braid is a good start, not the end: each row was
+beaten against a frozen braid, and the frozen braid keeps whatever twist and
+width it was made with. So the whole is settled afterwards by <code class="docutils literal notranslate"><span class="pre">rope.js</span></code>, as
+the second <strong>Settle</strong> choice does from the laid braid — which, from this start,
+takes a second or two.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ABOK sinnet</p></th>
+<th class="head"><p>laid</p></th>
+<th class="head"><p>beaten up at once</p></th>
+<th class="head"><p>made crossing by crossing</p></th>
+<th class="head"><p>then settled</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>#3044, 8 strands, 4 cycles</p></td>
+<td><p>55.5 long</p></td>
+<td><p>11.3, in 4.5 s</p></td>
+<td><p>13.1, in 6 s</p></td>
+<td><p>11.1, in 1.5 s more</p></td>
+</tr>
+<tr class="row-odd"><td><p>#3048, 17 strands, 3 cycles</p></td>
+<td><p>204 long</p></td>
+<td><p>6.2, in 1 to 1.5 min</p></td>
+<td><p>7.9, in 1.5 min</p></td>
+<td><p>6.1, in 1 s more</p></td>
+</tr>
+</tbody>
+</table>
+<p>Lengths in yarn diameters; times in Node on one machine, measured again for
+this version; a page in a browser takes about the same. Friction changes little here: #3044 is made 13.1 long with it, 12.6
+without.</p>
+</section>
+<section id="made-on-a-marudai-move-by-move">
+<h2>Made on a marudai, move by move<a class="headerlink" href="#made-on-a-marudai-move-by-move" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">web/marudai.js</span></code> makes a disk braid the way braid3dmin, a kumihimo
+simulation in three.js, makes it: yarns as chains of beads pulled by their
+bobbins, each move laid over the top and drawn tight, the braid relaxed from
+what moved and turned to balance. The method, as braidpy implements it, is
+set out in <a class="reference internal" href="marudai.html"><span class="std std-doc">a page of its own</span></a> and not repeated here; the code is
+this project’s own. braidpy’s disk program — the slots the yarns start in, then
+per step which yarns move, by how much — is played move by move. What
+<code class="docutils literal notranslate"><span class="pre">marudai.js</span></code> does its own way:</p>
+<ul class="simple">
+<li><p><strong>Units and frame.</strong> Inside, lengths are half a diameter and y is up, as
+the method is given; what comes out is in yarn diameters, z up.</p></li>
+<li><p><strong>Speed.</strong> The beads are kept in flat arrays rather than objects, their
+neighbours found in a grid of cells rather than registered in every cell
+around, and looked up once per move rather than twice.</p></li>
+<li><p><strong>The made braid is frozen</strong> well behind each yarn’s end, so only the
+newest rows move.</p></li>
+</ul>
+<p>Checked against braid3dmin itself, run headless on the same moves (not
+part of this project):</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>braid3dmin</p></th>
+<th class="head"><p>marudai.js</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ABOK #3073, 20-strand square, 11 cycles, from a braid3dmin design</p></td>
+<td><p>23.6 long, square, in 117 s</p></td>
+<td><p>23.7 long, square, in 12 s</p></td>
+</tr>
+<tr class="row-odd"><td><p>ABOK #3044, 8-strand triangle, 10 cycles, braidpy’s program</p></td>
+<td><p>23.1 long, in 260 s</p></td>
+<td><p>23.6 long, in 26 s</p></td>
+</tr>
+</tbody>
+</table>
+<p>Lengths in yarn diameters, times in Node. Seen from above, the yarns of
+#3073 halfway up run in the same square grid, the same 2.6 diameters from
+the axis on average; the order beads are moved in changes a braid’s length
+by a few per cent. It is faster for the reasons above.</p>
+<p><strong>In Python.</strong> <code class="docutils literal notranslate"><span class="pre">braidpy.marudai</span></code> is the same algorithm in Python, step
+for step, to read and to check it by; it is pure Python and tens of times
+slower. Given the same numbers from the maths library — cos, sin, atan2 and
+asin rounded to single precision on both sides, and JavaScript’s
+<code class="docutils literal notranslate"><span class="pre">Math.hypot</span></code> — the two make the same braid bead for bead
+(<code class="docutils literal notranslate"><span class="pre">tests/test_marudai_python.py</span></code>). Each with its own library they differ in
+the last place (Python’s <code class="docutils literal notranslate"><span class="pre">math.hypot</span></code> is correctly rounded, V8’s is not, a
+third of the time), and thousands of relaxation steps make that visible, as
+they would any change: a plait of 3 strands made over 8 crossings comes out
+5.33 diameters long in JavaScript and 5.14 in Python, its yarns crossing
+half way up alike. Twisting a held braid in is the most sensitive: when the
+twist first draws a rope down to the tip changes with the last digit, so
+after 6 turns of three bobbins one rope is 0.5 diameters long and the
+other 4.7; after 18 they are alike again, 15.0 and 15.7.</p>
+<p>It makes the braid as a marudai does, the made braid hanging below the
+fell, the yarns going out and up to their carriers; seen from above, the
+disk’s slots go round as braidpy numbers them. The page draws a braid’s
+fell at the bottom, as a braiding machine makes it, so the braid is turned
+upside down for it: a half turn about a horizontal axis. Only flipping its
+heights would have shown its mirror image — the sum of the Gauss linking
+integrand over its pairs of yarns, which a mirror flips, says it is the
+same braid, by hand, as braidpy’s.</p>
+<p><strong>Braid words.</strong> A braid word is made on the marudai too, its row of
+strands rolled onto a ring of bobbins, evenly round it so their pull is
+balanced. Each crossing is two neighbours swapping places: the one passing
+under goes most of the way first, the one passing over is laid across it,
+then the first goes the rest of the way. A full run of crossings round the
+ring, <code class="docutils literal notranslate"><span class="pre">σₙ₋₁…σ₁</span></code> or its inverse, is the bobbins all turning one place round
+— <code class="docutils literal notranslate"><span class="pre">braidpy.annulus_braid.turn</span></code>, as a braider lays up a rope — rather
+than one strand carried all the way round under the others, which the
+pull cannot draw down to the tip; the ring is numbered whichever way round
+finds the more such runs, the other way being a half turn of the whole
+braid about its axis. A braid word is held, as a braider holds a plait:
+it does not turn to balance, and turning the bobbins twists the yarns in.
+Read back with <code class="docutils literal notranslate"><span class="pre">solid_word</span></code>, the moves are
+the word; made, the braid has the word’s hand, by the sign of the Gauss
+linking sum. With six strands or fewer, the yarns start on a ring wide
+enough for them to clear each other.</p>
+<p>Plaits and braids of alternating crossings come out well. Rope-like words
+— two-ply, or <code class="docutils literal notranslate"><span class="pre">σ₁σ₂σ₃</span></code> over and over — come out with the right twist but
+short: the pull, mostly outwards to the rim, draws a rope’s twist in at
+the tip less than it draws a sinnet’s crossings.</p>
+<p><strong>Machines</strong> are tightened sideways for now: their carriers’ paths, rather
+than their words, should drive the moves, so the braid made keeps in step
+with the drawing of the machine.</p>
+<p>What it does not check: that the braid made is the one braidpy laid. A
+move passes over the yarns on its way, the short way round, as braidpy’s
+disk crossings do; a move of more than nine tenths of a half turn is made
+in two halves, so it goes round the side braidpy’s goes.</p>
+</section>
+<section id="limits-and-what-is-next">
+<h2>Limits, and what is next<a class="headerlink" href="#limits-and-what-is-next" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Speed.</strong> A 17-strand sinnet (ABOK #3048, 3 cycles) is laid 204 diameters
+long, about 7000 beads, and takes a minute or more to beat up, at once or
+crossing by crossing: the page’s progress shows little for a long while,
+then rises. The time step is set by the stiffest springs; the length to
+travel, by how long the braid is laid. Fewer beads (the made part frozen),
+a shorter start, or the GPU would help.</p></li>
+<li><p><strong>Shapes.</strong> Made on a marudai, sinnets take their shapes (above). By
+the two other settles, cross-sections start to differ — #3044’s tracks lean toward a
+triangle — but the yarns are not packed tight yet: gaps remain. Made
+crossing by crossing, the braid keeps the width it was laid with: braidpy
+lays a sinnet’s strands round a ring, the first rows freeze at that ring’s
+radius, and each later row is beaten against them and pressed by the laid
+braid above, at the same radius. A real braid draws in to the fell, its
+yarns spreading out above it to their carriers: the block above should
+rather be yarns running out to carriers.</p></li>
+<li><p><strong>Which braids.</strong> Any. A braid forms on a fell ring about its own size,
+yarns being as thick as they are, and braidpy lays it so: a machine’s
+braid, or a braid word in a row, on a ring as tight as its yarns allow.
+Drawn in to a single point instead, as they once were, all the yarns
+would meet there and could untwist through it whatever holds them.
+Laid on the ring and settled, braids keep their closures’ linking
+numbers: flat 9, princess, tubular 12 and soutache 5 made 2 cycles, the
+plait and <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">2</span> <span class="pre">-3</span> <span class="pre">4</span></code> among words. A braid word to settle by physics is
+still laid round a ring of bobbins, as a disk braid is, the moves a
+marudai makes. Round rigid cores a machine’s braid only settles sideways:
+the physics has no rigid yarn.</p></li>
+<li><p><strong>Pulling clear.</strong> Sideways tightening works level by level: two yarns
+can circle each other at one level without touching, and undo a turn of
+the braid between levels. Before the physics, the yarns are pulled clear
+ten rounds at a time, and the round before any pair’s winding changes by
+half a turn is kept.</p></li>
+<li><p><strong>Tried and dropped.</strong> Laying rows closer, to start shorter, was tried and dropped:
+on rows a diameter apart the sideways clearing can push one yarn past
+another, which the linking numbers caught.</p></li>
+</ul>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>E. Bitzek, P. Koskinen, F. Gähler, M. Moseler, P. Gumbsch, “Structural
+relaxation made simple”, <em>Phys. Rev. Lett.</em> 97, 170201 (2006): FIRE, the
+solver.</p></li>
+<li><p>P. A. Cundall and O. D. L. Strack, “A discrete numerical model for
+granular assemblies”, <em>Géotechnique</em> 29, 47 (1979),
+<a class="reference external" href="https://doi.org/10.1680/geot.1979.29.1.47">doi:10.1680/geot.1979.29.1.47</a>
+(not free to read): friction as a tangential spring capped by Coulomb’s
+law. Free to read, the same tangential spring among other contact models:
+“Review of contact models used in Discrete Element Method (DEM)”,
+<a class="reference external" href="https://arxiv.org/abs/2509.07461">arXiv:2509.07461</a>.</p></li>
+<li><p>C. Ericson, <em>Real-Time Collision Detection</em> (Morgan Kaufmann, 2005),
+§5.1.9: the closest points of two segments, for contact.</p></li>
+<li><p>M. Teschner, B. Heidelberger, M. Müller, D. Pomeranets, M. Gross,
+“Optimized spatial hashing for collision detection of deformable objects”,
+<em>Vision, Modeling, and Visualization</em> (2003): the grid of cells that finds
+which segments may touch.</p></li>
+<li><p>K. Klenin, J. Langowski, “Computation of writhe in modeling of supercoiled
+DNA”, <em>Biopolymers</em> 54, 307 (2000): linking numbers of polygons, exactly.</p></li>
+<li><p>D. Rolfsen, <em>Knots and Links</em> (Publish or Perish, 1976), §5.D: linking
+numbers from crossings.</p></li>
+</ul>
+</section>
+<section id="made-by-its-carriers">
+<h2>Made by its carriers<a class="headerlink" href="#made-by-its-carriers" title="Link to this heading"></a></h2>
+<p>Made crossing by crossing, the braid is still made from the braid braidpy
+laid. <a class="reference internal" href="reference.html#module-braidpy.carried" title="braidpy.carried"><code class="xref py py-mod docutils literal notranslate"><span class="pre">braidpy.carried</span></code></a> lays nothing: a horn gear machine’s carriers go
+round their tracks, at the machine’s real size, and each pulls its yarn, at
+a steady tension, up through a forming ring into the braid, which is taken
+off above at a steady rate. The yarns near the ring are beads, settled with
+the same stretching, bending, contact and friction as
+<a class="reference internal" href="#making-it-crossing-by-crossing-with-friction">crossing by crossing</a>;
+what differs:</p>
+<ul class="simple">
+<li><p><strong>Where the yarn comes from.</strong> Not a block of laid braid above, but the
+carrier below. Each yarn runs straight from its carrier’s eye up to ten
+diameters under the ring; from there it is beads. Its lowest bead is
+pulled towards the eye, and yarn is paid out, a bead at a time, as the
+braid draws it up, or taken back as it slackens: a carrier’s tensioner.
+No bead is renamed, so each contact keeps its friction for as long as it
+lasts.</p></li>
+<li><p><strong>The forming ring</strong>, a torus of wire round the axis, three centimetres
+over the carriers’ eyes: the yarns pass inside it, and it brings them
+together where the braid forms.</p></li>
+<li><p><strong>Friction is what makes the braid.</strong> Without it, two taut yarns slide to
+wherever they touch, just below the braid, and stay there: the braid
+taken off has no crossings at all. With it, each crossing is held where
+it was beaten up, and carried up with the braid.</p></li>
+<li><p><strong>To scale</strong>: lengths are in diameters of 1100 dtex yarn, about 0.4 mm,
+a gear 140 of them across, so the braid is seen as small as it is beside
+the machine making it.</p></li>
+</ul>
+<p>On the three-gear flat machine, the plait made crosses as the braid laid off
+the machine does, crossing for crossing (<code class="docutils literal notranslate"><span class="pre">tests/test_carried.py</span></code>).
+<code class="docutils literal notranslate"><span class="pre">examples/demo_carried.py</span></code> draws it twice: near, the braid formed above the
+ring, its yarns as thick as they are; and to scale, the deck, the carriers,
+the yarns’ runs and the ring. It is pure Python, some ten seconds a step of
+the machine: not in Braid Studio yet.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="horn_gear_layout.html" class="btn btn-neutral float-left" title="Laying out a horn gear machine" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="marudai.html" class="btn btn-neutral float-right" title="Making a braid on a marudai" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

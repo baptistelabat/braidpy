@@ -1,0 +1,336 @@
+# Braid Studio: braidpy on the web
+
+Braid Studio is a web page where anyone can describe a braid — a braid word,
+a kumihimo pattern, a disk braid, an Ashley sinnet, a horn gear braiding
+machine — and see it laid and tightened in 3D, without installing anything.
+
+This page says what it does and how to use it. How it is built is in the
+developer guide.
+
+## Looking braids up
+
+Its front page lists every braid it offers as it comes — each catalogued
+braid, each braid word example — in a table, each with a picture of it
+settled, as the studio shows it. The table can be narrowed down by what the
+braid is: by name, by what makes it, by how many strands it has, by the
+loops its strands make when its ends are joined (one, several, or one per
+strand, a pure braid), and by its writhe, its crossings counted with their
+signs (see {mod}`braidpy.similarity` for what each says). Each row says
+what else makes the same braid (the catalogue of braids by topology,
+{mod}`braidpy.topology_catalog`), and where the braid comes from and is
+shown made: the book, videos, pages ({class}`braidpy.catalog.Link`).
+Clicking a braid opens it in the studio, at once.
+
+A braid made round cores — a machine's axial yarns, held straight up
+through it, as soutache's two cords or a triaxial braid's eight — counts
+each core as a strand standing still, which the other yarns pass in front
+of or behind. A lace machine's braid has no figures yet: it has a word,
+but the catalogue of braids by topology ({mod}`braidpy.topology_catalog`)
+does not take lace machines yet.
+
+## What it does
+
+The studio has a form and a 3D view.
+
+- **Made by** picks the source: a braid word; a braid from the mobidai
+  catalogue; an Ashley solid sinnet; a braiding machine; or a Jacquard lace
+  machine. Kumihimo's
+  `S`/`R` moves are out of the menu for now, but a link to one still makes
+  it.
+- A braid word starts from a list of examples — a plait, a twist, a flat
+  four-strand braid, a two-ply, a rope — as the other sources start from
+  their catalogues; changing the word makes it your own.
+- Each source asks for what it needs: the word and the number of strands; the
+  pattern and how often to repeat it; which braid, and for how many cycles.
+  The advanced section sets the yarn diameter and how hard the yarns are
+  pulled (the tightening steps; 0 lays them with no tension).
+- A braid word is drawn as it is typed, as a 2D diagram — strands running
+  down, the one passing behind broken where they cross — before the braid
+  is made.
+- A disk braid's or a sinnet's **moves** are typed, or clicked on a drawing
+  of the disk or of Ashley's spaces. The drawing shows the strands with the
+  moves made up to a cursor, the last of them as an arrow; ⏮ ◀ ▶ ⏭ step it
+  through the moves, as a machine's handle is turned, and the caret in the
+  moves typed puts it on the move it is in. Stepping changes no move: a move
+  clicked goes in after the cursor, the ones after it kept, and **Undo
+  move** takes out the move at the cursor.
+- A braid word can also be a **ring word**, its strands round a circle as
+  on a marudai: `1` to `n - 1` cross neighbours as in a braid word, `n`
+  crosses the last strand and the first, across the seam, and `n + 1` turns
+  every strand one place round. It is drawn on a cylinder cut at the seam,
+  and made on the marudai move by move as written. A turn carries every
+  bobbin round together, passing nobody, the braid held: the yarns twist
+  into a rope, each as far from its axis as the others.
+- Or a **band word**, its strands round a circle, any two crossing in front
+  of those between: `4:1` crosses strands 4 and 1, `1:4` the other way
+  ([in band generators](braid_representations.md#in-band-generators)).
+- **Your own machine…** is any horn gear machine, written as the gears that
+  mesh: `A-B B-C C-D D-A` is four gears in a ring, a gear with its own
+  number of slots `A:6`, the others with *Slots per gear* (4 to start
+  with), a split gear as its parts joined on their axle, `A-B1 B2-C B1+B2`
+  (two plaits side by side), in as many parts as wanted. Gears may be named
+  as you like. The first gear named turns anticlockwise, its neighbours the
+  other way; a ring goes clockwise from the gear whose name sorts first,
+  whichever way the pairs are written. It starts from the machine chosen
+  before, written so. braidpy works out the rest — which way each gear turns, where they
+  meet, how it loads — as {mod}`braidpy.horn_gear.described` says, and
+  says why a graph cannot be a machine: a ring of an odd number of gears,
+  gears in two separate machines.
+- A braiding machine is drawn from above in the panel, as it starts: its
+  gears, the contacts between them and every slot, its carriers on them,
+  and its tracks, each in a colour of its own: the closed paths its
+  carriers follow, as the demo draws them
+  ({func}`~braidpy.horn_gear.visualization.track_curves`). A lace machine,
+  its gears turned by its card, has none.
+  Click a slot to put a carrier on it or take it off, or type them in as
+  `gear:slot`; **Its own loading** puts back the machine's. Two carriers on
+  the same point are ringed at once. Carriers that meet as the machine turns,
+  or come to one point ({func}`~braidpy.horn_gear.take_off.too_close`),
+  stop the braiding there: the braid is what it made until then, the note
+  says at which step and where, and the carriers that met are ringed where
+  they started. Left as the machine loads itself, the loading is not
+  written into the link. A note says how large the machine must be for its
+  bobbins, 20 mm across or `bobbin_diameter_mm` in the link
+  ([How large a machine must be for its bobbins](horn_gear_layout.md#how-large-a-machine-must-be-for-its-bobbins)).
+- Its **handle** turns it, a step at a time: ▶ turns a step, smoothly, ◀
+  turns it back, ⏮ goes back to step 0, and **Run** turns it until carriers
+  meet, or until stopped. Carriers that meet stop the handle, ringed, at the
+  step they met. What is turned is always the loading at step 0 — what the
+  machine braids with — so a carrier put on a slot at a later step is loaded
+  on the slot at step 0 that brings it there; taken off, the same.
+  braidpy does the turning (`braidpy.horn_gear.handle`) and says where every
+  slot and carrier is through each step: the same places as its plotly
+  animation, so the page and Python agree. In Python,
+  `Handle(machine).turn(5).figure()` is the same handle, drawn with plotly.
+- A **Jacquard lace machine** (`braidpy.horn_gear.jacquard`) is a ring of
+  gears driven by a punchcard rather than geared together: a bobbin sits in
+  a notch, where two gears overlap, and the card says which gears turn at
+  each step, the anticlockwise ones and then the clockwise ones. It is drawn,
+  threaded by hand and turned by its handle as a braiding machine is. Its
+  examples are a ring with every gear turning, as a tubular braider, and
+  cards punched for braids of the catalogue — the Dutch braid, the plait,
+  the weave of 3, two four-strand sinnets, a flat braid of 6
+  ({func}`~braidpy.making.lace.lace_card`). Its word is read off the
+  machine itself, a pass of the card a repeat
+  ({func}`~braidpy.making.lace.ring_braid`), and the card is in the notes,
+  as punched. The gears and the card of the machine chosen are shown, ready
+  to change, as a sinnet's moves are: **Your own card…** takes an even
+  number of gears, up to 72, and a card: the gears each step turns, by
+  name, a step after another with `/` between — `A C / B / -`, `-` a step
+  turning none, and after Z, AA, AB… — or a step a line in 0 and 1, the
+  gears turning anticlockwise then those turning clockwise, a digit a gear
+  — `1010 0100`. The card is written in the address by gear names, far
+  shorter than its digits; the punched card, ● and ○, is in the notes, to
+  copy or download. A card that cannot drive the machine says why, in the
+  panel.
+- A machine can braid round a **core**: its own, as soutache braids round
+  its cords, or, for a ring of gears — a tubular machine, a lace machine of
+  six gears or more — one down the hole the ring encloses
+  ({func}`~braidpy.horn_gear.ring_core`). **Core** chooses: as the machine
+  is built, none, of yarn, held at both ends and giving way between to the
+  yarns pressing on it, or rigid, straight. Either way each core keeps its
+  own place, where the machine lays it, and no yarn or other core ever
+  passes through it. A machine with nowhere for a core — a flat one, or a
+  ring of four lace gears, whose bobbins cross its middle — says so.
+  **Axial yarns** says where a horn gear machine's cores are fed: up a
+  gear's hollow spindle, `B`, or down the hole of a ring of gears,
+  `A-B-C-D` ({func}`~braidpy.horn_gear.described.read_axials`). Every place
+  there is room for one is drawn on the machine as a dashed ring; click one
+  to load a spool there, filled grey, or take it off. Left as it is, the
+  machine feeds its own. A
+  kumihimo or mobidai braid can be made round a core too, down the disk's
+  middle, of yarn or rigid as a machine's; its word is the yarns' own. On
+  a marudai, the core rises up the braid's axis and the yarns are carried
+  round it ([the marudai, round a core](marudai.md#round-a-core)); a lace
+  braid made there can have one whatever its card, the marudai having room
+  for one where four lace gears do not.
+- A disk braid — kumihimo, mobidai, a sinnet — is **made on a marudai**
+  (`web/marudai.js`): the disk's own moves, one by one, each moved yarn
+  laid over the others and drawn tight, as braid3dmin makes a braid. It is
+  the closest to a real braid, sinnets taking the shapes of their
+  cross-sections. A braid word is made there too, its strands rolled onto
+  a ring of bobbins, the braid held; and a lace machine's, its card run
+  round its ring of notches, each gear's turn its two notches swapping
+  bobbins ({func}`~braidpy.making.lace.card_program`), worked out from the
+  card alone. A machine's braid is tightened
+  **sideways**, fast, keeping the pitch it was laid with. Under "Yarn and tightening", **Settle the
+  yarns** can choose otherwise: sideways for a disk braid too; **sideways,
+  endless**, the braid tightened as a length cut from a longer one, its fell
+  end running on into its top rather than both ends held (see *Periodicity,
+  instead of holding both ends* in [Solving a braid's shape
+  numerically](solving_numerically.md)); or, for any
+  braid, by physics (`web/rope.js`, in beta) — each yarn an elastic
+  chain of beads, clamped at the fell and fed from a bobbin, the braid
+  beaten up until its crossings jam — or made crossing by crossing, with
+  friction. The view follows each as it goes. A braid word to settle by
+  physics is laid round a ring, as a disk braid is, each crossing two
+  neighbours swapping places, the moves the marudai makes. A machine's
+  braid and a braid word in a row are laid on a fell ring the size of the
+  braid, as a braid really forms, not drawn in to a point: settled by
+  physics, the yarns are held there apart, and keep the braid they were
+  laid as. A machine braiding round rigid cores is only tightened sideways:
+  the physics would bend them as yarns.
+- A disk's top view is turned so its seam — where its numbering closes,
+  between its first slot or space and its last — is up, away from you; a
+  braid made on a marudai is turned to match, each yarn going to its
+  carrier where the top view has it, and seen from the top view's bottom,
+  the seam behind it. A braid word is seen half round, its ring's seam
+  behind it too. A sinnet's disk shows its spaces as numbered sectors, as
+  the book draws them.
+- **Hanging** shows a braid hanging from its fell, as from a kumihimo disk
+  or a marudai, or, unticked, rising from it, as from a braiding machine.
+  Braids made on a marudai hang unless asked otherwise. Made, they show
+  their yarns' tails too, as on a real marudai: up from the fell to the
+  hole in a see-through mirror, flat across it, and over its edge towards
+  their bobbins. The physics pulls each yarn at the hole, where the mirror
+  takes the pull; the rest is drawn. The making shows as it goes — each
+  yarn carried up over the others to its new place, drawn tight, the braid
+  settling — and **Grow** replays it, move by move, before showing the
+  braid made. Each moment is kept only as its yarns still free: a bead
+  frozen into the braid moves only as the whole braid turns, so it is put
+  back from the braid as made, turned back to where it was. Even a sinnet
+  of 45 strands keeps some eighty moments within a few megabytes, made
+  with the site. It is a half turn of the view
+  about a level axis: the braid stays the braid it is, where only flipping
+  its heights would show its mirror image.
+- A disk braid or a sinnet can also be **your own**: choosing "Your own
+  moves…" shows what the braid chosen before is made of — the slots its
+  strands start in and its moves, or its spaces' counts and moves — ready to
+  change, as text or by clicking on a drawing of the disk: a strand, then
+  the slot it goes to (or a space, then the space a strand goes to).
+  A kumihimo disk's braid, or an Ashley sinnet, shows what it is made of
+  always, ready to change there: changing a move, its slots, its counts or
+  its turn makes it your own, and the catalogued braid stays as it was, to
+  choose again.
+- **Ashley's method, from a shape** makes a sinnet from the shape it is to
+  take, as Ashley draws it (see
+  [Making](making.md#from-the-shape-it-is-to-take)): first its **Grid**,
+  square (lines at 0° and 90°), diamond (the same lines, the sides free to
+  run at 45°), triangular (lines at 0°, 60° and 120°) or skewed (lines at
+  0° and 120°, and at 60° between their crossings, as in #3078: see
+  [Making](making.md#from-the-shape-it-is-to-take)), then a **Shape**
+  that grid offers: an oblong,
+  an L, a U or a hollow square on squares, or skewed (an oblong a
+  parallelogram); a square or an oblong on a
+  corner on the diamond grid; a triangle or a hexagon on triangles, so many
+  lines along a side (an oblong's width and height, an L's or a U's width
+  and arms, a hollow square's width and sides). Or one of the braids its
+  **Braid** list offers on that grid and of that shape, made with the site
+  and found among the others by topology: the book's triangles, flat oblong, squares on a corner and #3078, a
+  hexagon, a square, #3078 larger and longer, an L, a U and hollow squares. The shape is its grid's cells,
+  squares or triangles, and is drawn once made: its cells, its lines,
+  coloured by track, each with an arrow the way its move goes, and its
+  spaces, numbered, larger with more strands. As the list above the
+  drawing says, clicking a track makes its moves the other way round;
+  clicking a space gives it a strand more from the start, shift-clicking
+  takes one off; clicking a cell adds it to the shape, or takes it off, the
+  cells then listed in **Cells**, the shape's own. **At each corner** adds
+  strands at every corner at once, as the book sharpens a shape's edges: a
+  triangle of four lines a side with one is #3049. **Order of the moves**
+  is the book's, alternating where it can, or space by space: a triangle of
+  two lines a side so is #3057.
+- **Import a braid3d design** reads a `.b3d` file saved by braid3d (the
+  designer braid3dmin runs) as your own mobidai braid: its yarns in their
+  colours, its moves, and its repeat as cycles, on a disk of as few slots
+  as hold its yarns ({mod}`braidpy.b3d` says how). It is the braid the
+  design makes, crossing for crossing; only the spacing round the disk may
+  differ. A move of exactly half a turn, whose way round a file from
+  braid3d does not say, goes up the slots, as any mobidai move of half a
+  turn does. A braid saved here reads back as it was made, but for the
+  disk's turns, which the file leaves out.
+- The yarn diameter and the tightening steps, left empty, take the braid's
+  own defaults, shown greyed with "default" once it is made; going into the
+  field puts the default in, so that its arrows step from there. The
+  marudai draws its yarns tight itself, without tightening steps.
+- **Strands**, under the form, gives each strand its own colour, changed
+  everywhere the braid is drawn. Strands of one colour are a **group**,
+  listed above the strands with how many there are: pointing at a group
+  shows its strands among the others, and changing its colour changes them
+  all. A strand joins a group by taking its colour — the braid's own colours
+  come first in the palette — and Ctrl-, Cmd- or Shift-clicking strands
+  colours several at once. Groups are only colours, so the link says them as
+  it says the colours.
+- The braid is drawn as tubes, one colour per yarn, and can be turned, zoomed
+  and spun. **Grow** replays it being made, by the clock of whatever made
+  it: the oldest rows first, carried up as the newest form at the fell. An
+  inset shows what made it, seen from above, at the same instant — the disk
+  with its strands as spokes, the machine's gears, tracks and carriers — and a
+  disk's braid turns with the disk, each strand at the fell nearest its
+  carrier. The slider beside it goes through the making a sub-step at a
+  time, an eighth of a machine's step or a disk's move: the arrow keys a
+  sub-step, with Shift a step, and it says which step it is at.
+- Over the view, in a card that folds away to its title, what is known of
+  the braid: its strands; after how many of its words or cycles it is pure
+  — every strand back where it started — how many were made, and so
+  whether it is; its crossings and word (its ring word too, for a disk
+  braid, its band word where that is shorter, and a shorter word for the same braid when one is found:
+  {doc}`braid_algebra`, *Shortening a word*), the permutation it makes, what it closes up into (a knot, or a link of so many pieces), its Garside
+  normal form and full twists, how close the yarns come.
+  Long words show three lines; **Make from it** makes the braid again from
+  its own word, ring word or band word, as a braid word — the same braid, made on the
+  marudai much as the disk made it — and **Copy** copies it. Under them,
+  **Also made as** lists every other way the catalogues make the same braid
+  — the plait typed as a word is also the three-carrier flat machine's — and
+  **Nearest braids** the braids of the catalogues most like it, whatever
+  makes them, each with how unlike it is; your own braid too, found by its
+  fingerprint ({doc}`comparing_braids`). Each is a link that makes it. And
+  **Make it as…** gives the braid made other ways ({doc}`making`), from
+  its word shortened: its moves on a kumihimo disk, to make; a lace machine's punchcard, to make,
+  copy or download — for a braid made round a core, on a ring of gears or
+  as a ring word, made as a tube, the shortest stretch that repeated makes
+  it ([as a tube](making.md#as-a-tube)); and, when asked, a sinnet on Ashley's stand, to make. The
+  braid is drawn in the middle of what the card leaves free.
+- A braid word or ring word is made on the marudai hanging free, as a disk
+  braid is; when the bobbins turn together it is held while they turn,
+  twisting the yarns in, and a word of nothing but turns — a rope — is held
+  all the while. Under "Yarn and tightening", **Twist, on the marudai**
+  can choose otherwise: kept, the braid held throughout, so it never turns
+  to balance and turning the bobbins together always twists the yarns in
+  (a kumihimo's R moves too); or untwisted, the braid hanging free
+  throughout, so the bobbins turning together carry it round with them and
+  twist nothing in — a rope then comes straight back out, its yarns
+  hanging straight and side by side, and the page says the braid is no
+  longer the one its word says. Held, the yarns are laid
+  out to their carriers and drawn tight after every move as when free; only
+  while the bobbins turn together are they carried round, not over each
+  other.
+- **Twist** applies to each way of settling the yarns as it can: on a
+  marudai, kept, held while the bobbins turn together, or untwisted;
+  settled by physics, the end plate the braid is drawn off by held still
+  (kept) or free to turn (untwisted); tightened sideways, endless or not, it
+  is not offered,
+  the yarns keeping the twist they were laid with.
+- A sinnet's disk, to click your own moves on, is numbered as its top view
+  is: anticlockwise from the top, the first space and the last meeting
+  there.
+- These choices offer no "automatic": each braid's own is selected and
+  marked "(default)" — guessed from its source, then as it was made — and
+  only one chosen otherwise goes into the link.
+- The view's switches — tubes, spin, hanging, the top view and the
+  cross-section — are in the toolbar's **View** menu.
+- The address bar always describes the braid shown, so **Copy link** shares
+  it. **Save…** keeps a picture, the yarns as an STL file for 3D printing or
+  an OBJ model, or their points as JSON. A braid made on a disk can also be
+  saved **for braid3dmin** (B3D): the braid as made move by move on the
+  marudai, each yarn bead by bead, with its moves listed as braid3dmin
+  lists them, and with each step where the yarns are before it, as
+  braid3dmin writes them. When the disk turns with the braid on it, nothing
+  moves against anything else, so braid3dmin has no step for it, and the
+  angles that follow are counted from the braid. A move's angles go the
+  short way round, so a strand moved half a turn or more, as kumihimo takes
+  one across the disk, is two steps, each less than half a turn. A braid whose cycle comes round
+  exactly, as a sinnet's does, is saved as one cycle and braid3dmin's
+  repeat; any other, move by move, as braid3dmin's repeat would move its
+  yarns back its own way.
+- **Braid** makes the braid described. Asking for another while one is
+  being made stops it at once: the yarns are settled in a worker of their
+  own (`web/settle.js`), apart from braidpy's, which is ended and started
+  again without reloading Python. On the marudai, asking for more of the
+  same braid — more repeats or cycles — goes on from where it was left,
+  making only the moves still to come, even while it is still being made;
+  the note says from which move. **Reset** stops whatever is being made and
+  forgets the marudai, so the next braid is made from the start.
+- The last few braids made are kept: going back to one is instant.
+
+How the page is built, how to run it locally and what comes next are in the
+developer guide: [Braid Studio's internals](braid_studio_internals.md).

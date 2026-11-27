@@ -1,0 +1,419 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BraidPy &mdash; braidpy 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User manual" href="user_manual.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            braidpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="user_manual.html">User manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory_manual.html">Theory manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">braidpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">BraidPy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="braidpy">
+<h1>BraidPy<a class="headerlink" href="#braidpy" title="Link to this heading"></a></h1>
+<p>A Python library for working with braids, from braid theory to the braids
+people make: by hand on a kumihimo disk, a marudai or Ashley’s stand, or on a
+braiding or lace machine. It aims to help design real 3D braids using recent
+advances in braid theory, and to say how to make them.</p>
+<ul class="simple">
+<li><p><strong><a class="reference external" href="https://baptistelabat.github.io/braidpy/studio/">Braid Studio</a></strong>: braidpy
+in your browser. Describe a braid and see it laid, tightened and made in 3D,
+with nothing to install.</p></li>
+<li><p><strong><a class="reference external" href="https://baptistelabat.github.io/braidpy">Documentation</a></strong>: guides, the
+mathematics, and the API reference.</p></li>
+<li><p><strong>Sources</strong> on <a class="reference external" href="https://github.com/baptistelabat/braidpy">GitHub</a>.</p></li>
+</ul>
+<p>braidpy is in <strong>alpha</strong>: its features work and are tested, but its API may
+still change between versions. What changed in each is in the
+<a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/CHANGELOG.md">changelog</a>.</p>
+<section id="support">
+<h2>Support<a class="headerlink" href="#support" title="Link to this heading"></a></h2>
+<p>braidpy is built with <a class="reference external" href="https://claude.com/claude-code">Claude Code</a>. If it
+helps you, you can <a class="reference external" href="https://github.com/sponsors/baptistelabat">sponsor it</a>:
+sponsoring helps pay for that.</p>
+</section>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<p>Braids in theory:</p>
+<ul class="simple">
+<li><p>[x] Braids as braid words in Artin’s generators, read and written in the
+common notations (<code class="docutils literal notranslate"><span class="pre">σ₁σ₂⁻¹</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-2</span></code>, <code class="docutils literal notranslate"><span class="pre">aB</span></code>, …)</p></li>
+<li><p>[x] Operations: product, inverse, powers, handle reduction, normal forms</p></li>
+<li><p>[x] Properties and invariants: permutation, purity, closure, linking
+numbers, Alexander polynomial, conjugacy</p></li>
+<li><p>[x] Whether two braids are the same braid however written, and the braids
+most like one, by a topological fingerprint</p></li>
+<li><p>[x] Drawn in the console, in 2D and in 3D</p></li>
+<li><p>[x] Annulus braids: crossings on a ring of slots, the wrapping crossing,
+turns</p></li>
+</ul>
+<p>Braids people make:</p>
+<ul class="simple">
+<li><p>[x] Horn gear (maypole) braiding machines: flat, tubular, soutache and
+Jacquard lace, with tracks, collisions, threading and animation</p></li>
+<li><p>[x] Kumihimo and mobidai disks, animated from above, strands as spokes to
+the middle of the disk</p></li>
+<li><p>[x] Ashley’s solid sinnets (ABOK #2965–#3082, 43 of them), worked on his
+stand, animated with the braid growing below</p></li>
+<li><p>[x] A sinnet from the shape it is to take, drawn as Ashley draws it, on a
+grid of squares, of squares on a corner or of triangles: triangles,
+hexagons, oblongs, an L, a U, a hollow square, squares on a corner;
+and back from a sinnet’s moves to its shape</p></li>
+<li><p>[x] A braid made move by move on a marudai, each yarn carried over the
+others and drawn tight</p></li>
+<li><p>[x] Ways of making a braid: from a braid word to how to make it on a kumihimo disk, on a
+Jacquard lace machine’s punchcard, or on Ashley’s stand, each checked by
+reading the braid back off what it makes</p></li>
+</ul>
+<p>The shape a braid takes:</p>
+<ul class="simple">
+<li><p>[x] A braid as it comes off whatever made it, in 3D: laid with no tension,
+converging on a fell ring about the braid’s size, and tightened</p></li>
+<li><p>[x] Closed-form geometry for the shapes that admit one (a laid rope, a
+braided tube, the figure-eight flat braid), their clearances measured
+rather than assumed</p></li>
+<li><p>[x] From a 3D braid back to its braid word, for flat braids, so a computed
+shape can be checked against the braid it claims to be</p></li>
+</ul>
+<p>Using it:</p>
+<ul class="simple">
+<li><p>[x] Braid Studio: all of the above on a web page, braidpy running in the
+browser</p></li>
+<li><p>[x] For AI assistants: a short front door (<code class="docutils literal notranslate"><span class="pre">braidpy.tools</span></code>) and an MCP
+server</p></li>
+</ul>
+<p>Not yet:</p>
+<ul class="simple">
+<li><p>[ ] From a real, material braid to its 3D shape</p></li>
+<li><p>[ ] Finger loop braids (Kute-Uchi), a technique used and improved by nuns
+for centuries</p></li>
+<li><p>[ ] Track plans</p></li>
+<li><p>[ ] 3D rotary (hexagonal) braiding machines</p></li>
+</ul>
+</section>
+<section id="basic-example">
+<h2>Basic example<a class="headerlink" href="#basic-example" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Braid</span>
+
+<span class="c1"># Create a braid using list of Artin's generator</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Braid</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Display the corresponding braid word. You should get the notation as used by Artin 'σ₁σ₂σ₁⁻¹'.</span>
+<span class="n">b</span><span class="o">.</span><span class="n">format</span><span class="p">()</span>
+
+<span class="c1"># Display using other common notation. You should get 'abA'.</span>
+<span class="n">b</span><span class="o">.</span><span class="n">format_to_notation</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">"alpha"</span><span class="p">)</span>
+
+<span class="c1"># Draw the braid in console. Alternatively use result.plot() for more advanced 2D plot.</span>
+<span class="n">b</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+
+<span class="c1"># Perform operations. See documentation for much more features !</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+
+<span class="c1"># Draw the resulting braid in console.</span>
+<span class="n">result</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+
+<span class="c1"># Plot the resulting braid.</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1"># Convert to parametric braid before plotting in 3D.</span>
+<span class="n">strands</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">to_parametric_strands</span><span class="p">()</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.parametric_braid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParametricBraid</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">ParametricBraid</span><span class="p">(</span><span class="n">strands</span><span class="p">)</span>  <span class="c1"># .plot()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">result.plot()</span></code> gives the 2D diagram below — the braid runs down the page with its
+word above it, each strand in the same colour the console draws it in, and the strand
+passing behind interrupted where the two meet. <code class="docutils literal notranslate"><span class="pre">p.plot()</span></code> opens the 3D view.</p>
+<p><img alt="Plot braid example" src="https://raw.githubusercontent.com/baptistelabat/braidpy/develop/braid_plot.png" /></p>
+</section>
+<section id="braiding-machines">
+<h2>Braiding machines<a class="headerlink" href="#braiding-machines" title="Link to this heading"></a></h2>
+<p>A horn gear (maypole) braiding machine can be described, run and drawn. Half
+its carriers travel one way round the ring of gears and half the other, and the
+closed paths they run on decide which carriers can ever meet — which is what
+decides the braid.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.horn_gear.examples</span><span class="w"> </span><span class="kn">import</span> <span class="n">tubular_braid_8</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.horn_gear.tracks</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_tracks</span><span class="p">,</span> <span class="n">simulation_period</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.horn_gear.loading</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_carriers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.horn_gear.simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">simulate</span>
+
+<span class="n">machine</span> <span class="o">=</span> <span class="n">tubular_braid_8</span><span class="p">()</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">compute_tracks</span><span class="p">(</span><span class="n">machine</span><span class="p">))</span>  <span class="c1"># 4 closed tracks</span>
+<span class="n">simulation_period</span><span class="p">(</span><span class="n">machine</span><span class="p">)</span>  <span class="c1"># 8 steps to come home</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">machine</span><span class="p">,</span> <span class="n">simulation_period</span><span class="p">(</span><span class="n">machine</span><span class="p">),</span> <span class="n">load_carriers</span><span class="p">(</span><span class="n">machine</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Threading is a search, not a convention: <code class="docutils literal notranslate"><span class="pre">load_carriers</span></code> tries placements,
+runs each one, and keeps the fullest that never collides. <code class="docutils literal notranslate"><span class="pre">visualize_machine</span></code>
+and <code class="docutils literal notranslate"><span class="pre">animate</span></code> draw the result, and <code class="docutils literal notranslate"><span class="pre">scripts/gen_demos.py</span></code> writes a page per machine —
+flat, tubular, soutache, diamond, and a Jacquard lace machine whose gears
+interpenetrate and whose switches are driven by a punched programme.</p>
+</section>
+<section id="braid-studio-in-the-browser">
+<h2>Braid Studio, in the browser<a class="headerlink" href="#braid-studio-in-the-browser" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="https://baptistelabat.github.io/braidpy/studio/">Braid Studio</a> is braidpy on
+a web page. Describe a braid as a braid word, a kumihimo pattern, a disk
+braid, an Ashley sinnet or a braiding machine, and it is laid and tightened in
+3D. braidpy itself runs in your browser through Pyodide, and three.js draws
+the result. See <a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braid_studio.md">how to use it</a>,
+or run it locally:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>studio<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>studio-serve<span class="w">   </span><span class="c1"># then open http://localhost:8000</span>
+</pre></div>
+</div>
+</section>
+<section id="ashley-solid-sinnets">
+<h2>Ashley solid sinnets<a class="headerlink" href="#ashley-solid-sinnets" title="Link to this heading"></a></h2>
+<p>The solid sinnets of the Ashley Book of Knots are worked on a disk: each move
+takes the earliest strand of a space over every strand it passes to another
+space.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.solid_sinnets_catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">abok_3042</span>
+
+<span class="n">abok_3042</span><span class="o">.</span><span class="n">braid</span><span class="p">()</span>  <span class="c1"># the braid word one cycle makes</span>
+<span class="n">abok_3042</span><span class="o">.</span><span class="n">to_mobidai</span><span class="p">()</span>  <span class="c1"># the same, as a kumihimo disk pattern</span>
+<span class="n">abok_3042</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="n">n_cycles</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">side_view</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output_html</span><span class="o">=</span><span class="s2">"3042.html"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-shape-a-braid-takes">
+<h2>The shape a braid takes<a class="headerlink" href="#the-shape-a-braid-takes" title="Link to this heading"></a></h2>
+<p>Pulled tight, some braids have a shape you can write down. A laid rope does; so
+does a braided tube; so does the classic flat braid. Most do not, and the
+reason is not want of effort.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">braidpy.annulus_braid</span><span class="w"> </span><span class="kn">import</span> <span class="n">lay_radius</span><span class="p">,</span> <span class="n">packing_radius</span><span class="p">,</span> <span class="n">tubular_braid_radius</span>
+
+<span class="n">packing_radius</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">)</span>  <span class="c1"># 0.231 — the zero-lay limit</span>
+<span class="n">lay_radius</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">lay</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>  <span class="c1"># 0.259 — where it really settles</span>
+<span class="n">tubular_braid_radius</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">45</span><span class="p">))</span>  <span class="c1"># 0.825 — in closed form</span>
+</pre></div>
+</div>
+<p>The documentation works each of these through, with figures generated from the
+same functions:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/laid_rope.md">The shape of a laid rope</a></p></li>
+<li><p><a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/braided_tube.md">The shape of a braided tube</a></p></li>
+<li><p><a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/why_no_closed_form.md">Why a braid’s shape has no closed form</a></p></li>
+<li><p><a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/solving_numerically.md">Solving a braid’s shape numerically</a></p></li>
+</ul>
+</section>
+<section id="is-it-the-same-braid-and-how-is-it-made">
+<h2>Is it the same braid, and how is it made?<a class="headerlink" href="#is-it-the-same-braid-and-how-is-it-made" title="Link to this heading"></a></h2>
+<p>The same braid can be written many ways, and made many ways. braidpy
+compares braids by their topology, and says how to make one by hand or on a
+machine:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">braidpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">tools</span>
+
+<span class="n">tools</span><span class="o">.</span><span class="n">compare_braids</span><span class="p">(</span><span class="s2">"1 -2"</span><span class="p">,</span> <span class="s2">"-2 1"</span><span class="p">)</span>  <span class="c1"># {'same_braid': True, 'distance': 0.0}</span>
+<span class="n">ways</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">ways_to_make</span><span class="p">(</span><span class="s2">"1 -2"</span><span class="p">)</span>  <span class="c1"># a kumihimo disk's moves, a lace punchcard,</span>
+<span class="n">ways</span><span class="p">[</span><span class="s2">"disk"</span><span class="p">][</span><span class="s2">"moves"</span><span class="p">]</span>  <span class="c1"># a sinnet on Ashley's stand</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/comparing_braids.md">Comparing braids</a>
+and <a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/making.md">Making a braid by hand or on a machine</a>
+explain how.</p>
+</section>
+<section id="for-ai-assistants">
+<h2>For AI assistants<a class="headerlink" href="#for-ai-assistants" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">braidpy.tools</span></code> answers the common questions in plain data, and
+<code class="docutils literal notranslate"><span class="pre">braidpy-mcp</span></code> offers it to an assistant such as Claude as an MCP server:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"braidpy[mcp]"</span>
+claude<span class="w"> </span>mcp<span class="w"> </span>add<span class="w"> </span>braidpy<span class="w"> </span>--<span class="w"> </span>braidpy-mcp
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/ai_assistants.md">braidpy for AI assistants</a>.</p>
+</section>
+<section id="installation">
+<h2>🛠️ Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Releases are on PyPI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>braidpy<span class="w">        </span><span class="c1"># or: uv add braidpy, poetry add braidpy</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"braidpy[viz]"</span><span class="w"> </span><span class="c1"># with what it draws with: matplotlib, plotly</span>
+</pre></div>
+</div>
+<p>braidpy alone computes everything; drawing braids (diagrams, 3D plots,
+animations) needs the <code class="docutils literal notranslate"><span class="pre">viz</span></code> extra.</p>
+<p>The development version, with what is not released yet, installs from
+GitHub:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"braidpy[viz] @ git+https://github.com/baptistelabat/braidpy@develop"</span>
+</pre></div>
+</div>
+<p>braidpy needs Python 3.10 or later; it is tested daily on 3.10 to 3.15.</p>
+</section>
+<section id="installation-from-source">
+<h2>🛠️ Installation from source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h2>
+<p>To work on braidpy itself, clone it (you are then on the <code class="docutils literal notranslate"><span class="pre">develop</span></code> branch)
+and install it with <a class="reference external" href="https://docs.astral.sh/uv/">uv</a>, the project’s package
+manager. On Linux, from the root of the repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:baptistelabat/braidpy.git
+<span class="nb">cd</span><span class="w"> </span>braidpy
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>build-essential
+make<span class="w"> </span>install-uv
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="test">
+<h2>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h2>
+<p>The quick tests, in parallel, as every push runs them (a couple of minutes):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span><span class="nb">test</span>
+</pre></div>
+</div>
+<p>Every test, the slow ones too, as CI runs them daily: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-all</span></code>. Only
+the tests touching what you changed: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-changed</span></code>.</p>
+</section>
+<hr class="docutils" />
+<section id="documentation">
+<h2>📜 Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p>The documentation of the development version is on
+<a class="reference external" href="https://baptistelabat.github.io/braidpy">GitHub Pages</a>, with Braid Studio
+beside it; that of released versions is on
+<a class="reference external" href="https://braidpy.readthedocs.io/en/latest/">Read the Docs</a>. To build it for
+the version you have from source:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs
+</pre></div>
+</div>
+<section id="project-team">
+<h3>Project Team:<a class="headerlink" href="#project-team" title="Link to this heading"></a></h3>
+<p>This is a single person project for now, but I would be happy to make the team grow.</p>
+<p>Human:</p>
+<ul class="simple">
+<li><p><strong>Baptiste Labat</strong>
+<a class="reference external" href="https://www.linkedin.com/in/baptiste-labat-01751138/"><img alt="LinkedIn" src="https://img.shields.io/badge/-LinkedIn-blue?logo=linkedin&amp;logoWidth=20&amp;style=flat-square" /></a>
+<a class="reference external" href="https://github.com/baptistelabat"><img alt="GitHub" src="https://img.shields.io/badge/-GitHub-black?logo=github&amp;logoWidth=20&amp;style=flat-square" /></a></p></li>
+</ul>
+<p>Bots:</p>
+<ul class="simple">
+<li><p>Claude Code</p></li>
+<li><p>chatgpt</p></li>
+<li><p>windsurf</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="contributions">
+<h2>🤝 Contributions<a class="headerlink" href="#contributions" title="Link to this heading"></a></h2>
+<p>Contributions are welcome! Please open an <a class="reference external" href="https://github.com/baptistelabat/braidpy/issues">issue</a> or submit a pull request from your fork to suggest changes, report/correct bugs, or propose new features.</p>
+<p>The <a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/develop/docs/source/developer_guide.md">developer guide</a>
+says how to set up, the rules braidpy is written by, how to test it and how
+it is released. In short: English code and comments, Google-style
+docstrings, type hints, and <code class="docutils literal notranslate"><span class="pre">pre-commit</span> <span class="pre">install</span></code> to check each commit.</p>
+</section>
+<section id="license">
+<h2>📜 License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p><img alt="License" src="https://img.shields.io/badge/license-MPL%202.0-brightgreen" /></p>
+<p>This project is licensed under the Mozilla Public License 2.0 - see the <a class="reference external" href="https://github.com/baptistelabat/braidpy/blob/HEAD/LICENSE">LICENSE</a> file for details.</p>
+</section>
+<hr class="docutils" />
+<section id="id1">
+<h2>Documentation<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="user_manual.html"><span class="doc">User manual</span></a></strong> — how to use braidpy: writing, drawing, making and
+comparing braids, Braid Studio, AI assistants, and the API reference.</p></li>
+<li><p><strong><a class="reference internal" href="theory_manual.html"><span class="doc">Theory manual</span></a></strong> — the ideas behind it: braid words and the braid
+group, comparing braids, the shape a braid takes, settling it by physics.</p></li>
+<li><p><strong><a class="reference internal" href="developer_guide.html"><span class="doc">Developer guide</span></a></strong> — working on braidpy: setting up, its rules, its
+tests, its documentation and releases.</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="user_manual.html" class="btn btn-neutral float-right" title="User manual" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
