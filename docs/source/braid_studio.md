@@ -229,15 +229,6 @@ The studio has a form and a 3D view.
   triangle of four lines a side with one is #3049. **Order of the moves**
   is the book's, alternating where it can, or space by space: a triangle of
   two lines a side so is #3057.
-- **Import a braid3d design** reads a `.b3d` file saved by braid3d (the
-  designer braid3dmin runs) as your own mobidai braid: its yarns in their
-  colours, its moves, and its repeat as cycles, on a disk of as few slots
-  as hold its yarns ({mod}`braidpy.b3d` says how). It is the braid the
-  design makes, crossing for crossing; only the spacing round the disk may
-  differ. A move of exactly half a turn, whose way round a file from
-  braid3d does not say, goes up the slots, as any mobidai move of half a
-  turn does. A braid saved here reads back as it was made, but for the
-  disk's turns, which the file leaves out.
 - The yarn diameter and the tightening steps, left empty, take the braid's
   own defaults, shown greyed with "default" once it is made; going into the
   field puts the default in, so that its arrows step from there. The
@@ -308,6 +299,16 @@ The studio has a form and a 3D view.
   only one chosen otherwise goes into the link.
 - The view's switches — tubes, spin, hanging, the top view and the
   cross-section — are in the toolbar's **View** menu.
+- **Import B3D…**, in the toolbar beside **Save…** and whatever the braid
+  shown, reads a `.b3d` file saved by braid3d (the designer braid3dmin runs)
+  or saved here for braid3dmin, as your own mobidai braid: its yarns in their
+  colours, its moves, and its repeat as cycles, on a disk of as few slots
+  as hold its yarns ({mod}`braidpy.b3d` says how). It is the braid the
+  design makes, crossing for crossing; only the spacing round the disk may
+  differ. A move of exactly half a turn, whose way round a file from
+  braid3d does not say, goes up the slots, as any mobidai move of half a
+  turn does. A braid saved here reads back as it was made, but for the
+  disk's turns, which the file leaves out.
 - The address bar always describes the braid shown, so **Copy link** shares
   it. **Save…** keeps a picture, the yarns as an STL file for 3D printing or
   an OBJ model, or their points as JSON. A braid made on a disk can also be
