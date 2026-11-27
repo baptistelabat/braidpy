@@ -6,6 +6,13 @@ What changed in each release of braidpy.
 
 ### New
 
+- 37 more of Ashley's plat sinnets as braid words (`braid_catalogue.ASHLEY_PLATS`,
+  #2976–#3019): French, flat, twill, duplex and doubled-edge sinnets led to
+  the centre, and square, half-round, ellipse and round sinnets by the square
+  sinnet's method, each written as the book gives its leads ("u3 o1", under
+  three, over one) and made by `AshleyPlat`. What the book says of them holds:
+  #3018 is #3001, #2989 divided equally is #3003 turned end for end, and #2999,
+  #2965, #2967 and #2968 are the sinnets already catalogued.
 - Whether a braid is reducible (`Braid.is_reducible`): some of its strands
   gathered into groups, fewer groups than strands, each running inside one
   tube, the tubes themselves free to braid — a round curve round consecutive

@@ -4,7 +4,9 @@
 
 """A catalogue of remarkable braids, as words."""
 
-from typing import Any
+import re
+from dataclasses import dataclass
+from typing import Any, Literal
 
 import braidpy.braid
 from braidpy import Braid
@@ -410,6 +412,177 @@ https://youtu.be/cGFLqDZTtoQ?si=WrbbVFJ50fQ0ELE5&t=92
 """
 
 
+# ------------------------------------------------------------ Ashley's plats
+
+# A lead's path, as Ashley gives it: "u3 o1", under three strands, then over one.
+_PATH = re.compile(r"\s*([ou])(\d+)")
+
+
+def _path(text: str) -> list[str]:
+    """A lead's path, a letter a strand passed: ``"u2 o1"`` is u, u, o."""
+    passed: list[str] = []
+    at = 0
+    for match in _PATH.finditer(text):
+        if match.start() != at:
+            break
+        passed += [match.group(1)] * int(match.group(2))
+        at = match.end()
+    if at != len(text.rstrip()) or not passed:
+        raise ValueError(f"A lead is over and under so many strands: not {text!r}.")
+    return passed
+
+
+@dataclass(frozen=True)
+class AshleyPlat:
+    """A sinnet plaited in the hands as *The Ashley Book of Knots* says, its
+    strands held in two groups, the top strand of each led in turn.
+
+    Two ways of leading a strand, as the book's plat sinnets have them:
+
+    - ``"plat"`` (#2976–#2998, and Smith's square sinnets #3017–#3019): the
+      top strand is led to the centre, over and under its sisters as its path
+      says, and joins the other group, lowest in it;
+    - ``"square"`` (the square sinnet's method, #2999–#3014): the top strand
+      goes round behind its sisters and behind the opposing strands, comes
+      forward between two of them — its path as long as the opposing
+      strands it passed, counted from the bottom — and comes back along its
+      path, over and under them, to lie lowest in its own group.
+
+    The strands are numbered from the left, the left group first; a strand
+    led over its neighbour to the right is ``σᵢ``, as everywhere in braidpy.
+
+    Args:
+        shape: What the book calls it: "flat", "French", "square"...
+        n_strands: Strands.
+        n_left: Strands held in the left hand at the start.
+        leads: Each lead's path, the left group's top strand first unless
+            ``first`` says otherwise, then the right's, in turn.
+        method: How a strand is led.
+        first: The group whose strand is led first.
+    """
+
+    shape: str
+    n_strands: int
+    n_left: int
+    leads: tuple[str, ...]
+    method: Literal["plat", "square"] = "plat"
+    first: Literal["left", "right"] = "left"
+
+    def braid(self) -> Braid:
+        """The braid of one round of the leads.
+
+        Returns:
+            The braid.
+
+        Raises:
+            ValueError: If a lead passes more strands than it can, or the
+                groups are not as they started after the round.
+        """
+        n, left, word = self.n_strands, self.n_left, []
+        side = self.first
+        for lead in self.leads:
+            passed = _path(lead)
+            right = n - left
+            if self.method == "plat":
+                sisters = (left if side == "left" else right) - 1
+                if len(passed) != sisters:
+                    raise ValueError(
+                        f"{lead!r} passes {len(passed)} strands, its {sisters} sisters."
+                    )
+                if side == "left":
+                    word += [i if k == "o" else -i for i, k in enumerate(passed, 1)]
+                    left -= 1
+                else:
+                    places = range(n - 1, left, -1)
+                    word += [-i if k == "o" else i for i, k in zip(places, passed)]
+                    left += 1
+            else:
+                opposing = right if side == "left" else left
+                if len(passed) > opposing:
+                    raise ValueError(
+                        f"{lead!r} passes {len(passed)} of {opposing} opposing strands."
+                    )
+                if side == "left":
+                    # Behind its sisters and the opposing strands, then back.
+                    at = left + len(passed)
+                    word += [-i for i in range(1, at)]
+                    for k in passed:
+                        word.append(-(at - 1) if k == "o" else at - 1)
+                        at -= 1
+                else:
+                    at = left + 1 - len(passed)
+                    word += list(range(n - 1, at - 1, -1))
+                    for k in passed:
+                        word.append(at if k == "o" else -at)
+                        at += 1
+            side = "right" if side == "left" else "left"
+        if left != self.n_left:
+            raise ValueError("The groups are not as they started after the leads.")
+        return Braid(tuple(word), n)
+
+
+#: The plat sinnets of *The Ashley Book of Knots* (chapter 38) made as its
+#: text says, by number.  Left out: those of doubled strands (#2972,
+#: #2978, coachwhipping #3015, #3016), the "trick" sinnet #2993, #2979
+#: (#2976 made another way, the same braid), and the round sinnets worked
+#: turning in the hand (#3021 on), which are ring words.
+ASHLEY_PLATS: dict[int, AshleyPlat] = {
+    2976: AshleyPlat("French", 7, 4, ("u1 o1 u1", "u1 o1 u1")),
+    2977: AshleyPlat("French", 6, 3, ("o1 u1", "u1 o1 u1")),
+    2980: AshleyPlat("flat", 8, 5, ("u3 o1", "o3")),
+    2981: AshleyPlat("flat", 6, 3, ("o1 u1", "u1 o2")),
+    2982: AshleyPlat("flat", 7, 5, ("u3 o1", "u1 o1")),
+    2983: AshleyPlat("flat", 7, 4, ("u2 o1", "u2 o1")),
+    2984: AshleyPlat("flat", 7, 5, ("u2 o2", "o2")),
+    2985: AshleyPlat("flat", 9, 5, ("u2 o2", "u2 o2")),
+    2986: AshleyPlat("flat", 11, 6, ("u2 o3", "u2 o3")),
+    2987: AshleyPlat("flat", 11, 6, ("u2 o2 u1", "u2 o2 u1")),
+    2988: AshleyPlat("French", 5, 3, ("o2", "o2", "u2", "u2")),
+    2989: AshleyPlat("duplex", 6, 4, ("o3", "o2", "u3", "u2")),
+    2990: AshleyPlat("twill", 9, 5, ("u1 o3", "u1 o3", "u2 o2", "u2 o2")),
+    2991: AshleyPlat("twill", 10, 5, ("o2 u2", "o2 u2 o1", "o2 u2", "o2 u3")),
+    2992: AshleyPlat("twill", 10, 5, ("o1 u3", "o1 u3 o1", "o1 u3", "o1 u4")),
+    2994: AshleyPlat("doubled-edge flat", 6, 4, ("o1 u2", "o2", "u1 o2", "u2")),
+    2995: AshleyPlat("doubled-edge flat", 7, 4, ("o2 u1", "u1 o2", "u2 o1", "o1 u2")),
+    2996: AshleyPlat(
+        "doubled-edge flat", 8, 5, ("u1 o2 u1", "u1 o2", "o1 u2 o1", "o1 u2")
+    ),
+    2997: AshleyPlat(
+        "doubled-edge flat", 10, 6, ("u2 o2 u1", "u2 o2", "o2 u2 o1", "o2 u2")
+    ),
+    2998: AshleyPlat(
+        "doubled-edge flat",
+        11,
+        6,
+        (
+            "u1 o2 u1 o1",
+            "u2 o1 u2",
+            "o1 u1 o2 u1",
+            "o1 u2 o1 u1",
+            "o2 u1 o2",
+            "u1 o1 u2 o1",
+        ),
+    ),
+    3001: AshleyPlat("square", 8, 4, ("o2", "o2"), "square"),
+    3002: AshleyPlat("square", 12, 6, ("o3", "o3"), "square", "right"),
+    3003: AshleyPlat("half round", 6, 3, ("o1", "o1"), "square"),
+    3004: AshleyPlat("half round", 8, 4, ("o1", "o1"), "square"),
+    3005: AshleyPlat("half round", 10, 5, ("o2", "o2"), "square"),
+    3006: AshleyPlat("half round", 8, 4, ("o1 u1", "o1 u1"), "square"),
+    3007: AshleyPlat("ellipse", 8, 4, ("o1 u2", "o1 u1"), "square"),
+    3008: AshleyPlat("ellipse", 6, 3, ("o2", "o1"), "square"),
+    3009: AshleyPlat("ellipse", 8, 4, ("o3", "o1"), "square"),
+    3010: AshleyPlat("ellipse", 10, 5, ("o3", "o2"), "square"),
+    3011: AshleyPlat("round", 6, 3, ("o1 u1", "o1"), "square"),
+    3012: AshleyPlat("round", 8, 4, ("o1 u1 o1", "o1 u1 o1"), "square"),
+    3013: AshleyPlat("square", 5, 3, ("o1", "o2"), "square"),
+    3014: AshleyPlat("square", 7, 4, ("o2", "o2"), "square"),
+    3017: AshleyPlat("square", 4, 3, ("o2", "o1", "u2", "u1")),
+    3018: AshleyPlat("square", 8, 5, ("o4", "o3", "u4", "u3")),
+    3019: AshleyPlat("square", 12, 7, ("o6", "o5", "u6", "u5")),
+}
+
+
 # ------------------------------------------------------------ as braid words
 
 #: The rectangular braid of fourteen strands, as the word it repeats.
@@ -611,6 +784,17 @@ CATALOGUE: dict[str, Entry[Braid]] = {
         "Rectangular braid of 20", lambda: rectangular20(draw=False)[0]
     ),
 }
+# Ashley's plats, each as its number names it.
+CATALOGUE.update(
+    {
+        f"abok_{number}": Entry(
+            f"ABOK #{number}, {plat.n_strands}-strand {plat.shape}",
+            plat.braid,
+            (ashley(number),),
+        )
+        for number, plat in ASHLEY_PLATS.items()
+    }
+)
 
 
 # An example shows at least so many crossings.
