@@ -81,17 +81,39 @@ the branch's name, or under the release's tag from `main`.
 
 ## Releasing
 
-Releases are made by hand, from `main`:
+A release needs `uv` (`uv sync` installs the documentation's Sphinx with the
+`dev` group) and Node's `npx`, which fetches `gh-pages-multi` for the
+documentation. Its steps, each by its own command, so that one failing
+stops the rest:
 
-1. Merge `develop` into `main`.
-2. Set the version in `pyproject.toml`, and say what changed in
-   `CHANGELOG.md`, its date in place of "unreleased".
-   The version is also in `server.json` (twice) and `uv.lock` (`uv lock`).
-3. Tag the release with its version (`git tag 0.4.0`), as the earlier ones
-   are, and push the tag: the release workflow (`release.yml`) builds the
-   package and publishes it on PyPI, refusing a tag that is not the version
-   `pyproject.toml` gives.
-4. Publish its documentation: `make doc-deploy`.
+1. **On `develop`, a release PR** sets the version in `pyproject.toml`,
+   `server.json` (twice) and `uv.lock` (`uv lock`), and turns `CHANGELOG.md`'s
+   "Unreleased" into the version and its date.
+2. **Merge `develop` into `main`** by a pull request from `develop`, merged
+   with a merge commit, not squashed, so that `main` keeps `develop`'s
+   history.
+3. **`make release`**, from `main` (`scripts/release.sh`). It checks
+   everything before it changes anything, and stops at the first that
+   fails, saying what to do:
+   - that this is `main`, with nothing uncommitted;
+   - that `main` fast-forwards to `origin/main`;
+   - that `server.json` and `CHANGELOG.md` agree with `pyproject.toml`'s
+     version;
+   - that no tag of that version exists, here or on GitHub.
+
+   Then it tags `main` with the version and pushes the tag. The release
+   workflow (`release.yml`) builds the package and publishes it on PyPI,
+   refusing a tag that is not `pyproject.toml`'s version.
+4. **`make doc-deploy`**, from `main`, publishes the documentation under the
+   release's tag.
+
+If a tag went onto the wrong commit, nothing was published: the workflow
+refused it. Take it away, here and on GitHub, and run `make release` again:
+
+```sh
+git tag -d 0.4.0
+git push origin :refs/tags/0.4.0
+```
 
 A release is cut every two or three weeks while the API still moves: each
 break costs less made sooner, and `CHANGELOG.md` is what the people using

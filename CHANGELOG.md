@@ -12,6 +12,15 @@ What changed in each release of braidpy.
   stdio, as before. A test drives the server as a client does
   (`tests/test_mcp_server.py`).
 
+### Documentation
+
+- A release is made by `make release` (`scripts/release.sh`): from an
+  up-to-date `main`, with `pyproject.toml`, `server.json` and
+  `CHANGELOG.md` agreeing on the version and no tag of it yet, it tags and
+  pushes, stopping first with what to do when any of these fails. `make docs`
+  runs Sphinx in the project's environment (`uv run`), and `make doc-deploy`
+  fetches `gh-pages-multi` itself (`npx`); the developer guide says the steps.
+
 ## 0.4.0 — 2026-11-27
 
 braidpy tells braids apart by what they are, and makes them more ways.
