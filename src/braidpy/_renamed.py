@@ -13,21 +13,31 @@ it does not break.
 from __future__ import annotations
 
 import functools
+import sys
 import warnings
 from collections.abc import Callable, Mapping
 from typing import Any, Optional, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-# The warning points at the caller of the old name, past this module.
-_CALLER = 3
+
+# The caller of the old name: the first frame past braidpy._renamed, so a
+# warning points at the code that used it, however deeply the old name was
+# answered from here.
+def _caller(frame: Any) -> int:
+    level = 1
+    while frame and frame.f_globals.get("__name__", "").startswith(f"{__name__}"):
+        level += 1
+        frame = frame.f_back
+    return level
 
 
 def _warn(old: str, new: str) -> None:
+    frame = sys._getframe()
     warnings.warn(
         f"{old} is now {new}; use it under its new name.",
         DeprecationWarning,
-        stacklevel=_CALLER,
+        stacklevel=_caller(frame),
     )
 
 
