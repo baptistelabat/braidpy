@@ -18,7 +18,7 @@ from braidpy.horn_gear import examples as ex
 from braidpy.horn_gear.tracks import simulation_period
 from braidpy.horn_gear.word import (
     annular_word,
-    deck_centre,
+    deck_center,
     flat_word,
     strands_for_checking,
 )
@@ -117,7 +117,7 @@ def test_the_word_depends_on_where_you_look_from():
     surprise someone reading a word out of this module.
     """
     machine = ex.tubular_braid_8()
-    axis = deck_centre(machine)
+    axis = deck_center(machine)
     from_axis = annular_word(machine, around=axis)
     off_axis = annular_word(machine, around=(axis[0] + 4.0, axis[1]))
     assert from_axis.generators != off_axis.generators
@@ -187,13 +187,13 @@ def test_reading_more_steps_repeats_the_word():
     assert twice == once + once
 
 
-def test_the_centre_defaults_to_the_axis_of_the_tube():
+def test_the_center_defaults_to_the_axis_of_the_tube():
     """For a ring of gears the centroid is the hole they braid around."""
     machine = ex.tubular_braid_8()
-    centre = deck_centre(machine)
+    center = deck_center(machine)
     word = annular_word(machine)
-    assert word.centre == pytest.approx(centre)
-    assert math.hypot(*centre) == pytest.approx(math.hypot(*word.centre))
+    assert word.center == pytest.approx(center)
+    assert math.hypot(*center) == pytest.approx(math.hypot(*word.center))
 
 
 @pytest.mark.parametrize("name", ["soutache_braid", "princess_braid", "flat_braid_9"])

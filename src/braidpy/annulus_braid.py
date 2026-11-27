@@ -717,8 +717,8 @@ class TubularBraidStrand:
     def position(self, z: float) -> tuple[float, float, float]:
         """Where the strand is at ``z`` along the axis."""
         # z = R * u * cot(q), so the angle travelled follows from the height.
-        travelled = z * math.tan(self.braid_angle) / self.radius
-        angle = self.direction * travelled + self.phase
+        traveled = z * math.tan(self.braid_angle) / self.radius
+        angle = self.direction * traveled + self.phase
         swing = self.radius + self.direction * self.bulge * math.sin(
             self.n_strands * angle / 2.0
         )

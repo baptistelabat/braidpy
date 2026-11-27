@@ -74,14 +74,14 @@ export function rebase(result) {
 
 // The colours chosen without the empty places after the last: those say
 // nothing, and a link need not carry them.
-function trimmed(colours) {
-  let end = colours.length;
-  while (end > 0 && !colours[end - 1]) end -= 1;
-  return colours.slice(0, end);
+function trimmed(colors) {
+  let end = colors.length;
+  while (end > 0 && !colors[end - 1]) end -= 1;
+  return colors.slice(0, end);
 }
 
 /** The colour a strand is really in, whatever is drawn while one is picked. */
-export function trueColour(i, fallback) {
+export function trueColor(i, fallback) {
   if (editing?.includes(i) && preview) return preview;
   return chosen[i] || made[i] || fallback;
 }
@@ -99,8 +99,8 @@ export function pick(which) {
 // three.js material and two canvases — all take a solid colour, so mixing it
 // here keeps one mechanism where opacity would need three.  A quarter of the
 // strand's own colour is left in it, enough to keep the braid readable.
-function muted(colour) {
-  const hex = long(colour);
+function muted(color) {
+  const hex = long(color);
   const mix = (at) => Math.round(parseInt(hex.slice(at, at + 2), 16) * 0.25 + 0x8c * 0.75);
   return (
     "#" +
@@ -117,20 +117,20 @@ function muted(colour) {
  * carriers on the machine — which have a palette of their own to fall back
  * on rather than a braid to take colours from.
  */
-export function strandColour(i, fallback) {
+export function strandColor(i, fallback) {
   const own = chosen[i] || fallback;
   return picked === null || picked.includes(i) ? own : muted(own);
 }
 
 /** The colours chosen, as the description writes them: `#rgb,,#rgb`. */
-export function chosenColours() {
+export function chosenColors() {
   return trimmed(chosen)
-    .map((colour) => colour || "")
+    .map((color) => color || "")
     .join(",");
 }
 
 /** Take the colours from a description, as `readSpec` wrote them. */
-export function useColours(text) {
+export function useColors(text) {
   chosen = String(text || "")
     .split(",")
     .map((part) => (part.trim() ? part.trim().toLowerCase() : null));
@@ -146,7 +146,7 @@ export function useColours(text) {
 export function paint(result) {
   if (!result || !result.strands) return result;
   result.strands.forEach((strand, i) => {
-    strand.colour = strandColour(i, trueColour(i, strand.colour));
+    strand.colour = strandColor(i, trueColor(i, strand.colour));
   });
   list(result);
   return result;
@@ -179,7 +179,7 @@ function list(result) {
     const i = Number(swatch.dataset.strand);
     // The swatch shows the strand's own colour, never the muted one it is
     // drawn in while another is shown among the others.
-    const own = long(trueColour(i, strands[i].colour));
+    const own = long(trueColor(i, strands[i].colour));
     swatch.style.setProperty("--swatch", own);
     swatch.firstElementChild.textContent = strands[i].name;
     swatch.title = `${strands[i].name}: ${own}`;
@@ -194,9 +194,9 @@ function list(result) {
 function groupsOf(strands) {
   const groups = new Map();
   strands.forEach((strand, i) => {
-    const colour = long(trueColour(i, strand.colour));
-    if (!groups.has(colour)) groups.set(colour, []);
-    groups.get(colour).push(i);
+    const color = long(trueColor(i, strand.colour));
+    if (!groups.has(color)) groups.set(color, []);
+    groups.get(color).push(i);
   });
   return groups;
 }
@@ -230,12 +230,12 @@ function listGroups(strands) {
   }
   for (const swatch of into.querySelectorAll("button[data-strands]")) {
     const members = swatch.dataset.strands.split(",").map(Number);
-    const colour = long(trueColour(members[0], strands[members[0]].colour));
+    const color = long(trueColor(members[0], strands[members[0]].colour));
     const names = members.map((i) => strands[i].name).join(", ");
     const count = members.length === 1 ? "1 strand" : `${members.length} strands`;
-    swatch.style.setProperty("--swatch", colour);
+    swatch.style.setProperty("--swatch", color);
     swatch.firstElementChild.textContent = count;
-    swatch.title = `${count} in ${colour}: ${names}`;
+    swatch.title = `${count} in ${color}: ${names}`;
     swatch.setAttribute("aria-label", `The colour of ${count}: ${names}`);
     swatch.closest("li").classList.toggle("picked", same(picked, members) && members.length > 1);
     swatch.closest("li").classList.toggle("changing", same(openFor(), members));
@@ -270,14 +270,14 @@ function openPalette(strands, anchor) {
   // one click, whatever colour that group was given.
   const swatches = [...document.querySelectorAll("#strand-list button[data-strand]")];
   const inUse = swatches.map((swatch) => swatch.style.getPropertyValue("--swatch").trim());
-  for (const colour of new Set([...inUse, ...PALETTE, ...NEUTRALS].map(long))) {
+  for (const color of new Set([...inUse, ...PALETTE, ...NEUTRALS].map(long))) {
     const dab = document.createElement("button");
     dab.type = "button";
     dab.className = "dab";
-    dab.dataset.colour = colour;
-    dab.style.setProperty("--swatch", colour);
-    dab.title = colour;
-    dab.setAttribute("aria-label", colour);
+    dab.dataset.colour = color;
+    dab.style.setProperty("--swatch", color);
+    dab.title = color;
+    dab.setAttribute("aria-label", color);
     holder.append(dab);
   }
   const more = document.createElement("button");
@@ -320,7 +320,7 @@ function openFor() {
 }
 
 /** Give strands a colour, and say so. */
-function colour(strands, value) {
+function color(strands, value) {
   for (const i of strands) {
     while (chosen.length <= i) chosen.push(null);
     chosen[i] = value.toLowerCase();
@@ -332,15 +332,15 @@ function openBox(strands) {
   if (!box) return;
   editing = strands;
   preview = null;
-  box.value = long(trueColour(strands[0], "#000000"));
+  box.value = long(trueColor(strands[0], "#000000"));
   // showPicker is what opens it without the box having to be seen; where it
   // is not understood, clicking the box does the same.
   if (typeof box.showPicker === "function") box.showPicker();
   else box.click();
 }
 
-function long(colour) {
-  const text = String(colour || "#000000").trim();
+function long(color) {
+  const text = String(color || "#000000").trim();
   if (/^#[0-9a-fA-F]{3}$/.test(text)) {
     return "#" + [...text.slice(1)].map((c) => c + c).join("");
   }
@@ -378,7 +378,7 @@ document.addEventListener("click", (event) => {
   }
   const dab = event.target.closest?.("#strand-palette .dab");
   if (dab) {
-    colour(openFor(), dab.dataset.colour);
+    color(openFor(), dab.dataset.colour);
     preview = null;
     editing = null;
     closePalette();
@@ -408,7 +408,7 @@ document.addEventListener("input", (event) => {
 // Confirming it writes it down, and the link follows.
 document.addEventListener("change", (event) => {
   if (event.target.id !== "strand-colour" || editing === null) return;
-  colour(editing, event.target.value);
+  color(editing, event.target.value);
   preview = null;
   tell(true);
 });

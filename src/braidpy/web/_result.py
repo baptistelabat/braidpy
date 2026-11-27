@@ -107,9 +107,9 @@ def _with_core(trajectories, name: Hashable):
     """The strands' paths, and a core standing at their axis all along."""
     from dataclasses import replace
 
-    centre = trajectories.centre()
-    standing = np.tile(np.asarray(centre, dtype=float), (len(trajectories.times), 1))
-    return replace(trajectories, axis=centre, xy={**trajectories.xy, name: standing})
+    center = trajectories.center()
+    standing = np.tile(np.asarray(center, dtype=float), (len(trajectories.times), 1))
+    return replace(trajectories, axis=center, xy={**trajectories.xy, name: standing})
 
 
 def _tighten(
@@ -122,7 +122,7 @@ def _tighten(
     return _tightened(paths, diameter, iterations.read(spec), rigid=rigid)
 
 
-def recoloured(result: Result, chosen: Sequence[str | None]) -> Result:
+def recolored(result: Result, chosen: Sequence[str | None]) -> Result:
     """The same braid with the colours a page chose for its strands.
 
     Whatever made the braid picks the colours to start with -- a word by the
@@ -141,9 +141,9 @@ def recoloured(result: Result, chosen: Sequence[str | None]) -> Result:
         The braid, recoloured.  The same object, which the builders have only
         just made.
     """
-    for strand, colour in zip(result["strands"], chosen):
-        if colour:
-            strand["colour"] = colour
+    for strand, color in zip(result["strands"], chosen):
+        if color:
+            strand["colour"] = color
     return result
 
 
@@ -151,7 +151,7 @@ def _result(
     title: str,
     paths,
     diameter: float,
-    colours: Optional[Sequence[str]] = None,
+    colors: Optional[Sequence[str]] = None,
     names: Optional[Sequence[str]] = None,
     info: Optional[Info] = None,
     notes: Sequence[str] = (),
@@ -161,21 +161,21 @@ def _result(
     n = paths.formed_count
     keys: list[Hashable] = list(paths.points)
     stride = max(1, math.ceil(n / _MAX_POINTS))
-    centre = np.array([paths.axis[0], paths.axis[1], 0.0])
+    center = np.array([paths.axis[0], paths.axis[1], 0.0])
     chosen = list(range(0, n, stride))
     if chosen[-1] != n - 1:
         chosen.append(n - 1)
     strands: list[Strand] = []
     for i, key in enumerate(keys):
-        points = np.asarray(paths.points[key], dtype=float)[chosen] - centre
+        points = np.asarray(paths.points[key], dtype=float)[chosen] - center
         if not np.all(np.isfinite(points)):
             raise ValueError("The braid could not be laid: its yarns ran off.")
-        colour = colours[i % len(colours)] if colours else PALETTE[i % len(PALETTE)]
+        color = colors[i % len(colors)] if colors else PALETTE[i % len(PALETTE)]
         name = names[i] if names else f"Strand {key}"
         strands.append(
             {
                 "name": name,
-                "colour": colour,
+                "colour": color,
                 "points": np.round(points, _DECIMALS).tolist(),
             }
         )
@@ -239,7 +239,7 @@ def _timeline(
     chosen = list(range(0, len(times), stride))
     if chosen[-1] != len(times) - 1:
         chosen.append(len(times) - 1)
-    cx, cy = trajectories.centre()
+    cx, cy = trajectories.center()
     shift = np.array([cx, cy])
 
     def plane(points) -> list[list[float]]:
@@ -293,12 +293,12 @@ def _timeline(
         timeline["turn"] = turn
     if tracks:
         timeline["tracks"] = [
-            {"colour": colour, "points": plane(points)} for colour, points in tracks
+            {"colour": color, "points": plane(points)} for color, points in tracks
         ]
     return timeline
 
 
 def _hues(n: int) -> list[str]:
-    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.ashley_solid_sinnet import strand_colors
 
-    return strand_colours(n)
+    return strand_colors(n)

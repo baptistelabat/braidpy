@@ -48,8 +48,8 @@ from pathlib import Path
 from typing import Any, Optional, cast
 
 from braidpy.web import disks, machines, words
-from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
-from braidpy.web._settings import COLOURS, OWN
+from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recolored
+from braidpy.web._settings import COLORS, OWN
 from braidpy.web._spec import parse_moves, parse_word
 from braidpy.web._types import MachineGeometry, MachineTurned, Result, Source, Spec
 from braidpy.web.disks import from_b3d
@@ -123,7 +123,7 @@ def build(spec: Spec, tighten: bool = True) -> Result:
     later = _PAGE_TIGHTENS.set(not tighten)
     job = _TIGHTENING.set(None)
     try:
-        return recoloured(_SOURCES[source][1](spec), COLOURS.read(spec))
+        return recolored(_SOURCES[source][1](spec), COLORS.read(spec))
     finally:
         _PAGE_TIGHTENS.reset(later)
         _TIGHTENING.reset(job)

@@ -472,7 +472,7 @@ def settle(
         cells = [0] * (3 * n)
         segs = [g for g in range(n) if not is_top[g]]
 
-        def neighbours() -> None:
+        def neighbors() -> None:
             nonlocal pairs
             pairs = near_pairs(x, segs, yarn_of, gap, reach, cells)
             built[:] = x
@@ -532,13 +532,13 @@ def settle(
         restarts = 0
         sums = [0.0] * 4
         place_tops()
-        neighbours()
+        neighbors()
         while state["step"] < steps:
             step = state["step"]
             # Every step: two beads moving a tenth of a diameter each,
             # apart, would otherwise close the list's margin unseen.
             if stale(x, built):
-                neighbours()
+                neighbors()
             forces()
             up = force
             torque = 0.0

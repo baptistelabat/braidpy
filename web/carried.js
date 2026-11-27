@@ -160,7 +160,7 @@
     let keysHere = new Set();
     const accept = (g, h) => !!(moves[g] || moves[g + 1] || moves[h] || moves[h + 1]);
 
-    function neighbours() {
+    function neighbors() {
       pairs = nearPairs(x, segs, yarnOf, gap, reach, cells, accept);
       built = x.slice();
       keysHere = new Set();
@@ -231,10 +231,10 @@
 
     let dt = fire.dt, alpha = fire.alpha, downhill = 0;
     const none = [];
-    neighbours();
+    neighbors();
     let deepest = 0;
     for (let step = 0; step < st.most_steps; step++) {
-      if (stale(x, built)) neighbours();
+      if (stale(x, built)) neighbors();
       now.dt = dt;
       forces();
       deepest = Math.max(deepest, now.deepest);

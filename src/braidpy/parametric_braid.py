@@ -56,7 +56,7 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
-    def _colour(self, index: int, colors: Sequence[str] | None) -> str:
+    def _color(self, index: int, colors: Sequence[str] | None) -> str:
         palette = colors if colors else terminal_colors
         return palette[index % len(palette)]
 
@@ -80,7 +80,7 @@ class ParametricBraid:
 
         traces = []
         for index, strand in enumerate(self.strands):
-            colour = self._colour(index, colors)
+            color = self._color(index, colors)
             x, y, z = tube_mesh(
                 strand.sample(n_sample), diameter / 2.0, n_around=n_around
             )
@@ -90,7 +90,7 @@ class ParametricBraid:
                     y=y,
                     z=z,
                     surfacecolor=np.zeros_like(x),
-                    colorscale=[[0.0, colour], [1.0, colour]],
+                    colorscale=[[0.0, color], [1.0, color]],
                     showscale=False,
                     opacity=opacity,
                     name=self._name(index, names),
@@ -118,7 +118,7 @@ class ParametricBraid:
                     y=y,
                     z=z,
                     mode="lines",
-                    line=dict(width=line_width, color=self._colour(index, colors)),
+                    line=dict(width=line_width, color=self._color(index, colors)),
                     name=self._name(index, names),
                     legendgroup=self._name(index, names),
                     hoverinfo="name",

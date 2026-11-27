@@ -253,6 +253,18 @@ What changed in each release of braidpy.
 
 ### Changed
 
+- braidpy's names are spelled in American English, as Python's and its
+  libraries' are (`color`, `center`, `neighbor`), `catalogue` aside; prose
+  may be British. A test keeps it so (`tests/test_spelling.py`). Renamed,
+  the old names still answering with a `DeprecationWarning`
+  (`braidpy._renamed`): `ashley_solid_sinnet.strand_colors`,
+  `horn_gear.visualization.colored_tracks`, `horn_gear.word.deck_center`,
+  `BraidingMachine.carrier_colors`, `StrandTrajectories.center`,
+  `DescribedMachine(centers=)` and its `centers`, the `color=` of
+  `BraidGrowth.traces`, and the attributes `b3d.Design.colors`,
+  `CarriedBraid.colors` and `AnnularWord.center` (built with the old
+  keyword, these three no longer are). Braid Studio's links and JSON are
+  unchanged.
 - One spelling for the catalogues: the modules `braid_catalog`,
   `machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog` and
   `topology_catalog` are now `braid_catalogue`, `machine_catalogue`,

@@ -118,8 +118,8 @@ def least_take_off(
         ``take_off``, or a little faster than the least take-off that lets
         the closest such pair fit.
     """
-    centre = np.asarray(trajectories.centre(), dtype=float)
-    rel = np.stack([xy - centre for xy in trajectories.xy.values()])
+    center = np.asarray(trajectories.center(), dtype=float)
+    rel = np.stack([xy - center for xy in trajectories.xy.values()])
     n_yarns, n, _ = rel.shape
     dt = float(trajectories.times[1] - trajectories.times[0])
     least = take_off

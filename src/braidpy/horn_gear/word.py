@@ -52,6 +52,7 @@ from typing import Optional, cast
 
 import numpy as np
 
+from braidpy._renamed import renamed_attribute, renamed_globals
 from braidpy.braid import Braid
 
 from .model import Axial, BraidingMachine
@@ -63,7 +64,7 @@ __all__ = [
     "AnnularWord",
     "RingWord",
     "annular_word",
-    "deck_centre",
+    "deck_center",
     "default_axis",
     "flat_word",
     "ring_unit",
@@ -115,7 +116,7 @@ def _trajectories(
     return replace(tracks, xy={**tracks.xy, **standing})
 
 
-def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, float]:
+def deck_center(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, float]:
     """The centroid of the gears, as a default point to look out from.
 
     For a machine whose gears ring a hole — a tubular braider — this is the
@@ -132,10 +133,10 @@ def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, fl
     """
     from .layout import compute_layout
 
-    centres = list(compute_layout(machine, scale=scale).values())
+    centers = list(compute_layout(machine, scale=scale).values())
     return (
-        sum(x for x, _ in centres) / len(centres),
-        sum(y for _, y in centres) / len(centres),
+        sum(x for x, _ in centers) / len(centers),
+        sum(y for _, y in centers) / len(centers),
     )
 
 
@@ -226,15 +227,18 @@ class AnnularWord:
         winding: Per carrier, how many times it went round the centre over the
             stretch read.  Half the carriers of a tubular braider go one way
             and half the other, so these come in both signs.
-        centre: The point the braid was read around.
+        center: The point the braid was read around.
         n_strands: How many strands there are, which is the index of the
             wrapping pair.
     """
 
     generators: list[int]
     winding: dict[CarrierId, float]
-    centre: tuple[float, float]
+    center: tuple[float, float]
     n_strands: int
+
+    # Its name before braidpy's code took American spelling.
+    centre = renamed_attribute("center")
 
     @property
     def net_winding(self) -> float:
@@ -268,7 +272,7 @@ def annular_word(
 
     Args:
         machine: The machine definition.
-        around: The point to look out from; :func:`deck_centre` if None.
+        around: The point to look out from; :func:`deck_center` if None.
         carriers: The loading; the machine's own if None.
         n_steps: How many steps to read; one full cycle if None.
         n_substeps: Samples per step.
@@ -280,7 +284,7 @@ def annular_word(
     """
     tracks = _trajectories(machine, carriers, n_steps, n_substeps, scale)
     if around is None:
-        around = deck_centre(machine, scale=scale)
+        around = deck_center(machine, scale=scale)
 
     ids = sorted(tracks.xy)
     count = len(ids)
@@ -313,7 +317,7 @@ def annular_word(
     return AnnularWord(
         generators=word,
         winding=winding,
-        centre=(float(around[0]), float(around[1])),
+        center=(float(around[0]), float(around[1])),
         n_strands=count,
     )
 
@@ -393,7 +397,7 @@ def default_axis(machine: BraidingMachine) -> Axial:
     a ring of gears encloses, which a tubular braider braids round
     (:func:`~braidpy.horn_gear.layout.tube_axials`); an axial the machine
     feeds up a gear, as a soutache's cord; the gear nearest the deck's
-    centre (:func:`deck_centre`).
+    centre (:func:`deck_center`).
 
     Args:
         machine: The machine.
@@ -414,7 +418,7 @@ def default_axis(machine: BraidingMachine) -> Axial:
         return holes[0]
     if own:
         return own[0]
-    x, y = deck_centre(machine)
+    x, y = deck_center(machine)
     gears = [spot for spot in axial_spots(machine, layout) if len(spot.anchor) == 1]
     return min(
         gears,
@@ -468,7 +472,7 @@ def ring_word(
 
     if axis is None:
         axis = default_axis(machine)
-    centre = axial_position(machine, compute_layout(machine), axis)
+    center = axial_position(machine, compute_layout(machine), axis)
     machine = machine.with_axials(
         [a for a in getattr(machine, "axials", ()) if a.anchor != axis.anchor]
     )
@@ -482,8 +486,8 @@ def ring_word(
     # A step more, to begin the period where no two strands are in line.
     tracks = _trajectories(machine, carriers, n_steps + 1, n_substeps, 1.0)
     ids = sorted(tracks.xy, key=str)
-    xs = np.column_stack([tracks.xy[k][:, 0] - centre[0] for k in ids])
-    ys = np.column_stack([tracks.xy[k][:, 1] - centre[1] for k in ids])
+    xs = np.column_stack([tracks.xy[k][:, 0] - center[0] for k in ids])
+    ys = np.column_stack([tracks.xy[k][:, 1] - center[1] for k in ids])
     clearance = float(np.hypot(xs, ys).min())
     if clearance <= 0:
         raise ValueError(f"A strand passes through the axis {axis.name!r}.")
@@ -711,3 +715,10 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
     axials = [a.name for a in getattr(machine, "axials", ()) if a.name in paths.points]
     carriers = sorted(cast("list[int]", [k for k in paths.points if k not in axials]))
     return [_Yarn(paths.points[k]) for k in [*carriers, *axials]]
+
+
+# The names these went by before braidpy's code took American spelling.
+__getattr__ = renamed_globals(
+    __name__,
+    {"deck_centre": "deck_center"},
+)

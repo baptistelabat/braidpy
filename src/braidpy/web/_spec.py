@@ -105,11 +105,11 @@ class Number:
         return float(_number(spec, self.key, own, self.low, self.high))
 
 
-_COLOUR = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+_COLOR = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 
 
 @dataclass(frozen=True)
-class Colours:
+class Colors:
     """Colours a description may give as ``key``, one per strand.
 
     Given as a list, or as one string of them separated by commas, which is
@@ -145,7 +145,7 @@ class Colours:
             if not text:
                 chosen.append(None)
                 continue
-            if not _COLOUR.match(text):
+            if not _COLOR.match(text):
                 raise ValueError(
                     f"{text!r} is not a colour: write it as #rgb or #rrggbb."
                 )

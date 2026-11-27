@@ -51,6 +51,8 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from braidpy._renamed import renamed_attribute
+
 if TYPE_CHECKING:
     from braidpy.mobidai_catalogue import CataloguedMobidai
 
@@ -66,7 +68,7 @@ _SAME_ANGLE = 1e-6
 _HALF = 1e-9
 _TURN = 2 * math.pi
 # The colour of a yarn the file gives none: a light grey.
-_NO_COLOUR = "#cccccc"
+_NO_COLOR = "#cccccc"
 
 
 def _wrap(angle: float) -> float:
@@ -118,17 +120,20 @@ class Design:
 
     Attributes:
         start: Each yarn's angle at the start.
-        colours: Each yarn's colour, as ``#rrggbb``.
+        colors: Each yarn's colour, as ``#rrggbb``.
         prelude: The groups made before the cycle, once.
         cycle: The groups of a cycle.
         times: How many times the cycle is made.
     """
 
     start: dict[int, float]
-    colours: tuple[str, ...]
+    colors: tuple[str, ...]
     prelude: tuple[Group, ...]
     cycle: tuple[Group, ...]
     times: int
+
+    # Its name before braidpy's code took American spelling.
+    colours = renamed_attribute("colors")
 
     @classmethod
     def read(cls, text: str) -> Design:
@@ -140,9 +145,9 @@ class Design:
         data = read_b3d(text)
         n = int(data["nThreads"])
         threads = (data.get("threadStates") or [])[:n]
-        colours = tuple(
-            f"#{int(t['colour']):06x}" if "colour" in t else _NO_COLOUR for t in threads
-        ) + (_NO_COLOUR,) * (n - len(threads))
+        colors = tuple(
+            f"#{int(t['colour']):06x}" if "colour" in t else _NO_COLOR for t in threads
+        ) + (_NO_COLOR,) * (n - len(threads))
         steps = data["steps"]
         start = _start(steps, n)
         last = len(steps) - 1
@@ -151,12 +156,12 @@ class Design:
             first = _repeated_from(steps, last)
             return cls(
                 start,
-                colours,
+                colors,
                 tuple(_groups(steps, 1, first)),
                 (*_groups(steps, first, last), _back(steps[last])),
                 1 + int(steps[last]["repeatTimes"]),
             )
-        return cls(start, colours, (), tuple(_groups(steps, 1, len(steps))), 1)
+        return cls(start, colors, (), tuple(_groups(steps, 1, len(steps))), 1)
 
 
 def _start(steps: Sequence[dict[str, Any]], n: int) -> dict[int, float]:
@@ -383,7 +388,7 @@ def mobidai_from_b3d(
         CataloguedMobidai(
             name=name,
             n_slots=n,
-            initial_slots=tuple(zip(starts, (design.colours[y] for y in yarns))),
+            initial_slots=tuple(zip(starts, (design.colors[y] for y in yarns))),
             moves=tuple(moves),
             source="braid3d",
         ),

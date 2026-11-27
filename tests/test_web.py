@@ -12,7 +12,7 @@ import sys
 import pytest
 
 from braidpy.web import build, catalogue
-from braidpy.web._settings import COLOURS
+from braidpy.web._settings import COLORS
 
 
 @pytest.mark.parametrize(
@@ -186,18 +186,18 @@ def test_a_braid_forms_on_a_fell_ring_not_a_point(spec):
         (None, ()),
     ],
 )
-def test_colours_are_read_however_they_are_written(given, want):
+def test_colors_are_read_however_they_are_written(given, want):
     """A list, or one string of them, which is what fits in a link."""
-    assert COLOURS.read({} if given is None else {"colours": given}) == want
+    assert COLORS.read({} if given is None else {"colours": given}) == want
 
 
 @pytest.mark.parametrize("given", ["red", "#12345", "#gggggg", "e41a1c"])
-def test_colours_that_cannot_be_read_say_so(given):
+def test_colors_that_cannot_be_read_say_so(given):
     with pytest.raises(ValueError, match="not a colour"):
-        COLOURS.read({"colours": given})
+        COLORS.read({"colours": given})
 
 
-def test_a_chosen_colour_replaces_the_one_the_braid_was_made_with():
+def test_a_chosen_color_replaces_the_one_the_braid_was_made_with():
     spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
     made = build(dict(spec))
     chosen = build(dict(spec, colours="#112233,,#445566"))
@@ -208,7 +208,7 @@ def test_a_chosen_colour_replaces_the_one_the_braid_was_made_with():
     ]
 
 
-def test_choosing_a_colour_changes_nothing_else_about_the_braid():
+def test_choosing_a_color_changes_nothing_else_about_the_braid():
     """Only what the strands are painted with: the braid is the same braid."""
     spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
     made = build(dict(spec))
@@ -219,14 +219,14 @@ def test_choosing_a_colour_changes_nothing_else_about_the_braid():
     assert made["info"] == chosen["info"]
 
 
-def test_more_colours_than_strands_are_no_trouble():
+def test_more_colors_than_strands_are_no_trouble():
     spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
     chosen = build(dict(spec, colours=",".join(["#010101"] * 9)))
     assert [s["colour"] for s in chosen["strands"]] == ["#010101"] * 3
 
 
 @pytest.mark.parametrize("source", ["word", "kumihimo", "machine"])
-def test_every_kind_of_braid_can_be_recoloured(source):
+def test_every_kind_of_braid_can_be_recolored(source):
     """Whatever chose the colours to start with, a page may choose its own."""
     starts = {
         "word": {"word": "1 -2", "n_strands": 3},

@@ -72,7 +72,7 @@ def test_two_gears_side_by_side():
     assert [(c.gear_a, c.gear_b) for c in machine.connections] == [("A", "B")]
 
 
-def test_neighbours_turn_opposite_ways_and_a_gear_may_have_its_own_slots():
+def test_neighbors_turn_opposite_ways_and_a_gear_may_have_its_own_slots():
     machine = machine_from_graph("A:6-B, A-C; A-D", n_slots=4)
     assert machine.gears["A"].n_slots == 6
     assert {machine.gears[g].n_slots for g in "BCD"} == {4}
@@ -181,8 +181,8 @@ def test_a_split_gear_is_its_parts_on_one_axle():
     parts = [machine.gears["B1"], machine.gears["B2"]]
     assert [(g.n_slots, g.size) for g in parts] == [(3, 6), (3, 6)]
     assert parts[0].direction == parts[1].direction == -machine.gears["A"].direction
-    centres = compute_layout(machine)
-    assert centres["B1"] == centres["B2"]
+    centers = compute_layout(machine)
+    assert centers["B1"] == centers["B2"]
 
 
 def test_a_gear_split_in_three_braids_three_plaits_round_it():
@@ -647,12 +647,12 @@ def test_a_matrix_of_gears_touches_and_overlaps_nowhere(graph):
     from braidpy.horn_gear.layout import CLEARANCE, compute_layout, gear_radii
 
     machine = machine_from_graph(graph, 4)
-    centres, radii = compute_layout(machine), gear_radii(machine)
+    centers, radii = compute_layout(machine), gear_radii(machine)
     # An axle by where it stands: a split gear's parts stand on one.
     meshes = {
-        frozenset((centres[c.gear_a], centres[c.gear_b])) for c in machine.connections
+        frozenset((centers[c.gear_a], centers[c.gear_b])) for c in machine.connections
     }
-    size = {centres[name]: radii[name] for name in centres}
+    size = {centers[name]: radii[name] for name in centers}
     axles = sorted(size)
     for i, a in enumerate(axles):
         for b in axles[i + 1 :]:
@@ -716,13 +716,13 @@ def test_the_timing_takes_no_step_from_two_gears_at_one_place():
     from braidpy.horn_gear.layout import RingContacts, time_ring
 
     r = math.sqrt(4)
-    centres = np.array([[0.0, 0.0], [0.0, 0.0], [2 * r, 2 * r], [2 * r, 0.0]])
+    centers = np.array([[0.0, 0.0], [0.0, 0.0], [2 * r, 2 * r], [2 * r, 0.0]])
     first, second = np.array([0, 1, 2, 3]), np.array([1, 2, 3, 0])
     turns = np.array([1, -1, 1, -1]) * 4 / (2 * math.pi)
     contacts = RingContacts(first, second, turns, np.zeros(4), np.zeros(4), np.ones(4))
     with np.errstate(all="raise"):
         placed, _, _, phases = time_ring(
-            centres,
+            centers,
             np.full(4, r),
             np.full(4, r),
             [(0, 1), (1, 2), (2, 3), (0, 3)],

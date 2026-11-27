@@ -216,7 +216,7 @@ def test_a_disk_braids_round_a_core_down_its_middle(source, core):
     and the marudai is told of the core, after the yarns."""
     import numpy as np
 
-    from braidpy.web._settings import CORE_COLOUR
+    from braidpy.web._settings import CORE_COLOR
 
     plain = build({"source": source})
     result = build({"source": source, "core": core})
@@ -225,7 +225,7 @@ def test_a_disk_braids_round_a_core_down_its_middle(source, core):
     assert result["info"]["closest_approach"] >= 0.99 * result["yarn_diameter"]
     points, widest = _round_a_core(result)
     assert widest < np.pi, "the yarns all round the core"
-    assert result["strands"][-1]["colour"] == CORE_COLOUR
+    assert result["strands"][-1]["colour"] == CORE_COLOR
     if core == "rigid":
         assert np.ptp(points[:, :2], axis=0).max() < 1e-9
     assert result["disk"] == {**plain["disk"], "core": core}
@@ -242,13 +242,13 @@ def test_a_lace_braid_made_on_a_marudai_can_have_a_core(name):
     """Made from its card on a marudai, any lace braid can be made round a
     core, even one of four gears, which has no room for one on the machine:
     the core comes after its bobbins, grey, and the marudai is told of it."""
-    from braidpy.web._settings import CORE_COLOUR
+    from braidpy.web._settings import CORE_COLOR
 
     spec = {"source": "lace", "name": name, "settle": "marudai"}
     plain = build(spec)
     result = build({**spec, "core": "rigid"})
     assert result["strands"][-1]["name"] == "Core"
-    assert result["strands"][-1]["colour"] == CORE_COLOUR
+    assert result["strands"][-1]["colour"] == CORE_COLOR
     assert result["disk"] == {**plain["disk"], "core": "rigid"}
     assert result["info"]["word"] == plain["info"]["word"]
 

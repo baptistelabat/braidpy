@@ -82,6 +82,8 @@ from typing import Optional
 import networkx as nx
 import numpy as np
 
+from braidpy._renamed import renamed_attribute, renamed_keywords
+
 from .model import Axial, BraidingMachine, Connection, HornGear
 
 __all__ = [
@@ -240,14 +242,14 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         raise ValueError(
             "These gears make separate machines: " + "; ".join(groups) + "."
         )
-    colours = nx.bipartite.color(graph) if nx.is_bipartite(graph) else None
-    if colours is None:
+    colors = nx.bipartite.color(graph) if nx.is_bipartite(graph) else None
+    if colors is None:
         cycle = next(c for c in nx.cycle_basis(graph) if len(c) % 2)
         raise ValueError(
             f"Gears {'-'.join(cycle)} make a ring of {len(cycle)}: neighbours turn "
             "opposite ways, so a ring of an odd number cannot turn."
         )
-    first = colours[axle_of[named[0]]]
+    first = colors[axle_of[named[0]]]
     slots = {gear: own.get(gear, n_slots) for gear in named}
     # A split gear is as large as all its parts' slots together.
     size = {axle: 0 for axle in graph}
@@ -257,7 +259,7 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
         HornGear(
             name,
             slots[name],
-            direction=1 if colours[axle_of[name]] == first else -1,
+            direction=1 if colors[axle_of[name]] == first else -1,
             size=None if axle_of[name] == name else size[axle_of[name]],
         )
         for name in named
@@ -322,16 +324,16 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
             phase[(a, b)] = phase[(b, a)] = tick / k
     solved_radii = False
     if axles and nx.is_forest(graph):
-        centres = _layout_bfs(
+        centers = _layout_bfs(
             sketch, directions=_interleaved(axles, meets, slots, axle_of)
         )
     elif nx.is_forest(graph):
-        centres = compute_layout(sketch)
+        centers = compute_layout(sketch)
     else:
         # A ring: drawn to touch, sizes and all (ring_geometry).
-        centres, radius = ring_geometry(sketch)
+        centers, radius = ring_geometry(sketch)
         solved_radii = True
-    at = {gear: centres[axle_of[gear]] for gear in named}
+    at = {gear: centers[axle_of[gear]] for gear in named}
     slot = {
         gear.name: _contact_slots(
             gear,
@@ -359,8 +361,8 @@ def _meshed(text: str, n_slots: int) -> BraidingMachine:
             # Timed, a split gear's parts are stacked, each its own horn
             # plate (_timed): sketched again with an axle as large as a part,
             # band by band.
-            centres, radius = _banded(pairs, axle_of, slots)
-            return _timed(gears, pairs, axle_of, centres, radius)
+            centers, radius = _banded(pairs, axle_of, slots)
+            return _timed(gears, pairs, axle_of, centers, radius)
     if not axles:
         return BraidingMachine(gears, connections)
     return DescribedMachine(
@@ -398,7 +400,7 @@ def _banded(
     from .layout import compute_layout, gear_radii, ring_geometry
 
     parts = nx.Graph(pairs)
-    centres: dict[str, np.ndarray] = {}
+    centers: dict[str, np.ndarray] = {}
     radius: dict[str, float] = {}
     for band in sorted(nx.connected_components(parts), key=lambda b: min(b)):
         sketch = BraidingMachine(
@@ -412,13 +414,13 @@ def _banded(
         else:
             here, size = ring_geometry(sketch)
         own = {axle: np.array(here[axle], dtype=float) for axle in here}
-        shared = [axle for axle in own if axle in centres]
+        shared = [axle for axle in own if axle in centers]
         if shared:
-            own = _onto(own, shared, centres)
+            own = _onto(own, shared, centers)
         for axle, at in own.items():
-            centres.setdefault(axle, at)
+            centers.setdefault(axle, at)
             radius.setdefault(axle, float(size[axle]))
-    return {axle: (float(at[0]), float(at[1])) for axle, at in centres.items()}, radius
+    return {axle: (float(at[0]), float(at[1])) for axle, at in centers.items()}, radius
 
 
 def _onto(
@@ -487,7 +489,7 @@ def _timed(
     gears: list[HornGear],
     pairs: list[tuple[str, str]],
     axle_of: dict[str, str],
-    centres: dict[str, tuple[float, float]],
+    centers: dict[str, tuple[float, float]],
     radius: dict[str, float],
 ) -> DescribedMachine:
     """A ring of gears whose contacts cannot all be whole slots apart, laid
@@ -504,7 +506,7 @@ def _timed(
         gears: The gears, parts of split gears each a gear.
         pairs: The gears that mesh, as written.
         axle_of: Each gear's axle: its own name, or its split gear's.
-        centres: Each axle's centre, from :func:`ring_geometry`, an axle as
+        centers: Each axle's centre, from :func:`ring_geometry`, an axle as
             large as its largest part.
         radius: Each axle's radius, from the same.
 
@@ -514,7 +516,7 @@ def _timed(
     """
     from .layout import RingContacts, _gear_radius, time_ring
 
-    axles = list(centres)
+    axles = list(centers)
     index = {axle: i for i, axle in enumerate(axles)}
     by_name = {gear.name: gear for gear in gears}
     of_axle = {axle_of[gear.name]: gear for gear in gears}
@@ -541,8 +543,8 @@ def _timed(
         for q in range(p + 1, len(axles))
         if (p, q) not in set(meshes)
     ]
-    centre, radii, turned, phases = time_ring(
-        np.array([centres[axle] for axle in axles], dtype=float),
+    center, radii, turned, phases = time_ring(
+        np.array([centers[axle] for axle in axles], dtype=float),
         np.array([radius[axle] for axle in axles], dtype=float),
         np.array([_gear_radius(int(h)) for h in horns]),
         meshes,
@@ -574,7 +576,7 @@ def _timed(
         slot = {}
         for gear, other in ((a, b), (b, a)):
             g, i = by_name[gear], index[axle_of[gear]]
-            (x, y), (u, v) = centre[i], centre[index[axle_of[other]]]
+            (x, y), (u, v) = center[i], center[index[axle_of[other]]]
             # The gear's slot 0 starts here: its part's own start.
             start = 2 * math.pi * turned[timer[gear]] / (g.direction * g.n_slots)
             at_contact = (math.atan2(v - y, u - x) - start) * g.n_slots / (2 * math.pi)
@@ -588,8 +590,8 @@ def _timed(
         connections,
         {
             g.name: (
-                float(centre[index[axle_of[g.name]]][0]),
-                float(centre[index[axle_of[g.name]]][1]),
+                float(center[index[axle_of[g.name]]][0]),
+                float(center[index[axle_of[g.name]]][1]),
             )
             for g in gears
         },
@@ -670,19 +672,23 @@ class DescribedMachine(BraidingMachine):
     Args:
         gears: The gears, parts of split gears among them.
         connections: The contacts.
-        centres: Each gear's centre, at scale 1.
+        centers: Each gear's centre, at scale 1.
         radii: Each gear's radius at scale 1, where the convention's is not
             the one the geometry asks for; None to leave every gear to it.
     """
 
+    # Its name before braidpy's code took American spelling.
+    centres = renamed_attribute("centers")
+
+    @renamed_keywords(centres="centers")
     def __init__(
         self,
         gears: list[HornGear],
         connections: list[Connection],
-        centres: dict[str, tuple[float, float]],
+        centers: dict[str, tuple[float, float]],
         radii: dict[str, float] | None = None,
     ) -> None:
-        self.centres = dict(centres)
+        self.centers = dict(centers)
         self.radii = dict(radii) if radii else None
         super().__init__(gears, connections)
 
@@ -690,7 +696,7 @@ class DescribedMachine(BraidingMachine):
         self, scale: float = 1.0
     ) -> dict[str, tuple[float, float]] | None:
         """The centres the graph laid out, at this scale."""
-        return {g: (x * scale, y * scale) for g, (x, y) in self.centres.items()}
+        return {g: (x * scale, y * scale) for g, (x, y) in self.centers.items()}
 
     def preferred_gear_radii(self, scale: float = 1.0) -> dict[str, float] | None:
         """The radii the ring's layout drew, at this scale."""
@@ -711,7 +717,7 @@ _FITS_DEG = 1.0
 
 def _contact_slots(
     gear: HornGear,
-    neighbours: list[str],
+    neighbors: list[str],
     at: dict[str, tuple[float, float]],
     phases: Optional[dict[str, float]] = None,
 ) -> dict[str, int]:
@@ -730,14 +736,14 @@ def _contact_slots(
     Raises:
         ValueError: If the gear has more contacts than slots.
     """
-    n, k = gear.n_slots, len(neighbours)
+    n, k = gear.n_slots, len(neighbors)
     if k > n:
         raise ValueError(
             f"Gear {gear.name} meshes with {k} gears but has {n} slots: give it "
             f"at least {k}, as {gear.name}:{k}."
         )
     if k == 1:
-        return {neighbours[0]: 0}
+        return {neighbors[0]: 0}
     x, y = at[gear.name]
 
     def turn(name: str) -> float:
@@ -748,11 +754,11 @@ def _contact_slots(
         back = gear.direction * (phases or {}).get(name, 0.0) * 2 * math.pi / n
         return math.atan2(v - y, u - x) - back
 
-    first = turn(neighbours[0])
+    first = turn(neighbors[0])
     # Anticlockwise from the first contact, in slots.
     ahead = sorted(
         (((turn(name) - first) % (2 * math.pi)) / (2 * math.pi) * n, name)
-        for name in neighbours
+        for name in neighbors
     )
     wanted = [
         round(((ahead[(i + 1) % k][0] - ahead[i][0]) % n) / _SAME) * _SAME
@@ -932,9 +938,9 @@ def graph_of(machine: BraidingMachine) -> tuple[str, int]:
     split = [g for g in machine.gears.values() if g.size not in (None, g.n_slots)]
     axles: dict[tuple[float, float], list[str]] = {}
     if split:
-        centres = compute_layout(machine)
+        centers = compute_layout(machine)
         for g in split:
-            x, y = centres[g.name]
+            x, y = centers[g.name]
             axles.setdefault((round(x, 6), round(y, 6)), []).append(g.name)
     together = ["+".join(parts) for parts in axles.values() if len(parts) > 1]
     return " ".join(pairs + together), common

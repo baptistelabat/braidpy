@@ -24,7 +24,7 @@ def out():
     return json.loads(run.stdout)
 
 
-def test_colours_chosen_on_a_longer_braid_leave_the_link_of_a_shorter_one(out):
+def test_colors_chosen_on_a_longer_braid_leave_the_link_of_a_shorter_one(out):
     """Strands 2, 5, 17 and 19 coloured on a braid of twenty, then a braid of
     sixteen made: its link names its own strands' colours only, not twenty."""
     assert len(out["chosenOnTwenty"].split(",")) == 20
@@ -34,6 +34,6 @@ def test_colours_chosen_on_a_longer_braid_leave_the_link_of_a_shorter_one(out):
     assert out["letGoAgain"] is False
 
 
-def test_empty_places_after_the_last_colour_are_not_written(out):
+def test_empty_places_after_the_last_color_are_not_written(out):
     assert out["trailing"] == "#ff0000"
     assert out["none"] == ""
