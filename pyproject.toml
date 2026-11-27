@@ -7,6 +7,16 @@ build-backend = "setuptools.build_meta"
 name = "braidpy"
 version = "0.4.0"
 description = "Python library for working with braids"
+keywords = [
+    "braid",
+    "braiding",
+    "kumihimo",
+    "marudai",
+    "sinnet",
+    "knot theory",
+    "topology",
+    "textile engineering",
+]
 authors = [
     { name="Baptiste Labat", email="baptiste.labat@gmail.com" }
 ]
