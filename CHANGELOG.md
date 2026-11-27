@@ -351,6 +351,9 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- The nearness of a band's new axles to those placed, on a machine of
+  split gears, comes out a plain float: it was numpy's, as `np.linalg.norm`
+  gave it.
 - `Braid.is_periodic()` answers the theorem it quoted: a braid is periodic
   when its nth power or its (n − 1)st power is a power of the half-twist
   Δ, read in the Garside canonical form.  It asked only whether such a
