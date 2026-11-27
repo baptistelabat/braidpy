@@ -15,6 +15,11 @@ and is added to a client as a command, for example to Claude Code::
 
     claude mcp add braidpy -- braidpy-mcp
 
+A client that reaches the server across the network, as a hosted one does,
+is served over streamable HTTP instead::
+
+    braidpy-mcp --http 0.0.0.0:8000    # 127.0.0.1 if no host is given
+
 The tools are :mod:`braidpy.tools`'s functions as they are, their
 docstrings what the assistant reads of them: nothing here but the wiring,
 so what a person reads in the library and what an assistant is told are
@@ -24,7 +29,8 @@ the same words.
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
+from argparse import ArgumentParser
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from braidpy import tools
@@ -77,8 +83,19 @@ def server() -> Any:
     return made
 
 
-def main() -> None:
-    """Run the server over stdio: ``braidpy-mcp``."""
+def main(argv: Sequence[str] | None = None) -> None:
+    """Run the server: over stdio, as ``braidpy-mcp``, or, with ``--http``,
+    over streamable HTTP, for the client that reaches a server across the
+    network."""
+    parser = ArgumentParser(
+        prog="braidpy-mcp", description="braidpy's tools, as an MCP server"
+    )
+    parser.add_argument(
+        "--http",
+        metavar="[HOST:]PORT",
+        help="serve streamable HTTP there (127.0.0.1 if no host is given), rather than stdio",
+    )
+    given = parser.parse_args(argv)
     try:
         made = server()
     except ModuleNotFoundError as missing:
@@ -87,7 +104,11 @@ def main() -> None:
         raise SystemExit(
             "braidpy-mcp needs the mcp extra: pip install 'braidpy[mcp]'"
         ) from None
-    made.run()
+    if given.http is None:
+        made.run()
+        return
+    host, _, port = given.http.rpartition(":")
+    made.run("streamable-http", host=host or "127.0.0.1", port=int(port))
 
 
 if __name__ == "__main__":

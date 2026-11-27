@@ -49,7 +49,10 @@ pip install "braidpy[mcp]"
 claude mcp add braidpy -- braidpy-mcp      # Claude Code; other clients alike
 ```
 
-It runs on the assistant's machine, over stdio, and needs nothing else. The
+It runs on the assistant's machine, over stdio, and needs nothing else. A
+client that reaches the server across the network — a hosted one, a
+registry's runner — is served over streamable HTTP instead:
+`braidpy-mcp --http 0.0.0.0:8000` (127.0.0.1 if no host is given). The
 catalogue of braids by topology, which
 {func}`~braidpy.tools.similar_braids` uses, takes a minute or so to make: the
 server starts making it as it starts.

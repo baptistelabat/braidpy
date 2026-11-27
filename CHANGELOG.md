@@ -2,6 +2,16 @@
 
 What changed in each release of braidpy.
 
+## Unreleased
+
+### New
+
+- `braidpy-mcp --http [host:]port`: braidpy's tools served over streamable
+  HTTP, for the client that reaches the server across the network — a
+  hosted one, a registry's runner. `braidpy-mcp` alone serves them over
+  stdio, as before. A test drives the server as a client does
+  (`tests/test_mcp_server.py`).
+
 ## 0.4.0 — 2026-11-27
 
 braidpy tells braids apart by what they are, and makes them more ways.
