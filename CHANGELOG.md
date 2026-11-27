@@ -6,11 +6,17 @@ What changed in each release of braidpy.
 
 ### New
 
+- 37 more of Ashley's plat sinnets as braid words (`braid_catalogue.ASHLEY_PLATS`,
+  #2976–#3019): French, flat, twill, duplex and doubled-edge sinnets led to
+  the centre, and square, half-round, ellipse and round sinnets by the square
+  sinnet's method, each written as the book gives its leads ("u3 o1", under
+  three, over one) and made by `AshleyPlat`. What the book says of them holds:
+  #3018 is #3001, #2989 divided equally is #3003 turned end for end, and #2999,
+  #2965, #2967 and #2968 are the sinnets already catalogued.
 - Which of periodic, reducible or pseudo-Anosov a braid is, on Braid
   Studio's card and in `tools.describe_braid` (`nielsen_thurston`): said
   of braids of few strands and crossings, the super summit set looked
   through only so far — past that, the card says it cannot tell.
-
 - Whether a braid is reducible (`Braid.is_reducible`): some of its strands
   gathered into groups, fewer groups than strands, each running inside one
   tube, the tubes themselves free to braid — a round curve round consecutive
@@ -349,6 +355,9 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- The nearness of a band's new axles to those placed, on a machine of
+  split gears, comes out a plain float: it was numpy's, as `np.linalg.norm`
+  gave it.
 - `Braid.is_periodic()` answers the theorem it quoted: a braid is periodic
   when its nth power or its (n − 1)st power is a power of the half-twist
   Δ, read in the Garside canonical form.  It asked only whether such a

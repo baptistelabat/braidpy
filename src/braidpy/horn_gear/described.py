@@ -473,11 +473,13 @@ def _onto(
 
     def clearance(band: dict[str, np.ndarray]) -> float:
         """How near the band's new axles come to those placed."""
-        return min(
-            np.linalg.norm(at - other)
-            for axle, at in band.items()
-            if axle not in placed
-            for other in placed.values()
+        return float(
+            min(
+                np.linalg.norm(at - other)
+                for axle, at in band.items()
+                if axle not in placed
+                for other in placed.values()
+            )
         )
 
     return max((moved(False), moved(True)), key=clearance)

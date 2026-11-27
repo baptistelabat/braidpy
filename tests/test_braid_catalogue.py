@@ -191,7 +191,7 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
     examples = word_examples()
     assert len(examples) == len(CATALOGUE) + len(catalog.WORD_EXAMPLES)
     for example, name in zip(examples, CATALOGUE):
-        braid, _ = getattr(catalog, name)(draw=False)
+        braid = CATALOGUE[name].make()
         unit = parse_word(example["word"])
         times, rest = divmod(len(braid.generators), len(unit))
         assert rest == 0 and tuple(unit * times) == tuple(braid.generators), name
@@ -248,3 +248,39 @@ def test_the_rectangular_braid_of_20_is_not_a_wider_copy_of_the_14():
     track = {place: number for number, orbit in enumerate(orbits) for place in orbit}
     assert "".join("AB"[track[place]] for place in range(20)) == "ABBABAABABBABAABABBA"
     assert is_pure(Braid(tuple(braid.generators) * home, 20))
+
+
+def test_ashley_s_plats_are_the_sinnets_the_book_says_are_alike():
+    """Made as the book's text says, the plats agree with what it says of
+    them: #2999 by the square method is the square sinnet already
+    catalogued, and #2965, #2967 and #2968 the flat sinnets; #3018, Smith's
+    method, is #3001 ("structurally it is identical"); #2989's method, six
+    strands equally divided, gives #3003, turned end for end."""
+    from braidpy.braid_catalogue import ASHLEY_PLATS, CATALOGUE, AshleyPlat
+
+    def alike(a: Braid, b: Braid) -> bool:
+        return a.pattern() == b.pattern()
+
+    square = AshleyPlat("square", 4, 2, ("o1", "o1"), "square").braid()
+    assert alike(square, CATALOGUE["square4"].make())
+    for n, name in ((3, "flat3"), (5, "flat_sinnet5"), (7, "flat_sinnet7")):
+        lead = f"o{n // 2}"
+        flat = AshleyPlat("flat", n, n // 2, (lead, lead), first="right").braid()
+        assert alike(flat, CATALOGUE[name].make()), name
+    assert alike(ASHLEY_PLATS[3018].braid(), ASHLEY_PLATS[3001].braid())
+    equal = AshleyPlat("duplex", 6, 3, ("o2", "o3", "u2", "u3")).braid()
+    turned = Braid(tuple(reversed(equal.generators)), 6)
+    assert alike(turned, ASHLEY_PLATS[3003].braid())
+
+
+def test_a_plat_s_lead_passes_the_strands_it_can():
+    """A lead to the centre passes every sister; a lead round the back
+    comes forward among the opposing strands, not past them."""
+    from braidpy.braid_catalogue import AshleyPlat
+
+    with pytest.raises(ValueError, match="sisters"):
+        AshleyPlat("flat", 5, 3, ("o1", "o2")).braid()
+    with pytest.raises(ValueError, match="opposing"):
+        AshleyPlat("square", 4, 2, ("o3", "o1"), "square").braid()
+    with pytest.raises(ValueError, match="over and under"):
+        AshleyPlat("flat", 3, 2, ("x1", "o1")).braid()
