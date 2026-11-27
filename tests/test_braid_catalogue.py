@@ -134,8 +134,9 @@ def test_flat4():
     Returns:
 
     """
-    b, _ = asymmetric_flat4()
-    assert b.is_periodic()
+    b, periods = asymmetric_flat4()
+    assert (b**periods).perm() == list(range(1, b.n_strands + 1))
+    assert not b.is_periodic()
 
 
 def test_abok_2934():

@@ -6,6 +6,14 @@ What changed in each release of braidpy.
 
 ### New
 
+- Whether a braid is reducible (`Braid.is_reducible`): some of its strands
+  gathered into groups, fewer groups than strands, each running inside one
+  tube, the tubes themselves free to braid — a round curve round consecutive
+  strands, two of them at least, all but two at most, brought back to itself.
+  Asked of the super summit set `conjugacy` computes, a reducible braid
+  having a conjugate there that keeps a round curve (Benardete, Gutiérrez
+  and Nitecki 1993; Calvez 2014, theorem 10).  With `Braid.is_periodic`,
+  this says which of periodic, reducible or pseudo-Anosov a braid is.
 - A machine's braid as a ring word round an axis
   (`braidpy.horn_gear.word.ring_word`): an axial, or any spot one could be
   fed at, the core the machine braids round if not said (`default_axis`).
@@ -336,6 +344,12 @@ What changed in each release of braidpy.
 
 ### Fixed
 
+- `Braid.is_periodic()` answers the theorem it quoted: a braid is periodic
+  when its nth power or its (n − 1)st power is a power of the half-twist
+  Δ, read in the Garside canonical form.  It asked only whether such a
+  power was pure, so σ₁² kept every strand's place and was said periodic,
+  as was the catalogue's asymmetric_flat4, which is not; a rotation's
+  braid, as σ₁σ₂ on three strands, is.
 - `hash(Braid)` agrees with `==`: two words for one braid hash alike,
   so a braid is one key in a dict or a set however it is written. It
   hashed the word, while `==` compares the braid itself; it now hashes
