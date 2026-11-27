@@ -29,6 +29,11 @@ COLOURS = Colours("colours")
 # info card of any braid (braidpy.shortening): a second or so in a browser.
 MOST_CROSSINGS_SHORTENED = 300
 
+# The most braids of a super summit set looked through, for the info card to
+# say which of periodic, reducible or pseudo-Anosov a braid is
+# (Braid.is_reducible): past it, the card says it cannot tell.
+MOST_BRAIDS_CLASSIFIED = 200
+
 # ------------------------------------------------------------- braid words
 
 

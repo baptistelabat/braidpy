@@ -108,9 +108,10 @@ def list_braids(source: Optional[str] = None) -> dict[str, Any]:
 def describe_braid(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
     """What is known of a braid from its word: strands, crossings, the
     permutation it makes, whether it is pure and after how many repeats,
-    what it closes up into, its Garside normal form, its band word where
-    that is shorter (:meth:`braidpy.braid.Braid.band_word`) — as Braid
-    Studio's card shows it (:mod:`braidpy.web`) — and a link to see it.
+    what it closes up into, its Garside normal form, which of periodic,
+    reducible or pseudo-Anosov it is, its band word where that is shorter
+    (:meth:`braidpy.braid.Braid.band_word`) — as Braid Studio's card shows
+    it (:mod:`braidpy.web`) — and a link to see it.
 
     Args:
         word: The braid word, for example ``"1 -2"``.

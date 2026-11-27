@@ -27,6 +27,7 @@ def test_every_answer_is_plain_data():
 def test_a_braid_is_described_and_linked():
     info = tools.describe_braid("aB")  # letters, as braidpy reads words
     assert info["n_strands"] == 3 and info["permutation"] == [2, 3, 1]
+    assert info["nielsen_thurston"] == "pseudo-Anosov"
     assert info["studio"].startswith(tools.STUDIO + "#source=word")
 
 
