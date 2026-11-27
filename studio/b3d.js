@@ -34,7 +34,7 @@
   // The angle of a slot, as marudai.js turns it (loaded before this in the
   // page, required beside it in Node).
   const slotAngle =
-    typeof module !== "undefined" && module.exports ? require("./marudai.js?v=e7b54acf59").slotAngle : root.slotAngleOnMarudai;
+    typeof module !== "undefined" && module.exports ? require("./marudai.js?v=73cce557c0").slotAngle : root.slotAngleOnMarudai;
 
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
   const colourNumber = (colour) => (/^#[0-9a-f]{6}$/i.test(colour ?? "") ? parseInt(colour.slice(1), 16) : 0xcccccc);

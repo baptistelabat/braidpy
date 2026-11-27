@@ -6,12 +6,12 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js?v=e7b54acf59";
-import { englishText, tr } from "./i18n.js?v=e7b54acf59";
-import { $, round } from "./page.js?v=e7b54acf59";
-import { lastResult } from "./scene.js?v=e7b54acf59";
-import { writeSpec } from "./spec.js?v=e7b54acf59";
-import { pending, submit, worker } from "./workers.js?v=e7b54acf59";
+import { catalogue } from "./fields.js?v=73cce557c0";
+import { englishText, tr } from "./i18n.js?v=73cce557c0";
+import { $, round } from "./page.js?v=73cce557c0";
+import { lastResult } from "./scene.js?v=73cce557c0";
+import { writeSpec } from "./spec.js?v=73cce557c0";
+import { pending, submit, worker } from "./workers.js?v=73cce557c0";
 
 export function describe(result, seconds) {
   $("about").hidden = false;
@@ -32,6 +32,16 @@ export function describe(result, seconds) {
     ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
     // Pure, and trivial with any one strand out, as the Borromean rings.
     ["Brunnian", info.brunnian === undefined ? undefined : info.brunnian ? "yes" : "no"],
+    [
+      // Which of periodic, reducible or pseudo-Anosov it is
+      // (Nielsen–Thurston); null when the search was too long.
+      "Kind",
+      info.nielsen_thurston === undefined
+        ? undefined
+        : info.nielsen_thurston === null
+          ? "too much to tell"
+          : info.nielsen_thurston,
+    ],
     ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
     ["Crossings", info.crossings],
     ["Exponent sum", info.exponent_sum],
