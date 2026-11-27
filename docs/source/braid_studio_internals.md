@@ -58,8 +58,9 @@ static files, published with the documentation.
   see [A site of your own](private_sites.md#in-another-language).
 - `web/build.py` assembles the site in `web/site/`. It copies the page, each
   of its files naming the others with the page's version, so a browser never
-  mixes old files with new ones, and three.js; builds the wheels; and writes `catalogue.json`, what the page
-  can make, and `topologies.json`, the catalogue of braids by topology, made
+  mixes old files with new ones, and three.js; builds the wheels; and writes `catalog.json`, what the page
+  can make — `catalogue.json` too, while sites built before it fetch it —
+  and `topologies.json`, the catalogue of braids by topology, made
   once here rather than in every browser.
 - `web/smoke_test.py` serves the site, opens it in a headless browser,
   checks the front page lists and filters its braids, and makes a braid of
@@ -110,7 +111,7 @@ another, braidpy's worker is started by the page's first lines, before
 three.js and the page's own modules load, and it fetches numpy, braidpy and
 the catalogue by topology while Python starts. The form does not wait for
 Python at all: what the page can make — every source, its braids and
-defaults — is written with the site (`catalogue.json`), so the menu and
+defaults — is written with the site (`catalog.json`), so the menu and
 fields are there at once, and a braid chosen before Python is ready is the
 one made when it is.
 

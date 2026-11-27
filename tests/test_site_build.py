@@ -23,6 +23,17 @@ def _build():
     return module
 
 
+def test_the_catalog_is_served_under_its_new_name_and_its_old_one(tmp_path):
+    """`catalog.json`, with `catalogue.json` of the very same bytes beside
+    it, while the sites built before it fetch that one."""
+    build = _build()
+    build._as_json(tmp_path, {"catalog": {"word": {"title": "Words"}}})
+    assert (tmp_path / "catalog.json").read_text() == '{"word": {"title": "Words"}}'
+    assert (tmp_path / "catalogue.json").read_text() == (
+        tmp_path / "catalog.json"
+    ).read_text()
+
+
 def test_the_braids_made_with_the_site_are_kept_gzipped(tmp_path):
     """Gzipped, each braid made with the site unpacks to the very bytes it
     was made as, the index names the gzipped files, and the same braids

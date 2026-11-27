@@ -185,7 +185,7 @@ function heard(data) {
 }
 
 // The form, filled with what can be made as soon as that is known: from
-// the site (catalogue.json), long before braidpy is ready to make any of
+// the site (catalog.json), long before braidpy is ready to make any of
 // it — or, without it, from braidpy when it is.
 let offered = false;
 function offer(sources) {

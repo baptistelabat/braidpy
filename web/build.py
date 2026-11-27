@@ -333,12 +333,18 @@ def _data(site: Path, packages: Sequence[str] = ()) -> None:
         "import json, sys; from braidpy import web; "
         "from braidpy.topology_catalog import export; "
         "topologies = export(); "
-        "json.dump({'catalogue': web.catalog(), 'topologies': topologies, "
+        "json.dump({'catalog': web.catalog(), 'topologies': topologies, "
         "'braids': web.braids(topologies)}, sys.stdout)"
     )
-    data = json.loads(_braidpy(script, packages).stdout)
+    _as_json(site, json.loads(_braidpy(script, packages).stdout))
+
+
+def _as_json(site: Path, data: dict) -> None:
+    """Each entry of ``data``, written as ``name.json``; the catalog, as
+    ``catalogue.json`` too, while the sites built before it fetch that."""
     for name, value in data.items():
         (site / f"{name}.json").write_text(json.dumps(value))
+    (site / "catalogue.json").write_text(json.dumps(data["catalog"]))
 
 
 def build(site: Path, premade: bool = True, about: Path = PROFILE) -> None:

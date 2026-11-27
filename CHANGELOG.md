@@ -284,7 +284,10 @@ What changed in each release of braidpy.
   `CatalogedBraid`, and each catalogue's `CATALOGUE` is `CATALOG`; the
   catalogue modules keep the names 0.3.0 shipped them — `braid_catalog`,
   `machine_catalog`, `mobidai_catalog`, `solid_sinnets_catalog` and
-  `topology_catalog`. Braid Studio's links and JSON are unchanged.
+  `topology_catalog`. Braid Studio's links and the JSON its pages serve
+  are unchanged, but the site writes its catalog as `catalog.json`,
+  keeping `catalogue.json` beside it for the sites built before it (a few
+  months, a release at least), each to be dropped in a later one.
 - Braids are compared as patterns (`braidpy.braid_pattern`) where braidpy
   compares them: `BraidPattern.alike`, and `braid_pattern.alike(a, b)` for
   two braids, say nothing measured tells two patterns apart — fast, the
