@@ -2,11 +2,25 @@
 
 What changed in each release of braidpy.
 
-## Unreleased
+## 0.4.0 — 2026-11-27
+
+braidpy tells braids apart by what they are, and makes them more ways.
+Four kinds of "the same braid" — the same word, the same braid, the same
+pattern repeated, the same knot or link — each with its own `==`; normal
+forms of its own, Artin's and the band generators', so math-braid is no
+longer needed; whether a braid is periodic, reducible or pseudo-Anosov.
+Horn gear machines are written as their graphs, with split gears, cores and
+axials anywhere, sized for their bobbins; a tube is made as a tube on a lace
+machine; disk moves are made in band letters where that is quicker;
+Ashley's sinnets come from the shape they take, and 37 more of his plat
+sinnets join the catalogue. Braid Studio speaks French, makes braids round
+a core, and steps through a disk's or a sinnet's moves. braidpy's names now
+take American spelling (`color`, `center`, `catalog`), the old ones still
+answering, with a warning.
 
 ### New
 
-- 37 more of Ashley's plat sinnets as braid words (`braid_catalogue.ASHLEY_PLATS`,
+- 37 more of Ashley's plat sinnets as braid words (`braid_catalog.ASHLEY_PLATS`,
   #2976–#3019): French, flat, twill, duplex and doubled-edge sinnets led to
   the centre, and square, half-round, ellipse and round sinnets by the square
   sinnet's method, each written as the book gives its leads ("u3 o1", under
@@ -52,7 +66,7 @@ What changed in each release of braidpy.
   the old name is kept. The topology catalogue groups braids by pattern
   key, with the same 91 topologies as before.
 - Catalogues from outside: a package of a site's own adds braids to
-  braidpy's catalogues (`braidpy.catalogue.extended`, entry points in
+  braidpy's catalogues (`braidpy.catalog.extended`, entry points in
   the group `braidpy.catalogues`), as braid-designer adds machines of its
   own without braidpy knowing them. A profile's `packages` name the
   site's packages: the build runs braidpy with them, installs their
@@ -150,7 +164,7 @@ What changed in each release of braidpy.
   naming a braid go on there.
 - Each catalogued braid's links, as data: where it comes from and where it
   is shown made, each a title, a kind (book, article, video, page, post)
-  and a web address (`catalogue.Link`, `Entry.links`; `Entry.reference` is
+  and a web address (`catalog.Link`, `Entry.links`; `Entry.reference` is
   now the first link's title). The addresses that were in the catalogues'
   docstrings and notes are there now, and go out with the topology
   catalogue (`topology_catalog.export`), for Braid Studio to show.
@@ -197,7 +211,7 @@ What changed in each release of braidpy.
   what it needs.
 - The multiband machines draw every carrier of a band in that band's colour,
   so the bands can be told apart in the braid they make together; a band
-  shown alone keeps its colour (`BraidingMachine.carrier_colours`).
+  shown alone keeps its colour (`BraidingMachine.carrier_colors`).
 - A line of horn gears that braids three bands at once: the 10-15-10
   machine of the Atelier de Tressage (`braidpy.horn_gear.multiband`). Where
   two bands meet, a six-horn gear is split between them, three horns each, so
