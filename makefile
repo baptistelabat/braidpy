@@ -1,4 +1,4 @@
-.PHONY: help install-uv docs studio studio-serve studio-test duplicates test test-all test-changed
+.PHONY: help install-uv docs doc-deploy release studio studio-serve studio-test duplicates test test-all test-changed
 .DEFAULT_GOAL := help
 
 # Define the version of uv you want to install
@@ -90,8 +90,8 @@ coverage: ## Launch coverage test
 	coverage run -m pytest tests
 	coverage html --omit="*/test*"
 
-docs:
-	cd docs && make html
+docs: ## Build the documentation in docs/build/html (Sphinx, from the dev group)
+	cd docs && uv run make html
 
 doc-deploy: docs ## Deploy docs to gh-pages under versioned path
 	@branch=$$(git rev-parse --abbrev-ref HEAD); \
@@ -102,7 +102,10 @@ doc-deploy: docs ## Deploy docs to gh-pages under versioned path
 	fi; \
 	safe_tag=$$(echo "$$tag" | tr '/\\' '-' ); \
 	echo "Deploying to branch gh-pages/$$safe_tag"; \
-	gh-pages-multi deploy -s docs/build/html -t "$$safe_tag"
+	npx --yes gh-pages-multi@0.2.0 deploy -s docs/build/html -t "$$safe_tag"
+
+release: ## Tag main with pyproject.toml's version and push it: release.yml publishes it on PyPI
+	scripts/release.sh
 
 demo: ## Launch an interactive demo
 	uv run examples/interactive_demo.py
