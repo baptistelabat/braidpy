@@ -129,6 +129,10 @@ class Info(TypedDict, total=False):
     # Pure, and trivial with any one strand out (Braid.is_brunnian): said
     # only of a pure braid small enough to ask.
     brunnian: bool
+    # Which of periodic, reducible or pseudo-Anosov the braid is
+    # (Nielsen–Thurston): None when the super summit set was too big to
+    # look through.
+    nielsen_thurston: str | None
     closest_approach: float
     expected_shape: str
     collision: Collision

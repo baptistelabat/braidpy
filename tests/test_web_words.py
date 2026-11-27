@@ -172,6 +172,37 @@ def test_a_braid_says_how_many_repeats_were_made(spec, made):
         assert info["pure"] == (made % info["pure_after"] == 0)
 
 
+@pytest.mark.parametrize(
+    "word, n_strands, kind",
+    [
+        ("1 2", 3, "periodic"),
+        ("1 1", 3, "reducible"),
+        ("1 -2", 3, "pseudo-Anosov"),
+    ],
+)
+def test_a_braid_says_which_of_periodic_reducible_or_pseudo_anosov_it_is(
+    word, n_strands, kind
+):
+    """Every braid is one of the three (Nielsen–Thurston): a rotation, the
+    strands in tubes, or neither (Braid.is_periodic, Braid.is_reducible)."""
+    info = build(
+        {"source": "word", "word": word, "n_strands": n_strands}, tighten=False
+    )["info"]
+    assert info["nielsen_thurston"] == kind
+
+
+def test_a_kind_too_long_to_tell_is_left_unsaid(monkeypatch):
+    """Told of braids of few strands and crossings, the super summit set
+    looked through so far only: past that, the card says it cannot tell."""
+    from braidpy.web import _info
+
+    assert _info._braid_info(parse_word("1 2 -3"), 4)["nielsen_thurston"] == (
+        "pseudo-Anosov"
+    )
+    monkeypatch.setattr(_info, "MOST_BRAIDS_CLASSIFIED", 1)
+    assert _info._braid_info(parse_word("1 2 -3"), 4)["nielsen_thurston"] is None
+
+
 def test_a_long_word_is_cut_short_in_the_title():
     word = " ".join(["1 -2"] * 30)
     title = build({"source": "word", "word": word, "n_strands": 3}, tighten=False)[

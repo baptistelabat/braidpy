@@ -13,6 +13,10 @@ What changed in each release of braidpy.
   three, over one) and made by `AshleyPlat`. What the book says of them holds:
   #3018 is #3001, #2989 divided equally is #3003 turned end for end, and #2999,
   #2965, #2967 and #2968 are the sinnets already catalogued.
+- Which of periodic, reducible or pseudo-Anosov a braid is, on Braid
+  Studio's card and in `tools.describe_braid` (`nielsen_thurston`): said
+  of braids of few strands and crossings, the super summit set looked
+  through only so far — past that, the card says it cannot tell.
 - Whether a braid is reducible (`Braid.is_reducible`): some of its strands
   gathered into groups, fewer groups than strands, each running inside one
   tube, the tubes themselves free to braid — a round curve round consecutive

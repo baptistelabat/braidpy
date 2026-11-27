@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from braidpy.web._settings import MOST_CROSSINGS_SHORTENED
+from braidpy.web._settings import MOST_BRAIDS_CLASSIFIED, MOST_CROSSINGS_SHORTENED
 from braidpy.web._types import Info
 
 
@@ -61,6 +61,25 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
                 # As Braid.full_twists has it, without computing it twice.
                 "full_twists": math.floor((least + most) / 4 + 0.5),
             }
+        # Which of periodic, reducible or pseudo-Anosov the braid is
+        # (Nielsen–Thurston): periodicity is cheap, but reducibility asks
+        # the super summit set, exponential at worst — asked of braids of
+        # these strands and crossings at most, and no more braids looked
+        # through than MOST_BRAIDS_CLASSIFIED; past that, no saying.
+        if n_strands <= 8 and len(word) <= 100:
+            from braidpy.conjugacy import SuperSummitSetTooLarge
+
+            if braid.is_periodic():
+                info["nielsen_thurston"] = "periodic"
+            else:
+                try:
+                    reducible = braid.is_reducible(limit=MOST_BRAIDS_CLASSIFIED)
+                except SuperSummitSetTooLarge:
+                    info["nielsen_thurston"] = None
+                else:
+                    info["nielsen_thurston"] = (
+                        "reducible" if reducible else "pseudo-Anosov"
+                    )
     return info
 
 
