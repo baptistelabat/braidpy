@@ -1,5 +1,10 @@
 # BraidPy
 
+[![PyPI](https://img.shields.io/pypi/v/braidpy?style=flat-square)](https://pypi.org/project/braidpy/)
+[![Python](https://img.shields.io/pypi/pyversions/braidpy?style=flat-square)](https://pypi.org/project/braidpy/)
+[![Documentation](https://img.shields.io/website?label=docs&style=flat-square&url=https%3A%2F%2Fbaptistelabat.github.io%2Fbraidpy)](https://baptistelabat.github.io/braidpy)
+[![License](https://img.shields.io/badge/license-MPL%202.0-brightgreen?style=flat-square)](LICENSE)
+
 A Python library for working with braids, from braid theory to the braids
 people make: by hand on a kumihimo disk, a marudai or Ashley's stand, or on a
 braiding or lace machine. It aims to help design real 3D braids using recent
@@ -81,6 +86,8 @@ Not yet:
 - [ ] 3D rotary (hexagonal) braiding machines
 
 ## Basic example
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/baptistelabat/braidpy/blob/develop/examples/quickstart.ipynb)
 
 ```python
 from braidpy import Braid
