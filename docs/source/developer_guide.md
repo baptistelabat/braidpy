@@ -86,11 +86,12 @@ Releases are made by hand, from `main`:
 1. Merge `develop` into `main`.
 2. Set the version in `pyproject.toml`, and say what changed in
    `CHANGELOG.md`, its date in place of "unreleased".
-3. Tag the release with its version (`git tag 0.3.0`), as the earlier ones
-   are, and push the tag.
-4. Build and publish the package: `uv build`, then `uv publish` with a PyPI
-   token.
-5. Publish its documentation: `make doc-deploy`.
+   The version is also in `server.json` (twice) and `uv.lock` (`uv lock`).
+3. Tag the release with its version (`git tag 0.4.0`), as the earlier ones
+   are, and push the tag: the release workflow (`release.yml`) builds the
+   package and publishes it on PyPI, refusing a tag that is not the version
+   `pyproject.toml` gives.
+4. Publish its documentation: `make doc-deploy`.
 
 A release is cut every two or three weeks while the API still moves: each
 break costs less made sooner, and `CHANGELOG.md` is what the people using

@@ -3,7 +3,7 @@
   "name": "io.github.baptistelabat/braidpy",
   "title": "braidpy",
   "description": "Braids by name or word: what they are, what they are like, and how to make them",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "websiteUrl": "https://baptistelabat.github.io/braidpy/studio/",
   "repository": {
     "url": "https://github.com/baptistelabat/braidpy",
@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "braidpy",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "runtimeHint": "uvx",
       "runtimeArguments": [
         {

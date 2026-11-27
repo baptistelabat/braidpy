@@ -2,7 +2,19 @@
 
 What changed in each release of braidpy.
 
-## Unreleased
+## 0.4.0 — 2026-11-27
+
+braidpy tells braids apart by what they are, and makes them more ways.
+Four kinds of "the same braid" — the same word, the same braid, the same
+pattern repeated, the same knot or link — each with its own `==`; normal
+forms of its own, Artin's and the band generators', so math-braid is no
+longer needed; whether a braid is periodic, reducible or pseudo-Anosov.
+Horn gear machines are written as their graphs, with split gears, cores and
+axials anywhere, sized for their bobbins; a tube is made as a tube on a lace
+machine; disk moves are made in band letters where that is quicker;
+Ashley's sinnets come from the shape they take, and 37 more of his plat
+sinnets join the catalogue. Braid Studio speaks French, makes braids round
+a core, and steps through a disk's or a sinnet's moves.
 
 ### New
 
