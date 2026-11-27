@@ -73,3 +73,61 @@ def test_alexander_polynomial_does_not_see_the_starting_point_nor_the_mirror():
 def test_a_negative_crossing_on_two_strands_is_the_inverse():
     """σ₁⁻¹ on two strands: the reduced Burau matrix is −1/t, not −t."""
     assert (Braid([1, -1], 2).to_reduced_matrix()[0, 0] - 1) == 0
+
+
+@pytest.mark.parametrize(
+    "word, n_strands, repeats",
+    [([1, -2, 3, 1, -3, 2, 2], 4, 3), ([1, 2, 3, 4, -1, -2], 5, 1), ([1], 2, 7)],
+)
+def test_burau_polynomial_mod_is_the_exact_one_reduced(word, n_strands, repeats):
+    """The characteristic polynomial of Bᵏ over the rationals, at t = 3, by
+    sympy, B the product of the generators' whole matrices, its
+    coefficients then taken modulo the prime."""
+    from sympy import QQ
+    from sympy.polys.matrices import DomainMatrix
+
+    from braidpy.braid import reduced_burau_generator
+    from braidpy.properties import PRIME, burau_polynomial_mod
+
+    braid = Braid(word, n_strands)
+    m = n_strands - 1
+    burau = DomainMatrix.eye(m, QQ)
+    for g in word:
+        rows = reduced_burau_generator(g, n_strands, QQ(3), QQ.one, QQ.zero)
+        burau = burau * DomainMatrix(rows, (m, m), QQ)
+    exact = [
+        c.numerator * pow(c.denominator, -1, PRIME) % PRIME
+        for c in (burau**repeats).charpoly()
+    ]
+    assert burau_polynomial_mod(braid, 3, repeats) == tuple(exact)
+
+
+def test_a_long_word_overflows_nothing():
+    """A unit whose Burau matrix grows, written out two thousand times: its
+    entries went past a float's range, its eigenvalues came out as NaN and
+    the fingerprint failed.  Scaled down as it is made, it overflows
+    nothing.  (Its samples are rounding all the same, so long a product:
+    :func:`~braidpy.properties.burau_polynomial_mod` is what is exact.)"""
+    import math
+
+    from braidpy.properties import alexander_on_circle, burau_polynomial_on_circle
+
+    written = Braid([1, -2, 3, -4, 5, -6, 7] * 2000, 8)
+    angles = (1.0, 2.0)
+    assert all(math.isfinite(v) for v in burau_polynomial_on_circle(written, angles))
+    alexander = alexander_on_circle(written, angles)
+    assert all(v is None or math.isfinite(v) for v in alexander)
+
+
+def test_a_braid_that_stays_small_is_never_scaled():
+    """Scaling starts only past ``_LARGEST``: below it the matrix is made
+    exactly as it was."""
+    import numpy as np
+
+    from braidpy.properties import _LARGEST, _burau_product, _scaled_burau_product
+
+    braid = Braid([1, -2, 3, -4, 5, -6, 7] * 20, 8)
+    t = complex(np.exp(1j))
+    scaled, log_scale = _scaled_burau_product(braid, t, 1 + 0j, 0j, largest=_LARGEST)
+    assert log_scale == 0.0
+    assert np.array_equal(scaled, _burau_product(braid, t, 1 + 0j, 0j))

@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Optional
 
 from .model import BraidingMachine
 from .tracks import Position, _next_position
@@ -79,6 +80,7 @@ class CarrierState:
 
     @property
     def position(self) -> Position:
+        """Where the carrier is: its gear and slot."""
         return self.gear, self.slot
 
 
@@ -101,7 +103,7 @@ class MachineState:
 
 def initial_state(
     machine: BraidingMachine,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
 ) -> MachineState:
     """Create an initial MachineState.
 
@@ -212,7 +214,7 @@ def carrier_places(
 
 def state_period(
     machine: BraidingMachine,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
     max_steps: int = 10_000,
 ) -> int | None:
     """Steps after which the machine is exactly as it started, or None.
@@ -259,7 +261,7 @@ def state_period(
 def simulate(
     machine: BraidingMachine,
     n_steps: int,
-    carrier_positions: dict[CarrierId, Position] | None = None,
+    carrier_positions: Optional[dict[CarrierId, Position]] = None,
 ) -> list[MachineState]:
     """Run the simulation for ``n_steps`` steps.
 
@@ -291,7 +293,11 @@ def simulate(
             history.append(state)
             raise CollisionError(state.time, same_slot, history)
 
-        # 2. Crossing-transfer collision: two carriers swapping through the same
+        # 2. Two carriers at one contact as it hands over, where contacts
+        #    hand over during a step: walked in the order they hand over.
+        _check_handovers(machine, prev_state, history + [state])
+
+        # 3. Crossing-transfer collision: two carriers swapping through the same
         #    connection in opposite directions.  Both end up at the contact point
         #    at frac=0 of the next step, which is the same physical (x, y).
         prev_gear = {c.carrier_id: c.gear for c in prev_state.carriers}
@@ -324,6 +330,42 @@ def simulate(
         _check_connection_point_collision(machine, state, history)
 
     return history
+
+
+def _check_handovers(
+    machine: BraidingMachine,
+    state: MachineState,
+    history: list[MachineState],
+) -> None:
+    """Raise CollisionError if two carriers are at one contact as it hands
+    over, in the step from ``state``.
+
+    Only a machine with contacts handing over during a step
+    (:class:`~braidpy.horn_gear.model.Connection`'s ``phase``) is walked:
+    elsewhere every hand-over is at the step's end, where the checks of
+    :func:`simulate` see it.  Here a carrier can be handed on twice in one
+    step, and meet a carrier at its second contact, which comparing the
+    gears before and after the step misses.  So the step's hand-overs are
+    made in their order, the ones at its end last, and at each the two
+    slots at the contact are looked at.
+    """
+    if not any(conn.phase for conn in machine.connections):
+        return
+    time = state.time
+    turning = machine.turning_gears(time)
+    at = {c.position: c.carrier_id for c in state.carriers}
+    for conn in sorted(machine.connections, key=lambda c: c.phase or 1.0):
+        if conn.gear_a not in turning and conn.gear_b not in turning:
+            continue
+        # A contact handing over at the step's end has its slots of then.
+        sa, sb = conn.slots_at(machine, time if conn.phase else time + 1)
+        a, b = (conn.gear_a, sa), (conn.gear_b, sb)
+        if a in at and b in at:
+            raise CollisionError(time + 1, {a: [at[a]], b: [at[b]]}, history)
+        if a in at:
+            at[b] = at.pop(a)
+        elif b in at:
+            at[a] = at.pop(b)
 
 
 def _check_connection_point_collision(

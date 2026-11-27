@@ -208,8 +208,8 @@ def tubes() -> None:
     the axis swings out and in — out over, in under.  The swing is the braid.
     """
     diameter = 0.4
-    for name, n_strands, degrees, title in TUBES:
-        angle = math.radians(degrees)
+    for name, n_strands, angle_deg, title in TUBES:
+        angle = math.radians(angle_deg)
         radius = tubular_braid_radius(n_strands, diameter, angle)
         strands = tubular_braid(n_strands, radius, angle, diameter)
         clearance = tubular_braid_clearance(strands, 600)
@@ -227,7 +227,7 @@ def tubes() -> None:
             output_html=f"braid_{name}_yarn.html",
         )
         print(
-            f"braid_{name}.html  {n_strands} strands at {degrees}\u00b0, "
+            f"braid_{name}.html  {n_strands} strands at {angle_deg}\u00b0, "
             f"radius {radius:.4f} "
             f"({'climb' if crossing_binds_above(n_strands, angle) else 'swing'}"
             f"-bound; seated at "
@@ -242,14 +242,14 @@ def tubes() -> None:
     # honestly reach: at a cover of 0.9 the strands are a third of a
     # diameter into one another.  Real yarn flattens where it crosses; this
     # is what that would look like.
-    n_strands, degrees, cover = 8, 45, 0.9
-    angle = math.radians(degrees)
+    n_strands, angle_deg, cover = 8, 45, 0.9
+    angle = math.radians(angle_deg)
     radius = radius_for_cover(n_strands, diameter, angle, cover)
     strands = tubular_braid(n_strands, radius, angle, diameter)
     overlap = diameter - tubular_braid_clearance(strands, 600)
     braid = ParametricBraid([_as_parametric(strand) for strand in strands])
     caption = (
-        f"Braided tube \u2013 {n_strands} strands at {degrees}\u00b0, drawn tight "
+        f"Braided tube \u2013 {n_strands} strands at {angle_deg}\u00b0, drawn tight "
         f"\u2014 covering {cover:.0%} of the tube, which round strands cannot "
         f"do: they overlap by {overlap:.2f} of a {diameter} diameter"
     )
@@ -261,7 +261,7 @@ def tubes() -> None:
         output_html="braid_tube_tight_yarn.html",
     )
     print(
-        f"braid_tube_tight.html  {n_strands} strands at {degrees}\u00b0, "
+        f"braid_tube_tight.html  {n_strands} strands at {angle_deg}\u00b0, "
         f"radius {radius:.4f} for {cover:.0%} cover, "
         f"strands overlapping by {overlap:.4f} of {diameter} \u2014 "
         f"what flattened yarn would allow, not round"

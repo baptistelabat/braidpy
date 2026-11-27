@@ -5,6 +5,8 @@
 """Laying, drawing in and tightening a braid from any source of strands."""
 
 import re
+import warnings
+from dataclasses import replace
 from types import SimpleNamespace
 
 import matplotlib
@@ -17,6 +19,7 @@ from braidpy.mobidai import Mobidai, MobidaiConfig, Move, Strand
 from braidpy.parametric_braid import ParametricBraid
 from braidpy.symmetric_braid import braid_word
 from braidpy.take_off import (
+    SAFE_STEP,
     StrandTrajectories,
     braid_word_trajectories,
     default_take_off,
@@ -24,6 +27,7 @@ from braidpy.take_off import (
     kumihimo_steps,
     kumihimo_trajectories,
     lay_yarns,
+    longest_step,
     mobidai_steps,
     mobidai_trajectories,
     parametric_trajectories,
@@ -101,7 +105,7 @@ def test_default_take_off_is_the_mean_speed():
     still = np.ones((5, 2))
     traj = StrandTrajectories(times, {0: moving, 1: still})
     assert default_take_off(traj) == pytest.approx((4.0 / 2.0) / 2)
-    assert traj.centre() == pytest.approx(np.concatenate([moving, still]).mean(0))
+    assert traj.center() == pytest.approx(np.concatenate([moving, still]).mean(0))
 
 
 def test_parametric_braid_is_read_as_it_is_drawn():
@@ -310,6 +314,27 @@ def test_kumihimo_is_laid_and_tightened():
     tight, history = tighten_yarns(paths, 0.15, iterations=40)
     assert history["length"][-1] < history["length"][0]
     assert tight.closest_approach(include_fell=False) >= 0.15 * (1 - 2e-3)
+
+
+def test_a_braid_laid_too_coarsely_to_tighten_is_warned_of():
+    """Tightening looks for contact between samples, so a yarn that moves a
+    diameter or more sideways between two levels can let another through
+    unseen: it says so, and says nothing of a braid laid finely enough."""
+    d = 0.15
+    # Sampled finely enough that no strand moves a diameter between samples.
+    traj = kumihimo_trajectories("SR" * 2, n_strands=8, samples_per_step=192)
+    paths = lay_yarns(traj, yarn_diameter=d, fell_radius=0.0)
+    assert longest_step(paths) < SAFE_STEP * d
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        tighten_yarns(paths, d, iterations=1)
+    first = next(iter(paths.points))
+    shoved = paths.points[first].copy()
+    shoved[paths.formed_count // 2, 0] += 3 * d
+    jumpy = replace(paths, points={**paths.points, first: shoved})
+    assert longest_step(jumpy) >= SAFE_STEP * d
+    with pytest.warns(UserWarning, match="pass through each other"):
+        tighten_yarns(jumpy, d, iterations=1)
 
 
 def test_mobidai_is_laid_and_tightened():
@@ -542,3 +567,24 @@ def test_the_tension_step_solves_its_tridiagonal_system(n, hold_top, h):
     # Both solve exactly but for rounding, a few units in the last place of
     # numbers of order one.
     assert np.allclose(_tension_solver(n, h, hold_top)(b), expected, atol=1e-12)
+
+
+def test_yarns_passing_nearly_the_same_point_are_lifted_to_fit():
+    """One yarn passes a point, the next a hundredth of a diameter beside
+    it a sample later: the take-off only lifted yarns passing the very same
+    point, and drawing in had to blow the braid up a hundredfold to part
+    them.  Now the take-off lifts them till they fit undrawn."""
+    from braidpy.take_off.contact import jammed_contraction, least_take_off
+
+    times = np.arange(4.0)
+    near = 0.01
+    xy = {
+        0: np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0], [6.0, 0.0]]),
+        1: np.array([[-1.0, 1.0], [near, 0.0], [1.0, -1.0], [2.0, -2.0]]),
+    }
+    trajectories = StrandTrajectories(times, xy)
+    take_off = least_take_off(trajectories, yarn_diameter=1.0, take_off=0.1)
+    assert take_off == pytest.approx(np.sqrt(1 - near**2), rel=0.02)
+    center = np.asarray(trajectories.center())
+    rel = np.stack([p - center for p in xy.values()])
+    assert jammed_contraction(rel, take_off, 1.0) <= 1.0

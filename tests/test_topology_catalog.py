@@ -12,7 +12,7 @@ from braidpy import Braid
 from braidpy.topology_catalog import (
     Topology,
     braid_of,
-    catalogue,
+    catalog,
     export,
     for_page,
     load,
@@ -40,7 +40,7 @@ def test_the_plait_is_made_four_ways():
 def test_each_way_points_back_to_its_topology():
     """The link is two ways: a topology lists its methods, and each method
     finds that topology again."""
-    for entry in catalogue().values():
+    for entry in catalog().values():
         topology = entry.make()
         assert isinstance(topology, Topology)
         for method in topology.methods:
@@ -48,17 +48,17 @@ def test_each_way_points_back_to_its_topology():
 
 
 def test_every_braid_word_is_in_exactly_one_topology():
-    listed = [m.key for entry in catalogue().values() for m in entry.make().methods]
+    listed = [m.key for entry in catalog().values() for m in entry.make().methods]
     assert len(listed) == len(set(listed))
-    # Machines braiding round cores have no braid word of their strands.
-    assert topology_of("machine", "soutache_5") is None
-    left_out = {m.key for m in methods()} - set(listed)
-    assert left_out == {"machine:soutache_5", "machine:soutache_7", "machine:princess"}
+    # Every way of making a braid is in: machines braiding round cores too,
+    # each core a strand of the word.
+    assert {m.key for m in methods()} == set(listed)
+    assert topology_of("machine", "soutache_5").fingerprint.n_strands == 7
 
 
-def test_every_source_is_in_the_catalogue():
-    sources = {m.source for entry in catalogue().values() for m in entry.make().methods}
-    assert sources == {"word", "kumihimo", "mobidai", "sinnet", "machine"}
+def test_every_source_is_in_the_catalog():
+    sources = {m.source for entry in catalog().values() for m in entry.make().methods}
+    assert sources == {"word", "kumihimo", "mobidai", "sinnet", "shape", "machine"}
 
 
 def test_your_own_braid_finds_its_topology_and_the_ways_to_make_it():
@@ -79,13 +79,13 @@ def _page(spec):
     return for_page(spec, info, load(json.loads(json.dumps(export()))))
 
 
-def test_the_catalogue_is_read_back_as_it_was_written():
-    """Braid Studio's copy, written as JSON with the site, is the catalogue."""
+def test_the_catalog_is_read_back_as_it_was_written():
+    """Braid Studio's copy, written as JSON with the site, is the catalog."""
     topologies = load(json.loads(json.dumps(export())))
-    assert topologies == tuple(entry.make() for entry in catalogue().values())
+    assert topologies == tuple(entry.make() for entry in catalog().values())
 
 
-def test_a_catalogued_braid_is_also_made_as_the_others():
+def test_a_cataloged_braid_is_also_made_as_the_others():
     """The plait's machine, made for three cycles: also made as every other
     way of making the plait — the braid words and Ashley's stand — not as
     itself; and the braids nearest it, further on."""
@@ -121,7 +121,17 @@ def test_a_creeping_disk_braid_is_known_by_its_name():
 
 
 def test_a_braid_with_no_word_has_nothing_shown():
-    assert _page({"source": "machine", "name": "soutache_5"}) == {
+    # A machine of your own, its carriers meeting two steps in: it stops,
+    # and reads no word.  (A cataloged one is known by its name, whatever
+    # its loading.)
+    stopped = {
+        "source": "machine",
+        "name": "custom",
+        "graph": "A-B",
+        "n_slots": 3,
+        "carriers": "A:1 B:2",
+    }
+    assert _page(stopped) == {
         "same": [],
         "near": [],
     }
@@ -133,3 +143,16 @@ def test_a_tubular_machine_s_braid_is_its_ring_word_filled_in():
     ring = {"annular_word": "1 -2 3 4", "n_strands": 5}
     assert braid_of(ring) == Braid(tuple(solid_word([1, -2, 3, 4], 4)), 4)
     assert braid_of({"n_strands": 5}) is None
+
+
+def test_a_shape_s_example_is_known_only_as_it_is():
+    """A sinnet from a shape is the example it is described as only if
+    every setting agrees: a track turned round is another braid."""
+    from braidpy.topology_catalog import methods
+
+    triangle = next(
+        m for m in methods() if m.source == "shape" and m.title.startswith("ABOK #3047")
+    )
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": "4"}
+    assert triangle.describes(spec)
+    assert not triangle.describes({**spec, "turned": "1"})

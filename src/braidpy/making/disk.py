@@ -5,22 +5,30 @@
 """A braid as moves on a kumihimo disk (a mobidai).
 
 A mobidai's move takes one strand from a slot to another, the short way
-round, lifted over every strand it passes (:mod:`braidpy.mobidai`).  Each
-crossing of the braid's ring program (:mod:`braidpy.ring_program`) becomes
-three moves, the strands kept two slots apart — strand ``k`` from slot
-``2k + 3`` — so that every strand has an empty slot either side of it:
+round, lifted over every strand it passes (:mod:`braidpy.mobidai`).  The
+strands are kept two slots apart — strand ``k`` from slot ``2k + 3`` — so
+that every strand has an empty slot either side of it, and each crossing
+is three moves:
 
-- the strand lifted goes over its neighbour, into the empty slot beyond it:
-  the crossing;
-- the neighbour moves into the place it left, crossing nobody;
-- the lifted strand settles into the neighbour's old place, crossing nobody.
+- one of the two strands crossing is lifted over the other, and over every
+  strand between them, into the empty slot beyond it;
+- the other moves into the place it left;
+- the lifted strand settles into the other's old place.
 
 Every strand is then back two slots from the next, and the disk ready for
-the next crossing.  A 32-slot disk takes up to 15 strands this way.  None
-passes the seam between the last slot and the first: that would twist the
-braid, which is still a braid and can be shorter to make, but from a braid
-word the strands are in a row, and keeping them so makes the word itself
-(:mod:`braidpy.ring_program`).  Shorter moves, over the seam, are for later.
+the next crossing.  The two strands need not be neighbours: a band letter
+``a_ts`` (:mod:`braidpy.band_canonical_form`), strands ``t`` and ``s``
+crossing in front of those between, is three moves however far apart they
+are, where in crossings of neighbours it is ``2(t - s) - 1`` of them.  The
+braid is made in band letters where that takes fewer — a disk braid, its
+strands carried across the disk: Kongo gumi's 81 crossings, 243 moves so,
+are 43 letters, 129 moves — and as its ring program's crossings of
+neighbours (:mod:`braidpy.ring_program`) where not, as a machine's braid.
+A 32-slot disk takes up to 15 strands this way.  None passes the seam
+between the last slot and the first: that would twist the braid, which is
+still a braid and can be shorter to make, but from a braid word the
+strands are in a row, and keeping them so makes the word itself.  Shorter
+moves, over the seam, are for later.
 
 :func:`disk_braid` reads the braid back as braidpy reads any mobidai's
 (:func:`~braidpy.take_off.mobidai_steps`).
@@ -31,6 +39,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from braidpy.band_canonical_form import band_letters, band_word
 from braidpy.braid import Braid
 from braidpy.ring_program import from_braid
 
@@ -112,15 +121,31 @@ def disk_moves(braid: Braid, n_slots: int = 32) -> DiskMoves:
     def slot(place: int) -> int:
         return 2 * place + 3
 
+    # The fewer letters of two: the band normal form, far shorter for a
+    # braid of strands carried across the disk; or the word as it stands,
+    # each run spelling a band letter read as one.
+    letters = min(
+        band_word(braid.generators, n), band_letters(braid.generators), key=len
+    )
+    if len(letters) >= len(braid.generators):
+        # No shorter: the ring program's crossings, each of neighbours,
+        # a_{i+1,i}.
+        letters = [
+            (swap.place + 2, swap.place + 1)
+            if swap.sign > 0
+            else (swap.place + 1, swap.place + 2)
+            for swap in from_braid(braid).swaps()
+        ]
     moves: list[tuple[int, int]] = []
-    for swap in from_braid(braid).swaps():
-        left, right = slot(swap.place), slot(swap.place + 1)
-        if swap.sign > 0:
-            # The right strand lifted over the left, into the slot beyond it.
-            moves += [(right, left - 1), (left, right), (left - 1, left)]
+    for first, second in letters:
+        low, high = slot(min(first, second) - 1), slot(max(first, second) - 1)
+        if first > second:
+            # The higher strand lifted over the rest, into the slot below
+            # the lower.
+            moves += [(high, low - 1), (low, high), (low - 1, low)]
         else:
-            # The left strand lifted over the right.
-            moves += [(left, right + 1), (right, left), (right + 1, right)]
+            # The lower strand lifted over the rest, above the higher.
+            moves += [(low, high + 1), (high, low), (high + 1, high)]
     return DiskMoves(n_slots, tuple(slot(k) for k in range(n)), tuple(moves))
 
 

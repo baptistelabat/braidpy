@@ -32,9 +32,9 @@ def test_turning_the_handle_is_the_machine_running(make):
 def test_the_handle_stops_where_carriers_meet():
     """Two carriers either side of a contact are on one point already."""
     machine = flat_braid_9()
-    turned = turn(machine, [("A", 0), ("B", 2)], 10)
+    turned = turn(machine, [("A", 0), ("B", 0)], 10)
     assert turned.time == 0
-    assert set(turned.met) == {("A", 0), ("B", 2)}
+    assert set(turned.met) == {("A", 0), ("B", 0)}
 
 
 def test_two_carriers_on_one_slot_have_met_before_anything_moves():
@@ -76,13 +76,13 @@ def test_the_sweep_draws_what_the_animation_draws():
 
     machine = flat_braid_9()
     state = turn(machine, _own(machine), 2).state
-    layout, offsets, riding = drawing(machine)
+    layout, angles, riding = drawing(machine)
     slots, slot_xy, carriers = sweep(machine, state, 4)
     assert len(slots) == machine.total_slots()
     assert len(slot_xy) == len(carriers) == 4
     for c, xy in zip(state.carriers, carriers[0]):
         assert xy == pytest.approx(
-            carrier_xy(machine, layout, offsets, riding, c.position, 2)
+            carrier_xy(machine, layout, angles, riding, c.position, 2)
         )
 
 
@@ -93,12 +93,12 @@ def test_the_handle_draws_with_plotly():
 
 
 def test_where_carriers_met_is_ringed_in_plotly():
-    figure = Handle(flat_braid_9(), [("A", 0), ("B", 2)]).figure()
+    figure = Handle(flat_braid_9(), [("A", 0), ("B", 0)]).figure()
     rings = [t for t in figure.data if t.name == "Met"]
     assert len(rings) == 1 and len(rings[0].x) == 2
 
 
-def test_braid_studio_turns_a_catalogued_machine():
+def test_braid_studio_turns_a_cataloged_machine():
     from braidpy.web import machine_geometry, machine_origin, machine_turned
 
     loading = machine_geometry("flat_9")["loading"]
@@ -109,5 +109,5 @@ def test_braid_studio_turns_a_catalogued_machine():
     assert all(len(f["slots"]) == len(turned["slots"]) for f in turned["frames"])
     first = turned["carriers"][0]
     assert machine_origin("flat_9", first, 5) == loading[0]
-    met = machine_turned("flat_9", [["A", 0], ["B", 2]], 5)
-    assert met["time"] == 0 and sorted(met["met"]) == [["A", 0], ["B", 2]]
+    met = machine_turned("flat_9", [["A", 0], ["B", 0]], 5)
+    assert met["time"] == 0 and sorted(met["met"]) == [["A", 0], ["B", 0]]

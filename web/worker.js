@@ -8,15 +8,17 @@
 // Messages in:   {type: "init", pyodideUrl}
 //                {type: "build", id, spec, premade?, info?}
 //                  premade: the braid as the site was built with it, for a
-//                  catalogue braid as it comes (web/build.py): laid at
+//                  catalog braid as it comes (web/build.py): laid at
 //                  once, without waiting for Python; info: what is known
 //                  of one the page already shows settled, for its kin
 //                {type: "geometry", name}
 //                {type: "sinnet", id}
 //                {type: "turn", id, name, loading, time}
 //                {type: "origin", name, place, time}
+//                {type: "b3d", text}
+//                  a design saved by braid3d, to read as your own mobidai
 // Messages out:  {type: "status", text}
-//                {type: "ready", catalogue, version}
+//                {type: "ready", catalog, version}
 //                {type: "laid", id, result, job, settle, twist}
 //                  the braid as laid, for settle.js to settle
 //                {type: "kin", id, kin}
@@ -28,6 +30,8 @@
 //                  the braid's other ways of being made, and the braids
 //                  nearest it (braidpy.topology_catalog.for_page)
 //                {type: "geometry", name, shape}
+//                {type: "b3d", spec}
+//                  the design read, as a description to make
 //                {type: "turned", id, turned}
 //                  a machine's handle turned by hand (web.machine_turned)
 //                {type: "origin", origin}
@@ -38,7 +42,7 @@
 
 let pyodide = null;
 let machinesReady = false;
-// The catalogue of braids by topology, made with the site: without it, no
+// The catalog of braids by topology, made with the site: without it, no
 // kin are found.
 let topologies = false;
 
@@ -56,7 +60,7 @@ function prefetch(url) {
 
 async function init(pyodideUrl) {
   // What braidpy needs is fetched while Python starts, rather than after:
-  // numpy, braidpy's wheels and the catalogue by topology.
+  // numpy, braidpy's wheels and the catalog by topology.
   const base = new URL("wheels/", self.location.href);
   const manifest = fetch(new URL("manifest.json", base)).then((r) => r.json());
   manifest.then((m) => m.wheels.forEach((wheel) => prefetch(new URL(wheel, base))));
@@ -72,7 +76,7 @@ async function init(pyodideUrl) {
   importScripts(pyodideUrl + "pyodide.js");
   pyodide = await loadPyodide({ indexURL: pyodideUrl });
 
-  status("Loading braidpy…");
+  status("Loading the braid engine…");
   // Installed as they are, without resolving what they ask for: braidpy's
   // other dependencies are for drawing, which the page does itself, or for
   // what the page does not ask of it (sympy, for Burau matrices).
@@ -88,8 +92,8 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 import json
 from braidpy import web
 `);
-  const catalogue = JSON.parse(
-    await pyodide.runPythonAsync("json.dumps(web.catalogue())"),
+  const catalog = JSON.parse(
+    await pyodide.runPythonAsync("json.dumps(web.catalog())"),
   );
   try {
     const found = await topologiesFound;
@@ -105,7 +109,7 @@ del topologies_json
   } catch {
     topologies = false;
   }
-  self.postMessage({ type: "ready", catalogue, version: (await manifest).version });
+  self.postMessage({ type: "ready", catalog, version: (await manifest).version });
 }
 
 // The newest braid asked for: one asked for before it is not laid.
@@ -144,12 +148,19 @@ function laid(id, spec, result) {
   let settle = (spec.settle ?? "auto") === "auto" ? (result.disk ? "marudai" : "sideways") : spec.settle;
   // By physics, every yarn is a yarn: a rigid core is not held rigid.
   const rigid = job?.rigid?.some(Boolean);
-  if (job && settle !== "sideways" && (settle === "marudai" ? !result.disk : rigid)) {
+  if (
+    job &&
+    settle !== "sideways" &&
+    settle !== "endless" &&
+    (settle === "marudai" ? !result.disk : settle === "carriers" ? !result.carriers : rigid)
+  ) {
     result.notes = [
       ...(result.notes || []),
       settle === "marudai"
         ? "Only disk braids and braid words are made on a marudai for now: these yarns were tightened sideways."
-        : "Settled by physics, a rigid core would bend as a yarn does: these yarns were tightened sideways.",
+        : settle === "carriers"
+          ? "Only a machine's braid is made by its carriers, and not yet round a core: these yarns were tightened sideways."
+          : "Settled by physics, a rigid core would bend as a yarn does: these yarns were tightened sideways.",
     ];
     settle = "sideways";
   }
@@ -251,6 +262,13 @@ json.dumps(web.machine_turned(job["name"], job["loading"], job["time"]))
   self.postMessage({ type: "turned", id: message.id, turned });
 }
 
+// A design saved by braid3d, as your own mobidai braid (braidpy.web.from_b3d).
+async function b3d(text) {
+  pyodide.globals.set("b3d_text", text);
+  const spec = JSON.parse(await pyodide.runPythonAsync("json.dumps(web.from_b3d(b3d_text))"));
+  self.postMessage({ type: "b3d", spec });
+}
+
 async function origin(message) {
   await machinery();
   pyodide.globals.set("origin_job", JSON.stringify(message));
@@ -278,7 +296,7 @@ async function machinery() {
 self.onmessage = (event) => {
   const message = event.data;
   if (message.type === "build") latest = message.id;
-  // A catalogue braid made with the site is laid at once, Python or not:
+  // A catalog braid made with the site is laid at once, Python or not:
   // only what is found from it — its kin, its other ways — waits for Python.
   if (message.type === "build" && (message.premade || message.info)) {
     const { id, spec, premade } = message;
@@ -300,6 +318,7 @@ self.onmessage = (event) => {
       else if (message.type === "turn") await turn(message);
       else if (message.type === "sinnet") await sinnet(message.id);
       else if (message.type === "origin") await origin(message);
+      else if (message.type === "b3d") await b3d(message.text);
     } catch (error) {
       self.postMessage({
         type: "error",

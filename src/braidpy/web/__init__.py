@@ -12,7 +12,7 @@ License: Mozilla Public License 2.0
 
 The braidpy web page runs braidpy itself, in the browser, through Pyodide,
 and draws what it computes with three.js.  This package is everything the
-page asks of braidpy: what can be made (:func:`catalogue`), and the braid a
+page asks of braidpy: what can be made (:func:`catalog`), and the braid a
 description makes (:func:`build`), both as plain JSON-ready data — lists,
 numbers and strings — so the page needs nothing of Python's to draw it.
 
@@ -24,7 +24,9 @@ source offered:
     letters (``aB``, ``a`` for σ₁ and ``A`` its inverse).  With ``"layout":
     "ring"``, a ring word, the strands round a circle: ``n`` crosses the
     last strand and the first, across the seam, and ``n + 1`` turns them
-    all one place round.
+    all one place round.  With ``"layout": "band"``, a band word
+    (:mod:`braidpy.band_canonical_form`): ``4:1`` crosses strands 4 and 1
+    in front of those between, ``1:4`` the other way.
 ``{"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 8}``
     Kumihimo's own moves: swap top and bottom, rotate a quarter.
 ``{"source": "mobidai", "name": "KONGO_8", "cycles": 8}``
@@ -41,14 +43,16 @@ tightening steps; 0 lays the yarns without tightening them.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from braidpy.web import disks, machines, words
-from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recoloured
-from braidpy.web._settings import COLOURS, OWN
+from braidpy.web._result import _PAGE_TIGHTENS, _TIGHTENING, recolored
+from braidpy.web._settings import COLORS, OWN
 from braidpy.web._spec import parse_moves, parse_word
 from braidpy.web._types import MachineGeometry, MachineTurned, Result, Source, Spec
+from braidpy.web.disks import from_b3d
 from braidpy.web.machines import machine_geometry, machine_origin, machine_turned
 
 __all__ = [
@@ -57,8 +61,10 @@ __all__ = [
     "Result",
     "Source",
     "Spec",
+    "braids",
     "build",
-    "catalogue",
+    "catalog",
+    "from_b3d",
     "machine_geometry",
     "machine_origin",
     "machine_turned",
@@ -73,7 +79,7 @@ __all__ = [
 _SOURCES = {**words.SOURCES, **disks.SOURCES, **machines.SOURCES}
 
 
-def catalogue() -> dict[str, Source]:
+def catalog() -> dict[str, Source]:
     """What the page can make, with sensible defaults for each source.
 
     Returns:
@@ -81,6 +87,12 @@ def catalogue() -> dict[str, Source]:
         entries to choose from, each with a name and a title.
     """
     return {source: entry() for source, (entry, _) in _SOURCES.items()}
+
+
+# The function's name as 0.3.0 shipped it, kept working.
+from braidpy._renamed import renamed_globals
+
+__getattr__ = renamed_globals(__name__, {"catalogue": "catalog"})
 
 
 def build(spec: Spec, tighten: bool = True) -> Result:
@@ -117,7 +129,7 @@ def build(spec: Spec, tighten: bool = True) -> Result:
     later = _PAGE_TIGHTENS.set(not tighten)
     job = _TIGHTENING.set(None)
     try:
-        return recoloured(_SOURCES[source][1](spec), COLOURS.read(spec))
+        return recolored(_SOURCES[source][1](spec), COLORS.read(spec))
     finally:
         _PAGE_TIGHTENS.reset(later)
         _TIGHTENING.reset(job)
@@ -133,7 +145,7 @@ def premade_specs() -> list[Spec]:
         source's defaults is left to them.
     """
     specs: list[Spec] = []
-    for source, about in catalogue().items():
+    for source, about in catalog().items():
         for entry in about.get("entries", []):
             if entry["name"] != OWN:
                 specs.append(cast(Spec, {"source": source, "name": entry["name"]}))
@@ -141,6 +153,93 @@ def premade_specs() -> list[Spec]:
             made = {k: v for k, v in example.items() if k != "title"}
             specs.append(cast(Spec, {"source": source, **made}))
     return specs
+
+
+def _key(spec: Spec, title: str) -> str:
+    """A braid's name for files and addresses: its source and its name in
+    its catalogue, or its title for one with no name."""
+    name = spec.get("name") or "".join(
+        c if c.isalnum() else "_" for c in title.lower()
+    ).strip("_")
+    return f"{spec['source']}-{name}"
+
+
+def braids(topologies: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Every braid a page offers as it comes (:func:`premade_specs`), as a
+    row of a table to look braids up in: what it is called and made from,
+    what it is — from its topology, where the catalogue of braids by
+    topology has it — and where it is shown.
+
+    Args:
+        topologies: The catalogue of braids by topology, as
+            :func:`braidpy.topology_catalog.export` writes it.
+
+    Returns:
+        Per braid: ``key``, a name for its files; ``title``; ``source``;
+        ``spec``, what :func:`build` makes it from; ``links``, as
+        :class:`braidpy.catalog.Link` has them; and, if its topology is
+        known, ``topology``, its name, ``n_strands``, ``loops``, the sizes
+        of the loops its closure makes, ``writhe``, and ``same``, the
+        titles of the other braids of the catalogue it is.  A braid the
+        catalogue of braids by topology does not take, as a lace
+        machine's, has no topology.
+    """
+    from dataclasses import asdict
+
+    from braidpy.topology_catalog import links_of, load
+
+    known = load(topologies)
+    titles = {
+        (source, entry["name"]): entry["title"]
+        for source, about in catalog().items()
+        for entry in about.get("entries", [])
+    }
+    examples = {
+        json.dumps(
+            {"source": source, **{k: v for k, v in e.items() if k != "title"}},
+            sort_keys=True,
+        ): e["title"]
+        for source, about in catalog().items()
+        for e in about.get("examples", [])
+    }
+    rows: list[dict[str, Any]] = []
+    for spec in premade_specs():
+        source = spec["source"]
+        name = spec.get("name")
+        title = (
+            titles[(source, name)]
+            if name is not None
+            else examples[json.dumps(dict(spec), sort_keys=True)]
+        )
+        found = next(
+            (
+                (topology, method)
+                for topology in known
+                for method in topology.methods
+                if method.source == source and method.describes(spec)
+            ),
+            None,
+        )
+        links = found[1].links if found else links_of(source, str(name))
+        row: dict[str, Any] = {
+            "key": f"{source}-{found[1].name}" if found else _key(spec, title),
+            "title": title,
+            "source": source,
+            "spec": dict(spec),
+            "links": [asdict(link) for link in links],
+        }
+        if found:
+            topology, method = found
+            mark = topology.fingerprint
+            row.update(
+                topology=topology.name,
+                n_strands=mark.n_strands,
+                loops=list(mark.loops),
+                writhe=mark.writhe,
+                same=[m.title for m in topology.methods if m is not method],
+            )
+        rows.append(row)
+    return rows
 
 
 def _premade_one(spec: Spec) -> str | None:
@@ -152,7 +251,7 @@ def _premade_one(spec: Spec) -> str | None:
         return None
 
 
-def premade(directory: str, workers: int | None = None) -> list[dict[str, Any]]:
+def premade(directory: str, workers: Optional[int] = None) -> list[dict[str, Any]]:
     """Make every braid of :func:`premade_specs`, laid as
     :func:`build` lays it for a page to tighten (``tighten=False``), and
     write each as JSON in ``directory``, with ``index.json`` saying which

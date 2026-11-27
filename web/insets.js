@@ -5,8 +5,35 @@
 // The insets over the 3D view: the braid's cross-section, and what made it
 // seen from above.
 
+import { tr } from "./i18n.js";
 import { $ } from "./page.js";
 import { braid } from "./scene.js";
+
+// How a machine's tracks are drawn from above, under its carriers: thin
+// and see-through, so the slots and carriers on them stay clear.
+const TRACK_WIDTH = 2;
+const TRACK_ALPHA = 0.45;
+
+// The carriers' tracks, each a closed curve in its colour, its points put
+// where they are drawn by ``at``.
+export function drawTracks(ctx, tracks, at) {
+  if (!tracks?.length) return;
+  ctx.save();
+  ctx.lineWidth = TRACK_WIDTH;
+  ctx.globalAlpha = TRACK_ALPHA;
+  ctx.lineJoin = "round";
+  for (const track of tracks) {
+    ctx.strokeStyle = track.colour;
+    ctx.beginPath();
+    track.points.forEach((p, i) => {
+      const [x, y] = at(p);
+      if (i) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 
 // The braid seen along its axis, once made: each strand's track over the
 // middle of the braid — far from the fell and the held top — and a slice
@@ -56,7 +83,7 @@ export function drawSection(result) {
   const style = getComputedStyle(document.documentElement);
   ctx.fillStyle = style.getPropertyValue("--muted").trim();
   ctx.font = "10px system-ui, sans-serif";
-  ctx.fillText("Cross-section", 8, 14);
+  ctx.fillText(tr("Cross-section"), 8, 14);
   ctx.globalAlpha = 0.55;
   ctx.lineWidth = 1;
   middle.forEach((points, i) => {
@@ -110,6 +137,8 @@ export function drawTop(now, partly) {
     outline.forEach((p, i) => (i ? ctx.lineTo(x(p), y(p)) : ctx.moveTo(x(p), y(p))));
     ctx.stroke();
   }
+  // A machine's tracks, under its carriers, as in the panel.
+  drawTracks(ctx, view.tracks, (p) => [x(p), y(p)]);
   ctx.fillStyle = ink;
   ctx.font = "10px system-ui, sans-serif";
   ctx.textAlign = "center";

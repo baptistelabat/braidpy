@@ -4,11 +4,11 @@
 
 """Ashley's solid sinnets, from *The Ashley Book of Knots*: each its own
 :class:`~braidpy.ashley_solid_sinnet.AshleySolidSinnet`, named by its number
-in the book, and all of them in :data:`CATALOGUE`, as every catalogue lists
-its braids (:mod:`braidpy.catalogue`)."""
+in the book, and all of them in :data:`CATALOG`, as every catalogue lists
+its braids (:mod:`braidpy.catalog`)."""
 
 from braidpy.ashley_solid_sinnet import AshleySolidSinnet
-from braidpy.catalogue import Entry
+from braidpy.catalog import Entry, Link, ashley, extended
 
 """The simplest sinnets, worked the same way on the stand: Ashley's stand,
 like a marudai, makes the plait and the square and round sinnets as well
@@ -81,7 +81,6 @@ abok_3044 = AshleySolidSinnet(
 """
 ABOK #3045
 10-strand triangle
-https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3045 = AshleySolidSinnet(
     shape="triangle",
@@ -97,7 +96,6 @@ mnnber of edges (or sides), in
 order to be symmetrical, must
 have all the strands at the edges
 rotate in the same direction."
-https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3046 = AshleySolidSinnet(
     shape="triangle",
@@ -131,7 +129,6 @@ abok_3047 = AshleySolidSinnet(
 """
 ABOK #3048
 17-strand triangle
-https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3048 = AshleySolidSinnet(
     shape="triangle",
@@ -158,7 +155,6 @@ abok_3048 = AshleySolidSinnet(
 """
 ABOK #3049
 22-strand triangle
-https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
 abok_3049 = AshleySolidSinnet(
     shape="triangle",
@@ -190,10 +186,6 @@ abok_3050 = AshleySolidSinnet(
 """
 ABOK #3051
 28-strand triangle
-
-https://www.youtube.com/watch?v=u1Pc5vE0Rfw
-https://www.youtube.com/watch?v=2eV8z6674xM
-https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
 abok_3051 = AshleySolidSinnet(
     shape="triangle",
@@ -271,7 +263,6 @@ abok_3053 = AshleySolidSinnet(
 ABOK #3054
 17-strand half round
 The same moves as #3053.
-https://www.facebook.com/johnrichings/posts/pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual?__cft__[0]=AZVUW5RGsiw4yNeTJFgAEDXQa2P_45OG9mKgp7qtJERvN-9bgI_t09zqey1iIH1R4T_CwcqAidQGqFwEWonDNvPP1_Z0O-g-N2ZKAtXa0QPLzPoIbWXmpO99HXBlCQJAPxDE05WW9o0gPtt5JD7FD9Op9EzZWqPC0nlLDBjxc2x23A&__tn__=%2CO%2CPH-R
 """
 abok_3054 = AshleySolidSinnet(
     shape="half round",
@@ -323,7 +314,7 @@ abok_3055 = AshleySolidSinnet(
 """
 ABOK #3056
 26-strand diamond
-ABOK #3056 https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
+ABOK #3056
 """
 abok_3056 = AshleySolidSinnet(
     shape="diamond",
@@ -354,6 +345,7 @@ abok_3056 = AshleySolidSinnet(
 """
 ABOK #3057
 9-strand triangle
+#3058's table, odd strands to the right and even ones to the left.
 """
 abok_3057 = AshleySolidSinnet(
     shape="triangle",
@@ -374,6 +366,7 @@ ABOK #3058
 All strands move to the right.
 """
 abok_3058 = AshleySolidSinnet(
+    all_right=True,
     shape="triangle",
     initial_counts_per_space=[2, 2, 2, 1, 1, 1],
     moves=[
@@ -392,6 +385,7 @@ ABOK #3059
 All strands move to the right.
 """
 abok_3059 = AshleySolidSinnet(
+    all_right=True,
     shape="triangle",
     initial_counts_per_space=[2, 2, 2, 2, 1, 1, 1, 1, 1],
     moves=[
@@ -548,6 +542,7 @@ ABOK #3066
 All strands move to the right.
 """
 abok_3066 = AshleySolidSinnet(
+    all_right=True,
     shape="round",
     initial_counts_per_space=[2, 1, 1, 1, 2, 1, 1, 1],
     moves=[
@@ -567,6 +562,7 @@ ABOK #3068
 All strands move to the right.
 """
 abok_3068 = AshleySolidSinnet(
+    all_right=True,
     shape="round",
     initial_counts_per_space=[2, 2, 2, 2, 2, 2],
     moves=[
@@ -585,6 +581,7 @@ ABOK #3069
 All strands move to the right.
 """
 abok_3069 = AshleySolidSinnet(
+    all_right=True,
     shape="round",
     initial_counts_per_space=[2, 2, 1, 1],
     moves=[
@@ -683,7 +680,6 @@ abok_3073 = AshleySolidSinnet(
 """
 ABOK #3074
 26-strand square
-https://www.facebook.com/johnrichings/posts/pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l
 """
 
 abok_3074 = AshleySolidSinnet(
@@ -863,8 +859,6 @@ abok_3079 = AshleySolidSinnet(
 """
 ABOK #3080
 16-strand pentagon
-https://www.facebook.com/photo/?fbid=499834040106245&set=a.134484456641207
-
 """
 abok_3080 = AshleySolidSinnet(
     shape="pentagon",
@@ -888,7 +882,6 @@ abok_3080 = AshleySolidSinnet(
 """
 ABOK #3081
 31-strand pentalpha
-https://www.youtube.com/watch?v=FDMqYdqFHtU
 """
 abok_3081 = AshleySolidSinnet(
     shape="pentalpha",
@@ -930,8 +923,6 @@ abok_3081 = AshleySolidSinnet(
 """
 ABOK #3082
 61-strand pentalpha
-https://www.youtube.com/watch?v=_Ydpx9smLAk
-https://www.youtube.com/watch?v=w1PJb4Bxb2c
 """
 abok_3082 = AshleySolidSinnet(
     shape="pentalpha",
@@ -1015,18 +1006,192 @@ https://www.facebook.com/photo?fbid=598774186878896&set=pcb.598774553545526
 # fmt: on
 
 
+# John Richings' posts of sinnets he made from the book, several to a post.
+_RICHINGS_1 = Link(
+    "John Richings, on Facebook",
+    "post",
+    "https://www.facebook.com/johnrichings/posts/"
+    "pfbid0pJh7t4KgQWMeJWx4SQHg18dqaT2G1Ho1YmmNqFJto2MraFz4muHhFSgWuZSr33ual",
+)
+_RICHINGS_2 = Link(
+    "John Richings, on Facebook",
+    "post",
+    "https://www.facebook.com/johnrichings/posts/"
+    "pfbid0sFpnjdzXANcj4NSp2ZK5B3C2vNpLnnWZ9X7ytgxx4e6aqxPwLto4NLsca6waPty4l",
+)
+
+# Where each sinnet is shown made, besides the book: by its name.
+LINKS: dict[str, tuple[Link, ...]] = {
+    "abok_3021": (
+        Link("Made, on video", "video", "https://www.youtube.com/watch?v=G0BFWYYVj7M"),
+    ),
+    "abok_3044": (
+        Link(
+            "Craft Design Online: its moves",
+            "page",
+            "https://craftdesignonline.com/design/8-strand-triangle-sinnet/",
+        ),
+    ),
+    "abok_3045": (
+        _RICHINGS_1,
+        Link(
+            "Craft Design Online: its moves",
+            "page",
+            "https://craftdesignonline.com/design/10-strand-triangle-sinnet/",
+        ),
+    ),
+    "abok_3046": (_RICHINGS_1,),
+    "abok_3048": (_RICHINGS_1,),
+    "abok_3049": (_RICHINGS_2,),
+    "abok_3051": (
+        Link("Made, on video", "video", "https://www.youtube.com/watch?v=u1Pc5vE0Rfw"),
+        Link("Made, on video", "video", "https://www.youtube.com/watch?v=2eV8z6674xM"),
+        _RICHINGS_2,
+    ),
+    "abok_3054": (
+        _RICHINGS_1,
+        Link(
+            "Craft Design Online: its moves",
+            "page",
+            "https://craftdesignonline.com/design/17-strand-half-round-sinnet/",
+        ),
+    ),
+    "abok_3056": (_RICHINGS_2,),
+    "abok_3057": (
+        Link(
+            "Craft Design Online: its moves",
+            "page",
+            "https://craftdesignonline.com/design/9-strand-triangle-sinnet-1/",
+        ),
+    ),
+    "abok_3058": (
+        Link(
+            "Craft Design Online: its moves",
+            "page",
+            "https://craftdesignonline.com/design/9-strand-triangle-sinnet-2/",
+        ),
+    ),
+    "abok_3073": (
+        Link(
+            "Craft Design Online: its moves",
+            "page",
+            "https://craftdesignonline.com/design/20-strand-square-sinnet/",
+        ),
+    ),
+    "abok_3074": (_RICHINGS_2,),
+    "abok_3080": (
+        Link(
+            "John Richings, on Facebook",
+            "post",
+            "https://www.facebook.com/photo/?fbid=499834040106245&set=a.134484456641207",
+        ),
+    ),
+    "abok_3081": (
+        Link("Made, on video", "video", "https://www.youtube.com/watch?v=FDMqYdqFHtU"),
+    ),
+    "abok_3082": (
+        Link("Made, on video", "video", "https://www.youtube.com/watch?v=_Ydpx9smLAk"),
+        Link("Made, on video", "video", "https://www.youtube.com/watch?v=w1PJb4Bxb2c"),
+    ),
+}
+
+
+# The book's sinnets that a shape on a grid draws, as Ashley draws them
+# (braidpy.making.ashley.grid_shape, sinnet_from_shape): its grid, shape and
+# size, in lines, as Braid Studio asks for them, the order of its moves if
+# not the book's alternating one, and the strands added at its corners.
+# "makes": the sinnet so made is the book's braid; otherwise the shape draws
+# its lines, its moves made in another order.
+DRAWN: dict[str, dict[str, str | int | bool]] = {
+    "abok_3045": {"grid": "triangle", "shape": "triangle", "size": 2, "makes": True},
+    "abok_3047": {"grid": "triangle", "shape": "triangle", "size": 4, "makes": True},
+    "abok_3049": {
+        "grid": "triangle",
+        "shape": "triangle",
+        "size": 4,
+        "corners": 1,
+        "makes": True,
+    },
+    "abok_3051": {"grid": "triangle", "shape": "triangle", "size": 6, "makes": True},
+    "abok_3057": {
+        "grid": "triangle",
+        "shape": "triangle",
+        "size": 2,
+        "order": "spaces",
+        "makes": True,
+    },
+    "abok_3058": {
+        "grid": "triangle",
+        "shape": "triangle",
+        "size": 2,
+        "order": "spaces",
+        "makes": True,
+    },
+    "abok_3059": {"grid": "triangle", "shape": "triangle", "size": 3, "makes": True},
+    "abok_3070": {
+        "grid": "square",
+        "shape": "oblong",
+        "size": 2,
+        "height": 2,
+        "makes": False,
+    },
+    "abok_3071": {
+        "grid": "square",
+        "shape": "oblong",
+        "size": 6,
+        "height": 2,
+        "corners": 1,
+        "makes": True,
+    },
+    "abok_3072": {
+        "grid": "square",
+        "shape": "oblong",
+        "size": 10,
+        "height": 2,
+        "corners": 1,
+        "makes": True,
+    },
+    "abok_3073": {"grid": "diagonal", "shape": "square", "size": 6, "makes": False},
+    "abok_3074": {"grid": "diagonal", "shape": "square", "size": 8, "makes": False},
+    "abok_3075": {
+        "grid": "diagonal",
+        "shape": "oblong",
+        "size": 10,
+        "height": 2,
+        "makes": False,
+    },
+    # Its lines halfway between crossings, a little irregular, as the book
+    # says; its moves made in an order of the book's own.
+    "abok_3078": {
+        "grid": "skew",
+        "shape": "oblong",
+        "size": 3,
+        "height": 5,
+        "makes": False,
+    },
+}
+
+
 def _entry(name: str, sinnet: AshleySolidSinnet) -> Entry[AshleySolidSinnet]:
     number = name.split("_")[1]
     return Entry(
         title=f"ABOK #{number}, {sinnet.n_strands}-strand {sinnet.shape or 'sinnet'}",
         make=lambda: sinnet,
-        reference=f"The Ashley Book of Knots, #{number}",
+        links=(ashley(number), *LINKS.get(name, ())),
     )
 
 
 # By their number in the book.
-CATALOGUE: dict[str, Entry[AshleySolidSinnet]] = {
+CATALOG: dict[str, Entry[AshleySolidSinnet]] = {
     name: _entry(name, value)
     for name, value in sorted(globals().items())
     if isinstance(value, AshleySolidSinnet)
 }
+# Then the braids installed packages add (braidpy.catalog.extended).
+CATALOG = extended("solid_sinnets_catalog", CATALOG)
+
+
+# The catalogue's name as 0.3.0 shipped it, kept working.
+from braidpy._renamed import renamed_globals
+
+__getattr__ = renamed_globals(__name__, {"CATALOGUE": "CATALOG"})

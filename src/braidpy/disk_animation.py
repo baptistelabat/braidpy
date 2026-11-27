@@ -26,10 +26,11 @@ disk and animate it; :func:`animate_disk` does the drawing for any disk.
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_keywords
 from braidpy.utils import lazy_module, play_controls
 
 if TYPE_CHECKING:
@@ -66,7 +67,7 @@ def _rim_radius(trajectories: StrandTrajectories) -> float:
     return float(max(np.max(np.hypot(*xy.T)) for xy in trajectories.xy.values()) or 1.0)
 
 
-def _hsv_colours(n: int) -> list[str]:
+def _hsv_colors(n: int) -> list[str]:
     """Hues round the colour wheel, one per strand, as Kumihimo draws them.
 
     Spaced so the wheel does not wrap: Kumihimo's own palette runs from 0 to
@@ -186,17 +187,18 @@ class BraidGrowth:
             )
         return float(np.angle(pull)) if abs(pull) > 1e-12 else 0.0
 
+    @renamed_keywords(colour="color")
     def traces(
         self,
         time: float,
-        colour: Mapping[Hashable, str],
-        carriers: Mapping[Hashable, Sequence[float]] | None = None,
+        color: Mapping[Hashable, str],
+        carriers: Optional[Mapping[Hashable, Sequence[float]]] = None,
     ) -> list[go.Scatter3d]:
         """Each yarn's visible length, ``time`` disk steps in.
 
         Args:
             time: Disk steps made.
-            colour: Each strand's colour.
+            color: Each strand's colour.
             carriers: Each strand's carrier on the disk, from its centre, to
                 turn the braid as the disk is; not turned if None.
         """
@@ -216,7 +218,7 @@ class BraidGrowth:
                     y=np.round(s * x + c * y, 4),
                     z=np.round(z, 4),
                     mode="lines",
-                    line=dict(color=colour[k], width=9),
+                    line=dict(color=color[k], width=9),
                     hoverinfo="skip",
                     showlegend=False,
                     scene="scene",
@@ -263,14 +265,14 @@ class BraidGrowth:
 
 def animate_disk(
     trajectories: StrandTrajectories,
-    step_labels: Sequence[str] | None = None,
+    step_labels: Optional[Sequence[str]] = None,
     title: str = "Braiding disk",
-    output_html: str | None = None,
-    colors: Sequence[str] | None = None,
+    output_html: Optional[str] = None,
+    colors: Optional[Sequence[str]] = None,
     show_ids: bool = True,
     frame_duration_ms: int = 50,
     max_frames: int = 900,
-    braid: BraidGrowth | None = None,
+    braid: Optional[BraidGrowth] = None,
 ) -> go.Figure:
     """Animate strands moving round a disk, seen from above.
 
@@ -297,11 +299,11 @@ def animate_disk(
 
         colors = PALETTE
     keys: list[Hashable] = list(trajectories.xy)
-    colour: dict[Hashable, str] = {
+    color: dict[Hashable, str] = {
         k: colors[i % len(colors)] for i, k in enumerate(keys)
     }
     rim = _rim_radius(trajectories)
-    centre = trajectories.centre()
+    center = trajectories.center()
 
     times = trajectories.times
     per_step = max(1, round(1.0 / float(times[1] - times[0])))
@@ -313,7 +315,7 @@ def animate_disk(
     # How far in a strand is, as a fraction of the deepest any strand goes:
     # 0 on the rim, 1 at the middle of the deepest lift.
     depth = {
-        k: (rim - np.hypot(xy[:, 0] - centre[0], xy[:, 1] - centre[1])) / rim
+        k: (rim - np.hypot(xy[:, 0] - center[0], xy[:, 1] - center[1])) / rim
         for k, xy in trajectories.xy.items()
     }
     deepest = max(float(np.max(d)) for d in depth.values())
@@ -340,10 +342,10 @@ def animate_disk(
             lift = float(depth[k][i]) / deepest if deepest > 0 else 0.0
             lifted = lift > _LIFTED
             spoke = dict(
-                x=[centre[0], x],
-                y=[centre[1], y],
+                x=[center[0], x],
+                y=[center[1], y],
                 mode="lines",
-                line=dict(color=colour[k], width=_SPOKE_WIDTH),
+                line=dict(color=color[k], width=_SPOKE_WIDTH),
                 hoverinfo="skip",
                 showlegend=False,
             )
@@ -357,7 +359,7 @@ def animate_disk(
             gap = (
                 {}
                 if lifted
-                else {"x": [centre[0], centre[0]], "y": [centre[1], centre[1]]}
+                else {"x": [center[0], center[0]], "y": [center[1], center[1]]}
             )
             edging.append(
                 Moving(
@@ -379,7 +381,7 @@ def animate_disk(
             mode="markers",
             marker=dict(
                 size=14,
-                color=[colour[k] for k in keys],
+                color=[color[k] for k in keys],
                 line=dict(color="white", width=1.5),
             ),
             hovertext=[f"{trajectories.label}{k}" for k in keys],
@@ -431,7 +433,7 @@ def animate_disk(
         # Every slot on the rim, and its number just outside it.
         xs, ys, names = zip(*trajectories.slots)
         outward = [
-            np.array([x - centre[0], y - centre[1]]) * 1.09 + np.array(centre)
+            np.array([x - center[0], y - center[1]]) * 1.09 + np.array(center)
             for x, y in zip(xs, ys)
         ]
         still.append(
@@ -458,8 +460,8 @@ def animate_disk(
         )
     still.append(
         go.Scatter(
-            x=[centre[0]],
-            y=[centre[1]],
+            x=[center[0]],
+            y=[center[1]],
             mode="markers",
             marker=dict(size=7, color="black"),
             hovertext=["Where the braid forms"],
@@ -472,8 +474,8 @@ def animate_disk(
     # then the yarns.
     side: list = []
     if braid is not None:
-        grey = "#888888"
-        braid_colour = {k: colour.get(k, grey) for k in braid.keys}
+        gray = "#888888"
+        braid_color = {k: color.get(k, gray) for k in braid.keys}
         side = [braid.fell()]
         after = moving[-1] + 1 + len(side)
         moving += list(range(after, after + len(braid.keys)))
@@ -481,8 +483,8 @@ def animate_disk(
     def frame_traces(i: int) -> list:
         traces: list = [rounded(t) for t in strand_traces(i)]
         if braid is not None:
-            carriers = {k: trajectories.xy[k][i] - np.asarray(centre) for k in keys}
-            traces += braid.traces(float(times[i]), braid_colour, carriers)
+            carriers = {k: trajectories.xy[k][i] - np.asarray(center) for k in keys}
+            traces += braid.traces(float(times[i]), braid_color, carriers)
         return traces
 
     def label(i: int) -> str:
@@ -513,13 +515,13 @@ def animate_disk(
     fig.update_layout(
         title=title,
         xaxis=dict(
-            range=[centre[0] - reach, centre[0] + reach],
+            range=[center[0] - reach, center[0] + reach],
             scaleanchor="y",
             scaleratio=1,
             visible=False,
             domain=[0.0, 0.5] if braid is not None else [0.0, 1.0],
         ),
-        yaxis=dict(range=[centre[1] - reach, centre[1] + reach], visible=False),
+        yaxis=dict(range=[center[1] - reach, center[1] + reach], visible=False),
         plot_bgcolor="white",
         margin=dict(l=20, r=20, t=80, b=20),
         **play_controls(frame_duration_ms, [(str(i), label(i)) for i in samples]),
@@ -531,7 +533,7 @@ def animate_disk(
     return fig
 
 
-def kumihimo_step_labels(kumihimo, n_strands: int | None = None) -> list[str]:
+def kumihimo_step_labels(kumihimo, n_strands: Optional[int] = None) -> list[str]:
     """What each disk step of a kumihimo sequence is, for the slider.
 
     A swap takes three steps on the disk (see
@@ -553,9 +555,9 @@ def kumihimo_step_labels(kumihimo, n_strands: int | None = None) -> list[str]:
 
 def animate_kumihimo(
     kumihimo,
-    n_strands: int | None = None,
-    output_html: str | None = None,
-    title: str | None = None,
+    n_strands: Optional[int] = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
     samples_per_step: int = 12,
     side_view: bool = False,
     yarn_diameter: float = 0.12,
@@ -585,7 +587,7 @@ def animate_kumihimo(
     trajectories = kumihimo_trajectories(
         kumihimo, n_strands, samples_per_step=samples_per_step
     )
-    kwargs.setdefault("colors", _hsv_colours(n))
+    kwargs.setdefault("colors", _hsv_colors(n))
     if side_view:
         n_slots, start, steps = kumihimo_steps(kumihimo, n_strands)
         kwargs.setdefault(
@@ -604,9 +606,9 @@ def animate_kumihimo(
 def animate_mobidai(
     mobidai,
     n_cycles: int = 1,
-    drift: int | None = None,
-    output_html: str | None = None,
-    title: str | None = None,
+    drift: Optional[int] = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
     samples_per_step: int = 12,
     slot_offset: float = 0.0,
     side_view: bool = False,
@@ -672,8 +674,8 @@ def animate_mobidai(
 def animate_sinnet(
     sinnet,
     n_cycles: int = 1,
-    output_html: str | None = None,
-    title: str | None = None,
+    output_html: Optional[str] = None,
+    title: Optional[str] = None,
     samples_per_step: int = 12,
     side_view: bool = False,
     yarn_diameter: float = 0.12,
@@ -700,7 +702,7 @@ def animate_sinnet(
     Returns:
         The figure.
     """
-    from braidpy.ashley_solid_sinnet import sinnet_disk, strand_colours
+    from braidpy.ashley_solid_sinnet import sinnet_disk, strand_colors
 
     disk = sinnet_disk(sinnet, n_cycles)
     trajectories = disk_trajectories(
@@ -714,7 +716,7 @@ def animate_sinnet(
             disk.middle_slot(space): str(space) for space in range(1, disk.n_spaces + 1)
         },
     )
-    kwargs.setdefault("colors", strand_colours(len(disk.start)))
+    kwargs.setdefault("colors", strand_colors(len(disk.start)))
     if side_view:
         kwargs.setdefault(
             "braid",

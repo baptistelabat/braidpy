@@ -173,6 +173,9 @@ class BraidTracker:
         )
 
     def get_generators_for_move(self, move: Move) -> str:
+        """The braid word's generators for a move: the strand moved crossing
+        every strand it passes, the way it goes round; empty if no strand is
+        in the slot it is moved from."""
         moving_strand = None
         for s in self.strand_map.values():
             if s.position == move.from_slot:
@@ -262,6 +265,9 @@ class BraidTracker:
 
 
 class Mobidai:
+    """A kumihimo disk at work: its slots, the strands in them, and the braid
+    word its moves make."""
+
     def __init__(self, config: MobidaiConfig):
         self.n_total_shift = 0
         self.config = config
@@ -319,6 +325,12 @@ class Mobidai:
     def single_step(
         self, move: Move, slots: dict[int, Strand | None]
     ) -> dict[int, Strand | None]:
+        """Make one move: the strand in its slot moved to the slot it goes
+        to, the generators it makes added to the braid word.
+
+        Raises:
+            SlotAlreadyInUseError: If that slot already holds a strand.
+        """
         strand = slots.get(move.from_slot)
         if strand:
             if slots.get(move.to_slot) is not None:
@@ -337,6 +349,7 @@ class Mobidai:
         return slots
 
     def rotate(self, steps: int):
+        """Turn the disk so many slots round, every strand with it."""
         n = self.config.n_slots
         new_slots: dict[int, Strand | None] = {i: None for i in range(1, n + 1)}
         for slot, strand in self.slots.items():

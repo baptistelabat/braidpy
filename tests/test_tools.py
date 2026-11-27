@@ -27,13 +27,14 @@ def test_every_answer_is_plain_data():
 def test_a_braid_is_described_and_linked():
     info = tools.describe_braid("aB")  # letters, as braidpy reads words
     assert info["n_strands"] == 3 and info["permutation"] == [2, 3, 1]
+    assert info["nielsen_thurston"] == "pseudo-Anosov"
     assert info["studio"].startswith(tools.STUDIO + "#source=word")
 
 
 def test_the_same_braid_however_written():
     """Ashley's flat sinnet of 7 is the catalogue's word read backwards."""
     same = tools.compare_braids("1 2 3 -6 -5 -4", "3 2 1 -4 -5 -6", n_strands=7)
-    assert same == {"same_braid": True, "distance": 0.0}
+    assert same == {"same_braid": True, "proven": True, "distance": 0.0}
     assert not tools.compare_braids("1 -2", "1 2")["same_braid"]
 
 
@@ -44,7 +45,7 @@ def test_ways_to_make_a_braid_no_sinnet_makes():
     assert set(made) == {"disk", "lace", "ashley"}
     assert made["ashley"]["a_sinnet"] is False
     assert made["ashley"]["spaces"] == "1 0 1 0 1 0"
-    assert made["lace"]["bobbins"] == ["A-B", "B-C", "C-D"]
+    assert made["lace"]["bobbins"] == ["B-C", "C-D", "D-A"]
 
 
 def test_a_braid_word_with_no_crossing_says_so():

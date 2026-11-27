@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "braidpy"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python library for working with braids"
 authors = [
     { name="Baptiste Labat", email="baptiste.labat@gmail.com" }
@@ -33,10 +33,15 @@ classifiers = [
 dependencies = [
     "numpy>=1.21.0",
     "sympy>=1.14.0",
-    "math-braid (>=0.8,<0.9)",
-    "dataclasses-json>=0.6.7",
     "networkx>=3.4.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/baptistelabat/braidpy"
+Documentation = "https://baptistelabat.github.io/braidpy"
+"Braid Studio" = "https://baptistelabat.github.io/braidpy/studio/"
+Changelog = "https://github.com/baptistelabat/braidpy/blob/develop/CHANGELOG.md"
+Issues = "https://github.com/baptistelabat/braidpy/issues"
 
 [project.optional-dependencies]
 # Drawing braids: diagrams, 3D plots, animations (braid.plot,
@@ -56,6 +61,9 @@ braidpy-mcp = "braidpy.mcp_server:main"
 dev = [
     # Working on braidpy, its drawings are tested too.
     "braidpy[viz]",
+    # An independent check of braidpy's normal form and triviality, in the
+    # tests only: braidpy itself does not use it.
+    "math-braid (>=0.8,<0.9)",
     "ruff>=0.17.2",
     "pytest>=8.3.5",
     "coverage>=7.8.2",
@@ -80,7 +88,10 @@ braidpy = ["py.typed"]
 [tool.ruff.lint]
 # dict(x=1, y=2) is how the drawing code builds Plotly's settings: read as
 # keywords, it stays as it is.
-ignore = ["C408"]
+# Optional[X] marks an optional argument, one whose default is None; X | None
+# is kept for a None that means something, for returns and for attributes
+# (CLAUDE.md). So pyupgrade's UP045 is not wanted.
+ignore = ["C408", "UP045"]
 
 [tool.mypy]
 # Libraries without type information.

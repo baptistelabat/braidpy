@@ -9,7 +9,7 @@ import math
 import pytest
 from web_checks import check
 
-from braidpy.web import build, catalogue
+from braidpy.web import build, catalog
 
 
 def test_a_kumihimo_pattern():
@@ -57,9 +57,9 @@ def test_a_disk_braid_is_made_in_step_with_its_crossings():
 
 
 @pytest.mark.parametrize("source", ["mobidai", "sinnet"])
-def test_a_catalogued_braid_typed_in_is_the_same_braid(source):
-    """What the catalogue shows of a braid, made as your own, is that braid."""
-    entry = catalogue()[source]["entries"][0]
+def test_a_cataloged_braid_typed_in_is_the_same_braid(source):
+    """What the catalog shows of a braid, made as your own, is that braid."""
+    entry = catalog()[source]["entries"][0]
     as_listed = build(
         {"source": source, "name": entry["name"], "cycles": 2, "iterations": 5}
     )
@@ -74,7 +74,7 @@ def test_a_catalogued_braid_typed_in_is_the_same_braid(source):
     )
     assert typed["info"]["word"] == as_listed["info"]["word"]
     assert typed["strands"][0]["points"] == as_listed["strands"][0]["points"]
-    assert catalogue()[source]["entries"][-1]["name"] == "custom"
+    assert catalog()[source]["entries"][-1]["name"] == "custom"
 
 
 @pytest.mark.parametrize(
@@ -183,12 +183,165 @@ def test_a_braid_says_how_many_repeats_were_made(spec, made):
 
 
 @pytest.mark.parametrize("source", ["kumihimo", "mobidai", "sinnet"])
-def test_a_disk_braid_made_from_its_catalogue_defaults_is_made_by_default(source):
-    """The page starts from the catalogue's defaults; a description that
+def test_a_disk_braid_made_from_its_catalog_defaults_is_made_by_default(source):
+    """The page starts from the catalog's defaults; a description that
     gives none of them makes the same braid: both read one table."""
     given = build(
-        {"source": source, **catalogue()[source]["defaults"], "iterations": 1},
+        {"source": source, **catalog()[source]["defaults"], "iterations": 1},
         tighten=False,
     )
     assumed = build({"source": source, "iterations": 1}, tighten=False)
     assert given == assumed
+
+
+def _round_a_core(result):
+    import numpy as np
+
+    (core,) = [s for s in result["strands"] if s["name"] == "Core"]
+    points = np.array(core["points"])
+    middle = len(points) // 2
+    angles = sorted(
+        np.arctan2(*(np.array(s["points"])[middle, 1::-1] - points[middle, 1::-1]))
+        for s in result["strands"]
+        if s is not core
+    )
+    return points, np.diff([*angles, angles[0] + 2 * np.pi]).max()
+
+
+@pytest.mark.parametrize("source", ["kumihimo", "mobidai"])
+@pytest.mark.parametrize("core", ["yarn", "rigid"])
+def test_a_disk_braids_round_a_core_down_its_middle(source, core):
+    """The core stands on the axis, grey, the yarns all round it and none
+    through it; a rigid one stays straight.  The word is the yarns' own,
+    and the marudai is told of the core, after the yarns."""
+    import numpy as np
+
+    from braidpy.web._settings import CORE_COLOR
+
+    plain = build({"source": source})
+    result = build({"source": source, "core": core})
+    assert len(result["strands"]) == len(plain["strands"]) + 1
+    assert result["info"]["word"] == plain["info"]["word"]
+    assert result["info"]["closest_approach"] >= 0.99 * result["yarn_diameter"]
+    points, widest = _round_a_core(result)
+    assert widest < np.pi, "the yarns all round the core"
+    assert result["strands"][-1]["colour"] == CORE_COLOR
+    if core == "rigid":
+        assert np.ptp(points[:, :2], axis=0).max() < 1e-9
+    assert result["disk"] == {**plain["disk"], "core": core}
+    assert "core" in result["notes"][-1]
+
+
+def test_a_disk_has_no_core_unless_asked():
+    with pytest.raises(ValueError, match="none, yarn, rigid"):
+        build({"source": "kumihimo", "core": "own"})
+
+
+@pytest.mark.parametrize("name", ["lace_dutch", "lace_tubular_8"])
+def test_a_lace_braid_made_on_a_marudai_can_have_a_core(name):
+    """Made from its card on a marudai, any lace braid can be made round a
+    core, even one of four gears, which has no room for one on the machine:
+    the core comes after its bobbins, grey, and the marudai is told of it."""
+    from braidpy.web._settings import CORE_COLOR
+
+    spec = {"source": "lace", "name": name, "settle": "marudai"}
+    plain = build(spec)
+    result = build({**spec, "core": "rigid"})
+    assert result["strands"][-1]["name"] == "Core"
+    assert result["strands"][-1]["colour"] == CORE_COLOR
+    assert result["disk"] == {**plain["disk"], "core": "rigid"}
+    assert result["info"]["word"] == plain["info"]["word"]
+
+
+def test_a_sinnet_from_a_shape_is_the_book_s_and_drawn():
+    """A triangle of four lines a side, from the page, is the book's #3047,
+    its strands and moves, and comes drawn: its lines, each a move on a
+    track, and its spaces."""
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
+    result = build({**spec, "cycles": 1, "iterations": 0})
+    check(result, abok_3047.n_strands)
+    drawn = result["ashley_shape"]
+    assert drawn["counts"] == abok_3047.initial_counts_per_space
+    assert len(drawn["lines"]) == len(drawn["spaces"]) == 12
+    assert drawn["tracks"] == 3
+    shapes = catalog()["shape"]["shapes"]
+    assert set(shapes) == {"square", "diagonal", "triangle", "skew"}
+    assert set(shapes["square"]) >= {"oblong", "L", "U", "frame"}
+
+
+def test_a_parallelogram_from_the_page_draws_3078_s_lines():
+    """A parallelogram of 3 by 5 lines on the skewed grid, from the page,
+    is drawn with #3078's 14 lines, a third of them halfway between the
+    others' crossings."""
+    spec = {"source": "shape", "grid": "skew", "shape": "oblong", "size": 3}
+    result = build({**spec, "height": 5, "cycles": 1, "iterations": 0})
+    drawn = result["ashley_shape"]
+    assert len(drawn["lines"]) == len(drawn["spaces"]) == 14
+    assert len(drawn["outline"]) == 4
+
+
+def test_a_shape_s_track_turned_round_and_strands_added():
+    """A track turned round runs the other way, each space still giving
+    once and taking once; a space named twice holds two strands more."""
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
+    plain = build({**spec, "cycles": 1, "iterations": 0})["ashley_shape"]
+    turned = build({**spec, "turned": "1", "cycles": 1, "iterations": 0})
+    turned = turned["ashley_shape"]
+    for before, after in zip(plain["lines"], turned["lines"]):
+        if before["track"] == 1:
+            assert after["start"] == before["end"]
+    more = build({**spec, "turned": "1", "extra": "1 1", "cycles": 1, "iterations": 0})
+    assert more["ashley_shape"]["counts"][0] == turned["counts"][0] + 2
+
+
+@pytest.mark.parametrize(
+    "spec, message",
+    [
+        ({"shape": "circle"}, "No shape"),
+        ({"cells": "0,0^ 1,1^"}, "meet at a point|more than one piece"),
+        ({"grid": "square", "shape": "triangle"}, "No shape"),
+        ({"grid": "hexagonal"}, "No grid"),
+        ({"turned": "9"}, "No track"),
+        ({"extra": "99"}, "numbered 1 to"),
+    ],
+)
+def test_a_sinnet_from_a_shape_is_checked(spec, message):
+    with pytest.raises(ValueError, match=message):
+        build({"source": "shape", "iterations": 0, **spec})
+
+
+def test_a_shape_s_corners_take_strands_more():
+    """A strand more at each corner of a triangle of four lines a side is
+    the book's #3049."""
+    from braidpy.solid_sinnets_catalog import abok_3049
+
+    spec = {"source": "shape", "grid": "triangle", "shape": "triangle", "size": 4}
+    result = build({**spec, "corners": 1, "cycles": 1, "iterations": 0})
+    assert result["ashley_shape"]["counts"] == abok_3049.initial_counts_per_space
+
+
+def test_a_shape_s_cells_are_its_own():
+    """A shape is its grid's cells: given, they make it, and it comes with
+    them and the cells beside, to add; an L is cut in two triangles' less
+    than its oblong, and its lines in pieces where it turns."""
+    spec = {
+        "source": "shape",
+        "grid": "square",
+        "shape": "oblong",
+        "size": 3,
+        "height": 3,
+    }
+    whole = build({**spec, "cycles": 1, "iterations": 0})["ashley_shape"]
+    assert sorted(c["name"] for c in whole["cells"] if c["in"]) == [
+        "0,0",
+        "0,1",
+        "1,0",
+        "1,1",
+    ]
+    notched = build({**spec, "cells": "0,0 1,0 0,1", "cycles": 1, "iterations": 0})
+    drawn = notched["ashley_shape"]
+    assert sum(c["in"] for c in drawn["cells"]) == 3
+    assert "1,1" in [c["name"] for c in drawn["cells"] if not c["in"]]
+    assert len(drawn["outline"]) == 6

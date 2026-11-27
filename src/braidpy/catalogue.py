@@ -2,38 +2,26 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""What every catalogue of braids in braidpy has in common.
+"""`braidpy.catalogue` was renamed `braidpy.catalog`: one spelling for the catalogues.
 
-Each catalogue — :mod:`braidpy.braid_catalog` (braid words),
-:mod:`braidpy.mobidai_catalog` (kumihimo disk braids),
-:mod:`braidpy.solid_sinnets_catalog` (Ashley's solid sinnets) and
-:mod:`braidpy.machine_catalog` (braiding machines) — keeps its braids as
-it likes best, and lists them in a ``CATALOGUE``: an :class:`Entry` per
-braid, by the name it is known by, in the order to offer them.
+Kept so the older imports go on working.  Anything this module answers,
+`braidpy.catalog` answers, under its own name.
 """
 
-from __future__ import annotations
+import warnings
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Generic, TypeVar
+from braidpy import catalog
 
-__all__ = ["Entry"]
-
-T = TypeVar("T")
+_warned = False
 
 
-@dataclass(frozen=True)
-class Entry(Generic[T]):
-    """One braid of a catalogue.
-
-    Args:
-        title: What it is called, to show.
-        make: Makes it, as its catalogue keeps it: a braid, a disk braid's
-            moves, a sinnet, a machine.  Nothing is drawn.
-        reference: Where it comes from: a book and its number, a page.
-    """
-
-    title: str
-    make: Callable[[], T]
-    reference: str = ""
+def __getattr__(name: str):
+    global _warned
+    if not _warned:
+        _warned = True
+        warnings.warn(
+            "braidpy.catalogue is now braidpy.catalog; import it under its new name.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    return getattr(catalog, name)

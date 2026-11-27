@@ -9,7 +9,7 @@ import time
 import pytest
 
 from braidpy import Braid
-from braidpy.similarity import distance, fingerprint, similar
+from braidpy.similarity import distance, fingerprint, same_fingerprint, similar
 
 PLAIT = [1, -2]
 
@@ -42,6 +42,37 @@ def test_the_plait_is_not_strands_hanging_straight():
     assert distance(plait, straight) > 0.5
 
 
+@pytest.mark.parametrize(
+    "first, second, n_strands",
+    [
+        # Edo yatsu, on a kumihimo disk, and ABOK #3070, its repeating units.
+        (
+            [7, 6, 5, 4, 3, 2, -3, -5, -7, -1, -2, -3, -4, -5, -6, 5, 3, 1],
+            [6, 5, -3, -4, -5, -6, -7, 5, 4, 3, 2, 1, -3, -4],
+            8,
+        ),
+        # The flat braid of 6 and ABOK #3021.
+        (
+            [-4, -3, -2, 1, 2, 3, 2, 3, 4, -5, -4, -3],
+            [5, 3, -2, -3, -4, -5, 4, 3, 2, 1, -2, -4],
+            6,
+        ),
+    ],
+)
+def test_braids_whose_alexander_polynomial_vanishes_are_still_told_apart(
+    first, second, n_strands
+):
+    """They agree on their loops, writhe and linking numbers, and the
+    Alexander polynomial of both vanishes: the Burau polynomial tells them
+    apart."""
+    a = fingerprint(Braid(first, n_strands))
+    b = fingerprint(Braid(second, n_strands))
+    assert (a.loops, a.writhe, a.linking) == (b.loops, b.writhe, b.linking)
+    assert a.alexander == b.alexander == (None, None)
+    assert not same_fingerprint(a, b)
+    assert distance(a, b) > 0.05
+
+
 def test_a_mirror_image_is_told_apart_by_its_writhe():
     """A rope twisted the other way: the same Alexander polynomial, the
     other writhe."""
@@ -52,9 +83,9 @@ def test_a_mirror_image_is_told_apart_by_its_writhe():
     assert distance(s_twist, z_twist) > 0.5
 
 
-def test_your_own_braid_finds_the_catalogue_braid_it_is():
+def test_your_own_braid_finds_the_catalog_braid_it_is():
     """The plait, typed from its second crossing and repeated five times:
-    the catalogue's plait comes first, the same fingerprint, at distance 0."""
+    the catalog's plait comes first, the same fingerprint, at distance 0."""
     mine = Braid((PLAIT[1:] + PLAIT[:1]) * 5, 3)
     found = similar(mine, count=3)
     assert found[0].name in {"flat3", "inverted_flat3"}
@@ -84,3 +115,27 @@ def test_a_long_sinnet_is_fingerprinted_quickly():
     assert time.perf_counter() - started < 10
     assert found.n_strands == 17
     assert all(value is not None for value in found.alexander)
+
+
+def test_a_long_home_braid_keeps_its_fingerprint_read_from_anywhere():
+    """ABOK #3057's unit closes after 20 repeats.  Its Burau matrix raised
+    to that power has entries near 1e19, and the Alexander polynomial taken
+    from them lost the digits it cancelled: read from another starting
+    point, the unit seemed another braid.  From the eigenvalues it does not."""
+    unit = [7, 6, 5, 4, 3, 7, 6, 5, 4, -6, -7, -8, 4, 3, 2, 1, -3, -4, -5]
+    unit += [-2, -3, -4, -5]
+    turned = unit[5:] + unit[:5]
+    assert same_fingerprint(fingerprint(Braid(unit, 9)), fingerprint(Braid(turned, 9)))
+
+
+def test_two_long_words_of_one_braid_have_one_fingerprint():
+    """A braid whose Burau matrix grows fast, not a repeat of a shorter one,
+    and the same braid with a crossing and its undoing before each crossing.
+    In floating point the Burau polynomial's samples came out apart in the
+    third digit, and the two seemed different braids; modulo a prime they
+    are the same."""
+    word = [1, -2, 3, -4, 5, -6, 7, -8] * 20 + [1]
+    padded = [g for c in word for g in (9 - abs(c), abs(c) - 9, c)]
+    a, b = fingerprint(Braid(word, 9)), fingerprint(Braid(padded, 9))
+    assert max(abs(x - y) for x, y in zip(a.burau, b.burau)) > 1e-6
+    assert same_fingerprint(a, b)

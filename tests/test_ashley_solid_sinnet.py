@@ -110,12 +110,12 @@ from braidpy.take_off import (
 )
 
 
-def _catalogue():
-    import braidpy.solid_sinnets_catalog as catalogue
+def _catalog():
+    import braidpy.solid_sinnets_catalog as catalog
 
     return {
         name: value
-        for name, value in vars(catalogue).items()
+        for name, value in vars(catalog).items()
         if isinstance(value, AshleySolidSinnet)
     }
 
@@ -161,9 +161,9 @@ def test_a_move_takes_the_earliest_strand_over_all_it_passes():
     assert len(crossings) == 4 + 1 + 4 + 1 + 4 + 1
 
 
-@pytest.mark.parametrize("name", sorted(_catalogue()))
+@pytest.mark.parametrize("name", sorted(_catalog()))
 def test_strands_keep_their_space_and_order(name):
-    sinnet = _catalogue()[name]
+    sinnet = _catalog()[name]
     disk = sinnet_disk(sinnet, 2)
     where = dict(disk.start)
     for number, step in enumerate(disk.steps):
@@ -181,9 +181,9 @@ def test_strands_keep_their_space_and_order(name):
                 assert 2 <= place < disk.slots_per_space
 
 
-@pytest.mark.parametrize("name", sorted(_catalogue()))
+@pytest.mark.parametrize("name", sorted(_catalog()))
 def test_the_braid_permutes_the_strands_as_the_disk_does(name):
-    sinnet = _catalogue()[name]
+    sinnet = _catalog()[name]
     disk = sinnet_disk(sinnet)
     end = _end(disk)
     # Read clockwise from the seam, as the word is: slots from the last back.
@@ -198,9 +198,9 @@ def test_the_braid_permutes_the_strands_as_the_disk_does(name):
     "name",
     [
         pytest.param(name, marks=pytest.mark.slow)
-        if _catalogue()[name].n_strands >= 24
+        if _catalog()[name].n_strands >= 24
         else name
-        for name in sorted(_catalogue())
+        for name in sorted(_catalog())
     ],
 )
 def test_the_braid_is_the_old_word_read_from_the_other_side(name):
@@ -209,7 +209,7 @@ def test_the_braid_is_the_old_word_read_from_the_other_side(name):
     :func:`ashley_to_artin_exact` reads anticlockwise and counts a strand
     lifted over as positive: read clockwise and mirrored, it is the braid.
     """
-    sinnet = _catalogue()[name]
+    sinnet = _catalog()[name]
     n = sinnet.n_strands
     _, old = ashley_to_artin_exact(list(sinnet.initial_counts_per_space), sinnet.moves)
     other_side = [-int(np.sign(g)) * (n - abs(g)) for g in old]
@@ -225,7 +225,7 @@ def test_two_moves_from_one_space_are_both_made():
 
 @pytest.mark.parametrize("name", ["abok_3042", "abok_3047", "abok_3053"])
 def test_the_mobidai_pattern_makes_the_same_braid(name):
-    sinnet = _catalogue()[name]
+    sinnet = _catalog()[name]
     config = sinnet.to_mobidai()
     assert config.n_slots == sinnet_disk(sinnet).n_slots
     assert not config.is_clockwise
@@ -255,3 +255,20 @@ def test_a_sinnet_in_3d():
     braid = abok_3042.braid_3d(0.12, n_cycles=1, iterations=60)
     assert len(braid.points) == 8
     assert braid.closest_approach() > 0.12 * 0.9
+
+
+def test_3057_and_3058_differ_only_in_the_way_round_not_in_the_braid():
+    """The book gives both one table: #3058's strands all go to the right.
+
+    A strand carried over all the others can be swung over the top of the
+    sinnet, so which way round it goes changes the moves on the disk, not
+    the braid.
+    """
+    one, other = _catalog()["abok_3057"], _catalog()["abok_3058"]
+    assert (one.initial_counts_per_space, one.moves) == (
+        other.initial_counts_per_space,
+        other.moves,
+    )
+    assert not one.all_right and other.all_right
+    assert one.annular_word(2) != other.annular_word(2)
+    assert one.braid(2) == other.braid(2)

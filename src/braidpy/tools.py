@@ -23,7 +23,7 @@ for σ₂⁻¹, written as braidpy reads them (:func:`~braidpy.braidword.parse_w
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 from urllib.parse import urlencode
 
 from braidpy.braid import Braid
@@ -46,7 +46,7 @@ __all__ = [
 STUDIO = "https://baptistelabat.github.io/braidpy/studio/"
 
 
-def _braid(word: str, n_strands: int | None = None) -> Braid:
+def _braid(word: str, n_strands: Optional[int] = None) -> Braid:
     """A braid word read, on as many strands as it needs if not said."""
     from braidpy.braidword import parse_word
 
@@ -71,10 +71,10 @@ def studio_link(spec: dict[str, Any]) -> str:
     return STUDIO + "#" + urlencode({k: v for k, v in spec.items() if v is not None})
 
 
-def list_braids(source: str | None = None) -> dict[str, Any]:
+def list_braids(source: Optional[str] = None) -> dict[str, Any]:
     """The braids braidpy knows by name, by what makes them: braid words,
     kumihimo disks, Ashley's sinnets, braiding machines, lace machines
-    (:func:`braidpy.web.catalogue`).
+    (:func:`braidpy.web.catalog`).
 
     Args:
         source: Only this one, for example ``"sinnet"``; all if None.
@@ -83,7 +83,7 @@ def list_braids(source: str | None = None) -> dict[str, Any]:
         Per source, its title and its braids — each a ``name`` and a
         ``title`` — and the settings it takes, with their defaults.
     """
-    from braidpy.web import catalogue
+    from braidpy.web import catalog
 
     listed = {
         name: {
@@ -94,12 +94,9 @@ def list_braids(source: str | None = None) -> dict[str, Any]:
                 for e in about.get("entries", [])
                 if e["name"] != "custom"
             ]
-            + [
-                {"word": e["word"], "n_strands": e["n_strands"], "title": e["title"]}
-                for e in about.get("examples", [])
-            ],
+            + [dict(e) for e in about.get("examples", [])],
         }
-        for name, about in catalogue().items()
+        for name, about in catalog().items()
     }
     if source is None:
         return listed
@@ -108,11 +105,13 @@ def list_braids(source: str | None = None) -> dict[str, Any]:
     return {source: listed[source]}
 
 
-def describe_braid(word: str, n_strands: int | None = None) -> dict[str, Any]:
+def describe_braid(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
     """What is known of a braid from its word: strands, crossings, the
     permutation it makes, whether it is pure and after how many repeats,
-    what it closes up into, its Garside normal form — as Braid Studio's
-    card shows it (:mod:`braidpy.web`) — and a link to see it.
+    what it closes up into, its Garside normal form, which of periodic,
+    reducible or pseudo-Anosov it is, its band word where that is shorter
+    (:meth:`braidpy.braid.Braid.band_word`) — as Braid Studio's card shows
+    it (:mod:`braidpy.web`) — and a link to see it.
 
     Args:
         word: The braid word, for example ``"1 -2"``.
@@ -137,11 +136,13 @@ def describe_braid(word: str, n_strands: int | None = None) -> dict[str, Any]:
     return info
 
 
-def compare_braids(a: str, b: str, n_strands: int | None = None) -> dict[str, Any]:
-    """Whether two braid words make the same braid, as braidpy compares
-    braids — by their topology, however written
-    (:func:`braidpy.ring_program.same_braid`) — and how unlike they are
-    (:func:`braidpy.similarity.distance`: 0 the same, up to 5).
+def compare_braids(a: str, b: str, n_strands: Optional[int] = None) -> dict[str, Any]:
+    """Whether two braid words make the same braid pattern, however written:
+    alike, as braidpy's ways of making a braid check it — by their
+    fingerprints (:meth:`braidpy.braid_pattern.BraidPattern.alike`) — and,
+    if so, proven or not (:meth:`~braidpy.braid_pattern.BraidPattern.proven`);
+    and how unlike they are (:func:`braidpy.similarity.distance`: 0 the
+    same, up to 6).
 
     Args:
         a: A braid word.
@@ -149,20 +150,24 @@ def compare_braids(a: str, b: str, n_strands: int | None = None) -> dict[str, An
         n_strands: The strands of both; as many as they need if None.
 
     Returns:
-        ``same_braid`` and ``distance``.
+        ``same_braid``, whether they are alike; ``proven``, whether they are
+        proven the same pattern — None if the proof would take too long, or
+        they are not alike, which proves them different; and ``distance``.
     """
-    from braidpy.similarity import distance, fingerprint, same_fingerprint
+    from braidpy.similarity import distance
 
     n = n_strands or max(_braid(a).n_strands, _braid(b).n_strands)
-    one, other = fingerprint(_braid(a, n)), fingerprint(_braid(b, n))
+    one, other = _braid(a, n).pattern(), _braid(b, n).pattern()
+    alike = one.alike(other)
     return {
-        "same_braid": same_fingerprint(one, other),
-        "distance": round(float(distance(one, other)), 3),
+        "same_braid": alike,
+        "proven": one.proven(other) if alike else False,
+        "distance": round(float(distance(one.fingerprint, other.fingerprint)), 3),
     }
 
 
 def similar_braids(
-    word: str, n_strands: int | None = None, count: int = 5
+    word: str, n_strands: Optional[int] = None, count: int = 5
 ) -> list[dict[str, Any]]:
     """The braids of braidpy's catalogues most like this one, nearest first,
     each with every way braidpy knows of making it
@@ -198,11 +203,12 @@ def similar_braids(
     return found
 
 
-def ways_to_make(word: str, n_strands: int | None = None) -> dict[str, Any]:
+def ways_to_make(word: str, n_strands: Optional[int] = None) -> dict[str, Any]:
     """How to make a braid by hand or on a machine (:mod:`braidpy.making`):
     a kumihimo disk's moves, a Jacquard lace machine's punchcard, and
     Ashley's stand — a sinnet of the book's kind if one makes it, or the
-    braid itself one strand a space.
+    braid itself one strand a space; each from the word shortened first
+    (:meth:`~braidpy.braid.Braid.shortened`), fewer crossings to make.
 
     Args:
         word: The braid word, one repeat of it.
@@ -218,14 +224,14 @@ def ways_to_make(word: str, n_strands: int | None = None) -> dict[str, Any]:
     from braidpy.making.disk import disk_moves
     from braidpy.making.lace import lace_card
 
-    braid = _braid(word, n_strands)
+    braid = _braid(word, n_strands).shortened()
     made: dict[str, Any] = {}
     if 2 * braid.n_strands + 2 <= 32:
         disk = disk_moves(braid)
         made["disk"] = {"moves": disk.text(), "studio": studio_link(disk.spec())}
     card = lace_card(braid)
     made["lace"] = {"card": card.text(), "bobbins": card.notches()}
-    search = ashley_sinnet(braid, time_limit=3.0)
+    search = ashley_sinnet(braid, time_limit_s=3.0)
     sinnet = search.sinnet or ashley_moves(braid)
     spec = sinnet_spec(sinnet)
     made["ashley"] = {

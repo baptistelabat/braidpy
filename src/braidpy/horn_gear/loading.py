@@ -218,6 +218,26 @@ def _greedy_loadings(
         yield slots[seed:] + slots[:seed]
 
 
+def _parts(machine: BraidingMachine) -> list[list[str]]:
+    """The machine's gears, grouped into the parts that share contacts.
+
+    Most machines are one part.  A split gear can leave two, modelled as two
+    gears on one axis with no contact between them
+    (:mod:`braidpy.horn_gear.multiband`), and then the parts braid side by
+    side without a carrier ever passing from one to the other.
+
+    Args:
+        machine: The machine definition.
+
+    Returns:
+        Gear names, part by part, each part's names sorted.
+    """
+    graph = nx.Graph()
+    graph.add_nodes_from(machine.gears)
+    graph.add_edges_from((c.gear_a, c.gear_b) for c in machine.connections)
+    return [sorted(part) for part in nx.connected_components(graph)]
+
+
 def _fullest_loading(
     machine: BraidingMachine,
     period: int,
@@ -230,11 +250,31 @@ def _fullest_loading(
     *pair* in it is.  That makes the fullest loading a maximum clique of the
     "these two can coexist" graph, which is worth solving exactly: greedy
     loading leaves real machines short of what they can hold.
+
+    A machine that falls into parts (:func:`_parts`) is solved part by part
+    and the loadings put together.  Two slots of different parts never meet,
+    so every such pair is an edge, and a graph of two parts has cliques to
+    enumerate for every pairing of theirs — exponentially many, for an answer
+    that is just the fullest of each part.  Splitting also means the size
+    limit on the exact search counts each part, not the whole machine, so
+    three bands side by side are loaded exactly where the whole would have
+    fallen back on greedy and lost a third of its carriers.
     """
+    found: dict[CarrierId, Position] = {}
+    for part in _parts(machine):
+        for position in _fullest_in(machine, period, part).values():
+            found[len(found)] = position
+    return found
+
+
+def _fullest_in(
+    machine: BraidingMachine,
+    period: int,
+    part: Iterable[str],
+) -> dict[CarrierId, Position]:
+    """The largest collision-free set of slots among one part's gears."""
     slots = [
-        (name, slot)
-        for name, gear in machine.gears.items()
-        for slot in range(gear.n_slots)
+        (name, slot) for name in part for slot in range(machine.gears[name].n_slots)
     ]
 
     graph = nx.Graph()
@@ -302,8 +342,14 @@ def load_carriers(machine: BraidingMachine) -> dict[CarrierId, Position]:
             return positions
 
     # Exact for any machine of a sane size; clique enumeration is exponential
-    # in the worst case, so very large machines fall back to greedy.
-    if machine.total_slots() <= _EXACT_LOADING_LIMIT:
+    # in the worst case, so very large machines fall back to greedy.  Each
+    # part is enumerated on its own (:func:`_fullest_loading`), so it is the
+    # largest part that has to be of a sane size, not the whole machine.
+    largest = max(
+        (sum(machine.gears[name].n_slots for name in part) for part in _parts(machine)),
+        default=0,
+    )
+    if largest <= _EXACT_LOADING_LIMIT:
         best = _fullest_loading(machine, period)
     else:
         best = {}

@@ -18,6 +18,7 @@ from braidpy.horn_gear.examples import (
     mixed_gear_machine,
     princess_braid,
     soutache_braid,
+    triaxial_braid_16,
     tubular_braid_8,
     tubular_braid_12,
     tubular_braid_16,
@@ -58,6 +59,7 @@ from braidpy.horn_gear.tracks import (
     walk,
 )
 from braidpy.horn_gear.visualization import animate, visualize_machine
+from braidpy.machine_catalog import CATALOG as MACHINES
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -353,13 +355,14 @@ def test_slots_land_exactly_on_contacts(factory):
 @pytest.mark.parametrize(
     "factory,n_gears", [(tubular_braid_12, 6), (tubular_braid_16, 8)]
 )
-def test_rings_that_cannot_align_are_flagged(factory, n_gears):
-    """A ring of N 4-slot gears only aligns at N=4 — record the shortfall.
+def test_rings_that_cannot_align_hand_over_between_steps(factory, n_gears):
+    """A ring of N 4-slot gears only aligns at N=4 with whole steps.
 
     Closing a ring of N gears forces each gear's contacts to sit
-    ``180 - 360/N`` degrees apart, and a 4-slot gear can only place slots every
-    90°.  These two machines therefore cannot be made exact without changing
-    their gear count or slot count, and their carriers jump when transferring.
+    ``180 - 360/N`` degrees apart, and a 4-slot gear's horns are 90° apart,
+    so no turning puts a horn on each contact at the end of every step.
+    The horns still come round to each contact once a step, so each hands
+    over then, a fraction of a step in: every contact is on a horn.
     """
     m = factory()
     assert len(m.gears) == n_gears
@@ -367,7 +370,8 @@ def test_rings_that_cannot_align_are_flagged(factory, n_gears):
     assert separation % 90 != 0, "this ring would in fact align; update the test"
 
     worst = max(offset_residuals(m, compute_layout(m)).values())
-    assert math.degrees(worst) > 1.0
+    assert math.degrees(worst) < 1e-3
+    assert any(0 < c.phase < 1 for c in m.connections)
 
 
 @pytest.mark.parametrize("n_end,expected_slots", [(3, 14), (5, 18), (7, 22)])
@@ -534,7 +538,7 @@ def test_princess_carries_eight_carriers_around_a_cord():
     simulate(m, simulation_period(m), cp)  # raises on any collision
 
     cord = m.axials[0]
-    assert cord.name == "cord"
+    assert cord.name == "axial_B"
     assert cord.anchor == ("B",)
 
     # The cord stands at the centre gear, so it clears that gear's radius.
@@ -588,9 +592,9 @@ def test_tube_rings_finds_one_ring_per_hole(factory, expected):
     for ring in rings:
         assert len(ring) >= 3
         for i, gear in enumerate(ring):
-            neighbour = ring[(i + 1) % len(ring)]
-            assert m.graph.has_edge(gear, neighbour), (
-                f"{gear}-{neighbour} is not a connection, so this is no ring"
+            neighbor = ring[(i + 1) % len(ring)]
+            assert m.graph.has_edge(gear, neighbor), (
+                f"{gear}-{neighbor} is not a connection, so this is no ring"
             )
 
 
@@ -959,7 +963,7 @@ def test_a_long_cycle_trades_smoothing_rather_than_its_length():
     )
 
 
-def test_diamond_braid_is_tubular_braid_8_relabelled():
+def test_diamond_braid_is_tubular_braid_8_relabeled():
     """The 2x2 grid and the 4-gear ring are one machine, so one must delegate.
 
     Both are a 4-cycle of 4-slot gears with alternating rotations.  If they
@@ -1063,7 +1067,7 @@ def test_a_bobbin_stays_put_while_both_its_gears_are_idle():
         assert state.carrier_positions() == idle, "an idle bobbin moved"
 
 
-def test_a_turning_gear_takes_the_bobbin_from_its_idle_neighbour():
+def test_a_turning_gear_takes_the_bobbin_from_its_idle_neighbor():
     """The point of interpenetrating gears: one turns while the other stands still.
 
     A bobbin in the notch shared by A and B is swept out by whichever of the
@@ -1152,14 +1156,14 @@ def test_lace_bobbin_sits_in_the_notch(n_gears):
 
     for conn in m.connections:
         a, b = conn.gear_a, conn.gear_b
-        centres = math.dist(layout[a], layout[b])
-        assert centres < radii[a] + radii[b], "the circles only touch"
+        centers = math.dist(layout[a], layout[b])
+        assert centers < radii[a] + radii[b], "the circles only touch"
 
         notch = contact_point(m, layout, a, b)
         # On the line of centres, and the same point seen from either gear.
         assert contact_point(m, layout, b, a) == pytest.approx(notch)
         assert math.dist(layout[a], notch) + math.dist(notch, layout[b]) == (
-            pytest.approx(centres)
+            pytest.approx(centers)
         )
         # Cut back inside both rims.
         assert math.dist(layout[a], notch) < radii[a]
@@ -1181,7 +1185,7 @@ def test_tangent_machines_carry_bobbins_on_the_rim(factory):
         assert carrier_radius(m, layout, gear) == pytest.approx(radii[gear])
 
 
-def test_tangent_machines_keep_contacts_on_the_line_of_centres():
+def test_tangent_machines_keep_contacts_on_the_line_of_centers():
     """Ordinary gears touch, so their contact must stay where it always was."""
     m = tubular_braid_8()
     layout, radii = compute_layout(m), gear_radii(m)
@@ -1234,10 +1238,10 @@ def test_programme_is_drawn_as_a_punchcard():
     assert cw_xs[0] - trig_xs[0] == pytest.approx(pitch / 2)
 
 
-GREEN, RED, GREY = "60,170,90", "205,60,55", "140,140,140"
+GREEN, RED, GRAY = "60,170,90", "205,60,55", "140,140,140"
 
 
-def _disc_colours(figure_or_frame):
+def _disc_colors(figure_or_frame):
     """The fill of every gear disc, in gear order."""
     return [t.fillcolor for t in figure_or_frame.data if t.fill == "toself"]
 
@@ -1245,35 +1249,35 @@ def _disc_colours(figure_or_frame):
 @pytest.mark.parametrize(
     "factory", [tubular_braid_8, flat_braid_9, princess_braid, diamond_braid]
 )
-def test_wired_machine_gears_are_coloured_by_direction(factory):
+def test_wired_machine_gears_are_colored_by_direction(factory):
     """Green turns clockwise, red the other way — and a wired machine never stops.
 
     Every gear of a geared-together machine turns on every step, so none of
     them may be grey, and the colours show the alternation the braid needs.
     """
     m = factory()
-    colours = _disc_colours(visualize_machine(m))
-    assert len(colours) == len(m.gears)
+    colors = _disc_colors(visualize_machine(m))
+    assert len(colors) == len(m.gears)
 
-    for colour, gear in zip(colours, m.gears.values()):
+    for color, gear in zip(colors, m.gears.values()):
         wanted = GREEN if gear.direction == -1 else RED
-        assert wanted in colour, f"gear {gear.name} turns {gear.direction:+d}"
-        assert GREY not in colour, "a geared-together machine never holds a gear"
+        assert wanted in color, f"gear {gear.name} turns {gear.direction:+d}"
+        assert GRAY not in color, "a geared-together machine never holds a gear"
 
 
-def test_held_gears_are_grey():
+def test_held_gears_are_gray():
     """A gear its programme is not turning goes grey, whichever way it turns."""
     m = jacquard_lace_ring(6, [("101010", "010101"), ("100010", "010001")])
     fig = animate(m, n_steps=4)
 
     for frame in fig.frames:
         turning = m.turning_gears(frame.name and int(frame.name.split("_")[0]) or 0)
-        for colour, (name, gear) in zip(_disc_colours(frame), m.gears.items()):
+        for color, (name, gear) in zip(_disc_colors(frame), m.gears.items()):
             if name not in turning:
-                assert GREY in colour, f"{name} is held but not grey"
+                assert GRAY in color, f"{name} is held but not grey"
             else:
                 wanted = GREEN if gear.direction == -1 else RED
-                assert wanted in colour, f"{name} turns {gear.direction:+d}"
+                assert wanted in color, f"{name} turns {gear.direction:+d}"
 
 
 @pytest.mark.parametrize("factory", [tubular_braid_8, flat_braid_9, princess_braid])
@@ -1446,17 +1450,16 @@ def _laps_per_carrier(m):
     Measured from where the carriers actually are, rather than inferred from
     the tracks, so it is independent of how tracks are computed or drawn.
     """
-    from braidpy.horn_gear.layout import carrier_radius
-    from braidpy.horn_gear.visualization import slot_offsets
+    from braidpy.horn_gear.layout import carrier_radius, slot_angles
 
     layout = compute_layout(m)
-    offsets = slot_offsets(m, layout)
+    angles = slot_angles(m, layout)
     radii = {n: carrier_radius(m, layout, n) for n in m.gears}
     hub_x = sum(p[0] for p in layout.values()) / len(layout)
     hub_y = sum(p[1] for p in layout.values()) / len(layout)
 
     def angle(carrier, time):
-        a = offsets[carrier.gear] + m.slot_angle(carrier.gear, carrier.slot, time)
+        a = angles[carrier.gear](m.slot_angle(carrier.gear, carrier.slot, time))
         x = layout[carrier.gear][0] + radii[carrier.gear] * math.cos(a)
         y = layout[carrier.gear][1] + radii[carrier.gear] * math.sin(a)
         return math.atan2(y - hub_y, x - hub_x)
@@ -1704,6 +1707,42 @@ def test_the_stored_track_is_not_a_path():
 # ── The braid coming off the machine ──────────────────────────────────────────
 
 
+def test_a_triaxial_braid_lays_each_axial_between_the_two_sets():
+    """The tubular braid of 16 round an axial yarn up each gear: at every
+    axial, the carriers going round one way all pass it on one side, inside
+    the braid or out, and those going the other way all on the other, so it
+    lies between the two sets braided at plus and minus the braid angle."""
+    from braidpy.horn_gear.layout import axial_positions
+    from braidpy.horn_gear.take_off import carrier_trajectories
+    from braidpy.horn_gear.word import deck_center
+
+    m = triaxial_braid_16()
+    plain = tubular_braid_16()
+    assert m.default_carriers() == plain.default_carriers()
+    assert sorted(a.anchor for a in m.axials) == [(g,) for g in sorted(m.gears)]
+
+    period = simulation_period(m)
+    traj = carrier_trajectories(m, period, n_substeps=24)
+    center = np.array(deck_center(m))
+    sides: dict[tuple[str, bool], set[str]] = {}
+    for xy in traj.xy.values():
+        rel = xy - center
+        angle = np.unwrap(np.arctan2(rel[:, 1], rel[:, 0]))
+        radius = np.hypot(rel[:, 0], rel[:, 1])
+        anticlockwise = bool(angle[-1] > angle[0])
+        for name, at in axial_positions(m, traj.layout).items():
+            dx, dy = at[0] - center[0], at[1] - center[1]
+            turns = (angle - math.atan2(dy, dx)) / (2 * math.pi)
+            passing = np.nonzero(np.floor(turns[:-1]) != np.floor(turns[1:]))[0]
+            assert len(passing)
+            for i in passing:
+                side = "inside" if radius[i] < math.hypot(dx, dy) else "outside"
+                sides.setdefault((name, anticlockwise), set()).add(side)
+    for name in (a.name for a in m.axials):
+        assert len(sides[name, True]) == len(sides[name, False]) == 1
+        assert sides[name, True] != sides[name, False]
+
+
 def test_trajectories_follow_the_animation_and_stay_continuous():
     from braidpy.horn_gear.layout import carrier_xy
     from braidpy.horn_gear.take_off import carrier_trajectories
@@ -1715,13 +1754,13 @@ def test_trajectories_follow_the_animation_and_stay_continuous():
 
     # The last sample is where the simulation leaves the carrier.
     layout = compute_layout(m)
-    from braidpy.horn_gear.layout import slot_offsets
+    from braidpy.horn_gear.layout import slot_angles
 
-    offsets = slot_offsets(m, layout)
+    angles = slot_angles(m, layout)
     riding = {g: carrier_radius(m, layout, g) for g in m.gears}
     last = simulate(m, 8, m.default_carriers())[-1]
     for c in last.carriers:
-        expected = carrier_xy(m, layout, offsets, riding, c.position, 8)
+        expected = carrier_xy(m, layout, angles, riding, c.position, 8)
         assert traj.xy[c.carrier_id][-1] == pytest.approx(expected)
 
     # No jumps, transfers included: a sample never moves further than the arc
@@ -1731,6 +1770,59 @@ def test_trajectories_follow_the_animation_and_stay_continuous():
     for xy in traj.xy.values():
         steps = [math.dist(a, b) for a, b in itertools.pairwise(xy)]
         assert max(steps) <= bound * 1.01
+
+
+@pytest.mark.parametrize("name", list(MACHINES))
+def test_a_carrier_is_handed_on_where_it_is(name):
+    """At every transfer, the end of the step on the gear it leaves is where
+    it starts on the gear it joins: no jump, even where a line of gears bends
+    so that a gear's slots, turned rigidly, cannot meet both its contacts."""
+    from braidpy.horn_gear.layout import carrier_xy, slot_angles
+
+    m = MACHINES[name].make()
+    layout = compute_layout(m)
+    angles = slot_angles(m, layout)
+    riding = {g: carrier_radius(m, layout, g) for g in m.gears}
+
+    def apart(a, b):
+        """How far apart two gears' riding circles are where they meet: a
+        layout found numerically leaves them a hair apart, or none."""
+        if a == b:
+            return 0.0
+        return abs(math.dist(layout[a], layout[b]) - riding[a] - riding[b])
+
+    history = simulate(m, 24, m.default_carriers())
+    for now, nxt in itertools.pairwise(history):
+        after = {c.carrier_id: c.position for c in nxt.carriers}
+        for c in now.carriers:
+            joins = after[c.carrier_id]
+            left = carrier_xy(m, layout, angles, riding, c.position, now.time, 1.0)
+            joined = carrier_xy(m, layout, angles, riding, joins, nxt.time)
+            gap = apart(
+                *(
+                    m.riding_position(p, t)[0]
+                    for p, t in ((c.position, now.time), (joins, nxt.time))
+                )
+            )
+            assert math.dist(left, joined) <= gap + 1e-9, (c, joins)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("name", list(MACHINES))
+def test_a_machine_lays_its_braid_finely_enough_to_tighten(name):
+    """Laid as Braid Studio lays it, no yarn moves so far sideways between two
+    levels that tightening could let another through it unseen: carriers
+    jumping as they were handed on did, and the three-band machine's bands
+    came apart."""
+    from braidpy.horn_gear.take_off import yarn_paths
+    from braidpy.take_off import SAFE_STEP, longest_step
+    from braidpy.web._settings import Machine
+
+    m = MACHINES[name].make()
+    radii = gear_radii(m)
+    d = Machine.of_gear_radius * sum(radii.values()) / len(radii)
+    paths = yarn_paths(m, n_cycles=1, yarn_diameter=d)
+    assert longest_step(paths) < SAFE_STEP * d
 
 
 def test_yarns_are_laid_off_along_the_axis():
@@ -1753,10 +1845,10 @@ def test_tubular_yarns_wind_both_ways_round_the_axis():
 
     m = tubular_braid_8()
     paths = yarn_paths(m)  # three full cycles
-    centre = np.mean(list(paths.trajectories.layout.values()), axis=0)
+    center = np.mean(list(paths.trajectories.layout.values()), axis=0)
     windings = []
     for pts in paths.points.values():
-        angle = np.unwrap(np.arctan2(pts[:, 1] - centre[1], pts[:, 0] - centre[0]))
+        angle = np.unwrap(np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0]))
         windings.append((angle[-1] - angle[0]) / (2 * math.pi))
     # A tubular braid: half the yarns go round one way and half the other,
     # each by the same whole number of turns.
@@ -1986,7 +2078,7 @@ def test_a_machine_lays_its_cores_only_when_asked():
     machine = soutache_braid()
     plain = yarn_paths(machine, n_cycles=1, yarn_diameter=0.2).points
     cored = yarn_paths(machine, n_cycles=1, yarn_diameter=0.2, axials=True).points
-    assert set(cored) - set(plain) == {"cord_A", "cord_B"}
+    assert set(cored) - set(plain) == {"axial_A", "axial_B"}
 
 
 def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
@@ -1999,10 +2091,97 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
     paths = yarn_paths(
         machine, n_cycles=2, yarn_diameter=0.2, fell_radius=0.0, axials=True
     )
-    cores = ["cord_A", "cord_B"]
+    cores = ["axial_A", "axial_B"]
     rigid, _ = tighten_yarns(paths, 0.2, iterations=60, rigid=cores)
     free, _ = tighten_yarns(paths, 0.2, iterations=60)
     for name in cores:
         laid = np.asarray(paths.points[name])
         assert np.allclose(np.asarray(rigid.points[name]), laid)
         assert not np.allclose(np.asarray(free.points[name]), laid)
+
+
+def _side_by_side(machine, copies):
+    """The machine several times over, the copies sharing no contact."""
+    from braidpy.horn_gear.model import BraidingMachine, Connection, HornGear
+
+    gears, connections = [], []
+    for k in range(copies):
+        for name, gear in machine.gears.items():
+            gears.append(
+                HornGear(
+                    f"{k}{name}", gear.n_slots, direction=gear.direction, size=gear.size
+                )
+            )
+        for c in machine.connections:
+            connections.append(
+                Connection(
+                    f"{k}{c.gear_a}",
+                    f"{k}{c.gear_b}",
+                    c.slot_a0,
+                    c.slot_b0,
+                    name=f"{k}{c.name}",
+                )
+            )
+    return BraidingMachine(gears, connections)
+
+
+def test_a_machine_in_parts_holds_what_its_parts_hold():
+    """Three bands side by side hold three bands' worth of carriers.
+
+    Slots of different parts never meet, so the fullest loading is the
+    fullest of each part.  Seventy-two slots is past the limit on the exact
+    search, which counts the largest part — twenty-four here — rather than
+    the whole machine, so the loading stays exact instead of falling back on
+    greedy and losing a third of the carriers.
+    """
+    from braidpy.horn_gear.loading import _is_collision_free, _parts
+    from braidpy.horn_gear.multiband import multiband_band
+    from braidpy.horn_gear.simulation import simulate
+    from braidpy.horn_gear.tracks import simulation_period
+
+    band = multiband_band(0)
+    own = len(load_carriers(band))
+    assert own == 12 and band.total_slots() == 24
+
+    machine = _side_by_side(band, 3)
+    assert len(_parts(machine)) == 3
+    assert machine.total_slots() == 72
+    loading = load_carriers(machine)
+    assert len(loading) == 3 * own
+
+    period = simulation_period(machine)
+    assert _is_collision_free(machine, loading, period)
+    history = simulate(machine, period, loading)
+    first = {c.carrier_id: c.position for c in history[0].carriers}
+    assert first == {c.carrier_id: c.position for c in history[-1].carriers}
+
+
+def test_one_part_is_what_an_ordinary_machine_has():
+    """So loading a machine that does not split is unchanged."""
+    from braidpy.horn_gear.loading import _parts
+
+    for machine in (flat_braid_3(), flat_braid_9(), tubular_braid_8()):
+        assert _parts(machine) == [sorted(machine.gears)]
+
+
+def test_a_carrier_handed_on_twice_in_a_step_is_stopped_where_it_meets_another():
+    """Contacts handing over during a step can hand a carrier on twice in
+    it: from A to B a quarter of a step in, from B to C three quarters in,
+    where a carrier on C is handed to B at the same moment.  The two pass
+    through each other at that contact; comparing the gears before and
+    after the step (A to C, C to B) does not see it, walking the step's
+    hand-overs in their order does."""
+    from braidpy.horn_gear.simulation import CollisionError
+
+    gears = [HornGear("A", 4, 1), HornGear("B", 4, -1), HornGear("C", 4, 1)]
+    machine = BraidingMachine(
+        gears,
+        [
+            Connection("A", "B", 0, 0, phase=0.25),
+            Connection("B", "C", 0, 0, phase=0.75),
+        ],
+    )
+    assert machine.next_position(("A", 0), 0) == ("C", 0)
+    assert machine.next_position(("C", 0), 0) == ("B", 0)
+    with pytest.raises(CollisionError, match="step 1"):
+        simulate(machine, 1, {0: ("A", 0), 1: ("C", 0)})

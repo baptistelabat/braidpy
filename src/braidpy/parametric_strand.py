@@ -2,6 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Strands as curves in space: a braid word laid as arcs from crossing to
+crossing (:func:`strand_paths`), sampled into points (:func:`sample_strands`,
+:class:`SampledStrand`), and a strand as a function of its height
+(:class:`ParametricStrand`)."""
+
 import bisect
 import math
 from collections.abc import Callable
@@ -95,6 +100,8 @@ def combine_arcs(arcs: list[Arc]) -> Callable[[float], tuple[float, float, float
 
 
 class ParametricStrand:
+    """A strand as a curve in space, a function of its height."""
+
     def __init__(self, func: Callable[[float], tuple]) -> None:
         """
 
@@ -138,8 +145,8 @@ class ParametricStrand:
 # shape reasoned about rather than merely sampled.
 #
 # It is a *drawing* convention, the same one `make_arc` implements, and not
-# the shape a strand takes under tension.  See src/braidpy/analytic for why
-# there is no closed form for the latter.
+# the shape a strand takes under tension, for which there is no closed form
+# (docs/source/why_no_closed_form.md).
 
 # A transition profile as polynomial coefficients in the segment parameter
 # tau, lowest power first: P(tau) = c0 + c1 tau + c2 tau^2 + ...
@@ -413,13 +420,13 @@ def transported_frame(points):
     """
     import numpy as np
 
-    centre = np.asarray(points, dtype=float)
+    center = np.asarray(points, dtype=float)
 
     # Tangents by central differences, so a sample is not biased forwards.
-    ahead = np.roll(centre, -1, axis=0)
-    behind = np.roll(centre, 1, axis=0)
-    ahead[-1] = centre[-1] + (centre[-1] - centre[-2])
-    behind[0] = centre[0] - (centre[1] - centre[0])
+    ahead = np.roll(center, -1, axis=0)
+    behind = np.roll(center, 1, axis=0)
+    ahead[-1] = center[-1] + (center[-1] - center[-2])
+    behind[0] = center[0] - (center[1] - center[0])
     tangents = ahead - behind
     tangents /= np.linalg.norm(tangents, axis=1)[:, None]
 
@@ -449,7 +456,7 @@ def transported_frame(points):
         normals.append(carried / np.linalg.norm(carried))
 
     normals = np.array(normals)
-    return centre, normals, np.cross(tangents, normals)
+    return center, normals, np.cross(tangents, normals)
 
 
 def tube_rings(points, radius: float, n_around: int = 16):
@@ -470,13 +477,13 @@ def tube_rings(points, radius: float, n_around: int = 16):
     """
     import numpy as np
 
-    centre, normals, binormals = transported_frame(points)
+    center, normals, binormals = transported_frame(points)
     around = np.linspace(0.0, 2.0 * math.pi, n_around + 1)
     ring = (
         radius * np.cos(around)[None, :, None] * normals[:, None, :]
         + radius * np.sin(around)[None, :, None] * binormals[:, None, :]
     )
-    return centre[:, None, :] + ring
+    return center[:, None, :] + ring
 
 
 def tube_mesh(points, radius: float, n_around: int = 16):

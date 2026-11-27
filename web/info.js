@@ -6,7 +6,8 @@
 // make again, the other ways of making it and the braids nearest it, and
 // notes.
 
-import { catalogue } from "./fields.js";
+import { catalog } from "./fields.js";
+import { englishText, tr } from "./i18n.js";
 import { $, round } from "./page.js";
 import { lastResult } from "./scene.js";
 import { writeSpec } from "./spec.js";
@@ -29,6 +30,18 @@ export function describe(result, seconds) {
     ],
     ["Made", info.made && info.repeated && times(info.made, info.repeated)],
     ["Pure", info.pure === undefined ? undefined : info.pure ? "yes" : "no"],
+    // Pure, and trivial with any one strand out, as the Borromean rings.
+    ["Brunnian", info.brunnian === undefined ? undefined : info.brunnian ? "yes" : "no"],
+    [
+      // Which of periodic, reducible or pseudo-Anosov it is
+      // (Nielsen–Thurston); null when the search was too long.
+      "Kind",
+      info.nielsen_thurston === undefined
+        ? undefined
+        : info.nielsen_thurston === null
+          ? "too much to tell"
+          : info.nielsen_thurston,
+    ],
     ["Should look", info.expected_shape && `${info.expected_shape} in cross-section`],
     ["Crossings", info.crossings],
     ["Exponent sum", info.exponent_sum],
@@ -48,7 +61,10 @@ export function describe(result, seconds) {
     ],
     ["Full twists", info.garside && info.garside.full_twists],
     ["Word", info.word, { layout: "row" }],
+    ["Shorter word", info.shorter_word, { layout: "row" }],
     ["Ring word", info.annular_word, { layout: "ring" }],
+    // The same braid in band letters, where that is shorter (Braid.band_word).
+    ["Band word", info.band_word, { layout: "band" }],
     [
       "Closest yarns",
       info.closest_approach === undefined
@@ -98,12 +114,12 @@ export function showKin(kin) {
     [
       "Also made as",
       kin.same,
-      "The same braid, made another way: nothing braidpy measures tells them apart",
+      "The same braid, made another way: nothing measured here tells them apart",
     ],
     [
       "Nearest braids",
       kin.near,
-      "Braids of the catalogues most like this one, by their topology — strands, loops, crossings, linking and Alexander polynomial — whatever way each is made",
+      "Braids of the catalogs most like this one, by their topology — strands, loops, crossings, linking and Alexander polynomial — whatever way each is made",
     ],
   ];
   for (const [heading, methods, about] of lists) {
@@ -125,7 +141,7 @@ export function showKin(kin) {
       });
       const from = document.createElement("span");
       from.className = "muted";
-      const source = catalogue[method.source]?.title ?? method.source;
+      const source = catalog[method.source]?.title ?? method.source;
       from.textContent =
         method.distance === undefined ? ` ${source}` : ` ${source} · ${method.distance}`;
       if (method.distance !== undefined) from.title = "How unlike: 0 the same, up to 5";
@@ -138,7 +154,7 @@ export function showKin(kin) {
 
 // The braid made other ways (braidpy.making): its repeating unit as a
 // kumihimo disk's moves, to make here; as a lace machine's punchcard, to
-// copy or download; and, when asked, as a sinnet on Ashley's stand, which
+// make here, copy or download; and, when asked, as a sinnet on Ashley's stand, which
 // is searched for.  None: nothing shown.
 export function showMaking(making) {
   const box = $("making");
@@ -228,8 +244,12 @@ export function showMaking(making) {
     lace.card +
     "\n";
   item(
-    document.createTextNode("Lace machine"),
-    muted(` ${lace.gears} gears, ${lace.steps} steps a repeat `),
+    lace.spec ? link("Lace machine", lace.spec) : document.createTextNode("Lace machine"),
+    muted(
+      lace.tube
+        ? ` ${lace.gears} gears, ${lace.steps} steps a repeat, made as a tube `
+        : ` ${lace.gears} gears, ${lace.steps} steps a repeat `,
+    ),
     small("Copy card", (button) => copyText(card, button)),
     small("Download", () => {
       const file = new Blob([card], { type: "text/plain" });
@@ -251,7 +271,8 @@ function wordActions(word, layout, strands) {
   const make = document.createElement("button");
   make.type = "button";
   make.textContent = "Make from it";
-  make.title = `Make this ${layout === "ring" ? "ring word" : "braid word"} as a braid word, once`;
+  const kind = { ring: "ring word", band: "band word" }[layout] ?? "braid word";
+  make.title = `Make this ${kind} as a braid word, once`;
   make.addEventListener("click", () => {
     // The same yarn, for the same look.
     const yarn = lastResult?.yarn_diameter;
@@ -290,10 +311,10 @@ export async function copyText(text, button) {
     area.remove();
   }
   if (!copied) {
-    window.prompt("Copy it from here:", text);
+    window.prompt(tr("Copy it from here:"), text);
     return;
   }
-  const was = button.textContent;
+  const was = englishText(button);
   button.textContent = "Copied ✓";
   setTimeout(() => (button.textContent = was), 1500);
 }

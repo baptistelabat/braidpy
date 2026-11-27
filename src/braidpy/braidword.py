@@ -2,6 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Braid words read from text, written in letters (``aB``), as signed
+numbers (``1 -2``) or as named generators (``s1 s2^-1``): braidpy's one
+reader of them (:func:`parse_word`)."""
+
 import re
 
 
@@ -87,3 +91,36 @@ def parse_word(text: str) -> list[int]:
     if any(g == 0 for g in word):
         raise ValueError("Generators are numbered from 1.")
     return word
+
+
+def parse_band_word(text: str) -> list[tuple[int, int]]:
+    """A braid word in band generators
+    (:mod:`braidpy.band_canonical_form`), as band letters.
+
+    Reads ``4:1 2:1 1:3`` (or with commas): ``t:s`` for ``a_ts``, strands
+    ``t > s`` crossing in front of those between, and ``s:t`` for its
+    inverse.
+
+    Args:
+        text: The word.
+
+    Returns:
+        The letters, ``(t, s)`` or ``(s, t)``; empty for an empty word.
+
+    Raises:
+        ValueError: If a letter is not two strands apart from 1 on.
+    """
+    letters: list[tuple[int, int]] = []
+    for token in re.split(r"[\s,;]+", text.strip()):
+        if not token:
+            continue
+        pair = re.fullmatch(r"(\d+):(\d+)", token)
+        if pair is None:
+            raise ValueError(f"Cannot read {token!r} as a band letter: write 4:1.")
+        first, second = int(pair.group(1)), int(pair.group(2))
+        if first == second or min(first, second) < 1:
+            raise ValueError(
+                f"A band letter crosses two strands from 1 on, not {token!r}."
+            )
+        letters.append((first, second))
+    return letters

@@ -12,7 +12,7 @@ what it needs, checking it (:mod:`braidpy.web._settings`).
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 # A number as the page may give it: typed in, it comes as text.
 Value = str | float | None
@@ -47,12 +47,26 @@ class Spec(TypedDict, total=False):
     n_slots: Value
     shift: Value
     counts: str
+    # A sinnet from a shape.
+    grid: str
+    shape: str
+    size: Value
+    height: Value
+    cells: str
+    order: str
+    turned: str
+    extra: str
+    corners: Value
     # A machine.
     carriers: str
+    core: str
+    # A link made before ``core``: how stiff a machine's own cores are.
     cores: str
     # Your own lace machine.
     n_gears: Value
     card: str
+    # Your own horn gear machine: the gears that mesh (and n_slots).
+    graph: str
 
 
 # ------------------------------------------------------------------ result
@@ -87,7 +101,19 @@ class Info(TypedDict, total=False):
 
     n_strands: int
     word: str
+    # The same braid in fewer crossings, if a shorter word is found
+    # (Braid.shortened).
+    shorter_word: str
+    # The same braid in band letters (Braid.band_word), if shorter than
+    # either word.
+    band_word: str
     annular_word: str
+    # A braid made round a core, as a tube (horn_gear.word.ring_unit): the
+    # ring word of what is made over and over, round how many strands, and
+    # how many times it was made.
+    ring_unit: str
+    ring_strands: int
+    ring_repeats: int
     crossings: int
     exponent_sum: int
     permutation: list[int]
@@ -100,6 +126,13 @@ class Info(TypedDict, total=False):
     repeated: str
     made: int
     pure: bool
+    # Pure, and trivial with any one strand out (Braid.is_brunnian): said
+    # only of a pure braid small enough to ask.
+    brunnian: bool
+    # Which of periodic, reducible or pseudo-Anosov the braid is
+    # (Nielsen–Thurston): None when the super summit set was too big to
+    # look through.
+    nielsen_thurston: str | None
     closest_approach: float
     expected_shape: str
     collision: Collision
@@ -110,6 +143,14 @@ class Clock(TypedDict):
 
     source: list[float]
     braid: list[float]
+
+
+class Track(TypedDict):
+    """A carrier track, seen from above: the closed curve the carriers on it
+    follow, and the colour braidpy draws it in."""
+
+    colour: str
+    points: list[Point]
 
 
 class _Timeline(TypedDict):
@@ -125,16 +166,19 @@ class _Timeline(TypedDict):
 class Timeline(_Timeline, total=False):
     """What made the braid, seen from above, over time: each carrier's path,
     the outlines under them and the slots, named; for a disk, how far its
-    braid turns with it."""
+    braid turns with it; for a machine of fixed tracks, its tracks."""
 
     turn: list[float]
+    tracks: list[Track]
 
 
 class Tightening(TypedDict):
     """What tightening the yarns needs, for a page that does it itself, as
     :func:`braidpy.take_off.tighten_yarns` would: the samples' ``xy``, yarn
     after yarn, and its settings; ``chosen``, which samples the strands'
-    points are, and ``centre``, what was taken off them."""
+    points are, and ``centre``, what was taken off them; ``partner``, the
+    yarn each runs into past the fell end, for tightening it endless
+    (:class:`braidpy.take_off.Periodic`), None if the braid does not close."""
 
     n_yarns: int
     n: int
@@ -148,6 +192,7 @@ class Tightening(TypedDict):
     centre: list[float]
     xy: list[float]
     rigid: list[bool]
+    partner: list[int] | None
     chosen: list[int]
 
 
@@ -162,10 +207,43 @@ class DiskProgram(_DiskProgram, total=False):
     """What a disk does, for the page to make the braid move by move: each
     strand's slot to start with, and per step, the strands that move, by
     index, and by how many slots.  A word's ring program also says whether
-    its bobbins' turns twist the yarns in, and whether it is held."""
+    its bobbins' turns twist the yarns in, and whether it is held; and a
+    disk braid round a core, the core's kind: yarn or rigid."""
 
     twists: bool
     held: bool
+    core: str
+
+
+class DrawnLine(TypedDict):
+    """A line of Ashley's drawing of a shape: the move along it, from where
+    to where, and the track it is on, numbered from 1."""
+
+    start: Point
+    end: Point
+    track: int
+
+
+# A cell of the grid a shape is drawn on: its name, as a link gives it, its
+# corners, and whether it is in the shape or beside it, to add ("in" is a
+# keyword: hence the functional form).
+GridCell = TypedDict("GridCell", {"name": str, "points": list[Point], "in": bool})
+
+
+class ShapeDrawing(TypedDict):
+    """A sinnet's shape as Ashley draws it
+    (:func:`braidpy.making.ashley.shape_diagram`): its outline and its
+    holes', its lines,
+    each a move, its bights, space 1 first, and the strands each starts
+    with."""
+
+    outline: list[Point]
+    holes: list[list[Point]]
+    lines: list[DrawnLine]
+    spaces: list[Point]
+    counts: list[int]
+    tracks: int
+    cells: list[GridCell]
 
 
 class _Result(TypedDict):
@@ -183,6 +261,10 @@ class Result(_Result, total=False):
     timeline: Timeline
     tighten: Tightening
     disk: DiskProgram
+    # A sinnet made from a shape, drawn as Ashley draws it.
+    ashley_shape: ShapeDrawing
+    # To make it by its carriers: braidpy.carried.carriers_job.
+    carriers: dict[str, Any]
 
 
 # --------------------------------------------------------------- catalogue
@@ -192,13 +274,21 @@ Default = str | int | float
 
 
 class Example(TypedDict, total=False):
-    """A braid word worth trying, with a title."""
+    """A braid worth trying, with a title: a braid word, or a sinnet from a
+    shape."""
 
     title: str
     word: str
     layout: str
     n_strands: int
     repeat: int
+    grid: str
+    shape: str
+    size: int
+    height: int
+    cells: str
+    order: str
+    corners: int
 
 
 class Entry(TypedDict, total=False):
@@ -220,6 +310,11 @@ class Source(_Source, total=False):
 
     entries: list[Entry]
     examples: list[Example]
+    # The grids a sinnet's shape is drawn on, the shapes on each, and the
+    # orders of its moves, by name, with their titles.
+    grids: dict[str, str]
+    shapes: dict[str, dict[str, str]]
+    orders: dict[str, str]
 
 
 # ---------------------------------------------------------------- machines
@@ -227,7 +322,7 @@ class Source(_Source, total=False):
 
 class Gear(TypedDict):
     """A gear seen from above: where it is, how big, the circle its carriers
-    ride, its slots, the way it turns and where its first slot is."""
+    ride, its slots, the way it turns and where each slot is at step 0."""
 
     name: str
     x: float
@@ -236,7 +331,9 @@ class Gear(TypedDict):
     ride: float
     slots: int
     direction: int
-    offset: float
+    # Each slot's angle at step 0, as braidpy draws it
+    # (braidpy.horn_gear.layout.GearAngles).
+    angles: list[float]
 
 
 class Contact(TypedDict):
@@ -272,3 +369,13 @@ class MachineGeometry(TypedDict):
     gears: list[Gear]
     contacts: list[Contact]
     loading: list[list[str | int]]
+    # Every place it could feed an axial yarn, as written and where; those
+    # it feeds; and the colour cores are drawn in.
+    axials: list[dict[str, Any]]
+    own_axials: list[str]
+    core_colour: str
+    # The gears that mesh, and the slots most have; None for a machine of
+    # split gears, or a lace machine.
+    graph: dict[str, Any] | None
+    # The carriers' tracks; none for a machine driven by a programme.
+    tracks: list[Track]

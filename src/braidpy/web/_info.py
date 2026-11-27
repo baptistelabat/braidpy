@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 
+from braidpy.web._settings import MOST_BRAIDS_CLASSIFIED, MOST_CROSSINGS_SHORTENED
 from braidpy.web._types import Info
 
 
@@ -34,18 +35,51 @@ def _braid_info(word: Sequence[int], n_strands: int) -> Info:
         info["pure"] = bool(braid.is_pure())
         info["pure_after"] = closing_repeats(braid, limit=None)
         info["components"] = components(braid)
+        if len(word) <= MOST_CROSSINGS_SHORTENED:
+            shorter = [int(g) for g in braid.shortened().generators]
+            if len(shorter) < len(word):
+                info["shorter_word"] = " ".join(str(g) for g in shorter)
+            # In band letters, where that is shorter still: strands carried
+            # across a disk, each crossing one letter (band_canonical_form).
+            band = braid.band_word()
+            if len(band) < min(len(word), len(shorter)):
+                from braidpy.band_canonical_form import band_text
+
+                info["band_word"] = band_text(band)
         # The Garside normal form costs more the more strands there are:
-        # beyond this, minutes in a browser.
+        # beyond this, minutes in a browser; and taking out each strand in
+        # turn to see the braid come apart (Brunnian), more again.
         if n_strands <= 12 and len(word) <= 300:
             factors = braid.get_canonical_factors()
             least = int(factors.n_half_twist)
             most = least + len(factors.Ai)
+            if info["pure"]:
+                info["brunnian"] = bool(braid.is_brunnian())
             info["garside"] = {
                 "half_twists": least,
                 "factors": len(factors.Ai),
                 # As Braid.full_twists has it, without computing it twice.
                 "full_twists": math.floor((least + most) / 4 + 0.5),
             }
+        # Which of periodic, reducible or pseudo-Anosov the braid is
+        # (Nielsen–Thurston): periodicity is cheap, but reducibility asks
+        # the super summit set, exponential at worst — asked of braids of
+        # these strands and crossings at most, and no more braids looked
+        # through than MOST_BRAIDS_CLASSIFIED; past that, no saying.
+        if n_strands <= 8 and len(word) <= 100:
+            from braidpy.conjugacy import SuperSummitSetTooLarge
+
+            if braid.is_periodic():
+                info["nielsen_thurston"] = "periodic"
+            else:
+                try:
+                    reducible = braid.is_reducible(limit=MOST_BRAIDS_CLASSIFIED)
+                except SuperSummitSetTooLarge:
+                    info["nielsen_thurston"] = None
+                else:
+                    info["nielsen_thurston"] = (
+                        "reducible" if reducible else "pseudo-Anosov"
+                    )
     return info
 
 

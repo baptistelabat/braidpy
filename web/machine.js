@@ -6,7 +6,9 @@
 // a click puts a carrier on a slot or takes it off, the handle turns it a
 // step at a time, forwards or back, and carriers that meet are ringed.
 
-import { PALETTE, strandColour } from "./colours.js";
+import { PALETTE, strandColor, trueColor } from "./colours.js";
+import { drawTracks } from "./insets.js";
+import { inTime } from "./page.js";
 import { worker } from "./workers.js";
 
 // A machine seen from above, to load by hand: its gears, the contacts
@@ -41,6 +43,22 @@ function readLoading(text) {
     .map((m) => [m[1], Number(m[2])]);
 }
 
+// Where axial yarns are fed, as written (braidpy.horn_gear.described
+// .read_axials): a gear, or a ring of gears in any order.
+function readAxials(text) {
+  return String(text)
+    .split(/[\s,;]+/)
+    .filter((token) => token && token !== "none");
+}
+const axialKey = (at) => at.split("-").sort().join("-");
+
+// A place for an axial yarn: a ring round the gear's name, in carriers'
+// sizes, dashed when no spool is loaded there; a click this many of its
+// sizes from it reaches it.
+const AXIAL_SIZE = 1.6;
+const AXIAL_DASH = [3, 3];
+const AXIAL_REACH = 1.2;
+
 // A step, turned smoothly: how long it takes, and how long Run waits
 // between steps.
 const SWEEP_MS = 360;
@@ -49,6 +67,8 @@ const RUN_PAUSE_MS = 60;
 export function attachMachine(holder) {
   const names = holder.querySelector("select[name=name]");
   const field = holder.querySelector("[name=carriers]");
+  // Not on a lace machine, which feeds none.
+  const axialField = holder.querySelector("[name=axials]");
   const label = field.closest("label");
   const box = document.createElement("div");
   box.className = "editor machine";
@@ -71,12 +91,13 @@ export function attachMachine(holder) {
   const start = button("⏮", "Back to step 0");
   const back = button("◀", "Turn the handle back a step");
   const forward = button("▶", "Turn the handle a step");
+  const nudge = button("▸", "Hold the handle part way through a step, so the two slots meeting at a contact come apart");
   const run = button("Run", "Turn the handle until carriers meet");
   const reading = document.createElement("span");
   reading.className = "step";
   const handle = document.createElement("div");
   handle.className = "examples handle";
-  handle.append(start, back, forward, run, reading);
+  handle.append(start, back, forward, nudge, run, reading);
   box.append(canvas, help, handle, buttons);
   label.after(box);
 
@@ -85,19 +106,30 @@ export function attachMachine(holder) {
   let time = 0; // how far the handle is turned
   let turned = null; // braidpy's answer for this machine, loading and step
   let asked = 0; // the newest question to braidpy
-  let sweeping = null; // {from, started}: a step being turned
+  let sweeping = null; // {from, started, at, ms}: a step being turned, from its picture at
+  // Held part way through the step, so that the two slots at a contact --
+  // which sit on the same point when the step is whole -- come apart and a
+  // click can tell them from one another.  0 is the step itself.
+  let part = 0;
+  let standing = null; // {name, slots}: where the slots were last drawn
   let running = false;
   // A lace machine with a card of your own goes by its gears and card
-  // (braidpy.web.machines.OWN_LACE).
+  // (braidpy.web.machines.OWN_LACE), a horn gear machine of your own by its
+  // slots and the gears that mesh (OWN_GEARS).
   const gears = holder.querySelector("[name=n_gears]");
   const card = holder.querySelector("[name=card]");
-  const machineName = () =>
-    names.value === "custom" && gears && card
-      ? `lace:${gears.value}:${card.value.trim().split(/\s+/).join(" ")}`
-      : names.value;
+  const graph = holder.querySelector("[name=graph]");
+  const slots = holder.querySelector("[name=n_slots]");
+  const words = (input) => input.value.trim().split(/\s+/).join(" ");
+  const machineName = () => {
+    if (names.value !== "custom") return names.value;
+    if (gears && card) return `lace:${gears.value}:${words(card)}`;
+    if (graph && slots) return `gears:${slots.value}:${words(graph)}`;
+    return names.value;
+  };
   const shape = () => machineShapes.get(machineName());
   const slotAt = (gear, slot) => {
-    const angle = gear.offset + (2 * Math.PI * slot) / gear.slots;
+    const angle = gear.angles[slot];
     return [gear.x + gear.ride * Math.cos(angle), gear.y + gear.ride * Math.sin(angle)];
   };
 
@@ -127,6 +159,9 @@ export function attachMachine(holder) {
     }
   });
   const answer = (id) => new Promise((resolve) => waiting.set(id, resolve));
+  // Asked again, the loading having changed.  Where the handle is held --
+  // the step, and how far through it -- is about where the gears stand, not
+  // which slots have carriers on them, so putting one on leaves it alone.
   const fresh = () => {
     turned = null;
     ask(time);
@@ -141,6 +176,11 @@ export function attachMachine(holder) {
     const mine = loadingText(known.loading);
     if (!field.value.trim() || field.value === field.dataset.default) field.value = mine;
     field.dataset.default = mine;
+    if (axialField) {
+      const fed = known.own_axials.join(" ");
+      if (!axialField.value.trim() || axialField.value === axialField.dataset.default) axialField.value = fed;
+      axialField.dataset.default = fed;
+    }
     fresh();
     draw();
   };
@@ -158,19 +198,36 @@ export function attachMachine(holder) {
     fresh();
     draw();
   });
+  axialField?.addEventListener("input", () => draw());
   const another = () => {
     field.value = "";
+    if (axialField) axialField.value = "";
     met = [];
     time = 0;
+    part = 0;
+    standing = null;
     running = false;
     turned = null;
     askMachine(machineName());
     draw();
   };
-  names.addEventListener("change", another);
-  // Your own card: another machine with every change to it — once the
-  // list has turned to "Your own card…", as it does on the same change.
-  for (const input of [gears, card]) input?.addEventListener("input", () => queueMicrotask(another));
+  // Your own machine starts from the one drawn before, written as the gears
+  // that mesh (braidpy.web.machines.machine_geometry's graph).
+  let drawnBefore = names.value;
+  names.addEventListener("change", () => {
+    if (names.value !== "custom") drawnBefore = names.value;
+    else if (graph && slots) {
+      const from = machineShapes.get(drawnBefore)?.graph;
+      if (from) {
+        graph.value = from.graph;
+        slots.value = String(from.n_slots);
+      }
+    }
+    another();
+  });
+  // Your own card or gears: another machine with every change to them —
+  // once the list has turned to "Your own…", as it does on the same change.
+  for (const input of [gears, card, graph, slots]) input?.addEventListener("input", () => queueMicrotask(another));
   document.addEventListener("machine-shape", () => {
     if (canvas.isConnected) fill();
   });
@@ -181,16 +238,20 @@ export function attachMachine(holder) {
   });
 
   // A step forwards: turned smoothly through braidpy's pictures of it,
-  // while braidpy works out the next; stopped where carriers meet.
+  // while braidpy works out the next; stopped where carriers meet.  Held
+  // part way through it, the handle turns on from there, through what is
+  // left of the step, in as much of the time.
   async function step() {
     if (!turned || turned.met.length || sweeping) return false;
     const from = turned;
     const next = answer(ask(from.time + 1));
-    sweeping = { from, started: performance.now() };
+    const count = from.frames.length;
+    const at = Math.min(part, count - 1);
+    sweeping = { from, started: performance.now(), at, ms: (SWEEP_MS * (count - at)) / count };
     await new Promise((done) => {
       const frame = () => {
         draw();
-        if (performance.now() - sweeping.started < SWEEP_MS) requestAnimationFrame(frame);
+        if (performance.now() - sweeping.started < sweeping.ms) requestAnimationFrame(frame);
         else done();
       };
       requestAnimationFrame(frame);
@@ -204,11 +265,13 @@ export function attachMachine(holder) {
     }
     turned = reached;
     time = reached.time;
+    part = 0;
     draw();
     return reached.time > from.time && !reached.met.length;
   }
   async function goTo(at) {
     running = false;
+    part = 0;
     const reached = await answer(ask(Math.max(0, at)));
     if (reached) {
       turned = reached;
@@ -216,12 +279,31 @@ export function attachMachine(holder) {
     }
     draw();
   }
-  forward.addEventListener("click", () => {
+  // A step on: from where the handle is held, if it is, to the next step.
+  forward.addEventListener("click", (event) => {
+    if (!inTime(event)) return;
     running = false;
     step();
   });
-  back.addEventListener("click", () => goTo(time - 1));
-  start.addEventListener("click", () => goTo(0));
+  // Each press holds the handle a quarter of a step further on; past the
+  // last, the step itself is taken and the handle sits on a whole step
+  // again.  A quarter, because the two slots at a contact are furthest
+  // apart half way through -- so the second press is the one to click on.
+  nudge.addEventListener("click", (event) => {
+    if (!inTime(event)) return;
+    running = false;
+    if (!turned || turned.met.length || sweeping) return;
+    const by = Math.max(1, Math.round(turned.frames.length / 4));
+    if (part + by < turned.frames.length) {
+      part += by;
+      draw();
+    } else {
+      // On through the rest of the step, from where it is held.
+      step();
+    }
+  });
+  back.addEventListener("click", (event) => inTime(event) && goTo(time - 1));
+  start.addEventListener("click", (event) => inTime(event) && goTo(0));
   run.addEventListener("click", async () => {
     if (running) {
       running = false;
@@ -243,19 +325,24 @@ export function attachMachine(holder) {
   function places(known) {
     const loading = readLoading(field.value);
     if (turned && turned.carriers.length === loading.length) {
-      let picture = turned.frames[0];
+      let picture = turned.frames[Math.min(part, turned.frames.length - 1)];
       if (sweeping && sweeping.from === turned) {
-        const done = Math.min(1, (performance.now() - sweeping.started) / SWEEP_MS);
-        const last = turned.frames.length - 1;
-        picture = turned.frames[Math.min(last, Math.floor(done * turned.frames.length))];
+        const done = Math.min(1, (performance.now() - sweeping.started) / sweeping.ms);
+        const count = turned.frames.length;
+        const at = sweeping.at + Math.floor(done * (count - sweeping.at));
+        picture = turned.frames[Math.min(count - 1, at)];
       }
-      return {
+      standing = {
+        name: names.value,
         slots: turned.slots.map(([gear, slot], i) => ({
           gear,
           slot,
           x: picture.slots[i][0],
           y: picture.slots[i][1],
         })),
+      };
+      return {
+        slots: standing.slots,
         carriers: turned.carriers.map(([gear, slot], i) => ({
           gear,
           slot,
@@ -266,13 +353,18 @@ export function attachMachine(holder) {
         met: turned.met,
       };
     }
-    const slots = [];
-    for (const g of known.gears) {
-      for (let slot = 0; slot < g.slots; slot++) {
-        const [x, y] = slotAt(g, slot);
-        slots.push({ gear: g.name, slot, x, y });
-      }
-    }
+    // Where the slots stand does not depend on which of them carry, so
+    // while braidpy answers about a loading just changed, the ones already
+    // drawn still hold -- and the handle does not appear to let go.
+    const slots =
+      standing && standing.name === names.value
+        ? standing.slots
+        : known.gears.flatMap((g) =>
+            Array.from({ length: g.slots }, (_, slot) => {
+              const [x, y] = slotAt(g, slot);
+              return { gear: g.name, slot, x, y };
+            }),
+          );
     const carriers = loading
       .map(([gear, slot], i) => {
         const at = slots.find((p) => p.gear === gear && p.slot === slot);
@@ -329,17 +421,44 @@ export function attachMachine(holder) {
       ctx.beginPath();
       ctx.arc(X(g.x), Y(g.y), g.radius * scale, 0, 2 * Math.PI);
       ctx.stroke();
-      ctx.fillStyle = muted;
-      ctx.font = "11px system-ui, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(g.name, X(g.x), Y(g.y));
     }
+    // The carriers' tracks, under the slots, each in braidpy's colour for it.
+    drawTracks(ctx, known.tracks, (p) => [X(p[0]), Y(p[1])]);
     for (const c of known.contacts) {
       ctx.fillStyle = line;
       ctx.beginPath();
       ctx.arc(X(c.x), Y(c.y), 2, 0, 2 * Math.PI);
       ctx.fill();
+    }
+    // Where axial yarns may be fed: a spool, in the cores' colour, where one
+    // is loaded.
+    const fed = new Set(readAxials(axialField?.value ?? "").map(axialKey));
+    const spots = axialField
+      ? known.axials.map((s) => ({ ...s, x: X(s.x), y: Y(s.y), loaded: fed.has(axialKey(s.at)) }))
+      : [];
+    for (const s of spots) {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, dot * AXIAL_SIZE, 0, 2 * Math.PI);
+      if (s.loaded) {
+        // Ringed, so as not to be taken for a carrier of the same grey.
+        ctx.fillStyle = known.core_colour;
+        ctx.fill();
+        ctx.strokeStyle = muted;
+        ctx.stroke();
+      } else {
+        ctx.setLineDash(AXIAL_DASH);
+        ctx.strokeStyle = known.core_colour;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    // The gears' names, over a spool at their centre.
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const g of known.gears) {
+      ctx.fillStyle = muted;
+      ctx.fillText(g.name, X(g.x), Y(g.y));
     }
     const placed = places(known);
     const slots = placed.slots.map((p) => ({ ...p, x: X(p.x), y: Y(p.y) }));
@@ -353,7 +472,8 @@ export function attachMachine(holder) {
       ctx.stroke();
     }
     for (const c of carriers) {
-      ctx.fillStyle = strandColour(c.i, PALETTE[c.i % PALETTE.length]);
+      // In the colour its yarn was made in: the machine may choose its own.
+      ctx.fillStyle = strandColor(c.i, trueColor(c.i, PALETTE[c.i % PALETTE.length]));
       ctx.beginPath();
       ctx.arc(c.x, c.y, dot, 0, 2 * Math.PI);
       ctx.fill();
@@ -380,7 +500,7 @@ export function attachMachine(holder) {
       ctx.arc(p.x, p.y, dot * 1.9, 0, 2 * Math.PI);
       ctx.stroke();
     }
-    view = { slots, dot };
+    view = { slots, spots, dot };
 
     const count = carriers.length;
     const stopped = placed.met.length > 0;
@@ -391,7 +511,13 @@ export function attachMachine(holder) {
     start.disabled = !ready || time === 0 || running;
     run.disabled = !ready || (stopped && !running);
     run.textContent = running ? "Stop" : "Run";
-    reading.textContent = ready ? `Step ${time}` : "";
+    nudge.disabled = forward.disabled;
+    const parts = turned ? turned.frames.length : 1;
+    reading.textContent = ready
+      ? part
+        ? `Step ${time} and ${part}/${parts}`
+        : `Step ${time}`
+      : "";
     const carried = `${count} carrier${count === 1 ? "" : "s"}`;
     help.textContent = stopped
       ? `Carriers met at step ${time}, ringed: take one off, or turn back.`
@@ -401,13 +527,22 @@ export function attachMachine(holder) {
           ? "Ringed: where carriers met, and the braiding stopped."
           : time > 0
             ? `Step ${time}: ${carried}. Click a slot to put a carrier on it or take one off: it is loaded where it would have come from.`
-            : `${carried} on ${known.gears.length} gears. Click a slot to put a carrier on it or take it off.`;
+            : `${carried} on ${known.gears.length} gears. Click a slot to put a carrier on it or take it off${spots.length ? ", a dashed ring to load an axial yarn there or take it off" : ""}.`;
   }
 
   canvas.addEventListener("click", async (event) => {
     if (!view || sweeping || running) return;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left, y = event.clientY - rect.top;
+    // A spool for an axial yarn, put on or taken off.
+    const spot = view.spots.find((s) => Math.hypot(s.x - x, s.y - y) < view.dot * AXIAL_SIZE * AXIAL_REACH);
+    if (spot) {
+      const fed = readAxials(axialField.value).filter((at) => axialKey(at) !== axialKey(spot.at));
+      if (!spot.loaded) fed.push(spot.at);
+      axialField.value = fed.join(" ");
+      axialField.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
     let best = null;
     for (const p of view.slots) {
       const d = Math.hypot(p.x - x, p.y - y);

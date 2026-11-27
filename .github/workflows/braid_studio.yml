@@ -4,11 +4,13 @@ run-name: Braid Studio — build, test${{ github.event_name == 'push' && ' and p
 # The web page: braidpy run in the browser by Pyodide, drawn with three.js.
 # Built and tried in a real browser on every change to it or to braidpy;
 # published beside the documentation, under studio/, from develop — and as
-# a beta, under studio-beta/, from the branch it is being made on.
+# a beta, under studio-beta/, from any other branch run by hand (Actions,
+# Braid Studio, Run workflow, choosing the branch): one beta at a time, the
+# last run.
 
 on:
   push:
-    branches: [develop, feat/multiband_machine]
+    branches: [develop]
     paths:
       - "src/**"
       - "web/**"
@@ -69,6 +71,16 @@ jobs:
           uv run --no-project --with playwright python web/smoke_test.py \
             --screenshots web/screenshots ${chrome:+--chromium "$chrome"}
 
+      # The front page's pictures, each braid settled as the studio shows
+      # it.  A braid that does not settle in time is left without one, and
+      # the site is published all the same.
+      - name: Take a picture of every braid listed
+        continue-on-error: true
+        run: |
+          chrome="$(command -v google-chrome || true)"
+          uv run --no-project --with playwright python web/snapshots.py \
+            ${chrome:+--chromium "$chrome"}
+
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -103,5 +115,8 @@ jobs:
           publish_branch: gh-pages
           publish_dir: site
           destination_dir: ${{ github.ref_name == 'develop' && 'studio' || 'studio-beta' }}
-          keep_files: true
+          # Replaces only that directory, files gone from the build included
+          # (stale ones once kept studio-beta over GitHub Pages' size); the
+          # documentation and the other studio are left as they are.
+          keep_files: false
           commit_message: "Braid Studio from ${{ github.sha }}"

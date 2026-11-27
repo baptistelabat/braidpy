@@ -23,6 +23,8 @@ from __future__ import annotations
 import argparse
 import functools
 import http.server
+import json
+import math
 import socketserver
 import sys
 import threading
@@ -38,9 +40,45 @@ CASES = [
     ({"source": "kumihimo", "pattern": "SR", "n_strands": 8, "repeat": 2}, 8),
     ({"source": "mobidai", "name": "KONGO_8", "cycles": 2}, 8),
     ({"source": "sinnet", "name": "abok_3042", "cycles": 1}, 8),
+    # A sinnet from the shape it is to take: the book's #3045, ten strands.
+    (
+        {
+            "source": "shape",
+            "shape": "triangle",
+            "size": 2,
+            "cycles": 1,
+        },
+        10,
+    ),
     ({"source": "machine", "name": "tubular_8", "cycles": 1}, 8),
     # Laid on its fell ring, a machine's braid can be settled by physics.
     ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "physics"}, 3),
+    # Tightened as a length of an endless braid.
+    ({"source": "machine", "name": "tubular_8", "cycles": 1, "settle": "endless"}, 8),
+    # A machine of your own, written as the gears that mesh.
+    (
+        {
+            "source": "machine",
+            "name": "custom",
+            "graph": "A-B B-C C-D D-A",
+            "n_slots": 4,
+            "cycles": 1,
+        },
+        8,
+    ),
+    # And one of split gears: three plaits round a gear split in three.
+    (
+        {
+            "source": "machine",
+            "name": "custom",
+            "graph": "H1-A H2-B H3-C H1+H2+H3",
+            "n_slots": 3,
+            "cycles": 1,
+        },
+        9,
+    ),
+    # And made by its carriers going round.
+    ({"source": "machine", "name": "flat_3", "cycles": 1, "settle": "carriers"}, 3),
     # A lace machine, its card turning the gears; its handle too.
     ({"source": "lace", "name": "lace_plait", "cycles": 2}, 3),
     # And a card of your own: every gear turning on a ring of 6.
@@ -69,6 +107,24 @@ CASES = [
 # The plait, as a braid word and on its machine: each also made as the other.
 ALSO_MADE = [("word", "1 -2"), ("name", "flat_3")]
 
+# A small design as braid3d saves it, imported on the mobidai page: four
+# yarns a quarter turn apart, two of them moving three eighths round, and
+# how many yarns it should draw (braidpy.b3d).
+B3D_DESIGN = {
+    "nThreads": 4,
+    "threadStates": [{"colour": c} for c in (0xE41A1C, 0x377EB8, 0x4DAF4A, 0x984EA3)],
+    "steps": [
+        {
+            "type": None,
+            "moves": [],
+            "poss": [{"angle": k * 0.5 * math.pi, "id": str(k)} for k in range(4)],
+        },
+        {"type": "threadMove", "moves": [{"from": 0.0, "to": 0.75 * math.pi}]},
+        {"type": "threadMove", "moves": [{"from": math.pi, "to": -0.25 * math.pi}]},
+    ],
+}
+B3D_YARNS = 4
+
 
 class _Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
@@ -81,6 +137,48 @@ def _serve(site: Path) -> socketserver.TCPServer:
     server.daemon_threads = True
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
+
+
+def _front_page(browser, base: str, query: str) -> bool:
+    """The front page lists every braid of braids.json, filters them, and
+    sends an address naming a braid on to the studio."""
+
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
+
+    listed = len(json.loads((SITE / "braids.json").read_text()))
+    page = browser.new_page(viewport={"width": 1200, "height": 800})
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    try:
+        page.goto(base + query)
+        page.wait_for_function(
+            f"() => document.querySelectorAll('#braids tbody tr').length === {listed}",
+            timeout=30000,
+        )
+        page.fill("#strands_min", "3")
+        page.fill("#strands_max", "3")
+        page.wait_for_function(
+            "() => [...document.querySelectorAll('#braids tbody tr')]"
+            ".every((row) => row.cells[2].textContent === '3')",
+            timeout=10000,
+        )
+        shown = page.locator("#braids tbody tr").count()
+        # An old address, opened afresh.
+        old = browser.new_page()
+        old.goto(base + query + "#" + urlencode({"source": "word", "word": "1 -2"}))
+        old.wait_for_url("**/make.html*", timeout=10000)
+        old.close()
+        ok = 0 < shown < listed and not errors
+    except PlaywrightTimeout as error:
+        ok, shown = False, 0
+        errors.append(str(error).splitlines()[0])
+    print(
+        f"{'ok  ' if ok else 'FAIL'} front page: {listed} braids listed, "
+        f"{shown} of 3 strands, an old address sent on to the studio"
+        + (f"  errors: {errors}" if errors else "")
+    )
+    page.close()
+    return ok
 
 
 def main() -> int:
@@ -103,6 +201,7 @@ def main() -> int:
         if args.chromium:
             launch["executable_path"] = args.chromium
         browser = playwright.chromium.launch(**launch)
+        failures += not _front_page(browser, base, query)
         for spec, n_yarns in CASES:
             page = browser.new_page(viewport={"width": 1200, "height": 800})
             errors: list[str] = []
@@ -115,7 +214,7 @@ def main() -> int:
                 ),
             )
             started = time.time()
-            page.goto(base + query + "#" + urlencode(spec))
+            page.goto(base + "make.html" + query + "#" + urlencode(spec))
             page.wait_for_function(
                 "() => { const s = document.getElementById('status');"
                 " return s.textContent.startsWith('Made') ||"
@@ -142,6 +241,22 @@ def main() -> int:
                 except PlaywrightTimeout:
                     ok = False
                     errors.append("the machine's handle did not turn")
+            # A sinnet's moves stepped through, the moves typed left as they are.
+            if spec["source"] == "sinnet" and "moves" in spec:
+                try:
+                    typed = page.input_value("textarea[name=moves]")
+                    page.click("button[title='Before the first move']")
+                    page.click("button[title='A move on']")
+                    page.wait_for_function(
+                        "() => [...document.querySelectorAll('.handle .step')]"
+                        ".some((s) => s.textContent.startsWith('Move 1 of 6'))",
+                        timeout=10000,
+                    )
+                    if page.input_value("textarea[name=moves]") != typed:
+                        raise PlaywrightTimeout("the moves changed")
+                except PlaywrightTimeout:
+                    ok = False
+                    errors.append("a sinnet's moves were not stepped through")
             # Two strands coloured at once are a group, recoloured together.
             if spec["source"] == "word":
                 try:
@@ -163,6 +278,29 @@ def main() -> int:
                 except PlaywrightTimeout:
                     ok = False
                     errors.append("a group of strands was not recoloured together")
+            # A braid3d design imported: its moves in the fields, and made.
+            if spec["source"] == "mobidai":
+                try:
+                    page.set_input_files(
+                        "input[type=file]",
+                        files=[
+                            {
+                                "name": "design.b3d",
+                                "mimeType": "text/plain",
+                                "buffer": quote(json.dumps(B3D_DESIGN)).encode(),
+                            }
+                        ],
+                    )
+                    page.wait_for_function(
+                        "(n) => document.querySelector('[name=name]').value === 'custom'"
+                        " && document.getElementById('status').textContent"
+                        ".startsWith('Made') && window.braidStudio.drawn === n",
+                        arg=B3D_YARNS,
+                        timeout=args.timeout * 1000,
+                    )
+                except PlaywrightTimeout:
+                    ok = False
+                    errors.append("a braid3d design was not imported and made")
             # Its kin, found in the page from the catalogue made with it.
             kin = ""
             if any(spec.get(key) == value for key, value in ALSO_MADE):

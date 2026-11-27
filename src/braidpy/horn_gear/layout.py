@@ -10,7 +10,8 @@ Where everything sits: gear centres, the notches between them, the circles a
 carrier rides on, and the columns a braid forms around.
 
 Gears are placed from the connection graph — BFS along the x-axis for a chain,
-Kamada-Kawai for anything with a cycle — unless the machine pins its own
+Kamada-Kawai relaxed till every two gears that mesh touch for anything with a
+cycle (:func:`ring_geometry`) — unless the machine pins its own
 geometry, in which case :meth:`~braidpy.horn_gear.model.BraidingMachine
 .preferred_layout` wins.  Gear radius goes as sqrt(n_slots), which is a
 drawing convention and not a mechanical one — see :func:`_gear_radius`.
@@ -18,15 +19,20 @@ drawing convention and not a mechanical one — see :func:`_gear_radius`.
 Everything else here is derived from those centres: where two gears meet
 (:func:`contact_point`), how far out a carrier rides (:func:`carrier_radius`),
 how each gear must be turned for its slots to face its notches
-(:func:`slot_offsets`) and by how much that fails when a machine's slots cannot
-be reconciled with its layout (:func:`offset_residuals`).  It is all plain
+(:func:`slot_offsets`), by how much that fails where a line of gears bends
+(:func:`offset_residuals`), and how the slots are drawn so that carriers are
+handed on without jumping all the same (:func:`slot_angles`).  It is all plain
 geometry with no drawing in it, so it can be measured and tested directly.
 """
 
 from __future__ import annotations
 
+import bisect
 import math
+import weakref
 from collections import deque
+from dataclasses import dataclass
+from typing import Optional
 
 import networkx as nx
 import numpy as np
@@ -80,9 +86,8 @@ def compute_layout(
     For tree / path graphs (flat braid): BFS-based placement along the x-axis
     guarantees every pair of adjacent gear circles touches exactly.
 
-    For cyclic graphs (tubular braid ring): Kamada-Kawai layout with edge
-    rest-lengths = r_A + r_B, post-scaled so every edge equals its rest-length
-    (valid when all gears have the same radius, i.e. same n_slots).
+    For cyclic graphs (a tubular braider's ring, a matrix of gears):
+    :func:`ring_geometry`, which also sizes the gears so that they touch.
 
     Args:
         machine: The BraidingMachine whose gears to position.
@@ -106,35 +111,527 @@ def compute_layout(
     if nx.is_forest(machine.graph):
         return _layout_bfs(machine, scale)
 
-    # ── Cyclic graph: Kamada-Kawai + per-edge exact rescaling ─────────────────
+    # ── Cyclic graph: Kamada-Kawai, relaxed till the gears touch ──────────────
+    return ring_geometry(machine, scale, seed=seed, iterations=iterations)[0]
+
+
+# How far a gear in a ring may grow or shrink from the drawing convention
+# (:func:`_gear_radius`) so that it touches its neighbours, as a factor of
+# the convention's radius: a matrix of gears of several sizes cannot always
+# be laid out with every gear its own size and touching every neighbour.
+RADIUS_RANGE = (0.75, 1.3)
+# What share of the gap between two gears that do not mesh is kept, past
+# touching, as a share of their two radii: room for the carriers going by.
+CLEARANCE = 0.1
+# How much of a mesh's error a round of :func:`_relax` gives to the radii,
+# the rest to moving the centres: the sizes change only as far as needed.
+RADIUS_GIVE = 0.2
+# Rounds of :func:`_relax`, at most, and the error at which it stops: a mesh
+# that far off, as a share of its length, is touching for any drawing.
+RELAX_ROUNDS = 3000
+RELAX_TOLERANCE = 1e-3
+
+
+def ring_geometry(
+    machine: BraidingMachine,
+    scale: float = 1.0,
+    seed: int | None = 42,
+    iterations: int = 500,
+) -> tuple[dict[str, tuple[float, float]], dict[str, float]]:
+    """Where the gears of a machine with a ring of gears stand, and how large
+    they are drawn, so that every two that mesh touch and no two others
+    overlap.
+
+    Kamada-Kawai lays the graph out with each mesh as long as the two radii,
+    which it can do exactly for one ring of gears alike, as a tubular
+    braider is.  Where it cannot, as in a matrix of gears of several sizes,
+    its compromise is relaxed (:func:`_relax`): the gears that mesh are
+    drawn to touch, moving their centres and, within ``RADIUS_RANGE``,
+    their sizes; those that do not are pushed apart, past touching.  Not an
+    exact solution, but no gear runs through another, nor does a carrier
+    through another's path.  A layout that is right already is kept as it
+    is.
+
+    Args:
+        machine: The machine; its graph has a cycle.
+        scale: Overall scale for the radii.
+        seed: Random seed for the spring layout, the fallback.
+        iterations: Iterations of the spring layout.
+    Returns:
+        Gear name → centre, and gear name → radius.
+    """
+    key = (scale, seed, iterations)
+    solved = _RING_GEOMETRY.setdefault(machine, {})
+    if key not in solved:
+        solved[key] = _ring_geometry(machine, scale, seed, iterations)
+    centers, radii = solved[key]
+    return dict(centers), dict(radii)
+
+
+# Each machine's ring geometry, worked out once: the layout and the radii
+# are asked for at every turn of a machine, and Kamada-Kawai takes time.
+_RING_GEOMETRY: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+
+
+def _ring_geometry(machine, scale, seed, iterations):
+    """:func:`ring_geometry`, worked out."""
+    convention = {
+        name: _gear_radius(gear.size or gear.n_slots, scale)
+        for name, gear in machine.gears.items()
+    }
     g = machine.graph.copy()
     for u, v in g.edges():
-        r_u = _gear_radius(machine.gears[u].n_slots, scale)
-        r_v = _gear_radius(machine.gears[v].n_slots, scale)
-        g[u][v]["len"] = r_u + r_v
-
+        g[u][v]["len"] = convention[u] + convention[v]
     try:
         raw = nx.kamada_kawai_layout(g, weight="len")
     # Without SciPy (in a browser) or for a graph it cannot lay out, the
     # spring layout instead.
     except Exception:  # noqa: BLE001
         raw = nx.spring_layout(g, seed=seed, iterations=iterations)
-
     pos = {n: np.array(xy) for n, xy in raw.items()}
-
-    # Rescale so the minimum-ratio edge is exactly its rest-length.
+    # Scaled so that no mesh is longer than its two radii: exact for a ring
+    # of gears alike, every mesh then as long as it should be.
     min_ratio = float("inf")
     for u, v in g.edges():
         actual = float(np.linalg.norm(pos[u] - pos[v]))
-        desired = g[u][v]["len"]
         if actual > 1e-9:
-            min_ratio = min(min_ratio, desired / actual)
-
+            min_ratio = min(min_ratio, g[u][v]["len"] / actual)
     if math.isfinite(min_ratio) and min_ratio > 0:
         pos = {n: xy * min_ratio for n, xy in pos.items()}
+    names = list(g.nodes)
+    centers = np.array([pos[n] for n in names], dtype=float)
+    radii = np.array([convention[n] for n in names])
+    index = {n: i for i, n in enumerate(names)}
+    meshes = [(index[u], index[v]) for u, v in g.edges()]
+    others = [
+        (index[u], index[v])
+        for i, u in enumerate(names)
+        for v in names[i + 1 :]
+        if not g.has_edge(u, v)
+    ]
+    if _worst(centers, radii, meshes, others) > RELAX_TOLERANCE:
+        centers, radii = min(
+            (
+                _relax(start, radii, meshes, others)
+                for start in _starts(g, names, centers, meshes, radii, seed)
+            ),
+            key=lambda solved: _worst(*solved, meshes, others),
+        )
+    placed = {n: (float(x), float(y)) for n, (x, y) in zip(names, centers)}
+    return _orient(machine, placed), {n: float(r) for n, r in zip(names, radii)}
 
-    placed = {n: (float(xy[0]), float(xy[1])) for n, xy in pos.items()}
-    return _orient(machine, placed)
+
+# How many spring layouts, besides Kamada-Kawai's and a planar one, a ring
+# is relaxed from (:func:`_starts`): a start can fold a ring of gears into a
+# bow-tie, which relaxing cannot undo, and another start does not.
+SPRING_STARTS = 3
+
+
+def _starts(g, names, centers, meshes, radii, seed):
+    """Layouts to relax a ring from (:func:`ring_geometry`), each scaled so
+    that its middle mesh is as long as it should be: Kamada-Kawai's, a
+    planar one where the gears can be drawn without crossing, and
+    ``SPRING_STARTS`` spring layouts."""
+    shapes = [centers]
+    if nx.check_planarity(g)[0]:
+        planar = nx.planar_layout(g)
+        shapes.append(np.array([planar[n] for n in names], dtype=float))
+    for k in range(SPRING_STARTS):
+        spring = nx.spring_layout(g, seed=None if seed is None else seed + k)
+        shapes.append(np.array([spring[n] for n in names], dtype=float))
+    for shape in shapes:
+        a, b, _, distance = _pairs(shape, meshes)
+        ratio = (radii[a] + radii[b]) / np.maximum(distance, 1e-12)
+        yield shape * float(np.median(ratio))
+
+
+def _pairs(centers: np.ndarray, pairs: list) -> tuple[np.ndarray, ...]:
+    """Two index arrays for ``pairs``, the unit vector from the first of each
+    to the second, and their distance."""
+    a = np.array([p[0] for p in pairs], dtype=int)
+    b = np.array([p[1] for p in pairs], dtype=int)
+    gap = centers[b] - centers[a]
+    distance = np.linalg.norm(gap, axis=1)
+    return a, b, gap / np.maximum(distance, 1e-12)[:, None], distance
+
+
+def _worst(centers, radii, meshes, others) -> float:
+    """The worst error of a layout, as a share of the length it should be:
+    a mesh too long or too short, or two gears that do not mesh closer than
+    touching, past ``CLEARANCE``."""
+    worst = 0.0
+    if meshes:
+        a, b, _, distance = _pairs(centers, meshes)
+        wanted = radii[a] + radii[b]
+        worst = float(np.max(np.abs(distance - wanted) / wanted))
+    if others:
+        a, b, _, distance = _pairs(centers, others)
+        wanted = (radii[a] + radii[b]) * (1 + CLEARANCE)
+        worst = max(worst, float(np.max((wanted - distance) / wanted)))
+    return worst
+
+
+def _relax(centers, radii, meshes, others):
+    """Draw gears that mesh to touch and push the others apart, a round at a
+    time, every constraint at once and each gear moved by the mean of what
+    its constraints ask, till the worst is within ``RELAX_TOLERANCE`` or
+    ``RELAX_ROUNDS`` have passed.  A mesh's error goes to its centres and,
+    ``RADIUS_GIVE`` of it, to the radii, kept within ``RADIUS_RANGE`` of
+    where they started."""
+    centers = centers.copy()
+    least, most = radii * RADIUS_RANGE[0], radii * RADIUS_RANGE[1]
+    radii = radii.copy()
+    n = len(radii)
+    for _ in range(RELAX_ROUNDS):
+        if _worst(centers, radii, meshes, others) <= RELAX_TOLERANCE:
+            break
+        moves = np.zeros_like(centers)
+        counts = np.zeros(n)
+        grows = np.zeros(n)
+        a, b, unit, distance = _pairs(centers, meshes)
+        error = distance - (radii[a] + radii[b])
+        push = unit * (error * (1 - RADIUS_GIVE) / 2)[:, None]
+        np.add.at(moves, a, push)
+        np.add.at(moves, b, -push)
+        np.add.at(counts, a, 1)
+        np.add.at(counts, b, 1)
+        np.add.at(grows, a, error * RADIUS_GIVE / 2)
+        np.add.at(grows, b, error * RADIUS_GIVE / 2)
+        if others:
+            a, b, unit, distance = _pairs(centers, others)
+            short = np.maximum((radii[a] + radii[b]) * (1 + CLEARANCE) - distance, 0)
+            push = unit * (short / 2)[:, None]
+            np.add.at(moves, a, -push)
+            np.add.at(moves, b, push)
+            pushed = (short > 0).astype(float)
+            np.add.at(counts, a, pushed)
+            np.add.at(counts, b, pushed)
+        counts = np.maximum(counts, 1)
+        centers += moves / counts[:, None]
+        radii = np.clip(radii + grows / counts, least, most)
+    return centers, radii
+
+
+# Rounds of :func:`time_ring`, at most, and the error at which it stops, as
+# a share of a mesh's length or of the gap between two horns.
+TIMING_ROUNDS = 400
+TIMING_TOLERANCE = 1e-7
+# Levenberg-Marquardt's damping in time_ring to start with, how it changes
+# after a step that helps and one that does not, and the least it may be:
+# undamped, the fit's free directions (every gear turned alike, the whole
+# layout moved) leave its equations singular.
+DAMPING = 1e-2
+DAMPING_EASE = 3.0
+DAMPING_STIFFEN = 4.0
+DAMPING_LEAST = 1e-9
+# Two centres closer than this are at one place, with no direction between
+# them: a step there is taken from this far apart.
+SAME_PLACE = 1e-12
+# A contact handing over this close to a whole step hands over at its end.
+WHOLE_STEP = 1e-3
+
+
+@dataclass(frozen=True)
+class RingContacts:
+    """When a ring's contacts come round, for :func:`time_ring`: one entry a
+    contact, between gear ``first`` and gear ``second`` (indices).
+
+    A gear of ``n`` slots a part, turning ``d`` (+1 anticlockwise) and
+    turned ``psi`` to start with, brings its part ``p`` of ``k`` to a
+    contact at angle ``alpha`` at the times ``t`` with
+    ``d n (alpha - psi) / 2 pi - d p / k = t`` (mod 1).  Written with the
+    gear's start ``x = d n psi / 2 pi``, that is
+    ``turns * alpha - x - part = t``.
+
+    Each start is a timer's: by default each gear's, its parts a fixed
+    share of a step apart; or, with ``timer_first`` and ``timer_second``,
+    one of ``n_timers``, so that the parts of a split gear, stacked on one
+    axle, each start where they are set, as their horn plates are when the
+    machine is assembled (``part`` then 0).
+
+    Attributes:
+        first: Each contact's first gear.
+        second: Its second gear.
+        turns: ``d n / 2 pi`` of each gear, by index.
+        part_first: ``d p / k`` of the first gear's part there.
+        part_second: The same of the second's.
+        weight: A miss of one step at the contact, as a share of the gap
+            between two horns of the first gear.
+        timer_first: The timer of the first gear's part, by index; the
+            gear's own if None.
+        timer_second: The same of the second's.
+        n_timers: How many timers; as many as gears if None.
+        apart: Timers set so far apart once fitted, as ``(timer, other,
+            share of a step)``: the parts of a split gear, their horns
+            taking turns round its axle.  Where no contact ties the two, as
+            two bands joined by split gears, the first's whole band is
+            turned so, which changes no contact of it.
+    """
+
+    first: np.ndarray
+    second: np.ndarray
+    turns: np.ndarray
+    part_first: np.ndarray
+    part_second: np.ndarray
+    weight: np.ndarray
+    timer_first: np.ndarray | None = None
+    timer_second: np.ndarray | None = None
+    n_timers: int | None = None
+    apart: tuple[tuple[int, int, float], ...] = ()
+
+
+def _wrap(x):
+    """``x`` mod 1, between -1/2 and 1/2."""
+    return (x + 0.5) % 1.0 - 0.5
+
+
+class _Timing:
+    """What :func:`time_ring` fits: the gears' centres, radii and starts,
+    packed into one vector ``z``, and the errors it drives to nothing, with
+    their derivatives."""
+
+    def __init__(self, convention, meshes, others, contacts: RingContacts):
+        self.n = len(convention)
+        self.meshes, self.others, self.contacts = meshes, others, contacts
+        c = contacts
+        # Whose start each contact's two horns keep time by.
+        self.m = self.n if c.n_timers is None else c.n_timers
+        self.timed_first = c.first if c.timer_first is None else c.timer_first
+        self.timed_second = c.second if c.timer_second is None else c.timer_second
+        # A contact asks first's start minus second's to be
+        # slope * alpha + offset, alpha its angle seen from first.
+        self.slope = c.turns[c.first] - c.turns[c.second]
+        self.offset = -c.part_first + c.part_second - c.turns[c.second] * math.pi
+        self.least = convention * RADIUS_RANGE[0]
+        self.most = convention * RADIUS_RANGE[1]
+
+    def split(self, z):
+        """The centres, radii and starts packed in ``z``."""
+        n = self.n
+        return z[: 2 * n].reshape(n, 2), z[2 * n : 3 * n], z[3 * n :]
+
+    def angle(self, centers):
+        """Each contact's angle, seen from its first gear, and the vector
+        from that gear's centre to the second's."""
+        c = self.contacts
+        gap = centers[c.second] - centers[c.first]
+        return np.arctan2(gap[:, 1], gap[:, 0]), gap
+
+    def miss(self, z):
+        """How far each contact's two horns miss each other, in steps."""
+        centers, _, turned = self.split(z)
+        alpha, _ = self.angle(centers)
+        wanted = self.slope * alpha + self.offset
+        return _wrap(turned[self.timed_first] - turned[self.timed_second] - wanted)
+
+    def residuals(self, z):
+        """Every error, as a share of what it is measured against: each mesh
+        too long or too short, each two gears that do not mesh closer than
+        ``CLEARANCE``, each contact's two horns missing each other."""
+        centers, radii, _ = self.split(z)
+        a, b, _, apart = _pairs(centers, self.meshes)
+        mesh = apart / (radii[a] + radii[b]) - 1
+        a, b, _, apart = _pairs(centers, self.others)
+        clear = (1 + CLEARANCE) * (radii[a] + radii[b])
+        overlap = np.maximum(clear - apart, 0) / clear
+        return np.concatenate([mesh, overlap, self.contacts.weight * self.miss(z)])
+
+    def jacobian(self, z):
+        """The derivative of each error of :meth:`residuals` with respect to
+        each number of ``z``, one row an error."""
+        centers, radii, _ = self.split(z)
+        n = self.n
+        rows = []
+        a, b, unit, apart = _pairs(centers, self.meshes)
+        apart = np.maximum(apart, SAME_PLACE)
+        touch = radii[a] + radii[b]
+        mesh = np.zeros((len(a), 3 * n + self.m))
+        k = np.arange(len(a))
+        for axis in (0, 1):
+            mesh[k, 2 * b + axis] += unit[:, axis] / touch
+            mesh[k, 2 * a + axis] -= unit[:, axis] / touch
+        mesh[k, 2 * n + a] = mesh[k, 2 * n + b] = -apart / touch**2
+        rows.append(mesh)
+        a, b, unit, apart = _pairs(centers, self.others)
+        apart = np.maximum(apart, SAME_PLACE)
+        clear = (1 + CLEARANCE) * (radii[a] + radii[b])
+        near = apart < clear
+        overlap = np.zeros((len(a), 3 * n + self.m))
+        k = np.arange(len(a))[near]
+        a, b, unit, apart, clear = (
+            a[near],
+            b[near],
+            unit[near],
+            apart[near],
+            clear[near],
+        )
+        for axis in (0, 1):
+            overlap[k, 2 * b + axis] -= unit[:, axis] / clear
+            overlap[k, 2 * a + axis] += unit[:, axis] / clear
+        overlap[k, 2 * n + a] = overlap[k, 2 * n + b] = (
+            apart * (1 + CLEARANCE) / clear**2
+        )
+        rows.append(overlap)
+        c = self.contacts
+        _, gap = self.angle(centers)
+        gx, gy = gap[:, 0], gap[:, 1]
+        square = np.maximum(gx * gx + gy * gy, SAME_PLACE**2)
+        turn = np.stack([-gy / square, gx / square], axis=1)
+        pull = (c.weight * self.slope)[:, None] * turn
+        timing = np.zeros((len(c.first), 3 * n + self.m))
+        k = np.arange(len(c.first))
+        for axis in (0, 1):
+            timing[k, 2 * c.second + axis] -= pull[:, axis]
+            timing[k, 2 * c.first + axis] += pull[:, axis]
+        timing[k, 3 * n + self.timed_first] += c.weight
+        timing[k, 3 * n + self.timed_second] -= c.weight
+        rows.append(timing)
+        return np.vstack(rows)
+
+    def clip(self, z):
+        """``z`` with each radius within ``RADIUS_RANGE`` of its
+        convention."""
+        z = z.copy()
+        n = self.n
+        z[2 * n : 3 * n] = np.clip(z[2 * n : 3 * n], self.least, self.most)
+        return z
+
+    def start(self, centers):
+        """Each timer's start from a spanning tree of its contacts, the rest
+        of the contacts left to the fit."""
+        turned = np.zeros(self.m)
+        alpha, _ = self.angle(centers)
+        wanted = self.slope * alpha + self.offset
+        placed = {0}
+        while len(placed) < self.m:
+            for k, (u, v) in enumerate(zip(self.timed_first, self.timed_second)):
+                if (u in placed) != (v in placed):
+                    if u in placed:
+                        turned[v] = turned[u] - wanted[k]
+                        placed.add(int(v))
+                    else:
+                        turned[u] = turned[v] + wanted[k]
+                        placed.add(int(u))
+                    break
+            else:
+                # Timers no contact joins to those placed, as the parts of
+                # split gears braiding apart: their own tree, from 0.
+                placed.add(min(set(range(self.m)) - placed))
+        return turned
+
+
+def time_ring(
+    centers: np.ndarray,
+    radii: np.ndarray,
+    convention: np.ndarray,
+    meshes: list[tuple[int, int]],
+    others: list[tuple[int, int]],
+    contacts: RingContacts,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[float]]:
+    """Move and size the gears of a ring, from :func:`ring_geometry`'s
+    layout, so that each contact's two horns come round to it together, and
+    say when.
+
+    A contact between two gears asks their starts to differ by so much, mod
+    1 (:class:`RingContacts`): one equation a contact, and one start a
+    gear, so round each ring of gears one equation is left over, which the
+    layout has to meet.  Round a single ring of gears alike it cancels.
+    Every two gears that mesh touch, no two others come within
+    ``CLEARANCE``, each radius stays within ``RADIUS_RANGE`` of its
+    convention, and the horns arrive together: a least-squares fit of all
+    of it, by Levenberg-Marquardt with exact derivatives.
+
+    Args:
+        centers: Each gear's centre, ``(n, 2)``.
+        radii: Each gear's radius as drawn.
+        convention: Each gear's radius by the drawing convention
+            (:func:`_gear_radius`), which its radius may leave by
+            ``RADIUS_RANGE`` at most.
+        meshes: The gears that mesh, as index pairs.
+        others: Those that do not.
+        contacts: When the contacts come round.
+
+    Returns:
+        The centres, the radii, each gear's start (``x`` of
+        :class:`RingContacts`), and when each contact hands over, as a share
+        of a step.
+    """
+    fit = _Timing(convention, meshes, others, contacts)
+    z = np.concatenate([centers.ravel(), radii, fit.start(centers)])
+    damping = DAMPING
+    error = fit.residuals(z)
+    for _ in range(TIMING_ROUNDS):
+        if np.max(np.abs(error)) < TIMING_TOLERANCE:
+            break
+        jac = fit.jacobian(z)
+        normal = jac.T @ jac + damping * np.eye(len(z))
+        try:
+            step = np.linalg.solve(normal, -jac.T @ error)
+        except np.linalg.LinAlgError:
+            damping *= DAMPING_STIFFEN
+            continue
+        trial = fit.clip(z + step)
+        trial_error = fit.residuals(trial)
+        if np.all(np.isfinite(trial_error)) and np.sum(trial_error**2) < np.sum(
+            error**2
+        ):
+            z, error = trial, trial_error
+            damping = max(damping / DAMPING_EASE, DAMPING_LEAST)
+        else:
+            damping *= DAMPING_STIFFEN
+    centers, radii, turned = fit.split(z)
+    turned = _set_apart(turned.copy(), fit, contacts.apart)
+    alpha, _ = fit.angle(centers)
+    c = contacts
+    # When the first gear's part comes round, the miss shared with the
+    # second's by halves.
+    own = c.turns[c.first] * alpha - turned[fit.timed_first] - c.part_first
+    phases = [
+        0.0 if min(phase, 1 - phase) < WHOLE_STEP else phase
+        for phase in ((own + fit.miss(z) / 2) % 1.0).tolist()
+    ]
+    return centers.copy(), radii.copy(), turned.copy(), phases
+
+
+def _set_apart(
+    turned: np.ndarray,
+    fit: _Timing,
+    apart: tuple[tuple[int, int, float], ...],
+) -> np.ndarray:
+    """The timers, each band of them that no contact ties to another shifted
+    together, which changes none of its contacts, so that its timers stand
+    as far from the other band's as ``apart`` asks (:class:`RingContacts`);
+    a band already tied to the other, by a contact or an earlier shift,
+    stays as it is.
+
+    Args:
+        turned: Each timer's start, as fitted; shifted in place.
+        fit: The fit, for which timers each contact keeps time by.
+        apart: ``(timer, other, share of a step)``: ``timer``'s band
+            shifted so that it starts that share after ``other``.
+
+    Returns:
+        The timers' starts.
+    """
+    band = list(range(len(turned)))
+
+    def root(t: int) -> int:
+        """The timer that stands for ``t``'s band (union-find)."""
+        while band[t] != t:
+            band[t] = band[band[t]]
+            t = band[t]
+        return t
+
+    for u, v in zip(fit.timed_first, fit.timed_second):
+        band[root(int(u))] = root(int(v))
+    for timer, other, share in apart:
+        mine, theirs = root(timer), root(other)
+        if mine == theirs:
+            continue
+        shift = turned[other] + share - turned[timer]
+        turned[[t for t in range(len(turned)) if root(t) == mine]] += shift
+        band[mine] = theirs
+    return turned
 
 
 def _orient(
@@ -168,14 +665,14 @@ def _orient(
     previous = None
     current = start
     while len(walk) < len(ring):
-        neighbours = sorted(
+        neighbors = sorted(
             n
             for n in machine.graph.neighbors(current)
             if n in members and n != previous
         )
-        if not neighbours:
+        if not neighbors:
             return placed
-        previous, current = current, neighbours[0]
+        previous, current = current, neighbors[0]
         walk.append(current)
 
     area = 0.0
@@ -189,36 +686,63 @@ def _orient(
     return {name: (x, -y) for name, (x, y) in placed.items()}
 
 
+def _spread(back: float | None, n_onward: int) -> list[float]:
+    """Directions out of a gear for the gears placed from it.
+
+    The layout grows out from the first gear (:func:`_layout_bfs`): each
+    other gear is placed from a neighbour already placed, and ``back`` is
+    the direction from the gear to that neighbour, None for the first gear.
+    The ``n_onward`` gears placed from it go evenly round it with the way
+    back, so one carries straight on and two branch at ±60°; round the
+    whole of the first gear, the first to the right."""
+    if back is None:
+        return [2 * math.pi * i / n_onward for i in range(n_onward)]
+    if n_onward == 1:
+        # Straight on, the way it came in, to the last bit: a chain stays on
+        # the x-axis exactly.
+        return [back - math.pi]
+    return [back + 2 * math.pi * (i + 1) / (n_onward + 1) for i in range(n_onward)]
+
+
 def _layout_bfs(
     machine: BraidingMachine,
     scale: float = 1.0,
+    directions=None,
 ) -> dict[str, tuple[float, float]]:
-    """Exact tangential layout for tree (path) graphs via BFS.
+    """Exact tangential layout for tree graphs via BFS.
 
-    Places gears left-to-right along the x-axis so every adjacent pair of
-    gear circles touches exactly.  Works for any tree, including linear chains
-    and branching topologies.
+    The first gear at the origin; then, gear by gear, outwards, each gear's
+    neighbours not yet placed round it, each rim touching its own, in the
+    directions :func:`_spread` gives — a chain carries straight on along the
+    x-axis, a gear with several neighbours onward branches.
+
+    Args:
+        machine: The machine, its gears in a tree.
+        scale: Overall scale factor.
+        directions: How to choose the directions out of a gear for its
+            gears placed from it instead: called with the gear, the direction
+            back to the neighbour it was placed from (None for the first
+            gear) and the neighbours to place from it, it gives a direction
+            for each.
+    Returns:
+        Gear name -> (x, y).
     """
-    radii = {n: _gear_radius(g.n_slots, scale) for n, g in machine.gears.items()}
+    radii = gear_radii(machine, scale)
     root = next(iter(machine.gears))
+    choose = directions or (lambda gear, back, onward: _spread(back, len(onward)))
 
     pos: dict[str, tuple[float, float]] = {root: (0.0, 0.0)}
-    visited: set = {root}
-    queue: deque = deque([(root, 0.0)])  # (node, parent_x + parent_r)
-
+    back: dict[str, float | None] = {root: None}
+    queue: deque = deque([root])
     while queue:
-        parent, _right_edge = queue.popleft()
-        r_parent = radii[parent]
-        cx_parent = pos[parent][0]
-
-        unvisited = [n for n in machine.graph.neighbors(parent) if n not in visited]
-        for child in sorted(unvisited):
-            r_child = radii[child]
-            cx_child = cx_parent + r_parent + r_child
-            pos[child] = (cx_child, 0.0)
-            visited.add(child)
-            queue.append((child, cx_child))
-
+        gear = queue.popleft()
+        onward = sorted(n for n in machine.graph.neighbors(gear) if n not in pos)
+        x, y = pos[gear]
+        for placed, angle in zip(onward, choose(gear, back[gear], onward)):
+            apart = radii[gear] + radii[placed]
+            pos[placed] = (x + apart * math.cos(angle), y + apart * math.sin(angle))
+            back[placed] = angle + math.pi
+            queue.append(placed)
     return pos
 
 
@@ -363,6 +887,33 @@ def carrier_radius(
     return sum(distances) / len(distances)
 
 
+def _contacts(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, list[tuple[float, float]]]:
+    """Per gear, each of its contacts: the angle on the gear of the slot that
+    is there at every step, ``2π*slot0/N`` — or, for a contact handing over
+    ``phase`` of the way through a step, the angle at the step's start of
+    the slot there then, a ``phase`` of a slot back — and the contact's
+    angle on the deck, seen from the gear's centre."""
+    contacts: dict[str, list[tuple[float, float]]] = {
+        name: [] for name in machine.gears
+    }
+    for conn in machine.connections:
+        for gname, other, slot0 in [
+            (conn.gear_a, conn.gear_b, conn.slot_a0),
+            (conn.gear_b, conn.gear_a, conn.slot_b0),
+        ]:
+            gear = machine.gears[gname]
+            contacts[gname].append(
+                (
+                    2 * math.pi * (slot0 + gear.direction * conn.phase) / gear.n_slots,
+                    contact_angle(machine, layout, gname, other),
+                )
+            )
+    return contacts
+
+
 def _gear_constraints(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
@@ -374,16 +925,10 @@ def _gear_constraints(
     gear with several connections gets one such value per connection; they all
     agree only when the connection slots match the physical layout.
     """
-    wanted: dict[str, list[float]] = {name: [] for name in machine.gears}
-    for conn in machine.connections:
-        for gname, other, slot0 in [
-            (conn.gear_a, conn.gear_b, conn.slot_a0),
-            (conn.gear_b, conn.gear_a, conn.slot_b0),
-        ]:
-            gear = machine.gears[gname]
-            theta = contact_angle(machine, layout, gname, other)
-            wanted[gname].append(theta - 2 * math.pi * slot0 / gear.n_slots)
-    return wanted
+    return {
+        name: [theta - slot for slot, theta in contacts]
+        for name, contacts in _contacts(machine, layout).items()
+    }
 
 
 def slot_offsets(
@@ -421,8 +966,9 @@ def offset_residuals(
     """Worst angular error (radians) between each gear's slots and its contacts.
 
     Zero means every contact of that gear falls exactly on a slot.  A non-zero
-    value means the machine's connection slots cannot be reconciled with its
-    layout, and carriers will appear to jump when they transfer there.
+    value means its slots, turned rigidly, cannot meet every contact, as where
+    a line of gears bends; :class:`GearAngles` then draws them spread
+    unevenly, so that carriers do not jump when they transfer there.
     """
     offsets = slot_offsets(machine, layout)
     residuals: dict[str, float] = {}
@@ -433,6 +979,79 @@ def offset_residuals(
             default=0.0,
         )
     return residuals
+
+
+#: How far (radians) a gear's slots may miss its contacts and still be drawn
+#: turned rigidly: rounding, not a bend.
+FITS = 1e-9
+
+
+@dataclass(frozen=True)
+class GearAngles:
+    """Where a gear's slots are drawn on the deck, from their angle on the gear.
+
+    A gear's slots are evenly spaced round it and turn at its rate, and are
+    drawn turned by its offset (:func:`slot_offsets`).  That puts a slot on
+    every contact at every step only when the contacts are a whole number of
+    slots apart round the gear, as on a straight line of gears.  Where a line
+    bends at a gear they are not, so its slots are drawn spread unevenly
+    instead: the slot at a contact is always drawn on it, and those between
+    two contacts evenly between their angles.  A carrier rounds the outside of
+    the bend a little faster than the inside, then, and is handed on where it
+    is, without jumping.  Which slot is where is the machine's; only the
+    drawing changes (see :func:`offset_residuals`).
+
+    Args:
+        offset: The gear's offset, from :func:`slot_offsets`.
+        knots: Each contact as (angle of its slot on the gear, angle on the
+            deck), in order round the gear; empty where turning the slots
+            rigidly by ``offset`` puts one on every contact.
+    """
+
+    offset: float
+    knots: tuple[tuple[float, float], ...] = ()
+
+    def __call__(self, angle: float) -> float:
+        """The angle on the deck of a slot at ``angle`` on the gear."""
+        if len(self.knots) < 2:
+            return self.offset + angle
+        turn = 2 * math.pi
+        # Where on the gear, in [0, 2π): rounding can carry ``%`` to 2π.
+        angle %= turn
+        if angle >= turn:
+            angle = 0.0
+        # The last knot at or before it, the one before the first if none is.
+        k = bisect.bisect_right([slot for slot, _ in self.knots], angle) - 1
+        here, at = self.knots[k]
+        there, to = self.knots[(k + 1) % len(self.knots)]
+        span = (there - here) % turn or turn
+        return at + ((to - at) % turn or turn) * ((angle - here) % turn) / span
+
+
+def slot_angles(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+) -> dict[str, GearAngles]:
+    """How each gear's slots are drawn: see :class:`GearAngles`.
+
+    Args:
+        machine: The machine definition.
+        layout: Gear centres, from :func:`compute_layout`.
+
+    Returns:
+        Gear name -> its :class:`GearAngles`.
+    """
+    offsets = slot_offsets(machine, layout)
+    residuals = offset_residuals(machine, layout)
+    angles = {}
+    for name, contacts in _contacts(machine, layout).items():
+        if residuals[name] <= FITS:
+            angles[name] = GearAngles(offsets[name])
+            continue
+        # One knot a slot: two contacts on one slot are one point.
+        knots = dict(sorted(contacts))
+        angles[name] = GearAngles(offsets[name], tuple(knots.items()))
+    return angles
 
 
 def _signed_area(
@@ -450,7 +1069,7 @@ def _signed_area(
 
 def tube_rings(
     machine: BraidingMachine,
-    layout: dict[str, tuple[float, float]] | None = None,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
 ) -> list[list[str]]:
     """Find the rings of gears that enclose a hole — one per tube.
 
@@ -495,7 +1114,7 @@ def tube_rings(
 
 def tube_axials(
     machine: BraidingMachine,
-    layout: dict[str, tuple[float, float]] | None = None,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
     min_clearance: float = 1e-6,
     prefix: str = "core",
 ) -> list[Axial]:
@@ -528,6 +1147,74 @@ def tube_axials(
     return axials
 
 
+# Gear centres as many decimals alike as this are one axle: a split gear's
+# parts, placed on it by the same sums.
+_CENTER_DIGITS = 9
+
+
+def _axle(layout: dict[str, tuple[float, float]], name: str) -> tuple[float, float]:
+    """The axle a gear turns on, the same for a split gear's parts."""
+    x, y = layout[name]
+    return round(x, _CENTER_DIGITS), round(y, _CENTER_DIGITS)
+
+
+def axial_spots(
+    machine: BraidingMachine,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
+) -> list[Axial]:
+    """Every place the machine could feed an axial yarn, loaded or not.
+
+    Up each gear's hollow spindle, at its centre — once for the parts of a
+    split gear, which share an axle, named by its first part — and down the
+    hole of each ring of gears that leaves room for one (:func:`tube_axials`).
+    Which of them a machine braids round is its :attr:`~braidpy.horn_gear
+    .model.BraidingMachine.axials`.
+
+    Args:
+        machine: The machine to inspect.
+        layout: Gear centre positions (computed if None).
+
+    Returns:
+        The gears' spots, in the machine's order, then the rings'.
+    """
+    if layout is None:
+        layout = compute_layout(machine)
+    spots: list[Axial] = []
+    centers: set[tuple[float, float]] = set()
+    for name in machine.gears:
+        center = _axle(layout, name)
+        if center in centers:
+            continue
+        centers.add(center)
+        spots.append(Axial(f"axial_{name}", (name,)))
+    return spots + tube_axials(machine, layout)
+
+
+def ring_core(
+    machine: BraidingMachine,
+    layout: Optional[dict[str, tuple[float, float]]] = None,
+) -> Axial | None:
+    """The core a machine that is one ring of gears braids round: down the
+    hole the ring encloses, as a tubular machine's or a lace machine's.
+
+    Only a ring of every gear makes a tube: a line folded round, as the
+    multiband machine's, encloses a hole between its gears too, but braids
+    flat bands, not round it.
+
+    Args:
+        machine: The machine.
+        layout: Gear centre positions (computed if None).
+
+    Returns:
+        The core, named ``centre``; None if the machine is not one ring, or
+        its hole has no room for a core.
+    """
+    for core in tube_axials(machine, layout, prefix="centre"):
+        if set(core.anchor) == set(machine.gears):
+            return core
+    return None
+
+
 def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]:
     """Return the visual radius for each gear.
 
@@ -538,15 +1225,28 @@ def gear_radii(machine: BraidingMachine, scale: float = 1.0) -> dict[str, float]
     Returns:
         Dict mapping gear name → radius.
     """
-    return {
-        name: _gear_radius(gear.n_slots, scale) for name, gear in machine.gears.items()
+    radii = {
+        name: _gear_radius(gear.size or gear.n_slots, scale)
+        for name, gear in machine.gears.items()
     }
+    # A machine that has solved its own geometry draws as it solved it, and
+    # gears in a ring as their layout drew them to touch (ring_geometry).
+    preferred = machine.preferred_gear_radii(scale)
+    if preferred:
+        radii.update({name: r for name, r in preferred.items() if name in radii})
+    elif (
+        len(machine.gears) > 1
+        and machine.preferred_layout(scale) is None
+        and not nx.is_forest(machine.graph)
+    ):
+        radii.update(ring_geometry(machine, scale)[1])
+    return radii
 
 
 def carrier_xy(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
-    offsets: dict[str, float],
+    angles: dict[str, GearAngles],
     carrier_radii: dict[str, float],
     position: tuple[str, int],
     time: int,
@@ -555,7 +1255,8 @@ def carrier_xy(
     """Where in the plane a carrier is, at continuous time ``time + frac``.
 
     A carrier rides in a horn of its gear, so its angle is simply that slot's
-    angle: it turns at exactly the gear's rate and always sits on its slot.
+    angle: it turns with the gear and always sits on its slot, drawn where
+    :class:`GearAngles` draws it.
     It is drawn on whatever is actually moving it this step — on a machine
     with shared slots that is the receiving gear, see
     :meth:`~braidpy.horn_gear.model.BraidingMachine.riding_position`.
@@ -563,13 +1264,13 @@ def carrier_xy(
     Transfers stay continuous without any special casing: a carrier moves to
     the neighbour only at the step where its slot is at the contact point, and
     it lands on the neighbour's slot that is at that same contact point at that
-    same instant, so the two coincide (provided the machine's connection slots
-    match its layout — see :func:`offset_residuals`).
+    same instant, so the two coincide; where a line bends at a gear, its
+    slots are drawn so that they still do (:class:`GearAngles`).
 
     Args:
         machine: The machine definition.
         layout: Gear centres, from :func:`compute_layout`.
-        offsets: Per-gear rotation offsets, from :func:`slot_offsets`.
+        angles: How each gear's slots are drawn, from :func:`slot_angles`.
         carrier_radii: Per-gear riding radius, from :func:`carrier_radius`.
         position: The carrier's recorded (gear, slot) at ``time``.
         time: The step being taken.
@@ -578,8 +1279,8 @@ def carrier_xy(
     Returns:
         The carrier's (x, y).
     """
-    gear_name, slot = machine.riding_position(position, time)
+    gear_name, slot = machine.riding_position(position, time, frac)
     cx, cy = layout[gear_name]
     r = carrier_radii[gear_name]
-    ang = offsets[gear_name] + machine.slot_angle(gear_name, slot, time, frac)
+    ang = angles[gear_name](machine.slot_angle(gear_name, slot, time, frac))
     return cx + r * math.cos(ang), cy + r * math.sin(ang)

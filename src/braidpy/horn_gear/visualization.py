@@ -28,9 +28,10 @@ centres, and a carrier rides at that distance from its gear's centre — on the
 rim when the gears merely touch, inside it when they overlap.
 
 The rotation offset ``phi_G`` turns each gear so its connection slots point at
-its notches, fitted across all of them (:func:`slot_offsets`); where a
-machine's slots cannot be reconciled with its layout, :func:`offset_residuals`
-says by how much and the figure is labelled with it.
+its notches, fitted across all of them (:func:`slot_offsets`); where a line of
+gears bends, so that turned rigidly they cannot all meet them, the slots are
+drawn spread unevenly instead, so that carriers are handed on without jumping
+(:func:`slot_angles`).
 
 Nothing here decides how far a gear has turned, where a carrier goes next, or
 which gear is carrying it — those belong to the machine, so that an ordinary
@@ -41,10 +42,12 @@ without it knowing the difference.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
+from braidpy._renamed import renamed_globals
+from braidpy.pure_braid import repeating_unit
 from braidpy.utils import PALETTE, lazy_module, play_controls
 
 if TYPE_CHECKING:
@@ -53,6 +56,7 @@ else:
     go = lazy_module("plotly.graph_objects")
 
 from .layout import (
+    GearAngles,
     axial_clearance,
     axial_position,
     carrier_radius,
@@ -61,8 +65,7 @@ from .layout import (
     contact_angle,
     contact_point,
     gear_radii,
-    offset_residuals,
-    slot_offsets,
+    slot_angles,
 )
 from .model import BraidingMachine
 from .simulation import (
@@ -128,7 +131,7 @@ if (gd) {
 }
 """
 
-_GEAR_COLOURS = {
+_GEAR_COLORS = {
     "clockwise": ("rgba(60,170,90,0.20)", "rgba(35,135,65,0.85)"),
     "trigonometric": ("rgba(205,60,55,0.16)", "rgba(165,40,35,0.80)"),
     "held": ("rgba(140,140,140,0.14)", "rgba(110,110,110,0.65)"),
@@ -169,7 +172,7 @@ def _slot_angle(
     machine: BraidingMachine,
     gear_name: str,
     slot: int,
-    offset: float,
+    angles: GearAngles,
     t: int = 0,
     frac: float = 0.0,
 ) -> float:
@@ -177,9 +180,10 @@ def _slot_angle(
 
     How far the gear has turned by then is the machine's business — it is
     ``direction * t`` on an ordinary machine and whatever the programme says
-    on a Jacquard one — so this only adds the layout offset on top.
+    on a Jacquard one — so this only draws it where the layout puts it
+    (:class:`~braidpy.horn_gear.layout.GearAngles`).
     """
-    return offset + machine.slot_angle(gear_name, slot, t, frac)
+    return angles(machine.slot_angle(gear_name, slot, t, frac))
 
 
 def _arc_xy(
@@ -299,24 +303,31 @@ def _carrier_marker_sizes(
     }
 
 
-def _track_traces(
+def track_curves(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
-    tracks: list[Track] | None = None,
+    tracks: Optional[list[Track]] = None,
     scale: float = 1.0,
-    width: float = 2.5,
-    opacity: float = 1.0,
-) -> list[go.BaseTraceType]:
-    """Each carrier track as a closed run of arcs, one trace per track.
+) -> list[tuple[str, np.ndarray]]:
+    """Each carrier track as a closed run of arcs, seen from above.
 
     A run of positions on the same gear is drawn as a single arc from the notch
     the carrier came in by to the one it leaves by, following the gear's
     rotation, at the radius the carriers actually ride at — so the tracks lie
     under the carriers rather than beside them.
 
-    Tracks belong to the wiring, so they are the same at every step and can be
-    drawn once and left alone.  A machine driven by a programme has none, and
-    gets an empty list.
+    Tracks belong to the wiring, so they are the same at every step.  A
+    machine driven by a programme has none.
+
+    Args:
+        machine: The machine.
+        layout: Where its gears are (:func:`compute_layout`).
+        tracks: Its tracks, if already worked out.
+        scale: The layout's scale.
+
+    Returns:
+        Per distinct closed curve, a name — the loop of gears it runs round —
+        and its points, shape ``(n, 2)``, the first repeated at the end.
     """
     if not machine.has_fixed_tracks:
         return []
@@ -339,14 +350,16 @@ def _track_traces(
     period = simulation_period(machine)
     paths: dict[tuple[tuple[str, str, str], ...], None] = {}
     for track in tracks:
-        runs = tuple(_track_runs(walk(machine, track[0], period)))
+        # Walked over the machine's period, a carrier can go round its loop
+        # many times: drawn once.
+        runs = tuple(repeating_unit(_track_runs(walk(machine, track[0], period))))
         if not runs:
             continue
         # Same loop entered at a different gear is still the same loop.
         paths.setdefault(min(runs[i:] + runs[:i] for i in range(len(runs))), None)
 
-    traces: list[go.BaseTraceType] = []
-    for index, runs in enumerate(paths):
+    curves: list[tuple[str, np.ndarray]] = []
+    for runs in paths:
         xs_all: list = []
         ys_all: list = []
         for gear_name, prev_gear, next_gear in runs:
@@ -361,7 +374,6 @@ def _track_traces(
             )
             xs_all.extend(xs.tolist())
             ys_all.extend(ys.tolist())
-
         xs_all.append(xs_all[0])  # close the loop
         ys_all.append(ys_all[0])
 
@@ -376,18 +388,51 @@ def _track_traces(
             label = f"Track {shown}… ({len(visited)} crossings)"
         else:
             label = "Track " + "-".join(visited)
-        traces.append(
-            go.Scatter(
-                x=xs_all,
-                y=ys_all,
-                mode="lines",
-                line=dict(color=PALETTE[index % len(PALETTE)], width=width),
-                opacity=opacity,
-                name=label,
-                hoverinfo="skip",
-            )
+        curves.append((label, np.column_stack([xs_all, ys_all])))
+    return curves
+
+
+def colored_tracks(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+    tracks: Optional[list[Track]] = None,
+    scale: float = 1.0,
+) -> list[tuple[str, str, np.ndarray]]:
+    """Each carrier track (:func:`track_curves`) in its colour: the
+    palette's, one after another, wherever the tracks are drawn.
+
+    Returns:
+        Per track, its name, its colour and its points.
+    """
+    return [
+        (label, PALETTE[index % len(PALETTE)], points)
+        for index, (label, points) in enumerate(
+            track_curves(machine, layout, tracks, scale)
         )
-    return traces
+    ]
+
+
+def _track_traces(
+    machine: BraidingMachine,
+    layout: dict[str, tuple[float, float]],
+    tracks: Optional[list[Track]] = None,
+    scale: float = 1.0,
+    width: float = 2.5,
+    opacity: float = 1.0,
+) -> list[go.BaseTraceType]:
+    """Each carrier track (:func:`colored_tracks`) as a Plotly trace."""
+    return [
+        go.Scatter(
+            x=points[:, 0].tolist(),
+            y=points[:, 1].tolist(),
+            mode="lines",
+            line=dict(color=color, width=width),
+            opacity=opacity,
+            name=label,
+            hoverinfo="skip",
+        )
+        for label, color, points in colored_tracks(machine, layout, tracks, scale)
+    ]
 
 
 def _disc_traces(
@@ -415,7 +460,7 @@ def _disc_traces(
     for name in machine.gears:
         cx, cy = layout[name]
         r = radii[name]
-        fill, edge = _GEAR_COLOURS[
+        fill, edge = _GEAR_COLORS[
             _gear_state(machine.gears[name].direction, name in turning)
         ]
         traces.append(
@@ -437,7 +482,7 @@ def _slot_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     radii: dict[str, float],
-    offsets: dict[str, float],
+    angles: dict[str, GearAngles],
     t: int = 0,
     frac: float = 0.0,
     scale: float = 1.0,
@@ -461,7 +506,7 @@ def _slot_traces(
         notch = _notch_radius(machine, layout, radii, name, scale)
 
         for slot in range(gear.n_slots):
-            angle = _slot_angle(machine, name, slot, offsets[name], t, frac)
+            angle = _slot_angle(machine, name, slot, angles[name], t, frac)
             px = cx + seat * math.cos(angle)
             py = cy + seat * math.sin(angle)
 
@@ -513,7 +558,7 @@ def _gear_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     radii: dict[str, float],
-    offsets: dict[str, float],
+    angles: dict[str, GearAngles],
     t: int = 0,
     frac: float = 0.0,
     scale: float = 1.0,
@@ -529,7 +574,7 @@ def _gear_traces(
     """
     return (
         _disc_traces(machine, layout, radii, t)
-        + _slot_traces(machine, layout, radii, offsets, t, frac, scale)
+        + _slot_traces(machine, layout, radii, angles, t, frac, scale)
         + _gear_label_traces(machine, layout)
     )
 
@@ -628,7 +673,7 @@ def _punchcard_traces(
     machine: BraidingMachine,
     layout: dict[str, tuple[float, float]],
     radii: dict[str, float],
-    current_phase: int | None = None,
+    current_phase: Optional[int] = None,
 ) -> list[go.BaseTraceType]:
     """Draw the machine's programme below it, as the punchcard it is.
 
@@ -772,18 +817,18 @@ def _contact_point_traces(
 def visualize_machine(
     machine: BraidingMachine,
     scale: float = 1.0,
-    output_html: str | None = None,
+    output_html: Optional[str] = None,
     title: str = "Horn Gear Braiding Machine",
 ) -> go.Figure:
     """Static diagram of the machine layout with oriented slot tick marks."""
     layout = compute_layout(machine, scale=scale)
     radii = gear_radii(machine, scale=scale)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
 
     traces: list[go.BaseTraceType] = []
     traces.extend(_connection_traces(machine, layout, radii))
     traces.extend(_contact_point_traces(machine, layout, radii))
-    traces.extend(_gear_traces(machine, layout, radii, offsets, scale=scale))
+    traces.extend(_gear_traces(machine, layout, radii, angles, scale=scale))
 
     # Slot dots, in the notches the bobbins ride in.
     seat_sizes = _carrier_marker_sizes(machine, layout, radii, scale)
@@ -792,7 +837,7 @@ def visualize_machine(
         cx, cy = layout[name]
         r_carrier = carrier_radius(machine, layout, name, scale)
         for s in range(gear.n_slots):
-            ang = _slot_angle(machine, name, s, offsets[name])
+            ang = _slot_angle(machine, name, s, angles[name])
             xs.append(cx + r_carrier * math.cos(ang))
             ys.append(cy + r_carrier * math.sin(ang))
             labels.append(f"{name}[{s}]")
@@ -834,9 +879,9 @@ def visualize_machine(
 
 def visualize_tracks(
     machine: BraidingMachine,
-    tracks: list[Track] | None = None,
+    tracks: Optional[list[Track]] = None,
     scale: float = 1.0,
-    output_html: str | None = None,
+    output_html: Optional[str] = None,
     title: str = "Carrier Tracks",
 ) -> go.Figure:
     """Draw carrier tracks as circular arcs that meet at physical contact points.
@@ -873,10 +918,10 @@ def visualize_tracks(
 
 def animate(
     machine: BraidingMachine,
-    n_steps: int | None = None,
-    carrier_positions: dict | None = None,
+    n_steps: Optional[int] = None,
+    carrier_positions: Optional[dict] = None,
     scale: float = 1.0,
-    output_html: str | None = None,
+    output_html: Optional[str] = None,
     title: str = "Carrier Animation",
     frame_duration_ms: int = 40,
     n_substeps: int = 9,
@@ -916,7 +961,7 @@ def animate(
     """
     layout_pos = compute_layout(machine, scale=scale)
     radii_dict = gear_radii(machine, scale=scale)
-    offsets = slot_offsets(machine, layout_pos)
+    angles = slot_angles(machine, layout_pos)
     bobbin_sizes = _carrier_marker_sizes(machine, layout_pos, radii_dict, scale)
 
     # The tracks are a property of the wiring, so they are identical in
@@ -967,16 +1012,6 @@ def animate(
         )
         title = f"{title} — COLLISION at step {collision_info.step} ({coll_detail})"
 
-    # Warn when the machine's connection slots cannot be reconciled with its
-    # layout: carriers then visibly jump as they transfer.  That is a property
-    # of the machine definition, not of the animation.
-    worst = max(offset_residuals(machine, layout_pos).values(), default=0.0)
-    if math.degrees(worst) > 1.0:
-        title = (
-            f"{title}<br><sub>slots miss their contacts by up to "
-            f"{math.degrees(worst):.0f}° — carriers jump when transferring</sub>"
-        )
-
     carrier_colors = {
         c.carrier_id: PALETTE[i % len(PALETTE)]
         for i, c in enumerate(history[0].carriers)
@@ -1012,7 +1047,7 @@ def animate(
         xs, ys, htexts, colors_list, texts, sizes = [], [], [], [], [], []
         for c in state.carriers:
             x, y = carrier_xy(
-                machine, layout_pos, offsets, carrier_radii, c.position, t, frac
+                machine, layout_pos, angles, carrier_radii, c.position, t, frac
             )
             gear_name, _ = machine.riding_position(c.position, t)
             xs.append(x)
@@ -1050,7 +1085,7 @@ def animate(
                     x, y = carrier_xy(
                         machine,
                         layout_pos,
-                        offsets,
+                        angles,
                         carrier_radii,
                         c.position,
                         state.time,
@@ -1086,7 +1121,7 @@ def animate(
                 discs_change,
             ),
             (
-                _slot_traces(machine, layout_pos, radii_dict, offsets, t, frac, scale),
+                _slot_traces(machine, layout_pos, radii_dict, angles, t, frac, scale),
                 True,
             ),
             (still_labels, False),
@@ -1177,3 +1212,10 @@ def animate(
             post_script=_LOOP_SCRIPT.replace("__DURATION__", str(frame_duration_ms)),
         )
     return fig
+
+
+# The names these went by before braidpy's code took American spelling.
+__getattr__ = renamed_globals(
+    __name__,
+    {"coloured_tracks": "colored_tracks"},
+)

@@ -20,9 +20,13 @@ def _words():
         yield example["title"], Braid(word, example["n_strands"])
 
 
-def test_every_catalogue_word_is_made_on_the_disk():
+def test_every_catalog_word_is_made_on_the_disk():
+    """On a disk with room for it: a strand wants two slots, with room
+    either side, so the 32-slot disk of the shops holds fifteen strands and
+    a wider braid needs a wider disk."""
     for title, braid in _words():
-        assert disk_braid(disk_moves(braid)) == braid, title
+        slots = max(32, 2 * braid.n_strands + 2)
+        assert disk_braid(disk_moves(braid, slots)) == braid, title
 
 
 def test_a_crossing_is_three_moves_and_only_the_first_crosses():
@@ -49,3 +53,41 @@ def test_braid_studio_makes_the_disk_s_moves():
 def test_a_disk_too_small_is_refused():
     with pytest.raises(ValueError, match="34 slots"):
         disk_moves(Braid((1,) * 3, 16))
+
+
+def test_two_strands_far_apart_cross_in_three_moves():
+    """a_41, strands 4 and 1 crossing in front of 2 and 3: strand 4 lifted
+    over them all into slot 2, strand 1 into its place, strand 4 into 3 —
+    three moves, where in crossings of neighbours it is five, fifteen
+    moves."""
+    from braidpy.band_canonical_form import artin_from_band
+
+    braid = Braid(tuple(artin_from_band([(4, 1)])), 4)
+    moves = disk_moves(braid)
+    assert moves.moves == ((9, 2), (3, 9), (2, 3))
+    assert disk_braid(moves) == braid
+
+
+def test_a_disk_braid_takes_fewer_moves_in_band_letters():
+    """Kongo gumi, shortened: 81 crossings, 243 moves a crossing at a time,
+    are 43 band letters, 129 moves; a random word never takes more than
+    three moves a crossing."""
+    import random
+
+    from braidpy.making import _unit
+    from braidpy.web import build
+
+    info = build(
+        {"source": "mobidai", "name": "KONGO_8", "iterations": 0}, tighten=False
+    )["info"]
+    unit = _unit(info)[0].shortened()
+    moves = disk_moves(unit)
+    assert len(moves.moves) == 129 < 3 * len(unit.generators)
+    assert disk_braid(moves) == unit
+    rng = random.Random(5)
+    for _ in range(100):
+        n = rng.randint(2, 9)
+        word = tuple(rng.choice((-1, 1)) * rng.randint(1, n - 1) for _ in range(20))
+        moves = disk_moves(Braid(word, n))
+        assert len(moves.moves) <= 3 * len(word)
+        assert disk_braid(moves) == Braid(word, n)

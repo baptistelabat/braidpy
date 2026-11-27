@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .model import BraidingMachine
 from .simulation import (
@@ -40,6 +40,8 @@ from .tracks import Position, _next_position
 
 if TYPE_CHECKING:
     import plotly.graph_objects as go
+
+    from .layout import GearAngles
 
 __all__ = ["Handle", "Turned", "drawing", "origin", "sweep", "turn"]
 
@@ -139,7 +141,7 @@ class Handle:
     """
 
     def __init__(
-        self, machine: BraidingMachine, loading: Sequence[Position] | None = None
+        self, machine: BraidingMachine, loading: Optional[Sequence[Position]] = None
     ):
         self.machine = machine
         if loading is None:
@@ -223,25 +225,27 @@ class Handle:
         )
 
 
-Drawing = tuple[dict[str, tuple[float, float]], dict[str, float], dict[str, float]]
+Drawing = tuple[
+    dict[str, tuple[float, float]], dict[str, "GearAngles"], dict[str, float]
+]
 
 
 def drawing(machine: BraidingMachine) -> Drawing:
     """Where a machine's gears are, how they are turned and the circle their
     carriers ride: worked out once, for :func:`sweep` to draw every step."""
-    from .layout import carrier_radius, compute_layout, slot_offsets
+    from .layout import carrier_radius, compute_layout, slot_angles
 
     layout = compute_layout(machine)
-    offsets = slot_offsets(machine, layout)
+    angles = slot_angles(machine, layout)
     riding = {name: carrier_radius(machine, layout, name) for name in machine.gears}
-    return layout, offsets, riding
+    return layout, angles, riding
 
 
 def sweep(
     machine: BraidingMachine,
     state: MachineState,
     frames: int,
-    drawn: Drawing | None = None,
+    drawn: Optional[Drawing] = None,
 ) -> tuple[list[Position], list[list[list[float]]], list[list[list[float]]]]:
     """Where every slot and carrier is through one step, from ``state``:
     ``frames`` pictures, the first the step itself.  The same places as the
@@ -260,7 +264,7 @@ def sweep(
     from .layout import carrier_xy
     from .visualization import _slot_angle
 
-    layout, offsets, riding = drawn or drawing(machine)
+    layout, angles, riding = drawn or drawing(machine)
     slots = [
         (name, slot)
         for name, gear in machine.gears.items()
@@ -272,7 +276,7 @@ def sweep(
         frac = k / frames
         here = []
         for name, slot in slots:
-            angle = _slot_angle(machine, name, slot, offsets[name], state.time, frac)
+            angle = _slot_angle(machine, name, slot, angles[name], state.time, frac)
             cx, cy = layout[name]
             here.append(
                 [
@@ -285,7 +289,7 @@ def sweep(
             [
                 list(
                     carrier_xy(
-                        machine, layout, offsets, riding, c.position, state.time, frac
+                        machine, layout, angles, riding, c.position, state.time, frac
                     )
                 )
                 for c in state.carriers

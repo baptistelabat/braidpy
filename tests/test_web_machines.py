@@ -8,6 +8,7 @@ import json
 
 import pytest
 
+from braidpy.machine_catalog import CATALOG as MACHINES
 from braidpy.web import build
 
 
@@ -19,9 +20,11 @@ def test_a_machine_braids_its_cores_in_as_yarns():
     result = build({"source": "machine", "name": "soutache_5", "cycles": 2})
     cores = [s for s in result["strands"] if s["name"].startswith("Core")]
     yarns = [s for s in result["strands"] if not s["name"].startswith("Core")]
-    assert [s["name"] for s in cores] == ["Core cord_A", "Core cord_B"]
+    assert [s["name"] for s in cores] == ["Core axial_A", "Core axial_B"]
     assert len(yarns) == 5
-    assert "word" not in result["info"]
+    # Each core counted in its word as a strand standing still.
+    assert result["info"]["n_strands"] == 7
+    assert max(abs(int(g)) for g in result["info"]["word"].split()) == 6
     # Half way up, each core is among the yarns, not off to one side.
     middle = len(cores[0]["points"]) // 2
     xy = np.array([s["points"][middle][:2] for s in yarns])
@@ -39,7 +42,7 @@ def test_a_machines_cores_never_cross_or_touch_a_yarn(cores):
     import numpy as np
 
     result = build(
-        {"source": "machine", "name": "soutache_7", "cycles": 2, "cores": cores}
+        {"source": "machine", "name": "soutache_7", "cycles": 2, "core": cores}
     )
     d = result["yarn_diameter"]
     assert result["info"]["closest_approach"] >= 0.99 * d
@@ -57,7 +60,7 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
 
     def spread(cores):
         result = build(
-            {"source": "machine", "name": "soutache_5", "cycles": 2, "cores": cores}
+            {"source": "machine", "name": "soutache_5", "cycles": 2, "core": cores}
         )
         core = next(s for s in result["strands"] if s["name"].startswith("Core"))
         xy = np.array(core["points"])[:, :2]
@@ -67,9 +70,81 @@ def test_a_rigid_core_stays_straight_and_a_yarn_core_gives_way():
     assert spread("yarn") > 0
 
 
-def test_cores_are_yarn_or_rigid():
-    with pytest.raises(ValueError, match="yarn or rigid"):
-        build({"source": "machine", "name": "soutache_5", "cores": "glass"})
+def test_a_core_is_the_machines_own_none_yarn_or_rigid():
+    with pytest.raises(ValueError, match="own, none, yarn, rigid"):
+        build({"source": "machine", "name": "soutache_5", "core": "glass"})
+
+
+def _cores(result):
+    return [s for s in result["strands"] if s["name"].startswith("Core")]
+
+
+def test_a_link_made_before_keeps_its_cores():
+    """``cores`` said how stiff a machine's own cores were: it still does,
+    and adds none to a machine without."""
+    for name, stiff in (("soutache_5", "rigid"), ("tubular_8", "rigid")):
+        old = build(
+            {"source": "machine", "name": name, "cycles": 1, "cores": stiff},
+            tighten=False,
+        )
+        new = build(
+            {"source": "machine", "name": name, "cycles": 1, "core": "own"},
+            tighten=False,
+        )
+        assert len(_cores(old)) == len(_cores(new))
+    rigid = build({"source": "machine", "name": "soutache_5", "cores": "rigid"})
+    assert (
+        rigid["notes"]
+        == build({"source": "machine", "name": "soutache_5", "core": "rigid"})["notes"]
+    )
+
+
+def test_a_machine_can_braid_without_its_cores():
+    result = build({"source": "machine", "name": "soutache_5", "core": "none"})
+    assert _cores(result) == []
+    assert "word" in result["info"]
+
+
+@pytest.mark.parametrize(
+    "source, name", [("machine", "tubular_8"), ("lace", "lace_tubular_8")]
+)
+@pytest.mark.parametrize("core", ["yarn", "rigid"])
+def test_a_ring_of_gears_braids_round_a_core_down_its_hole(source, name, core):
+    """The core stands on the axis, the yarns all round it, none passing
+    through it; a rigid one stays straight.  It goes on to the marudai
+    after the bobbins."""
+    import numpy as np
+
+    result = build({"source": source, "name": name, "cycles": 1, "core": core})
+    (made,) = _cores(result)
+    assert made["name"] == "Core centre"
+    assert result["info"]["closest_approach"] >= 0.99 * result["yarn_diameter"]
+    points = np.array(made["points"])
+    yarns = [np.array(s["points"]) for s in result["strands"] if s is not made]
+    middle = len(points) // 2
+    angles = sorted(
+        np.arctan2(*(y[middle, 1::-1] - points[middle, 1::-1])) for y in yarns
+    )
+    gaps = np.diff([*angles, angles[0] + 2 * np.pi])
+    assert gaps.max() < np.pi, "the yarns all round the core"
+    if core == "rigid":
+        assert np.ptp(points[:, :2], axis=0).max() < 1e-9
+    assert "word" not in result["info"]
+    if source == "lace":
+        assert result["disk"]["core"] == core
+        assert len(result["disk"]["start"]) == len(yarns)
+
+
+def test_a_core_needs_a_hole_to_go_down():
+    """A flat machine has none, nor the line folded round of the multiband
+    machine, nor a ring of four lace gears, whose bobbins cross its middle."""
+    for source, name in (
+        ("machine", "flat_3"),
+        ("machine", "multiband_10_15_10"),
+        ("lace", "lace_dutch"),
+    ):
+        with pytest.raises(ValueError, match="nowhere for a core"):
+            build({"source": source, "name": name, "core": "yarn"})
 
 
 @pytest.mark.parametrize(
@@ -116,7 +191,7 @@ def test_a_machine_is_drawn_for_the_page_to_load_by_hand():
     json.dumps(shape)
     assert {g["name"] for g in shape["gears"]} == {"A", "B", "C", "D"}
     for gear in shape["gears"]:
-        assert {"x", "y", "radius", "ride", "slots", "direction", "offset"} <= set(gear)
+        assert {"x", "y", "radius", "ride", "slots", "direction", "angles"} <= set(gear)
     assert shape["contacts"]
     own = _machines()["tubular_8"].make().default_carriers()
     assert shape["loading"] == [list(own[k]) for k in sorted(own)]
@@ -159,7 +234,7 @@ def test_carriers_that_meet_stop_the_braiding():
 def test_carriers_that_meet_at_once_cannot_be_braided():
     with pytest.raises(ValueError, match="meet as soon as"):
         build(
-            {"source": "machine", "name": "tubular_8", "carriers": "A:0 D:0"},
+            {"source": "machine", "name": "tubular_8", "carriers": "A:0 B:0"},
             tighten=False,
         )
 
@@ -180,3 +255,42 @@ def test_a_loading_that_cannot_be_braided_says_so(carriers, message):
             {"source": "machine", "name": "tubular_8", "carriers": carriers},
             tighten=False,
         )
+
+
+@pytest.mark.parametrize("name", sorted(MACHINES))
+def test_a_track_is_drawn_round_its_loop_once(name):
+    """A carrier walked over its machine's period can go round its loop many
+    times, as on the three-band machine, whose period is long.  Drawn so,
+    and thinned to the points the page keeps, a track joined points laps
+    apart by straight lines across the deck.  Each is drawn round once:
+    thinned, it still follows its gears, a step never as long as half the
+    smallest gear's radius."""
+    import math
+    from itertools import pairwise
+
+    from braidpy.horn_gear.layout import gear_radii
+    from braidpy.web.machines import tracks
+
+    machine = MACHINES[name].make()
+    smallest = min(gear_radii(machine).values())
+    for _, points in tracks(machine):
+        steps = [math.dist(p, q) for p, q in pairwise(points)]
+        assert max(steps) < smallest / 2
+
+
+def test_a_machine_for_bobbins_twice_as_wide_is_twice_as_large():
+    """The size note follows ``bobbin_diameter_mm``: every size in it, in
+    mm, doubles with the bobbins."""
+    import re
+
+    def sizes(bobbin_mm):
+        spec = {"source": "machine", "name": "tubular_8", "cycles": 1}
+        if bobbin_mm is not None:
+            spec["bobbin_diameter_mm"] = bobbin_mm
+        made = build(spec, tighten=False)
+        (note,) = [n for n in made["notes"] if n.startswith("Sized for bobbins")]
+        return [float(x) for x in re.findall(r"(\d+(?:\.\d+)?) (?:to \d+ )?mm", note)]
+
+    usual, wide = sizes(None), sizes(40.0)
+    assert usual[0] == 20 and wide[0] == 40
+    assert wide[1:] == pytest.approx([2 * x for x in usual[1:]], abs=1)

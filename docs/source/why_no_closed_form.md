@@ -289,10 +289,6 @@ Kept, because each is verified and none of it claims to be a physical shape:
   `ParametricBraid.plot(tube_diameter=...)` — drawing strands at their real
   thickness, so that whether they touch can be seen rather than believed.
 
-`src/braidpy/analytic/` holds nothing but a pointer to this page: the
-directory is named for the thing that turned out not to exist, and keeping it
-seemed better than pretending the question was never asked.
-
 Removed, because it asserted more than it established: a constrained
 minimiser whose constraints pinned every strand to its slot at every step, and
 a tubular shape whose crossings were held open at a single point and which

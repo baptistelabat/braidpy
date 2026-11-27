@@ -9,9 +9,9 @@ what tightening them needs."""
 from __future__ import annotations
 
 import math
-from collections.abc import Hashable, Sequence
+from collections.abc import Collection, Hashable, Sequence
 from contextvars import ContextVar
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import numpy as np
 
@@ -48,12 +48,18 @@ def _tightened(
 ):
     """The yarns pulled taut — or, for a page that does it itself, as laid,
     with what it needs to do so noted for :func:`_result`."""
-    from braidpy.take_off import tighten_yarns
+    from braidpy.take_off import Periodic, tighten_yarns, warn_if_too_coarse
 
     if iterations == 0:
         return paths
     if _PAGE_TIGHTENS.get():
+        # web/tighten.js tightens as tighten_yarns does, and is as blind.
+        warn_if_too_coarse(paths, diameter)
         formed = paths.formed()
+        # Each yarn's partner past the fell end, for the page to tighten the
+        # braid endless if asked: laid over a whole number of periods, every
+        # braid closes on itself.
+        closing = Periodic.closing(formed)
         _TIGHTENING.set(
             {
                 "n_yarns": int(formed.shape[0]),
@@ -69,6 +75,7 @@ def _tightened(
                 "centre": [float(paths.axis[0]), float(paths.axis[1])],
                 "xy": np.round(formed[:, :, :2].reshape(-1), 9).tolist(),
                 "rigid": [k in rigid for k in paths.points],
+                "partner": None if closing is None else list(closing.partner),
             }
         )
         return paths
@@ -76,6 +83,33 @@ def _tightened(
         paths, diameter, iterations=iterations, core_radius=core_radius, rigid=rigid
     )
     return tightened
+
+
+def _place_cores(paths, cores: Collection[Hashable]):
+    """The cores, each standing straight in the braid where the machine
+    lays it, all the way down to the fell: drawn in to the fell with the
+    yarns, the cores would come closer there than the machine lays them,
+    and could pass each other."""
+    from dataclasses import replace
+
+    if not cores:
+        return paths
+    points = dict(paths.points)
+    n = paths.formed_count
+    for k in cores:
+        line = points[k].copy()
+        line[:n, :2] = line[0, :2]
+        points[k] = line
+    return replace(paths, points=points)
+
+
+def _with_core(trajectories, name: Hashable):
+    """The strands' paths, and a core standing at their axis all along."""
+    from dataclasses import replace
+
+    center = trajectories.center()
+    standing = np.tile(np.asarray(center, dtype=float), (len(trajectories.times), 1))
+    return replace(trajectories, axis=center, xy={**trajectories.xy, name: standing})
 
 
 def _tighten(
@@ -88,7 +122,7 @@ def _tighten(
     return _tightened(paths, diameter, iterations.read(spec), rigid=rigid)
 
 
-def recoloured(result: Result, chosen: Sequence[str | None]) -> Result:
+def recolored(result: Result, chosen: Sequence[str | None]) -> Result:
     """The same braid with the colours a page chose for its strands.
 
     Whatever made the braid picks the colours to start with -- a word by the
@@ -107,9 +141,9 @@ def recoloured(result: Result, chosen: Sequence[str | None]) -> Result:
         The braid, recoloured.  The same object, which the builders have only
         just made.
     """
-    for strand, colour in zip(result["strands"], chosen):
-        if colour:
-            strand["colour"] = colour
+    for strand, color in zip(result["strands"], chosen):
+        if color:
+            strand["colour"] = color
     return result
 
 
@@ -117,31 +151,31 @@ def _result(
     title: str,
     paths,
     diameter: float,
-    colours: Sequence[str] | None = None,
-    names: Sequence[str] | None = None,
-    info: Info | None = None,
+    colors: Optional[Sequence[str]] = None,
+    names: Optional[Sequence[str]] = None,
+    info: Optional[Info] = None,
     notes: Sequence[str] = (),
-    timeline: Timeline | None = None,
+    timeline: Optional[Timeline] = None,
 ) -> Result:
     """Everything the page draws, as plain data."""
     n = paths.formed_count
     keys: list[Hashable] = list(paths.points)
     stride = max(1, math.ceil(n / _MAX_POINTS))
-    centre = np.array([paths.axis[0], paths.axis[1], 0.0])
+    center = np.array([paths.axis[0], paths.axis[1], 0.0])
     chosen = list(range(0, n, stride))
     if chosen[-1] != n - 1:
         chosen.append(n - 1)
     strands: list[Strand] = []
     for i, key in enumerate(keys):
-        points = np.asarray(paths.points[key], dtype=float)[chosen] - centre
+        points = np.asarray(paths.points[key], dtype=float)[chosen] - center
         if not np.all(np.isfinite(points)):
             raise ValueError("The braid could not be laid: its yarns ran off.")
-        colour = colours[i % len(colours)] if colours else PALETTE[i % len(PALETTE)]
+        color = colors[i % len(colors)] if colors else PALETTE[i % len(PALETTE)]
         name = names[i] if names else f"Strand {key}"
         strands.append(
             {
                 "name": name,
-                "colour": colour,
+                "colour": color,
                 "points": np.round(points, _DECIMALS).tolist(),
             }
         )
@@ -177,8 +211,9 @@ def _timeline(
     trajectories,
     keys: Sequence[Hashable],
     kind: str,
-    clock: Clock | None = None,
+    clock: Optional[Clock] = None,
     ring=None,
+    tracks: Sequence[tuple[str, Any]] = (),
 ) -> Timeline:
     """What made the braid, seen from above, over time: for the page to
     animate in step with the braid.
@@ -195,13 +230,16 @@ def _timeline(
             at the fell is nearest its carrier — see
             :meth:`~braidpy.disk_animation.BraidGrowth.turn_at` — and how
             far it is turned is given at each instant, as ``turn``.
+        tracks: For a machine, its tracks, each a colour and its points
+            (:func:`braidpy.web.machines.tracks`), in the trajectories'
+            plane.
     """
     times = np.asarray(trajectories.times, dtype=float)
     stride = max(1, math.ceil(len(times) / _MAX_TIMES))
     chosen = list(range(0, len(times), stride))
     if chosen[-1] != len(times) - 1:
         chosen.append(len(times) - 1)
-    cx, cy = trajectories.centre()
+    cx, cy = trajectories.center()
     shift = np.array([cx, cy])
 
     def plane(points) -> list[list[float]]:
@@ -225,7 +263,8 @@ def _timeline(
     if ring is not None:
         rows = np.interp(times[chosen], clock["source"], clock["braid"])
         pull = np.zeros(len(chosen), dtype=complex)
-        for k in keys:
+        # A core, on the axis, pulls the braid no way round.
+        for k in (k for k in keys if k in ring.xy):
             at = np.asarray(trajectories.xy[k][chosen], dtype=float) - shift
             on = np.asarray(ring.xy[k], dtype=float)
             x = np.interp(rows, ring.times, on[:, 0])
@@ -252,10 +291,14 @@ def _timeline(
     }
     if turn is not None:
         timeline["turn"] = turn
+    if tracks:
+        timeline["tracks"] = [
+            {"colour": color, "points": plane(points)} for color, points in tracks
+        ]
     return timeline
 
 
 def _hues(n: int) -> list[str]:
-    from braidpy.ashley_solid_sinnet import strand_colours
+    from braidpy.ashley_solid_sinnet import strand_colors
 
-    return strand_colours(n)
+    return strand_colors(n)

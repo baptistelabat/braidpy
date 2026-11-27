@@ -1,0 +1,27 @@
+name: A bug
+description: Something braidpy says, draws or makes that it should not.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: >
+        What you asked for, what braidpy answered or drew, and what you
+        expected.  A short script is worth a page of prose.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: braidpy's version
+      placeholder: "0.3.0"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python's version
+      placeholder: "3.12"
+    validations:
+      required: false

@@ -2,21 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: parametric_braid.py
-Description: A braid describes by a punctured disk
-Authors: Baptiste Labat
-Created: 2025-05-25
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
-"""
+"""A braid as curves in space, its strands through a punctured disk."""
 
 from __future__ import annotations
 
 import math
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -38,11 +31,15 @@ else:
 
 
 class Plotter(str, Enum):
+    """What draws a braid: Plotly or Matplotlib."""
+
     PLOTLY = "PLOTLY"
     MATPLOTLIB = "MATPLOTLIB"
 
 
 class ParametricBraid:
+    """A braid as its strands' curves in space, to sample and draw."""
+
     def __init__(self, strands: list[ParametricStrand]) -> None:
         self.strands = strands
         self.n_strands = len(strands)
@@ -59,7 +56,7 @@ class ParametricBraid:
         """
         return [strand.evaluate(t) for strand in self.strands]
 
-    def _colour(self, index: int, colors: Sequence[str] | None) -> str:
+    def _color(self, index: int, colors: Sequence[str] | None) -> str:
         palette = colors if colors else terminal_colors
         return palette[index % len(palette)]
 
@@ -72,8 +69,8 @@ class ParametricBraid:
         n_sample: int,
         n_around: int,
         opacity: float,
-        colors: Sequence[str] | None = None,
-        names: Sequence[str] | None = None,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
     ) -> list[go.Surface]:
         """One tube per strand, swept at the strands' real thickness.
 
@@ -83,7 +80,7 @@ class ParametricBraid:
 
         traces = []
         for index, strand in enumerate(self.strands):
-            colour = self._colour(index, colors)
+            color = self._color(index, colors)
             x, y, z = tube_mesh(
                 strand.sample(n_sample), diameter / 2.0, n_around=n_around
             )
@@ -93,7 +90,7 @@ class ParametricBraid:
                     y=y,
                     z=z,
                     surfacecolor=np.zeros_like(x),
-                    colorscale=[[0.0, colour], [1.0, colour]],
+                    colorscale=[[0.0, color], [1.0, color]],
                     showscale=False,
                     opacity=opacity,
                     name=self._name(index, names),
@@ -107,8 +104,8 @@ class ParametricBraid:
     def _line_traces(
         self,
         n_sample: int,
-        colors: Sequence[str] | None = None,
-        names: Sequence[str] | None = None,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
         line_width: float = 10,
     ) -> list[go.Scatter3d]:
         """One line per strand, along the centrelines."""
@@ -121,7 +118,7 @@ class ParametricBraid:
                     y=y,
                     z=z,
                     mode="lines",
-                    line=dict(width=line_width, color=self._colour(index, colors)),
+                    line=dict(width=line_width, color=self._color(index, colors)),
                     name=self._name(index, names),
                     legendgroup=self._name(index, names),
                     hoverinfo="name",
@@ -133,11 +130,11 @@ class ParametricBraid:
         self,
         n_sample: StrictlyPositiveInt = 200,
         title: str = "",
-        tube_diameter: float | None = None,
+        tube_diameter: Optional[float] = None,
         n_around: int = 16,
         opacity: float = 0.55,
-        colors: Sequence[str] | None = None,
-        names: Sequence[str] | None = None,
+        colors: Optional[Sequence[str]] = None,
+        names: Optional[Sequence[str]] = None,
         line_width: float = 10,
         z_title: str = "Z (time)",
         flip_z: bool = True,
@@ -200,9 +197,9 @@ class ParametricBraid:
         self,
         n_sample: StrictlyPositiveInt = 200,
         plotter: Plotter = Plotter.PLOTLY,
-        output_html: str | None = None,
+        output_html: Optional[str] = None,
         title: str = "",
-        tube_diameter: float | None = None,
+        tube_diameter: Optional[float] = None,
         n_around: int = 16,
         opacity: float = 0.55,
     ) -> ParametricBraid:
@@ -258,7 +255,7 @@ def closest_approach(
     strands: Sequence,
     n_samples: int = 600,
     span: float = 1.0,
-    against: Sequence[int] | None = None,
+    against: Optional[Sequence[int]] = None,
 ) -> float:
     """The nearest the centres of two different strands come to each other.
 

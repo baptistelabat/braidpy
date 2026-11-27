@@ -21,7 +21,7 @@ static files, published with the documentation.
      three.js tubes                     form.js or marudai.js
 ```
 
-- `braidpy.web` is everything the page asks of braidpy: `catalogue()`,
+- `braidpy.web` is everything the page asks of braidpy: `catalog()`,
   what can be made, and `build(spec)`, the braid a description makes. Both
   answer in plain data, lists and numbers, so the page needs nothing of
   Python's to draw. It is a module per source — `disks`, `words`,
@@ -29,7 +29,7 @@ static files, published with the documentation.
   result and its timeline (`_result`), and what is known of a braid
   (`_info`).
 - `web/worker.js` loads Pyodide and numpy from Pyodide's CDN, and braidpy
-  and math_braid as wheels from the site. It then answers each description:
+  as a wheel from the site. It then answers each description:
   braidpy lays the yarns, the page shows them at once, and the settle
   worker, `web/settle.js`, settles them: sideways (`web/tighten.js`), on a
   marudai (`web/marudai.js`), or by physics (`web/rope.js`, `web/form.js`).
@@ -41,24 +41,40 @@ static files, published with the documentation.
   reference: a test tightens the same braid both ways, and they agree to
   the last digits for the first tens of steps, and come out as tight and as
   clear as each other after hundreds.
-- The page is in modules, `web/app.js` loading them: the form (`fields.js`,
+- The front page, `web/index.html` with `web/home.js`, is a table of
+  braids, written by braidpy when the site is built
+  ({func}`~braidpy.web.braids`, `braids.json`), each with its picture
+  (`snapshots/`, below). It filters and sorts that table, and opens a braid
+  in the studio, `web/make.html`. An address naming a braid
+  (`studio/#source=…`), from before the front page, is sent on to the
+  studio.
+- The studio is in modules, `web/app.js` loading them: the form (`fields.js`,
   with `diagram.js`, `machine.js` and `editor.js` for drawing a word,
   loading a machine and editing a disk's moves), the braid asked for in the
   address (`spec.js`), the workers (`workers.js`), the braid's own defaults
   (`defaults.js`), the 3D view (`scene.js`) and its insets (`insets.js`), the
-  info card (`info.js`) and the view's controls (`controls.js`).
+  info card (`info.js`) and the view's controls (`controls.js`). The page's
+  words are put into the site's language as they are shown (`i18n.js`):
+  see [A site of your own](private_sites.md#in-another-language).
 - `web/build.py` assembles the site in `web/site/`. It copies the page, each
   of its files naming the others with the page's version, so a browser never
-  mixes old files with new ones, and three.js; builds the wheels, math_braid's from its source package,
-  since PyPI has no wheel of it; and writes `catalogue.json`, what the page
-  can make, and `topologies.json`, the catalogue of braids by topology, made
+  mixes old files with new ones, and three.js; builds the wheels; and writes `catalog.json`, what the page
+  can make — `catalogue.json` too, while sites built before it fetch it —
+  and `topologies.json`, the catalogue of braids by topology, made
   once here rather than in every browser.
-- `web/smoke_test.py` serves the site, opens it in a headless browser and
-  makes a braid of every kind there.
+- `web/smoke_test.py` serves the site, opens it in a headless browser,
+  checks the front page lists and filters its braids, and makes a braid of
+  every kind in the studio.
+- `web/snapshots.py` opens every braid the front page lists in the studio,
+  in a headless browser, and keeps the 3D view of it settled as a small
+  picture, `snapshots/<key>.webp`. A site built without a browser has no
+  pictures, and its front page shows none.
 - `.github/workflows/braid_studio.yml` builds and smoke-tests the site on
   every pull request touching braidpy or the page. On `develop`, it publishes
-  the site to `gh-pages` under `studio/`, beside the documentation; on the
-  branch it lists beside `develop`, under `studio-beta/`.
+  the site to `gh-pages` under `studio/`, beside the documentation. Run by
+  hand on any other branch (Actions, Braid Studio, Run workflow), it
+  publishes that branch under `studio-beta/`, replacing whatever beta was
+  there.
 
 ### Why not a JavaScript port, or a Python server?
 
@@ -81,7 +97,7 @@ tightening, the hot loop, ported to JavaScript and tested against braidpy.
 Drawing libraries — plotly, matplotlib, imageio — are tens of megabytes in a
 browser, and the page does not need them: it draws with three.js. braidpy
 therefore imports them only when something is drawn with them
-(`braidpy.utils.lazy_module`), and so with sympy and math_braid, seconds to
+(`braidpy.utils.lazy_module`), and so with sympy, seconds to
 import in a browser and needed only for Burau matrices and comparing braids;
 a test checks that building any braid loads none of them. The page loads
 numpy, plus networkx for the machines when one is first chosen.
@@ -95,7 +111,7 @@ another, braidpy's worker is started by the page's first lines, before
 three.js and the page's own modules load, and it fetches numpy, braidpy and
 the catalogue by topology while Python starts. The form does not wait for
 Python at all: what the page can make — every source, its braids and
-defaults — is written with the site (`catalogue.json`), so the menu and
+defaults — is written with the site (`catalog.json`), so the menu and
 fields are there at once, and a braid chosen before Python is ready is the
 one made when it is.
 
@@ -114,8 +130,11 @@ is shown settled at once, rather than after the minutes its tightening takes
 in the browser; a twist or another settling asked for is done in the page.
 Settled braids are kept in `web/.settled`, filed under a hash of the settling
 code and of the braid laid, so a build settles only what changed; without
-Node, braids are kept laid only. `python web/build.py --no-premade` leaves
-them all out, to try the page sooner.
+Node, braids are kept laid only. Laid and settled, they are kept gzipped, a
+tenth of their size or less, and the page unpacks each as it fetches it
+(`DecompressionStream`): as JSON they came to some 300 MB, more than GitHub
+Pages takes, and its deployments timed out. `python web/build.py
+--no-premade` leaves them all out, to try the page sooner.
 
 ## Trying it locally
 
@@ -128,6 +147,9 @@ python -m http.server -d web/site    # then open http://localhost:8000
 or `make studio` and `make studio-serve`. To use a Pyodide of your own rather than its CDN, add
 `?pyodide=<url of its full/ directory>` to the address.
 
+Under another name, crediting and linking otherwise, or in another
+language: `--profile`, see [A site of your own](private_sites.md).
+
 ## What comes next
 
 Done so far, beyond making and drawing a braid: watching it being made with
@@ -135,8 +157,9 @@ what made it seen from above, the braid turning with its disk; your own disk
 braids and sinnets, typed or clicked; the braid's closure, normal form and
 full twists; a cache of recent braids; STL, OBJ and JSON export.
 
-1. **Your own machines.** Gears and carriers placed by clicking, as a
-   disk's moves are now.
+1. **Your own machines, drawn.** A machine of your own is written as the
+   gears that mesh; drawing it, gears placed by clicking, would be the
+   next step.
 2. **More about the braid.** Its Alexander polynomial — once braidpy's is
    mended: it fails on negative crossings, and takes the determinant of the
    Burau matrix rather than of the identity less it — and its closure drawn

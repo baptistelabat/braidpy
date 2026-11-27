@@ -9,7 +9,8 @@ import pytest
 
 from braidpy import Braid
 from braidpy.braid_catalog import word_examples
-from braidpy.ring_program import RingProgram, Swap, from_braid, same_braid
+from braidpy.braid_pattern import alike
+from braidpy.ring_program import RingProgram, Swap, from_braid
 
 
 def _words():
@@ -21,7 +22,7 @@ def _words():
 
 
 @pytest.mark.parametrize("extra", [0, 3])
-def test_every_catalogue_word_comes_back_exactly(extra):
+def test_every_catalog_word_comes_back_exactly(extra):
     """Made into a ring program and read back off its disk moves, with or
     without empty places round the ring: the very braid, its crossings in
     another order only where they commute."""
@@ -75,8 +76,8 @@ def test_strands_carried_once_round_the_ring_twist_the_braid_once():
     program = RingProgram(places, (0, 1, 2, None, None), tuple(swaps))
     assert program.ends() == (0, 1, 2, None, None)
     full_twist = Braid((1, 2) * 3, 3)
-    assert same_braid(program.braid(), full_twist)
-    assert not same_braid(program.braid(), Braid((), 3))
+    assert alike(program.braid(), full_twist)
+    assert not alike(program.braid(), Braid((), 3))
 
 
 def test_strands_must_stay_clear_of_the_seam():
@@ -102,8 +103,8 @@ def test_a_program_that_cannot_be_made_is_refused(start, rows, wrong):
 def test_the_same_braid_is_the_same_topology():
     """Read from another strand, or written otherwise: the same braid."""
     plait = Braid((1, -2) * 3, 3)
-    assert same_braid(plait, Braid((-2, 1) * 3, 3))
-    assert not same_braid(plait, Braid((1, 2) * 3, 3))
+    assert alike(plait, Braid((-2, 1) * 3, 3))
+    assert not alike(plait, Braid((1, 2) * 3, 3))
 
 
 def test_a_swap_with_an_empty_place_crosses_nothing_whatever_its_sign():

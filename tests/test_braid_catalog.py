@@ -99,7 +99,7 @@ def test_full_twist_braid():
 
 
 def _drawn(make):
-    """A catalogued braid, drawn as it is made: a braid, and how many times
+    """A cataloged braid, drawn as it is made: a braid, and how many times
     to repeat it."""
     braid, repeat = make()
     assert isinstance(braid, Braid) and braid.generators
@@ -134,8 +134,9 @@ def test_flat4():
     Returns:
 
     """
-    b, _ = asymmetric_flat4()
-    assert b.is_periodic()
+    b, periods = asymmetric_flat4()
+    assert (b**periods).perm() == list(range(1, b.n_strands + 1))
+    assert not b.is_periodic()
 
 
 def test_abok_2934():
@@ -175,11 +176,11 @@ def test_double_flat3_does_not_pass_off_2971_as_its_parallel_twin():
         double_flat3(parallel=True, draw=False)
 
 
-def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
-    """Each catalogued braid, as the word it repeats, built without drawing:
+def test_the_catalog_s_braids_are_words_to_try(monkeypatch):
+    """Each cataloged braid, as the word it repeats, built without drawing:
     repeated as often as the example says, every strand comes home."""
     import braidpy.braid_catalog as catalog
-    from braidpy.braid_catalog import CATALOGUE, word_examples
+    from braidpy.braid_catalog import CATALOG, word_examples
     from braidpy.braidword import parse_word
     from braidpy.pure_braid import is_pure
 
@@ -188,12 +189,98 @@ def test_the_catalogue_s_braids_are_words_to_try(monkeypatch):
 
     monkeypatch.setattr(Braid, "draw", no_drawing)
     examples = word_examples()
-    assert len(examples) == len(CATALOGUE) + len(catalog.WORD_EXAMPLES)
-    for example, name in zip(examples, CATALOGUE):
-        braid, _ = getattr(catalog, name)(draw=False)
+    assert len(examples) == len(CATALOG) + len(catalog.WORD_EXAMPLES)
+    for example, name in zip(examples, CATALOG):
+        braid = CATALOG[name].make()
         unit = parse_word(example["word"])
         times, rest = divmod(len(braid.generators), len(unit))
         assert rest == 0 and tuple(unit * times) == tuple(braid.generators), name
         repeated = Braid(tuple(unit * example["repeat"]), example["n_strands"])
         assert is_pure(repeated), name
         assert len(repeated.generators) >= 12, name
+
+
+def test_the_rectangular_braid_of_14_runs_on_two_tracks_of_seven():
+    """Its two sets of seven places never mix, and they interleave in pairs.
+
+    The permutation of one repeat is two 7-cycles, so seven repeats bring
+    every strand home; labelling each place by its cycle and reading across
+    the face gives ABBAABBAABBAAB.  That is a property of the word, not of
+    any arrangement behind it.  As many crossings go one way as the other,
+    so nothing twists.
+    """
+    from braidpy.braid_catalog import rectangular14
+    from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
+
+    braid, home = rectangular14(draw=False)
+    assert braid.n_strands == 14
+    assert len(braid.generators) == 32
+    assert repeating_unit(list(braid.generators)) == list(braid.generators)
+    assert sum(1 if g > 0 else -1 for g in braid.generators) == 0
+    assert home == 7 == closing_repeats(braid, limit=None)
+    orbits = cycles(braid)
+    assert sorted(len(orbit) for orbit in orbits) == [7, 7]
+    track = {place: number for number, orbit in enumerate(orbits) for place in orbit}
+    assert [track[place] for place in range(14)] == [0, 1, 1, 0] * 3 + [0, 1]
+    assert is_pure(Braid(tuple(braid.generators) * home, 14))
+
+
+def test_the_rectangular_braid_of_20_is_not_a_wider_copy_of_the_14():
+    """Two sets of ten this time, and they interleave unevenly.
+
+    Forty-six crossings a repeat over all nineteen places, as many one way
+    as the other; ten repeats bring every strand home.  Labelling each place
+    by its cycle gives ABBABAABABBABAABABBA, in threes and pairs where the
+    braid of fourteen is in pairs throughout.
+    """
+    from braidpy.braid_catalog import rectangular20
+    from braidpy.pure_braid import closing_repeats, cycles, is_pure, repeating_unit
+
+    braid, home = rectangular20(draw=False)
+    assert braid.n_strands == 20
+    assert len(braid.generators) == 46
+    assert len({abs(g) for g in braid.generators}) == 19
+    assert repeating_unit(list(braid.generators)) == list(braid.generators)
+    assert sum(1 if g > 0 else -1 for g in braid.generators) == 0
+    assert home == 10 == closing_repeats(braid, limit=None)
+    orbits = cycles(braid)
+    assert sorted(len(orbit) for orbit in orbits) == [10, 10]
+    track = {place: number for number, orbit in enumerate(orbits) for place in orbit}
+    assert "".join("AB"[track[place]] for place in range(20)) == "ABBABAABABBABAABABBA"
+    assert is_pure(Braid(tuple(braid.generators) * home, 20))
+
+
+def test_ashley_s_plats_are_the_sinnets_the_book_says_are_alike():
+    """Made as the book's text says, the plats agree with what it says of
+    them: #2999 by the square method is the square sinnet already
+    cataloged, and #2965, #2967 and #2968 the flat sinnets; #3018, Smith's
+    method, is #3001 ("structurally it is identical"); #2989's method, six
+    strands equally divided, gives #3003, turned end for end."""
+    from braidpy.braid_catalog import ASHLEY_PLATS, CATALOG, AshleyPlat
+
+    def alike(a: Braid, b: Braid) -> bool:
+        return a.pattern() == b.pattern()
+
+    square = AshleyPlat("square", 4, 2, ("o1", "o1"), "square").braid()
+    assert alike(square, CATALOG["square4"].make())
+    for n, name in ((3, "flat3"), (5, "flat_sinnet5"), (7, "flat_sinnet7")):
+        lead = f"o{n // 2}"
+        flat = AshleyPlat("flat", n, n // 2, (lead, lead), first="right").braid()
+        assert alike(flat, CATALOG[name].make()), name
+    assert alike(ASHLEY_PLATS[3018].braid(), ASHLEY_PLATS[3001].braid())
+    equal = AshleyPlat("duplex", 6, 3, ("o2", "o3", "u2", "u3")).braid()
+    turned = Braid(tuple(reversed(equal.generators)), 6)
+    assert alike(turned, ASHLEY_PLATS[3003].braid())
+
+
+def test_a_plat_s_lead_passes_the_strands_it_can():
+    """A lead to the centre passes every sister; a lead round the back
+    comes forward among the opposing strands, not past them."""
+    from braidpy.braid_catalog import AshleyPlat
+
+    with pytest.raises(ValueError, match="sisters"):
+        AshleyPlat("flat", 5, 3, ("o1", "o2")).braid()
+    with pytest.raises(ValueError, match="opposing"):
+        AshleyPlat("square", 4, 2, ("o3", "o1"), "square").braid()
+    with pytest.raises(ValueError, match="over and under"):
+        AshleyPlat("flat", 3, 2, ("x1", "o1")).braid()

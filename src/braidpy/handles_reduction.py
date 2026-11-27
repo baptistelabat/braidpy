@@ -2,13 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: handles_reduction.py
-Description: Simplification of braid word to get unique braid representation
-Authors: Baptiste Labat
-Created: 2025-06-03
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""Dehornoy's handle reduction: a braid word simplified, its handles
+removed, towards a form that tells braids apart.
 """
 
 import dataclasses
@@ -41,6 +36,10 @@ class HandleReductionMode(str, Enum):
 
 @dataclasses.dataclass
 class HandleReductionResults:
+    """What handle reduction ends with: the braid word reduced, its sign in
+    Dehornoy's order (+1 positive, -1 negative, 0 trivial), and how far it
+    went."""
+
     generators: list[SignedCrossingIndex]
     sign: int
     handle_reduction_mode: HandleReductionMode

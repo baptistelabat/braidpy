@@ -31,8 +31,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import reduce
 from math import lcm
+from typing import Optional
 
 import networkx as nx
+
+from braidpy._renamed import renamed_attribute
 
 
 @dataclass(frozen=True)
@@ -43,11 +46,16 @@ class HornGear:
         name: Unique identifier for this gear.
         n_slots: Number of carrier slots (≥ 2).
         direction: +1 for counter-clockwise, -1 for clockwise rotation.
+        size: How large the gear is drawn, as the slot count of a gear that
+            size; its own slot count if None.  One half of a split gear
+            (:mod:`~braidpy.horn_gear.multiband`) has half the slots of the
+            gear it is part of, and is as large.
     """
 
     name: str
     n_slots: int
     direction: int = 1  # +1 CCW, -1 CW
+    size: int | None = None
 
     def __post_init__(self) -> None:
         if self.n_slots < 2:
@@ -82,12 +90,23 @@ class Connection:
     connection angle are computed.  A carrier sitting in the gear_a slot
     transfers to gear_b (and vice-versa).
 
+    A contact hands over at the end of each step, when every gear's slots
+    are back on slot angles.  One between two split gears, whose horns meet
+    there once a horn's pitch, as often as their parts in a step, hands
+    over at ``phase``, a fraction of the way through each step: the parts'
+    first pairing at 0, their second a step's ``1/k`` on, and so on, all at
+    the one contact (:mod:`~braidpy.horn_gear.described`).  A step then
+    holds ``k`` ticks, each a pitch of the split gears, and a hand-over at
+    each.
+
     Args:
         gear_a: Name of the first gear.
         gear_b: Name of the second gear.
-        slot_a0: Slot index of gear_a at the connection point at t=0.
-        slot_b0: Slot index of gear_b at the connection point at t=0.
+        slot_a0: Slot index of gear_a at the connection point at t=phase.
+        slot_b0: Slot index of gear_b at the connection point at t=phase.
         name: Optional label for this connection.
+        phase: How far through each step it hands over, from 0 (at the
+            step's end, as every contact of whole gears) to below 1.
     """
 
     gear_a: str
@@ -95,6 +114,7 @@ class Connection:
     slot_a0: int
     slot_b0: int
     name: str | None = None
+    phase: float = 0.0
 
     def slots_at(self, machine: BraidingMachine, time: int) -> tuple[int, int]:
         """Return the (slot_of_a, slot_of_b) currently at this connection.
@@ -163,6 +183,11 @@ class BraidingMachine:
     #: takes is whatever the programme dictates and need never come back.
     has_fixed_tracks: bool = True
 
+    #: The carriers it starts with when the caller does not say, as (gear,
+    #: slot) carrier after carrier (:meth:`with_loading`); None to work them
+    #: out (:meth:`default_carriers`).
+    _loading: tuple[tuple[str, int], ...] | None = None
+
     def __init__(
         self,
         gears: list[HornGear],
@@ -173,7 +198,45 @@ class BraidingMachine:
         self.connections: list[Connection] = connections
         self.axials: list[Axial] = list(axials)
         self.graph: nx.Graph = self._build_graph()
+        # Each gear's contacts handing over during a step, in their order
+        # (Connection.phase): asked for at every carrier's every step.
+        self._phased: dict[str, list[Connection]] = {}
+        for conn in sorted(connections, key=lambda c: c.phase):
+            if conn.phase:
+                self._phased.setdefault(conn.gear_a, []).append(conn)
+                self._phased.setdefault(conn.gear_b, []).append(conn)
         self._validate()
+
+    def with_axials(self, axials: Iterable[Axial]) -> BraidingMachine:
+        """The same machine braiding round these axials instead of its own."""
+        import copy
+
+        machine = copy.copy(self)
+        machine.axials = list(axials)
+        machine._validate()
+        return machine
+
+    def with_loading(self, loading: Iterable[tuple[str, int]]) -> BraidingMachine:
+        """The same machine, starting with these carriers when the caller
+        does not say otherwise (:meth:`default_carriers`).
+
+        Args:
+            loading: Each carrier's (gear, slot), carrier after carrier.
+
+        Raises:
+            ValueError: If a slot is not the machine's, or holds two carriers.
+        """
+        import copy
+
+        given = tuple((gear, int(slot)) for gear, slot in loading)
+        for gear, slot in given:
+            if gear not in self.gears or not 0 <= slot < self.gears[gear].n_slots:
+                raise ValueError(f"No slot {gear}:{slot} on this machine.")
+        if len(set(given)) < len(given):
+            raise ValueError("Two carriers on the same slot.")
+        machine = copy.copy(self)
+        machine._loading = given
+        return machine
 
     def _build_graph(self) -> nx.Graph:
         g = nx.Graph()
@@ -291,7 +354,25 @@ class BraidingMachine:
         """
         return None
 
-    def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
+    def preferred_gear_radii(self, scale: float = 1.0) -> dict[str, float] | None:
+        """The radii to draw gears at, where the machine knows better.
+
+        :func:`~braidpy.horn_gear.layout.gear_radii` draws a gear as large as
+        the square root of its horn count, which is a convention and no more:
+        horn gears do not roll on one another -- each is driven from below --
+        so a radius is free where a slot count is not.  A machine that has
+        solved its own geometry says so here, for the gears it has solved; the
+        rest keep the convention.
+
+        Returns:
+            Gear name -> radius, at this scale, or None to leave every gear
+            to the convention.
+        """
+        return None
+
+    def riding_position(
+        self, pos: tuple[str, int], time: int, frac: float = 0.0
+    ) -> tuple[str, int]:
         """Which (gear, slot) sweeps a carrier through the step at ``time``.
 
         This is what an animation must draw it on, and it is not always where
@@ -304,28 +385,83 @@ class BraidingMachine:
         the *receiving* gear does the sweeping: see
         :meth:`~braidpy.horn_gear.jacquard.JacquardLaceMachine.riding_position`.
 
+        A contact handing over during the step (:class:`Connection`'s
+        ``phase``) has the carrier drawn on the neighbour from then on.
+
         Args:
             pos: The carrier's (gear_name, slot_index) at ``time``.
             time: Step being taken.
+            frac: How far into the step.
 
         Returns:
-            The (gear_name, slot_index) to draw the carrier on for this step.
+            The (gear_name, slot_index) to draw the carrier on then.
         """
-        return pos
+        return self._handed_during(pos, time, frac)
+
+    def _handed_during(
+        self, pos: tuple[str, int], time: int, until: float
+    ) -> tuple[str, int]:
+        """Where a carrier is after the hand-overs of contacts handing over
+        during the step from ``time`` (:class:`Connection`'s ``phase``), up to
+        ``until`` of the way through it, in their order."""
+        gear_name, slot = pos
+        if not self._phased or gear_name not in self.turning_gears(time):
+            return pos
+        done = 0.0
+        while True:
+            # The next contact of the carrier's gear handing over, after the
+            # last and at or before ``until``, that its slot is at then.
+            for conn in self._phased.get(gear_name, ()):
+                if not done < conn.phase <= until:
+                    continue
+                sa, sb = conn.slots_at(self, time)
+                if conn.gear_a == gear_name and sa == slot:
+                    gear_name, slot = conn.gear_b, sb
+                elif conn.gear_b == gear_name and sb == slot:
+                    gear_name, slot = conn.gear_a, sa
+                else:
+                    continue
+                done = conn.phase
+                break
+            else:
+                return gear_name, slot
 
     def default_carriers(self) -> dict[int, tuple[str, int]]:
-        """How to thread this machine when the caller does not say.
+        """How to thread this machine when the caller does not say: as it
+        was given (:meth:`with_loading`), if it was.
 
-        A wired machine is loaded along its tracks, as far as it will go.  A
-        machine without tracks overrides this — see
+        Otherwise a wired machine is loaded along its tracks, as far as it
+        will go.  A machine without tracks overrides this — see
         :func:`~braidpy.horn_gear.jacquard.notch_positions`.
 
         Returns:
             Dict mapping carrier_id → (gear_name, slot).
         """
+        if self._loading is not None:
+            return dict(enumerate(self._loading))
         from .loading import load_carriers
 
         return load_carriers(self)
+
+    # Its name before braidpy's code took American spelling.
+    carrier_colours = renamed_attribute("carrier_colors")
+
+    def carrier_colors(
+        self, carriers: Optional[dict[int, tuple[str, int]]] = None
+    ) -> dict[int, str] | None:
+        """The colours a loading's carriers are drawn in, if the machine has
+        a way of its own to choose them.
+
+        Args:
+            carriers: Carrier number -> (gear, slot) it starts at; the
+                machine's own loading if None.
+
+        Returns:
+            Carrier number -> colour as ``#rrggbb``; None to leave it to
+            whoever draws them, which gives each carrier a colour of the
+            palette (:data:`braidpy.utils.PALETTE`) in turn.
+        """
+        return None
 
     def next_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
         """Where a carrier goes during the step from ``time`` to ``time + 1``.
@@ -346,13 +482,13 @@ class BraidingMachine:
         Returns:
             The (gear_name, slot_index) the carrier occupies afterwards.
         """
-        gear_name, slot = pos
-        if gear_name not in self.turning_gears(time):
+        if pos[0] not in self.turning_gears(time):
             return pos
-
-        # time + 1 because the gear turns first, then the transfer happens.
+        # Handed over by the contacts that do so during the step, then, the
+        # gears turned, by those that do so at its end (time + 1).
+        gear_name, slot = self._handed_during(pos, time, 1.0)
         neighbor = self.neighbor_at_slot(gear_name, slot, time + 1)
-        return neighbor if neighbor is not None else pos
+        return neighbor if neighbor is not None else (gear_name, slot)
 
     def slot_at_connection(self, gear_name: str, slot0_at_t0: int, time: int) -> int:
         """Which slot sits at the contact whose slot at t=0 was ``slot0_at_t0``.
@@ -425,6 +561,8 @@ class BraidingMachine:
             (neighbor_name, neighbor_slot) or None.
         """
         for conn in self.connections_of(gear_name):
+            if conn.phase:
+                continue  # handing over during a step, not at its end
             sa, sb = conn.slots_at(self, time)
             if conn.gear_a == gear_name and sa == slot:
                 return conn.gear_b, sb

@@ -1,0 +1,23 @@
+name: A machine, sinnet or pattern to add
+description: >
+  A braiding machine, an Ashley sinnet, a kumihimo pattern or another braid
+  braidpy does not know by name yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What it is
+      description: >
+        Its name, where it is written down (a book and number, a pattern, a
+        machine's drawing), and its braid word if you know it.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: How it is made
+      description: >
+        On which machine or by which hand, and any picture of the result.
+    validations:
+      required: false

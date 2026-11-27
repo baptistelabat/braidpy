@@ -39,14 +39,48 @@ const fill = new THREE.DirectionalLight(0xffffff, 0.5);
 fill.position.set(-6, 4, -2);
 scene.add(fill);
 
-function stageColour() {
+// The slider goes through the making a sub-step at a time: so many
+// positions a step of whatever made the braid — a machine's step, a disk's
+// move — and at least so many in all, for a braid made in a step or two.
+export const SUBSTEPS = 8;
+const LEAST_POSITIONS = 1000;
+// What a step of it is called, by what made it (its timeline's kind).
+const STEP_NAMES = { machine: "Step", disk: "Move" };
+
+// Where the slider is, as a step and a sub-step of whatever made the braid.
+function showMade(fraction) {
+  const name = STEP_NAMES[braid.timeline?.kind];
+  const [first, last] = braid.span;
+  const at = first + fraction * (last - first);
+  let whole = Math.floor(at);
+  let sub = Math.round((at - whole) * SUBSTEPS);
+  if (sub === SUBSTEPS) [whole, sub] = [whole + 1, 0];
+  $("made-at").textContent = !name ? "" : sub ? `${name} ${whole} · ${sub}/${SUBSTEPS}` : `${name} ${whole}`;
+}
+
+// Drawn only while something may have changed: for a while after anything
+// is done to the view (wake), and while it spins or grows (controls.js).
+// Idle, a braid of many yarns costs nothing to show, and the page stays
+// quick to answer a click.
+const AWAKE_MS = 1500;
+let awakeUntil = 0;
+export function wake() {
+  awakeUntil = performance.now() + AWAKE_MS;
+}
+export function awake(now) {
+  return now < awakeUntil;
+}
+controls.addEventListener("change", wake);
+
+function stageColor() {
   return getComputedStyle(document.documentElement)
     .getPropertyValue("--stage")
     .trim();
 }
-scene.background = new THREE.Color(stageColour());
+scene.background = new THREE.Color(stageColor());
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-  scene.background = new THREE.Color(stageColour());
+  scene.background = new THREE.Color(stageColor());
+  wake();
 });
 
 function resize() {
@@ -57,6 +91,7 @@ function resize() {
   renderer.domElement.style.height = height + "px";
   camera.aspect = width / height;
   clearOfCard();
+  wake();
 }
 new ResizeObserver(() => {
   resize();
@@ -85,7 +120,7 @@ new ResizeObserver(clearOfCard).observe($("about"));
 
 function currentTime() {
   const [first, last] = braid.span;
-  return first + (Number($("made").value) / 1000) * (last - first);
+  return first + (Number($("made").value) / Number($("made").max)) * (last - first);
 }
 resize();
 
@@ -95,7 +130,7 @@ export let braid = null;
 // How far round the vertical the starting view is turned, per source, so
 // the braid's seam — where its numbering round the ring closes, and no
 // strand crosses — is away from the viewer.
-const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2 };
+const VIEW_TURN = { word: Math.PI, kumihimo: Math.PI, sinnet: Math.PI / 2, shape: Math.PI / 2 };
 
 // Where a disk's numbering closes — between its first slot (or space) and
 // its last — as an angle seen from above, in the top view's frame.
@@ -152,6 +187,7 @@ function dispose(object) {
 export let shownLaid = null;
 
 export function show(result, seconds, keepView = false) {
+  wake();
   // One place decides what colour a strand is.
   paint(result);
   shownLaid = seconds === null ? pending : null;
@@ -270,13 +306,16 @@ export function show(result, seconds, keepView = false) {
   const seam = seamOf(timeline);
   braid.topTurn = seam === null ? 0 : Math.PI / 2 - seam;
   braid.program = result.disk;
-  braid.aligned = seam !== null && Boolean(result.disk) && result.settled !== "sideways";
+  const sideways = result.settled === "sideways" || result.settled === "endless";
+  braid.aligned = seam !== null && Boolean(result.disk) && !sideways;
   if (braid.aligned) turner.rotation.z = alignment();
   braid.box = new THREE.Box3().setFromObject(turner);
   showTubes($("tubes").checked);
   $("topview").hidden = !timeline || !$("showtop").checked;
   $("section").hidden = !$("showsection").checked;
   drawSection(result);
+  // A sub-step at a time through whatever made it.
+  $("made").max = String(Math.max(LEAST_POSITIONS, Math.ceil((span[1] - span[0]) * SUBSTEPS)));
   $("made").value = $("made").max;
   made(Number($("made").max));
   if (!keepView) fit();
@@ -304,7 +343,8 @@ function mirrorMesh({ z, radius, hole }) {
 // A moment in the making on a marudai, in place of the braid as made:
 // every yarn whole, from the start of the braid out over the mirror to its
 // bobbin, one tube each, and the mirror.
-export function showFrame(frame, disk, colours) {
+export function showFrame(frame, disk, colors) {
+  wake();
   if (!braid) return;
   clearFrame();
   const shown = new THREE.Group();
@@ -319,11 +359,11 @@ export function showFrame(frame, disk, colours) {
       tubes
         ? new THREE.Mesh(
             new THREE.TubeGeometry(curve, segments, braid.radius, 8, false),
-            new THREE.MeshStandardMaterial({ color: colours[i], roughness: 0.55, metalness: 0.05 }),
+            new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.55, metalness: 0.05 }),
           )
         : new THREE.Line(
             new THREE.BufferGeometry().setFromPoints(curve.getSpacedPoints(segments)),
-            new THREE.LineBasicMaterial({ color: colours[i] }),
+            new THREE.LineBasicMaterial({ color: colors[i] }),
           ),
     );
   });
@@ -337,6 +377,7 @@ export function showFrame(frame, disk, colours) {
 }
 
 function clearFrame() {
+  wake();
   if (!braid?.frame) return;
   braid.group.remove(braid.frame);
   dispose(braid.frame);
@@ -344,6 +385,7 @@ function clearFrame() {
 }
 
 export function showTubes(tubes) {
+  wake();
   if (!braid) return;
   for (const yarn of [...braid.yarns, ...braid.tails]) {
     yarn.tube.visible = tubes;
@@ -358,7 +400,9 @@ export function showTubes(tubes) {
 // it, at that same instant.
 export function made(value) {
   if (!braid) return;
-  const fraction = value / 1000;
+  wake();
+  const fraction = value / Number($("made").max);
+  showMade(fraction);
   const [first, last] = braid.span;
   // Made on a marudai: the making itself, move by move, until it is made.
   const frames = braid.frames;
@@ -449,19 +493,27 @@ function countUpTo(values, limit) {
   return low;
 }
 
-export function fit() {
+export function fit(close = false, frame = null) {
+  wake();
   if (!braid) return;
-  const box = braid.box;
-  const centre = box.getCenter(new THREE.Vector3());
+  const box = frame ?? braid.box;
+  const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const height = size.z;
   const across = Math.max(size.x, size.y);
   const fov = THREE.MathUtils.degToRad(camera.fov);
   const tall = height / 2 / Math.tan(fov / 2);
-  // Wide enough for what the card leaves free.
-  const free = Math.max(0.5, 1 - Math.min(cardCover(), viewer.clientWidth / 2) / viewer.clientWidth);
+  // Wide enough for what the card leaves free; close, for a picture, the
+  // whole view.
+  const free = close ? 1 : Math.max(0.5, 1 - Math.min(cardCover(), viewer.clientWidth / 2) / viewer.clientWidth);
   const wide = across / 2 / Math.tan(fov / 2) / Math.max(camera.aspect * free, 0.3);
-  const distance = 1.25 * Math.max(tall, wide, across * 2);
+  // Close, the whole braid in view from any side: its bounding sphere,
+  // within the narrower of the view's two angles.
+  const sphere = box.getBoundingSphere(new THREE.Sphere());
+  const narrowest = Math.min(fov, 2 * Math.atan(Math.tan(fov / 2) * camera.aspect));
+  const distance = close
+    ? (PORTRAIT_MARGIN * sphere.radius) / Math.sin(narrowest / 2)
+    : 1.25 * Math.max(tall, wide, across * 2);
   // Seen from the side the strands' seam is not: a disk braid made on a
   // marudai from the top view's bottom, as it is turned; others turned
   // about the vertical as each kind of braid needs it.
@@ -470,12 +522,50 @@ export function fit() {
     : new THREE.Vector3(1, -0.45, 0.25)
         .normalize()
         .applyAxisAngle(new THREE.Vector3(0, 0, 1), VIEW_TURN[braid.source] ?? 0);
-  camera.position.copy(centre).addScaledVector(direction, distance);
+  camera.position.copy(center).addScaledVector(direction, distance);
   camera.near = distance / 100;
   camera.far = distance * 100;
   camera.updateProjectionMatrix();
-  controls.target.copy(centre);
+  controls.target.copy(center);
   controls.update();
+}
+
+// How much room a picture leaves round the braid: a twentieth.
+const PORTRAIT_MARGIN = 1.05;
+
+// The braid alone, framed close, for its picture on the front page
+// (web/snapshots.py): without the yarns going on from the fell to their
+// bobbins, nor the marudai's mirror.
+export function portrait() {
+  if (!lastResult) return;
+  const { marudai, ...alone } = lastResult;
+  void marudai;
+  show(alone, null, true);
+  fit(true, middle());
+}
+
+// How much of the braid's length a picture frames, about its middle: its
+// ends are not yet the braid it settles into — at the fell it is still
+// being made, and at the oldest end it is drawn in to where it was held.
+const PORTRAIT_MIDDLE = 0.6;
+
+// What of the braid lies in the middle of its length, for a picture.
+function middle() {
+  const whole = braid.box;
+  const cut = ((1 - PORTRAIT_MIDDLE) / 2) * (whole.max.z - whole.min.z);
+  const low = whole.min.z + cut;
+  const high = whole.max.z - cut;
+  const box = new THREE.Box3();
+  const point = new THREE.Vector3();
+  for (const yarn of braid.yarns) {
+    yarn.tube.updateMatrixWorld(true);
+    const at = yarn.tube.geometry.attributes.position;
+    for (let i = 0; i < at.count; i++) {
+      point.fromBufferAttribute(at, i).applyMatrix4(yarn.tube.matrixWorld);
+      if (point.z >= low && point.z <= high) box.expandByPoint(point);
+    }
+  }
+  return box.isEmpty() ? whole : box;
 }
 
 // Choosing a colour does not remake the braid: the strands are the ones that

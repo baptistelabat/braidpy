@@ -21,11 +21,16 @@ mistake before:
 | A braid as a punchcard for the Jacquard lace machine | `making.lace` |
 | A braid as moves on a kumihimo disk | `making.disk` |
 | A braid as a sinnet on Ashley's stand, found by searching | `making.ashley` |
+| A sinnet from the shape it takes, as Ashley draws it | `making.ashley.sinnet_from_shape` |
+| A shape as cells on a grid (square, diagonal, triangular), its outline | `making.ashley.grid_shape`, `grid_outline` |
+| From a sinnet's moves back to its shape | `making.ashley.move_groups`, `shapes_from_moves` |
+| Which of the book's sinnets a shape draws | `solid_sinnets_catalog.DRAWN` |
 | A word's repeating unit | `pure_braid.repeating_unit` |
 | Yarn physics, a marudai, in Python | `rope`, `form`, `marudai` (ports of `web/*.js`) |
 | Colours, Plotly play/pause controls | `utils.PALETTE`, `utils.play_controls` |
-| A catalogue of braids | `catalogue.Entry`, each catalogue's `CATALOGUE` |
+| A catalogue of braids | `catalog.Entry`, each catalogue's `CATALOG` |
 | Defaults and limits for the web page | `web/_settings.py` |
+| The page in another language: a text by its English | `web/i18n.js`, `web/locales/` |
 
 ## Rules
 
@@ -43,10 +48,34 @@ mistake before:
 - **Documentation links, it does not restate.** If a method is described on
   one page, other pages link to it and say only what differs.
 - **Data apart from code.** Defaults, limits, titles and catalogues are data
-  (`web/_settings.py`, the `CATALOGUE`s), not literals inside functions.
+  (`web/_settings.py`, the `CATALOG`s), not literals inside functions.
+- **No magic numbers.** A number that means something (a size, a margin, a
+  factor) gets a name and a comment saying what it is, once, beside its
+  kin (`REACH`, `THICK`, `CLEAR` in `marudai`), and is written as that
+  name, or derived from it, wherever it is used: `CLEAR * THICK`, never
+  `2.2`.
+- **A unit in the name, unless SI.** A quantity in another unit carries it
+  as a suffix: `bobbin_diameter_mm`, `mm_per_unit`. One in the drawing's own
+  units, or in whatever unit it is given, says so in its docstring.
+- **`Optional[X]` for an optional argument, `X | None` for the rest.** A
+  parameter whose default is `None`, meaning "not given", is `Optional[X]`.
+  A parameter that takes `None` as a value of its own (with no default, or
+  another default, as `limit: int | None = 10000`, None for no limit), a
+  return, an attribute and an element type are `X | None`.
 - **Refactoring keeps results.** Check outputs are the same before and after
   (for `braidpy.web`, the same JSON for every build); say so in the PR, and
   say what changes when something does.
+- **The page's words are English, their French beside them.** A sentence
+  added to or changed on Braid Studio, in Python or in JavaScript, gets
+  its line in `web/locales/fr.toml` (a pattern for one with numbers or
+  names in it); `tests/test_i18n_js.py` checks the pages and catalogues.
+- **American spelling for names, prose as you like.** Names braidpy
+  defines, in Python and JavaScript, say `color`, `center`, `neighbor`,
+  `catalog`, as Python and its libraries do — no exceptions. Comments,
+  docstrings and pages may be British. Strings and JSON keys are data and
+  keep their spelling. A name renamed keeps its old one working, warning
+  (`braidpy._renamed`), for the release that renames it and one more, and
+  goes at the next; `tests/test_spelling.py` checks the spelling.
 - **Commit only what you mean to.** `git add` named paths, never a whole
   directory: `web/site/` and `web/node_modules/` are build output.
 

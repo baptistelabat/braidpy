@@ -2,13 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: symmetric_braid.py
-Description: Closed-form shapes for braids symmetric enough to have one
-Authors: Baptiste Labat
-Created: 2026-09-20
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""Closed-form shapes for braids symmetric enough to have one.
 
 No formula takes a braid word to the shape its strands settle into — see
 ``docs/source/why_no_closed_form.md``.  But some braids are regular

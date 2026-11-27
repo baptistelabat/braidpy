@@ -22,15 +22,62 @@ similar(mine, count=3)
 # [Match(name='flat3', distance=0.0, same_fingerprint=True), ...]
 ```
 
-## Why not decide it exactly
+## Four kinds of "the same"
+
+"The same braid" can mean four things, each coarser than a word, and
+braidpy gives each its own type, its own `==` and its own hash,
+so that a set or a dict of them keeps one of each:
+
+| Kind | The same when | Told |
+|---|---|---|
+| `BraidWord` (`braid.word()`) | the same crossings in the same order | exactly |
+| `Braid` | the same braid, its ends held where they are | exactly |
+| `BraidPattern` (`braid.pattern()`) | the same braid made over and over: read from another start, or a power of it | proven where it can be, else by fingerprint |
+| `ClosedBraid` (`braid.closed()`) | the same knot or link once each strand's end is tied back to its start, however many strands | by invariants |
+
+A pattern and a closed braid are both coarser than a braid, but neither is
+coarser than the other: the plait and the plait twice are one pattern and
+close into two knots (a plain loop, the figure-eight knot); σ₁ on two strands
+and a single strand close into one loop and are two patterns. Grommets and
+Turk's heads are closed braids.
+
+```python
+from braidpy import Braid
+
+a, b = Braid([1, 2], 3), Braid([2, 1], 3)
+a == b  # False: two braids
+a.pattern() == b.pattern()  # True: one read from the other's second crossing
+Braid([1], 2).closed() == Braid([], 1).closed()  # True: one loop
+```
+
+## Deciding it exactly
 
 "The same braid, read from another starting point" is conjugacy in the braid
-group, and it can be decided exactly, by summit sets (Elrifai and Morton). A
-first implementation of that answered in an instant on 4 strands, took
-68 seconds on 5 and over 2 minutes on 6 and 8: it conjugates by every
-permutation braid, n! of them. Sinnets and kumihimo braids have 8 to 17
-strands. And to suggest braids *like* yours, a yes or no is not enough: a
-distance is wanted.
+group, and {mod}`braidpy.conjugacy` decides it for patterns:
+{func}`~braidpy.conjugacy.same_pattern` (once called `same_braid`, a name
+kept) says yes or no, a proof, where fingerprints only ever prove braids
+different.
+
+```python
+from braidpy.braid import Braid
+from braidpy.conjugacy import same_pattern
+
+same_pattern(Braid([1, -2], 3), Braid([-2, 1], 3))  # True
+```
+
+It goes by summit sets (Elrifai and Morton https://nsalter.science.nd.edu/teaching/braidsspring2024/elrifaimorton.pdf): each braid is cycled to its
+*super summit set*, the conjugates as short as any in Garside's normal form,
+and that finite set is searched whole; two braids are conjugate exactly when
+their sets meet. A first implementation of that conjugated by every
+permutation braid, n! of them, and took minutes on 6 and 8 strands. This one
+follows only the least permutation braids that keep a braid in the set, at
+most one for each crossing σᵢ (Franco and González-Meneses): edo yatsu's
+set, 472 braids on 8 strands, is found in about 3 seconds. The set can still
+grow exponentially with the strands, so the search stops at a limit and
+says so ({class}`~braidpy.conjugacy.SuperSummitSetTooLarge`).
+
+A yes or no does not suggest braids *like* yours: for that, a distance is
+wanted, and the fingerprint gives one.
 
 ## The fingerprint
 
@@ -45,6 +92,7 @@ braid, whose closure makes a loop of each strand.
 | writhe | the unit's crossings counted with their signs | a braid from its mirror image |
 | linking numbers | how many times each two strands wind round each other in a repeat, sorted | how the strands are interlaced |
 | Alexander polynomial | of the home braid's closure, sampled on the unit circle | what linking numbers miss |
+| Burau polynomial | the characteristic polynomial of the home braid's Burau matrix, sampled on the unit circle | what the Alexander polynomial misses where it vanishes |
 
 None of them changes when the braid is read from another starting point, and
 none but the writhe when its strands are numbered from the other side. The
@@ -52,8 +100,8 @@ distance adds a share from 0 to 1 for each, 0 for the same fingerprint.
 
 ## Why the Alexander polynomial alone is not enough
 
-The Alexander polynomial Δ(t) of a braid's closure is the strongest of the
-five, and it is computed from the word through the Burau matrix
+The Alexander polynomial Δ(t) of a braid's closure is one of the strongest
+of the six, and it is computed from the word through the Burau matrix
 ({func}`braidpy.properties.alexander_polynomial`). But on its own:
 
 | Braid | Δ(t) |
@@ -77,6 +125,28 @@ five, and it is computed from the word through the Burau matrix
 Linking numbers alone are not enough either: the plait and three strands
 hanging straight both have all their linking numbers 0, and the Alexander
 polynomial tells them apart.
+
+## The Burau polynomial, where the Alexander polynomial vanishes
+
+The Alexander polynomial of a closed braid is det(1 − B), B the braid's
+Burau matrix, up to a factor: the characteristic polynomial det(x − B) of
+the matrix at x = 1. Where B has the eigenvalue 1, it is 0, as for many
+braids whose closure makes several loops, and it tells nothing apart. The
+whole characteristic polynomial does not vanish; like the Alexander
+polynomial, it does not change when the braid is read from another starting
+point. Sampled at x = 2, on the same circle
+({func}`braidpy.properties.burau_polynomial_on_circle`), it tells apart
+braids that agree on everything else:
+
+| Braids | Same loops, writhe, linking numbers | Alexander | Burau polynomial |
+| --- | --- | --- | --- |
+| edo yatsu on a kumihimo disk, ABOK #3070 | yes | 0, both | differ |
+| the flat braid of 6, ABOK #3021 | yes | 0, both | differ |
+
+Before the Burau polynomial was in the fingerprint, these were catalogued as
+the same braids. It is computed from the eigenvalues of the unit's Burau
+matrix, raised to the number of repeats, so that a home braid of thousands
+of crossings overflows nothing.
 
 ## The Alexander polynomial, sampled
 
@@ -112,8 +182,9 @@ with each the ways to make it.
 
 A disk braid that creeps round the disk from cycle to cycle, as kongo gumi
 does, is fingerprinted over as many cycles as bring every strand home, not
-its first. A machine braiding round cores has no braid word of its strands
-alone, and is left out. Making every braid takes some ten seconds, so the
+its first. A machine braiding round cores counts each core as a strand of
+its word, one standing still, which the others pass in front of or behind.
+Making every braid takes some ten seconds, so the
 catalogue is built once, when first asked for.
 
 Braid Studio shows it beside every braid it makes: **Also made as**, the
@@ -126,7 +197,7 @@ description, and any other by the fingerprint of the braid made.
 ## Limits
 
 - **Equal fingerprints do not prove two braids the same.** Different ones
-  prove them different.
+  prove them different; {func}`~braidpy.conjugacy.same_pattern` proves either.
 - **A braid seen from behind is the same braid.** The Dutch braid,
   σ₁⁻¹σ₂, is the plait σ₁σ₂⁻¹ with its strands numbered from the other side,
   and has its fingerprint.
@@ -145,3 +216,9 @@ description, and any other by the fingerprint of the braid made.
   closed braids, and Markov's theorem.
 - E. A. Elrifai and H. R. Morton, "Algorithms for positive braids", *Quart. J.
   Math.* 45, 479 (1994): conjugacy, decided exactly.
+- N. Franco and J. González-Meneses, "Conjugacy problem for braid groups and
+  Garside groups", *J. Algebra* 266, 112 (2003): the super summit set found
+  through minimal simple elements.
+- J. González-Meneses, "The nth root of a braid is unique up to conjugacy",
+  *Algebr. Geom. Topol.* 3, 1103 (2003): why braids repeated as often can be
+  compared by what is repeated.

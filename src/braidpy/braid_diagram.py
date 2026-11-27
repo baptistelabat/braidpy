@@ -2,13 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: braid_diagram.py
-Description: The 2D braid diagram, drawn by braidpy rather than by a library
-Authors: Baptiste Labat
-Created: 2025-06-06
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""The 2D braid diagram, drawn by braidpy rather than by a library.
 
 braidpy used to hand this picture to `braid-visualiser`, which drew a
 perfectly good diagram in **its own colours** — so a strand was one colour in
@@ -33,7 +27,7 @@ front, with the strand passing behind interrupted where the two meet.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
@@ -164,10 +158,10 @@ def draw_diagram(
     gap: float = 0.45,
     amplitude: float = 0.28,
     profile: Profile = SMOOTHSTEP,
-    color: str | None = None,
-    title: str | None = None,
-    save: str | None = None,
-    ax: plt.Axes | None = None,
+    color: Optional[str] = None,
+    title: Optional[str] = None,
+    save: Optional[str] = None,
+    ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """Draw a braid as a diagram, running down the page.
 

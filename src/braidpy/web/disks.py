@@ -12,33 +12,54 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Hashable, Sequence
+from typing import cast
 
 import numpy as np
 
 from braidpy.web._info import _disk_info, _disk_unit
-from braidpy.web._result import _hues, _result, _tightened, _timeline
+from braidpy.web._result import (
+    _hues,
+    _place_cores,
+    _result,
+    _tightened,
+    _timeline,
+    _with_core,
+)
 from braidpy.web._settings import (
+    CORE_COLOR,
+    DISK_CORE,
+    DISK_CORE_KINDS,
     DISK_ITERATIONS,
     DISK_YARN,
     OWN,
     Kumihimo,
     Mobidai,
+    Shape,
     Sinnet,
 )
 from braidpy.web._spec import _moves_text, _numbers, defaults, parse_moves
-from braidpy.web._types import DiskProgram, Entry, Result, Source, Spec
+from braidpy.web._types import (
+    DiskProgram,
+    DrawnLine,
+    Entry,
+    Example,
+    Result,
+    ShapeDrawing,
+    Source,
+    Spec,
+)
 
 
 def _sinnets():
-    from braidpy.solid_sinnets_catalog import CATALOGUE
+    from braidpy.solid_sinnets_catalog import CATALOG
 
-    return CATALOGUE
+    return CATALOG
 
 
 def _mobidais():
-    from braidpy.mobidai_catalog import CATALOGUE
+    from braidpy.mobidai_catalog import CATALOG
 
-    return CATALOGUE
+    return CATALOG
 
 
 def _disk_program(
@@ -60,6 +81,18 @@ def _disk_program(
     }
 
 
+# A disk braid's core, by name among its strands.
+CORE_NAME = "core"
+
+
+def _disk_core(spec: Spec) -> str:
+    """The core asked for down the disk's middle: none, yarn or rigid."""
+    core = DISK_CORE.read(spec)
+    if core not in DISK_CORE_KINDS:
+        raise ValueError(f"A disk's core is one of {', '.join(DISK_CORE_KINDS)}.")
+    return core
+
+
 def _disk_in_step(
     start,
     steps,
@@ -67,15 +100,20 @@ def _disk_in_step(
     diameter: float,
     iterations: int,
     clockwise: bool,
+    core: str = "none",
 ):
     """A disk's braid, laid round a ring with its rows made in the order
     the disk makes their crossings — as the side view of
     :class:`~braidpy.disk_animation.BraidGrowth` does — so the page can show
     the disk and the braid in step.
 
+    A core goes down the disk's middle, as kumihimo braids round one: it
+    stands on the ring's axis, the yarns drawn in round it, of yarn or
+    rigid as a machine's core is (:func:`braidpy.web.machines._cored`).
+
     Returns:
         The braid, and its clock: the disk's time at each crossing, and the
-        braid's then.
+        braid's then; and the ring, without the core.
     """
     from braidpy.take_off import (
         crossing_rows,
@@ -89,13 +127,41 @@ def _disk_in_step(
         raise ValueError("These moves cross no strands: there is no braid.")
     rows = crossing_rows(order, crossings, in_turn=True)
     ring = ring_trajectories(order, crossings, diameter, clockwise=clockwise, rows=rows)
-    paths = lay_yarns(ring, take_off=1.5 * diameter, yarn_diameter=diameter)
-    paths = _tightened(paths, diameter, iterations)
+    cores = [] if core == "none" else [CORE_NAME]
+    laid = _with_core(ring, CORE_NAME) if cores else ring
+    paths = lay_yarns(laid, take_off=1.5 * diameter, yarn_diameter=diameter)
+    paths = _place_cores(paths, cores)
+    paths = _tightened(
+        paths, diameter, iterations, rigid=cores if core == "rigid" else []
+    )
     clock = {
         "source": [0.0, *map(float, made_at), float(len(steps))],
         "braid": [0.0, *(r + 0.5 for r in rows), float(rows[-1] + 1)],
     }
     return paths, clock, ring
+
+
+def _cored(result: Result, core: str, keys: Sequence[Hashable], program) -> Result:
+    """A disk braid's result with the moves for the page's marudai, round
+    its core if it has one: the core grey, named, after the yarns, and the
+    note saying so."""
+    result["disk"] = program
+    if core == "none":
+        return result
+    program["core"] = core
+    for strand, key in zip(result["strands"], keys):
+        if key == CORE_NAME:
+            strand["name"] = "Core"
+            strand["colour"] = CORE_COLOR
+    kind = "rigid, it stays straight" if core == "rigid" else "of yarn, it gives way"
+    result["notes"] = [
+        *result["notes"],
+        (
+            f"Braided round a core down the disk's middle, drawn in grey: {kind}. "
+            "The word is the yarns' alone."
+        ),
+    ]
+    return result
 
 
 def _kumihimo_cycles(pattern: str, n_strands: int):
@@ -112,6 +178,7 @@ def _from_kumihimo(spec: Spec) -> Result:
     n_strands = Kumihimo.n_strands.read(spec)
     repeat = Kumihimo.repeat.read(spec)
     diameter = DISK_YARN.read(spec)
+    core = _disk_core(spec)
     n_slots, start, steps = kumihimo_steps(pattern * repeat, n_strands)
     paths, clock, ring = _disk_in_step(
         start,
@@ -120,13 +187,16 @@ def _from_kumihimo(spec: Spec) -> Result:
         diameter,
         DISK_ITERATIONS.read(spec),
         clockwise=False,
+        core=core,
     )
     disk = kumihimo_trajectories(pattern * repeat, n_strands)
+    if core != "none":
+        disk = _with_core(disk, CORE_NAME)
     result = _result(
         f"Kumihimo {pattern} × {repeat}, {n_strands} strands",
         paths,
         diameter,
-        colours=_hues(n_strands),
+        colors=_hues(n_strands),
         info=_disk_unit(
             _disk_info(start, steps, n_slots, clockwise=False),
             lambda k: _kumihimo_cycles(pattern * k, n_strands),
@@ -135,13 +205,17 @@ def _from_kumihimo(spec: Spec) -> Result:
         ),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
-    result["disk"] = _disk_program(start, steps, n_slots, False, list(paths.points))
+    keys = list(paths.points)
+    yarns = [k for k in keys if k != CORE_NAME]
+    result = _cored(
+        result, core, keys, _disk_program(start, steps, n_slots, False, yarns)
+    )
     result["info"]["made"] = repeat
     return result
 
 
 def _from_mobidai(spec: Spec) -> Result:
-    from braidpy.mobidai_catalog import CataloguedMobidai
+    from braidpy.mobidai_catalog import CatalogedMobidai
     from braidpy.take_off import mobidai_steps, mobidai_trajectories
 
     mobidais = _mobidais()
@@ -156,7 +230,7 @@ def _from_mobidai(spec: Spec) -> Result:
         moves = parse_moves(str(spec.get("moves", "")))
         if not all(1 <= p <= n_slots for move in moves for p in move):
             raise ValueError(f"Moves are between slots 1 to {n_slots}.")
-        entry = CataloguedMobidai(
+        entry = CatalogedMobidai(
             name="your own disk braid",
             n_slots=n_slots,
             initial_slots=tuple(zip(slots, _hues(len(slots)))),
@@ -171,6 +245,7 @@ def _from_mobidai(spec: Spec) -> Result:
     config = entry.to_config()
     cycles = Mobidai.cycles.read(spec)
     diameter = DISK_YARN.read(spec)
+    core = _disk_core(spec)
     start, steps = mobidai_steps(config, cycles)
     clockwise = getattr(config, "is_clockwise", True)
     paths, clock, ring = _disk_in_step(
@@ -180,15 +255,19 @@ def _from_mobidai(spec: Spec) -> Result:
         diameter,
         DISK_ITERATIONS.read(spec),
         clockwise=clockwise,
+        core=core,
     )
     # Coloured by strand, in the order the braid gives them.
-    colour_of = {k: colour for k, (_, colour) in zip(start, entry.initial_slots)}
+    color_of = {k: color for k, (_, color) in zip(start, entry.initial_slots)}
+    color_of[CORE_NAME] = CORE_COLOR
     disk = mobidai_trajectories(config, n_cycles=cycles, slot_offset=0.5)
+    if core != "none":
+        disk = _with_core(disk, CORE_NAME)
     result = _result(
         f"{entry.name[0].upper()}{entry.name[1:]}, {cycles} cycles",
         paths,
         diameter,
-        colours=[colour_of[k] for k in paths.points],
+        colors=[color_of[k] for k in paths.points],
         info=_disk_unit(
             _disk_info(start, steps, config.n_slots, clockwise),
             lambda k: (*mobidai_steps(config, k), config.n_slots),
@@ -196,16 +275,211 @@ def _from_mobidai(spec: Spec) -> Result:
         ),
         timeline=_timeline(disk, list(paths.points), "disk", clock, ring),
     )
-    result["disk"] = _disk_program(
-        start, steps, config.n_slots, clockwise, list(paths.points)
+    keys = list(paths.points)
+    yarns = [k for k in keys if k != CORE_NAME]
+    result = _cored(
+        result,
+        core,
+        keys,
+        _disk_program(start, steps, config.n_slots, clockwise, yarns),
     )
     result["info"]["made"] = cycles
     return result
 
 
+def from_b3d(text: str) -> Spec:
+    """A design saved by braid3d, as your own mobidai braid's description
+    (:func:`~braidpy.b3d.mobidai_from_b3d`): its disk, where each yarn
+    starts, in its colour, a cycle's moves and how many cycles.
+
+    Args:
+        text: The ``.b3d`` file's text.
+
+    Returns:
+        The description, for the page to fill its fields with and make.
+
+    Raises:
+        ValueError: If the file holds no design, or one not read here.
+    """
+    from braidpy.b3d import mobidai_from_b3d
+
+    entry, cycles = mobidai_from_b3d(text, most_slots=Mobidai.n_slots.high)
+    if cycles > Mobidai.cycles.high:
+        raise ValueError(
+            f"It repeats {cycles} times: a mobidai braid is made at most "
+            f"{Mobidai.cycles.high} times."
+        )
+    return cast(
+        Spec,
+        {
+            "source": "mobidai",
+            "name": OWN,
+            "n_slots": entry.n_slots,
+            "slots": " ".join(str(slot) for slot, _ in entry.initial_slots),
+            "moves": _moves_text(entry.moves),
+            "shift": 0,
+            "cycles": cycles,
+            "colours": ",".join(color for _, color in entry.initial_slots),
+        },
+    )
+
+
+_CELL = re.compile(r"(-?\d+),(-?\d+)([\^vbrtl]?)")
+# A diagonal grid's quarters of a square, as a link names them: below, to
+# the right, above, to the left.
+_QUARTERS = "brtl"
+
+
+def _cells(grid: str, text: str) -> list[tuple[int, ...]]:
+    """Cells as a link gives them: ``i,j`` on the square and skewed grids; ``i,jb``,
+    ``i,jr``, ``i,jt`` or ``i,jl`` for the quarter of that square below,
+    right of, above or left of its middle on the diagonal grid; ``i,j^``
+    for the triangle pointing up from point (i, j) of the triangular grid,
+    ``i,jv`` for the one pointing down beside it."""
+    from braidpy.making.ashley import CELL_PARTS
+
+    cells: list[tuple[int, ...]] = []
+    for i, j, which in _CELL.findall(text):
+        if not CELL_PARTS[grid]:
+            cells.append((int(i), int(j)))
+        elif grid == "diagonal":
+            cells.append((int(i), int(j), _QUARTERS.index(which or "b")))
+        else:
+            cells.append((int(i), int(j), int(which == "v")))
+    return cells
+
+
+def _cell_text(grid: str, cell: tuple[int, ...]) -> str:
+    """A cell as :func:`_cells` reads it."""
+    which = {"diagonal": _QUARTERS, "triangle": "^v"}.get(grid, "")
+    return f"{cell[0]},{cell[1]}" + (which[cell[2]] if which else "")
+
+
+def _beside(grid: str, cells: list[tuple[int, ...]]) -> list[tuple[int, ...]]:
+    """The cells sharing a side with these, not among them: those a shape
+    can grow by."""
+    from braidpy.making.ashley import CELL_PARTS, _cell_points
+
+    def sides(cell):
+        points = _cell_points(grid, cell)
+        return {frozenset(side) for side in zip(points, points[1:] + points[:1])}
+
+    taken = set(cells)
+    edges = set().union(*(sides(cell) for cell in cells))
+    parts: list[tuple[int, ...]] = [(part,) for part in CELL_PARTS[grid]] or [()]
+    near = {
+        (cell[0] + di, cell[1] + dj, *which)
+        for cell in cells
+        for di in (-1, 0, 1)
+        for dj in (-1, 0, 1)
+        for which in parts
+    }
+    return sorted(cell for cell in near - taken if sides(cell) & edges)
+
+
+def _from_shape(spec: Spec) -> Result:
+    """A sinnet from the shape it is to take, as Ashley draws it
+    (:func:`braidpy.making.ashley.sinnet_from_shape`), drawn as he draws
+    it, its grid's cells beside, to change the shape by."""
+    import dataclasses
+
+    from braidpy.making.ashley import (
+        cell_outline,
+        corner_spaces,
+        grid_halfway,
+        grid_lines,
+        grid_outline,
+        grid_shape,
+        shape_diagram,
+        shape_tracks,
+        sinnet_from_shape,
+    )
+
+    grid = Shape.grid.read(spec)
+    if grid not in Shape.grids:
+        raise ValueError(f"No grid {grid!r}: one of {sorted(Shape.grids)}.")
+    name = Shape.shape.read(spec)
+    if name not in Shape.shapes[grid]:
+        raise ValueError(
+            f"No shape {name!r} on that grid: one of {sorted(Shape.shapes[grid])}."
+        )
+    cells = grid_shape(grid, name, Shape.size.read(spec), Shape.height.read(spec))
+    if Shape.cells.read(spec).strip():
+        cells = _cells(grid, Shape.cells.read(spec))
+    outline, *holes = grid_outline(grid, cells)
+    across = grid_lines(grid)
+    halfway = grid_halfway(grid)
+    lines, joins, bights = shape_diagram(outline, holes, across, halfway)
+    turned = sorted(set(_numbers(Shape.turned.read(spec) or "0", "tracks")) - {0})
+    extra = [0] * len(bights)
+    for space in re.findall(r"\d+", Shape.extra.read(spec)):
+        if not 1 <= int(space) <= len(bights):
+            raise ValueError(f"Spaces are numbered 1 to {len(bights)}.")
+        extra[int(space) - 1] += 1
+    for space in corner_spaces(outline, holes, across, halfway):
+        extra[space - 1] += Shape.corners.read(spec)
+    sinnet = sinnet_from_shape(
+        outline,
+        extra=extra,
+        turned=turned,
+        order=Shape.order.read(spec),
+        holes=holes,
+        across=across,
+        halfway=halfway,
+    )
+    if sinnet.n_strands > Shape.most_strands:
+        raise ValueError(f"That is over {Shape.most_strands} strands.")
+    track_of = {
+        k: number
+        for number, track in enumerate(shape_tracks(sinnet.moves), start=1)
+        for k in track
+    }
+    # Each move along a line joining its two spaces; two lines may join the
+    # same two, as across an oblong, either taking either move.
+    free = list(range(len(lines)))
+    drawn: list[DrawnLine] = []
+    for k, (a, b) in enumerate(sinnet.moves):
+        line = next(i for i in free if sorted(joins[i]) == sorted((a, b)))
+        free.remove(line)
+        ends = lines[line].ends if joins[line][0] == a else lines[line].ends[::-1]
+        drawn.append(
+            {"start": list(ends[0]), "end": list(ends[1]), "track": track_of[k]}
+        )
+    drawing: ShapeDrawing = {
+        "outline": [list(corner) for corner in outline],
+        "holes": [[list(corner) for corner in hole] for hole in holes],
+        "lines": drawn,
+        "spaces": [list(bight) for bight in bights],
+        "counts": list(sinnet.initial_counts_per_space),
+        "tracks": len(set(track_of.values())),
+        "cells": [
+            {
+                "name": _cell_text(grid, cell),
+                "points": [list(p) for p in cell_outline(grid, cell)],
+                "in": taken,
+            }
+            for taken, group in (
+                (True, sorted(set(cells))),
+                (False, _beside(grid, cells)),
+            )
+            for cell in group
+        ],
+    }
+    # Called as the shape started from, or the shape's own cells.
+    own = bool(Shape.cells.read(spec).strip())
+    title = Shape.shapes[grid][name]
+    noun = (
+        None if own else title[0].lower() + title[1:] if title[1:2].islower() else title
+    )
+    named = dataclasses.replace(sinnet, shape=noun)
+    called = "Your own shape," if own else "From a shape,"
+    result = _sinnet_result(named, spec, Shape.cycles.read(spec), called)
+    result["ashley_shape"] = drawing
+    return result
+
+
 def _from_sinnet(spec: Spec) -> Result:
-    from braidpy.ashley_solid_sinnet import AshleySolidSinnet, strand_colours
-    from braidpy.take_off import disk_trajectories
+    from braidpy.ashley_solid_sinnet import AshleySolidSinnet
 
     sinnets = _sinnets()
     name = Sinnet.name.read(spec)
@@ -223,7 +497,15 @@ def _from_sinnet(spec: Spec) -> Result:
         sinnet = sinnets[name].make()
     else:
         raise ValueError(f"No sinnet {name!r}: one of {sorted(sinnets)}.")
-    cycles = Sinnet.cycles.read(spec)
+    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
+    return _sinnet_result(sinnet, spec, Sinnet.cycles.read(spec), called)
+
+
+def _sinnet_result(sinnet, spec: Spec, cycles: int, called: str) -> Result:
+    """A sinnet made on its disk, so many cycles, called so."""
+    from braidpy.ashley_solid_sinnet import strand_colors
+    from braidpy.take_off import disk_trajectories
+
     diameter = DISK_YARN.read(spec)
     disk = sinnet.disk(cycles)
     paths, clock, ring = _disk_in_step(
@@ -255,7 +537,6 @@ def _from_sinnet(spec: Spec) -> Result:
             "Its moves do not bring every space back to its count after a "
             "cycle: the catalogue's moves may be mistranscribed."
         )
-    called = "Your own" if name == OWN else f"ABOK #{name.split('_')[1]},"
     info = _disk_info(disk.start, disk.steps, disk.n_slots, clockwise=False)
 
     def worked(k: int):
@@ -273,7 +554,7 @@ def _from_sinnet(spec: Spec) -> Result:
         f"{cycles} cycles",
         paths,
         diameter,
-        colours=[strand_colours(sinnet.n_strands)[int(k) - 1] for k in paths.points],
+        colors=[strand_colors(sinnet.n_strands)[int(k) - 1] for k in paths.points],
         info=info,
         notes=notes,
         timeline=_timeline(seen, list(paths.points), "disk", clock, ring),
@@ -316,7 +597,7 @@ def _mobidai_entry() -> Source:
     entries: list[Entry] = [
         {
             "name": key,
-            "title": catalogued.title,
+            "title": cataloged.title,
             "pattern": {
                 "n_slots": braid.n_slots,
                 "slots": " ".join(str(slot) for slot, _ in braid.initial_slots),
@@ -324,8 +605,8 @@ def _mobidai_entry() -> Source:
                 "shift": braid.n_shift_after_cycle,
             },
         }
-        for key, catalogued in _mobidais().items()
-        for braid in [catalogued.make()]
+        for key, cataloged in _mobidais().items()
+        for braid in [cataloged.make()]
     ]
     return {
         "title": "Kumihimo disk (mobidai)",
@@ -338,15 +619,15 @@ def _sinnet_entry() -> Source:
     entries: list[Entry] = [
         {
             "name": name,
-            "title": catalogued.title,
+            "title": cataloged.title,
             "shape": sinnet.shape,
             "pattern": {
                 "counts": " ".join(str(c) for c in sinnet.initial_counts_per_space),
                 "moves": _moves_text(sinnet.moves),
             },
         }
-        for name, catalogued in _sinnets().items()
-        for sinnet in [catalogued.make()]
+        for name, cataloged in _sinnets().items()
+        for sinnet in [cataloged.make()]
     ]
     return {
         "title": "Ashley solid sinnet",
@@ -355,9 +636,45 @@ def _sinnet_entry() -> Source:
     }
 
 
+def _shape_entry() -> Source:
+    return {
+        "title": "Ashley's method, from a shape",
+        "defaults": defaults(*Shape.shown),
+        "grids": dict(Shape.grids),
+        "shapes": {grid: dict(shapes) for grid, shapes in Shape.shapes.items()},
+        "orders": dict(Shape.orders),
+        "examples": _shape_examples(),
+    }
+
+
+def _shape_examples() -> list[Example]:
+    """The braids a sinnet from a shape offers: the book's that a shape
+    draws (:data:`braidpy.solid_sinnets_catalog.DRAWN`), named as the
+    catalogue names them, then braidpy's own (``Shape.examples``)."""
+    from braidpy.solid_sinnets_catalog import DRAWN
+
+    sinnets = _sinnets()
+    book: dict[tuple, Example] = {}
+    for name, drawn in DRAWN.items():
+        made = {k: v for k, v in drawn.items() if k != "makes"}
+        key = tuple(sorted(made.items()))
+        if key in book:
+            # Two of the book's made alike, as #3057 and #3058: one braid.
+            first, rest = book[key]["title"].split(",", 1)
+            book[key]["title"] = f"{first} and #{name.split('_')[1]},{rest}"
+            continue
+        title = sinnets[name].title
+        book[key] = cast(
+            Example,
+            {"title": title if drawn["makes"] else f"The lines of {title}", **made},
+        )
+    return list(book.values()) + cast(list[Example], Shape.examples)
+
+
 # Each source: its catalogue entry, and what builds it.
 SOURCES: dict[str, tuple[Callable[[], Source], Callable[[Spec], Result]]] = {
     "kumihimo": (_kumihimo_entry, _from_kumihimo),
     "mobidai": (_mobidai_entry, _from_mobidai),
     "sinnet": (_sinnet_entry, _from_sinnet),
+    "shape": (_shape_entry, _from_shape),
 }

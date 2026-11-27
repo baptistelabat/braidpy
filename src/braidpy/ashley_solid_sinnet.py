@@ -41,13 +41,11 @@ import math
 import os
 from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    cast,
-)
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 
+from braidpy._renamed import renamed_globals
 from braidpy.annulus_braid import solid_word
 from braidpy.take_off import disk_annular_word, disk_braid
 from braidpy.utils import lazy_module
@@ -82,18 +80,30 @@ class AshleySolidSinnet:
     even space its left-hand strand, clockwise.  It goes in at the left
     (clockwise) end of an odd space and at the right (anticlockwise) end of
     an even one, so the earliest strand in a space is always the next to
-    leave it.
+    leave it.  When ``all_right``, as the book has it for "All strands move
+    to the right", the strand from an even space is led anticlockwise too,
+    still from its left and over all.
 
     Attributes:
         initial_counts_per_space (List[int]): Number of strands per sector. 1-based sectors.
         moves (List[Tuple[int, int]]): Sequence of (from_sector, to_sector) moves, each 1-based.
         shape (Optional[str]): The cross-section the sinnet takes when made, as
             the book names it: "round", "triangle", "hexagon"…
+        all_right (bool): Every strand is led to the right, anticlockwise,
+            not only those from odd spaces.  The same table makes another
+            braid so: #3057 and #3058 differ only in this.
     """
 
     initial_counts_per_space: list[int]
     moves: list[tuple[int, int]]
     shape: str | None = None
+    all_right: bool = False
+
+    def goes_right(self, space: int) -> bool:
+        """Whether a strand leaving ``space`` is led to the right,
+        anticlockwise.  Which end it leaves from, and which it arrives at,
+        is the space's parity whichever way it goes."""
+        return self.all_right or space % 2 == 1
 
     @property
     def n_strands(self) -> int:
@@ -177,6 +187,7 @@ class SinnetDisk:
 
     @property
     def n_slots(self) -> int:
+        """The disk's slots, every space's."""
         return self.n_spaces * self.slots_per_space
 
     def middle_slot(self, space: int) -> int:
@@ -195,7 +206,8 @@ def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
 
     Each move takes the earliest strand of its space — the right-hand one of
     an odd space, the left-hand one of an even space — round the disk over
-    every strand it passes, into its place at the end of the space it goes
+    every strand it passes, the way :meth:`AshleySolidSinnet.goes_right`
+    says, into its place at the end of the space it goes
     to.  The strands left behind, and those it joins, then slide along
     together to the middle of their spaces, so each space always has room
     either side of its strands.
@@ -273,7 +285,7 @@ def sinnet_disk(sinnet: AshleySolidSinnet, n_cycles: int = 1) -> SinnetDisk:
                 there = where[joining[-1]] + 1 if joining else placed(target, 1)[0]
                 joining.append(mover)
             gap = (there - where[mover]) % n_slots
-            steps.append({mover: gap if odd else gap - n_slots})
+            steps.append({mover: gap if sinnet.goes_right(source) else gap - n_slots})
             labels.append(f"{source} → {target}")
             where[mover] = there
             settle(source)
@@ -286,7 +298,8 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
 
     The disk of :func:`sinnet_disk`, numbered as a mobidai is, every move
     made from slot to slot the way the sinnet goes round — anticlockwise
-    from an odd space, clockwise from an even one — and every slide made one
+    from an odd space, clockwise from an even one, unless all go to the
+    right — and every slide made one
     strand at a time, the front one first.  A sinnet whose cycle brings each
     space back to its count brings every slot back too, so the pattern is
     simply repeated.
@@ -300,9 +313,9 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
     from braidpy.mobidai import MobidaiConfig, Move, Strand
 
     disk = sinnet_disk(sinnet, 1)
-    colours = strand_colours(sinnet.n_strands)
+    colors = strand_colors(sinnet.n_strands)
     where = {cast(int, k): slot for k, slot in disk.start.items()}
-    strands = [Strand(colours[k - 1], slot) for k, slot in sorted(where.items())]
+    strands = [Strand(colors[k - 1], slot) for k, slot in sorted(where.items())]
     moves: list[Move] = []
     for step in disk.steps:
         delta = next(iter(step.values()))
@@ -320,7 +333,7 @@ def sinnet_to_mobidai(sinnet: AshleySolidSinnet) -> MobidaiConfig:
     )
 
 
-def strand_colours(n: int) -> list[str]:
+def strand_colors(n: int) -> list[str]:
     """A colour per strand, evenly round the hue circle."""
     import colorsys
 
@@ -532,12 +545,12 @@ def _draw_disk_state(
     counts_per_space: list[int],
     title: str,
     show_ids: bool = True,
-    highlight_path: list[int] | None = None,
+    highlight_path: Optional[list[int]] = None,
     r_outer: float = 1.0,
     r_inner: float = 0.5,
     r_strand_circle: float = 0.75,
     arc_pad_frac: float = 0.12,
-    strand_colors: dict[int, tuple[float, float, float, float]] | None = None,
+    strand_colors: Optional[dict[int, tuple[float, float, float, float]]] = None,
 ) -> None:
     """Draw one frame of the disk with colored strands and optional path arrows.
 
@@ -789,3 +802,9 @@ if __name__ == "__main__":
         arc_pad_frac=0.10,
     )
     print(output)
+
+# The names these went by before braidpy's code took American spelling.
+__getattr__ = renamed_globals(
+    __name__,
+    {"strand_colours": "strand_colors"},
+)

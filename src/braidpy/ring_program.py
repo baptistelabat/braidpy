@@ -13,8 +13,8 @@ neighbouring places exchanging what they hold, the swaps of a row sharing
 no place so that they are made at once.  A braid becomes a ring program
 (:func:`from_braid`), and a ring program becomes each way of making it;
 read back as a braid (:meth:`RingProgram.braid`), each must be the braid
-it was made from, as braidpy compares braids: by their topology
-(:func:`same_braid`).
+it was made from, as braidpy compares braids: by their topology, their
+patterns alike (:func:`braidpy.braid_pattern.alike`).
 
 Conventions.  The ring is seen from above, from the side the braider
 works from on a kumihimo disk, and the braid is made downwards, away from
@@ -48,6 +48,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
+from typing import Optional
 
 from braidpy.braid import Braid
 
@@ -146,18 +147,31 @@ class RingProgram:
             held[left], held[right] = b, a
         return start, steps
 
+    def ring_word(self) -> tuple[list[int], int]:
+        """The braid the program makes as moves round its ring
+        (:mod:`braidpy.annulus_braid`), read off its disk moves, as a disk
+        braid is: a strand carried across the seam is a turn.  Round a core
+        (:func:`~braidpy.annulus_braid.cored_word`), it says how far round
+        each strand goes.
+
+        Returns:
+            The moves, and how many strands.
+        """
+        from braidpy.take_off import disk_annular_word
+
+        start, steps = self.disk()
+        return disk_annular_word(start, steps, self.n_places, clockwise=True)
+
     def braid(self) -> Braid:
-        """The braid the program makes, as a braid word: read off its disk
-        moves, as a disk braid is.
+        """The braid the program makes, as a braid word: its ring word
+        (:meth:`ring_word`), the middle filled.
 
         Returns:
             The braid, on the program's strands.
         """
         from braidpy.annulus_braid import solid_word
-        from braidpy.take_off import disk_annular_word
 
-        start, steps = self.disk()
-        annular, n = disk_annular_word(start, steps, self.n_places, clockwise=True)
+        annular, n = self.ring_word()
         return Braid(tuple(solid_word(annular, n)), n)
 
     def ends(self) -> tuple[int | None, ...]:
@@ -186,7 +200,7 @@ def _packed(n_places: int, swaps: Sequence[Swap]) -> tuple[tuple[Swap, ...], ...
 
 
 def from_braid(
-    braid: Braid, n_places: int | None = None, offset: int = 0
+    braid: Braid, n_places: Optional[int] = None, offset: int = 0
 ) -> RingProgram:
     """A braid as a ring program: its strands side by side from place
     ``offset``, each crossing ``σᵢ^±1`` the strands at places
@@ -222,9 +236,8 @@ def from_braid(
 
 
 def same_braid(a: Braid, b: Braid) -> bool:
-    """Whether two braids are the same braid, as the ways
-    of making one compare them: by their topology
-    (:func:`~braidpy.similarity.same_fingerprint`), whatever their words.
+    """Whether two braids make alike patterns: the name
+    :func:`braidpy.braid_pattern.alike` had, kept.
 
     Args:
         a: A braid.
@@ -233,6 +246,6 @@ def same_braid(a: Braid, b: Braid) -> bool:
     Returns:
         True if nothing measured tells them apart.
     """
-    from braidpy.similarity import fingerprint, same_fingerprint
+    from braidpy.braid_pattern import alike
 
-    return same_fingerprint(fingerprint(a), fingerprint(b))
+    return alike(a, b)

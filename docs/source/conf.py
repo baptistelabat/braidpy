@@ -33,12 +33,17 @@ extensions = [
 # $...$ for inline maths, and the aligned environments the geometry
 # pages use.  Without these, the formulas render as literal dollars.
 myst_enable_extensions = ["dollarmath", "amsmath"]
+# Sections get anchors down to ###, for links such as marudai.md#round-a-core.
+myst_heading_anchors = 3
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 intersphinx_disabled_domains = ["std"]
+
+# A page for assistants that browse: the documentation listed, one line each.
+html_extra_path = ["llms.txt"]
 
 templates_path = ["_templates"]
 

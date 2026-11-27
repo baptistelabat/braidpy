@@ -14,8 +14,14 @@
 // taken from the braid as it then lies.  Turned while the braid is held,
 // the bobbins twist the yarns in: that is written as every yarn moved.
 //
-// braid3dmin moves the yarn it finds at a move's angle, and a repeat step
-// plays its steps again from where it puts the yarns back to.  A braid
+// With each step, where every yarn is before it, as braid3dmin writes them.
+// A move's angles go the short way round, so a move of half a turn or more
+// is written as two steps, each less than half a turn the same way round,
+// breaking between two slots: kumihimo's strands across the disk.
+//
+// braidpy.b3d reads such a file back.  braid3dmin moves the yarn it finds
+// at a move's angle, and a repeat step plays its steps again from where it
+// puts the yarns back to.  A braid
 // whose cycle comes round exactly — the same moves at the same angles, the
 // yarns back on the same angles — is written as one cycle and a repeat
 // that puts nothing back: braid3dmin makes it as it was made here.  Any
@@ -25,8 +31,13 @@
 (function (root) {
   "use strict";
 
+  // The angle of a slot, as marudai.js turns it (loaded before this in the
+  // page, required beside it in Node).
+  const slotAngle =
+    typeof module !== "undefined" && module.exports ? require("./marudai.js").slotAngle : root.slotAngleOnMarudai;
+
   const wrap = (a) => a - 2 * Math.PI * Math.floor((a + Math.PI) / (2 * Math.PI));
-  const colourNumber = (colour) => (/^#[0-9a-f]{6}$/i.test(colour ?? "") ? parseInt(colour.slice(1), 16) : 0xcccccc);
+  const colorNumber = (color) => (/^#[0-9a-f]{6}$/i.test(color ?? "") ? parseInt(color.slice(1), 16) : 0xcccccc);
 
   /**
    * The .b3d text of a braid made on the marudai.
@@ -37,11 +48,11 @@
    * @param {string[]} colours  Each yarn's colour, as "#rrggbb".
    * @returns {string}
    */
-  function b3dText(job, making, colours) {
+  function b3dText(job, making, colors) {
     const n = job.start.length;
     const sense = job.clockwise ? -1 : 1;
     const twists = job.twists ?? !!job.held;
-    const angleOf = (slot) => -(sense * 2 * Math.PI * (slot - 1)) / job.n_slots;
+    const angleOf = (slot) => slotAngle(slot, job.n_slots, job.clockwise);
     const dirs = (job.from ?? job.start).map(angleOf);
     // How far the braid has turned with the disk: angles are given from it.
     let turned = 0;
@@ -49,52 +60,76 @@
       dirs
         .map((dir, t) => ({ angle: wrap(dir - turned), id: String(t) }))
         .sort((p, q) => p.angle - q.angle);
-    const step = (type, moves, extra = {}) => ({
-      type, num: steps.length, moves, tighten: type ? 1 : 0, repeatFrom: 0, repeatTimes: 0, rotate: 0, ...extra, poss: poss(),
+    // Each step with where the yarns are before it, as written, and after
+    // it, to find a cycle by (repeated()); `before` taken before its moves.
+    const step = (type, moves, before, extra = {}) => ({
+      type, num: steps.length, moves, tighten: type ? 1 : 0, repeatFrom: 0, repeatTimes: 0, rotate: 0, ...extra,
+      poss: before, after: poss(),
     });
     const moved = (t, to) => {
       const move = { from: wrap(dirs[t] - turned), to: wrap(to - turned), id: t };
       dirs[t] = to;
       return move;
     };
+    // A move of d slots, as the angle it turns a yarn by.
+    const turnOf = (d) => (sense * 2 * Math.PI * d) / job.n_slots;
+    // Of a move of half a turn or more, the first step's part: to between
+    // the two slots half way along it.
+    const long = (d) => 2 * Math.abs(d) >= job.n_slots;
+    const firstPart = (d) => Math.sign(d) * (Math.floor(Math.abs(d) / 2) + 0.5);
 
     const steps = [];
-    steps.push(step(null, []));
-    if (job.from) steps.push(step("threadMove", job.start.map((slot, t) => moved(t, angleOf(slot)))));
+    steps.push(step(null, [], poss()));
+    if (job.from) {
+      const before = poss();
+      steps.push(step("threadMove", job.start.map((slot, t) => moved(t, angleOf(slot))), before));
+    }
     const first = steps.length;
     for (const moves of job.steps) {
       const moving = moves.filter(([, d]) => d);
       if (!moving.length) continue;
       if (moving.length === n && moving.every(([, d]) => d === moving[0][1])) {
         const by = (sense * 2 * Math.PI * moving[0][1]) / job.n_slots;
-        if (twists) steps.push(step("threadMove", dirs.map((dir, t) => moved(t, dir - by))));
+        if (twists) {
+          const before = poss();
+          steps.push(step("threadMove", dirs.map((dir, t) => moved(t, dir - by)), before));
+        }
         else {
           for (let t = 0; t < n; t++) dirs[t] -= by;
           turned -= by;
         }
         continue;
       }
-      const list = moving.map(([t, d]) => moved(t, dirs[t] - (sense * 2 * Math.PI * d) / job.n_slots));
-      steps.push(step("threadMove", list));
+      const before = poss();
+      const list = moving.map(([t, d]) => moved(t, dirs[t] - turnOf(long(d) ? firstPart(d) : d)));
+      steps.push(step("threadMove", list, before));
+      const rest = moving.filter(([, d]) => long(d));
+      if (rest.length) {
+        const between = poss();
+        const ends = rest.map(([t, d]) => moved(t, dirs[t] - turnOf(d - firstPart(d))));
+        steps.push(step("threadMove", ends, between));
+      }
     }
 
     // The beads as made, turned back by as far as the braid went with the
     // disk, as the angles are.
     const c = Math.cos(turned), s = Math.sin(turned);
     const machine = making.machine;
-    const threadStates = machine.threads.map((thread, t) => ({
-      colour: colourNumber(colours[t]),
+    // braid3dmin has no core: the yarns alone.
+    const threadStates = machine.threads.slice(0, n).map((thread, t) => ({
+      colour: colorNumber(colors[t]),
       dir: wrap(thread.dir - turned),
       poss: machine.positions(t).map(([x, y, z]) => ({ x: x * c + z * s, y, z: -x * s + z * c })),
     }));
-    return encodeURIComponent(JSON.stringify({ nThreads: n, threadStates, steps: repeated(steps, first) }));
+    const written = repeated(steps, first).map(({ after, ...step }) => step);
+    return encodeURIComponent(JSON.stringify({ nThreads: n, threadStates, steps: written }));
   }
 
   // The steps from `first` on as one cycle and a repeat, if they come round
   // exactly; else as they are.
   function repeated(steps, first) {
     const same = (a, b) => Math.abs(wrap(a - b)) < 1e-9;
-    const angles = (k) => steps[k].poss.map((p) => p.angle);
+    const angles = (k) => steps[k].after.map((p) => p.angle);
     const sameMoves = (j, k) =>
       steps[j].rotate === steps[k].rotate &&
       steps[j].moves.length === steps[k].moves.length &&
@@ -114,7 +149,7 @@
         ...steps.slice(0, first + cycle),
         {
           type: "repeat", num: first + cycle, moves: [], tighten: 0,
-          repeatFrom: first, repeatTimes: made / cycle - 1, rotate: 0, poss: end.poss,
+          repeatFrom: first, repeatTimes: made / cycle - 1, rotate: 0, poss: end.after, after: end.after,
         },
       ];
     }

@@ -69,9 +69,9 @@ def server() -> Any:
         made.add_tool(function)
 
     def warm() -> None:
-        from braidpy.topology_catalog import catalogue
+        from braidpy.topology_catalog import catalog
 
-        catalogue()
+        catalog()
 
     threading.Thread(target=warm, daemon=True).start()
     return made

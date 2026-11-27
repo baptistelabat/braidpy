@@ -20,6 +20,11 @@ Two projections are offered, because braiding machines come in two shapes:
   ordered left to right and the word is an ordinary Artin word.  This is the
   right reading for a flat braider, whose carriers stay strung out along a
   line.
+- :func:`ring_word` reads round an axis — a core, or a spot one could be
+  fed at — and writes the braid as moves round a ring
+  (:class:`RingWord`), turns and all: with the core kept as a strand it is
+  the braid the machine makes round it, and it can be shortened
+  (:meth:`RingWord.shortened`).
 - :func:`annular_word` looks outward from a point you choose, so the carriers
   are ordered by angle around it and the word is an *annular* one — the
   vocabulary of :mod:`braidpy.annulus_braid`, where index ``n`` is the pair
@@ -41,40 +46,30 @@ machine's motion, the other from the shape that motion lays down.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
+from typing import Optional, cast
 
 import numpy as np
 
-from .model import BraidingMachine
-from .simulation import CarrierId
+from braidpy._renamed import renamed_attribute, renamed_globals
+from braidpy.braid import Braid
+
+from .model import Axial, BraidingMachine
+from .simulation import CarrierId, state_period
 from .take_off import carrier_trajectories
 from .tracks import Position, simulation_period
 
-__all__ = ["AnnularWord", "annular_word", "deck_centre", "flat_word"]
-
-
-def _check_no_axials(machine: BraidingMachine) -> None:
-    """Refuse a machine whose axials would be left out of the word.
-
-    An axial is a yarn the carriers braid *around*, so it takes part in the
-    braid and belongs in its word.  The trajectories this module reads come
-    from :func:`~braidpy.horn_gear.take_off.carrier_trajectories`, which
-    follows carriers only — an axial holds no slot and is not a carrier.
-    Rather than return a word that quietly omits strands, say so.
-
-    Raises:
-        NotImplementedError: If the machine has any axial.
-    """
-    axials = tuple(getattr(machine, "axials", ()))
-    if axials:
-        names = ", ".join(repr(a.name) for a in axials)
-        raise NotImplementedError(
-            f"This machine has {len(axials)} axial yarn(s) ({names}), which the "
-            f"carriers braid around and which therefore belong in its word.  The "
-            f"trajectories read here follow carriers only, so the word would be "
-            f"missing those strands.  Give the axials a path first."
-        )
+__all__ = [
+    "AnnularWord",
+    "RingWord",
+    "annular_word",
+    "deck_center",
+    "default_axis",
+    "flat_word",
+    "ring_unit",
+    "ring_word",
+]
 
 
 def _trajectories(
@@ -84,20 +79,44 @@ def _trajectories(
     n_substeps: int,
     scale: float,
 ):
-    """Carrier positions in the deck plane, one cycle by default."""
-    _check_no_axials(machine)
+    """Carrier positions in the deck plane, one cycle by default — as long as
+    this loading takes to be back as it started
+    (:func:`~braidpy.horn_gear.simulation.state_period`), or, for a machine
+    that never is, until every slot is (:func:`simulation_period`) — and each
+    axial yarn's, a strand of the braid that stands still where it rises
+    through the deck (:func:`~braidpy.horn_gear.layout.axial_position`),
+    numbered after the carriers, in the order the machine lists them.  The
+    carriers braid round it, so it belongs in the word as one strand: a
+    carrier crosses it where it passes its column."""
+    from dataclasses import replace
+
+    from .layout import axial_positions
+
     if n_steps is None:
-        n_steps = simulation_period(machine)
-    return carrier_trajectories(
+        n_steps = state_period(machine, carriers) or simulation_period(machine)
+    tracks = carrier_trajectories(
         machine,
         n_steps,
         carrier_positions=carriers,
         n_substeps=n_substeps,
         scale=scale,
     )
+    axials = getattr(machine, "axials", ())
+    if not axials:
+        return tracks
+    columns = axial_positions(machine, tracks.layout)
+    # Carriers are numbered; the axials after the last of them.
+    first = max((k for k in tracks.xy if isinstance(k, int)), default=-1) + 1
+    standing: dict[Hashable, np.ndarray] = {
+        first + k: np.tile(
+            np.asarray(columns[axial.name], dtype=float), (len(tracks.times), 1)
+        )
+        for k, axial in enumerate(axials)
+    }
+    return replace(tracks, xy={**tracks.xy, **standing})
 
 
-def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, float]:
+def deck_center(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, float]:
     """The centroid of the gears, as a default point to look out from.
 
     For a machine whose gears ring a hole — a tubular braider — this is the
@@ -114,17 +133,22 @@ def deck_centre(machine: BraidingMachine, scale: float = 1.0) -> tuple[float, fl
     """
     from .layout import compute_layout
 
-    centres = list(compute_layout(machine, scale=scale).values())
+    centers = list(compute_layout(machine, scale=scale).values())
     return (
-        sum(x for x, _ in centres) / len(centres),
-        sum(y for _, y in centres) / len(centres),
+        sum(x for x, _ in centers) / len(centers),
+        sum(y for _, y in centers) / len(centers),
     )
+
+
+# Carriers less than this far apart across the deck are level: the
+# difference is rounding, so they have not crossed.
+_LEVEL = 1e-9
 
 
 def flat_word(
     machine: BraidingMachine,
-    carriers: dict[CarrierId, Position] | None = None,
-    n_steps: int | None = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+    n_steps: Optional[int] = None,
     n_substeps: int = 64,
     scale: float = 1.0,
 ) -> list[int]:
@@ -152,25 +176,40 @@ def flat_word(
     Returns:
         The word, as signed generator indices.
 
-    Raises:
-        NotImplementedError: If the machine has axial yarns.
     """
     tracks = _trajectories(machine, carriers, n_steps, n_substeps, scale)
     ids = sorted(tracks.xy)
     across = np.column_stack([tracks.xy[cid][:, 0] for cid in ids])
     depth = np.column_stack([tracks.xy[cid][:, 1] for cid in ids])
 
-    order = sorted(range(len(ids)), key=lambda k: across[0, k])
+    # Carriers level at the start, one behind the other, are in the order
+    # they came there in: read over a whole period, the machine back as it
+    # started, that is how it ended the period before, so that two carriers
+    # crossing just as it starts are counted once, here, and not again as
+    # they draw level at the end.  Read over less, in the order they part in.
+    periodic = np.allclose(across[0], across[-1]) and np.allclose(depth[0], depth[-1])
+    tiebreak = across[-2::-1] if periodic else across[1:]
+    level = np.round(across[0] / _LEVEL)
+    order = sorted(range(len(ids)), key=lambda k: (level[k], *tiebreak[:, k]))
     word: list[int] = []
     for sample in range(1, len(tracks.times)):
-        for slot in range(len(ids) - 1):
-            first, second = order[slot], order[slot + 1]
-            before = across[sample - 1, first] - across[sample - 1, second]
-            after = across[sample, first] - across[sample, second]
-            if before < 0 <= after:
-                in_front = depth[sample, first] > depth[sample, second]
-                word.append(slot + 1 if in_front else -(slot + 1))
-                order[slot], order[slot + 1] = second, first
+        # Passes until no neighbours are left to exchange: in one pass a
+        # carrier going right can pass several others, one going left only
+        # one, and a missed exchange would leave the order wrong for good.
+        # Within a sample each carrier keeps its depth, so the order the
+        # exchanges are written in does not change the braid.  Two carriers
+        # have crossed only once one is past the other: drawing level is
+        # not crossing, as two carriers back where they started level are.
+        exchanged = True
+        while exchanged:
+            exchanged = False
+            for slot in range(len(ids) - 1):
+                first, second = order[slot], order[slot + 1]
+                if across[sample, first] - across[sample, second] > _LEVEL:
+                    in_front = depth[sample, first] > depth[sample, second]
+                    word.append(slot + 1 if in_front else -(slot + 1))
+                    order[slot], order[slot + 1] = second, first
+                    exchanged = True
     return word
 
 
@@ -188,15 +227,18 @@ class AnnularWord:
         winding: Per carrier, how many times it went round the centre over the
             stretch read.  Half the carriers of a tubular braider go one way
             and half the other, so these come in both signs.
-        centre: The point the braid was read around.
+        center: The point the braid was read around.
         n_strands: How many strands there are, which is the index of the
             wrapping pair.
     """
 
     generators: list[int]
     winding: dict[CarrierId, float]
-    centre: tuple[float, float]
+    center: tuple[float, float]
     n_strands: int
+
+    # Its name before braidpy's code took American spelling.
+    centre = renamed_attribute("center")
 
     @property
     def net_winding(self) -> float:
@@ -210,9 +252,9 @@ class AnnularWord:
 
 def annular_word(
     machine: BraidingMachine,
-    around: tuple[float, float] | None = None,
-    carriers: dict[CarrierId, Position] | None = None,
-    n_steps: int | None = None,
+    around: Optional[tuple[float, float]] = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+    n_steps: Optional[int] = None,
     n_substeps: int = 64,
     scale: float = 1.0,
 ) -> AnnularWord:
@@ -230,7 +272,7 @@ def annular_word(
 
     Args:
         machine: The machine definition.
-        around: The point to look out from; :func:`deck_centre` if None.
+        around: The point to look out from; :func:`deck_center` if None.
         carriers: The loading; the machine's own if None.
         n_steps: How many steps to read; one full cycle if None.
         n_substeps: Samples per step.
@@ -239,12 +281,10 @@ def annular_word(
     Returns:
         The crossings, and how far each carrier wound round the centre.
 
-    Raises:
-        NotImplementedError: If the machine has axial yarns.
     """
     tracks = _trajectories(machine, carriers, n_steps, n_substeps, scale)
     if around is None:
-        around = deck_centre(machine, scale=scale)
+        around = deck_center(machine, scale=scale)
 
     ids = sorted(tracks.xy)
     count = len(ids)
@@ -277,9 +317,358 @@ def annular_word(
     return AnnularWord(
         generators=word,
         winding=winding,
-        centre=(float(around[0]), float(around[1])),
+        center=(float(around[0]), float(around[1])),
         n_strands=count,
     )
+
+
+# Strands in line with the axis are told apart by their distance from it,
+# as an angle this many turns times the distance over the greatest: so
+# small no two strands at different angles change order, the same at both
+# ends of a period, the carriers being where they were.
+_LEVEL_TURNS = 1e-6
+# The axis is read from a point this fraction of its clearance away, in a
+# direction along no line of the machine's symmetry (_ASKEW radians): no
+# strand comes nearer the axis than its clearance, so the braid round the
+# point is the braid round the axis, and carriers that meet in line with
+# the axis itself, by symmetry, are read in line with the point no longer.
+_OFF_AXIS = 0.1
+_ASKEW = 1.0
+# Where carriers stand is compared to so many decimals: places the same
+# but for rounding are one place.
+_PLACE_DIGITS = 6
+# Samples a step at which a stretch of a cycle is compared with the next
+# (ring_unit): between steps, and halfway, where the gears turning show.
+_UNIT_SAMPLES = 2
+
+
+@dataclass(frozen=True)
+class RingWord:
+    """A machine's braid as moves round a ring, read round an axis.
+
+    Args:
+        moves: Crossings ``±1`` to ``±n_strands`` and turns
+            ``±(n_strands + 1)``, as :mod:`braidpy.annulus_braid` writes
+            them: the slots are numbered clockwise from a seam, as
+            :mod:`braidpy.ring_program` numbers places, and a strand
+            passing the seam is a turn.
+        n_strands: The strands round the axis: the carriers, and the
+            machine's axials but the axis's own.
+        axis: Where the braid was read round: the core.
+        strands: The carrier or axial in each slot to begin with.
+    """
+
+    moves: tuple[int, ...]
+    n_strands: int
+    axis: Axial
+    strands: tuple[Hashable, ...]
+
+    def braid(self) -> Braid:
+        """The braid with nothing in its middle
+        (:func:`~braidpy.annulus_braid.solid_word`): a tube and a flat braid
+        curled up are then the same."""
+        from braidpy.annulus_braid import solid_word
+
+        return Braid(tuple(solid_word(self.moves, self.n_strands)), self.n_strands)
+
+    def cored(self) -> Braid:
+        """The braid round its core, the core strand 1
+        (:func:`~braidpy.annulus_braid.cored_word`)."""
+        from braidpy.annulus_braid import cored_word
+
+        n = self.n_strands
+        return Braid(tuple(cored_word(self.moves, n)), n + 1)
+
+    def shortened(self) -> RingWord:
+        """The same braid round the core in as few moves as are found
+        (:func:`~braidpy.shortening.shortened_ring`)."""
+        from dataclasses import replace
+
+        from braidpy.shortening import shortened_ring
+
+        return replace(self, moves=tuple(shortened_ring(self.moves, self.n_strands)))
+
+
+def default_axis(machine: BraidingMachine) -> Axial:
+    """Where to read a machine's braid round, if not said: the core it
+    braids round, or the nearest thing to one.
+
+    In this order: an axial the machine feeds down a ring's hole; the hole
+    a ring of gears encloses, which a tubular braider braids round
+    (:func:`~braidpy.horn_gear.layout.tube_axials`); an axial the machine
+    feeds up a gear, as a soutache's cord; the gear nearest the deck's
+    centre (:func:`deck_center`).
+
+    Args:
+        machine: The machine.
+
+    Returns:
+        The axis, one of the machine's
+        :func:`~braidpy.horn_gear.layout.axial_spots`, or its own axials.
+    """
+    from .layout import axial_spots, compute_layout, tube_axials
+
+    own = list(getattr(machine, "axials", ()))
+    for axial in own:
+        if len(axial.anchor) > 1:
+            return axial
+    layout = compute_layout(machine)
+    holes = tube_axials(machine, layout)
+    if holes:
+        return holes[0]
+    if own:
+        return own[0]
+    x, y = deck_center(machine)
+    gears = [spot for spot in axial_spots(machine, layout) if len(spot.anchor) == 1]
+    return min(
+        gears,
+        key=lambda spot: math.hypot(
+            layout[spot.anchor[0]][0] - x, layout[spot.anchor[0]][1] - y
+        ),
+    )
+
+
+def ring_word(
+    machine: BraidingMachine,
+    axis: Optional[Axial] = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+    n_steps: Optional[int] = None,
+    n_substeps: int = 64,
+) -> RingWord:
+    """The braid a machine makes as moves round a ring, read round an axis.
+
+    Seen from the axis, the strands are in a ring: in order round it,
+    clockwise from a seam put in the widest gap between them.  Two strands
+    neighbours round it cross when they come in line with the axis, the one
+    further from it outside; a strand passing the seam, crossing nobody,
+    turns the ring by a slot.  Where :func:`annular_word` keeps only the
+    order round the axis, this keeps the seam, and so the turns: the braid
+    round the axis, its core kept (:meth:`RingWord.cored`), is the braid
+    the machine makes round a yarn fed there, exactly.
+
+    The axis matters: round another point the same machine makes another
+    braid round its core, the same once the core is taken away
+    (:meth:`RingWord.braid`).
+
+    Args:
+        machine: The machine.
+        axis: What to read the braid round, an axial or a spot one could be
+            fed at (:func:`~braidpy.horn_gear.layout.axial_spots`);
+            :func:`default_axis` if None.  An axial the machine feeds there
+            is the core, not a strand.
+        carriers: The loading; the machine's own if None.
+        n_steps: How many steps to read: one cycle of the machine if None
+            (:func:`~braidpy.horn_gear.simulation.state_period`), or for a
+            machine driven by a programme, one pass of it.
+        n_substeps: Samples per step.
+
+    Returns:
+        The moves, and which strand began where.
+
+    Raises:
+        ValueError: If a strand passes through the axis.
+    """
+    from .layout import axial_position, compute_layout
+
+    if axis is None:
+        axis = default_axis(machine)
+    center = axial_position(machine, compute_layout(machine), axis)
+    machine = machine.with_axials(
+        [a for a in getattr(machine, "axials", ()) if a.anchor != axis.anchor]
+    )
+    if n_steps is None:
+        program = getattr(machine, "program", None)
+        n_steps = (
+            2 * len(program)
+            if program is not None
+            else state_period(machine, carriers) or simulation_period(machine)
+        )
+    # A step more, to begin the period where no two strands are in line.
+    tracks = _trajectories(machine, carriers, n_steps + 1, n_substeps, 1.0)
+    ids = sorted(tracks.xy, key=str)
+    xs = np.column_stack([tracks.xy[k][:, 0] - center[0] for k in ids])
+    ys = np.column_stack([tracks.xy[k][:, 1] - center[1] for k in ids])
+    clearance = float(np.hypot(xs, ys).min())
+    if clearance <= 0:
+        raise ValueError(f"A strand passes through the axis {axis.name!r}.")
+    xs -= _OFF_AXIS * clearance * math.cos(_ASKEW)
+    # Clockwise seen from above: angles measured the other way round.
+    ys = -(ys - _OFF_AXIS * clearance * math.sin(_ASKEW))
+    samples = n_steps * n_substeps + 1
+    first = _untied(xs, ys, n_substeps) if _recurs(xs, ys, samples) else 0
+    xs, ys = xs[first : first + samples], ys[first : first + samples]
+    radius = np.hypot(xs, ys)
+    turns = np.unwrap(np.arctan2(ys, xs), axis=0) / (2 * math.pi)
+    turns += _LEVEL_TURNS * radius / radius.max()
+    moves, start = _ring_moves(turns, radius)
+    return RingWord(tuple(moves), len(ids), axis, tuple(ids[k] for k in start))
+
+
+def ring_unit(
+    machine: BraidingMachine,
+    axis: Optional[Axial] = None,
+    carriers: Optional[dict[CarrierId, Position]] = None,
+) -> tuple[RingWord, int]:
+    """The shortest stretch of a machine's cycle that, repeated, makes it:
+    as few steps as bring the carriers back to where carriers stood, each
+    perhaps where another was, read as a ring word (:func:`ring_word`).
+
+    A tube comes round long before its carriers are home: a tubular
+    braider of 16 does in 2 steps what its 16-step cycle does 8 times.  The
+    stretch need not bring a strand home, nor make a pure braid; made over
+    and over, it makes the machine's braid round its core, exactly.
+
+    Args:
+        machine: The machine.
+        axis: As :func:`ring_word` takes it.
+        carriers: The loading; the machine's own if None.
+
+    Returns:
+        The stretch's ring word, shortened (:meth:`RingWord.shortened`),
+        and how many times a cycle makes it.
+    """
+    program = getattr(machine, "program", None)
+    period = (
+        2 * len(program)
+        if program is not None
+        else state_period(machine, carriers) or simulation_period(machine)
+    )
+    # Where the carriers stand between steps and halfway through each: the
+    # stretch repeats if they stand so, step after step, as they did.
+    tracks = _trajectories(
+        machine.with_axials([]), carriers, period, _UNIT_SAMPLES, 1.0
+    )
+    standing = [
+        sorted(
+            (
+                round(float(xy[sample, 0]), _PLACE_DIGITS),
+                round(float(xy[sample, 1]), _PLACE_DIGITS),
+            )
+            for xy in tracks.xy.values()
+        )
+        for sample in range(period * _UNIT_SAMPLES + 1)
+    ]
+
+    def repeats(p: int) -> bool:
+        shift = p * _UNIT_SAMPLES
+        return period % p == 0 and all(
+            standing[sample] == standing[sample + shift]
+            for sample in range(len(standing) - shift)
+        )
+
+    steps = next(p for p in range(1, period + 1) if repeats(p))
+    word = ring_word(machine, axis, carriers, n_steps=steps)
+    return word.shortened(), period // steps
+
+
+def _recurs(xs: np.ndarray, ys: np.ndarray, samples: int) -> bool:
+    """Whether the strands are where they were after ``samples`` samples,
+    as a set: the period can then begin at any sample."""
+    if len(xs) < samples + 1:
+        return False
+    here = sorted(zip(np.round(xs[0], _PLACE_DIGITS), np.round(ys[0], _PLACE_DIGITS)))
+    there = sorted(
+        zip(
+            np.round(xs[samples - 1], _PLACE_DIGITS),
+            np.round(ys[samples - 1], _PLACE_DIGITS),
+        )
+    )
+    return here == there
+
+
+def _untied(xs: np.ndarray, ys: np.ndarray, n_substeps: int) -> int:
+    """The sample of the first step whose strands are furthest from any
+    being in line with the axis."""
+    angles = np.arctan2(ys, xs) / (2 * math.pi)
+
+    def closest(sample: int) -> float:
+        round_ = np.sort(angles[sample] % 1.0)
+        return float(np.diff(np.concatenate([round_, [round_[0] + 1.0]])).min())
+
+    return max(range(n_substeps), key=closest)
+
+
+def _ring_moves(turns: np.ndarray, radius: np.ndarray) -> tuple[list[int], list[int]]:
+    """The moves of strands round a centre: per sample, each strand's angle
+    in turns, unwrapped, and its distance.  Between samples each moves
+    evenly, so every event — two strands in line, a strand on the seam —
+    has its moment, and they are made in order.
+
+    Returns:
+        The moves, and the strand in each slot to begin with.
+    """
+    n = turns.shape[1]
+    start = np.sort(turns[0] % 1.0)
+    gaps = np.diff(np.concatenate([start, [start[0] + 1.0]]))
+    widest = int(np.argmax(gaps))
+    seam = start[widest] + gaps[widest] / 2
+    order = sorted(range(n), key=lambda k: (turns[0, k] - seam) % 1.0)
+    first = list(order)
+    moves: list[int] = []
+    for sample in range(1, len(turns)):
+        before, after = turns[sample - 1], turns[sample]
+        events: list[tuple[float, int, int]] = []
+        for k in range(n):
+            events += [
+                (at, k, -1) for at in _passings(before[k] - seam, after[k] - seam)
+            ]
+        apart_before = before[:, None] - before[None, :]
+        apart_after = after[:, None] - after[None, :]
+        changed = np.floor(apart_before) != np.floor(apart_after)
+        for a, b in zip(*np.nonzero(np.triu(changed, 1))):
+            events += [
+                (at, int(a), int(b))
+                for at in _passings(apart_before[a, b], apart_after[a, b])
+            ]
+        for at, a, b in sorted(events):
+            outside = radius[sample - 1] + at * (radius[sample] - radius[sample - 1])
+            order = _made(order, moves, a, b, outside, after[a] > before[a])
+    return moves, first
+
+
+def _passings(before: float, after: float) -> list[float]:
+    """When, as a fraction of the sample, a quantity moving evenly from
+    ``before`` to ``after`` passes a whole number."""
+    low, high = min(before, after), max(before, after)
+    return [
+        (whole - before) / (after - before)
+        for whole in range(math.floor(low) + 1, math.floor(high) + 1)
+    ]
+
+
+def _made(
+    order: list[int],
+    moves: list[int],
+    a: int,
+    b: int,
+    outside: np.ndarray,
+    onwards: bool,
+) -> list[int]:
+    """The strands' order once an event is made, its move written: strand
+    ``a`` passing the seam if ``b`` is -1, onwards being clockwise, else
+    strands ``a`` and ``b`` crossing, ``outside`` each strand's distance
+    from the centre then."""
+    n = len(order)
+    if b < 0:
+        if onwards and order[-1] == a:
+            moves.append(n + 1)
+            return [a] + order[:-1]
+        if not onwards and order[0] == a:
+            moves.append(-(n + 1))
+            return order[1:] + [a]
+        raise RuntimeError(f"Strand {a} passes the seam from the middle of the ring.")
+    i, j = order.index(a), order.index(b)
+    if abs(i - j) == 1:
+        low, high, index = min(i, j), max(i, j), min(i, j) + 1
+    elif {i, j} == {0, n - 1} and n > 2:
+        low, high, index = n - 1, 0, n
+    else:
+        raise RuntimeError(f"Strands {a} and {b} cross with others between.")
+    lower, upper = order[low], order[high]
+    moves.append(index if outside[lower] > outside[upper] else -index)
+    order = list(order)
+    order[low], order[high] = upper, lower
+    return order
 
 
 def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
@@ -295,8 +684,9 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
         **kwargs: Passed to :func:`~braidpy.horn_gear.take_off.yarn_paths`.
 
     Returns:
-        One object per carrier, answering ``position(z)`` over a common
-        ``length``, ordered by carrier id.
+        One object per yarn, answering ``position(z)`` over a common
+        ``length``: the carriers' by id, then the axials' if the paths have
+        them (``axials=True``), in the machine's order.
     """
     from .take_off import yarn_paths
 
@@ -320,5 +710,15 @@ def strands_for_checking(machine: BraidingMachine, **kwargs) -> Sequence:
             point = here + (nxt - here) * step
             return float(point[0]), float(point[1]), float(point[2])
 
-    ids: list = list(paths.points)
-    return [_Yarn(paths.points[cid]) for cid in sorted(ids)]
+    # Carriers by id, then the axials in the machine's order: as the words
+    # number them.
+    axials = [a.name for a in getattr(machine, "axials", ()) if a.name in paths.points]
+    carriers = sorted(cast("list[int]", [k for k in paths.points if k not in axials]))
+    return [_Yarn(paths.points[k]) for k in [*carriers, *axials]]
+
+
+# The names these went by before braidpy's code took American spelling.
+__getattr__ = renamed_globals(
+    __name__,
+    {"deck_centre": "deck_center"},
+)

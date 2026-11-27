@@ -43,11 +43,6 @@ Braid words, their notations, operations and properties.
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.operations
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. automodule:: braidpy.properties
    :members:
    :undoc-members:
@@ -58,12 +53,21 @@ Braid words, their notations, operations and properties.
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.band_canonical_form
+   :members:
+   :show-inheritance:
+
 .. automodule:: braidpy.garside_canonical_form
    :members:
    :undoc-members:
    :show-inheritance:
 
 .. automodule:: braidpy.handles_reduction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.shortening
    :members:
    :undoc-members:
    :show-inheritance:
@@ -79,9 +83,25 @@ Braid words, their notations, operations and properties.
 Whether braids are alike, and the braids braidpy knows.
 
 ```{eval-rst}
+.. automodule:: braidpy.braid_word
+   :members:
+   :show-inheritance:
+
+.. automodule:: braidpy.braid_pattern
+   :members:
+   :show-inheritance:
+
+.. automodule:: braidpy.closed_braid
+   :members:
+   :show-inheritance:
+
 .. automodule:: braidpy.similarity
    :members:
    :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.conjugacy
+   :members:
    :show-inheritance:
 
 .. automodule:: braidpy.topology_catalog
@@ -89,7 +109,7 @@ Whether braids are alike, and the braids braidpy knows.
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.catalogue
+.. automodule:: braidpy.catalog
    :members:
    :undoc-members:
    :show-inheritance:
@@ -148,6 +168,11 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: braidpy.horn_gear.described
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: braidpy.horn_gear.layout
    :members:
    :undoc-members:
@@ -179,6 +204,11 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :show-inheritance:
 
 .. automodule:: braidpy.horn_gear.handle
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: braidpy.horn_gear.multiband
    :members:
    :undoc-members:
    :show-inheritance:
@@ -229,9 +259,8 @@ Kumihimo, Ashley's sinnets, braiding and lace machines, and how to make a given 
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.craft_design_online
+.. automodule:: braidpy.b3d
    :members:
-   :undoc-members:
    :show-inheritance:
 ```
 
@@ -270,6 +299,8 @@ Laying braids in 3D, drawing them, and settling their yarns.
    :undoc-members:
    :show-inheritance:
 
+.. autodata:: braidpy.take_off.tighten.SAFE_STEP
+
 .. automodule:: braidpy.rope
    :members:
    :undoc-members:
@@ -280,10 +311,11 @@ Laying braids in 3D, drawing them, and settling their yarns.
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: braidpy.material_braid
+.. automodule:: braidpy.carried
    :members:
    :undoc-members:
    :show-inheritance:
+
 ```
 
 ## Braid Studio

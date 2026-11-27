@@ -37,6 +37,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from typing import Optional
+
 from braidpy.annulus_braid import (
     TubularBraidStrand,
     cover_factor,
@@ -84,7 +86,7 @@ def _style() -> None:
     )
 
 
-def _save(fig, name: str, png_dir: Path | None, note: str | None = None) -> None:
+def _save(fig, name: str, png_dir: Path | None, note: Optional[str] = None) -> None:
     if note:
         fig.text(0.0, -0.02, note, color=MUTED, fontsize=8, va="top")
     DOCS.mkdir(parents=True, exist_ok=True)
@@ -112,9 +114,9 @@ def _crossings(
         if other.direction == one.direction:
             continue
         for wrap in range(2):
-            travelled = (other.phase - one.phase + turn * wrap) / 2.0
-            if 0.0 <= travelled < turn:
-                height = travelled * one.radius / math.tan(one.braid_angle)
+            traveled = (other.phase - one.phase + turn * wrap) / 2.0
+            if 0.0 <= traveled < turn:
+                height = traveled * one.radius / math.tan(one.braid_angle)
                 found.append((height, other_index))
     return sorted(found)
 
@@ -752,9 +754,9 @@ def rope_ends(png_dir: Path | None) -> None:
 
     fig, ax = plt.subplots(figsize=(7.6, 4.6))
     z = np.linspace(0, 6, 300)
-    for k, colour in enumerate(YARN[:4]):
+    for k, color in enumerate(YARN[:4]):
         x = 0.9 * np.sin(2.1 * z + k * math.pi / 2)
-        ax.plot(x, z, color=colour, lw=2.4, alpha=0.85)
+        ax.plot(x, z, color=color, lw=2.4, alpha=0.85)
     ax.add_patch(Rectangle((-1.6, -0.35), 3.2, 0.35, color=MUTED, alpha=0.35, lw=0))
     ax.text(
         -1.75,
@@ -790,20 +792,20 @@ def rope_ends(png_dir: Path | None) -> None:
         ),
     )
     ax.text(1.35, 6.75, "free to turn", color=MUTED, fontsize=8)
-    for k, colour in enumerate(YARN[:4]):
+    for k, color in enumerate(YARN[:4]):
         x0 = 0.9 * math.sin(2.1 * 6 + k * math.pi / 2)
         bx = 2.6 + 0.55 * k
-        ax.plot([x0, bx], [6.12, 6.12 + 0.15 * (k + 1)], color=colour, lw=1.0, ls=":")
+        ax.plot([x0, bx], [6.12, 6.12 + 0.15 * (k + 1)], color=color, lw=1.0, ls=":")
         ax.plot(
             [bx, bx],
             [6.12 + 0.15 * (k + 1), 3.6 - 0.25 * k],
-            color=colour,
+            color=color,
             lw=1.0,
             ls=":",
         )
         ax.add_patch(
             Rectangle(
-                (bx - 0.13, 3.3 - 0.25 * k), 0.26, 0.3, color=colour, alpha=0.8, lw=0
+                (bx - 0.13, 3.3 - 0.25 * k), 0.26, 0.3, color=color, alpha=0.8, lw=0
             )
         )
     ax.add_patch(
@@ -881,17 +883,15 @@ def rope_results(png_dir: Path | None) -> None:
     fig = plt.figure(figsize=(11, 7.4))
     grid = fig.add_gridspec(2, 6, height_ratios=[1, 1.05])
 
-    def side(ax, yarns, title, colours=YARN):
+    def side(ax, yarns, title, colors=YARN):
         for k, y in enumerate(yarns):
             p = _xyz(y)
-            ax.plot(
-                p[:, 0], p[:, 2], color=colours[k % len(colours)], lw=2.2, alpha=0.9
-            )
+            ax.plot(p[:, 0], p[:, 2], color=colors[k % len(colors)], lw=2.2, alpha=0.9)
         ax.set_aspect("equal")
         ax.set_title(title, fontsize=9)
         ax.tick_params(labelsize=7)
 
-    def section(ax, yarns, title, colours=YARN):
+    def section(ax, yarns, title, colors=YARN):
         tops = [_xyz(y)[:, 2].max() for y in yarns]
         height = min(tops)
         lo, hi, mid = 0.3 * height, 0.7 * height, 0.5 * height
@@ -904,8 +904,8 @@ def rope_results(png_dir: Path | None) -> None:
         for k, y in enumerate(yarns):
             p = _xyz(y)
             m = (p[:, 2] > lo) & (p[:, 2] < hi)
-            colour = colours[k % len(colours)]
-            ax.plot(p[m, 0] - cx, p[m, 1] - cy, color=colour, lw=0.8, alpha=0.6)
+            color = colors[k % len(colors)]
+            ax.plot(p[m, 0] - cx, p[m, 1] - cy, color=color, lw=0.8, alpha=0.6)
             for i in range(len(p) - 1):
                 if (p[i, 2] - mid) * (p[i + 1, 2] - mid) <= 0 and p[i, 2] != p[
                     i + 1, 2
@@ -914,7 +914,7 @@ def rope_results(png_dir: Path | None) -> None:
                     c = p[i] + f * (p[i + 1] - p[i])
                     ax.add_patch(
                         Circle(
-                            (c[0] - cx, c[1] - cy), 0.5, color=colour, alpha=0.75, lw=0
+                            (c[0] - cx, c[1] - cy), 0.5, color=color, alpha=0.75, lw=0
                         )
                     )
                     break
@@ -964,6 +964,411 @@ def rope_results(png_dir: Path | None) -> None:
     )
 
 
+# The ladder of horn gears, two of its gears split, that horn_gear_layout.md
+# is about: the graph as Braid Studio's "Your own machine" takes it.
+SPLIT_LADDER = (
+    "A0-A1:3 A0-B0 A1-A2:3 A1-B1:3 A2-A3a A2-B2:3 A3a-B3a B0-B1 B1-B2 B2-B3a "
+    "A3b-A4:3 A3b-B3b A4-A5:3 A4-B4:3 A5-A6 A5-B5:3 A6-B6 B3b-B4 B4-B5 B5-B6 "
+    "A3a+A3b B3a+B3b"
+)
+
+
+def _wrapped(note: str) -> str:
+    """A figure's note in lines, not one as wide as its words: the horn
+    gear figures' notes are long."""
+    import textwrap
+
+    return textwrap.fill(note, 120)
+
+
+def _axles(machine) -> tuple[dict, dict, list]:
+    """A machine's axles: each centre once, its radius, and the pairs of axles
+    that mesh, the parts of a split gear being one axle."""
+    from braidpy.horn_gear.layout import compute_layout, gear_radii
+
+    centers, radii = compute_layout(machine), gear_radii(machine)
+    axle = {name: name.rstrip("ab") if name[-1] in "ab" else name for name in centers}
+    at = {axle[n]: centers[n] for n in centers}
+    size = {axle[n]: radii[n] for n in centers}
+    meshes = sorted(
+        {tuple(sorted((axle[c.gear_a], axle[c.gear_b]))) for c in machine.connections}
+    )
+    return at, size, meshes
+
+
+def _draw_gears(ax, at, size, meshes) -> tuple[float, float]:
+    """Gears as circles, each mesh a line between centres: green if the two
+    touch, within 1%, red if not; two gears that do not mesh but overlap are
+    joined in red too.  Returns the worst mesh error and the worst overlap,
+    as shares of the two radii."""
+    worst_mesh = worst_overlap = 0.0
+    for name, (x, y) in at.items():
+        ax.add_patch(plt.Circle((x, y), size[name], fill=False, color=INK, lw=0.8))
+        ax.text(x, y, name, ha="center", va="center", fontsize=7, color=MUTED)
+    names = sorted(at)
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            touching = size[a] + size[b]
+            apart = math.dist(at[a], at[b])
+            if (a, b) in meshes:
+                error = abs(apart - touching) / touching
+                worst_mesh = max(worst_mesh, error)
+                color = MARK if error < 0.01 else LIMIT
+            elif apart < touching:
+                worst_overlap = max(worst_overlap, (touching - apart) / touching)
+                color = LIMIT
+            else:
+                continue
+            ax.plot(*zip(at[a], at[b]), color=color, lw=1.4)
+    ax.set_aspect("equal")
+    ax.autoscale_view()
+    ax.axis("off")
+    return worst_mesh, worst_overlap
+
+
+def gear_layout_ladder(png_dir: Path | None) -> None:
+    """The split ladder laid out as Kamada-Kawai shrunk left it, and relaxed."""
+    import networkx as nx
+
+    from braidpy.horn_gear.described import machine_from_graph
+
+    machine = machine_from_graph(SPLIT_LADDER, 4)
+    at, size, meshes = _axles(machine)
+    # Before: the graph laid out, each mesh as long as its two radii at the
+    # convention (radius sqrt(horns)), then shrunk till no mesh was longer,
+    # as compute_layout did.
+    horns = {name: 4 for name in at}
+    for part in SPLIT_LADDER.split():
+        if ":3" in part:
+            horns[part.split("-")[1].split(":")[0]] = 3
+    horns.update({"A3": 8, "B3": 8})
+    convention = {name: math.sqrt(h) for name, h in horns.items()}
+    graph = nx.Graph()
+    for a, b in meshes:
+        graph.add_edge(a, b, len=convention[a] + convention[b])
+    try:
+        raw = nx.kamada_kawai_layout(graph, weight="len")
+    except ImportError:  # without SciPy, the spring layout, as compute_layout did
+        raw = nx.spring_layout(graph, seed=42, iterations=500)
+    shrink = min(
+        graph[a][b]["len"] / math.dist(raw[a], raw[b]) for a, b in graph.edges()
+    )
+    before = {name: tuple(shrink * np.asarray(xy)) for name, xy in raw.items()}
+
+    fig, (left, right) = plt.subplots(1, 2, figsize=(9.5, 4.6))
+    mesh_before, overlap_before = _draw_gears(left, before, convention, meshes)
+    left.set_title("before: laid out, then shrunk\ntill no mesh is too long")
+    mesh_after, overlap_after = _draw_gears(right, at, size, meshes)
+    right.set_title("after: relaxed (ring_geometry),\nthen timed (time_ring)")
+    # The claims horn_gear_layout.md makes of these two pictures.
+    assert mesh_before > 0.5 and overlap_before > 0.2
+    assert mesh_after < 0.01 and overlap_after == 0.0
+    _save(
+        fig,
+        "gear_layout_ladder",
+        png_dir,
+        _wrapped(
+            f"Green: two gears that mesh and touch (within 1%). Red: a mesh too short "
+            f"or too long, or two gears that do not mesh but overlap. Before, the "
+            f"worst mesh is {mesh_before:.0%} off; after, {mesh_after:.1%}, every gear "
+            f"its own size within 0.75 to 1.3 of sqrt(horns)."
+        ),
+    )
+
+
+def gear_layout_relax(png_dir: Path | None) -> None:
+    """One round of the relaxation, for a mesh and for two gears apart."""
+    fig, (left, right) = plt.subplots(1, 2, figsize=(9.5, 3.2))
+    for ax, (ri, rj, d, title, meshing) in zip(
+        (left, right),
+        (
+            (1.0, 0.8, 2.6, "two gears that mesh: drawn to touch", True),
+            (1.0, 0.8, 1.5, "two gears that do not: pushed apart", False),
+        ),
+    ):
+        pi, pj = np.array([0.0, 0.0]), np.array([d, 0.0])
+        ax.add_patch(plt.Circle(pi, ri, fill=False, color=INK))
+        ax.add_patch(plt.Circle(pj, rj, fill=False, color=INK))
+        ax.plot([0, d], [0, 0], color=MUTED, lw=0.8)
+        ax.text(0, 0.08, "$p_i$", ha="center")
+        ax.text(d, 0.08, "$p_j$", ha="center")
+        ax.text(-ri / 2, -0.25, "$r_i$", ha="center", color=MUTED)
+        ax.text(d + rj / 2, -0.25, "$r_j$", ha="center", color=MUTED)
+        ax.annotate(
+            "", (d, -1.25), (0, -1.25), arrowprops={"arrowstyle": "<->", "color": INK}
+        )
+        ax.text(d / 2, -1.45, "$d_{ij}$", ha="center")
+        if meshing:
+            error = d - (ri + rj)
+            ax.annotate(
+                "",
+                (error / 2, 0.55),
+                (0, 0.55),
+                arrowprops={"arrowstyle": "->", "color": MARK},
+            )
+            ax.annotate(
+                "",
+                (d - error / 2, 0.55),
+                (d, 0.55),
+                arrowprops={"arrowstyle": "->", "color": MARK},
+            )
+            ax.text(
+                d / 2,
+                1.05,
+                "$e = d_{ij} - (r_i + r_j) > 0$: closer, and larger",
+                ha="center",
+                color=MARK,
+            )
+        else:
+            short = 1.1 * (ri + rj) - d
+            ax.annotate(
+                "",
+                (-short / 2, 0.55),
+                (0, 0.55),
+                arrowprops={"arrowstyle": "->", "color": LIMIT},
+            )
+            ax.annotate(
+                "",
+                (d + short / 2, 0.55),
+                (d, 0.55),
+                arrowprops={"arrowstyle": "->", "color": LIMIT},
+            )
+            ax.text(
+                d / 2,
+                1.05,
+                "$s = (1 + c)(r_i + r_j) - d_{ij} > 0$: apart",
+                ha="center",
+                color=LIMIT,
+            )
+        ax.set_title(title)
+        ax.set_aspect("equal")
+        ax.set_xlim(-1.4, d + 1.2)
+        ax.set_ylim(-1.7, 1.4)
+        ax.axis("off")
+    _save(fig, "gear_layout_relax", png_dir)
+
+
+def split_axles_meet(png_dir: Path | None) -> None:
+    """Two split axles meshing twice: touching, the a horns meeting at the
+    contact as a step begins, the b horns half a step on."""
+    from braidpy.horn_gear.described import machine_from_graph
+
+    machine = machine_from_graph("A1-B1 A2-B2 A1+A2 B1+B2", 4)
+    phases = {c.name: c.phase for c in machine.connections}
+    assert phases == {"A1-B1": 0.0, "A2-B2": 0.5}
+    horns = 8
+    pitch = 2 * math.pi / horns
+    radius = 1.0
+    ca, cb = np.array([-radius, 0.0]), np.array([radius, 0.0])
+    contact = np.array([0.0, 0.0])
+
+    def horn(center, angle):
+        return center + radius * np.array([math.cos(angle), math.sin(angle)])
+
+    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.6))
+    for ax, t in zip(axes, (0.0, 0.5)):
+        # A step turns each part one of its slots, two pitches of the axle;
+        # A anticlockwise, B clockwise, horn 0 of each, part a, at the
+        # contact as the step begins.
+        there = []
+        for center, start, turn in ((ca, 0.0, 1), (cb, math.pi, -1)):
+            ax.add_patch(plt.Circle(center, radius, fill=False, color=MUTED, lw=0.8))
+            for k in range(horns):
+                point = horn(center, start + turn * (k * pitch + t * 2 * pitch))
+                part = "a" if k % 2 == 0 else "b"
+                ax.plot(*point, "o", color=OUT if part == "a" else IN, ms=6)
+                if math.dist(point, contact) < 1e-9:
+                    there.append(part)
+        assert there == (["a", "a"] if t == 0.0 else ["b", "b"])
+        ax.plot(*contact, "s", mfc="none", mec=INK, ms=11)
+        ax.text(*(ca + [0, -0.12]), "A", ha="center", color=MUTED)
+        ax.text(*(cb + [0, -0.12]), "B", ha="center", color=MUTED)
+        ax.set_title(
+            "tick 0, the step's end:\nthe a horns meet and hand over"
+            if t == 0.0
+            else "tick 1, half a step on:\nthe b horns, at the same point"
+        )
+        ax.set_aspect("equal")
+        ax.axis("off")
+    _save(
+        fig,
+        "split_axles_meet",
+        png_dir,
+        _wrapped(
+            "Two split axles of eight horns, parts a (blue) and b (orange) taking "
+            "turns, meshing twice: they touch at one contact (square). A turns "
+            "anticlockwise, B clockwise, a step being two pitches, so a horn of each "
+            "comes round every half step: band a hands over at the step's end, band "
+            "b half a step on (Connection.phase 0.5), never there together."
+        ),
+    )
+
+
+def machine_size_survey(png_dir: Path | None) -> None:
+    """How large every machine must be for its bobbins: its horn gap, in
+    bobbin diameters, for the two carriers coming closest to clear."""
+    from braidpy.horn_gear.described import machine_from_graph
+    from braidpy.horn_gear.simulation import state_period
+    from braidpy.horn_gear.take_off import clearance
+    from braidpy.machine_catalog import CATALOG
+
+    machines = {name: entry.make for name, entry in sorted(CATALOG.items())}
+    machines.update(
+        {
+            "split in three": lambda: machine_from_graph("H1-A H2-B H3-C H1+H2+H3", 3),
+            "split pair, neighbours": lambda: machine_from_graph(
+                "X-A1 A1-B1 A2-B2 B2-Y A1+A2 B1+B2", 4
+            ),
+            "split ladder": lambda: machine_from_graph(SPLIT_LADDER, 4),
+        }
+    )
+    names, needed = [], []
+    for name, make in machines.items():
+        machine = make()
+        loading = machine.default_carriers()
+        steps = min(state_period(machine, loading) or 1, 600)
+        room = clearance(machine, steps, loading)
+        if room is None:
+            continue  # driven by a card, or one carrier
+        assert room.met is None, name
+        names.append(name)
+        needed.append(1 / room.share)
+    cataloged = needed[: len([n for n in names if n in CATALOG])]
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    colors = [LIMIT if n not in CATALOG else MUTED for n in names]
+    ax.barh(names, needed, color=colors)
+    ax.invert_yaxis()
+    ax.set_xlabel("smallest horn gap needed, in bobbin diameters")
+    _save(
+        fig,
+        "machine_size_survey",
+        png_dir,
+        _wrapped(
+            f"Cataloged machines need horns {min(cataloged):.1f} to "
+            f"{max(cataloged):.1f} bobbin diameters apart for their carriers to "
+            "clear each other; in red, the machines of your own this page "
+            "describes."
+        ),
+    )
+
+
+def _ashley_panel(ax, title, outline, holes=(), across=None) -> list[tuple[int, int]]:
+    """One shape drawn as Ashley draws it, on ``ax``: its outline and holes,
+    its lines coloured by direction, each bight a loop beyond the outline,
+    numbered as its space.  Returns its sinnet's moves."""
+    from braidpy.making.ashley import (
+        _loops,
+        _round_the_outline,
+        _sides,
+        shape_diagram,
+        sinnet_from_shape,
+    )
+
+    colors = [OUT, IN, MARK]
+    lines, joins, bights = shape_diagram(outline, holes, across)
+    loops = _loops(outline, holes)
+    for corners in loops:
+        closed = np.vstack([corners, corners[:1]])
+        ax.plot(closed[:, 0], closed[:, 1], color=MUTED, lw=1)
+    for line in lines:
+        (x0, y0), (x1, y1) = line.ends
+        ax.plot([x0, x1], [y0, y1], color=colors[line.direction % 3], lw=1.6)
+    sides = _sides(loops)
+    ends: dict[int, list] = {}
+    for line, join in zip(lines, joins):
+        for end, space in zip(line.ends, join):
+            ends.setdefault(space, []).append(np.asarray(end))
+    for number, at in enumerate(bights, start=1):
+        p, q = ends[number]
+        # Out of the shape, square to the sides its two ends are on: every
+        # outline goes round with the shape on its left, a hole's too.
+        out = np.zeros(2)
+        for end in (p, q):
+            a, b = sides[_round_the_outline(loops, end)[2]]
+            out += np.array([(b - a)[1], -(b - a)[0]]) / np.linalg.norm(b - a)
+        out = out / np.linalg.norm(out)
+        # Smaller round a hole, where there is less room.
+        reach = 0.5 if _round_the_outline(loops, p)[0] else 1.0
+        tip = np.asarray(at) + out * reach * (0.3 + 0.35 * np.linalg.norm(q - p))
+        t = np.linspace(0, 1, 30)[:, None]
+        loop = (1 - t) ** 2 * p + 2 * (1 - t) * t * tip + t**2 * q
+        ax.plot(loop[:, 0], loop[:, 1], color=INK, lw=1)
+        ax.text(
+            *(tip + out * 0.3 * reach),
+            str(number),
+            ha="center",
+            va="center",
+            fontsize=8,
+            color=INK,
+        )
+    ax.set_title(title, fontsize=10, pad=24)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    return sinnet_from_shape(outline, holes=holes, across=across).moves
+
+
+def ashley_shapes(png_dir: Path | None) -> None:
+    """Ashley's diagrams of a triangle and an oblong, as
+    sinnet_from_shape draws them: the lines, the bights numbered as the
+    spaces, and the moves in his order."""
+    from braidpy.making.ashley import oblong, triangle
+    from braidpy.solid_sinnets_catalog import abok_3047
+
+    shapes = {"triangle, #3047": triangle(4), "oblong, #3071": oblong(6, 2)}
+    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8), width_ratios=[1.1, 1.3])
+    notes = []
+    for ax, (title, outline) in zip(axes, shapes.items()):
+        moves = _ashley_panel(ax, title, outline)
+        notes.append(f"{title}: " + ", ".join(f"{a}>{b}" for a, b in moves))
+    # What the page says of the triangle: the book's own table.
+    assert _ashley_panel(plt.figure().gca(), "", shapes["triangle, #3047"]) == [
+        tuple(move) for move in abok_3047.moves
+    ]
+    plt.close()
+    _save(
+        fig,
+        "ashley_shapes",
+        png_dir,
+        _wrapped(
+            "Lines parallel to the sides, half a spacing in, coloured by direction; "
+            "each turns at the outline in a bight, numbered as the stand's spaces. "
+            "Moves in the book's order: " + "; ".join(notes) + "."
+        ),
+    )
+
+
+def ashley_grids(png_dir: Path | None) -> None:
+    """Shapes on a grid, as sinnet_from_shape draws them: an L on the
+    square grid, its lines cut where the outline turns; a hollow square, the
+    spaces round its hole numbered between the outer ones; a square on a
+    corner on the diagonal grid, the lines of the book's #3073."""
+    from braidpy.making.ashley import _drawn, grid_lines, grid_outline, grid_shape
+    from braidpy.solid_sinnets_catalog import abok_3073
+
+    shapes = {
+        "an L, 5 lines, arms 2": ("square", "L", 5, 2),
+        "a hollow square, 8 lines": ("square", "frame", 8, 2),
+        "a square on a corner, #3073": ("diagonal", "square", 6, 2),
+    }
+    fig, axes = plt.subplots(1, 3, figsize=(11, 4.2))
+    for ax, (title, (grid, shape, size, height)) in zip(axes, shapes.items()):
+        outline, *holes = grid_outline(grid, grid_shape(grid, shape, size, height))
+        moves = _ashley_panel(ax, title, outline, holes, grid_lines(grid))
+        if shape == "square":
+            # What the page says of it: the book's lines.
+            assert _drawn(moves) == _drawn([tuple(m) for m in abok_3073.moves])
+    _save(
+        fig,
+        "ashley_grids",
+        png_dir,
+        _wrapped(
+            "Shapes on a grid: an L, its lines cut where the outline turns back; a "
+            "hollow square, the spaces round its hole numbered between the outer ones; "
+            "a square on a corner, its lines across and up, the book's #3073."
+        ),
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--png", type=Path, default=None, help="also write PNG copies")
@@ -983,7 +1388,14 @@ def main() -> int:
     rope_model(args.png)
     rope_ends(args.png)
     rope_results(args.png)
-    print("\n10 figures written to docs/source/")
+    print("the horn gear machine:")
+    gear_layout_ladder(args.png)
+    gear_layout_relax(args.png)
+    split_axles_meet(args.png)
+    machine_size_survey(args.png)
+    ashley_shapes(args.png)
+    ashley_grids(args.png)
+    print("\n15 figures written to docs/source/")
     return 0
 
 

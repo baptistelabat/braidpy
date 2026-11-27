@@ -52,7 +52,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 from braidpy.rope import (
     fire_mix,
@@ -67,7 +67,7 @@ from braidpy.rope import (
     touching,
 )
 
-__all__ = ["form"]
+__all__ = ["form", "friction_force"]
 
 # Bead names in a friction spring's key: the first times this, plus the
 # second.
@@ -95,12 +95,65 @@ class _Outcome:
     relay: list[int] = field(default_factory=list)
 
 
+def friction_force(
+    grips: dict[int, list[float]],
+    key: int,
+    v: Sequence[float],
+    i: int,
+    j: int,
+    u: float,
+    w: float,
+    nx: float,
+    ny: float,
+    nz: float,
+    push: float,
+    dt: float,
+    mu: float,
+    kt: float,
+) -> tuple[float, float, float]:
+    """Friction at a contact: the tangential spring between the segments at
+    offsets i and j of the beads' velocities v, at u and w along them,
+    stretched by how the contact points slid past each other this step —
+    kept in the contact's tangent plane, normal (nx, ny, nz) — and given way
+    to what friction holds, mu times the push, when it pulls harder: the
+    contact slips.  The springs are kept in ``grips`` by the pair's key.
+
+    Returns:
+        The friction force on the first segment.
+    """
+    spring = grips.get(key)
+    if spring is None:
+        spring = grips[key] = [0.0, 0.0, 0.0]
+    vx = (1 - u) * v[i] + u * v[i + 3] - (1 - w) * v[j] - w * v[j + 3]
+    vy = (1 - u) * v[i + 1] + u * v[i + 4] - (1 - w) * v[j + 1] - w * v[j + 4]
+    vz = (1 - u) * v[i + 2] + u * v[i + 5] - (1 - w) * v[j + 2] - w * v[j + 5]
+    spring[0] += vx * dt
+    spring[1] += vy * dt
+    spring[2] += vz * dt
+    along = spring[0] * nx + spring[1] * ny + spring[2] * nz
+    spring[0] -= along * nx
+    spring[1] -= along * ny
+    spring[2] -= along * nz
+    tx, ty, tz = -kt * spring[0], -kt * spring[1], -kt * spring[2]
+    size = math.hypot(tx, ty, tz)
+    most = mu * push
+    if size > most:
+        k = most / size
+        tx *= k
+        ty *= k
+        tz *= k
+        spring[0] *= k
+        spring[1] *= k
+        spring[2] *= k
+    return tx, ty, tz
+
+
 def form(
     yarns: Sequence[Sequence[float]],
     row: float,
     friction: float = 0.3,
     feed: float = 1.0,
-    weight: float | None = None,
+    weight: Optional[float] = None,
     stretch: float = 100.0,
     bend: float = 0.5,
     contact: float = 100.0,
@@ -111,7 +164,7 @@ def form(
     window: float = 2.0,
     steps_per_row: int = 4000,
     tolerance: float = 2e-3,
-    progress: Callable[[dict[str, Any]], None] | None = None,
+    progress: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> dict[str, Any]:
     """A braid made crossing by crossing: ``form.js``'s ``form``.
 
@@ -300,7 +353,7 @@ def form(
 
         keys_here: set[int] = set()
 
-        def neighbours() -> None:
+        def neighbors() -> None:
             nonlocal pairs, keys_here
             pairs = near_pairs(x, segs, yarn_of, gap, reach, cells, movable)
             built[:] = x
@@ -335,45 +388,10 @@ def form(
             nz = pz / max(r, 1e-9)
             qx, qy, qz = push * nx, push * ny, push * nz
             if mu > 0:
-                # Friction: the tangential spring, stretched by how the
-                # contact points slid past each other this step.
                 touched.add(key)
-                spring = grips.get(key)
-                if spring is None:
-                    spring = grips[key] = [0.0, 0.0, 0.0]
-                vx = (1 - u) * v[i] + u * v[i + 3] - (1 - w) * v[j] - w * v[j + 3]
-                vy = (
-                    (1 - u) * v[i + 1]
-                    + u * v[i + 4]
-                    - (1 - w) * v[j + 1]
-                    - w * v[j + 4]
+                tx, ty, tz = friction_force(
+                    grips, key, v, i, j, u, w, nx, ny, nz, push, now["dt"], mu, kt
                 )
-                vz = (
-                    (1 - u) * v[i + 2]
-                    + u * v[i + 5]
-                    - (1 - w) * v[j + 2]
-                    - w * v[j + 5]
-                )
-                spring[0] += vx * now["dt"]
-                spring[1] += vy * now["dt"]
-                spring[2] += vz * now["dt"]
-                # Kept in the contact's tangent plane.
-                along = spring[0] * nx + spring[1] * ny + spring[2] * nz
-                spring[0] -= along * nx
-                spring[1] -= along * ny
-                spring[2] -= along * nz
-                tx, ty, tz = -kt * spring[0], -kt * spring[1], -kt * spring[2]
-                size = math.hypot(tx, ty, tz)
-                most = mu * push
-                if size > most:
-                    # Slipping: the spring gives way to what friction holds.
-                    k = most / size
-                    tx *= k
-                    ty *= k
-                    tz *= k
-                    spring[0] *= k
-                    spring[1] *= k
-                    spring[2] *= k
                 qx += tx
                 qy += ty
                 qz += tz
@@ -415,11 +433,11 @@ def form(
         v_block = 0.0
         working = [1 if k == 1 else 0 for k in kind]
         sums = [0.0] * 4
-        neighbours()
+        neighbors()
         step = 0
         while step < max_steps:
             if stale(x, built):
-                neighbours()
+                neighbors()
             forces(dt)
             state["deepestEver"] = max(state["deepestEver"], now["deepest"])
             block_force = now["blockForce"]

@@ -2,13 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: pure_braid.py
-Description: Pure braids: the ones that leave every strand where it started
-Authors: Baptiste Labat
-Created: 2025-05-30
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
+"""Pure braids: the ones that leave every strand where it started.
 
 A braid is *pure* when its word returns every strand to the slot it set out
 from — when the permutation it performs is the identity.  The pure braids
@@ -27,8 +21,12 @@ bring it home.  :func:`closing_repeats` says how many, from the strands'
 from collections.abc import Sequence
 from functools import reduce
 from math import lcm
+from typing import TypeVar
 
 from braidpy.braid import Braid
+
+# Whatever a sequence repeats (repeating_unit).
+T = TypeVar("T")
 
 
 def permutation(braid: Braid) -> list[int]:
@@ -117,11 +115,12 @@ def closing_repeats(braid: Braid, limit: int | None = 1000) -> int | None:
     return repeats if limit is None or repeats <= limit else None
 
 
-def repeating_unit(word: Sequence[int]) -> list[int]:
+def repeating_unit(word: Sequence[T]) -> list[T]:
     """The shortest word that, repeated, makes ``word``.
 
     Args:
-        word: Signed Artin generators.
+        word: Signed Artin generators, or any sequence: the gears a carrier
+            track runs round, say.
 
     Returns:
         The unit: ``word`` itself if it repeats nothing shorter.

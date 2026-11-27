@@ -11,8 +11,8 @@ import sys
 
 import pytest
 
-from braidpy.web import build, catalogue
-from braidpy.web._settings import COLOURS
+from braidpy.web import build, catalog
+from braidpy.web._settings import COLORS
 
 
 @pytest.mark.parametrize(
@@ -40,12 +40,12 @@ def test_moves_that_cannot_be_read_say_so(text, message):
     "source",
     [
         pytest.param(s, marks=pytest.mark.slow) if s == "sinnet" else s
-        for s, about in catalogue().items()
+        for s, about in catalog().items()
         if "entries" in about
     ],
 )
-def test_every_catalogue_entry_is_made(source):
-    for entry in catalogue()[source]["entries"]:
+def test_every_catalog_entry_is_made(source):
+    for entry in catalog()[source]["entries"]:
         if entry["name"] == "custom":
             continue  # made from what is typed in: see below
         result = build(
@@ -55,8 +55,8 @@ def test_every_catalogue_entry_is_made(source):
         json.dumps(result)
 
 
-def test_the_catalogue_is_plain_data_with_defaults():
-    entries = catalogue()
+def test_the_catalog_is_plain_data_with_defaults():
+    entries = catalog()
     json.dumps(entries)
     for source, about in entries.items():
         build({"source": source, **about["defaults"], "iterations": 1, "cycles": 1})
@@ -78,8 +78,8 @@ def test_nothing_heavy_is_loaded_to_build_a_braid():
     """No drawing library: in a browser they would be tens of megabytes; nor
     sympy, seconds to import there."""
     code = (
-        "import sys; from braidpy.web import build, catalogue\n"
-        "for source, about in catalogue().items():\n"
+        "import sys; from braidpy.web import build, catalog\n"
+        "for source, about in catalog().items():\n"
         "    build({'source': source, **about['defaults'], 'iterations': 1,"
         " 'cycles': 1})\n"
         "print([m for m in ('plotly', 'matplotlib', 'imageio', 'sympy', 'math_braid')"
@@ -91,12 +91,12 @@ def test_nothing_heavy_is_loaded_to_build_a_braid():
     assert out.stdout.strip() == "[]"
 
 
-def test_the_catalogue_is_listed_before_any_machine_is_loaded():
-    """The page lists the catalogue as soon as braidpy is in, and only loads
+def test_the_catalog_is_listed_before_any_machine_is_loaded():
+    """The page lists the catalog as soon as braidpy is in, and only loads
     networkx, for the machines, once one is asked for."""
     code = (
-        "import json, sys; from braidpy.web import catalogue\n"
-        "json.dumps(catalogue())\n"
+        "import json, sys; from braidpy.web import catalog\n"
+        "json.dumps(catalog())\n"
         "print('networkx' in sys.modules)"
     )
     out = subprocess.run(
@@ -105,9 +105,9 @@ def test_the_catalogue_is_listed_before_any_machine_is_loaded():
     assert out.stdout.strip() == "False"
 
 
-@pytest.mark.parametrize("source", sorted(catalogue()))
+@pytest.mark.parametrize("source", sorted(catalog()))
 def test_what_made_the_braid_comes_with_it_in_step(source):
-    about = catalogue()[source]
+    about = catalog()[source]
     result = build(
         {"source": source, **about["defaults"], "iterations": 5, "cycles": 2}
     )
@@ -186,18 +186,18 @@ def test_a_braid_forms_on_a_fell_ring_not_a_point(spec):
         (None, ()),
     ],
 )
-def test_colours_are_read_however_they_are_written(given, want):
+def test_colors_are_read_however_they_are_written(given, want):
     """A list, or one string of them, which is what fits in a link."""
-    assert COLOURS.read({} if given is None else {"colours": given}) == want
+    assert COLORS.read({} if given is None else {"colours": given}) == want
 
 
 @pytest.mark.parametrize("given", ["red", "#12345", "#gggggg", "e41a1c"])
-def test_colours_that_cannot_be_read_say_so(given):
+def test_colors_that_cannot_be_read_say_so(given):
     with pytest.raises(ValueError, match="not a colour"):
-        COLOURS.read({"colours": given})
+        COLORS.read({"colours": given})
 
 
-def test_a_chosen_colour_replaces_the_one_the_braid_was_made_with():
+def test_a_chosen_color_replaces_the_one_the_braid_was_made_with():
     spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
     made = build(dict(spec))
     chosen = build(dict(spec, colours="#112233,,#445566"))
@@ -208,7 +208,7 @@ def test_a_chosen_colour_replaces_the_one_the_braid_was_made_with():
     ]
 
 
-def test_choosing_a_colour_changes_nothing_else_about_the_braid():
+def test_choosing_a_color_changes_nothing_else_about_the_braid():
     """Only what the strands are painted with: the braid is the same braid."""
     spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
     made = build(dict(spec))
@@ -219,14 +219,14 @@ def test_choosing_a_colour_changes_nothing_else_about_the_braid():
     assert made["info"] == chosen["info"]
 
 
-def test_more_colours_than_strands_are_no_trouble():
+def test_more_colors_than_strands_are_no_trouble():
     spec = {"source": "word", "word": "1 -2", "n_strands": 3, "iterations": 0}
     chosen = build(dict(spec, colours=",".join(["#010101"] * 9)))
     assert [s["colour"] for s in chosen["strands"]] == ["#010101"] * 3
 
 
 @pytest.mark.parametrize("source", ["word", "kumihimo", "machine"])
-def test_every_kind_of_braid_can_be_recoloured(source):
+def test_every_kind_of_braid_can_be_recolored(source):
     """Whatever chose the colours to start with, a page may choose its own."""
     starts = {
         "word": {"word": "1 -2", "n_strands": 3},
@@ -239,20 +239,22 @@ def test_every_kind_of_braid_can_be_recoloured(source):
 
 
 def test_every_braid_offered_as_it_comes_is_made_with_the_site():
-    """Each catalogued braid and braid word example, nothing of your own."""
+    """Each cataloged braid and each example, a braid word's or a shape's,
+    nothing of your own."""
     from braidpy.web import premade_specs
 
     specs = premade_specs()
-    listed = catalogue()
+    listed = catalog()
     for source, about in listed.items():
         for entry in about.get("entries", []):
             wanted = {"source": source, "name": entry["name"]}
             assert (wanted in specs) == (entry["name"] != "custom")
-    for example in listed["word"]["examples"]:
-        assert {
-            "source": "word",
-            **{k: v for k, v in example.items() if k != "title"},
-        } in specs
+        for example in about.get("examples", []):
+            assert {
+                "source": source,
+                **{k: v for k, v in example.items() if k != "title"},
+            } in specs
+    assert listed["shape"]["examples"]
 
 
 def test_a_braid_made_with_the_site_is_the_braid_made_for_the_page(

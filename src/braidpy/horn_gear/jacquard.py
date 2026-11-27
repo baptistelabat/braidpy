@@ -51,6 +51,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Sequence
 from math import gcd, lcm
+from typing import Optional
 
 import networkx as nx
 
@@ -138,7 +139,7 @@ class JacquardLaceMachine(BraidingMachine):
         connections: list[Connection],
         program: Sequence[ProgramStep],
         axials: Iterable[Axial] = (),
-        threaded: Sequence[int] | None = None,
+        threaded: Optional[Sequence[int]] = None,
     ) -> None:
         super().__init__(gears, connections, axials)
         #: The notches threaded, by contact; every one if None.
@@ -266,7 +267,9 @@ class JacquardLaceMachine(BraidingMachine):
             for i, name in enumerate(cycles[0])
         }
 
-    def riding_position(self, pos: tuple[str, int], time: int) -> tuple[str, int]:
+    def riding_position(
+        self, pos: tuple[str, int], time: int, frac: float = 0.0
+    ) -> tuple[str, int]:
         """Which gear sweeps a bobbin through this step — which may not be its own.
 
         A bobbin in a notch is swept by whichever of the two gears turns, so
@@ -360,9 +363,9 @@ class JacquardLaceMachine(BraidingMachine):
 
 def jacquard_lace_ring(
     n_gears: int = 6,
-    program: Sequence[ProgramStep] | None = None,
+    program: Optional[Sequence[ProgramStep]] = None,
     n_slots: int = 2,
-    threaded: Sequence[int] | None = None,
+    threaded: Optional[Sequence[int]] = None,
 ) -> JacquardLaceMachine:
     """A tubular Jacquard lace machine: 2-slot gears in a ring.
 
@@ -398,7 +401,9 @@ def jacquard_lace_ring(
             "Neighbouring gears mesh, so they must turn opposite ways."
         )
 
-    names = [chr(ord("A") + i) for i in range(n_gears)]
+    from braidpy.making.lace import gear_name
+
+    names = [gear_name(i) for i in range(n_gears)]
     gears = [
         HornGear(name, n_slots, direction=+1 if i % 2 == 0 else -1)
         for i, name in enumerate(names)

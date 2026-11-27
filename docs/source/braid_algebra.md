@@ -41,8 +41,33 @@ braid (`is_trivial()`), and braidpy answers that two ways:
   braids, but no good bound on it is proven, and on long words of many
   strands it can blow up.
 - So it is given a few seconds, and if it has not decided, the braids'
-  **Garside normal forms** do ({doc}`braid_representations`), through
-  math-braid (Cha et al., 2001).
+  **Garside normal forms** do ({doc}`braid_representations`), braidpy's own
+  ({mod}`braidpy.garside_canonical_form`): the word read with its half twists
+  kept at its end, each factor made left-weighted with those before it in one
+  pass back. ABOK #3082, 61 strands, against itself rewritten, takes three
+  seconds so.
+
+## Shortening a word
+
+A braid has many words, and the shorter is the fewer moves to make, by hand
+or on a machine. `braid.shortened()` ({mod}`braidpy.shortening`) gives the
+same braid, exactly, in as few crossings as it finds:
+
+- a crossing followed at once by its inverse is taken out;
+- a crossing and its inverse kept apart are brought together where the
+  braid relations allow: crossings of strands far apart commute, and three
+  crossings of three strands can be made the other way round, signs mixed
+  too. Each piece of the word is rewritten every way they allow, up to a
+  budget, for one where two crossings cancel;
+- handle reduction's word is kept if it is shorter, after the same search.
+  Removing every handle is not shortening: the book's #3072 has 114
+  crossings, and 150 once its handles are reduced.
+
+A word whose crossings all have one sign is as short as it gets, since the
+relations keep the sum of a word's signs. A shortest word is not promised:
+finding one is hard in general. Braid Studio shows the shorter word under
+the braid's own, when it finds one; the catalogue's rectangular braid of 14
+goes from 448 crossings to 364.
 
 ## Twists and conjugates
 
@@ -51,7 +76,7 @@ braid (`is_trivial()`), and braidpy answers that two ways:
   (`full_twist()`). The full twist commutes with every braid: it generates
   the centre of the group. `full_twists()` counts how many a braid holds.
 - **Conjugates.** `c b c⁻¹` is `b` seen after `c`
-  ({func}`braidpy.operations.conjugate`). Conjugate braids close into the
+  (`c * b * c.inverse()`). Conjugate braids close into the
   same knot or link, which is why braids are compared up to conjugacy
   ({func}`braidpy.properties.conjugacy_class`).
 

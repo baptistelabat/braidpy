@@ -2,10 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""The braids the horn gear braiding machines of
-:mod:`braidpy.horn_gear.examples` make, and the Jacquard lace machines
-(:mod:`braidpy.horn_gear.jacquard`), as every catalogue lists its braids
-(:mod:`braidpy.catalogue`).
+"""The braids horn gear braiding machines make, and the Jacquard lace
+machines (:mod:`braidpy.horn_gear.jacquard`), as every catalogue lists its
+braids (:mod:`braidpy.catalog`).
+
+A horn gear machine is one of :mod:`braidpy.horn_gear.examples`, written
+there as its graph, as a machine of your own is
+(:func:`~braidpy.horn_gear.described.machine_from_graph`).  The machines
+that braid several bands at once are built by
+:mod:`braidpy.horn_gear.multiband`, as their line folds round and their
+bands' colours are more than a graph says yet.
 
 Listing them loads nothing: a machine is only made, and the simulator and
 networkx with it, when it is asked for.
@@ -17,16 +23,28 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from braidpy.catalogue import Entry
+from braidpy.catalog import Entry, Link, extended
 
 if TYPE_CHECKING:
     from braidpy.horn_gear.model import BraidingMachine
 
-__all__ = ["CATALOGUE", "LACE", "LaceRing"]
+__all__ = ["CATALOG", "LACE", "LaceRing"]
+
+
+def _multiband(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
+    """Makes the machine :mod:`braidpy.horn_gear.multiband` names."""
+
+    def make() -> BraidingMachine:
+        from braidpy.horn_gear import multiband
+
+        return getattr(multiband, name)(**settings)
+
+    return make
 
 
 def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
-    """Makes the machine :mod:`braidpy.horn_gear.examples` names."""
+    """Makes the machine :mod:`braidpy.horn_gear.examples` names, written
+    there as its graph."""
 
     def make() -> BraidingMachine:
         from braidpy.horn_gear import examples
@@ -39,7 +57,7 @@ def _example(name: str, **settings: Any) -> Callable[[], BraidingMachine]:
 # In the order to offer them; not the diamond braid, which is the tubular
 # braid of 8 again, nor the mixed gears, which only show that gears may
 # differ.
-CATALOGUE: dict[str, Entry[BraidingMachine]] = {
+CATALOG: dict[str, Entry[BraidingMachine]] = {
     "flat_3": Entry("Flat braid, 3 carriers", _example("flat_braid_3")),
     "flat_4": Entry("Flat braid, 4 carriers", _example("flat_braid_4")),
     "flat_9": Entry(
@@ -53,7 +71,55 @@ CATALOGUE: dict[str, Entry[BraidingMachine]] = {
     "tubular_8": Entry("Tubular braid, 8 carriers", _example("tubular_braid_8")),
     "tubular_12": Entry("Tubular braid, 12 carriers", _example("tubular_braid_12")),
     "tubular_16": Entry("Tubular braid, 16 carriers", _example("tubular_braid_16")),
+    # The tubular braid of 16 again, round an axial yarn up each gear.
+    "triaxial_16": Entry(
+        "Triaxial braid, 16 carriers round 8 axial yarns",
+        _example("triaxial_braid_16"),
+        (
+            Link(
+                "J. H. van Ravenhorst, Design tools for circular overbraiding of "
+                "complex mandrels (thesis)",
+                "article",
+                "https://ris.utwente.nl/ws/portalfiles/portal/46645249/"
+                "PhD_thesis_Johan_van_Ravenhorst.pdf",
+            ),
+        ),
+    ),
+    # Lines braiding several bands at once, split gears between them: the
+    # smallest, two plaits on three gears, then the three-band machine of the
+    # Atelier de Tressage whole and its bands one at a time.  A band keeps the
+    # whole machine's gear names and slot numbering, so a loading reads the
+    # same there as here.
+    "twin_plait": Entry(
+        "Two plaits at once: 3/6/3 gears, the middle one split",
+        _multiband("twin_plait"),
+    ),
+    "multiband_10_15_10": Entry(
+        "Three-band machine, 10-15-10 carriers",
+        _multiband("multiband_10_15_10"),
+        (
+            Link(
+                "L'Atelier de Tressage: la tresse plate",
+                "page",
+                "https://www.atelierdetressage.paris/tresse-plate/",
+            ),
+        ),
+    ),
+    "multiband_band_0": Entry(
+        "Three-band machine: left band alone, gears G0-G4",
+        _multiband("multiband_band", band=0),
+    ),
+    "multiband_band_1": Entry(
+        "Three-band machine: middle band alone, gears G4-G11",
+        _multiband("multiband_band", band=1),
+    ),
+    "multiband_band_2": Entry(
+        "Three-band machine: right band alone, gears G11-G15",
+        _multiband("multiband_band", band=2),
+    ),
 }
+# Then the braids installed packages add (braidpy.catalog.extended).
+CATALOG = extended("machine_catalog", CATALOG)
 
 
 @dataclass(frozen=True)
@@ -87,20 +153,20 @@ def _ring(n_gears: int) -> Callable[[], LaceRing]:
     return make
 
 
-def _card(braid: str) -> Callable[[], LaceRing]:
-    """A lace ring driven by the punchcard for a braid of
-    :data:`braidpy.braid_catalog.CATALOGUE`, its repeating unit
+def _card(braid: str, n_gears: int) -> Callable[[], LaceRing]:
+    """A lace ring of ``n_gears`` gears driven by the punchcard for a braid
+    of :data:`braidpy.braid_catalog.CATALOG`, its repeating unit
     (:func:`~braidpy.making.lace.lace_card`), threaded as the card says."""
 
     def make() -> LaceRing:
         from braidpy.braid import Braid
-        from braidpy.braid_catalog import CATALOGUE as BRAIDS
+        from braidpy.braid_catalog import CATALOG as BRAIDS
         from braidpy.making.lace import lace_card
         from braidpy.pure_braid import repeating_unit
 
         made = BRAIDS[braid].make()
         unit = repeating_unit([int(g) for g in made.generators])
-        card = lace_card(Braid(tuple(unit), made.n_strands))
+        card = lace_card(Braid(tuple(unit), made.n_strands).shortened(), n_gears)
         return LaceRing(card.n_gears, card.steps, tuple(card.threaded()))
 
     return make
@@ -111,16 +177,27 @@ def _card(braid: str) -> Callable[[], LaceRing]:
 # then a ring turning every gear, as a tubular braider does.
 LACE: dict[str, Entry[LaceRing]] = {
     "lace_dutch": Entry(
-        "Dutch braid of 3 (ABOK 2966), 4 gears", _card("inverted_flat3")
+        "Dutch braid of 3 (ABOK 2966), 4 gears", _card("inverted_flat3", 4)
     ),
     "lace_plait": Entry(
-        "Plait, or flat sinnet of 3 (ABOK 2965), 4 gears", _card("flat3")
+        "Plait, or flat sinnet of 3 (ABOK 2965), 4 gears", _card("flat3", 4)
     ),
-    "lace_weave3": Entry("Weave of 3 (ABOK 2973), 4 gears", _card("weave3")),
+    "lace_weave3": Entry("Weave of 3 (ABOK 2973), 4 gears", _card("weave3", 4)),
     "lace_sinnet4": Entry(
-        "Four-strand sinnet (ABOK 2974), 6 gears", _card("abok_2974")
+        "Four-strand sinnet (ABOK 2974), 6 gears", _card("abok_2974", 6)
     ),
-    "lace_square4": Entry("Square sinnet of 4 (ABOK 2999), 6 gears", _card("square4")),
-    "lace_flat6": Entry("Regular flat braid of 6, 8 gears", _card("regular_flat6")),
+    "lace_square4": Entry(
+        "Square sinnet of 4 (ABOK 2999), 6 gears", _card("square4", 6)
+    ),
+    "lace_flat6": Entry("Regular flat braid of 6, 8 gears", _card("regular_flat6", 8)),
     "lace_tubular_8": Entry("Every gear turning, 8 gears and bobbins", _ring(8)),
 }
+# Then the lace machines installed packages add (braidpy.catalog.extended),
+# by the entry point name "lace_machines": a dict of Entry of LaceRing.
+LACE = extended("lace_machines", LACE)
+
+
+# The catalogue's name as 0.3.0 shipped it, kept working.
+from braidpy._renamed import renamed_globals
+
+__getattr__ = renamed_globals(__name__, {"CATALOGUE": "CATALOG"})

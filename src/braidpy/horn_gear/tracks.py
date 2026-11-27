@@ -31,6 +31,7 @@ from __future__ import annotations
 
 from functools import reduce
 from math import lcm
+from typing import Optional
 
 from .model import BraidingMachine
 
@@ -97,7 +98,7 @@ def ring_order(machine: BraidingMachine) -> list[str] | None:
 def circulation(
     machine: BraidingMachine,
     start: Position,
-    period: int | None = None,
+    period: Optional[int] = None,
 ) -> int:
     """Which way round the machine a carrier started at ``start`` travels.
 
@@ -146,7 +147,7 @@ def circulation(
 def walk(
     machine: BraidingMachine,
     start: Position,
-    period: int | None = None,
+    period: Optional[int] = None,
 ) -> list[Position]:
     """Every position a carrier passes through, in order, repeats included.
 

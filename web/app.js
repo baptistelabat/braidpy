@@ -20,9 +20,11 @@
 //   info.js      the card: what is known of the braid
 //   controls.js  the view's controls, sharing and saving
 //   page.js      what they all share
+//   i18n.js      the page in the site's language, first
 //
 // Each sets itself up as it loads, in this order.
 
+import "./i18n.js";
 import "./fields.js";
 import "./diagram.js";
 import "./machine.js";

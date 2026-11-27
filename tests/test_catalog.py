@@ -2,17 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Every catalogue lists its braids the same way."""
+"""Every catalog lists its braids the same way."""
 
 import importlib
 
 import pytest
 
-from braidpy.catalogue import Entry
+from braidpy.catalog import Entry
 
-CATALOGUES = {
+CATALOGS = {
     "braidpy.braid_catalog": "braidpy.braid.Braid",
-    "braidpy.mobidai_catalog": "braidpy.mobidai_catalog.CataloguedMobidai",
+    "braidpy.mobidai_catalog": "braidpy.mobidai_catalog.CatalogedMobidai",
     "braidpy.solid_sinnets_catalog": "braidpy.ashley_solid_sinnet.AshleySolidSinnet",
     "braidpy.machine_catalog": "braidpy.horn_gear.model.BraidingMachine",
 }
@@ -23,19 +23,19 @@ def _class(path):
     return getattr(importlib.import_module(module), name)
 
 
-@pytest.mark.parametrize("module, kind", sorted(CATALOGUES.items()))
-def test_a_catalogue_names_titles_and_makes_each_braid(module, kind, monkeypatch):
+@pytest.mark.parametrize("module, kind", sorted(CATALOGS.items()))
+def test_a_catalog_names_titles_and_makes_each_braid(module, kind, monkeypatch):
     from braidpy.braid import Braid
 
     def no_drawing(*args, **kwargs):
         raise AssertionError("drawn")
 
     monkeypatch.setattr(Braid, "draw", no_drawing)
-    catalogue = importlib.import_module(module).CATALOGUE
-    assert catalogue
-    titles = [entry.title for entry in catalogue.values()]
+    catalog = importlib.import_module(module).CATALOG
+    assert catalog
+    titles = [entry.title for entry in catalog.values()]
     assert len(set(titles)) == len(titles)
-    for name, entry in catalogue.items():
+    for name, entry in catalog.items():
         assert isinstance(entry, Entry), name
         assert name.isidentifier() and entry.title, name
         assert isinstance(entry.make(), _class(kind)), name

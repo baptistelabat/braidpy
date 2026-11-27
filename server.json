@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.baptistelabat/braidpy",
+  "title": "braidpy",
+  "description": "Braids by name or word: what they are, what they are like, and how to make them",
+  "version": "0.4.0",
+  "websiteUrl": "https://baptistelabat.github.io/braidpy/studio/",
+  "repository": {
+    "url": "https://github.com/baptistelabat/braidpy",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "braidpy",
+      "version": "0.4.0",
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--from",
+          "value": "braidpy[mcp]"
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "braidpy-mcp"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

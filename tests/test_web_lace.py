@@ -8,12 +8,12 @@ loaded by hand, turned by the handle."""
 import pytest
 
 from braidpy import Braid
-from braidpy.braid_catalog import CATALOGUE as BRAIDS
+from braidpy.braid_catalog import CATALOG as BRAIDS
 from braidpy.horn_gear.jacquard import jacquard_lace_ring
 from braidpy.machine_catalog import LACE
 from braidpy.making.lace import punchcard_text, ring_braid
 from braidpy.pure_braid import repeating_unit
-from braidpy.web import build, catalogue, machine_geometry, machine_turned
+from braidpy.web import build, catalog, machine_geometry, machine_turned
 
 
 @pytest.mark.parametrize("name", list(LACE))
@@ -37,7 +37,7 @@ def test_every_lace_machine_is_made_and_its_word_read(name):
         ("lace_flat6", "regular_flat6"),
     ],
 )
-def test_a_card_makes_its_catalogue_braid(name, braid):
+def test_a_card_makes_its_catalog_braid(name, braid):
     """A pass of the card is a repeat of the braid it was punched for."""
     made = BRAIDS[braid].make()
     unit = Braid(
@@ -48,7 +48,7 @@ def test_a_card_makes_its_catalogue_braid(name, braid):
 
 
 def test_the_lace_machines_are_a_source_of_their_own():
-    listed = catalogue()
+    listed = catalog()
     assert [e["name"] for e in listed["lace"]["entries"]] == [*LACE, "custom"]
     assert not set(LACE) & {e["name"] for e in listed["machine"]["entries"]}
 
@@ -56,7 +56,8 @@ def test_the_lace_machines_are_a_source_of_their_own():
 def test_a_lace_machine_is_drawn_and_turned_by_hand():
     shape = machine_geometry("lace_plait")
     assert len(shape["gears"]) == 4
-    assert shape["loading"] == [["A", 0], ["B", 0], ["C", 0]]
+    # Threaded a notch along, every crossing on a gear of its sign.
+    assert shape["loading"] == [["B", 0], ["C", 0], ["D", 0]]
     turned = machine_turned("lace_plait", shape["loading"], 4)
     assert turned["time"] == 4 and turned["met"] == []
 
@@ -87,21 +88,21 @@ def test_a_ring_threaded_in_some_notches():
 
 
 @pytest.mark.parametrize(
-    "entry", catalogue()["lace"]["entries"][:-1], ids=lambda e: e["name"]
+    "entry", catalog()["lace"]["entries"][:-1], ids=lambda e: e["name"]
 )
-def test_a_catalogued_card_typed_in_as_your_own_is_the_same_braid(entry):
-    """Each catalogued machine shows its gears and card, ready to change:
+def test_a_cataloged_card_typed_in_as_your_own_is_the_same_braid(entry):
+    """Each cataloged machine shows its gears and card, ready to change:
     as they are, they make the same braid."""
     machine = LACE[entry["name"]].make().machine()
     threading = " ".join(f"{g}:{s}" for g, s in machine.default_carriers().values())
     own = {"source": "lace", "name": "custom", "carriers": threading, "iterations": 0}
     made = build({**own, **entry["pattern"]})
-    catalogued = build({"source": "lace", "name": entry["name"], "iterations": 0})
-    assert made["info"]["word"] == catalogued["info"]["word"]
+    cataloged = build({"source": "lace", "name": entry["name"], "iterations": 0})
+    assert made["info"]["word"] == cataloged["info"]["word"]
 
 
 def test_your_own_card_is_offered_last():
-    assert catalogue()["lace"]["entries"][-1] == {
+    assert catalog()["lace"]["entries"][-1] == {
         "name": "custom",
         "title": "Your own card…",
     }
@@ -112,7 +113,8 @@ def test_your_own_card_is_offered_last():
     [
         (5, "10000 01000", "even number"),
         (4, "1000", "two groups"),
-        (4, "10x0 0000", "0 and 1"),
+        (4, "10x0 0000", "not a gear"),
+        (4, "A C / E", "No gear E"),
         (4, "100 010", "one for each of the 4 gears"),
         (4, "0100 0000", "turns the other way"),
         (4, "", "Give the card"),
@@ -124,8 +126,170 @@ def test_a_card_that_cannot_drive_the_machine_says_why(n_gears, card, message):
 
 
 def test_your_own_lace_machine_is_drawn_and_turned_by_hand():
-    """The page asks for it by its gears and card, as for a catalogued one."""
+    """The page asks for it by its gears and card, as for a cataloged one."""
     name = "lace:6:101010 010101"
     shape = machine_geometry(name)
     assert len(shape["gears"]) == 6 and len(shape["loading"]) == 6
     assert machine_turned(name, shape["loading"], 2)["time"] == 2
+
+
+def test_bobbins_can_be_named_by_their_notch():
+    """ "A-B" is the notch gears A and B cut, as the card names it: the same
+    bobbin as giving its gear and slot."""
+    from braidpy.horn_gear.jacquard import notch_positions
+
+    card = [("1000", "0000"), ("0000", "0100")]
+    at = notch_positions(jacquard_lace_ring(4, card))
+    spec = {
+        "source": "lace",
+        "name": "custom",
+        "n_gears": 4,
+        "card": "1000 0000 0000 0100",
+        "cycles": 1,
+        "iterations": 0,
+    }
+    named = build({**spec, "carriers": "A-B C-D"}, tighten=False)
+    slots = " ".join(f"{g}:{s}" for g, s in (at[0], at[2]))
+    given = build({**spec, "carriers": slots}, tighten=False)
+    assert len(named["strands"]) == 2
+    assert named["info"]["word"] == given["info"]["word"]
+
+
+def test_a_notch_named_twice_is_refused():
+    with pytest.raises(ValueError, match="same notch"):
+        build(
+            {
+                "source": "lace",
+                "name": "custom",
+                "n_gears": 4,
+                "card": "1000 0000",
+                "carriers": "A-B A-B",
+                "cycles": 1,
+            },
+            tighten=False,
+        )
+
+
+@pytest.mark.parametrize("name", list(LACE))
+def test_a_lace_machine_made_on_a_marudai_is_the_braid_of_its_card(name):
+    """Made on a marudai, the braid is read off the card, not the machine:
+    the same word, and a disk program that reads back the card run twice."""
+    from braidpy.annulus_braid import solid_word
+    from braidpy.take_off import disk_annular_word
+    from braidpy.web.words import _ring_steps
+
+    spec = {"source": "lace", "name": name, "cycles": 2, "iterations": 0}
+    machine = build(spec, tighten=False)
+    disk = build({**spec, "settle": "marudai"}, tighten=False)
+    assert disk["info"]["word"] == machine["info"]["word"]
+    assert disk["timeline"]["kind"] == "disk"
+    twice = [int(g) for g in machine["info"]["word"].split()] * 2
+    for made in (machine, disk):
+        start, steps = _ring_steps(made["disk"])
+        annular, n = disk_annular_word(
+            start, steps, made["disk"]["n_slots"], clockwise=True
+        )
+        assert list(solid_word(annular, n)) == twice
+
+
+def test_a_lace_machine_on_a_marudai_loads_nothing_the_machine_needs():
+    """Worked out from its card: neither the machine's code nor networkx is
+    imported, as the page would otherwise load them in the browser."""
+    import subprocess
+    import sys
+
+    script = (
+        "import sys; from braidpy.web import build; "
+        "build({'source': 'lace', 'name': 'custom', 'n_gears': 6, "
+        "'card': '101010 010101', 'carriers': 'A-B C:0 E:1', 'cycles': 2, "
+        "'settle': 'marudai', 'iterations': 0}, tighten=False); "
+        "print('networkx' in sys.modules, "
+        "any(m.startswith('braidpy.horn_gear') for m in sys.modules))"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    assert out.stdout.split() == ["False", "False"]
+
+
+def test_bobbins_on_a_marudai_go_in_the_notches_named():
+    """By notch, A-B, or as gear:slot: slot 0 faces the next gear round the
+    ring, slot 1 the previous."""
+    made = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 6,
+            "card": "101010 010101",
+            "carriers": "C:0 A-B E:1",
+            "cycles": 1,
+            "settle": "marudai",
+            "iterations": 0,
+        },
+        tighten=False,
+    )
+    # Yarn i of the braid is the bobbin it names; the disk lists them alike.
+    notch = {
+        int(strand["name"].split()[-1]): (slot - 1) // 12
+        for strand, slot in zip(made["strands"], made["disk"]["start"])
+    }
+    assert notch == {0: 2, 1: 0, 2: 3}
+
+
+def test_your_own_lace_ring_may_have_as_many_gears_as_the_largest_machines():
+    """48 gears and more, as lace machines have: a ring of 48, every gear
+    turning once, builds; one of 74 is refused."""
+    # One step: the anticlockwise gears A, C, E… turning, then none.
+    card = "".join("1" if g % 2 == 0 else "0" for g in range(48)) + " " + "0" * 48
+    result = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 48,
+            "card": card,
+            "cycles": 1,
+            "iterations": 0,
+        }
+    )
+    assert len(result["strands"]) == 48
+    with pytest.raises(ValueError):
+        build(
+            {
+                "source": "lace",
+                "name": "custom",
+                "n_gears": 74,
+                "card": card,
+                "cycles": 1,
+            }
+        )
+
+
+def test_a_card_by_gear_names_is_the_card_in_digits():
+    """The gears each step turns, a step after another: the same machine as
+    the card in 0 and 1."""
+    digits = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 4,
+            "card": "1000 0100 0010 0001",
+            "iterations": 0,
+        }
+    )
+    names = build(
+        {
+            "source": "lace",
+            "name": "custom",
+            "n_gears": 4,
+            "card": "A B / C D",
+            "iterations": 0,
+        }
+    )
+    assert names["info"]["word"] == digits["info"]["word"]
+
+
+def test_bobbins_are_named_by_gears_past_z():
+    """On a ring of 30 gears, notch Z-AA and gear AB's first slot."""
+    from braidpy.web.machines import _lace_threading
+
+    assert _lace_threading("Z-AA AB:0 AD-A", 30) == [25, 27, 29]

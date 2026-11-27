@@ -20,11 +20,11 @@ catalogue, with the description Braid Studio makes it from
 (:func:`braidpy.web.build`).  Its braid word is the one braidpy reads off
 it, over a whole period: for a disk braid that creeps round the disk from
 cycle to cycle, as kongo gumi does, as many cycles as bring every strand
-home.  A machine braiding round cores has no braid word of its strands
-alone, and is left out.
+home.  A machine braiding round cores has its cores in its word, each a
+strand standing still (:mod:`braidpy.horn_gear.word`).
 
 Building the catalogue makes every braid of every catalogue — some ten
-seconds — so it is built once, when first asked for (:func:`catalogue`).
+seconds — so it is built once, when first asked for (:func:`catalog`).
 Braid Studio has it built with the site: :func:`export` writes it as JSON,
 :func:`load` reads it back, and :func:`for_page` says, for the braid on the
 page, every other way of making it and the braids nearest it.
@@ -35,19 +35,20 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from functools import lru_cache
-from typing import Any
+from typing import Any, Optional
 
 from braidpy.braid import Braid
-from braidpy.catalogue import Entry
+from braidpy.catalog import Entry, Link
 from braidpy.similarity import Fingerprint, distance, fingerprint, same_fingerprint
 
 __all__ = [
     "Method",
     "Topology",
     "braid_of",
-    "catalogue",
+    "catalog",
     "export",
     "for_page",
+    "links_of",
     "load",
     "methods",
     "related",
@@ -56,6 +57,23 @@ __all__ = [
 
 # What says how much of a braid is made, not which braid it is.
 _HOW_MUCH = ("cycles", "repeat")
+
+
+def _defining(source: str) -> tuple:
+    """The settings of a source that each make the braid what it is: for a
+    sinnet from a shape, the shape and its cells, tracks and strands."""
+    from braidpy.web._settings import Shape
+
+    return Shape.defining if source == "shape" else ()
+
+
+# The catalogue each source's braids are listed in, by braidpy.web's names.
+_CATALOGS = {
+    "word": "braidpy.braid_catalog",
+    "mobidai": "braidpy.mobidai_catalog",
+    "sinnet": "braidpy.solid_sinnets_catalog",
+    "machine": "braidpy.machine_catalog",
+}
 
 
 @dataclass(frozen=True)
@@ -68,12 +86,15 @@ class Method:
         name: The braid's name in that catalogue.
         title: What it is called, to show.
         spec: What :func:`braidpy.web.build` makes it from.
+        links: Where it comes from and is shown: its catalogue entry's
+            (:class:`braidpy.catalog.Link`).
     """
 
     source: str
     name: str
     title: str
     spec: tuple[tuple[str, Any], ...]
+    links: tuple[Link, ...] = ()
 
     @property
     def key(self) -> str:
@@ -86,10 +107,17 @@ class Method:
 
     def describes(self, spec: Mapping[str, Any]) -> bool:
         """Whether a description is of this method's braid, however much of
-        it is made: as a page's address has it, every value a string."""
+        it is made: as a page's address has it, every value a string.  Of a
+        source whose every setting makes the braid what it is, as a shape's
+        (:data:`_DEFINING`), every setting must agree, given or not."""
+        mine = self.description()
         return all(
             key in _HOW_MUCH or str(spec.get(key)) == str(value)
             for key, value in self.spec
+        ) and all(
+            str(spec.get(setting.key, setting.default))
+            == str(mine.get(setting.key, setting.default))
+            for setting in _defining(self.source)
         )
 
 
@@ -115,6 +143,18 @@ def _spec(**items: Any) -> tuple[tuple[str, Any], ...]:
     return tuple(items.items())
 
 
+def links_of(source: str, name: str) -> tuple[Link, ...]:
+    """A catalogued braid's links, by the source that makes it and its name
+    there; none for one no catalogue lists."""
+    from importlib import import_module
+
+    module = _CATALOGS.get(source)
+    if module is None:
+        return ()
+    entry = import_module(module).CATALOG.get(name)
+    return entry.links if entry is not None else ()
+
+
 def methods() -> list[Method]:
     """Every way of making a braid the catalogues list, in their order:
     braid words, kumihimo, kumihimo disks, sinnets, machines.
@@ -122,9 +162,9 @@ def methods() -> list[Method]:
     Returns:
         The methods.
     """
-    from braidpy.braid_catalog import CATALOGUE as WORDS
+    from braidpy.braid_catalog import CATALOG as WORDS
     from braidpy.braid_catalog import word_examples
-    from braidpy.web import catalogue as studio
+    from braidpy.web import catalog as studio
 
     listed = studio()
     found: list[Method] = []
@@ -135,7 +175,13 @@ def methods() -> list[Method]:
     for name, example in zip(names, word_examples()):
         rest = {k: v for k, v in example.items() if k != "title"}
         found.append(
-            Method("word", name, example["title"], _spec(source="word", **rest))
+            Method(
+                "word",
+                name,
+                example["title"],
+                _spec(source="word", **rest),
+                links_of("word", name),
+            )
         )
     pattern = listed["kumihimo"]["defaults"]
     found.append(
@@ -151,6 +197,16 @@ def methods() -> list[Method]:
             ),
         )
     )
+    for shaped in listed["shape"].get("examples", []):
+        rest = {k: v for k, v in shaped.items() if k != "title"}
+        found.append(
+            Method(
+                "shape",
+                shaped["title"].lower().replace(",", "").replace(" ", "_"),
+                shaped["title"],
+                _spec(source="shape", **rest, cycles=1),
+            )
+        )
     for source in ("mobidai", "sinnet", "machine"):
         for entry in listed[source]["entries"]:
             if entry["name"] == "custom":
@@ -161,6 +217,7 @@ def methods() -> list[Method]:
                     entry["name"],
                     entry["title"],
                     _spec(source=source, name=entry["name"], cycles=1),
+                    links_of(source, entry["name"]),
                 )
             )
     return found
@@ -213,27 +270,24 @@ def _braid(method: Method) -> Braid | None:
 
 @lru_cache(maxsize=1)
 def _topologies() -> tuple[Topology, ...]:
-    grouped: list[tuple[Fingerprint, list[Method]]] = []
+    # The methods by the pattern their braid makes: alike when nothing
+    # measured tells them apart (BraidPattern.key), in the order first made.
+    grouped: dict[tuple, tuple[Fingerprint, list[Method]]] = {}
     for method in methods():
         braid = _braid(method)
         if braid is None:
             continue
-        mark = fingerprint(braid)
-        for known, members in grouped:
-            if same_fingerprint(known, mark):
-                members.append(method)
-                break
-        else:
-            grouped.append((mark, [method]))
+        pattern = braid.pattern()
+        grouped.setdefault(pattern.key(), (pattern.fingerprint, []))[1].append(method)
     return tuple(
         Topology(members[0].name, members[0].title, mark, tuple(members))
-        for mark, members in grouped
+        for mark, members in grouped.values()
     )
 
 
-def catalogue() -> dict[str, Entry[Topology]]:
+def catalog() -> dict[str, Entry[Topology]]:
     """The catalogue, as every catalogue lists its braids
-    (:mod:`braidpy.catalogue`): an entry per topology, by its first
+    (:mod:`braidpy.catalog`): an entry per topology, by its first
     method's name.  Built the first time it is asked for.
 
     Returns:
@@ -241,17 +295,21 @@ def catalogue() -> dict[str, Entry[Topology]]:
     """
 
     def entry(topology: Topology) -> Entry[Topology]:
-        return Entry(
-            topology.title,
-            lambda: topology,
-            ", ".join(f"{m.source}: {m.title}" for m in topology.methods),
-        )
+        # Its links are those of every way of making it, each once.
+        links = tuple(dict.fromkeys(link for m in topology.methods for link in m.links))
+        return Entry(topology.title, lambda: topology, links)
 
     return {topology.name: entry(topology) for topology in _topologies()}
 
 
+# The function's name as 0.3.0 shipped it, kept working.
+from braidpy._renamed import renamed_globals
+
+__getattr__ = renamed_globals(__name__, {"catalogue": "catalog"})
+
+
 def topology_of(
-    source: str, name: str, topologies: Sequence[Topology] | None = None
+    source: str, name: str, topologies: Optional[Sequence[Topology]] = None
 ) -> Topology | None:
     """The topology a catalogue's braid has: the way back from a method.
 
@@ -273,7 +331,7 @@ def topology_of(
 def related(
     braid: Braid,
     count: int = 5,
-    topologies: Sequence[Topology] | None = None,
+    topologies: Optional[Sequence[Topology]] = None,
 ) -> list[tuple[Topology, float]]:
     """The topologies nearest a braid — one of your own, say — nearest
     first; distance 0 for its own, if the catalogue has it.
@@ -325,6 +383,7 @@ def export() -> list[dict[str, Any]]:
                     "name": m.name,
                     "title": m.title,
                     "spec": m.description(),
+                    "links": [asdict(link) for link in m.links],
                 }
                 for m in t.methods
             ],
@@ -355,9 +414,17 @@ def load(data: Sequence[Mapping[str, Any]]) -> tuple[Topology, ...]:
                     writhe=int(mark["writhe"]),
                     linking=tuple(mark["linking"]),
                     alexander=tuple(mark["alexander"]),
+                    burau=tuple(mark["burau"]),
+                    burau_mod=tuple(tuple(c) for c in mark["burau_mod"]),
                 ),
                 tuple(
-                    Method(m["source"], m["name"], m["title"], tuple(m["spec"].items()))
+                    Method(
+                        m["source"],
+                        m["name"],
+                        m["title"],
+                        tuple(m["spec"].items()),
+                        tuple(Link(**link) for link in m.get("links", ())),
+                    )
                     for m in t["methods"]
                 ),
             )

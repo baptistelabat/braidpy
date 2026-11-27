@@ -11,14 +11,14 @@ import { onChosen, rebase } from "./colours.js";
 import { showMaking, showKin } from "./info.js";
 import * as THREE from "three";
 import { forgetDefaults, guessChoices, showDefaults } from "./defaults.js";
-import { UNLISTED, catalogue, renderFields, setCatalogue } from "./fields.js";
+import { UNLISTED, catalog, renderFields, setCatalog } from "./fields.js";
 import { unpack } from "./frames.js";
 import { machineShapes, machineWanted } from "./machine.js";
 import { $ } from "./page.js";
 import { braid, fit, show, showFrame, shownLaid, topAtFrame } from "./scene.js";
 import { readSpec, specFromHash, writeSpec } from "./spec.js";
 
-// Started by the page itself, before its modules (index.html).
+// Started by the page itself, before its modules (make.html).
 export const worker = window.braidpy.worker;
 export let pending = 0;
 
@@ -105,7 +105,7 @@ function heard(data) {
   if (data.type === "status") {
     setStatus(shownAtOnce && shownAtOnce === pending ? `${AT_ONCE} ${data.text}` : data.text);
   } else if (data.type === "ready") {
-    offer(data.catalogue);
+    offer(data.catalog);
     $("build").disabled = false;
     $("build").textContent = "Braid";
     // Unless a braid made with the site is already being shown.
@@ -118,6 +118,10 @@ function heard(data) {
       if (makingOf.size > KEEP) makingOf.delete(makingOf.keys().next().value);
     }
     showMaking(data.making);
+  } else if (data.type === "b3d") {
+    // A braid3d design read: the form filled with it, and made.
+    writeSpec(data.spec);
+    submit();
   } else if (data.type === "sinnet") {
     document.dispatchEvent(new CustomEvent("braid-sinnet", { detail: data }));
   } else if (data.type === "kin") {
@@ -146,8 +150,10 @@ function heard(data) {
     topAtFrame(data.frame);
   } else if (data.type === "laid") {
     if (data.id !== pending) return;
+    // For what draws a braid's making beside the form (editor.js).
+    document.dispatchEvent(new CustomEvent("braid-laid", { detail: data.result }));
     // Settling sends the braid as it goes: the view stays put.
-    rebase(data.result);
+    if (rebase(data.result)) relink();
     show(data.result, null, shownLaid === data.id);
   } else if (data.type === "result") {
     if (data.id !== pending) return;
@@ -165,8 +171,9 @@ function heard(data) {
     );
     // The tight braid replaces the laid one where the view already is —
     // unless it was beaten up, much shorter than it was laid.
-    rebase(data.result);
-    show(data.result, data.seconds, shownLaid === data.id && data.result.settled === "sideways");
+    if (rebase(data.result)) relink();
+    const sideways = data.result.settled === "sideways" || data.result.settled === "endless";
+    show(data.result, data.seconds, shownLaid === data.id && sideways);
     showDefaults(data.result.used);
     document.dispatchEvent(
       new CustomEvent("machine-met", { detail: data.result.info?.collision?.at ?? [] }),
@@ -178,16 +185,16 @@ function heard(data) {
 }
 
 // The form, filled with what can be made as soon as that is known: from
-// the site (catalogue.json), long before braidpy is ready to make any of
+// the site (catalog.json), long before braidpy is ready to make any of
 // it — or, without it, from braidpy when it is.
 let offered = false;
 function offer(sources) {
   if (offered || !sources) return;
   offered = true;
-  setCatalogue(sources);
+  setCatalog(sources);
   const select = $("source");
-  const spec = specFromHash() || { source: "word", ...catalogue.word.defaults };
-  for (const [source, about] of Object.entries(catalogue)) {
+  const spec = specFromHash() || { source: "word", ...catalog.word.defaults };
+  for (const [source, about] of Object.entries(catalog)) {
     // Out of the menu for now, but still made from a link to it.
     if (UNLISTED.has(source) && spec.source !== source) continue;
     select.append(new Option(about.title, source));
@@ -219,7 +226,7 @@ function same(a, b) {
 // asked, or the source's default where it was not.  Its index entry: the
 // file it was laid in, and the one it was settled in, if it was.
 async function premadeFor(spec) {
-  const defaults = catalogue?.[spec.source]?.defaults;
+  const defaults = catalog?.[spec.source]?.defaults;
   if (!defaults) return null;
   for (const entry of await premadeIndex) {
     const made = entry.spec;
@@ -231,10 +238,18 @@ async function premadeFor(spec) {
   return null;
 }
 
+// Kept gzipped (web/build.py), and unpacked here as they come: gzip's
+// own first two bytes say so, in case a server has unpacked one already.
+const GZIP_MAGIC = [0x1f, 0x8b];
+
 async function fetched(file) {
   try {
     const response = await fetch(`made/${file}`);
-    return response.ok ? await response.json() : null;
+    if (!response.ok) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const packed = GZIP_MAGIC.every((byte, k) => bytes[k] === byte);
+    const body = packed ? new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip")) : new Blob([bytes]).stream();
+    return await new Response(body).json();
   } catch {
     return null;
   }
@@ -252,7 +267,7 @@ async function premade(spec) {
   const laid = await fetched(entry.file);
   return laid ? { laid } : null;
 }
-window.braidpy.catalogue.then(offer);
+window.braidpy.catalog.then(offer);
 
 // What braidpy said while the page loaded, then the rest as it comes.
 worker.onmessage = fromBraidpy;
@@ -305,9 +320,13 @@ export function submit() {
 // it — written again without making anything, since nothing has changed but
 // what the strands are painted with.
 onChosen((saved) => {
-  if (!saved) return;
-  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+  if (saved) relink();
 });
+
+// The address written again for the braid asked for, nothing made.
+function relink() {
+  history.replaceState(null, "", "#" + new URLSearchParams(readSpec()).toString());
+}
 
 // Reset: stop whatever is being made, and forget the marudai and the
 // braids made, so that the next is made from the start.

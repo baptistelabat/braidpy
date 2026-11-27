@@ -2,17 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""
-Filename: properties.py
-Description: Properties and invariants of braids
-Authors: Baptiste Labat
-Created: 2025-05-24
-Repository: https://github.com/baptistelabat/braidpy
-License: Mozilla Public License 2.0
-"""
+"""Properties and invariants of braids."""
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .braid import Braid, reduced_burau_generator
 
@@ -20,17 +13,84 @@ if TYPE_CHECKING:
     from sympy import Poly
 
 
-def _burau_product(braid: Braid, t, one, zero, product, identity):
-    """The braid's reduced Burau matrix, a generator at a time, in whatever
-    ring ``t``, ``one`` and ``zero`` are of: ``product(a, rows)`` multiplies
-    a matrix by a generator's rows, ``identity`` is where it starts."""
-    matrix = identity
+def _burau_product(braid: Braid, t, one, zero, modulus: Optional[int] = None):
+    """The braid's reduced Burau matrix: :func:`_scaled_burau_product`,
+    never scaled."""
+    return _scaled_burau_product(braid, t, one, zero, modulus)[0]
+
+
+# Entries of a floating-point Burau matrix above this are scaled down
+# (:func:`_scaled_burau_product`): far from overflowing a float (1e308),
+# however many crossings follow before the next look.
+_LARGEST = 1e100
+
+
+def _scaled_burau_product(
+    braid: Braid,
+    t,
+    one,
+    zero,
+    modulus: Optional[int] = None,
+    largest: float | None = None,
+):
+    """The braid's reduced Burau matrix, as a numpy array, in whatever ring
+    ``t``, ``one`` and ``zero`` are of: complex numbers, elements of a
+    sympy field (an array of objects), or integers modulo ``modulus``.
+
+    A generator's matrix is the identity but for one row
+    (:func:`~braidpy.braid.reduced_burau_generator`), so multiplying by it
+    changes three columns at most: a generator at a time, that is three
+    columns updated, where a whole matrix product is one multiplication per
+    entry.  Each generator's row is made once, however often it comes.
+
+    Args:
+        braid: The braid.
+        t: The Burau variable.
+        one: The ring's one.
+        zero: The ring's zero.
+        modulus: For integers modulo it: then ``t``, ``one`` and ``zero``
+            are elements of the field of that many elements (sympy's
+            ``GF``), and the matrix is of plain integers, each below it.
+        largest: For floating point: whenever an entry grows past it, the
+            matrix is divided by its largest entry, so that a long braid,
+            its entries growing with every crossing, overflows nothing.
+            None never scales.
+
+    Returns:
+        The matrix, and the natural logarithm of all it was divided by, 0 if
+        never: the braid's matrix is the first times ``e`` to the second.
+    """
+    import numpy as np
+
+    log_scale = 0.0
+    m = braid.n_strands - 1
+    rows: dict[int, list] = {}
+    if modulus is None:
+        matrix = np.array(
+            [[one if r == c else zero for c in range(m)] for r in range(m)]
+        ).reshape(m, m)
+    else:
+        matrix = np.eye(m, dtype=np.int64)
     for generator in braid.generators:
-        matrix = product(
-            matrix,
-            reduced_burau_generator(generator, braid.n_strands, t, one, zero),
-        )
-    return matrix
+        i = abs(generator) - 1
+        if generator not in rows:
+            row = reduced_burau_generator(generator, braid.n_strands, t, one, zero)[i]
+            rows[generator] = (
+                row if modulus is None else [int(c) % modulus for c in row]
+            )
+        row = rows[generator]
+        here = matrix[:, i].copy()
+        for c in (i - 1, i, i + 1):
+            if not 0 <= c < m:
+                continue
+            column = here * row[c] if c == i else matrix[:, c] + here * row[c]
+            matrix[:, c] = column if modulus is None else column % modulus
+        if largest is not None:
+            biggest = float(np.max(np.abs(matrix[:, max(i - 1, 0) : i + 2])))
+            if biggest > largest:
+                matrix = matrix / biggest
+                log_scale += float(np.log(biggest))
+    return matrix, log_scale
 
 
 def alexander_polynomial(braid: Braid) -> "Poly":
@@ -74,14 +134,8 @@ def alexander_polynomial(braid: Braid) -> "Poly":
         return Poly(Integer(1), t)
     field = QQ.frac_field(t)
     m = n - 1
-    burau = _burau_product(
-        braid,
-        field.convert(t),
-        field.one,
-        field.zero,
-        lambda a, rows: a * DomainMatrix(rows, (m, m), field),
-        DomainMatrix.eye(m, field),
-    )
+    rows = _burau_product(braid, field.convert(t), field.one, field.zero).tolist()
+    burau = DomainMatrix(rows, (m, m), field)
     determinant = field.to_sympy((DomainMatrix.eye(m, field) - burau).det())
     numerator, _ = fraction((determinant * (1 - t) / (1 - t**n)).cancel())
     poly = Poly(numerator, t)
@@ -107,8 +161,8 @@ def alexander_on_circle(
 
     On the unit circle ``|±tᵏ| = 1``, so the modulus is exactly an invariant of
     the closure, with nothing to normalise; it is computed numerically, from
-    the braid's Burau matrix at t = e^{iθ} raised to the power ``repeats`` —
-    milliseconds where the polynomial of a long braid takes minutes.  The
+    the eigenvalues of the braid's Burau matrix at t = e^{iθ}
+    (:func:`_log_det_minus_power`) — milliseconds where the polynomial of a long braid takes minutes.  The
     angles should not be rational multiples of π: at an n-th root of unity
     the formula divides by zero.
 
@@ -128,16 +182,7 @@ def alexander_on_circle(
     values: list[float | None] = []
     for theta in angles:
         t = complex(np.exp(1j * theta))
-        burau = _burau_product(
-            braid,
-            t,
-            1.0 + 0j,
-            0j,
-            lambda a, rows: a @ np.array(rows, dtype=complex),
-            np.eye(n - 1, dtype=complex),
-        )
-        power = np.linalg.matrix_power(burau, repeats)
-        _, log_det = np.linalg.slogdet(np.eye(n - 1) - power)
+        log_det = _log_det_minus_power(braid, theta, repeats, 1.0)
         value = (log_det + np.log(abs(1 - t)) - np.log(abs(1 - t**n))) / np.log(10)
         values.append(
             None if not np.isfinite(value) or value < np.log10(_ZERO) else float(value)
@@ -145,8 +190,141 @@ def alexander_on_circle(
     return tuple(values)
 
 
+def _burau_on_circle(braid: Braid, theta: float):
+    """The braid's reduced Burau matrix at t = e^{iθ}, numerically, as a
+    numpy array scaled down where it grows large, and the logarithm of the
+    scale (:func:`_scaled_burau_product`)."""
+    import numpy as np
+
+    t = complex(np.exp(1j * theta))
+    return _scaled_burau_product(braid, t, 1.0 + 0j, 0j, largest=_LARGEST)
+
+
+def _log_det_minus_power(braid: Braid, theta: float, repeats: int, x: float) -> float:
+    """``ln |det(x − Bᵏ)|``, ``B`` the braid's reduced Burau matrix at
+    t = e^{iθ} and ``k`` the repeats.
+
+    From the eigenvalues λ of ``B``: the product of the ``x − λᵏ``, each
+    taken in logarithms.  ``Bᵏ`` itself is never formed: its entries grow
+    with ``k``, and ``det(x − Bᵏ)`` taken from them loses the digits the
+    subtraction cancels, so that a braid read from another starting point
+    seemed another braid.  And a braid repeated a thousand times overflows
+    nothing, nor a braid of tens of thousands of crossings, its matrix
+    scaled down as it is made, its eigenvalues scaled back up in logarithms.
+    """
+    import numpy as np
+
+    total = 0.0
+    burau, log_scale = _burau_on_circle(braid, theta)
+    # A factor exactly zero gives -inf: the determinant vanishes, which the
+    # callers read as such (the Alexander polynomial of a split link).
+    with np.errstate(divide="ignore", under="ignore"):
+        for eigen in np.linalg.eigvals(burau):
+            grows = repeats * (np.log(abs(eigen)) + log_scale) if eigen else -np.inf
+            if grows > 30:
+                total += grows
+            elif log_scale:
+                total += np.log(abs(x - np.exp(repeats * (np.log(eigen) + log_scale))))
+            else:
+                total += np.log(abs(x - eigen**repeats))
+    return float(total)
+
+
+def burau_polynomial_on_circle(
+    braid: Braid, angles: Sequence[float], repeats: int = 1, at: float = 2.0
+) -> tuple[float, ...]:
+    """``log₁₀ |det(x − B(e^{iθ}))|`` at ``x = at``: the characteristic
+    polynomial of the braid's reduced Burau matrix ``B``, the braid repeated
+    ``repeats`` times, sampled on the unit circle.
+
+    The characteristic polynomial does not change when the braid is
+    conjugated — read from another starting point, as a braid round a disk
+    is wherever its circle is cut — so two braids it tells apart are not the
+    same braid however written.  It is a finer test than the Alexander
+    polynomial of the closure (:func:`alexander_on_circle`), which is that
+    polynomial at ``x = 1``: where the Burau matrix has the eigenvalue 1, as
+    for many braids with a closure of several loops, the Alexander polynomial
+    vanishes and tells nothing apart, but this does not.
+
+    Args:
+        braid: The braid.
+        angles: The angles θ, in radians.
+        repeats: How many times the braid is repeated.
+        at: Where the characteristic polynomial is taken, off the unit
+            circle so that it does not vanish there.
+
+    Returns:
+        Per angle, ``log₁₀ |det(x − B)|``.
+    """
+    import numpy as np
+
+    n = braid.n_strands
+    if n == 1:
+        return tuple(0.0 for _ in angles)
+    values = [
+        float(_log_det_minus_power(braid, theta, repeats, at) / np.log(10))
+        for theta in angles
+    ]
+    return tuple(values)
+
+
+# The prime :func:`burau_polynomial_mod` computes modulo: the largest below
+# 2²⁶, so that a matrix product of plain 64-bit integers, each entry a sum
+# of products below PRIME², overflows for no braid on fewer than
+# 2⁶³ / PRIME² = 2048 strands; and large enough that sampling at a fixed t
+# confuses two different polynomials about once in sixty million.
+PRIME = 67108859
+
+
+def burau_polynomial_mod(braid: Braid, t: int, repeats: int = 1) -> tuple[int, ...]:
+    """The characteristic polynomial ``det(x − Bᵏ)`` of the braid's reduced
+    Burau matrix ``B``, the braid repeated ``k = repeats`` times, at an
+    integer ``t``, exactly, modulo :data:`PRIME`.
+
+    :func:`burau_polynomial_on_circle` takes the same polynomial in floating
+    point, which for a long braid loses digits: two words for the same braid
+    can then disagree in its third.  Modulo a prime nothing is rounded, so
+    the same braid gives the same coefficients however written, and a
+    braid read from another starting point (conjugated) too.  Two different
+    polynomials, in ``t`` and ``x``, agree at a given ``t`` modulo the prime
+    only by rare chance.  The Alexander polynomial of the closure is in it as
+    well: ``det(1 − Bᵏ)`` is its value at ``x = 1``.
+
+    Args:
+        braid: The braid.
+        t: The Burau variable's value; not a multiple of :data:`PRIME`.
+        repeats: How many times the braid is repeated; a power taken by
+            squaring, so millions of repeats cost a few dozen products.
+
+    Returns:
+        The coefficients, from ``xⁿ⁻¹``'s (1) down, each in ``[0, PRIME)``.
+    """
+    import numpy as np
+    from sympy.polys.domains import GF
+
+    m = braid.n_strands - 1
+    field = GF(PRIME)
+    burau = _burau_product(braid, field(t), field.one, field.zero, PRIME)
+    power = np.eye(m, dtype=np.int64)
+    k = repeats
+    while k:
+        if k & 1:
+            power = power @ burau % PRIME
+        burau = burau @ burau % PRIME
+        k >>= 1
+    # Faddeev and LeVerrier: Mₖ = A Mₖ₋₁ + cₖ₋₁ I, cₖ = −tr(A Mₖ) / k.
+    coefficients = [1]
+    product = np.zeros((m, m), dtype=np.int64)
+    for k in range(1, m + 1):
+        step = product + coefficients[-1] * np.eye(m, dtype=np.int64)
+        product = power @ step % PRIME
+        trace = int(np.trace(product)) % PRIME
+        coefficients.append(-trace * pow(k, -1, PRIME) % PRIME)
+    return tuple(coefficients)
+
+
 def conjugacy_class(
-    braid: Braid, conjugators: list[Braid] | None = None
+    braid: Braid, conjugators: Optional[list[Braid]] = None
 ) -> list[Braid]:
     """Generate conjugates of a braid by a list of other braids.
 

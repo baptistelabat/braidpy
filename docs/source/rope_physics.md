@@ -334,3 +334,39 @@ in two halves, so it goes round the side braidpy's goes.
   DNA", *Biopolymers* 54, 307 (2000): linking numbers of polygons, exactly.
 - D. Rolfsen, *Knots and Links* (Publish or Perish, 1976), §5.D: linking
   numbers from crossings.
+
+## Made by its carriers
+
+Made crossing by crossing, the braid is still made from the braid braidpy
+laid. {mod}`braidpy.carried` lays nothing: a horn gear machine's carriers go
+round their tracks, at the machine's real size, and each pulls its yarn, at
+a steady tension, up through a forming ring into the braid, which is taken
+off above at a steady rate. The yarns near the ring are beads, settled with
+the same stretching, bending, contact and friction as
+[crossing by crossing](#making-it-crossing-by-crossing-with-friction);
+what differs:
+
+- **Where the yarn comes from.** Not a block of laid braid above, but the
+  carrier below. Each yarn runs straight from its carrier's eye up to ten
+  diameters under the ring; from there it is beads. Its lowest bead is
+  pulled towards the eye, and yarn is paid out, a bead at a time, as the
+  braid draws it up, or taken back as it slackens: a carrier's tensioner.
+  No bead is renamed, so each contact keeps its friction for as long as it
+  lasts.
+- **The forming ring**, a torus of wire round the axis, three centimetres
+  over the carriers' eyes: the yarns pass inside it, and it brings them
+  together where the braid forms.
+- **Friction is what makes the braid.** Without it, two taut yarns slide to
+  wherever they touch, just below the braid, and stay there: the braid
+  taken off has no crossings at all. With it, each crossing is held where
+  it was beaten up, and carried up with the braid.
+- **To scale**: lengths are in diameters of 1100 dtex yarn, about 0.4 mm,
+  a gear 140 of them across, so the braid is seen as small as it is beside
+  the machine making it.
+
+On the three-gear flat machine, the plait made crosses as the braid laid off
+the machine does, crossing for crossing (`tests/test_carried.py`).
+`examples/demo_carried.py` draws it twice: near, the braid formed above the
+ring, its yarns as thick as they are; and to scale, the deck, the carriers,
+the yarns' runs and the ring. It is pure Python, some ten seconds a step of
+the machine: not in Braid Studio yet.

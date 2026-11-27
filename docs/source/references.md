@@ -148,6 +148,7 @@ https://www.artisanart.biz/Apps/Kikko_Planner/
 
 Historical braids by Masako Kinoshita https://loopbraiding.com/ https://www.ee0r.com/lmbric.net/
 Ingrid Crickmore blog https://loopbraider.com/
+A 14-strand, 7-loop D-shaped braid (unorthodox) https://loopbraider.com/2015/04/21/uo-dshaped-7tut/
 Braid planner by Gary Mitchell https://www.islandbraider.com/
 ## 📺 Video Resource
 
@@ -171,6 +172,11 @@ produce several patterns.
 
 - [ScienceDirect — Triaxial braid overview](https://www.sciencedirect.com/topics/engineering/triaxial-braid)
   — diamond/regular/Hercules definitions and relative stability.
+- [J. H. van Ravenhorst, *Design tools for circular overbraiding of complex
+  mandrels*](https://ris.utwente.nl/ws/portalfiles/portal/46645249/PhD_thesis_Johan_van_Ravenhorst.pdf)
+  (PhD thesis, University of Twente) — the maypole braider and its yarn
+  paths, axial yarns fed up the horn gears' spindles for triaxial braids;
+  what `triaxial_braid_16()` models.
 - [L'Atelier de Tressage — la tresse plate](https://www.atelierdetressage.paris/tresse-plate/)
   — French flat-braid designs (uni, chiné, grappé, damier, pied-de-poule,
   diagonal, milanaise). Flat looms run 7–121 fuseaux, single circuit.
@@ -217,6 +223,20 @@ empty slots at full load are mechanism, not choice. *Half load* is 25% of slots.
   what `soutache_braid()` models as two `Axial` columns.
 
 ---
+## Lace braiding machines
+Early patents of the machine behind
+[the Jacquard lace machine](making.md#the-jacquard-lace-machine); their
+words (quoit, race-circle, pattern bar) are in the {doc}`glossary`.
+
+- Rahm, *Lace braiding machine*, US 1,446,127 (1923):
+  https://patents.google.com/patent/US1446127A/en
+- Rahm, *Lace-braiding-carrier drive*, US 1,282,945 (1918):
+  https://patents.google.com/patent/US1282945A/en
+- Staub, *Carrier drive for lace braiders*, US 1,512,146 (1924):
+  https://patents.google.com/patent/US1512146A/en
+- Sandweg, *Braiding and lace-making machine*, US 1,488,064 (1924):
+  https://patents.google.com/patent/US1488064A/en
+
 ## Braiding machine control
 https://github.com/stiganielsen/BraidOMatic
 https://github.com/Brandon-Key5113/BraidyBunch
@@ -239,3 +259,8 @@ https://www.youtube.com/watch?v=qSPfs9S0Pag
 https://github.com/ElsevierSoftwareX/SOFTX-D-17-00056
 https://github.com/louisepb/TexGen
 https://craftdesignonline.com/braid-3d/
+
+## Multiband braiding machine
+Circuit drawing of a 3-band 10-15-10 machine, from which
+`braidpy.horn_gear.multiband_10_15_10` is taken:
+https://www.atelierdetressage.paris/wp-content/uploads/2022/05/Dessin-du-circuit-sur-un-3-bandes-10-15-10.png

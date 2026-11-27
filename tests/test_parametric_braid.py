@@ -137,7 +137,7 @@ def test_a_braid_can_be_drawn_as_yarn_rather_than_as_lines():
     ), "plot still returns the braid"
 
 
-def test_a_tube_is_everywhere_its_own_radius_from_the_centreline():
+def test_a_tube_is_everywhere_its_own_radius_from_the_centerline():
     """Which is what makes the picture a measurement rather than a suggestion."""
     import numpy as np
 
@@ -146,12 +146,12 @@ def test_a_tube_is_everywhere_its_own_radius_from_the_centreline():
     radius = 0.2
     points = [(math.cos(t / 30), math.sin(t / 30), t / 40) for t in range(120)]
     x, y, z = tube_mesh(points, radius, n_around=12)
-    centre = np.array(points)
+    center = np.array(points)
 
     gaps = np.sqrt(
-        (x - centre[:, None, 0]) ** 2
-        + (y - centre[:, None, 1]) ** 2
-        + (z - centre[:, None, 2]) ** 2
+        (x - center[:, None, 0]) ** 2
+        + (y - center[:, None, 1]) ** 2
+        + (z - center[:, None, 2]) ** 2
     )
     assert gaps.min() == pytest.approx(radius, abs=1e-12)
     assert gaps.max() == pytest.approx(radius, abs=1e-12)
@@ -181,10 +181,10 @@ def test_the_two_renderings_are_of_the_same_tube():
     assert all(len(face) == 4 for face in faces)
     # A face spans two rings, so its first two corners belong to one
     # centreline point and its last two to the next.
-    centre = np.array(points)
+    center = np.array(points)
     for corner, belongs_to in zip(faces[0], (0, 0, 1, 1)):
         assert float(
-            np.linalg.norm(np.array(corner) - centre[belongs_to])
+            np.linalg.norm(np.array(corner) - center[belongs_to])
         ) == pytest.approx(radius, abs=1e-9)
 
     assert len(tube_faces(points, radius, n_around=n_around, stride=4)) < len(faces)
@@ -197,9 +197,9 @@ def test_the_carried_frame_stays_square_to_itself():
     from braidpy.parametric_strand import transported_frame
 
     points = [(math.cos(t / 20), math.sin(t / 20) ** 3, t / 30) for t in range(80)]
-    centre, normal, binormal = transported_frame(points)
+    center, normal, binormal = transported_frame(points)
 
-    assert centre.shape == normal.shape == binormal.shape
+    assert center.shape == normal.shape == binormal.shape
     assert np.allclose(np.linalg.norm(normal, axis=1), 1.0)
     assert np.allclose(np.linalg.norm(binormal, axis=1), 1.0)
     assert np.allclose(np.einsum("ij,ij->i", normal, binormal), 0.0, atol=1e-12)
