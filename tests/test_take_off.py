@@ -21,6 +21,7 @@ from braidpy.symmetric_braid import braid_word
 from braidpy.take_off import (
     SAFE_STEP,
     StrandTrajectories,
+    YarnPaths,
     braid_word_trajectories,
     default_take_off,
     disk_trajectories,
@@ -335,6 +336,31 @@ def test_a_braid_laid_too_coarsely_to_tighten_is_warned_of():
     assert longest_step(jumpy) >= SAFE_STEP * d
     with pytest.warns(UserWarning, match="pass through each other"):
         tighten_yarns(jumpy, d, iterations=1)
+
+
+def test_coincident_samples_are_pushed_apart():
+    """Two samples of different yarns on the very same spot have no direction
+    between them to push along: tightening still has to part them.  Two
+    straight yarns laid exactly on top of one another stay stuck where a
+    direction is found for them."""
+    d = 0.15
+    n = 40
+    times = np.arange(float(n))
+    heights = (0.05 * (times[-1] - times))[:, None]
+    paths = YarnPaths(
+        times=times,
+        points={
+            "a": np.hstack([np.zeros((n, 2)), heights]),
+            "b": np.hstack([np.zeros((n, 2)), heights]),
+        },
+        take_off=1.0,
+        trajectories=StrandTrajectories(
+            times=times, xy={"a": np.zeros((n, 2)), "b": np.zeros((n, 2))}
+        ),
+        fell_radius=0.0,
+    )
+    tight, _ = tighten_yarns(paths, d, iterations=40, hold_top=False)
+    assert tight.closest_approach(include_fell=False) >= d * (1 - 2e-3)
 
 
 def test_mobidai_is_laid_and_tightened():
