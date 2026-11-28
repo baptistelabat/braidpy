@@ -5,11 +5,11 @@
 // The form: what each source asks for, filled in from braidpy's catalog,
 // and the examples a source offers.
 
-import { attachDiagram } from "./diagram.js?v=aa8993d4af";
-import { attachEditor, attachShape } from "./editor.js?v=aa8993d4af";
-import { attachMachine } from "./machine.js?v=aa8993d4af";
-import { $ } from "./page.js?v=aa8993d4af";
-import { submit, worker } from "./workers.js?v=aa8993d4af";
+import { attachDiagram } from "./diagram.js?v=771d8b281c";
+import { attachEditor, attachShape } from "./editor.js?v=771d8b281c";
+import { attachMachine } from "./machine.js?v=771d8b281c";
+import { $ } from "./page.js?v=771d8b281c";
+import { submit } from "./workers.js?v=771d8b281c";
 
 // The core a braid is made round (braidpy.web._settings.CORE).
 const CORE = {
@@ -99,12 +99,6 @@ const FIELDS = {
     },
     { name: "cycles", label: "Cycles", kind: "number", min: 1, max: 40 },
     DISK_CORE,
-    {
-      kind: "file",
-      label: "Import a braid3d design",
-      accept: ".b3d",
-      hint: "A .b3d file saved by braid3d, read as your own disk braid: its yarns, in their colours, and its moves, on a disk of as few slots as hold them.",
-    },
   ],
   sinnet: [
     { name: "name", label: "Sinnet", kind: "entries" },
@@ -266,18 +260,6 @@ export function renderFields(source, values = {}) {
       input = document.createElement("textarea");
       input.rows = 2;
       input.spellcheck = false;
-    } else if (field.kind === "file") {
-      // Read by braidpy (braidpy.web.from_b3d), which fills the fields with
-      // what it holds and makes it.  Unnamed, it is no part of a link.
-      input = document.createElement("input");
-      input.type = "file";
-      input.accept = field.accept;
-      input.addEventListener("change", async () => {
-        const [file] = input.files;
-        if (!file) return;
-        worker.postMessage({ type: "b3d", text: await file.text() });
-        input.value = "";
-      });
     } else {
       input = document.createElement("input");
       input.type = field.kind;

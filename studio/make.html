@@ -9,13 +9,13 @@
       content="Describe a braid — a braid word, a kumihimo pattern, a disk braid, an Ashley sinnet, a braiding machine or a lace machine — and see it laid and tightened in 3D, computed by braidpy in your browser."
     />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="style.css?v=aa8993d4af" />
+    <link rel="stylesheet" href="style.css?v=771d8b281c" />
     <script>
       // braidpy's worker starts first, while three.js and the page's
       // modules load: Python is the slowest to start.  What it says before
       // the page is ready to hear it is kept for workers.js to read.
       window.braidpy = (() => {
-        const worker = new Worker("worker.js?v=aa8993d4af");
+        const worker = new Worker("worker.js?v=771d8b281c");
         const early = [];
         worker.onmessage = ({ data }) => early.push(data);
         const pyodideUrl =
@@ -42,8 +42,8 @@
       }
     </script>
     <!-- First, on its own: the page is shown once its words are in the site's language. -->
-    <script type="module" src="i18n.js?v=aa8993d4af"></script>
-    <script type="module" src="app.js?v=aa8993d4af"></script>
+    <script type="module" src="i18n.js?v=771d8b281c"></script>
+    <script type="module" src="app.js?v=771d8b281c"></script>
   </head>
   <body>
     <aside class="panel">
@@ -227,6 +227,14 @@
           <option value="json">Yarn points (JSON)</option>
           <option value="b3d" id="save-b3d" hidden>For braid3dmin (B3D)</option>
         </select>
+        <button
+          id="import-b3d"
+          type="button"
+          title="A .b3d file saved by braid3d, read as your own disk braid: its yarns, in their colours, and its moves, on a disk of as few slots as hold them."
+        >
+          Import B3D…
+        </button>
+        <input id="import-b3d-file" type="file" accept=".b3d" hidden />
       </div>
       <div id="empty" class="empty">
         <p>The braid appears here.</p>

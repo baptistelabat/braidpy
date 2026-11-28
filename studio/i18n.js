@@ -20,7 +20,7 @@
 // translate="no" keeps its own words, as a braid word.  A catalog's
 // translation of "English" is its language's own name, in the menu.
 
-import { catalogs, language as siteLanguage } from "./locale.js?v=aa8993d4af";
+import { catalogs, language as siteLanguage } from "./locale.js?v=771d8b281c";
 
 const PLACE = /\{#?\}/g;
 

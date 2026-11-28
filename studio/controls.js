@@ -8,9 +8,9 @@
 import * as THREE from "three";
 import { OBJExporter } from "three/addons/exporters/OBJExporter.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import { copyText } from "./info.js?v=aa8993d4af";
-import { drawSection, section, top } from "./insets.js?v=aa8993d4af";
-import { $ } from "./page.js?v=aa8993d4af";
+import { copyText } from "./info.js?v=771d8b281c";
+import { drawSection, section, top } from "./insets.js?v=771d8b281c";
+import { $ } from "./page.js?v=771d8b281c";
 import {
   awake,
   braid,
@@ -25,8 +25,8 @@ import {
   SUBSTEPS,
   scene,
   showTubes,
-} from "./scene.js?v=aa8993d4af";
-import { b3dOf } from "./workers.js?v=aa8993d4af";
+} from "./scene.js?v=771d8b281c";
+import { b3dOf, worker } from "./workers.js?v=771d8b281c";
 
 $("tubes").addEventListener("change", (event) => showTubes(event.target.checked));
 $("showsection").addEventListener("change", (event) => {
@@ -103,6 +103,17 @@ function download(name, href) {
   link.click();
   if (href.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
+
+// A design saved by braid3d or braid3dmin, whatever the source shown: read by
+// braidpy (braidpy.web.from_b3d) as your own disk braid, the form filled
+// with it and made.  The file is no part of a link.
+$("import-b3d").addEventListener("click", () => $("import-b3d-file").click());
+$("import-b3d-file").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  if (!file) return;
+  worker.postMessage({ type: "b3d", text: await file.text() });
+  event.target.value = "";
+});
 
 // Only a braid with a disk program can be made on braid3dmin's marudai.
 for (const asked of ["focus", "pointerdown"]) {
