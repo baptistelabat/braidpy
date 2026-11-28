@@ -6,6 +6,10 @@ What changed in each release of braidpy.
 
 ### New
 
+- Braid Studio's **Import B3D…** is in the toolbar, beside **Save…** and
+  its "For braid3dmin (B3D)", whatever the braid shown: a braid3d design is
+  read as your own disk braid, as before, but no longer from the bottom of
+  the disk braid's fields.
 - `braidpy-mcp --http [host:]port`: braidpy's tools served over streamable
   HTTP, for the client that reaches the server across the network — a
   hosted one, a registry's runner. `braidpy-mcp` alone serves them over
