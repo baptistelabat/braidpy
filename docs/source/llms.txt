@@ -43,6 +43,10 @@ nothing to install.
 - [Rope physics](https://baptistelabat.github.io/braidpy/develop/rope_physics.html): yarns that settle and tighten, as braidpy models them.
 - [A marudai](https://baptistelabat.github.io/braidpy/develop/marudai.html): a braid made move by move, round a core or not.
 
+## Braiding over a surface
+
+- [Braiding over a mesh](https://baptistelabat.github.io/braidpy/develop/mesh_braids.html): a braid over any shape — a specification, not a description.
+
 ## Working on braidpy
 
 - [Developer guide](https://baptistelabat.github.io/braidpy/develop/developer_guide.html): setting up, the rules, the tests, the releases.

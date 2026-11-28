@@ -1,9 +1,9 @@
 # Theory manual
 
 The ideas behind braidpy: braids as words and as a group, how braids are
-compared, the shape a braid takes and why it has no formula, and how its
-yarns are settled by physics. Each page says what braidpy computes and why,
-with the code that does it.
+compared, the shape a braid takes and why it has no formula, how its yarns
+are settled by physics, and how a braid may cover a shape of any kind. Each
+page says what braidpy computes and why, with the code that does it.
 
 ```{toctree}
 :maxdepth: 2
@@ -37,6 +37,13 @@ horn_gear_layout.md
 
 rope_physics.md
 marudai.md
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Braiding over a surface
+
+mesh_braids.md
 ```
 
 ```{toctree}
