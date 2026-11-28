@@ -88,6 +88,13 @@ def _tension_solver(
     return _thomas(lower, diagonal, upper)
 
 
+def _lengths(v: np.ndarray) -> np.ndarray:
+    """The length of every row of ``v``, as :func:`numpy.linalg.norm` gives
+    it.  The same answer, without the call's overhead in the innermost
+    loops."""
+    return np.sqrt(np.einsum("...i,...i->...", v, v))
+
+
 #: How far, in diameters, a yarn may move sideways between two levels and
 #: tightening still keep yarns from passing through each other.  It looks for
 #: contact between samples only, and two yarns can cross between two levels
@@ -438,7 +445,7 @@ def tighten_yarns(
         return move
 
     def clamp(move: np.ndarray) -> np.ndarray:
-        size = np.linalg.norm(move, axis=-1, keepdims=True)
+        size = _lengths(move)[..., None]
         return move * np.minimum(1.0, max_move / np.maximum(size, 1e-300))
 
     def neighbors() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -463,7 +470,7 @@ def tighten_yarns(
                 p, q = grid[a, : n - 1].ravel(), beyond[b, o : o + n - 1].ravel()
                 apart = p != q
                 p, q = p[apart], q[apart]
-            close = np.linalg.norm(xy[p] - xy[q], axis=-1) < need + yarn_diameter
+            close = _lengths(xy[p] - xy[q]) < need + yarn_diameter
             first.append(p[close])
             second.append(q[close])
             needs.append(np.full(int(close.sum()), need))
@@ -478,18 +485,33 @@ def tighten_yarns(
             np.concatenate(rises),
         )
 
+    push = np.zeros_like(xy)
+
     def separate(p: np.ndarray, q: np.ndarray, need: np.ndarray) -> None:
         for _ in range(50):
-            push = np.zeros_like(xy)
+            push.fill(0.0)
             worst = 0.0
             if len(p):
                 diff = xy[p] - xy[q]
-                dist = np.linalg.norm(diff, axis=-1)
+                dist = _lengths(diff)
                 short = need - dist
                 hit = short > slack
                 if np.any(hit):
                     worst = float(np.max(short[hit]))
                     unit = diff[hit] / np.maximum(dist[hit], 1e-300)[:, None]
+                    # Two samples of different yarns on the very same spot
+                    # have no direction between them: push them straight
+                    # out from the axis, where a yarn lies rather than on
+                    # it, or up if they sit on it.
+                    stuck = np.flatnonzero(dist[hit] < 1e-12)
+                    if len(stuck):
+                        rel = xy[p[hit][stuck]] - center
+                        out = _lengths(rel)
+                        unit[stuck] = np.where(
+                            (out > 1e-12)[:, None],
+                            rel / np.maximum(out, 1e-300)[:, None],
+                            np.array([1.0, 0.0]),
+                        )
                     gap = short[hit, None] * unit
                     # Shared between the two, or all to the one that is free
                     # to move when the other is held at the fell.
@@ -498,7 +520,7 @@ def tighten_yarns(
                     np.add.at(push, q[hit], -(1 - share) * gap)
             if core_radius is not None:
                 rel = xy - center
-                r = np.linalg.norm(rel, axis=-1)
+                r = _lengths(rel)
                 inner = core_radius + yarn_diameter / 2
                 low = r < inner
                 if np.any(low):
@@ -551,7 +573,7 @@ def tighten_yarns(
         separate(p, q, need)
         # The push itself can carry a sample out of the list's reach, so the
         # check comes after it, and a rebuilt list is pushed against again.
-        while np.max(np.linalg.norm(xy - built, axis=-1)) > yarn_diameter / 4:
+        while np.max(_lengths(xy - built)) > yarn_diameter / 4:
             p, q, need, rise = movable(neighbors())
             built = xy.copy()
             separate(p, q, need)

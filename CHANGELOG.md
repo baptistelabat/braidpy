@@ -16,6 +16,20 @@ What changed in each release of braidpy.
   stdio, as before. A test drives the server as a client does
   (`tests/test_mcp_server.py`).
 
+### Changed
+
+- Tightening measures its distances directly, where :func:`numpy.linalg.norm`'s
+  overhead sat in the innermost loops: a braid tightens in about four fifths
+  of the time it took, with the same result.
+
+### Fixed
+
+- Two samples of different yarns on the very same spot — where a braid laid
+  coarsely puts them, or a degenerate one — had no direction between them to
+  push along, and stayed stuck on top of each other however long the braid
+  tightened: they are now pushed straight out from the axis. A test tightens
+  two yarns laid exactly one upon the other.
+
 ### Documentation
 
 - A release is made by `make release` (`scripts/release.sh`): from an
